@@ -40,5 +40,39 @@ try {
     const denied = new Pool({ host: '127.0.0.1', port: db.identity.dbPort, database: db.identity.database, user: db.identity.user, password: 'deliberately-invalid', connectionTimeoutMillis: 2000 });
     try { await assert.rejects(denied.query('SELECT 1'), { code: '28P01' }); } finally { await denied.end(); }
   });
-  console.log(`Integration: ${count} passed; 0 skipped. No booking/payment runtime claims.`);
 } finally { await db.stop(); console.log('Owned PostgreSQL process stopped.'); }
+
+// A second fresh owned cluster keeps the initial-concurrency test above independent.
+// The only object removed below is this test's own collision fixture, never an existing schema.
+const recovery = await startIsolatedPostgres();
+try {
+  await check('failed initial migration rolls back DDL and ledger, releases lock, then recovers', async () => {
+    // Reserve another backend BEFORE migrate() so the lock probe cannot accidentally use
+    // the migrator's own backend (PostgreSQL advisory locks are reentrant per session).
+    const observer = await recovery.pool.connect();
+    try {
+      await observer.query('CREATE TABLE telemetry_events (sentinel text)');
+      await observer.query("INSERT INTO telemetry_events VALUES ('test-owned-collision')");
+      // Migration creates its ledger and metadata first, then hits this name collision.
+      await assert.rejects(migrate(recovery.pool), { code: '42P07' });
+      const state = await observer.query("SELECT to_regclass('foundation_migrations') AS ledger, to_regclass('foundation_metadata') AS metadata");
+      assert.deepEqual(state.rows[0], { ledger: null, metadata: null });
+      assert.deepEqual((await observer.query('SELECT sentinel FROM telemetry_events')).rows, [{ sentinel: 'test-owned-collision' }]);
+      await observer.query('BEGIN');
+      try {
+        assert.equal((await observer.query('SELECT pg_try_advisory_xact_lock(71820401) AS acquired')).rows[0].acquired, true);
+      } finally { await observer.query('ROLLBACK'); }
+      await observer.query('DROP TABLE telemetry_events');
+    } finally { observer.release(); }
+    // Bound a regression's lock wait rather than letting a broken recovery hang CI.
+    const bounded = await recovery.pool.connect();
+    try { await bounded.query("SET statement_timeout = '5s'"); } finally { bounded.release(); }
+    await migrate(recovery.pool);
+    await migrate(recovery.pool);
+    assert.deepEqual((await recovery.pool.query('SELECT id FROM foundation_migrations')).rows, [{ id: '0001' }]);
+    await seed(recovery.pool, recovery.identity.namespace);
+    await recordTelemetry(recovery.pool, randomUUID(), recovery.identity.namespace, 'foundation.probe');
+    assert.equal((await recovery.pool.query('SELECT count(*)::int AS n FROM telemetry_events')).rows[0].n, 1);
+  });
+} finally { await recovery.stop(); console.log('Owned recovery-test PostgreSQL process stopped.'); }
+console.log(`Integration: ${count} passed; 0 skipped. No booking/payment runtime claims.`);

@@ -80,3 +80,13 @@ physical socket end callbacks. The owned server could therefore stop too early. 
 client and await its end event before stopping PG; background pool errors become a sanitized failure,
 not a dumped Client object. Regression tests model the delayed socket close and confirm errors remain
 failures without revealing connection metadata. No sleeps/retries/error suppression were added.
+
+## PR #1 independent-review follow-up: migration recovery
+
+The original event INSERT/ROLLBACK test did not exercise a failed migration. A separate fresh owned
+PostgreSQL cluster now forces the initial migration to fail after its first DDL, using a test-owned
+name collision. The integration test verifies both migration-created relations are absent, preserves
+the collision fixture, probes advisory-lock release from a different reserved backend, removes only
+its own fixture, then applies/replays the migration and writes a valid seed/event. The original fresh
+concurrent-migration test remains separate. This adds failure-recovery evidence without changing the
+migration SQL, schema, pricing or operational rules.

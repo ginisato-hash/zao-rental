@@ -22,3 +22,31 @@ test('auth and quota errors stop without API fallback', () => { assert.match(cla
 test('plan has bounded repair and no merge or main push', () => { const f = simulationFixture(); const plan = commandPlan(f.approval, '/tmp/zao-rental-new', 'ginisato-hash/zao-rental'); assert.ok(plan.some(step => step.stage === 'draft')); assert.ok(plan.some(step => step.stage === 'claude')); assert.ok(!JSON.stringify(plan).includes('auto-merge')); assert.deepEqual(plan.find(step => step.stage === 'push')?.argv?.slice(-1), ['HEAD:refs/heads/codex/e01']); });
 
 test('a failing CI test enters bounded repair before requiring review', () => { const f = simulationFixture(); f.evidence.ci.checks.foundation = 'failure'; f.evidence.review = null; assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'FIX_REQUIRED'); assert.equal(evaluate(f.approval, f.policy, f.evidence, 2, 1).reason, 'FIX_ROUND_LIMIT'); });
+
+function reviewFinding(severity: string) {
+  return { severity, file: 'example.ts', line: 1, scenario: 'synthetic gate regression', evidence: 'fixture', fix_direction: 'fixture', required_test: 'fixture' };
+}
+test('unknown review verdicts cannot advance even with otherwise valid evidence', () => {
+  for (const verdict of ['NEEDS_REVISION', 'REVIEW_ERROR', 'pass', '']) {
+    const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), verdict };
+    assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'BLOCKED');
+  }
+});
+test('unknown severity labels cannot advance under a PASS verdict', () => {
+  for (const severity of ['CRITICAL', 'UNKNOWN', 'high', '']) {
+    const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), findings: [reviewFinding(severity)] };
+    assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'BLOCKED');
+  }
+});
+test('PASS still requires acceptable severity; blockers require bounded repair', () => {
+  for (const severity of ['BLOCKER', 'HIGH', 'MEDIUM', 'LOW']) {
+    const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), findings: [reviewFinding(severity)] };
+    const blocking = ['BLOCKER', 'HIGH'].includes(severity);
+    assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, blocking ? 'FIX_REQUIRED' : 'AWAITING_APPROVAL');
+    if (blocking) assert.equal(evaluate(f.approval, f.policy, f.evidence, 2, 1).reason, 'FIX_ROUND_LIMIT');
+  }
+});
+test('PASS with any unverified item remains blocked', () => {
+  const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), unverified: ['missing migration recovery evidence'] };
+  assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).reason, 'REVIEW_UNVERIFIED');
+});

@@ -95,10 +95,15 @@ export function evaluate(approval: Approval, policy: Policy, evidence: Evidence,
   const review = evidence.review as { task_id: string; base_sha: string; head_sha: string; spec_hash: string; verdict: string; unverified: string[]; findings: { severity: string }[] };
   if (review.task_id !== approval.taskId || review.base_sha !== approval.baseSha || review.head_sha !== evidence.headSha || review.spec_hash !== approval.specHash) return blocked('STALE_REVIEW');
   if (review.verdict === 'BLOCKED' || review.unverified.length) return blocked('REVIEW_UNVERIFIED');
+  // The schema already rejects unknown labels. Keep this final gate independently explicit:
+  // a future schema enum extension must never silently become permission to advance.
+  if (review.verdict === 'PASS' && review.findings.every(f => ['MEDIUM', 'LOW'].includes(f.severity))) {
+    return { status: 'AWAITING_APPROVAL', reason: 'EXACT_SHA_EVIDENCE_READY_NO_MERGE', fixRound, headSha: evidence.headSha };
+  }
   if (review.verdict === 'CHANGES_REQUIRED' || review.findings.some(f => ['BLOCKER', 'HIGH'].includes(f.severity))) {
     return fixRound >= policy.maxFixRounds ? blocked('FIX_ROUND_LIMIT') : { status: 'FIX_REQUIRED', reason: 'REVIEW_FINDINGS', fixRound: fixRound + 1, headSha: evidence.headSha };
   }
-  return { status: 'AWAITING_APPROVAL', reason: 'EXACT_SHA_EVIDENCE_READY_NO_MERGE', fixRound, headSha: evidence.headSha };
+  return blocked('REVIEW_NOT_EXPLICITLY_ACCEPTABLE');
 }
 export function classifyFailure(exitCode: number, output: string): string {
   if (/429|quota|rate.?limit|usage.?limit|credit|insufficient.*balance/i.test(output)) return 'QUOTA_BLOCKED_NO_API_FALLBACK';

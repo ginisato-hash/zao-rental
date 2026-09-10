@@ -87,3 +87,15 @@ may not trigger downstream workflows. Repo-limited App or explicit dispatch is a
 
 Installed CLI: codex 0.153.4 (ChatGPT), Claude Code 2.1.220 (claude.ai Team), gh 2.93.0 (keyring HTTPS).
 Authentication was checked with sanitized metadata; no model API credential was read or displayed.
+
+## PR #1 independent-review follow-up: explicit acceptance
+
+The review-result schema already enumerates verdicts PASS/CHANGES_REQUIRED/BLOCKED and severities
+BLOCKER/HIGH/MEDIUM/LOW; baseline runtime probes confirm unknown verdicts/severities are rejected
+by AJV. The initial review snapshot omitted that schema, so its current fail-open premise was not
+established by the supplied evidence. Nevertheless the evaluator now independently requires exact
+PASS, no unverified items, and only MEDIUM/LOW (or no findings) before AWAITING_APPROVAL. Unknown
+future values cannot become permission to advance merely because a schema enum expands. Tests cover
+unknown values, PASS with HIGH/BLOCKER, permitted advisory findings, unverified evidence and the
+repair cap. This is a disabled-runner guard improvement; the independent reviewer must reassess it,
+and the implementer does not unilaterally dismiss the HIGH finding or declare review PASS.

@@ -17,12 +17,14 @@ export async function startIsolatedPostgres() {
     databaseDir, user: identity.user, password, port: identity.dbPort,
     authMethod: 'scram-sha-256', persistent: true, createPostgresUser: false,
     initdbFlags: ['--encoding=UTF8', '--locale=C'],
-    postgresFlags: ['-h', '127.0.0.1', '-k', databaseDir, '-c', 'log_statement=none'],
+    postgresFlags: ['-h', '127.0.0.1', '-c', 'unix_socket_directories=', '-c', 'log_statement=none'],
     onLog: () => {}, onError: () => {},
   });
   let started = false;
   try {
-    await cluster.initialise();
+    // The launcher briefly creates an initdb password file; force owner-only permissions.
+    const previousUmask = process.umask(0o077);
+    try { await cluster.initialise(); } finally { process.umask(previousUmask); }
     await cluster.start(); started = true;
     await cluster.createDatabase(identity.database);
     const pool = new Pool({ host: '127.0.0.1', port: identity.dbPort, user: identity.user, password, database: identity.database, max: 6 });

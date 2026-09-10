@@ -35,8 +35,9 @@ for deterministic initial cross-environment verification. Build does not connect
 
 Canonical absolute worktree path hashes to DB name, DB role, port pair and seed namespace. Each
 invocation creates a fresh cluster under `.local/postgres/run-*`, SCRAM password in memory and
-loopback-only TCP/socket. No DATABASE_URL is accepted. Role credentials are generated per invocation
-and are never serialized/logged; no production secrets are needed. Since each cluster is exclusively
+loopback-only TCP with Unix sockets disabled (avoids long-worktree-path socket limits). No DATABASE_URL is accepted. Role credentials are generated per invocation
+and are never logged or stored in repo configuration; initdb briefly uses a launcher-managed
+password file under the OS temporary directory, forced owner-only by umask 077 and unlinked in finally; no production secrets are needed. Since each cluster is exclusively
 owned, its bootstrap role is local superuser; production application roles/least-privilege migrations
 remain E05 work. Port collision fails, and no process outside this invocation is stopped.
 

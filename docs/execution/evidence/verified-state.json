@@ -1,0 +1,17 @@
+{
+  "checked_on": "2026-09-10",
+  "base_archive": "zao-rental-bootstrap-v0.4.zip",
+  "base_sha256": "39e50cdfd6e034c4731242eecc1a6340a864d6e1eae2c9b14b903115fea049ff",
+  "observations": {
+    "base_seed_tests": 27,
+    "base_seed_test_exit_code": 0,
+    "base_runtime_acceptance_cases_documented_not_executed": 32,
+    "accessible_github_repositories_returned": 0,
+    "repository_created": false,
+    "remote_agents_started": false,
+    "automation_installed": false,
+    "business_application_built": false,
+    "production_deployed": false
+  },
+  "scope": "Container-side inspection of the mounted v0.4 archive and a new execution plan only. This is not a preflight on the user Mac. GitHub result describes this connection, not all repositories owned by the user."
+}

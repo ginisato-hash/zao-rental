@@ -1,0 +1,7 @@
+# Bootstrap change log
+## v0.4 — 2026-09-10
+Owner operational update: AM due12:00; PM from13:00; no same-date re-rental initially with future scoped turnaround policy. Added explicit length-choice/atomic-hold constraints, daily17:00 transfer planning and receipt, and staff-capability exception refunds without automatic early-return repricing. Distinguished physical AVAILABLE from sellable capacity; refined continuous allocation and provider refund state. Updated authoritative docs and added a draft operational seed and configuration-only tests. v0.3 pricing JSON and prices unchanged. No application/database/payment/UI integration, external delegation or deployment completed in this package update.
+
+## v0.3 — 2026-09-10
+Pricing-focused update requested by the owner. Half-day factor lowered to 75%; approved nonlinear multi-day curve retained. Added explicit draft price seed, configurable versioned-price specification, quote/booking lock rules, runtime acceptance checklist, owner-facing summary and seed validation tests. Synchronized already approved age-category and asset-vs-pole tracking rules so new agents do not work from stale v0.2 questions.
+No application/UI/database/payment implementation, repository push, or production deployment occurred in this package build. Earlier competitor research and inventory counts were not re-audited in this turn. Remaining operational questions stay open.

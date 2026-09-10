@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { createServer } from 'node:net';
+import { authorize, assertTelemetryEventName } from '@rental/core';
+import { identityForPath, assertPortFree, rejectAmbientDatabase } from '../../scripts/worktree';
+test('anonymous and empty identities are denied on server', () => { assert.deepEqual(authorize(null, ['STAFF']), { allowed: false, status: 401 }); assert.deepEqual(authorize({ subject: '', role: 'ADMIN' }, ['ADMIN']), { allowed: false, status: 401 }); });
+test('customer cannot enter staff or admin; staff cannot enter admin', () => { for (const role of ['CUSTOMER', 'STAFF'] as const) assert.deepEqual(authorize({ subject: 'fake-test-user', role }, ['ADMIN']), { allowed: false, status: 403 }); assert.deepEqual(authorize({ subject: 'fake-test-user', role: 'CUSTOMER' }, ['STAFF']), { allowed: false, status: 403 }); });
+test('explicit allowed role is accepted', () => { assert.deepEqual(authorize({ subject: 'fake-test-user', role: 'STAFF' }, ['STAFF', 'ADMIN']), { allowed: true }); });
+test('telemetry only accepts foundation events', () => { assert.doesNotThrow(() => assertTelemetryEventName('foundation.ready')); assert.throws(() => assertTelemetryEventName('customer.email')); });
+test('worktree paths separate stable DB, role, ports and seed namespace', () => { const a = identityForPath('/tmp/rental/tree-a'); const b = identityForPath('/tmp/rental/tree-b'); assert.deepEqual(a, identityForPath('/tmp/rental/tree-a')); for (const key of ['database', 'user', 'dbPort', 'webPort', 'namespace'] as const) assert.notEqual(a[key], b[key]); });
+test('occupied port fails rather than attaching to existing service', async () => { const server = createServer(); await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve)); try { const address = server.address(); assert.ok(address && typeof address !== 'string'); await assert.rejects(assertPortFree(address.port), /occupied/); } finally { await new Promise<void>(resolve => server.close(() => resolve())); } });
+test('ambient database target is refused without revealing it', () => { const previous = process.env.DATABASE_URL; process.env.DATABASE_URL = 'invalid-test-target'; try { assert.throws(rejectAmbientDatabase, /Ambient database/); } finally { if (previous === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = previous; } });

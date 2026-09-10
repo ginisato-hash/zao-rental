@@ -1,0 +1,46 @@
+{
+  "name": "zao-rental",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.15.x",
+    "npm": "11.12.x"
+  },
+  "packageManager": "npm@11.12.1",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen apps/web && tsc --noEmit",
+    "test:reference": "python3 -m unittest discover -s tests -p test_*.py -v",
+    "test:unit": "node --import tsx --test tests/unit/*.test.ts tests/automation/*.test.ts",
+    "test:integration": "node --import tsx scripts/integration.ts",
+    "build": "next build apps/web --webpack",
+    "test:e2e": "playwright test",
+    "verify": "node scripts/verify.mjs",
+    "dev": "node --import tsx scripts/dev.ts",
+    "runner:dry-run": "node --import tsx tools/automation/cli.ts --dry-run",
+    "check:reference": "node scripts/check-reference.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "next": "16.3.4",
+    "pg": "8.23.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.10.1",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "ajv": "8.20.0",
+    "embedded-postgres": "18.4.0-beta.17",
+    "eslint": "9.39.3",
+    "eslint-config-next": "16.3.4",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3"
+  }
+}

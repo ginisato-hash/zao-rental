@@ -1,0 +1,21 @@
+
+> zao-rental@0.1.0 test:e2e
+> playwright test
+
+
+Running 6 tests using 1 worker
+
+  ✓  1 [desktop] › tests/e2e/foundation.spec.ts:2:1 › development shell is honest and customer flow stays closed (543ms)
+  ✓  2 [desktop] › tests/e2e/foundation.spec.ts:7:1 › role spoofing cannot unlock staff/admin pages or APIs (174ms)
+  ✓  3 [desktop] › tests/e2e/foundation.spec.ts:14:1 › health exposes liveness without readiness or credentials (5ms)
+  ✓  4 [mobile] › tests/e2e/foundation.spec.ts:2:1 › development shell is honest and customer flow stays closed (238ms)
+  ✓  5 [mobile] › tests/e2e/foundation.spec.ts:7:1 › role spoofing cannot unlock staff/admin pages or APIs (185ms)
+  ✓  6 [mobile] › tests/e2e/foundation.spec.ts:14:1 › health exposes liveness without readiness or credentials (4ms)
+
+  6 passed (3.7s)
+[WebServer] (node:29963) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:29964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:29972) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

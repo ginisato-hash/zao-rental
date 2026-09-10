@@ -1,0 +1,23 @@
+name: Claude review proposal (DISABLED)
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  disabled-review:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Proposal only. Activation requires a trusted controller repository/ref, exact-SHA
+    # snapshot ingestion, output validation and separately reviewed publication adapter.
+    # Do not add candidate checkout or install/test commands to this credentialed job.
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Disabled subscription reviewer — requires owner provisioning
+        uses: anthropics/claude-code-action@19dda84776b3518d98b8798e591daee763049ed3 # v1, verified upstream
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: '--tools "" --strict-mcp-config --mcp-config {"mcpServers":{}} --setting-sources "" --disable-slash-commands --max-turns 1'
+          prompt: 'DISABLED PROPOSAL. No verified controller snapshot is supplied. Return BLOCKED; do not inspect or execute repository code, post comments, edit files or merge.'

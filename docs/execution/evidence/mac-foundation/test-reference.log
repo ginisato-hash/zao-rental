@@ -1,0 +1,36 @@
+
+> zao-rental@0.1.0 test:reference
+> python3 -m unittest discover -s tests -p test_*.py -v
+
+test_age_and_tier_isolation_preserved (test_operations_seed.OperationsSeedTests) ... ok
+test_customer_length_choices_preserve_original_bounds (test_operations_seed.OperationsSeedTests) ... ok
+test_day_block_and_inspection_survive_location_change (test_operations_seed.OperationsSeedTests) ... ok
+test_future_gap_does_not_enable_rotation (test_operations_seed.OperationsSeedTests) ... ok
+test_hold_swap_and_selected_length_contract (test_operations_seed.OperationsSeedTests) ... ok
+test_hours_and_no_new_cutoff (test_operations_seed.OperationsSeedTests) ... ok
+test_no_automatic_refund_or_price_rewrite_on_early_return (test_operations_seed.OperationsSeedTests) ... ok
+test_not_a_production_activation (test_operations_seed.OperationsSeedTests) ... ok
+test_owner_facing_hours_and_documents_are_synchronized (test_operations_seed.OperationsSeedTests) ... ok
+test_refund_amounts_requests_and_uncertainty_guardrails (test_operations_seed.OperationsSeedTests) ... ok
+test_rental_windows_and_ten_day_limit (test_operations_seed.OperationsSeedTests) ... ok
+test_runtime_acceptance_is_not_claimed_as_executed (test_operations_seed.OperationsSeedTests) ... ok
+test_selected_staff_permission_not_hidden_bypass (test_operations_seed.OperationsSeedTests) ... ok
+test_timezone_and_two_store_scope (test_operations_seed.OperationsSeedTests) ... ok
+test_transfer_future_commitment_and_no_retroactive_departure (test_operations_seed.OperationsSeedTests) ... ok
+test_transfer_schedule_is_not_guaranteed_ten_minute_readiness (test_operations_seed.OperationsSeedTests) ... ok
+test_catalog_categories_and_pole_policy (test_pricing_seed.PricingSeedTests) ... ok
+test_extra_day_increments_remain_positive_nonincreasing (test_pricing_seed.PricingSeedTests) ... ok
+test_generation_metadata_reproduces_initial_whole_day_table (test_pricing_seed.PricingSeedTests) ... ok
+test_half_day_advance_discount_examples (test_pricing_seed.PricingSeedTests) ... ok
+test_half_day_golden_values_and_same_am_pm (test_pricing_seed.PricingSeedTests) ... ok
+test_money_is_positive_integer_yen_on_100_yen_grid (test_pricing_seed.PricingSeedTests) ... ok
+test_no_implicit_production_publication (test_pricing_seed.PricingSeedTests) ... ok
+test_product_count_uniqueness_and_duration_completeness (test_pricing_seed.PricingSeedTests) ... ok
+test_sets_are_not_more_expensive_than_components (test_pricing_seed.PricingSeedTests) ... ok
+test_total_increases_average_daily_price_decreases (test_pricing_seed.PricingSeedTests) ... ok
+test_whole_day_golden_values_keep_approved_curve (test_pricing_seed.PricingSeedTests) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.008s
+
+OK

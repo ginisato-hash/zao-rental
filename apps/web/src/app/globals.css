@@ -1,0 +1,7 @@
+:root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Noto Sans JP", sans-serif; color: #153f42; background: #f4f3ec; }
+* { box-sizing: border-box; } body { margin: 0; } main { max-width: 960px; margin: 0 auto; padding: 80px 28px 32px; }
+.eyebrow { font-size: 12px; letter-spacing: .18em; color: #557274; } h1 { font-size: clamp(32px, 5.5vw, 60px); line-height: 1.4; letter-spacing: -.035em; margin: 36px 0 20px; }
+.intro { max-width: 560px; line-height: 1.9; } section { border: 1px solid #cbd7cf; border-radius: 12px; background: #fffef8; padding: 28px; margin: 36px 0; }
+.badge { display: inline-block; font-size: 12px; border-radius: 24px; padding: 6px 12px; background: #dfece3; } h2 { font-size: 20px; } p { line-height: 1.8; }
+nav { display: flex; gap: 12px; flex-wrap: wrap; } a { display: inline-block; color: inherit; padding: 12px 18px; border: 1px solid #587c73; border-radius: 6px; text-decoration: none; } a:hover { background: #e3eae0; } a:focus-visible { outline: 3px solid #af642c; outline-offset: 4px; } footer { margin-top: 72px; font-size: 12px; color: #607774; }
+@media (max-width: 480px) { main { padding-top: 40px; } section { padding: 20px; } }

@@ -1,0 +1,46 @@
+name: Foundation CI
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: foundation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      PLAYWRIGHT_BROWSERS_PATH: .local/browsers
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, verified upstream
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4, verified upstream
+        with:
+          node-version: '24.15.0'
+      - name: Pin npm
+        run: npm install --global npm@11.12.1 --no-fund --no-audit
+      - name: Reproducible setup
+        run: npm run setup
+      - name: Browser system libraries (ephemeral runner only)
+        run: npx playwright install-deps chromium
+      - name: Verify implemented foundation
+        run: npm run verify
+      - name: Runner simulation only
+        run: npm run runner:dry-run
+      - name: Preserve command logs and browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, verified upstream
+        with:
+          name: foundation-${{ github.sha }}
+          retention-days: 7
+          include-hidden-files: true
+          path: |
+            .local/evidence/
+            .local/runner-simulation/runs/
+            playwright-report/
+            test-results/

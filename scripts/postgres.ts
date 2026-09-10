@@ -6,7 +6,8 @@ import { Pool } from 'pg';
 import { trackPoolLifecycle } from './pool-lifecycle';
 import { assertPortFree, rejectAmbientDatabase, worktreeIdentity } from './worktree';
 // Dedicated real PostgreSQL process and fresh data for each invocation. No host services are installed.
-export async function startIsolatedPostgres() {
+export async function startIsolatedPostgres(options: { statementTimeoutMs?: number } = {}) {
+  if (options.statementTimeoutMs !== undefined && (!Number.isSafeInteger(options.statementTimeoutMs) || options.statementTimeoutMs <= 0)) throw new Error('Statement timeout must be a positive integer');
   rejectAmbientDatabase();
   const identity = worktreeIdentity();
   await assertPortFree(identity.dbPort);
@@ -28,7 +29,7 @@ export async function startIsolatedPostgres() {
     try { await cluster.initialise(); } finally { process.umask(previousUmask); }
     await cluster.start(); started = true;
     await cluster.createDatabase(identity.database);
-    const pool = new Pool({ host: '127.0.0.1', port: identity.dbPort, user: identity.user, password, database: identity.database, max: 6 });
+    const pool = new Pool({ host: '127.0.0.1', port: identity.dbPort, user: identity.user, password, database: identity.database, max: 6, statement_timeout: options.statementTimeoutMs });
     const closePool = trackPoolLifecycle(pool);
     return { identity, pool, databaseDir, async stop() { try { await closePool(); } finally { await cluster.stop(); } } };
   } catch (error) { if (started) await cluster.stop(); throw error; }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 import { migrate, seed, recordTelemetry } from '@rental/db';
 import { startIsolatedPostgres } from './postgres';
 const db = await startIsolatedPostgres();
@@ -44,7 +44,8 @@ try {
 
 // A second fresh owned cluster keeps the initial-concurrency test above independent.
 // The only object removed below is this test's own collision fixture, never an existing schema.
-const recovery = await startIsolatedPostgres();
+// Pool constructor options are inherited by every physical client, including replacements.
+const recovery = await startIsolatedPostgres({ statementTimeoutMs: 5000 });
 try {
   await check('failed initial migration rolls back DDL and ledger, releases lock, then recovers', async () => {
     // Reserve another backend BEFORE migrate() so the lock probe cannot accidentally use
@@ -64,15 +65,29 @@ try {
       } finally { await observer.query('ROLLBACK'); }
       await observer.query('DROP TABLE telemetry_events');
     } finally { observer.release(); }
-    // Bound a regression's lock wait rather than letting a broken recovery hang CI.
-    const bounded = await recovery.pool.connect();
-    try { await bounded.query("SET statement_timeout = '5s'"); } finally { bounded.release(); }
     await migrate(recovery.pool);
     await migrate(recovery.pool);
     assert.deepEqual((await recovery.pool.query('SELECT id FROM foundation_migrations')).rows, [{ id: '0001' }]);
     await seed(recovery.pool, recovery.identity.namespace);
     await recordTelemetry(recovery.pool, randomUUID(), recovery.identity.namespace, 'foundation.probe');
     assert.equal((await recovery.pool.query('SELECT count(*)::int AS n FROM telemetry_events')).rows[0].n, 1);
+  });
+  await check('statement timeout cancels queries on two distinct pooled backends', async () => {
+    const clients: PoolClient[] = [];
+    try {
+      // Hold both simultaneously so this cannot pass by reacquiring the same backend.
+      clients.push(await recovery.pool.connect()); clients.push(await recovery.pool.connect());
+      const pids = await Promise.all(clients.map(async client => (await client.query('SELECT pg_backend_pid() AS pid')).rows[0].pid));
+      assert.notEqual(pids[0], pids[1]);
+      const checks = await Promise.allSettled(clients.map(async client => {
+        assert.equal((await client.query('SHOW statement_timeout')).rows[0].statement_timeout, '5s');
+        // Finite sleep: a missing timeout makes the assertion fail after 6s, never hang.
+        await assert.rejects(client.query('SELECT pg_sleep(6)'), { code: '57014' });
+        assert.equal((await client.query('SELECT 1 AS healthy')).rows[0].healthy, 1);
+      }));
+      // Wait for every query to settle before releasing clients and stopping the cluster.
+      for (const result of checks) if (result.status === 'rejected') throw result.reason;
+    } finally { for (const client of clients) client.release(); }
   });
 } finally { await recovery.stop(); console.log('Owned recovery-test PostgreSQL process stopped.'); }
 console.log(`Integration: ${count} passed; 0 skipped. No booking/payment runtime claims.`);

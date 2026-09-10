@@ -90,3 +90,12 @@ the collision fixture, probes advisory-lock release from a different reserved ba
 its own fixture, then applies/replays the migration and writes a valid seed/event. The original fresh
 concurrent-migration test remains separate. This adds failure-recovery evidence without changing the
 migration SQL, schema, pricing or operational rules.
+
+The first re-review accepted D1/B1 and identified a LOW test weakness: SET statement_timeout on one
+leased client did not guarantee a later pool checkout inherited it. The recovery cluster now receives
+statement_timeout through the Pool constructor for every physical connection; default dev/test calls
+remain unchanged. A real-PG test holds two distinct backend PIDs, verifies each reports 5s, confirms
+pg_sleep(6) is cancelled with SQLSTATE 57014 on each, and checks each connection still executes SELECT 1.
+All concurrent checks settle before clients are released or the owned cluster stops. No wall-clock
+assertion, statistical pool reuse, retry or skip is used. See the [pg client config](https://node-postgres.com/apis/client)
+and [Pool constructor inheritance](https://node-postgres.com/apis/pool).

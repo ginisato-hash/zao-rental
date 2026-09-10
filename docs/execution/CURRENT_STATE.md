@@ -32,3 +32,10 @@ ESLint 10 was incompatible with Next's bundled plugins and failed lint; ESLint 9
 support-ended warning are documented in ADR 0007. No rule was disabled to make lint pass.
 New executable verification writes command/exit records to `.local/evidence/<run-id>/` and
 `.local/manual-evidence/commands.jsonl`; the handoff copies these to user-facing outputs.
+
+First remote CI run 34494168137 failed only at real-PG shutdown (57P01) after seven DB assertions.
+The fix waits for socket end events before stopping PG and reports background errors without dumping
+Client objects. Local regression verification now passes 24 unit + 7 DB + 6 E2E + 27 original tests.
+See evidence/mac-shutdown-fix/. Remote rerun remains independently reported by its run ID.
+Claude external review invocation was blocked by automatic approval review pending explicit user
+consent to send the private snapshot to Anthropic; no Claude inference had been called at this point.

@@ -1,0 +1,36 @@
+
+> zao-rental@0.1.0 test:unit
+> node --import tsx --test tests/unit/*.test.ts tests/automation/*.test.ts
+
+✔ unsigned or self-modified READY approval is rejected (3.828083ms)
+✔ valid signature still requires exact spec hash and expiry (0.523125ms)
+✔ activation flags are refused even with signed approval (0.172375ms)
+✔ task claim is exclusive and expired lease is not stolen (6.541417ms)
+✔ policy inside worktree or with unpinned hash is rejected (2.288709ms)
+✔ exact-head CI and review stop for human approval (0.634417ms)
+✔ new push invalidates old review even after new CI passes (0.20275ms)
+✔ empty, pending or stale CI cannot pass (0.422917ms)
+✔ missing, malformed or incomplete review cannot pass (0.37125ms)
+✔ protected, traversing and out-of-scope changes stop (0.479875ms)
+✔ maximum two repair rounds, then escalation (0.185208ms)
+✔ budget and wall-clock exhaustion stop (0.118083ms)
+✔ auth and quota errors stop without API fallback (0.233792ms)
+✔ plan has bounded repair and no merge or main push (0.235667ms)
+✔ a failing CI test enters bounded repair before requiring review (0.117125ms)
+✔ anonymous and empty identities are denied on server (0.786833ms)
+✔ customer cannot enter staff or admin; staff cannot enter admin (0.097834ms)
+✔ explicit allowed role is accepted (0.060708ms)
+✔ telemetry only accepts foundation events (0.144417ms)
+✔ worktree paths separate stable DB, role, ports and seed namespace (0.13425ms)
+✔ occupied port fails rather than attaching to existing service (6.885125ms)
+✔ ambient database target is refused without revealing it (0.099292ms)
+✔ database stop must wait for delayed socket end after pool.end resolves (0.434125ms)
+✔ background connection errors fail closure without exposing attached client (0.303041ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 161.939167

@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import EmbeddedPostgres from 'embedded-postgres';
 import { Pool } from 'pg';
+import { trackPoolLifecycle } from './pool-lifecycle';
 import { assertPortFree, rejectAmbientDatabase, worktreeIdentity } from './worktree';
 // Dedicated real PostgreSQL process and fresh data for each invocation. No host services are installed.
 export async function startIsolatedPostgres() {
@@ -28,6 +29,7 @@ export async function startIsolatedPostgres() {
     await cluster.start(); started = true;
     await cluster.createDatabase(identity.database);
     const pool = new Pool({ host: '127.0.0.1', port: identity.dbPort, user: identity.user, password, database: identity.database, max: 6 });
-    return { identity, pool, databaseDir, async stop() { try { await pool.end(); } finally { await cluster.stop(); } } };
+    const closePool = trackPoolLifecycle(pool);
+    return { identity, pool, databaseDir, async stop() { try { await closePool(); } finally { await cluster.stop(); } } };
   } catch (error) { if (started) await cluster.stop(); throw error; }
 }

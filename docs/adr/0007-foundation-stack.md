@@ -71,3 +71,12 @@ Do not connect real staff/customer data or deploy publicly before E05 completes.
 - [Launcher maintainer's documentation](https://github.com/leinelissen/embedded-postgres)
 
 Version metadata was also read from the official npm registry and pinned by integrity in package-lock.json.
+
+## Linux CI shutdown correction
+
+The first Linux CI completed all seven DB assertions but failed on pg-pool idle-client error 57P01
+during shutdown. Inspection showed pg-pool removes idle clients and resolves pool.end before their
+physical socket end callbacks. The owned server could therefore stop too early. Track every connected
+client and await its end event before stopping PG; background pool errors become a sanitized failure,
+not a dumped Client object. Regression tests model the delayed socket close and confirm errors remain
+failures without revealing connection metadata. No sleeps/retries/error suppression were added.

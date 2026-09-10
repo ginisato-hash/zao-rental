@@ -1,0 +1,14 @@
+
+> zao-rental@0.1.0 test:integration
+> node --import tsx scripts/integration.ts
+
+{"postgres":"PostgreSQL 18.4 on x86_64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.3.2), 64-bit","database":"zr_e99081066190","user":"zr_e99081066190","port":26881}
+PASS fresh migration and concurrent replay are idempotent
+PASS seed is worktree scoped and repeatable
+PASS concurrent duplicate telemetry records one event
+PASS SQL constraints reject unsupported event and foreign seed
+PASS failed transaction leaves no partial event
+PASS migration checksum drift is rejected
+PASS unauthenticated database client is rejected
+Integration: 7 passed; 0 skipped. No booking/payment runtime claims.
+Owned PostgreSQL process stopped.

@@ -1,0 +1,675 @@
+{
+  "version": "1.0",
+  "basis": "bootstrap v0.4",
+  "status": "PROPOSED_NOT_DISPATCHED",
+  "tasks": [
+    {
+      "id": "E00",
+      "title": "実装用Mac・原本・GitHub認証のpreflight",
+      "status": "PLANNED",
+      "depends_on": [],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "CONTROL",
+      "allowed_paths": [
+        "docs/execution/"
+      ],
+      "acceptance_criteria": [
+        "新規projectの絶対pathとoriginを検証。既存projectを変更しない",
+        "v0.4 ZIP hash一致と既存27テストを記録",
+        "codex/claude/gh/runtime/container実行可否と認証方式を秘密値なしで記録",
+        "GitHub owner/private repo/plan/保護機能を確認し、必要な承認だけ列挙"
+      ],
+      "notes": "未認証なら人のログインを求める。追加課金しない。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E01",
+      "title": "最小Web・Postgres・再現可能setupとCI",
+      "status": "PLANNED",
+      "depends_on": [
+        "E00"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "CONTROL",
+      "allowed_paths": [
+        "apps/web/",
+        "packages/",
+        "scripts/",
+        "tests/",
+        ".github/",
+        "docs/adr/"
+      ],
+      "acceptance_criteria": [
+        "新規cloneからsetup→verifyが実行可能",
+        "TS lint/typecheck/buildと実Postgres migration+smoke test成功",
+        "worktree毎のDB/portを隔離",
+        "CIは未実装業務ケースを合格と報告しない",
+        "支払/個人情報の本番secret不要"
+      ],
+      "notes": "最初の構成変更は統合担当Codex1本のみ。バージョン/ORM/認証案は公式資料を確認してADR化。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E02",
+      "title": "限定RunnerとClaude自動レビューの往復検証",
+      "status": "PLANNED",
+      "depends_on": [
+        "E01"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "CONTROL",
+      "allowed_paths": [
+        "tools/automation/",
+        ".github/",
+        "docs/execution/",
+        "tests/automation/"
+      ],
+      "acceptance_criteria": [
+        "READY承認範囲・排他・SHA・timeout・停止を検証",
+        "人工の失敗をCodex→CI→Claude→Codex修正で解消できる",
+        "古いレビュー/欠落出力/429/二重起動/2巡上限を検知",
+        "自動merge OFF、既定branchとprod変更不可",
+        "追加pushでCI/レビューが実際に発火する"
+      ],
+      "notes": "Runnerを巨大な新規SaaSにしない。最初は単一processと永続state、短いCLI wrapperで十分。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E03",
+      "title": "業務契約・時刻/金額/在庫の反例を固定",
+      "status": "PLANNED",
+      "depends_on": [
+        "E01"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/contracts/",
+        "tests/reference/",
+        "docs/adr/",
+        "docs/execution/"
+      ],
+      "acceptance_criteria": [
+        "2店舗・13歳境界・AM12時/PM13時・当日再貸出禁止を契約化",
+        "実装をコピーしない手計算の在庫/価格golden cases",
+        "API contractとdomain状態をClaudeが反例レビュー",
+        "未確定の公開設定にGateと担当を付ける"
+      ],
+      "notes": "DB migrationの所有権、変更手続き、スキー安全判定をここで固定。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E04",
+      "title": "商品・Asset・数量ポール・sample取込",
+      "status": "PLANNED",
+      "depends_on": [
+        "E03"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/catalog/",
+        "packages/core/src/asset/",
+        "packages/db/",
+        "tests/catalog/"
+      ],
+      "acceptance_criteria": [
+        "スキーpair/board/boot pairの固有ID、店舗非依存identifier",
+        "元シート/セル/行への取込追跡と再実行冪等",
+        "未知BSL/model/所在を捏造せずsample/要確認を区別",
+        "ポールはsize/age/store数量単位",
+        "合成500セットfixtureを本番データと明瞭に区別"
+      ],
+      "notes": "既存xlsxを原本として保ち、読み取り精度と総数を先に照合。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E05",
+      "title": "スタッフ認証・権限・監査",
+      "status": "PLANNED",
+      "depends_on": [
+        "E03"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/identity/",
+        "packages/core/src/audit/",
+        "apps/web/src/auth/",
+        "tests/auth/"
+      ],
+      "acceptance_criteria": [
+        "staff/store scopeをserverで検証",
+        "REFUND_OVERRIDEを明示grant/revoke",
+        "セッション失効と匿名/権限なしAPI拒否",
+        "PIIなしQR・token/secretをlogへ出さない"
+      ],
+      "notes": "",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E06",
+      "title": "全期間・全構成品の在庫割当/HOLD",
+      "status": "PLANNED",
+      "depends_on": [
+        "E04"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/inventory/",
+        "packages/core/src/booking/",
+        "packages/db/",
+        "tests/inventory/"
+      ],
+      "acceptance_criteria": [
+        "実Postgresで残1へ同時HOLDし1つのみ成功",
+        "AM/PM同日と10日間の連続物理割当を検証",
+        "group/bundleをall-or-nothing確保",
+        "HOLD交換失敗時は元の有効HOLD保護",
+        "paid/UNKNOWN/期限切れとの状態境界を契約テスト"
+      ],
+      "notes": "単純daily countだけで予約可能にしない。source/destinationを通じたlocation制約も持つ。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E07",
+      "title": "17時移動便・異店舗返却・将来割当",
+      "status": "PLANNED",
+      "depends_on": [
+        "E06",
+        "E05"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/transfer/",
+        "packages/core/src/inventory/",
+        "packages/db/",
+        "tests/transfer/"
+      ],
+      "acceptance_criteria": [
+        "committed transferはsource在庫も保護",
+        "sealed/departed便に遡及追加不可",
+        "17:10自動受領なし・両方向/部分受領/数量ポール",
+        "突然の返却先変更/遅延/破損から次予約への例外検知",
+        "即時貸出は実受領後のみ"
+      ],
+      "notes": "翌朝予約と17時返却の計画は納品可能性の証拠で判断。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E08",
+      "title": "価格版・見積・早割・クーポン",
+      "status": "PLANNED",
+      "depends_on": [
+        "E03",
+        "E05"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/pricing/",
+        "packages/core/src/promotion/",
+        "packages/db/",
+        "tests/pricing/"
+      ],
+      "acceptance_criteria": [
+        "承認済み非線形表と半日値を正確に再現",
+        "既存予約snapshotは改定後不変",
+        "JST前日15時境界・期限切れ見積・JPY丸め",
+        "coupon利用上限を同時実行でも超えない",
+        "税区分/公開日未確定のまま本番公開不可"
+      ],
+      "notes": "値変更UIは後工程。未承認の併用規則を本番固定しない。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E09",
+      "title": "おすすめ/短め/長め・グループ予約draft",
+      "status": "PLANNED",
+      "depends_on": [
+        "E06",
+        "E07",
+        "E08"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/recommendation/",
+        "packages/core/src/booking/",
+        "tests/recommendation/"
+      ],
+      "acceptance_criteria": [
+        "元のheight-20±15から漂移しない",
+        "13歳境界/selected tierを跨がない",
+        "受取店舗/期間/boot/polesを含め用意可能な候補のみ",
+        "選択だけをHOLDし、連打/支払中変更を排他",
+        "model guarantee不明点をpublic gateに残す"
+      ],
+      "notes": "",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E10",
+      "title": "Square Sandbox・決済照合・Webhook",
+      "status": "PLANNED",
+      "depends_on": [
+        "E06",
+        "E07",
+        "E08",
+        "E05"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/payment/",
+        "apps/web/src/app/api/",
+        "packages/db/",
+        "tests/payment/"
+      ],
+      "acceptance_criteria": [
+        "署名・重複・順序逆転・照合job",
+        "ブラウザredirectで決済確定しない",
+        "UNKNOWNで別keyの重複請求なし",
+        "HOLD期限後の支払成功時にoversellせず例外処理",
+        "金額/通貨/merchant/location/booking照合・provider id記録"
+      ],
+      "notes": "通常CIはdeterministic adapter、資格情報隔離sandbox jobで実APIを追加検証。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E11",
+      "title": "顧客Web・確認通知・QR",
+      "status": "PLANNED",
+      "depends_on": [
+        "E09",
+        "E10"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "MEDIUM",
+      "allowed_paths": [
+        "apps/web/src/app/(customer)/",
+        "packages/ui/",
+        "tests/e2e/customer/"
+      ],
+      "acceptance_criteria": [
+        "日程/店舗/利用者別種目と推薦選択",
+        "大人子供category取得、snowboardの不要な詳細属性を要求しない",
+        "価格/割引/返却先/期限/規約同意を可視化",
+        "決済pendingとconfirmedを区別・再読み込み耐性",
+        "mobile/desktop E2Eと架空宛先通知"
+      ],
+      "notes": "public gate未解決なら非公開previewのみ。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E12",
+      "title": "スタッフQR受付・割当・貸出・返却",
+      "status": "PLANNED",
+      "depends_on": [
+        "E04",
+        "E05",
+        "E06",
+        "E07"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "apps/web/src/app/(staff)/",
+        "packages/core/src/rental/",
+        "tests/e2e/staff/"
+      ],
+      "acceptance_criteria": [
+        "予約QR→実個体→利用者紐付け・2端末競合排除",
+        "BSL等の確認と最終fit承認を残す",
+        "部分貸出/部分返却・手入力fallback",
+        "早期返却後に同日再貸出も自動返金もしない",
+        "PWAオフラインで確定したと偽らない"
+      ],
+      "notes": "カメラfakeと実機の証拠を分ける。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E13",
+      "title": "本物の縦一周を統合",
+      "status": "PLANNED",
+      "depends_on": [
+        "E10",
+        "E11",
+        "E12"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "tests/e2e/",
+        "docs/execution/evidence/"
+      ],
+      "acceptance_criteria": [
+        "架空客が予約→sandbox決済→QR→貸出→異店舗返却",
+        "group/half-day/10days/在庫不足の一周ケース",
+        "関連DB状態と支払/監査logをtrace照合",
+        "統合merge後の同一SHAをCI/レビュー"
+      ],
+      "notes": "最重要milestone。全ダッシュボード完成を待たない。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E14",
+      "title": "変更見積・追加請求・例外返金",
+      "status": "PLANNED",
+      "depends_on": [
+        "E13"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "packages/core/src/amendment/",
+        "packages/core/src/payment/",
+        "apps/web/src/app/(staff)/",
+        "tests/refund/"
+      ],
+      "acceptance_criteria": [
+        "延長は在庫を保護して差額見積",
+        "短縮/商品交換の原契約と変更履歴を保持",
+        "指定staffだけ返金可能・残返金枠の同時実行排他",
+        "timeout/pendingは重複払戻しにしない",
+        "Square側で行われた返金の照合"
+      ],
+      "notes": "利用前変更規則等の未確定項目はfeature gate。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E15",
+      "title": "管理画面・ラベル・整備・棚卸",
+      "status": "PLANNED",
+      "depends_on": [
+        "E04",
+        "E05",
+        "E07",
+        "E08",
+        "E12"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "apps/web/src/app/(admin)/",
+        "packages/core/src/maintenance/",
+        "tests/admin/"
+      ],
+      "acceptance_criteria": [
+        "在庫登録/移動/状態/一覧/ラベル再発行",
+        "スキー左右同ID、人間可読ID、履歴保持",
+        "整備中は販売/割当不可",
+        "価格draft→preview→権限付き公開→旧予約維持",
+        "数量ポール棚卸と差異監査"
+      ],
+      "notes": "PDF/印刷、実シールは実機受け入れが必要。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E16",
+      "title": "稼働・日数・価格version別分析",
+      "status": "PLANNED",
+      "depends_on": [
+        "E13",
+        "E15"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "MEDIUM",
+      "allowed_paths": [
+        "packages/core/src/analytics/",
+        "apps/web/src/app/(admin)/analytics/",
+        "tests/analytics/"
+      ],
+      "acceptance_criteria": [
+        "同一売上を予約/個体に二重計上しない",
+        "AM/PMと当日capacity lockの稼働指標定義",
+        "日数/price version/availability failure/予約転換の記録",
+        "set売上配賦のルールと限界を明示"
+      ],
+      "notes": "初期からイベント収集。単価変更をagentが勝手に公開しない。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E17",
+      "title": "負荷・セキュリティ・回復・現場リハーサル",
+      "status": "PLANNED",
+      "depends_on": [
+        "E14",
+        "E15",
+        "E16"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "HIGH",
+      "allowed_paths": [
+        "tests/load/",
+        "tests/security/",
+        "docs/runbooks/",
+        "infra/"
+      ],
+      "acceptance_criteria": [
+        "500セット/2店舗/想定同時端末・人気size競合のp95測定",
+        "duplicate scan/refund/webhook/late transferの障害訓練",
+        "backup復元とmigration recoveryを非本番で確認",
+        "iPhone/Android実QR、濡れ/照明、2店舗実移動",
+        "公開前gateを解消するか明示BLOCKED"
+      ],
+      "notes": "以前の応答msは目標であり測定済み性能ではない。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    },
+    {
+      "id": "E18",
+      "title": "限定pilot・本番公開",
+      "status": "PLANNED",
+      "depends_on": [
+        "E17"
+      ],
+      "owner": "Codex",
+      "reviewer": "Claude independent review; ChatGPT integration decision",
+      "risk": "PRODUCTION",
+      "allowed_paths": [
+        "docs/release/",
+        "infra/"
+      ],
+      "acceptance_criteria": [
+        "staff rehearsalと限定pilotの承認",
+        "税/規約/営業日/stock/BSL/決済店舗が公開可能",
+        "対象SHA・backout/restore・監視・担当の確認",
+        "明示承認後だけ本番secretとdeployを使う",
+        "実決済/返金の検証は別途許可の範囲内"
+      ],
+      "notes": "全面無人公開は行わない。",
+      "done_evidence": [
+        "head_sha",
+        "base_sha",
+        "spec_hash",
+        "diff",
+        "commands_and_exit_codes",
+        "ci_run_ids",
+        "review_for_exact_head_sha",
+        "known_gaps"
+      ]
+    }
+  ]
+}

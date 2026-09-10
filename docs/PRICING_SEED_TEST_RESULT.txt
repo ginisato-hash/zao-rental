@@ -1,0 +1,19 @@
+Scope: local pricing seed arithmetic/configuration only.
+Not application, payment-sandbox, UI, security or transactional integration test evidence.
+
+test_catalog_categories_and_pole_policy (test_pricing_seed.PricingSeedTests.test_catalog_categories_and_pole_policy) ... ok
+test_extra_day_increments_remain_positive_nonincreasing (test_pricing_seed.PricingSeedTests.test_extra_day_increments_remain_positive_nonincreasing) ... ok
+test_generation_metadata_reproduces_initial_whole_day_table (test_pricing_seed.PricingSeedTests.test_generation_metadata_reproduces_initial_whole_day_table) ... ok
+test_half_day_advance_discount_examples (test_pricing_seed.PricingSeedTests.test_half_day_advance_discount_examples) ... ok
+test_half_day_golden_values_and_same_am_pm (test_pricing_seed.PricingSeedTests.test_half_day_golden_values_and_same_am_pm) ... ok
+test_money_is_positive_integer_yen_on_100_yen_grid (test_pricing_seed.PricingSeedTests.test_money_is_positive_integer_yen_on_100_yen_grid) ... ok
+test_no_implicit_production_publication (test_pricing_seed.PricingSeedTests.test_no_implicit_production_publication) ... ok
+test_product_count_uniqueness_and_duration_completeness (test_pricing_seed.PricingSeedTests.test_product_count_uniqueness_and_duration_completeness) ... ok
+test_sets_are_not_more_expensive_than_components (test_pricing_seed.PricingSeedTests.test_sets_are_not_more_expensive_than_components) ... ok
+test_total_increases_average_daily_price_decreases (test_pricing_seed.PricingSeedTests.test_total_increases_average_daily_price_decreases) ... ok
+test_whole_day_golden_values_keep_approved_curve (test_pricing_seed.PricingSeedTests.test_whole_day_golden_values_keep_approved_curve) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.006s
+
+OK

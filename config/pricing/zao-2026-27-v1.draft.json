@@ -1,0 +1,449 @@
+{
+  "schema_version": 1,
+  "price_book_key": "ZAO_2026_27_V1",
+  "document_version": "0.3",
+  "status": "DRAFT",
+  "purpose": "Implementation seed; NOT a deployed or published production price book.",
+  "currency": "JPY",
+  "tax_display_basis": "PENDING_OWNER_CONFIRMATION",
+  "timezone": "Asia/Tokyo",
+  "stores": [
+    "MOUNTAIN_BASE",
+    "ONSEN_BASE"
+  ],
+  "sales_effective_from": null,
+  "rental_effective_from": null,
+  "rental_effective_to": null,
+  "age_category_policy": {
+    "age_as_of": "RENTAL_START",
+    "adult_min_age_years": 13,
+    "cross_category_substitution_allowed": false
+  },
+  "table_generation": {
+    "half_day_factor_bps": 7500,
+    "duration_discount_bps": {
+      "1": 0,
+      "2": 800,
+      "3": 1300,
+      "4": 1700,
+      "5": 2100,
+      "6": 2400,
+      "7": 2700,
+      "8": 3000,
+      "9": 3300,
+      "10": 3600
+    },
+    "rounding": "NEAREST_100_JPY_HALF_UP",
+    "runtime_authority": "Explicit prices_jpy table, not recomputation from these generation hints.",
+    "manual_duration_overrides_allowed": true
+  },
+  "advance_discount": {
+    "discount_bps": 500,
+    "cutoff": "Previous calendar day at 15:00 Asia/Tokyo",
+    "qualification_event": "PAYMENT_COMPLETED",
+    "half_day_eligible": true,
+    "note": "Preserves v0.2 policy. Final cutoff handling must be reviewed with payment/hold state-machine implementation."
+  },
+  "coupon": {
+    "supported": true,
+    "stacking_rule": "Explicit per coupon; no global unapproved stacking default."
+  },
+  "products": [
+    {
+      "product_key": "SKI_SET_ADULT_REGULAR",
+      "sport": "SKI",
+      "kind": "SET",
+      "age_category": "ADULT",
+      "tier": "REGULAR",
+      "one_day_jpy": 7500,
+      "prices_jpy": {
+        "HALF_DAY_AM": 5600,
+        "HALF_DAY_PM": 5600,
+        "DAY_1": 7500,
+        "DAY_2": 13800,
+        "DAY_3": 19600,
+        "DAY_4": 24900,
+        "DAY_5": 29600,
+        "DAY_6": 34200,
+        "DAY_7": 38300,
+        "DAY_8": 42000,
+        "DAY_9": 45200,
+        "DAY_10": 48000
+      }
+    },
+    {
+      "product_key": "SKI_SET_ADULT_PREMIUM",
+      "sport": "SKI",
+      "kind": "SET",
+      "age_category": "ADULT",
+      "tier": "PREMIUM",
+      "one_day_jpy": 9000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 6800,
+        "HALF_DAY_PM": 6800,
+        "DAY_1": 9000,
+        "DAY_2": 16600,
+        "DAY_3": 23500,
+        "DAY_4": 29900,
+        "DAY_5": 35600,
+        "DAY_6": 41000,
+        "DAY_7": 46000,
+        "DAY_8": 50400,
+        "DAY_9": 54300,
+        "DAY_10": 57600
+      }
+    },
+    {
+      "product_key": "SKI_SET_KIDS_REGULAR",
+      "sport": "SKI",
+      "kind": "SET",
+      "age_category": "KIDS",
+      "tier": "REGULAR",
+      "one_day_jpy": 4000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 3000,
+        "HALF_DAY_PM": 3000,
+        "DAY_1": 4000,
+        "DAY_2": 7400,
+        "DAY_3": 10400,
+        "DAY_4": 13300,
+        "DAY_5": 15800,
+        "DAY_6": 18200,
+        "DAY_7": 20400,
+        "DAY_8": 22400,
+        "DAY_9": 24100,
+        "DAY_10": 25600
+      }
+    },
+    {
+      "product_key": "SKI_EQUIPMENT_ONLY_ADULT_REGULAR",
+      "sport": "SKI",
+      "kind": "EQUIPMENT_ONLY",
+      "age_category": "ADULT",
+      "tier": "REGULAR",
+      "one_day_jpy": 6000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 4500,
+        "HALF_DAY_PM": 4500,
+        "DAY_1": 6000,
+        "DAY_2": 11000,
+        "DAY_3": 15700,
+        "DAY_4": 19900,
+        "DAY_5": 23700,
+        "DAY_6": 27400,
+        "DAY_7": 30700,
+        "DAY_8": 33600,
+        "DAY_9": 36200,
+        "DAY_10": 38400
+      }
+    },
+    {
+      "product_key": "SKI_EQUIPMENT_ONLY_ADULT_PREMIUM",
+      "sport": "SKI",
+      "kind": "EQUIPMENT_ONLY",
+      "age_category": "ADULT",
+      "tier": "PREMIUM",
+      "one_day_jpy": 7500,
+      "prices_jpy": {
+        "HALF_DAY_AM": 5600,
+        "HALF_DAY_PM": 5600,
+        "DAY_1": 7500,
+        "DAY_2": 13800,
+        "DAY_3": 19600,
+        "DAY_4": 24900,
+        "DAY_5": 29600,
+        "DAY_6": 34200,
+        "DAY_7": 38300,
+        "DAY_8": 42000,
+        "DAY_9": 45200,
+        "DAY_10": 48000
+      }
+    },
+    {
+      "product_key": "SKI_EQUIPMENT_ONLY_KIDS_REGULAR",
+      "sport": "SKI",
+      "kind": "EQUIPMENT_ONLY",
+      "age_category": "KIDS",
+      "tier": "REGULAR",
+      "one_day_jpy": 3000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 2300,
+        "HALF_DAY_PM": 2300,
+        "DAY_1": 3000,
+        "DAY_2": 5500,
+        "DAY_3": 7800,
+        "DAY_4": 10000,
+        "DAY_5": 11900,
+        "DAY_6": 13700,
+        "DAY_7": 15300,
+        "DAY_8": 16800,
+        "DAY_9": 18100,
+        "DAY_10": 19200
+      }
+    },
+    {
+      "product_key": "SKI_BOOTS_ONLY_ADULT_STANDARD",
+      "sport": "SKI",
+      "kind": "BOOTS_ONLY",
+      "age_category": "ADULT",
+      "tier": "STANDARD",
+      "one_day_jpy": 3000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 2300,
+        "HALF_DAY_PM": 2300,
+        "DAY_1": 3000,
+        "DAY_2": 5500,
+        "DAY_3": 7800,
+        "DAY_4": 10000,
+        "DAY_5": 11900,
+        "DAY_6": 13700,
+        "DAY_7": 15300,
+        "DAY_8": 16800,
+        "DAY_9": 18100,
+        "DAY_10": 19200
+      }
+    },
+    {
+      "product_key": "SKI_BOOTS_ONLY_KIDS_STANDARD",
+      "sport": "SKI",
+      "kind": "BOOTS_ONLY",
+      "age_category": "KIDS",
+      "tier": "STANDARD",
+      "one_day_jpy": 1500,
+      "prices_jpy": {
+        "HALF_DAY_AM": 1100,
+        "HALF_DAY_PM": 1100,
+        "DAY_1": 1500,
+        "DAY_2": 2800,
+        "DAY_3": 3900,
+        "DAY_4": 5000,
+        "DAY_5": 5900,
+        "DAY_6": 6800,
+        "DAY_7": 7700,
+        "DAY_8": 8400,
+        "DAY_9": 9000,
+        "DAY_10": 9600
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_SET_ADULT_REGULAR",
+      "sport": "SNOWBOARD",
+      "kind": "SET",
+      "age_category": "ADULT",
+      "tier": "REGULAR",
+      "one_day_jpy": 7500,
+      "prices_jpy": {
+        "HALF_DAY_AM": 5600,
+        "HALF_DAY_PM": 5600,
+        "DAY_1": 7500,
+        "DAY_2": 13800,
+        "DAY_3": 19600,
+        "DAY_4": 24900,
+        "DAY_5": 29600,
+        "DAY_6": 34200,
+        "DAY_7": 38300,
+        "DAY_8": 42000,
+        "DAY_9": 45200,
+        "DAY_10": 48000
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_SET_ADULT_PREMIUM",
+      "sport": "SNOWBOARD",
+      "kind": "SET",
+      "age_category": "ADULT",
+      "tier": "PREMIUM",
+      "one_day_jpy": 9000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 6800,
+        "HALF_DAY_PM": 6800,
+        "DAY_1": 9000,
+        "DAY_2": 16600,
+        "DAY_3": 23500,
+        "DAY_4": 29900,
+        "DAY_5": 35600,
+        "DAY_6": 41000,
+        "DAY_7": 46000,
+        "DAY_8": 50400,
+        "DAY_9": 54300,
+        "DAY_10": 57600
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_SET_KIDS_REGULAR",
+      "sport": "SNOWBOARD",
+      "kind": "SET",
+      "age_category": "KIDS",
+      "tier": "REGULAR",
+      "one_day_jpy": 4000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 3000,
+        "HALF_DAY_PM": 3000,
+        "DAY_1": 4000,
+        "DAY_2": 7400,
+        "DAY_3": 10400,
+        "DAY_4": 13300,
+        "DAY_5": 15800,
+        "DAY_6": 18200,
+        "DAY_7": 20400,
+        "DAY_8": 22400,
+        "DAY_9": 24100,
+        "DAY_10": 25600
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_EQUIPMENT_ONLY_ADULT_REGULAR",
+      "sport": "SNOWBOARD",
+      "kind": "EQUIPMENT_ONLY",
+      "age_category": "ADULT",
+      "tier": "REGULAR",
+      "one_day_jpy": 6000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 4500,
+        "HALF_DAY_PM": 4500,
+        "DAY_1": 6000,
+        "DAY_2": 11000,
+        "DAY_3": 15700,
+        "DAY_4": 19900,
+        "DAY_5": 23700,
+        "DAY_6": 27400,
+        "DAY_7": 30700,
+        "DAY_8": 33600,
+        "DAY_9": 36200,
+        "DAY_10": 38400
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_EQUIPMENT_ONLY_ADULT_PREMIUM",
+      "sport": "SNOWBOARD",
+      "kind": "EQUIPMENT_ONLY",
+      "age_category": "ADULT",
+      "tier": "PREMIUM",
+      "one_day_jpy": 7500,
+      "prices_jpy": {
+        "HALF_DAY_AM": 5600,
+        "HALF_DAY_PM": 5600,
+        "DAY_1": 7500,
+        "DAY_2": 13800,
+        "DAY_3": 19600,
+        "DAY_4": 24900,
+        "DAY_5": 29600,
+        "DAY_6": 34200,
+        "DAY_7": 38300,
+        "DAY_8": 42000,
+        "DAY_9": 45200,
+        "DAY_10": 48000
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_EQUIPMENT_ONLY_KIDS_REGULAR",
+      "sport": "SNOWBOARD",
+      "kind": "EQUIPMENT_ONLY",
+      "age_category": "KIDS",
+      "tier": "REGULAR",
+      "one_day_jpy": 3000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 2300,
+        "HALF_DAY_PM": 2300,
+        "DAY_1": 3000,
+        "DAY_2": 5500,
+        "DAY_3": 7800,
+        "DAY_4": 10000,
+        "DAY_5": 11900,
+        "DAY_6": 13700,
+        "DAY_7": 15300,
+        "DAY_8": 16800,
+        "DAY_9": 18100,
+        "DAY_10": 19200
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_BOOTS_ONLY_ADULT_STANDARD",
+      "sport": "SNOWBOARD",
+      "kind": "BOOTS_ONLY",
+      "age_category": "ADULT",
+      "tier": "STANDARD",
+      "one_day_jpy": 3000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 2300,
+        "HALF_DAY_PM": 2300,
+        "DAY_1": 3000,
+        "DAY_2": 5500,
+        "DAY_3": 7800,
+        "DAY_4": 10000,
+        "DAY_5": 11900,
+        "DAY_6": 13700,
+        "DAY_7": 15300,
+        "DAY_8": 16800,
+        "DAY_9": 18100,
+        "DAY_10": 19200
+      }
+    },
+    {
+      "product_key": "SNOWBOARD_BOOTS_ONLY_KIDS_STANDARD",
+      "sport": "SNOWBOARD",
+      "kind": "BOOTS_ONLY",
+      "age_category": "KIDS",
+      "tier": "STANDARD",
+      "one_day_jpy": 1500,
+      "prices_jpy": {
+        "HALF_DAY_AM": 1100,
+        "HALF_DAY_PM": 1100,
+        "DAY_1": 1500,
+        "DAY_2": 2800,
+        "DAY_3": 3900,
+        "DAY_4": 5000,
+        "DAY_5": 5900,
+        "DAY_6": 6800,
+        "DAY_7": 7700,
+        "DAY_8": 8400,
+        "DAY_9": 9000,
+        "DAY_10": 9600
+      }
+    },
+    {
+      "product_key": "SKI_POLES_ONLY_ADULT_STANDARD",
+      "sport": "SKI",
+      "kind": "POLES_ONLY",
+      "age_category": "ADULT",
+      "tier": "STANDARD",
+      "one_day_jpy": 1500,
+      "prices_jpy": {
+        "HALF_DAY_AM": 1100,
+        "HALF_DAY_PM": 1100,
+        "DAY_1": 1500,
+        "DAY_2": 2800,
+        "DAY_3": 3900,
+        "DAY_4": 5000,
+        "DAY_5": 5900,
+        "DAY_6": 6800,
+        "DAY_7": 7700,
+        "DAY_8": 8400,
+        "DAY_9": 9000,
+        "DAY_10": 9600
+      }
+    },
+    {
+      "product_key": "SKI_POLES_ONLY_KIDS_STANDARD",
+      "sport": "SKI",
+      "kind": "POLES_ONLY",
+      "age_category": "KIDS",
+      "tier": "STANDARD",
+      "one_day_jpy": 1000,
+      "prices_jpy": {
+        "HALF_DAY_AM": 800,
+        "HALF_DAY_PM": 800,
+        "DAY_1": 1000,
+        "DAY_2": 1800,
+        "DAY_3": 2600,
+        "DAY_4": 3300,
+        "DAY_5": 4000,
+        "DAY_6": 4600,
+        "DAY_7": 5100,
+        "DAY_8": 5600,
+        "DAY_9": 6000,
+        "DAY_10": 6400
+      }
+    }
+  ]
+}

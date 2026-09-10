@@ -1,0 +1,8 @@
+# Review routing only; this is not enforceable branch protection by itself.
+* @ginisato-hash
+/.github/ @ginisato-hash
+/tools/automation/ @ginisato-hash
+/packages/db/ @ginisato-hash
+/package-lock.json @ginisato-hash
+/AGENTS.md @ginisato-hash
+/CLAUDE.md @ginisato-hash

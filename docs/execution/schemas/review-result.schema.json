@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "base_sha": {
+      "type": "string"
+    },
+    "head_sha": {
+      "type": "string"
+    },
+    "spec_hash": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "CHANGES_REQUIRED",
+        "BLOCKED"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "BLOCKER",
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ]
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "scenario": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "fix_direction": {
+            "type": "string"
+          },
+          "required_test": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "severity",
+          "file",
+          "line",
+          "scenario",
+          "evidence",
+          "fix_direction",
+          "required_test"
+        ]
+      }
+    },
+    "checks_read": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unverified": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "task_id",
+    "base_sha",
+    "head_sha",
+    "spec_hash",
+    "verdict",
+    "findings",
+    "checks_read",
+    "unverified"
+  ]
+}

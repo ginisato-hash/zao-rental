@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "document_version": "0.4",
+  "policy_key": "ZAO_OPERATIONS_V1",
+  "status": "DRAFT",
+  "production_activated": false,
+  "effective_from": null,
+  "purpose": "Owner decisions plus explicit implementation safeguards; specification seed only, not a deployed application.",
+  "timezone": "Asia/Tokyo",
+  "stores": [
+    "MOUNTAIN_BASE",
+    "ONSEN_BASE"
+  ],
+  "business_hours": {
+    "open": "08:30",
+    "close": "17:00",
+    "separate_final_checkout_cutoff": null,
+    "previous_day_pickup_allowed": false
+  },
+  "rental_windows": {
+    "HALF_DAY_AM": {
+      "starts_at_local": "08:30",
+      "return_due_local": "12:00"
+    },
+    "HALF_DAY_PM": {
+      "starts_at_local": "13:00",
+      "return_due_local": "17:00"
+    },
+    "WHOLE_DAY": {
+      "starts_at_local": "08:30",
+      "return_due_local": "17:00",
+      "minimum_days": 1,
+      "maximum_days": 10
+    }
+  },
+  "turnaround": {
+    "same_day_re_rental_enabled": false,
+    "initial_booking_capacity_policy": "WHOLE_RENTAL_DATE_PER_UNIT",
+    "returned_quantity_remains_blocked_same_day": true,
+    "block_follows_asset_across_stores": true,
+    "next_day_release_requires_inspection": true,
+    "same_rental_exchange_is_not_second_customer_rental": true,
+    "future_enablement": {
+      "supported_in_design": true,
+      "scope": [
+        "store",
+        "equipment_family",
+        "effective_date"
+      ],
+      "requires_audited_policy_publication": true,
+      "requires_revalidation_of_existing_commitments": true,
+      "requires_actual_return_and_inspection_before_checkout": true,
+      "turnaround_minutes_by_family": null,
+      "minimum_planned_am_pm_gap_minutes": 60
+    }
+  },
+  "transfer": {
+    "cross_store_return_allowed": true,
+    "inter_store_transfer_allowed": true,
+    "daily_batch_starts_at_local": "17:00",
+    "travel_minutes_estimate": 10,
+    "same_day_emergency_transfer_automatically_promised": false,
+    "automatic_receipt_from_clock": false,
+    "physical_receipt_confirmation_required": true,
+    "receiving_inspection_required": true,
+    "future_capacity_requires_committed_feasible_transfer": true,
+    "post_departure_additions_allowed": false,
+    "unreceived_stock_is_pickup_available": false,
+    "actual_departure_and_receipt_recorded": true,
+    "latest_booking_cutoff": "Relevant batch must not be sealed/departed; do not backdate a missed transfer.",
+    "loading_and_inspection_minutes": null
+  },
+  "length_choice": {
+    "sports": [
+      "SKI",
+      "SNOWBOARD"
+    ],
+    "height_offset_cm": -20,
+    "absolute_tolerance_cm": 15,
+    "choices": [
+      "RECOMMENDED",
+      "SHORTER",
+      "LONGER"
+    ],
+    "alternatives_relative_to": "INITIAL_RECOMMENDED_AVAILABLE_LENGTH",
+    "tolerance_anchor": "ORIGINAL_BODY_DERIVED_TARGET",
+    "nearest_initial_available_length_tie_break": "SHORTER",
+    "tie_break_status": "IMPLEMENTATION_DEFAULT_NOT_SAFETY_RULE",
+    "require_actual_candidate_availability": true,
+    "require_entire_interval_and_pickup_store_feasibility": true,
+    "cross_age_category_allowed": false,
+    "silent_tier_change_allowed": false,
+    "explicit_customer_choice_required": true,
+    "unavailable_choice_behavior": "DISABLED_WITH_EXPLANATION",
+    "hold_only_selected_choice": true,
+    "swap_hold_atomically": true,
+    "retain_old_hold_if_replacement_fails": true,
+    "selection_does_not_extend_hold_ttl": true,
+    "silent_selected_length_substitution_allowed": false,
+    "final_staff_fit_confirmation_required": true
+  },
+  "refund": {
+    "early_return_auto_refund": false,
+    "early_return_reprices_original_booking": false,
+    "exception_refund_allowed": true,
+    "permission": "REFUND_OVERRIDE",
+    "permission_can_be_granted_to_staff": true,
+    "ordinary_staff_has_permission_by_default": false,
+    "reason_required": true,
+    "amount_jpy_positive_integer": true,
+    "refund_cap": "COLLECTED_MINUS_COMPLETED_AND_RESERVED_PENDING_REFUNDS",
+    "idempotent_request_required": true,
+    "unknown_outcome_blocks_new_unrelated_retry": true,
+    "audit_required": true,
+    "partial_refund_supported": true,
+    "full_refund_supported": true,
+    "inventory_release_independent_of_refund": true,
+    "medical_details_required": false,
+    "role_amount_limits_jpy": null,
+    "unconfigured_permissions_fail_closed": true
+  }
+}

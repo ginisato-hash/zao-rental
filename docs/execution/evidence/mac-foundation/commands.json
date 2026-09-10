@@ -1,0 +1,59 @@
+{
+  "runId": "2026-09-10T15-08-32.369Z",
+  "commands": [
+    {
+      "command": "npm run check:reference",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:32.370Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/check-reference.log"
+    },
+    {
+      "command": "npm run check:secrets",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:32.501Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/check-secrets.log"
+    },
+    {
+      "command": "npm run test:reference",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:32.642Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/test-reference.log"
+    },
+    {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:32.803Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/lint.log"
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:34.949Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/typecheck.log"
+    },
+    {
+      "command": "npm run test:unit",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:37.366Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/test-unit.log"
+    },
+    {
+      "command": "npm run test:integration",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:37.688Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/test-integration.log"
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:43.269Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/build.log"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exit_code": 0,
+      "start": "2026-09-10T15:08:50.898Z",
+      "log_path": ".local/evidence/2026-09-10T15-08-32.369Z/test-e2e.log"
+    }
+  ]
+}

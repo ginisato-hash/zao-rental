@@ -1,0 +1,7 @@
+{
+  "command": "npm run dev; owned-process-group SIGINT smoke",
+  "ready": true,
+  "exit_code": 1,
+  "ports_remaining": [],
+  "log_path": ".local/dev-smoke.log"
+}

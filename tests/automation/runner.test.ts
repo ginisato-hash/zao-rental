@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { claimTask, classifyFailure, commandPlan, evaluate, loadProtectedPolicy, validateApproval } from '../../tools/automation/runner';
+import { simulationFixture } from '../../tools/automation/fixtures';
+test('unsigned or self-modified READY approval is rejected', () => { const f = simulationFixture(); f.signed.payload.allowedPaths.push('.github/'); assert.throws(() => validateApproval(f.signed, f.policy, f.approval.specHash), /UNTRUSTED/); });
+test('valid signature still requires exact spec hash and expiry', () => { const f = simulationFixture(); assert.throws(() => validateApproval(f.signed, f.policy, 'd'.repeat(64)), /INVALID/); assert.throws(() => validateApproval(f.signed, f.policy, f.approval.specHash, Date.now() + 120000), /INVALID/); });
+test('activation flags are refused even with signed approval', () => { const f = simulationFixture(); const unsafe = { ...f.policy, enabled: true }; assert.throws(() => validateApproval(f.signed, unsafe as unknown as typeof f.policy, f.approval.specHash), /UNSAFE/); });
+test('task claim is exclusive and expired lease is not stolen', async () => { const f = simulationFixture(); const path = await mkdtemp(join(tmpdir(), 'zr-lease-')); try { const first = await claimTask(path, f.approval, 0); await assert.rejects(claimTask(path, f.approval), /RECONCILIATION_REQUIRED/); await first.release(); const next = await claimTask(path, f.approval); await next.release(); } finally { await rm(path, { recursive: true }); } });
+test('policy inside worktree or with unpinned hash is rejected', async () => { const f = simulationFixture(); const path = await mkdtemp(join(tmpdir(), 'zr-policy-')); try { await mkdir(join(path, 'tree')); const raw = JSON.stringify(f.policy); const digest = createHash('sha256').update(raw).digest('hex'); await writeFile(join(path, 'tree/policy.json'), raw); await writeFile(join(path, 'policy.json'), raw); await assert.rejects(loadProtectedPolicy(join(path, 'tree/policy.json'), digest, join(path, 'tree')), /INSIDE_WORKTREE/); await assert.rejects(loadProtectedPolicy(join(path, 'policy.json'), 'a'.repeat(64), join(path, 'tree')), /HASH_MISMATCH/); assert.deepEqual(await loadProtectedPolicy(join(path, 'policy.json'), digest, join(path, 'tree')), f.policy); } finally { await rm(path, { recursive: true }); } });
+test('exact-head CI and review stop for human approval', () => { const f = simulationFixture(); assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'AWAITING_APPROVAL'); });
+test('new push invalidates old review even after new CI passes', () => { const f = simulationFixture(); f.evidence.headSha = 'd'.repeat(40); f.evidence.ci.headSha = f.evidence.headSha; assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).reason, 'STALE_REVIEW'); });
+test('empty, pending or stale CI cannot pass', () => { for (const state of ['missing', 'pending', 'stale']) { const f = simulationFixture(); if (state === 'missing') f.evidence.ci.checks = {}; else if (state === 'stale') f.evidence.ci.headSha = 'd'.repeat(40); else f.evidence.ci.checks.foundation = state as 'pending' | 'failure'; assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).reason, 'CI_MISSING_PENDING_OR_STALE'); } });
+test('missing, malformed or incomplete review cannot pass', () => { for (const review of [null, 'PASS', { verdict: 'PASS' }]) { const f = simulationFixture(); f.evidence.review = review; assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).reason, 'INVALID_OR_MISSING_REVIEW'); } });
+test('protected, traversing and out-of-scope changes stop', () => { for (const file of ['.github/workflows/ci.yml', '../other-project/file', 'packages/db/migrations/0002.sql', 'config/pricing/a.json']) { const f = simulationFixture(); f.evidence.changedFiles = [file]; assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'BLOCKED'); } });
+test('maximum two repair rounds, then escalation', () => { const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), verdict: 'CHANGES_REQUIRED' }; for (const round of [0, 1]) assert.equal(evaluate(f.approval, f.policy, f.evidence, round, 1).fixRound, round + 1); assert.equal(evaluate(f.approval, f.policy, f.evidence, 2, 1).reason, 'FIX_ROUND_LIMIT'); });
+test('budget and wall-clock exhaustion stop', () => { const f = simulationFixture(); assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 60).reason, 'TIME_OR_ROUND_LIMIT'); });
+test('auth and quota errors stop without API fallback', () => { assert.match(classifyFailure(1, 'HTTP 429'), /QUOTA_BLOCKED/); assert.match(classifyFailure(1, 'authentication required 401'), /AUTH_BLOCKED/); assert.match(classifyFailure(0, ''), /MISSING_OR_INVALID_OUTPUT/); });
+test('plan has bounded repair and no merge or main push', () => { const f = simulationFixture(); const plan = commandPlan(f.approval, '/tmp/zao-rental-new', 'ginisato-hash/zao-rental'); assert.ok(plan.some(step => step.stage === 'draft')); assert.ok(plan.some(step => step.stage === 'claude')); assert.ok(!JSON.stringify(plan).includes('auto-merge')); assert.deepEqual(plan.find(step => step.stage === 'push')?.argv?.slice(-1), ['HEAD:refs/heads/codex/e01']); });
+
+test('a failing CI test enters bounded repair before requiring review', () => { const f = simulationFixture(); f.evidence.ci.checks.foundation = 'failure'; f.evidence.review = null; assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'FIX_REQUIRED'); assert.equal(evaluate(f.approval, f.policy, f.evidence, 2, 1).reason, 'FIX_ROUND_LIMIT'); });
+
+function reviewFinding(severity: string) {
+  return { severity, file: 'example.ts', line: 1, scenario: 'synthetic gate regression', evidence: 'fixture', fix_direction: 'fixture', required_test: 'fixture' };
+}
+test('unknown review verdicts cannot advance even with otherwise valid evidence', () => {
+  for (const verdict of ['NEEDS_REVISION', 'REVIEW_ERROR', 'pass', '']) {
+    const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), verdict };
+    assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'BLOCKED');
+  }
+});
+test('unknown severity labels cannot advance under a PASS verdict', () => {
+  for (const severity of ['CRITICAL', 'UNKNOWN', 'high', '']) {
+    const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), findings: [reviewFinding(severity)] };
+    assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, 'BLOCKED');
+  }
+});
+test('PASS still requires acceptable severity; blockers require bounded repair', () => {
+  for (const severity of ['BLOCKER', 'HIGH', 'MEDIUM', 'LOW']) {
+    const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), findings: [reviewFinding(severity)] };
+    const blocking = ['BLOCKER', 'HIGH'].includes(severity);
+    assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).status, blocking ? 'FIX_REQUIRED' : 'AWAITING_APPROVAL');
+    if (blocking) assert.equal(evaluate(f.approval, f.policy, f.evidence, 2, 1).reason, 'FIX_ROUND_LIMIT');
+  }
+});
+test('PASS with any unverified item remains blocked', () => {
+  const f = simulationFixture(); f.evidence.review = { ...(f.evidence.review as object), unverified: ['missing migration recovery evidence'] };
+  assert.equal(evaluate(f.approval, f.policy, f.evidence, 0, 1).reason, 'REVIEW_UNVERIFIED');
+});

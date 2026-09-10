@@ -1,0 +1,53 @@
+{
+  "version": "1.0-draft",
+  "enabled": false,
+  "auto_merge_enabled": false,
+  "production_enabled": false,
+  "initial_implementation_workers": 1,
+  "steady_state_implementation_workers": 2,
+  "maximum_implementation_workers": 3,
+  "review_workers": 1,
+  "max_fix_rounds": 2,
+  "task_wall_clock_minutes_initial": 60,
+  "extra_paid_api_enabled": false,
+  "automatic_credit_purchase": false,
+  "protected_policy_outside_agent_write_scope_required": true,
+  "allowed_task_states": [
+    "READY"
+  ],
+  "requires_approved_spec_hash": true,
+  "requires_exact_reviewed_head_sha": true,
+  "requires_merge_before_dependents": true,
+  "initial_merge_mode": "EXPLICIT_APPROVAL",
+  "fail_closed_on": [
+    "missing_auth",
+    "quota_exceeded",
+    "invalid_json",
+    "missing_review",
+    "stale_review_sha",
+    "ci_not_executed",
+    "unknown_external_side_effect",
+    "out_of_scope_change",
+    "budget_limit",
+    "protected_file_change",
+    "production_request"
+  ],
+  "high_risk_scopes": [
+    "inventory",
+    "transfer",
+    "payment",
+    "refund",
+    "identity",
+    "pricing",
+    "database_migrations",
+    "CI",
+    "permissions",
+    "automation_policy"
+  ],
+  "notes": [
+    "This file is a proposal, not an enforcement mechanism.",
+    "Only a trusted controller may activate a protected copy after review.",
+    "Low-risk auto-merge requires later explicit authorization and effective server-side protection.",
+    "One scheduler only; no competing Codex scheduled task and OS runner."
+  ]
+}

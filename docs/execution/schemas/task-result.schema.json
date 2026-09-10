@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "READY_FOR_REVIEW",
+        "BLOCKED",
+        "FAILED"
+      ]
+    },
+    "head_sha": {
+      "type": "string"
+    },
+    "base_sha": {
+      "type": "string"
+    },
+    "spec_hash": {
+      "type": "string"
+    },
+    "changed_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "exit_code": {
+            "type": "integer"
+          },
+          "log_path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "command",
+          "exit_code",
+          "log_path"
+        ]
+      }
+    },
+    "known_gaps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_action": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "status",
+    "head_sha",
+    "base_sha",
+    "spec_hash",
+    "changed_files",
+    "commands",
+    "known_gaps",
+    "next_action"
+  ]
+}

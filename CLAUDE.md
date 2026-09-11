@@ -15,3 +15,8 @@ Return `docs/execution/schemas/review-result.schema.json`: severity, file/line, 
 evidence, minimal fix direction and proving test. Unverified is not PASS. Distinguish the 27 seed
 tests and foundation tests from 32 future operational scenarios. Prefer precise findings over
 style rewrites. A new head invalidates the prior review.
+
+For E02 include all referenced controller/policy/schema sources and test evidence in the manifest.
+Review ADR 0009 against real Mac denial evidence, common-lock races, durable INTENT recovery and
+owned process shutdown. Keep fake-service results separate from live acceptance. The current owner
+authorizes static documents-only review; no execution/tools/automatic context are authorized.

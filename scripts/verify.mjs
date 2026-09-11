@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 const runId = new Date().toISOString().replaceAll(':', '-');
 const directory = `.local/evidence/${runId}`; mkdirSync(directory, { recursive: true });
 const commands = [];
-for (const name of ['check:reference', 'check:secrets', 'test:reference', 'lint', 'typecheck', 'test:unit', 'test:integration', 'build', 'test:e2e']) {
+for (const name of ['check:reference', 'check:secrets', 'test:reference', 'lint', 'typecheck', 'test:unit', ...(process.platform === 'darwin' ? ['test:controller:macos'] : []), 'test:integration', 'build', 'test:e2e']) {
   const start = new Date().toISOString();
   const result = spawnSync('npm', ['run', name], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', PLAYWRIGHT_BROWSERS_PATH: '.local/browsers' } });
   const output = (result.stdout ?? '') + (result.stderr ?? '');

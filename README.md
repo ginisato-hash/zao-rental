@@ -62,3 +62,8 @@ E02's executable CLI is **simulation only**. `--live` exits 2; it cannot invoke 
 or deploy. The Claude Action proposal has a literal `if: false`, no schedule and no credentials
 provisioned. Do not mistake its skipped job for a review. Main requires human review/merge;
 server-side branch protection was unavailable to this private repo (HTTP 403). No plan change was made.
+
+E02 preflight: `npm run runner:dry-run` exercises the new controller with fake services and a real
+temporary common Git lease/journal. `npm run test:controller:macos` is the actual installed-Mac
+sandbox test, also included by `verify` on macOS. See ADR 0009 and E02_LIMITED_DEMONSTRATION.md for
+the live containment/auth gates. No live command, scheduled job or automatic merge is enabled.

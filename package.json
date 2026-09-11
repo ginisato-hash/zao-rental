@@ -19,9 +19,11 @@
     "test:e2e": "playwright test",
     "verify": "node scripts/verify.mjs",
     "dev": "node --import tsx scripts/dev.ts",
-    "runner:dry-run": "node --import tsx tools/automation/cli.ts --dry-run",
+    "runner:dry-run": "node --import tsx tools/automation/controller/dry-run.ts --dry-run",
     "check:reference": "node scripts/check-reference.mjs",
-    "check:secrets": "node scripts/check-secrets.mjs"
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "test:controller:macos": "node --import tsx scripts/test-controller-macos.ts",
+    "controller:export": "node --import tsx scripts/export-controller.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

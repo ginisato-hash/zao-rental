@@ -79,16 +79,21 @@ export function commandPlan(approval: Approval, worktree: string, repo: string) 
     { stage: 'stop', status: 'AWAITING_APPROVAL', note: 'no merge, production or next dependent task' },
   ];
 }
+export function checkChangedFiles(approval: Approval, policy: Policy, files: string[]): string | undefined {
+  for (const file of files) {
+    try { checkPath(file); } catch { return 'INVALID_PATH'; }
+    if (policy.protectedPaths.some(pattern => inScope(file, pattern))) return 'PROTECTED_FILE_CHANGE';
+    if (!approval.allowedPaths.some(pattern => inScope(file, pattern))) return 'OUT_OF_SCOPE_CHANGE';
+  }
+  return undefined;
+}
 export function evaluate(approval: Approval, policy: Policy, evidence: Evidence, fixRound: number, elapsedMinutes: number): Result {
   const blocked = (reason: string): Result => ({ status: 'BLOCKED', reason, fixRound, headSha: evidence.headSha });
   if (!Number.isInteger(fixRound) || fixRound < 0 || fixRound > policy.maxFixRounds || !Number.isFinite(elapsedMinutes) || elapsedMinutes < 0 || elapsedMinutes >= policy.maxMinutes) return blocked('TIME_OR_ROUND_LIMIT');
   if (evidence.taskId !== approval.taskId || evidence.baseSha !== approval.baseSha || evidence.specHash !== approval.specHash || !sha.test(evidence.headSha)) return blocked('EVIDENCE_IDENTITY_MISMATCH');
   if (!evidence.draft || !evidence.commandExitCodes.length || evidence.commandExitCodes.some(code => code !== 0)) return blocked('IMPLEMENTATION_OR_DRAFT_MISSING');
-  for (const file of evidence.changedFiles) {
-    try { checkPath(file); } catch { return blocked('INVALID_PATH'); }
-    if (policy.protectedPaths.some(pattern => inScope(file, pattern))) return blocked('PROTECTED_FILE_CHANGE');
-    if (!approval.allowedPaths.some(pattern => inScope(file, pattern))) return blocked('OUT_OF_SCOPE_CHANGE');
-  }
+  const scopeError = checkChangedFiles(approval, policy, evidence.changedFiles);
+  if (scopeError) return blocked(scopeError);
   if (evidence.ci.headSha !== evidence.headSha || !evidence.ci.runId || policy.requiredChecks.some(check => !['success', 'failure'].includes(evidence.ci.checks[check] ?? ''))) return blocked('CI_MISSING_PENDING_OR_STALE');
   if (policy.requiredChecks.some(check => evidence.ci.checks[check] === 'failure')) return fixRound >= policy.maxFixRounds ? blocked('FIX_ROUND_LIMIT') : { status: 'FIX_REQUIRED', reason: 'CI_FAILED', fixRound: fixRound + 1, headSha: evidence.headSha };
   if (!validateReview(evidence.review)) return blocked('INVALID_OR_MISSING_REVIEW');

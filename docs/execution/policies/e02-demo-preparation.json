@@ -1,0 +1,44 @@
+{
+  "status": "UNAPPROVED_DEMONSTRATION_PLAN_OUTER_BOUNDARY_UNAVAILABLE",
+  "policy": {
+    "enabled": false,
+    "autoMerge": false,
+    "production": false,
+    "paidApi": false,
+    "maxFixRounds": 2,
+    "maxMinutes": 60,
+    "approverPublicKey": "OWNER_ED25519_PUBLIC_KEY_REQUIRED",
+    "protectedPaths": [
+      ".github/",
+      ".git/",
+      ".codex/",
+      ".claude/",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "package.json",
+      "package-lock.json",
+      "scripts/",
+      "tools/",
+      "docs/",
+      "config/",
+      "packages/"
+    ],
+    "requiredChecks": [
+      "foundation"
+    ]
+  },
+  "reviewPublicKey": "TRUSTED_REVIEW_PUBLISHER_ED25519_PUBLIC_KEY_REQUIRED",
+  "demonstration": {
+    "taskId": "E02",
+    "baseSha": "be8c50ad35abefb6f95e45e5e4b1a7da37650176",
+    "allowedPaths": [
+      "apps/web/src/app/staff/page.tsx",
+      "tests/e2e/foundation.spec.ts"
+    ],
+    "maxCodexCliStarts": 2,
+    "maxClaudeCliStarts": 2,
+    "maxRepairRounds": 1,
+    "authorization": false,
+    "note": "Stricter demo caps are a proposed outer launch gate, not a claim that the old core maxFixRounds=2 has changed or LIVE has been wired."
+  }
+}

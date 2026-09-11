@@ -29,3 +29,9 @@ Auth OIDC provider, tax/effective dates, production deployment and operational d
 exclusion, bounded adapters/stop control, fake failure tests and a new draft PR with static Claude
 review are authorized. ADR 0009 records implementation and actual-vs-fake evidence. E02 live, new
 business features, E02 PR merge, scheduling, additional billing and production remain unauthorized.
+
+Current follow-up authority supersedes the earlier E02-merge prohibition only for PR #2: F8 was fixed,
+independently re-reviewed once, and exact-head merged. The new preparation branch may implement
+read-only GitHub/CI inspection, model-free isolation/fake tests and a next-demo manifest, then create
+a Draft PR. That new PR merge, live Runner, new auth/storage/privileges, VM installation, daemons,
+billing changes and business features remain outside scope. See ADR 0010.

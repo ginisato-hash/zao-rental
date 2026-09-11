@@ -23,7 +23,9 @@
     "check:reference": "node scripts/check-reference.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
     "test:controller:macos": "node --import tsx scripts/test-controller-macos.ts",
-    "controller:export": "node --import tsx scripts/export-controller.ts"
+    "controller:export": "node --import tsx scripts/export-controller.ts",
+    "test:preparation:macos": "node --import tsx scripts/test-preparation-macos.ts",
+    "prepare:github-read": "node --import tsx scripts/check-github-preparation.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

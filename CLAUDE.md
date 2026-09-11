@@ -20,3 +20,8 @@ For E02 include all referenced controller/policy/schema sources and test evidenc
 Review ADR 0009 against real Mac denial evidence, common-lock races, durable INTENT recovery and
 owned process shutdown. Keep fake-service results separate from live acceptance. The current owner
 authorizes static documents-only review; no execution/tools/automatic context are authorized.
+
+Current owner update: PR #2 was conditionally merged after the F8 fix and one explicitly authorized
+additional review. Post-merge connection/isolation preparation is a separate Draft PR. ADR 0010 and
+E02_NEXT_DEMO.manifest.json record UNATTENDED_HOLD. No further static model review is authorized for
+this preparation PR in this turn. Do not infer live/merge authority from a successful fake test.

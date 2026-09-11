@@ -1,4 +1,7 @@
-# Next E02 limited demonstration — NOT AUTHORIZED / NOT RUN
+# Historical E02 demonstration proposal — superseded, NOT AUTHORIZED / NOT RUN
+
+The current single-task plan is E02_NEXT_DEMO.manifest.json and ADR 0010. Its proposed cap is
+2 Codex + 2 Claude CLI starts, not this historical three-start ceiling. No live dispatch is wired.
 
 One candidate task: improve the unauthenticated wording in the staff entrance and its matching
 browser assertions. Keep the current denial semantics unchanged. No inventory, price, payment,

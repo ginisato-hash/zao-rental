@@ -1,0 +1,202 @@
+{
+  "manifestVersion": 1,
+  "status": "UNATTENDED_HOLD",
+  "executionAuthorized": false,
+  "purpose": "Single staff unauthenticated display/E2E demonstration plan only",
+  "repository": "ginisato-hash/zao-rental",
+  "startingBaseSha": "be8c50ad35abefb6f95e45e5e4b1a7da37650176",
+  "baseRule": "Reject if current main differs at approval/start; no automatic rebase or third-party adoption",
+  "controller": {
+    "sourceCommit": "695ccae03cc7aaa6cc46650f63fb8c88f76de5ea",
+    "inheritedImplementationMain": "be8c50ad35abefb6f95e45e5e4b1a7da37650176",
+    "sourceTree": "e96ad2cfbea76d0115e6b4f77847812ed1281ea5",
+    "releaseVersion": "e02-preflight-1",
+    "manifestSha256": "56957bd1bfbf294bbbaf57f5198f536cbc844083e4bf751a8c3ddc2d530aa3e3",
+    "controllerSha256": "efa454c61d68def328b2c3f3030c41620b4b68841a14221f465ba77ec43fa9ef",
+    "ownerApprovedRelease": false
+  },
+  "policy": {
+    "sourceCommit": "695ccae03cc7aaa6cc46650f63fb8c88f76de5ea",
+    "sourcePath": "docs/execution/policies/e02-demo-preparation.json",
+    "sha256": "198dbe21c8a9062af3c4a1ee521b8c64b2982ed5879a1f11e44557efcd6be74c",
+    "signersProvisioned": false,
+    "signedApprovalPresent": false,
+    "status": "UNAPPROVED_DISABLED_PLAN"
+  },
+  "task": {
+    "id": "E02",
+    "branch": "codex/e02",
+    "proposedWorktree": "/Users/gini/Projects/zao-rental/.local/worktrees/e02-staff-entry-once",
+    "allowedFiles": [
+      {
+        "path": "apps/web/src/app/staff/page.tsx",
+        "baseSha256": "65e2ff2c4164f4747504f3121ab3dbaadb8aa75a3d5ac56b8bba1c0dfe273959"
+      },
+      {
+        "path": "tests/e2e/foundation.spec.ts",
+        "baseSha256": "f36b9c8f6cec32fe0538c1310f9ae1ecba5cea76b56faa696025d0dddd515497"
+      }
+    ],
+    "expectedCopy": "スタッフ用ログインは現在準備中です。利用開始までスタッフ操作はできません。",
+    "acceptance": [
+      "Change only the unauthenticated staff paragraph and corresponding E2E expectations. Keep heading 認証が必要です and 戻る link.",
+      "Keep authorize/getPrincipal invocation and authorization conditions unchanged.",
+      "Staff/admin APIs remain 401 AUTHENTICATION_REQUIRED; spoofed role/header/cookie cannot unlock them.",
+      "Keep admin denial and existing customer/health behavior unchanged.",
+      "No inventory, price, payment, DB structure, authorization logic, controller, policy, dependency or workflow changes."
+    ],
+    "specSha256": "1820119e975e3f605941bc8a678bacaa147f3e95c9e46df17e87dab12836d967"
+  },
+  "environment": {
+    "host": "Implementation Mac / Darwin arm64",
+    "repositoryRoot": "/Users/gini/Projects/zao-rental",
+    "roles": {
+      "controller": "Trusted host; fixed release/policy/state outside implementation access",
+      "implementation": "Credential-free command worker; PATH/LANG/run TMPDIR only; real model parent NOT_WIRED",
+      "reviewer": "Separate empty cwd; shared staticReviewArgs; existing Claude Team authentication",
+      "publisher": "Separate trusted host role; NOT_WIRED; no worker credentials"
+    },
+    "runtimeHashes": {
+      "codex": "87a08119b8effa519f0ecb552dc98043f58a8200bf2ec5da60f76890c33e9c3a",
+      "node": "a5ebb9adc969c8fcc486823ada530a4130b0d56edf954de7b05c280170487b1a"
+    },
+    "testedWorkerProfileHash": "3eb04f7f307f34581ef2662a7340efe9971846e32d2c10b9d2201d67f9abf316",
+    "worktreeScopeProposal": {
+      "namespace": "zr_097ab7103683",
+      "database": "zr_097ab7103683",
+      "user": "zr_097ab7103683",
+      "dbPort": 20239,
+      "webPort": 30239,
+      "seedVersion": "foundation-v1",
+      "status": "PLAN_ONLY_PATH_MUST_BE_CANONICAL_AND_PORTS_FREE_BEFORE_USE"
+    },
+    "outerBoundary": {
+      "state": "UNAVAILABLE_NOT_PROVEN",
+      "unattendedReady": false,
+      "proposed": "One disposable run-specific Linux job/container PID namespace inside separately approved VM/runtime",
+      "imageDigest": null,
+      "runtime": null,
+      "forbidden": [
+        "host HOME/controller/policy/state/secrets mounts",
+        "shared Docker/VM control sockets",
+        "privileged mode",
+        "host PID or network namespace",
+        "broad host volumes"
+      ],
+      "readiness": "A name or installed CLI cannot enable the dispatcher; detached/guardian-loss termination must be proven on the chosen runtime first."
+    }
+  },
+  "communication": {
+    "currentPreparationAllowed": [
+      {
+        "role": "controller-reader",
+        "destination": "api.github.com via existing gh",
+        "methods": [
+          "GET"
+        ],
+        "repositoryOnly": true
+      }
+    ],
+    "implementationWorkerNetwork": "DENY_ALL",
+    "modelCallsAuthorizedNow": 0,
+    "proposedModelProviders": [
+      "existing Codex ChatGPT subscription",
+      "existing Claude Team subscription; credits OFF"
+    ],
+    "modelEndpointAllowlist": "UNVERIFIED_NOT_WIRED; must be pinned before any unattended model launch",
+    "futureGithubOperations": [
+      "create/push only codex/e02 task branch after scope/head validation",
+      "create/update one Draft PR and its evidence comment",
+      "GET exact PR/CI/commit evidence"
+    ],
+    "futureGithubOperationsAuthorized": false,
+    "forbiddenGithubOperations": [
+      "main push",
+      "merge",
+      "auto-merge",
+      "repo settings/permissions",
+      "secrets/token creation"
+    ]
+  },
+  "limits": {
+    "codexCliStarts": 2,
+    "claudeCliStarts": 2,
+    "minutes": 60,
+    "automaticMerge": false,
+    "extraCredits": false
+  },
+  "usageRecording": {
+    "nextTaskStartsSoFar": {
+      "codex": 0,
+      "claude": 0
+    },
+    "maxRepairRounds": 1,
+    "claudeTurnsPerCliAtMost": 3,
+    "claudeTurnsTotalAtMost": 6,
+    "internalApiRequests": null,
+    "counting": "CLI starts and provider internal requests are separate metrics. Reserve each start before invocation; unknown effect consumes its reserved start until human reconciliation. Record tokens/cache/runtime/result and isUsingOverage when exposed; unknown request counts stay null, never equal CLI starts.",
+    "liveLimiterWired": false,
+    "existingCoreCeiling": "Historical core maxFixRounds=2 / 3 starts unchanged; stricter 2-start outer gate is a proposal, not live proven."
+  },
+  "stopping": {
+    "overallTimeoutSeconds": 3600,
+    "proposedPerModelTimeoutSeconds": 900,
+    "abortOn": [
+      "unknown effect",
+      "auth/quota/credits error",
+      "base/head/spec/hash drift",
+      "missing signature",
+      "out-of-scope diff",
+      "failed sandbox probe",
+      "uncertain child cleanup",
+      "CI identity or attempt mismatch"
+    ],
+    "procedure": [
+      "Before any start, require explicit approval plus a tested outer run handle. Otherwise remain HOLD.",
+      "Cancel only this run; terminate its outer resource by verified identity, then prove all owned processes including detached descendants are gone.",
+      "Inspect run-specific web/DB ownership and ports; never stop a pre-existing occupant.",
+      "Preserve journal INTENT/result/evidence. Do not steal locks based only on expiry or repeat unknown operations."
+    ],
+    "resourcesToConfirm": [
+      "exact outer resource ID and descendant absence",
+      "owned guardian/process identities",
+      "run worktree/scratch and no shared control socket",
+      "worktree-specific DB/user/web and DB ports",
+      "repository lock/run journal/branch/PR identity"
+    ]
+  },
+  "evidence": {
+    "actual": [
+      "GitHub GET identity check for historical PR #2 / run 34557646952 attempt 1",
+      "Mac controller/policy/state/secret-canary/shared-socket EPERM; candidate write succeeds",
+      "Detached harmless process survived group stop; unique fixture cleaned; no outer containment claim"
+    ],
+    "fakeOnly": [
+      "CI identity/error cases",
+      "auth/quota/no-second-request cases",
+      "two-per-model CLI history limits"
+    ],
+    "unverified": [
+      "outer isolation installation and detached/guardian-loss termination",
+      "credentialed model-parent and publisher boundaries",
+      "live remote effect reconciliation and CI-to-review dispatch",
+      "restricted publisher write permission and provider endpoint allowlist"
+    ],
+    "githubWriteProof": false,
+    "runnerModelCalls": 0
+  },
+  "artifacts": [
+    "one task branch and one Draft PR",
+    "signed approval/release manifest from trusted owner channel",
+    "task/run journal with separate CLI and provider usage",
+    "exact base/head/spec/snapshot hashes",
+    "regression logs and exact CI run/attempt/integration proof",
+    "static review and final approval-waiting or blocked reason"
+  ],
+  "nextHumanDecisions": [
+    "Option A: keep unattended Runner on hold and continue owner-triggered Codex/tests/CI/static-review work.",
+    "Option B: separately approve one minimal outer VM/runtime installation and authentication/publisher wiring plan; no automatic installation.",
+    "Approve this preparation PR separately if desired; it is not merged by this task.",
+    "After missing gates are proven, revalidate/reissue exact manifest and approve just the two-file task, two starts per model, draft publication and review. No automatic merge."
+  ]
+}

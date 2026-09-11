@@ -68,8 +68,10 @@ export class LedgerService {
   async update(resource:Resource,id:string,input:unknown):Promise<LedgerDetail> {
     parseResource(resource);ledgerAccess(this.principal,true);assertId(id);const data=parseInput(resource,'update',input);
     return this.transaction(data.reason as string,async client=>{
-      // Lock before scope/version check; never expose or mutate another store's row.
-      await client.query(`SELECT id FROM ${tables[resource]} WHERE id=$1 FOR UPDATE`,[id]);
+      // Scope belongs in the locking statement: forbidden stores must not be locked at all.
+      const storeScoped=resource==='assets'||resource==='poles';
+      const locked=await client.query(`SELECT id FROM ${tables[resource]} WHERE id=$1${storeScoped?' AND store_id=ANY($2::text[])':''} FOR UPDATE`,storeScoped?[id,[...this.scope]]:[id]);
+      if(locked.rowCount!==1)throw new LedgerError('NOT_FOUND',404);
       const prior=await this.detail(client,resource,id);
       if(prior.version!==data.version)throw new LedgerError('STALE_VERSION',409);
       const keys=Object.keys(data).filter(k=>k!=='version'&&k!=='reason');const values=keys.map(k=>data[k]);values.push(id,data.version);

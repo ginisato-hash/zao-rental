@@ -112,6 +112,8 @@ try {
     assert.equal((await http(request('assets?available=true'))).status,422);assert.equal((await http(request('assets?age=ADULT&age=KIDS'))).status,422);
     assert.equal((await http(new Request('http://ledger.test/api/ledger/assets',{method:'POST',headers:{origin:'http://attacker.invalid','content-type':'application/json'},body:'{}'}))).status,403);
     assert.equal((await http(new Request('http://ledger.test/api/ledger/assets',{method:'POST',headers:{origin:'http://ledger.test','content-type':'application/json'},body:'x'.repeat(16385)}))).status,413);
+    await assert.rejects(db.pool.query("INSERT INTO ledger_history(resource,entity_id,action,actor,reason,before_data,after_data) SELECT resource,entity_id,action,actor,reason,before_data,after_data FROM ledger_history LIMIT 1"),{code:'23514'});
+    await assert.rejects(db.pool.query("INSERT INTO ledger_locations(asset_id,store_id,event) SELECT asset_id,store_id,event FROM ledger_locations LIMIT 1"),{code:'23514'});
     await assert.rejects(db.pool.query("UPDATE ledger_history SET reason='erased'"),{code:'23514'});await assert.rejects(db.pool.query('DELETE FROM ledger_locations'),{code:'23514'});
     await assert.rejects(raw(db.pool,c=>c.query('DELETE FROM ledger_assets WHERE id=$1',[id(201)])),{code:'23514'});
   });
@@ -139,6 +141,26 @@ try {
     const response=await http(request('assets','POST',{...SAMPLE.assets[0].data,family:'SNOWBOARD',sourceLocator:'http-family-mismatch'}));
     assert.equal(response.status,422);assert.deepEqual(await response.json(),{error:'CONSTRAINT_VIOLATION'});
     assert.equal((await service.list('assets')).total,before);assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM ledger_history')).rows[0].n,history);
+  });
+  await check('out-of-store update takes no Asset or pole row lock and cannot block the owning store',async()=>{
+    for(const [resource,recordId,table] of [['assets',id(202),'ledger_assets'],['poles',id(302),'ledger_poles']] as const){
+      const prior=await service.get(resource,recordId);const client=await db.pool.connect();const original=client.query;const query=client.query.bind(client);
+      let signal!:()=>void;let release!:()=>void;const reached=new Promise<void>(r=>{signal=r;});const gate=new Promise<void>(r=>{release=r;});
+      // The gate pauses a real PostgreSQL transaction after its actual lock query; not a mock DB.
+      client.query=(async(text:string,values?:unknown[])=>{const result=await query(text,values);if(text.includes('FOR UPDATE')){signal();await gate;}return result;}) as PoolClient['query'];
+      const controlledPool={connect:async()=>client} as unknown as Pool;
+      const outsider=new LedgerService(controlledPool,{subject:'other-store-admin',role:'ADMIN',storeIds:['MOUNTAIN_BASE']});
+      const attempt=outsider.update(resource,recordId,{version:prior.version,reason:'out-of-scope counterexample',notes:'must not be written'}).then(()=>undefined,e=>e as LedgerError);
+      try {
+        await reached;
+        // NOWAIT gives an immediate, deterministic failure if the outsider locked this real row.
+        await raw(db.pool,c=>c.query(`SELECT id FROM ${table} WHERE id=$1 FOR UPDATE NOWAIT`,[recordId]));
+        const owner=new LedgerService(db.pool,{subject:'owning-store-admin',role:'ADMIN',storeIds:['ONSEN_BASE']});
+        const updated=await owner.update(resource,recordId,{version:prior.version,reason:'legitimate concurrent update',notes:'SYNTHETIC owner update'});
+        assert.equal(updated.version,prior.version+1);
+      } finally {client.query=original;release();const denial=await attempt;assert.equal(denial?.code,'NOT_FOUND');assert.equal(denial?.status,404);}
+      const final=await service.get(resource,recordId);assert.equal(final.history.at(-1)!.actor,'owning-store-admin');
+    }
   });
   await check('sample checksum mismatch is not silently imported as replacement inventory',async()=>{
     await db.pool.query("UPDATE ledger_import_receipts SET checksum=repeat('0',64)");await assert.rejects(seedLedgerSample(db.pool),/checksum drift/);

@@ -57,6 +57,10 @@ and offset. Filters: storeId, sport, age, tier, size, status, q. Filters never s
 categories. `GET .../{uuid}` returns detail, audit history and initial Asset location history.
 POST registers; PATCH requires version/reason and mutable fields only. No DELETE or movement route.
 JSON Schema rejects extra fields, identifiers, auth flags, implied availability and unapproved inputs.
+Asset/pole update locks include the store scope in the locking SQL itself; a forbidden store row
+is rejected without acquiring its row lock. UI detail/save responses carry a selection generation;
+late results cannot restore an old tab or overwrite a newer selection. This discards stale display
+responses, not an already-submitted database mutation, and never automatically retries a write.
 Writes enforce JSON/body-size and same-origin checks in addition to server authorization. E05 must
 review deployed origin/proxy/session/CSRF configuration before connecting actual users or a DB.
 

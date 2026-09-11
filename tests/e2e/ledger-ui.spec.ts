@@ -29,3 +29,15 @@ test('asset onboarding keeps unknown BSL and pole edit records pair quantity',as
  await form.getByRole('button',{name:'登録を保存'}).click();await expect(page.getByText('7 件の台帳記録')).toBeVisible();const detail=page.getByRole('complementary',{name:'台帳詳細'});await expect(detail.getByText('要確認・未記録',{exact:true})).toBeVisible();await expect(detail.getByText('synthetic-boot-create')).toBeVisible();
  await page.getByRole('button',{name:'ポール数量',exact:true}).click();await page.getByRole('button',{name:'詳細：検証用ポール 110 cm'}).click();await page.getByRole('button',{name:'基本情報を更新'}).click();const edit=page.getByRole('region',{name:'更新フォーム'});await edit.getByLabel('数量（ペア / 1ペア＝2本）').fill('8');await edit.getByLabel('更新理由').fill('合成サンプルの数量訂正');await edit.getByRole('button',{name:'変更を保存'}).click();await expect(detail.getByText('8 ペア（1ペア＝2本）')).toBeVisible();await expect(detail.getByText('更新 · 合成サンプルの数量訂正')).toBeVisible();
 });
+
+test('late detail responses cannot reopen another tab or overwrite the latest selection',async({page})=>{
+ const settle=()=>page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ await page.goto('/race');await expect(page.getByText('6 件の台帳記録')).toBeVisible();const control=page.getByRole('region',{name:'応答順序テスト'});const detail=page.getByRole('complementary',{name:'台帳詳細'});
+ await page.getByRole('button',{name:'詳細：検証用スキー 160 cm',exact:true}).click();await expect(control.getByText('保留応答：1 / 完了応答：0')).toBeVisible();
+ await page.getByRole('button',{name:'ポール数量',exact:true}).click();await expect(page.getByText('2 件の台帳記録 / 数量単位：ペア（2本）')).toBeVisible();
+ await control.getByRole('button',{name:'最初の応答を返す'}).click();await expect(control.getByText('保留応答：0 / 完了応答：1')).toBeVisible();await settle();await expect(detail.getByRole('heading',{name:'検証用スキー',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'個体台帳',exact:true}).click();await expect(page.getByText('6 件の台帳記録')).toBeVisible();
+ await page.getByRole('button',{name:'詳細：検証用スキー 160 cm',exact:true}).click();await page.getByRole('button',{name:'詳細：検証用スキーブーツ 26.5 cm',exact:true}).click();await expect(control.getByText('保留応答：2 / 完了応答：1')).toBeVisible();
+ await control.getByRole('button',{name:'最後の応答を返す'}).click();await expect(detail.getByRole('heading',{name:'検証用スキーブーツ',exact:true})).toBeVisible();
+ await control.getByRole('button',{name:'最初の応答を返す'}).click();await expect(control.getByText('保留応答：0 / 完了応答：3')).toBeVisible();await settle();await expect(detail.getByRole('heading',{name:'検証用スキーブーツ',exact:true})).toBeVisible();await expect(detail.getByRole('heading',{name:'検証用スキー',exact:true})).toHaveCount(0);
+});

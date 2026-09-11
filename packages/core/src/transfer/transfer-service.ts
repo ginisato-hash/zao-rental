@@ -31,7 +31,7 @@ export class TransferService{
   await c.query(`UPDATE transfer_pieces p SET state='CLOSED' WHERE state='READY' AND NOT EXISTS(SELECT 1 FROM transfer_batches b WHERE b.id=p.batch_id AND b.issue IS NOT NULL) AND NOT EXISTS(SELECT 1 FROM inventory_claims WHERE active AND (transfer_piece_id=p.id OR asset_id=p.asset_id))`);
   for(const line of input){const asset='assetId'in line,id=asset?line.assetId:line.poleId,quantity=asset?1:line.quantity;
    const stock=(await c.query(`SELECT * FROM ${asset?'ledger_assets':'ledger_poles'} WHERE id=$1 AND store_id=$2 AND status='AVAILABLE'`,[id,b.source_store])).rows[0];if(!stock)throw new TransferError('STOCK_NOT_READY',409);
-   if((await c.query(`SELECT 1 FROM inventory_constraints WHERE ${asset?'asset_id':'pole_id'}=$1 AND ends_on>=$2 LIMIT 1`,[id,b.scheduled_date])).rowCount)throw new TransferError('STOCK_CONSTRAINED',409);
+   if((await c.query(`SELECT 1 FROM inventory_constraints WHERE ${asset?'asset_id':'pole_id'}=$1 AND starts_on<=$2 AND ends_on>=$2 LIMIT 1`,[id,b.scheduled_date])).rowCount)throw new TransferError('STOCK_CONSTRAINED',409);
    if(asset){if((await c.query(`SELECT 1 FROM transfer_pieces WHERE asset_id=$1 AND state NOT IN ('CANCELLED','CLOSED')`,[id])).rowCount)throw new TransferError('ALREADY_COMMITTED',409);
     if((await c.query(`SELECT 1 FROM inventory_claims c JOIN inventory_holds h ON h.id=c.hold_id WHERE c.active AND c.asset_id=$1 AND h.state='ACTIVE' AND (h.expires_at>$3 OR h.allocation_stage<>'PROVISIONAL' OR h.payment_state NOT IN ('NONE','FAILURE')) AND (c.day>$2 OR h.pickup_store<>h.return_store OR c.day=$2 AND h.allocation_stage<>'PROVISIONAL') LIMIT 1`,[id,b.scheduled_date,now])).rowCount)throw new TransferError('SOURCE_PROMISE_CONFLICT',409);
    }else{

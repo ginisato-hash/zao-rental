@@ -80,3 +80,8 @@ Screenshots are desktop/mobile viewport simulations, not physical-phone acceptan
 No actual stock/customer/staff data, production setup, payment, lending, return, automatic dispatch,
 or autonomous model execution is asserted by these tests. Daily operational route/readiness values
 and real-device/real-staff acceptance remain human operational gates.
+
+Review E07-01 correction: planning and dispatch both test whether a dated maintenance/OUT
+constraint includes the scheduled departure date (inclusive start/end). A constraint beginning
+later does not block the earlier plan. Asset and pole create/add regression cases prove both
+the accepted future interval and rejection/rollback for an overlapping departure-day interval.

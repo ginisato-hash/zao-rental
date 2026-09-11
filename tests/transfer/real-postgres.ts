@@ -92,6 +92,24 @@ try{
  await check('dispatch rechecks a rental fixed after planning and never assumes its physical return',async()=>{
   now=new Date('2031-01-17T07:55:00Z');const id=await stock('SKI',1,true),variant=(await db.pool.query('SELECT variant_id FROM ledger_assets WHERE id=$1',[id])).rows[0].variant_id;const p=await create([{assetId:id}],'2031-01-17');const h=await holds().command('create',randomUUID(),requestFor('2031-01-17',[variant]));assert.equal(h.result,'CREATED');const c=await db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[actor]);await c.query("UPDATE inventory_holds SET allocation_stage='RENTAL_FIXED' WHERE id=$1",[h.holdId]);await c.query('COMMIT');}finally{c.release();}now=new Date('2031-01-17T08:00:00Z');await assert.rejects(svc().command('dispatch',randomUUID(),{},p.id),{code:'SOURCE_NOT_RETURNED_OR_READY'});assert.equal((await svc().get(p.id)).state,'PLANNED');assert.equal((await db.pool.query('SELECT store_id FROM ledger_assets WHERE id=$1',[id])).rows[0].store_id,'MOUNTAIN_BASE');
  });
+ // E07-01: a future maintenance interval must not block an earlier transfer date.
+ let constraintCase=0;
+ for(const family of ['SKI','POLE'] as const)for(const op of ['create','add'] as const){
+  await check(`constraint date overlap: ${family} ${op} accepts future maintenance and rejects an inclusive departure-day block`,async()=>{
+   for(const overlaps of [false,true]){
+    const day='2031-02-'+String(2+constraintCase++).padStart(2,'0');now=new Date(day+'T06:00:00Z');
+    const id=await stock(family,2,true),line:TransferLine=family==='SKI'?{assetId:id}:{poleId:id,quantity:1};
+    const starts=overlaps?day:new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+    const ends=new Date(Date.parse(day+'T00:00:00Z')+2*86400000).toISOString().slice(0,10);
+    await db.pool.query("INSERT INTO inventory_constraints(id,asset_id,pole_id,starts_on,ends_on,kind,evidence_ref) VALUES($1,$2,$3,$4,$5,'MAINTENANCE','SYNTHETIC E07-01 interval boundary')",[randomUUID(),family==='SKI'?id:null,family==='POLE'?id:null,starts,ends]);
+    const existing=op==='add'?await create([{assetId:await stock()}],day):null;
+    const before=(await db.pool.query('SELECT count(*)::int AS n FROM transfer_pieces')).rows[0].n;
+    const attempt=()=>op==='create'?svc().command('create',randomUUID(),plan([line],day)):svc().command('add',randomUUID(),{lines:[line]},existing!.id);
+    if(overlaps){await assert.rejects(attempt(),{code:'STOCK_CONSTRAINED'});assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM transfer_pieces')).rows[0].n,before);}
+    else{const result=await attempt();assert.ok(result.batch.pieces.some(p=>p.asset_id===id||p.source_pole_id===id));now=new Date(day+'T08:00:00Z');await command(result.batch.id,'dispatch');assert.ok((await svc().get(result.batch.id)).pieces.every(p=>p.state==='IN_TRANSIT'));}
+   }
+  });
+ }
  await check('ordinary password/session/API rejects anonymous, CSRF, role/actor spoof and removed permission before allocation lock',async()=>{
   const signin=await httpAuth(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:'e07-actor@example.invalid',password})}));assert.equal(signin.status,200);const actorCookie=signin.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ');
   const handler=transferHandler(h=>resolveStaff(auth,db.pool,h),p=>svc(p),origin);assert.equal((await handler(new Request(origin+'/api/transfers'))).status,401);

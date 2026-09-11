@@ -2,7 +2,7 @@ import {LedgerError,ledgerAccess,parseResource,type LedgerPrincipal,type LedgerF
 import type {LedgerService} from '../../../../packages/core/src/catalog/ledger-service';
 type Service=Pick<LedgerService,'list'|'get'|'create'|'update'>;
 const headers={'Cache-Control':'private, no-store','Vary':'Cookie'};
-async function readJson(request:Request):Promise<unknown> {
+export async function readJson(request:Request):Promise<unknown> {
   if(request.headers.get('content-type')?.split(';')[0]!=='application/json')throw new LedgerError('JSON_REQUIRED',415);
   const reader=request.body?.getReader();if(!reader)throw new LedgerError('INVALID_INPUT',422);
   const chunks:Uint8Array[]=[];let length=0;
@@ -12,14 +12,14 @@ async function readJson(request:Request):Promise<unknown> {
     try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes)) as unknown;}catch{throw new LedgerError('INVALID_JSON',422);}
   }finally{reader.releaseLock();}
 }
-export function ledgerHandler(resolvePrincipal:()=>Promise<LedgerPrincipal|null>,serviceFor:(principal:LedgerPrincipal)=>Service|Promise<Service>) {
+export function ledgerHandler(resolvePrincipal:()=>Promise<LedgerPrincipal|null>,serviceFor:(principal:LedgerPrincipal)=>Service|Promise<Service>,trustedOrigin?:string) {
   return async(request:Request):Promise<Response>=>{
     try {
       const write=request.method==='POST'||request.method==='PATCH';const principal=await resolvePrincipal();ledgerAccess(principal,write);
       const url=new URL(request.url);const match=/^\/api\/ledger\/([^/]+)(?:\/([^/]+))?$/.exec(url.pathname);
       if(!match)throw new LedgerError('NOT_FOUND',404);const resource=parseResource(match[1]!);const id=match[2];
       if(!['GET','POST','PATCH'].includes(request.method))throw new LedgerError('METHOD_NOT_ALLOWED',405);
-      if(write && request.headers.get('origin')!==url.origin)throw new LedgerError('ORIGIN_REJECTED',403);
+      if(write && request.headers.get('origin')!==(trustedOrigin??url.origin))throw new LedgerError('ORIGIN_REJECTED',403);
       if((request.method==='POST'&&id)||(request.method==='PATCH'&&!id))throw new LedgerError('METHOD_NOT_ALLOWED',405);
       const body=write?await readJson(request):undefined;
       const service=await serviceFor(principal!);

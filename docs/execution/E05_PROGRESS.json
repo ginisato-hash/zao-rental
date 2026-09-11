@@ -1,0 +1,22 @@
+{
+  "authority": "2026-09-11 owner E05 request plus local email/password amendment",
+  "base": "45e838476c8d34d184ac3bc633b7edfdbcde2558",
+  "PR4": "MERGED_EXACT_APPROVED_HEAD",
+  "E02": "UNATTENDED_HOLD",
+  "PR3": "DRAFT_HOLD_NOT_ADOPTED",
+  "E05": "IMPLEMENTATION_CANDIDATE_VERIFY_EXACT_PR_HEAD",
+  "auth": "Better Auth local email/password; no OIDC",
+  "realAccountsProvisioned": false,
+  "productionDeployed": false,
+  "resetEmailDelivery": "NOT_CONNECTED",
+  "verification": "Exact command results, screenshots, CI integration SHA and Claude result belong in the associated Draft PR evidence, not inferred from this file",
+  "notCompleted": [
+    "original future REFUND_OVERRIDE criterion",
+    "production bootstrap/TLS/secrets/durable storage",
+    "human staff acceptance",
+    "physical device acceptance",
+    "email recovery delivery",
+    "period inventory/HOLD/Square/rental-return"
+  ],
+  "stop": "Draft PR; no merge/live Runner"
+}

@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { realpath, lstat, readFile } from 'node:fs/promises';
 import { verifyRelease, type Release } from './release';
 import { digest, type Lease } from './store';
-import { REVIEW_MAX_TURNS } from '../review-contract';
+import { staticReviewArgs } from '../review-contract';
 import type { Operation, Adapter } from './engine';
 import { Stop } from './engine';
 import type { ProcessPlan } from './process';
@@ -33,7 +33,7 @@ export async function restrictedCommand(kind: Operation['kind'], tools: Toolchai
     draft: [tools.gh, ['pr','create','--repo','ginisato-hash/zao-rental','--draft','--head',c.branch,'--base','main','--body-file',c.report]],
     observe: [tools.git, ['-c','core.hooksPath=/dev/null','--no-optional-locks','rev-parse','HEAD']],
     ci: [tools.gh, ['run','list','--repo','ginisato-hash/zao-rental','--commit',c.head,'--json','databaseId,headSha,status,conclusion']],
-    review: [tools.claude, ['--safe-mode','-p','--tools','','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--setting-sources','','--disable-slash-commands','--no-session-persistence','--no-chrome','--permission-mode','dontAsk','--output-format','json','--max-turns',String(REVIEW_MAX_TURNS)]],
+    review: [tools.claude, staticReviewArgs()],
   };
   const command = commands[kind]; if (!command) throw new Stop('UNAPPROVED_OPERATION');
   // Credentialed publication/review use a distinct empty cwd after separate live provisioning.

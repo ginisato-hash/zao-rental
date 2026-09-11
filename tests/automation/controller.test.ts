@@ -10,7 +10,7 @@ import { acquireRepositoryLease, Journal, digest, repositoryState } from '../../
 import { runPreflight, once, validateReviewReceipt, type Adapter, type Operation, type Receipt } from '../../tools/automation/controller/engine';
 import { runBounded } from '../../tools/automation/controller/process';
 import { restrictedCommand, DisabledLiveAdapter } from '../../tools/automation/controller/adapters';
-import { REVIEW_MAX_TURNS } from '../../tools/automation/review-contract';
+import { REVIEW_MAX_TURNS, staticReviewArgs } from '../../tools/automation/review-contract';
 import { approvalBytes, commandPlan, type Approval, type Policy } from '../../tools/automation/runner';
 const repo = process.cwd();
 const head = 'b'.repeat(40), base = 'a'.repeat(40), spec = 'c'.repeat(64);
@@ -150,12 +150,17 @@ test('controller SIGKILL disconnects guardian and removes its worker descendants
   }finally{await f.cleanup();}
 });
 
-test('both controller review plans use the same three-turn formatting cap',async()=>{
+test('one static review builder preserves restrictions and legacy review has no executable argv',async()=>{
   const f=await fixture();try{
     const tools={git:'/usr/bin/git',gh:'/usr/bin/gh',codex:'/usr/bin/codex',claude:'/usr/bin/claude',npm:'/usr/bin/npm'};
     const c={release:f.release,lease:f.lease,reportHash:'a'.repeat(64),root:f.candidate,branch:'codex/e02',base,head,taskSchema:resolve(f.release.directory,'task-result.schema.json'),report:'unused',prompt:'inert',cleanEnv:{PATH:'/usr/bin:/bin'}};
-    const newer=(await restrictedCommand('review',tools,c)).args;const original=commandPlan(f.signed.payload,f.candidate,'ginisato-hash/zao-rental').find(x=>x.stage==='claude')!.argv!;
-    for(const args of [newer,original]){assert.equal(args.filter(x=>x==='--max-turns').length,1);assert.equal(args[args.indexOf('--max-turns')+1],String(REVIEW_MAX_TURNS));assert.equal(REVIEW_MAX_TURNS,3);}
+    const newer=(await restrictedCommand('review',tools,c)).args;const original=commandPlan(f.signed.payload,f.candidate,'ginisato-hash/zao-rental').find(x=>x.stage==='claude')!;
+    assert.equal(original.argv,undefined);assert.equal(original.referenceOnly,true);
+    const expected=['--safe-mode','-p','--tools','','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--setting-sources','','--disable-slash-commands','--no-session-persistence','--no-chrome','--permission-mode','dontAsk','--max-turns','3','--output-format','json'];
+    assert.deepEqual(newer,expected);assert.deepEqual(staticReviewArgs(),expected);assert.equal(REVIEW_MAX_TURNS,3);
+    const audit=staticReviewArgs('stream-json');assert.deepEqual(audit,[...expected.slice(0,-1),'stream-json','--verbose','--include-hook-events']);
+    newer.splice(0,newer.length);assert.deepEqual(staticReviewArgs(),expected,'A caller cannot mutate shared restrictions');
+    assert.throws(()=>staticReviewArgs('text' as 'json'),/UNSUPPORTED_REVIEW_OUTPUT/);
   }finally{await f.cleanup();}
 });
 

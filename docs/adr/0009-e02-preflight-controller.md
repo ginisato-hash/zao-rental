@@ -147,3 +147,32 @@ The F7 probe caught an actual profile conflict: the child TMPDIR equals its run 
 explicit `:tmpdir=deny` also denied the exact approved scratch path. That redundant deny was removed;
 `:root=deny`, the explicit scratch grant and unrelated-temp read denial remain. The failing first
 probe is retained in the development evidence; it was not retried unchanged or accepted as a pass.
+
+
+## F8 follow-up — one static review launch contract
+
+The 2026-09-11 owner explicitly authorized this remaining LOW fix, one additional static review,
+and conditional exact-head PR #2 merge. The previous initial-plus-two review budget remains spent;
+this is one new authorization, not a reset. Live execution remains closed.
+
+The old commandPlan lacked `--safe-mode`, `--no-chrome`, and `--permission-mode dontAsk`.
+These affect automatic customization loading, browser integration, and tool permission behavior;
+they are safety-relevant even though both old plans were inert. Tools/MCP/setting sources, history,
+output JSON, and the three-turn limit already matched. Neither plan selected an API key/provider,
+changed billing, or enforced subscription identity by flags alone. Safe mode preserves managed policy
+and normal existing auth; it is not bare mode (which changes auth behavior).
+
+The legacy review stage now has `referenceOnly: true` and **no argv**, so it cannot be selected as an
+executable review command. Only controller/adapters.ts `restrictedCommand('review')` defines that
+operation, using review-contract.ts `staticReviewArgs`. There is no independent second flag list.
+The actual maintainer static review harness uses the same builder in audit output mode: stream-json
+plus verbose/include-hook-events instead of result JSON. Those are output/observability differences,
+not added tools, file access, auth, network permissions, or billing. Trusted prompt/schema/session ID
+are provided by the harness; the snapshot never supplies options. Empty cwd, existing Team auth,
+extra credits OFF, a clean child environment and managed policy checks remain host prerequisites.
+
+The complete expected argument list is regression-tested, including empty values, output-only
+variation, and the absence of executable legacy argv. Installed Claude Code 2.1.220 --help and its
+prior successful restricted executions confirm these options (max-turns is accepted but hidden from
+help). [Official CLI reference](https://code.claude.com/docs/en/cli-reference) also documents that
+help is not exhaustive. No setting is weakened, global config changed, or live adapter enabled.

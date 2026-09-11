@@ -24,3 +24,8 @@ specification, price/operation configuration and original tests remain byte-iden
 E01's schema contains only foundation metadata and whitelisted, non-PII telemetry. No rental schema
 or financial mutation is introduced. 32 business scenarios are explicitly not implemented/tested.
 Auth OIDC provider, tax/effective dates, production deployment and operational decisions stay open.
+
+2026-09-11 owner update: exact-head PR #1 merge and E02 controller/policy protection, repository-wide
+exclusion, bounded adapters/stop control, fake failure tests and a new draft PR with static Claude
+review are authorized. ADR 0009 records implementation and actual-vs-fake evidence. E02 live, new
+business features, E02 PR merge, scheduling, additional billing and production remain unauthorized.

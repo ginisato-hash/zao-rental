@@ -8,3 +8,6 @@ __pycache__/
 playwright-report/
 test-results/
 .DS_Store
+
+/tests/ui-app/.next/
+/tests/ui-app/tsconfig.tsbuildinfo

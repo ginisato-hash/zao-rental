@@ -6,5 +6,5 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: { baseURL: `http://127.0.0.1:${webPort}`, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [{ name: 'desktop', use: { ...devices['Desktop Chrome'] } }, { name: 'mobile', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } }],
-  webServer: { command: `node node_modules/next/dist/bin/next start apps/web --hostname 127.0.0.1 --port ${webPort}`, url: `http://127.0.0.1:${webPort}/api/health`, reuseExistingServer: false },
+  webServer: [{ command: `node node_modules/next/dist/bin/next start apps/web --hostname 127.0.0.1 --port ${webPort}`, url: `http://127.0.0.1:${webPort}/api/health`, reuseExistingServer: false }, { command: `node node_modules/next/dist/bin/next dev tests/ui-app --webpack --hostname 127.0.0.1 --port ${webPort+1}`, url: `http://127.0.0.1:${webPort+1}/api/health`, reuseExistingServer:false }],
 });

@@ -1,0 +1,38 @@
+{
+  "authority": "2026-09-11 explicit owner request: supervised ledger implementation",
+  "base": "be8c50ad35abefb6f95e45e5e4b1a7da37650176",
+  "E02": "UNATTENDED_HOLD; not completed by supervised work",
+  "heldPR3": {
+    "head": "6d0ec6341d2f67579ef8ed74c4b47a8155c32bf3",
+    "state": "DRAFT_HOLD",
+    "changesAdopted": false
+  },
+  "E03": {
+    "status": "PARTIAL_LEDGER_CONTRACTS",
+    "delivered": [
+      "model/variant/Asset/pole/bundle distinctions",
+      "BSL/provenance/custody/units",
+      "protected API ledger contract and DB counterexamples"
+    ],
+    "notCompleted": [
+      "renter age/date evaluation",
+      "time and price golden cases",
+      "interval allocation/hold states",
+      "production publication gates"
+    ]
+  },
+  "E04": {
+    "status": "IMPLEMENTED_NARROW_LEDGER_SCOPE_VERIFY_PER_PR_HEAD",
+    "realInventoryImported": false,
+    "sample": "six synthetic Assets, two pole pools, two bundle definitions",
+    "remaining": [
+      "confirmed legacy workbook reconciliation/import",
+      "physical label/intake acceptance",
+      "wear operational unit decision"
+    ]
+  },
+  "E05": "NOT_CONNECTED: production principal remains null; scoped test principals only",
+  "E06": "NOT_STARTED: no period availability/HOLD",
+  "verification": "Exact command exits, CI and Claude result recorded for final PR head, not inferred from this progress file",
+  "stop": "Draft PR; no merge/deploy/live Runner"
+}

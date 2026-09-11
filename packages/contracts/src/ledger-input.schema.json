@@ -1,0 +1,553 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "models_create": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9_-]{1,39}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "brand": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "family": {
+          "type": "string",
+          "enum": [
+            "SKI",
+            "SNOWBOARD",
+            "SKI_BOOT",
+            "SNOWBOARD_BOOT",
+            "POLE",
+            "WEAR"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "sourceKind": {
+          "type": "string",
+          "enum": [
+            "SYNTHETIC",
+            "UNVERIFIED"
+          ]
+        },
+        "sourceDocument": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "sourceLocator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "code",
+        "name",
+        "brand",
+        "family",
+        "notes",
+        "sourceKind",
+        "sourceDocument",
+        "sourceLocator"
+      ]
+    },
+    "models_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "brand": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "version",
+        "reason"
+      ],
+      "minProperties": 3
+    },
+    "variants_create": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "modelId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "family": {
+          "type": "string",
+          "enum": [
+            "SKI",
+            "SNOWBOARD",
+            "SKI_BOOT",
+            "SNOWBOARD_BOOT",
+            "POLE"
+          ]
+        },
+        "age": {
+          "type": "string",
+          "enum": [
+            "ADULT",
+            "KIDS"
+          ]
+        },
+        "tier": {
+          "type": "string",
+          "enum": [
+            "REGULAR",
+            "PREMIUM"
+          ]
+        },
+        "size": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "sourceKind": {
+          "type": "string",
+          "enum": [
+            "SYNTHETIC",
+            "UNVERIFIED"
+          ]
+        },
+        "sourceDocument": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "sourceLocator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "modelId",
+        "family",
+        "age",
+        "tier",
+        "size",
+        "notes",
+        "sourceKind",
+        "sourceDocument",
+        "sourceLocator"
+      ]
+    },
+    "variants_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "version",
+        "reason"
+      ],
+      "minProperties": 3
+    },
+    "assets_create": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "variantId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "family": {
+          "type": "string",
+          "enum": [
+            "SKI",
+            "SNOWBOARD",
+            "SKI_BOOT",
+            "SNOWBOARD_BOOT"
+          ]
+        },
+        "storeId": {
+          "type": "string",
+          "enum": [
+            "MOUNTAIN_BASE",
+            "ONSEN_BASE"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "AVAILABLE",
+            "MAINTENANCE",
+            "RETIRED"
+          ]
+        },
+        "bslStatus": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "RECORDED",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "bslMm": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 999
+        },
+        "bslEvidence": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "sourceKind": {
+          "type": "string",
+          "enum": [
+            "SYNTHETIC",
+            "UNVERIFIED"
+          ]
+        },
+        "sourceDocument": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "sourceLocator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "variantId",
+        "family",
+        "storeId",
+        "status",
+        "bslStatus",
+        "bslMm",
+        "bslEvidence",
+        "notes",
+        "sourceKind",
+        "sourceDocument",
+        "sourceLocator"
+      ]
+    },
+    "assets_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "AVAILABLE",
+            "MAINTENANCE",
+            "RETIRED"
+          ]
+        },
+        "bslStatus": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "RECORDED",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "bslMm": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 999
+        },
+        "bslEvidence": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "version",
+        "reason"
+      ],
+      "minProperties": 3
+    },
+    "poles_create": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "variantId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "storeId": {
+          "type": "string",
+          "enum": [
+            "MOUNTAIN_BASE",
+            "ONSEN_BASE"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "AVAILABLE",
+            "MAINTENANCE",
+            "RETIRED"
+          ]
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "sourceKind": {
+          "type": "string",
+          "enum": [
+            "SYNTHETIC",
+            "UNVERIFIED"
+          ]
+        },
+        "sourceDocument": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "sourceLocator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "variantId",
+        "storeId",
+        "status",
+        "quantity",
+        "notes",
+        "sourceKind",
+        "sourceDocument",
+        "sourceLocator"
+      ]
+    },
+    "poles_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "AVAILABLE",
+            "MAINTENANCE",
+            "RETIRED"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "version",
+        "reason"
+      ],
+      "minProperties": 3
+    },
+    "bundles_create": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9_-]{1,39}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "family": {
+          "type": "string",
+          "enum": [
+            "SKI_SET",
+            "SNOWBOARD_SET"
+          ]
+        },
+        "age": {
+          "type": "string",
+          "enum": [
+            "ADULT",
+            "KIDS"
+          ]
+        },
+        "tier": {
+          "type": "string",
+          "enum": [
+            "REGULAR",
+            "PREMIUM"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "sourceKind": {
+          "type": "string",
+          "enum": [
+            "SYNTHETIC",
+            "UNVERIFIED"
+          ]
+        },
+        "sourceDocument": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "sourceLocator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "code",
+        "name",
+        "family",
+        "age",
+        "tier",
+        "notes",
+        "sourceKind",
+        "sourceDocument",
+        "sourceLocator"
+      ]
+    },
+    "bundles_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        }
+      },
+      "required": [
+        "version",
+        "reason"
+      ],
+      "minProperties": 3
+    }
+  }
+}

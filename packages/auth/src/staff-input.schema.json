@@ -49,6 +49,12 @@
           },
           "INVENTORY_VIEW": {
             "type": "boolean"
+          },
+          "HOLD_VIEW": {
+            "type": "boolean"
+          },
+          "HOLD_EDIT": {
+            "type": "boolean"
           }
         }
       },
@@ -123,6 +129,12 @@
             "type": "boolean"
           },
           "INVENTORY_VIEW": {
+            "type": "boolean"
+          },
+          "HOLD_VIEW": {
+            "type": "boolean"
+          },
+          "HOLD_EDIT": {
             "type": "boolean"
           }
         }

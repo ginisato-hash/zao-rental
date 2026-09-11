@@ -17,7 +17,7 @@ function request(path:string,method='GET',body?:unknown){return new Request('htt
 const db=await startIsolatedPostgres();
 try {
   const service=new LedgerService(db.pool,admin);const http=ledgerHandler(async()=>admin,p=>new LedgerService(db.pool,p));
-  await check('ordered concurrent migrations apply 0001 through 0003 exactly once',async()=>{await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.deepEqual((await db.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows,[{id:'0001'},{id:'0002'},{id:'0003'}]);});
+  await check('ordered concurrent migrations apply 0001 through 0004 exactly once',async()=>{await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.deepEqual((await db.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows,[{id:'0001'},{id:'0002'},{id:'0003'},{id:'0004'}]);});
   await check('traceable synthetic sample is atomic and concurrent replay creates no duplicates or audit events',async()=>{
     await seedLedgerSample(db.pool);const before=(await db.pool.query('SELECT count(*)::int AS n FROM ledger_history')).rows[0].n;
     await Promise.all([seedLedgerSample(db.pool),seedLedgerSample(db.pool)]);
@@ -146,13 +146,13 @@ try {
     for(const [resource,recordId,table] of [['assets',id(202),'ledger_assets'],['poles',id(302),'ledger_poles']] as const){
       const prior=await service.get(resource,recordId);const client=await db.pool.connect();const original=client.query;const query=client.query.bind(client);
       let signal!:()=>void;let release!:()=>void;const reached=new Promise<void>(r=>{signal=r;});const gate=new Promise<void>(r=>{release=r;});
-      // The gate pauses a real PostgreSQL transaction after its actual lock query; not a mock DB.
-      client.query=(async(text:string,values?:unknown[])=>{const result=await query(text,values);if(text.includes('FOR UPDATE')){signal();await gate;}return result;}) as PoolClient['query'];
+      // The gate pauses a real PostgreSQL transaction after its scoped read (before any permitted lock); not a mock DB.
+      client.query=(async(text:string,values?:unknown[])=>{const result=await query(text,values);if(text.includes('SELECT id FROM')&&text.includes(table)){signal();await gate;}return result;}) as PoolClient['query'];
       const controlledPool={connect:async()=>client} as unknown as Pool;
       const outsider=new LedgerService(controlledPool,{subject:'other-store-admin',role:'ADMIN',storeIds:['MOUNTAIN_BASE']});
       const attempt=outsider.update(resource,recordId,{version:prior.version,reason:'out-of-scope counterexample',notes:'must not be written'}).then(()=>undefined,e=>e as LedgerError);
       try {
-        await reached;
+        await Promise.race([reached,attempt.then(()=>{throw new Error('Scoped authorization probe was not reached');})]);
         // NOWAIT gives an immediate, deterministic failure if the outsider locked this real row.
         await raw(db.pool,c=>c.query(`SELECT id FROM ${table} WHERE id=$1 FOR UPDATE NOWAIT`,[recordId]));
         const owner=new LedgerService(db.pool,{subject:'owning-store-admin',role:'ADMIN',storeIds:['ONSEN_BASE']});

@@ -40,3 +40,10 @@ For E05 follow ADR 0012 and E05_SCOPE / E05_PROGRESS. No public signup, external
 Only an explicit human terminal procedure bootstraps a development ADMIN. Never register a production
 ADMIN. Test principals/data stay in tests; normal runtime uses maintained password/session libraries.
 No stock-as-availability claim.
+
+Current owner update supersedes E05-only scope: supervised E06 period allocation/group HOLD
+and necessary E03 time/state/API contracts, including mutable provisional reallocation;
+read ADR 0013 and E06_SCOPE. Exact PR #5 merge is separately authorized and recorded. Preserve
+0001–0003, existing auth and canonical business sources. E06 stops at a new Draft PR and static
+Claude review (initial + two rereviews), no tools/external retrieval. No E07 live operations,
+Square, production, PR #3 adoption or Runner changes. Do not mark other E03 items complete.

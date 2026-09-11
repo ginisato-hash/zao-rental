@@ -4,7 +4,7 @@ import {hashStaffPassword,verifyStaffPassword,passwordPolicy} from './password';
 import type {LedgerPrincipal,StoreId} from '../../contracts/src/ledger';
 export const staffRoles=['ADMIN','MANAGER','STAFF','VIEWER'] as const;
 export type StaffRole=typeof staffRoles[number];
-export const permissions=['INVENTORY_VIEW','INVENTORY_EDIT','STAFF_MANAGE'] as const;
+export const permissions=['INVENTORY_VIEW','INVENTORY_EDIT','STAFF_MANAGE','HOLD_VIEW','HOLD_EDIT'] as const;
 export type Permission=typeof permissions[number];
 export type StaffPrincipal={subject:string;role:StaffRole;storeIds:StoreId[];scope:'ALL'|'ASSIGNED';permissions:Permission[];revision:number};
 export type ResetDelivery=(payload:{token:string;email:string})=>Promise<void>;

@@ -8,7 +8,7 @@ new supervised scope, not an execution approval for the Runner or any deployment
 | Product model | Named model/brand and family, separate from sizes and sellable bundles |
 | Variant | Model + explicit family, ADULT/KIDS, REGULAR/PREMIUM and size label including unit |
 | Physical Asset | One ski pair, one snowboard, or one boot pair; opaque immutable UUID |
-| Labels | Ski: two identical label copies reference one Asset; others one record per unit |
+| Labels | Current owner decision: ski and both boot families use two identical QR labels per single Asset; see RETURN_RULES.md for E12 follow-up |
 | Pole quantity | Variant + store + physical state, integer PAIR count; one pair is two poles |
 | Bundle | Ski + ski boots + poles, or snowboard + snowboard boots; all one component unit; no stock creation |
 | Custody | Explicit initial store + immutable initial history; basic update cannot relocate an Asset/pool |

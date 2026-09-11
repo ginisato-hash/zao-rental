@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign, randomUUID } from 'node:crypto';
-import { mkdtemp, writeFile, readFile, mkdir, rm, realpath, symlink } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, mkdir, rm, realpath, symlink, chmod, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
@@ -156,5 +156,34 @@ test('both controller review plans use the same three-turn formatting cap',async
     const c={release:f.release,lease:f.lease,reportHash:'a'.repeat(64),root:f.candidate,branch:'codex/e02',base,head,taskSchema:resolve(f.release.directory,'task-result.schema.json'),report:'unused',prompt:'inert',cleanEnv:{PATH:'/usr/bin:/bin'}};
     const newer=(await restrictedCommand('review',tools,c)).args;const original=commandPlan(f.signed.payload,f.candidate,'ginisato-hash/zao-rental').find(x=>x.stage==='claude')!.argv!;
     for(const args of [newer,original]){assert.equal(args.filter(x=>x==='--max-turns').length,1);assert.equal(args[args.indexOf('--max-turns')+1],String(REVIEW_MAX_TURNS));assert.equal(REVIEW_MAX_TURNS,3);}
+  }finally{await f.cleanup();}
+});
+
+
+test('push registry suppresses a candidate pre-push hook against a real local remote',async()=>{
+  const f=await fixture();try{
+    const bare=resolve(f.root,'local-remote.git');git(f.root,'init','--bare',bare);git(f.candidate,'remote','add','origin',bare);
+    const actualHead=git(f.candidate,'rev-parse','HEAD');const sentinel=resolve(f.candidate,'hook-sentinel');
+    const tools={git:await realpath(execFileSync('which',['git'],{encoding:'utf8'}).trim()),gh:'/usr/bin/gh',codex:'/usr/bin/codex',claude:'/usr/bin/claude',npm:'/usr/bin/npm'};
+    const c={release:f.release,lease:f.lease,reportHash:'a'.repeat(64),root:f.candidate,branch:'codex/e02',base:actualHead,head:actualHead,taskSchema:resolve(f.release.directory,'task-result.schema.json'),report:'unused',prompt:'inert',cleanEnv:{PATH:'/usr/bin:/bin'}};
+    const invoke=f.adapter.invoke.bind(f.adapter);let localPushes=0;
+    f.adapter.invoke=async op=>{
+      if(op.kind==='implement'){
+        const hook=resolve(f.candidate,'.git/hooks/pre-push');await writeFile(hook,'#!/bin/sh\nprintf fixture > hook-sentinel\n');await chmod(hook,0o755);
+      }
+      if(op.kind==='push'){
+        const command=await restrictedCommand('push',tools,c);
+        const result=await runBounded(f.release,process.execPath,command,5000);
+        assert.equal(result.exitCode,0,result.output);localPushes++;
+        assert.equal(git(bare,'rev-parse','refs/heads/codex/e02'),actualHead);
+        await assert.rejects(access(sentinel),{code:'ENOENT'});
+      }
+      return invoke(op);
+    };
+    assert.equal((await runPreflight(f.args)).status,'AWAITING_APPROVAL');assert.equal(localPushes,1);
+    for(const kind of ['branch','push','observe'] as const){const args=(await restrictedCommand(kind,tools,c)).args;assert.deepEqual(args.slice(0,2),['-c','core.hooksPath=/dev/null']);}
+    // Positive control: the same planted hook really executes without the registry protection.
+    git(f.candidate,'-c','core.hooksPath=.git/hooks','push','origin','HEAD:refs/heads/hook-positive-control');
+    assert.equal(await readFile(sentinel,'utf8'),'fixture');
   }finally{await f.cleanup();}
 });

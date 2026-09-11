@@ -127,3 +127,23 @@ This does not change the separate initial-plus-two-review-invocations limit. F4 
 from the guardian environment; the actual guardian reports only environment key names and Mac/
 process tests assert it does not invent NODE_ENV=test. The web framework's ambient type requirement
 is handled with a type assertion rather than a runtime environment change.
+
+
+## Independent review follow-up (first re-review)
+
+F5 disables Git hooks for every Git command in the restricted registry, including push. A real
+local-only bare repository test plants an executable pre-push hook during the fake implement step,
+runs the actual protected push plan from the fake adapter, proves the ref arrived without executing
+the hook, then proves the same hook fires in an unprotected positive control. No GitHub credential or
+network remote is involved. Future credentialed Git publication still requires isolated configuration,
+trusted remote/transport and publisher identity provisioning; hook suppression alone is not that gate.
+F6 adds a TCP connect attempt to a test-owned ephemeral loopback listener in the actual Mac sandbox.
+An unsandboxed positive control must connect first; only EPERM/EACCES counts as denial (connection
+refusal or timeout does not pass). This proves this network-deny case, not every possible network API.
+F7 writes and reads back a file in the separate run scratch directory, as well as the candidate path.
+The Mac evidence now distinguishes fourteen denied cases from the two successful write locations.
+
+The F7 probe caught an actual profile conflict: the child TMPDIR equals its run scratch, so an
+explicit `:tmpdir=deny` also denied the exact approved scratch path. That redundant deny was removed;
+`:root=deny`, the explicit scratch grant and unrelated-temp read denial remain. The failing first
+probe is retained in the development evidence; it was not retried unchanged or accepted as a pass.

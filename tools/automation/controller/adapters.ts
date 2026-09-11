@@ -24,13 +24,14 @@ export async function restrictedCommand(kind: Operation['kind'], tools: Toolchai
     const stat = await lstat(c.report);
     if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || await realpath(c.report) !== expected || digest(await readFile(c.report)) !== c.reportHash) throw new Stop('UNTRUSTED_CONTROLLER_REPORT_CONTENT');
   }
+  // Every Git operation suppresses candidate-installed hooks, including credentialed publication.
   const commands: Record<Operation['kind'], [string, string[]]> = {
     branch: [tools.git, ['-c','core.hooksPath=/dev/null','switch','-c',c.branch,c.base]],
-    push: [tools.git, ['push','origin',`${c.head}:refs/heads/${c.branch}`]],
+    push: [tools.git, ['-c','core.hooksPath=/dev/null','push','origin',`${c.head}:refs/heads/${c.branch}`]],
     implement: [tools.codex, ['exec','--ignore-user-config','--sandbox','workspace-write','--ephemeral','--json','--output-schema',c.taskSchema,'--cd',cwd,'-']],
     verify: [tools.npm, ['run','verify']],
     draft: [tools.gh, ['pr','create','--repo','ginisato-hash/zao-rental','--draft','--head',c.branch,'--base','main','--body-file',c.report]],
-    observe: [tools.git, ['--no-optional-locks','rev-parse','HEAD']],
+    observe: [tools.git, ['-c','core.hooksPath=/dev/null','--no-optional-locks','rev-parse','HEAD']],
     ci: [tools.gh, ['run','list','--repo','ginisato-hash/zao-rental','--commit',c.head,'--json','databaseId,headSha,status,conclusion']],
     review: [tools.claude, ['--safe-mode','-p','--tools','','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--setting-sources','','--disable-slash-commands','--no-session-persistence','--no-chrome','--permission-mode','dontAsk','--output-format','json','--max-turns',String(REVIEW_MAX_TURNS)]],
   };

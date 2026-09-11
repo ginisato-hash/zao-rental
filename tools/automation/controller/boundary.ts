@@ -16,7 +16,9 @@ export async function sandboxPlan(binding: SandboxBinding, worker: string, worke
   const executable = await realpath(worker);
   if (executable !== resolve(release.directory, 'worker-probe.mjs')) throw new Error('UNAPPROVED_PROBE_EXECUTABLE');
   if (!(await lstat(executable)).isFile()) throw new Error('INVALID_PROBE');
-  const filesystem: Record<string, string> = { ':root': 'deny', ':minimal': 'read', '/System/Library/OpenSSL': 'read', ':tmpdir': 'deny', ':slash_tmp': 'deny', [root]: 'write', [temp]: 'write', [commonGit]: 'deny', [resolve(root, '.git')]: 'deny', [resolve(root, '.codex')]: 'deny', [resolve(root, '.claude')]: 'deny', [resolve(root, '.env')]: 'deny', [release.directory]: 'read', [dirname(await realpath(node))]: 'read' };
+  // TMPDIR is the approved run scratch itself: a :tmpdir deny would cancel its exact grant.
+  // The default root deny still excludes every unrelated temporary directory.
+  const filesystem: Record<string, string> = { ':root': 'deny', ':minimal': 'read', '/System/Library/OpenSSL': 'read', ':slash_tmp': 'deny', [root]: 'write', [temp]: 'write', [commonGit]: 'deny', [resolve(root, '.git')]: 'deny', [resolve(root, '.codex')]: 'deny', [resolve(root, '.claude')]: 'deny', [resolve(root, '.env')]: 'deny', [release.directory]: 'read', [dirname(await realpath(node))]: 'read' };
   // The whole profile is a CLI override; candidate config cannot add permissions to this profile.
   const profile = `{ filesystem = { ${Object.entries(filesystem).map(([k,v]) => `${JSON.stringify(k)} = ${JSON.stringify(v)}`).join(', ')} }, network = { enabled = false } }`;
   const args = ['sandbox', '-c', `permissions.zao_e02=${profile}`, '-P', 'zao_e02', '--include-managed-config', '-C', root, '--', node, executable, ...workerArgs];

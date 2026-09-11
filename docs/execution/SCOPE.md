@@ -43,3 +43,8 @@ See ADR 0013 / E06_SCOPE. E06 review initial + at most two rereviews, new PR rem
 Owner-confirmed return behavior has one current canonical source: `docs/RETURN_RULES.md`.
 It overrides any earlier side-only receipt proposal. E12_RETURN_FOLLOWUP.json records pending
 acceptance; E06 does not implement return/scanner/loan operations or side management.
+
+2026-09-12 JST owner continuation: exact-head PR #6 merge, followed by supervised E07 store
+transfer implementation. See ADR 0014 / E07_SCOPE / E07_PROGRESS. The new E07 PR stays Draft;
+customer return, E08+, PR #3 and Runner live work remain held. Earlier E06-only prohibitions are
+superseded only for this explicitly approved development/synthetic-data E07 scope.

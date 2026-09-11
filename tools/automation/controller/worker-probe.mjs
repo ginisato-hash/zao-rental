@@ -3,8 +3,8 @@ import { writeFileSync, readFileSync, renameSync, symlinkSync, unlinkSync } from
 import { spawn } from 'node:child_process';
 const [mode, ...args] = process.argv.slice(2);
 if (mode === 'boundary') {
-  const [policy, state, canary, writable, targetPid] = args; const results = {};
-  for (const [label, action] of Object.entries({ policyWrite: () => writeFileSync(policy, 'modified'), policyRename: () => renameSync(policy, policy + '.moved'), stateWrite: () => writeFileSync(state, 'forged'), outsideRead: () => readFileSync(canary), outsideSignal: () => process.kill(Number(targetPid), 'SIGUSR1') })) {
+  const [policy, state, canary, writable, targetPid, gitConfig, codexFile, claudeFile, envFile] = args; const results = {};
+  for (const [label, action] of Object.entries({ policyWrite: () => writeFileSync(policy, 'modified'), policyRename: () => renameSync(policy, policy + '.moved'), stateWrite: () => writeFileSync(state, 'forged'), gitRead: () => readFileSync(gitConfig), codexRead: () => readFileSync(codexFile), codexWrite: () => writeFileSync(codexFile, 'modified'), claudeRead: () => readFileSync(claudeFile), claudeWrite: () => writeFileSync(claudeFile, 'modified'), envRead: () => readFileSync(envFile), envWrite: () => writeFileSync(envFile, 'modified'), outsideRead: () => readFileSync(canary), outsideSignal: () => process.kill(Number(targetPid), 'SIGUSR1') })) {
     try { action(); results[label] = 'ALLOWED'; } catch (e) { results[label] = e.code; }
   }
   writeFileSync(writable, 'allowed');

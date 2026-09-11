@@ -20,7 +20,9 @@ spoofed header/query rejection and admin denial must remain unchanged. E2E check
 existing rejection. This document does not implement that UI task.
 
 Maximum one active repository task, initial implementation 1 plus at most 2 repairs; independent
-review 1 plus at most 2 re-reviews. Total maximum 3 Codex and 3 Claude calls, each bounded by a
+review 1 plus at most 2 re-reviews. Total maximum 3 Codex and 3 Claude CLI invocations. Each Claude invocation has at most 3 turns
+(including structured-output formatting), so at most 9 Claude turns across the task. This is an
+invocation budget, not a claim that each CLI performs exactly one HTTP/model request. Each invocation is bounded by a
 controller deadline within the original 60-minute run budget. No model calls for CI polling or
 unchanged evidence. Stop on auth/quota/credits, unknown effect, exceeded budget, stale SHA/base,
 missing signatures, protected/out-of-scope changes, uncertain cleanup or failed sandbox probe.

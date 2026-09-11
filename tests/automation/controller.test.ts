@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign, randomUUID } from 'node:crypto';
-import { mkdtemp, writeFile, readFile, mkdir, rm, realpath } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, mkdir, rm, realpath, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
@@ -10,7 +10,8 @@ import { acquireRepositoryLease, Journal, digest, repositoryState } from '../../
 import { runPreflight, once, validateReviewReceipt, type Adapter, type Operation, type Receipt } from '../../tools/automation/controller/engine';
 import { runBounded } from '../../tools/automation/controller/process';
 import { restrictedCommand, DisabledLiveAdapter } from '../../tools/automation/controller/adapters';
-import { approvalBytes, type Approval, type Policy } from '../../tools/automation/runner';
+import { REVIEW_MAX_TURNS } from '../../tools/automation/review-contract';
+import { approvalBytes, commandPlan, type Approval, type Policy } from '../../tools/automation/runner';
 const repo = process.cwd();
 const head = 'b'.repeat(40), base = 'a'.repeat(40), spec = 'c'.repeat(64);
 const git = (cwd: string, ...args: string[]) => execFileSync('git', ['-c','user.name=Fixture','-c','user.email=fixture@invalid','-C',cwd,...args], { encoding: 'utf8', stdio: ['ignore','pipe','pipe'] }).trim();
@@ -102,8 +103,15 @@ test('repository-wide lease is shared by separate worktree processes; stale time
 });
 test('restricted command builder rejects shell/ref/environment injection',async()=>{
   const f=await fixture();try{const tools={git:'/usr/bin/git',gh:'/usr/bin/gh',codex:'/usr/bin/codex',claude:'/usr/bin/claude',npm:'/usr/bin/npm'};
-    const c={root:f.candidate,branch:'codex/e02',base,head,taskSchema:resolve(f.release.directory,'task-result.schema.json'),report:resolve(f.release.directory,'report.md'),prompt:'inert',cleanEnv:{PATH:'/usr/bin:/bin'}};
+    const reportPath=resolve(f.lease.state.root,'runs',f.runId,'report.md');await mkdir(resolve(reportPath,'..'),{recursive:true});await writeFile(reportPath,'controller report');
+    const c={release:f.release,lease:f.lease,reportHash:digest('controller report'),root:f.candidate,branch:'codex/e02',base,head,taskSchema:resolve(f.release.directory,'task-result.schema.json'),report:reportPath,prompt:'inert',cleanEnv:{PATH:'/usr/bin:/bin'}};
     const p=await restrictedCommand('implement',tools,c);assert.equal(p.executable,tools.codex);assert.ok(p.args.includes('--ignore-user-config'));
+    await assert.rejects(restrictedCommand('implement',tools,{...c,taskSchema:resolve(f.candidate,'attacker.schema.json')}),/UNTRUSTED_CONTROLLER_INPUT_PATH/);
+    await assert.rejects(restrictedCommand('draft',tools,{...c,report:resolve(f.candidate,'attacker-report.md')}),/UNTRUSTED_CONTROLLER_REPORT_PATH/);
+    await restrictedCommand('draft',tools,c);
+    await assert.rejects(restrictedCommand('draft',tools,{...c,reportHash:'f'.repeat(64)}),/UNTRUSTED_CONTROLLER_REPORT_CONTENT/);
+    await rm(reportPath);await symlink(resolve(f.candidate,'attacker-report.md'),reportPath);
+    await assert.rejects(restrictedCommand('draft',tools,c),/UNTRUSTED_CONTROLLER_REPORT_CONTENT/);
     await assert.rejects(restrictedCommand('branch',tools,{...c,branch:'x; touch /tmp/no'}),/INVALID_COMMAND/);
     await assert.rejects(restrictedCommand('implement',tools,{...c,cleanEnv:{GH_TOKEN:'synthetic-never-sent'}}),/UNAPPROVED_CHILD_ENV/);
   }finally{await f.cleanup();}
@@ -115,7 +123,7 @@ test('timeout, cancel and worker crash kill the owned child/grandchild group and
   try{for(const mode of ['timeout','cancel','crash']){
     const pidFile=resolve(f.candidate,'pids-'+mode);const abort=new AbortController();
     const promise=runBounded(f.release,process.execPath,{executable:process.execPath,args:[resolve(f.release.directory,'worker-probe.mjs'),'tree',pidFile,mode==='crash'?'crash':'wait'],cwd:f.candidate,env:{PATH:'/usr/bin:/bin'},stdin:''},mode==='timeout'?500:5000,abort.signal);
-    const pids=await waitFile(pidFile);if(mode==='cancel')abort.abort();const result=await promise;assert.equal(result.reason,mode==='timeout'?'TIMEOUT':mode==='cancel'?'CANCEL':'EXIT');
+    const pids=await waitFile(pidFile);if(mode==='cancel')abort.abort();const result=await promise;assert.ok(!result.guardianEnvironmentKeys.includes('NODE_ENV'));assert.equal(result.reason,mode==='timeout'?'TIMEOUT':mode==='cancel'?'CANCEL':'EXIT');
     assert.equal(running(pids.parent),false);assert.equal(running(pids.child),false);assert.equal(running(unrelated.pid!),true);
   }}finally{unrelated.kill('SIGKILL');await f.cleanup();}
 });
@@ -139,5 +147,14 @@ test('controller SIGKILL disconnects guardian and removes its worker descendants
     const pids=await waitFile(pidFile);parent.kill('SIGKILL');await new Promise(r=>parent.once('exit',r));
     for(let n=0;n<100&&(running(pids.parent)||running(pids.child));n++)await new Promise(r=>setTimeout(r,20));
     assert.equal(running(pids.parent),false);assert.equal(running(pids.child),false);
+  }finally{await f.cleanup();}
+});
+
+test('both controller review plans use the same three-turn formatting cap',async()=>{
+  const f=await fixture();try{
+    const tools={git:'/usr/bin/git',gh:'/usr/bin/gh',codex:'/usr/bin/codex',claude:'/usr/bin/claude',npm:'/usr/bin/npm'};
+    const c={release:f.release,lease:f.lease,reportHash:'a'.repeat(64),root:f.candidate,branch:'codex/e02',base,head,taskSchema:resolve(f.release.directory,'task-result.schema.json'),report:'unused',prompt:'inert',cleanEnv:{PATH:'/usr/bin:/bin'}};
+    const newer=(await restrictedCommand('review',tools,c)).args;const original=commandPlan(f.signed.payload,f.candidate,'ginisato-hash/zao-rental').find(x=>x.stage==='claude')!.argv!;
+    for(const args of [newer,original]){assert.equal(args.filter(x=>x==='--max-turns').length,1);assert.equal(args[args.indexOf('--max-turns')+1],String(REVIEW_MAX_TURNS));assert.equal(REVIEW_MAX_TURNS,3);}
   }finally{await f.cleanup();}
 });

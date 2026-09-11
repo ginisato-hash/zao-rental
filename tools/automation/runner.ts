@@ -1,3 +1,4 @@
+import { REVIEW_MAX_TURNS } from './review-contract';
 import { createHash, randomUUID, verify } from 'node:crypto';
 import { mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
@@ -74,7 +75,7 @@ export function commandPlan(approval: Approval, worktree: string, repo: string) 
     { stage: 'push', argv: ['git', 'push', 'origin', `HEAD:refs/heads/${branch}`], credentialBoundary: 'controller only after SHA/path/approval check' },
     { stage: 'draft', argv: ['gh', 'pr', 'create', '--repo', repo, '--draft', '--head', branch, '--base', 'main', '--body-file', '<controller-generated-report.md>'] },
     { stage: 'ci', argv: ['gh', 'run', 'list', '--repo', repo, '--commit', '<verified-head-sha>', '--json', 'databaseId,headSha,conclusion,status'], note: 'require all policy check names; an empty response is BLOCKED' },
-    { stage: 'claude', argv: ['claude', '-p', '--output-format', 'json', '--tools', '', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--setting-sources', '', '--disable-slash-commands', '--no-session-persistence', '--max-turns', '1'], stdin: '<trusted review contract + inert sanitized snapshot and evidence>', credentialBoundary: 'separate empty working directory; no candidate hooks/settings or code execution' },
+    { stage: 'claude', argv: ['claude', '-p', '--output-format', 'json', '--tools', '', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--setting-sources', '', '--disable-slash-commands', '--no-session-persistence', '--max-turns', String(REVIEW_MAX_TURNS)], stdin: '<trusted review contract + inert sanitized snapshot and evidence>', credentialBoundary: 'separate empty working directory; no candidate hooks/settings or code execution' },
     { stage: 'fix', maxRounds: 2, note: 'new SHA invalidates CI and review; re-enter verify → draft update → CI → review' },
     { stage: 'stop', status: 'AWAITING_APPROVAL', note: 'no merge, production or next dependent task' },
   ];

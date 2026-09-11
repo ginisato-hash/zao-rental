@@ -113,3 +113,17 @@ Official sources checked: [permissions](https://learn.chatgpt.com/docs/permissio
 [sandbox inheritance](https://learn.chatgpt.com/docs/sandboxing),
 [CLI options](https://learn.chatgpt.com/docs/cli/reference). Installed `codex help sandbox` was used
 to resolve the version-specific command syntax. Node process behavior is tested rather than inferred.
+
+## Independent review follow-up (first review)
+
+F1 HIGH identified missing direct read/write probes, not a demonstrated credential leak. The real
+Mac probe now creates only synthetic .git/config, .codex/.claude credential canaries and .env data;
+it requires denied Git reads and denied reads/writes for all three credential/config paths. No
+real credential file is opened. All thirteen denial cases are explicit in the evidence.
+F2 binds schema argv to the verified release and report argv to the active lease's controller state
+run directory, requires regular non-symlink/single-link files and verifies the trusted report digest.
+F3 gives both inert reviewer plans the same REVIEW_MAX_TURNS=3 cap (including output formatting).
+This does not change the separate initial-plus-two-review-invocations limit. F4 removes NODE_ENV
+from the guardian environment; the actual guardian reports only environment key names and Mac/
+process tests assert it does not invent NODE_ENV=test. The web framework's ambient type requirement
+is handled with a type assertion rather than a runtime environment change.

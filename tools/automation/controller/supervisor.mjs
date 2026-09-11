@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 let child, done = false, stopping = false, output = '', reason = 'EXIT', timer;
 function finish(code, why) {
   if (stopping) return; stopping = true; reason = why; clearTimeout(timer);
-  if (process.connected) process.send({ kind: 'result', exitCode: code, reason, output });
+  if (process.connected) process.send({ kind: 'result', exitCode: code, reason, output, guardianEnvironmentKeys: Object.keys(process.env) });
   // Guardian remains alive anchoring the PGID until the final kill, preventing group-ID reuse.
   try { process.kill(-process.pid, 'SIGTERM'); } catch {}
   setTimeout(() => { try { process.kill(-process.pid, 'SIGKILL'); } catch { process.exit(125); } }, 150);

@@ -20,3 +20,10 @@ For E02 include all referenced controller/policy/schema sources and test evidenc
 Review ADR 0009 against real Mac denial evidence, common-lock races, durable INTENT recovery and
 owned process shutdown. Keep fake-service results separate from live acceptance. The current owner
 authorizes static documents-only review; no execution/tools/automatic context are authorized.
+
+Current review target is the supervised ledger PR described in ADR 0011 and LEDGER_SCOPE.md.
+Owner authorizes initial static review plus at most two fix/re-review rounds with existing Team
+and extra credits OFF. Use the previously verified documents-only review launch, not the Runner.
+Review models/variants/Assets/pole pairs/bundles, DB invariants, BSL and custody/provenance,
+scoped API authorization and production/test separation. No tools/execution/external retrieval.
+Do not treat E03 remainder, E05 auth or period inventory as complete. No merge authority.

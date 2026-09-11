@@ -29,3 +29,9 @@ Auth OIDC provider, tax/effective dates, production deployment and operational d
 exclusion, bounded adapters/stop control, fake failure tests and a new draft PR with static Claude
 review are authorized. ADR 0009 records implementation and actual-vs-fake evidence. E02 live, new
 business features, E02 PR merge, scheduling, additional billing and production remain unauthorized.
+
+Latest owner authority (2026-09-11) supersedes the prior business-work prohibition only for
+supervised E03 ledger contracts and E04 ledger/API/component implementation and static review.
+PR #3 remains held; no code is adopted from it. E02 remains UNATTENDED_HOLD and its policy is
+unchanged. See ADR 0011, LEDGER_SCOPE.md (current 300 combined sets / 200 wear assumptions),
+and LEDGER_PROGRESS.json. Existing original documents remain immutable historical references.

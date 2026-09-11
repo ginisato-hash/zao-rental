@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 test('development shell is honest and customer flow stays closed', async ({ page }) => {
   await page.goto('/'); await expect(page.getByRole('heading', { level: 1 })).toContainText('蔵王のレンタル');
   await expect(page.getByText('この画面は開発用の基盤です。予約受付はまだ開始していません。')).toBeVisible();
-  await page.getByRole('link', { name: 'お客様', exact: true }).click(); await expect(page.getByRole('heading')).toHaveText('予約受付は準備中です');
+  await page.getByRole('link', { name: 'お客様', exact: true }).click(); await expect(page).toHaveURL(/\/customer$/); await expect(page.getByRole('heading', { level: 1 })).toHaveText('予約受付は準備中です');
 });
 test('role spoofing cannot unlock staff/admin pages or APIs', async ({ page, request }) => {
   for (const area of ['staff', 'admin']) {

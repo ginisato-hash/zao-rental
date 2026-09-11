@@ -52,6 +52,9 @@ analytics, role-separated immutable audit and long-term storage are future work.
 
 ## Authentication
 
+Historical E01/E05 direction below; the owner superseded OIDC with app-local staff email/password
+in ADR 0012. The original E01 denial state is not the current E05 implementation contract.
+
 Next official guidance recommends maintained auth/session libraries and authorization near data access.
 Future E05 direction: maintained OIDC library, server-managed secure session, explicit server-side role
 mapping and audited staff permission grants. Provider/tenant and provisioning require owner input then;

@@ -21,9 +21,10 @@ Review ADR 0009 against real Mac denial evidence, common-lock races, durable INT
 owned process shutdown. Keep fake-service results separate from live acceptance. The current owner
 authorizes static documents-only review; no execution/tools/automatic context are authorized.
 
-Current review target is the supervised ledger PR described in ADR 0011 and LEDGER_SCOPE.md.
-Owner authorizes initial static review plus at most two fix/re-review rounds with existing Team
-and extra credits OFF. Use the previously verified documents-only review launch, not the Runner.
-Review models/variants/Assets/pole pairs/bundles, DB invariants, BSL and custody/provenance,
-scoped API authorization and production/test separation. No tools/execution/external retrieval.
-Do not treat E03 remainder, E05 auth or period inventory as complete. No merge authority.
+Current review target is E05 in ADR 0012 and E05_SCOPE, including the owner's email/password
+amendment. Initial static review plus at most two fix/re-review rounds, existing Team/credits OFF.
+Review credential hashing, absence of signup/bypass, server sessions and revocation, Role vs
+Permission vs store scope, admin management/audit, least-privilege DB roles, CSRF and normal UI/API/DB
+tests. The maintained library owns crypto/session behavior. No OIDC or email provider is connected.
+The original future refund/period inventory tasks and production operation remain incomplete.
+Use the existing documents-only launch, no tools/code execution/external retrieval or Runner.

@@ -1,0 +1,140 @@
+{
+  "create": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80,
+        "pattern": ".*\\S.*"
+      },
+      "active": {
+        "type": "boolean"
+      },
+      "role": {
+        "enum": [
+          "ADMIN",
+          "MANAGER",
+          "STAFF",
+          "VIEWER"
+        ]
+      },
+      "scope": {
+        "enum": [
+          "ALL",
+          "ASSIGNED"
+        ]
+      },
+      "storeIds": {
+        "type": "array",
+        "uniqueItems": true,
+        "maxItems": 2,
+        "items": {
+          "enum": [
+            "MOUNTAIN_BASE",
+            "ONSEN_BASE"
+          ]
+        }
+      },
+      "permissions": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "STAFF_MANAGE": {
+            "type": "boolean"
+          },
+          "INVENTORY_EDIT": {
+            "type": "boolean"
+          },
+          "INVENTORY_VIEW": {
+            "type": "boolean"
+          }
+        }
+      },
+      "email": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 254
+      },
+      "password": {
+        "type": "string",
+        "minLength": 15,
+        "maxLength": 128
+      }
+    },
+    "required": [
+      "displayName",
+      "active",
+      "role",
+      "scope",
+      "storeIds",
+      "permissions",
+      "email",
+      "password"
+    ]
+  },
+  "update": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80,
+        "pattern": ".*\\S.*"
+      },
+      "active": {
+        "type": "boolean"
+      },
+      "role": {
+        "enum": [
+          "ADMIN",
+          "MANAGER",
+          "STAFF",
+          "VIEWER"
+        ]
+      },
+      "scope": {
+        "enum": [
+          "ALL",
+          "ASSIGNED"
+        ]
+      },
+      "storeIds": {
+        "type": "array",
+        "uniqueItems": true,
+        "maxItems": 2,
+        "items": {
+          "enum": [
+            "MOUNTAIN_BASE",
+            "ONSEN_BASE"
+          ]
+        }
+      },
+      "permissions": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "STAFF_MANAGE": {
+            "type": "boolean"
+          },
+          "INVENTORY_EDIT": {
+            "type": "boolean"
+          },
+          "INVENTORY_VIEW": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "required": [
+      "displayName",
+      "active",
+      "role",
+      "scope",
+      "storeIds",
+      "permissions"
+    ]
+  }
+}

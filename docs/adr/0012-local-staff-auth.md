@@ -52,10 +52,10 @@ Mutations require the exact configured Origin and bounded JSON; no client-select
 Role, actor or scope can authenticate the caller. Closed/unknown auth endpoints return 404.
 Public signup and social login are disabled at both routing and library configuration.
 
-Five failed attempts lock a known account for 15 minutes, serialized by a DB advisory lock
+Five failed sign-in or current-password verification attempts share one account counter and lock the account for 15 minutes, serialized by the same DB advisory lock
 across processes. Lock waiters have a separate bounded pool, so they cannot exhaust the
 authentication adapter connections needed by the winning login. Better Auth also limits sign-in requests to 30/minute per detected client in
-this single-server runtime. This is not a tested multi-node/public-edge rate-limit deployment.
+this single-server runtime. Password change keeps the library default burst limit of 3 attempts per 10 seconds per detected client; the shared account lock adds a cross-client bound. Wrong current passwords and locked change attempts emit PASSWORD_CHANGE_FAILED with verified actor and target; malformed new passwords do not count as guesses. Password-change checks hold only the advisory lock across the library call, not a staff row lock that would block its DB trigger. This is not a tested multi-node/public-edge rate-limit deployment.
 Account disable and password change revoke sessions in database triggers. Password change
 requires the current password, revokes **all** sessions, and requires re-login. Browser views
 unmount on logout, session change, hidden-page return and permission mismatch; a visible page

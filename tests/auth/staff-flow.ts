@@ -98,6 +98,22 @@ try{
   await owner.query("UPDATE staff_members SET locked_until=now()-interval '1 second' WHERE id=$1",[editorId]);
   await page.close();page=await login(editor,emails.editor);
  });
+ await check('AUTH-01 concurrent wrong currentPassword attempts share the login lockout and cannot change a locked password',async()=>{
+  const before=(await owner.query('SELECT password FROM auth_account WHERE "userId"=$1',[editorId])).rows[0].password;
+  const attempts=await Promise.all(Array.from({length:5},(_,i)=>editor.request.post('/api/auth/change-password',{headers:{origin,'x-forwarded-for':`192.0.2.${i+1}`},data:{currentPassword:'synthetic wrong password',newPassword}})));
+  assert.deepEqual(attempts.map(r=>r.status()),[401,401,401,401,401]);const state=(await owner.query('SELECT failed_login_count,locked_until>now() AS locked FROM staff_members WHERE id=$1',[editorId])).rows[0];assert.deepEqual(state,{failed_login_count:5,locked:true});
+  assert.equal((await editor.request.post('/api/auth/change-password',{headers:{origin},data:{currentPassword:password,newPassword}})).status(),401);
+  assert.equal((await editor.request.post('/api/auth/sign-in/email',{headers:{origin},data:{email:emails.editor,password}})).status(),401);
+  assert.ok((await owner.query('SELECT password FROM auth_account WHERE "userId"=$1',[editorId])).rows[0].password===before,'locked attempts must not change the hash');
+  const failures=(await owner.query("SELECT count(*)::int AS n FROM staff_audit WHERE event='PASSWORD_CHANGE_FAILED' AND actor_staff_id=$1 AND target_staff_id=$1",[editorId])).rows[0].n;assert.equal(failures,6);
+  await owner.query("UPDATE staff_members SET failed_login_count=0,locked_until=now()-interval '1 second' WHERE id=$1",[editorId]);
+ });
+ await check('password change preserves the library default 3-per-10-second client burst limit',async()=>{
+  const results=await Promise.all(Array.from({length:5},()=>editor.request.post('/api/auth/change-password',{headers:{origin,'x-forwarded-for':'192.0.2.99'},data:{currentPassword:'synthetic wrong password',newPassword}})));
+  assert.equal(results.filter(r=>r.status()===401).length,3);assert.equal(results.filter(r=>r.status()===429).length,2);
+  const state=(await owner.query('SELECT failed_login_count,locked_until>now() AS locked FROM staff_members WHERE id=$1',[editorId])).rows[0];assert.equal(state.failed_login_count,3);assert.equal(Boolean(state.locked),false);
+  await owner.query('UPDATE staff_members SET failed_login_count=0,locked_until=NULL WHERE id=$1',[editorId]);
+ });
  await check('password change through normal API uses Argon2id, rejects old password, and invalidates all existing sessions',async()=>{
   const second=await context();await login(second,emails.editor);
   assert.equal((await editor.request.post('/api/auth/change-password',{headers:{origin},data:{currentPassword:password,newPassword}})).status(),200);

@@ -50,7 +50,7 @@ CREATE VIEW staff_users AS SELECT m.id,u.email,a.password AS password_hash,u.nam
  m.active,m.role,m.created_at,m.updated_at,m.last_login_at,m.password_changed_at,m.failed_login_count,m.locked_until
  FROM staff_members m JOIN auth_user u ON u.id=m.id JOIN auth_account a ON a."userId"=m.id AND a."providerId"='credential';
 CREATE TABLE staff_audit (
- event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(), event text NOT NULL CHECK(event IN ('LOGIN_SUCCESS','LOGIN_FAILED','LOGOUT','PASSWORD_CHANGED','ACCOUNT_CREATED','ACCOUNT_DISABLED','ACCOUNT_ENABLED','ROLE_CHANGED','PERMISSION_CHANGED','STORE_ACCESS_CHANGED')),
+ event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(), event text NOT NULL CHECK(event IN ('LOGIN_SUCCESS','LOGIN_FAILED','LOGOUT','PASSWORD_CHANGED','PASSWORD_CHANGE_FAILED','ACCOUNT_CREATED','ACCOUNT_DISABLED','ACCOUNT_ENABLED','ROLE_CHANGED','PERMISSION_CHANGED','STORE_ACCESS_CHANGED')),
  actor_staff_id text, target_staff_id text, occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 CREATE FUNCTION staff_log(kind text,actor text,target text) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,public AS $$

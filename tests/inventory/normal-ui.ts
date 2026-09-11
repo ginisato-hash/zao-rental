@@ -33,6 +33,33 @@ try{
   assert.equal((await app!.db.pool.query('SELECT occupancy_start::text FROM inventory_holds WHERE id=$1',[holdId])).rows[0].occupancy_start,'2032-01-02');stage='cancel HOLD';await page.getByRole('button',{name:'仮押さえを取り消す',exact:true}).click();await expect(page.getByRole('region',{name:'HOLD詳細'})).toContainText('RELEASED');assert.equal((await app!.db.pool.query('SELECT count(*)::int AS n FROM inventory_claims WHERE hold_id=$1 AND active',[holdId])).rows[0].n,0);
   stage='logout then login';await page.getByRole('link',{name:'ログアウト',exact:true}).click();await page.getByRole('button',{name:'ログアウトする',exact:true}).click();await page.waitForURL(origin+'/staff/login');assert.equal((await editor.request.get('/api/holds')).status(),401);await page.close();page=await login(editor,'synthetic-e06-staff@example.invalid');await page.goto('/staff/holds');await expect(page.getByRole('button',{name:new RegExp(holdId.slice(0,8))})).toContainText('RELEASED');
  });
+ await check('lost committed create/amend responses survive reload and reconcile once with the original key',async()=>{
+  await page.getByRole('button',{name:'新しい要求',exact:true}).click();await page.getByLabel('開始日',{exact:true}).fill('2032-03-01');await page.getByLabel('最終日',{exact:true}).fill('2032-03-01');
+  await page.getByLabel('1人目 スキー（1ペア）',{exact:true}).selectOption(variants.ski);await page.getByLabel('1人目 スキーブーツ（1足）',{exact:true}).selectOption(variants.boot);await page.getByLabel('1人目 ポール（1ペア）',{exact:true}).selectOption(variants.pole);
+  let recoveredId='',requestKey='';
+  for(const op of ['create','amend']){
+   const path=op==='create'?'/api/holds':'/api/holds/'+recoveredId+'/amend';
+   if(op==='amend'){await page.getByLabel('開始日',{exact:true}).fill('2032-03-02');await page.getByLabel('最終日',{exact:true}).fill('2032-03-02');}
+   await page.route(origin+path,async route=>{
+    if(route.request().method()!=='POST'){await route.continue();return;}
+    const response=await route.fetch();assert.ok(response.ok());const result=await response.json();recoveredId=result.holdId;requestKey=route.request().postDataJSON().requestKey;
+    // Real API/PG committed; only the transport response is deliberately lost.
+    await route.abort('failed');
+   });
+   await page.getByRole('button',{name:op==='create'?'グループを仮押さえ':'条件を一括変更',exact:true}).click();await expect(page.getByRole('button',{name:'同じ要求を照合・再送'})).toBeVisible();
+   await page.unroute(origin+path);await page.reload();await expect(page.getByRole('button',{name:'同じ要求を照合・再送'})).toBeVisible();await expect(page.getByRole('button',{name:'グループを仮押さえ',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'新しい要求',exact:true})).toBeDisabled();
+   await page.getByRole('button',{name:'同じ要求を照合・再送'}).click();await expect(page.getByRole('region',{name:'HOLD詳細'})).toContainText(recoveredId);await expect(page.getByRole('button',{name:'同じ要求を照合・再送'})).toHaveCount(0);
+   assert.equal((await app!.db.pool.query('SELECT count(*)::int AS n FROM inventory_requests WHERE owner_id=$1 AND request_key=$2',[actor,requestKey])).rows[0].n,1);
+   assert.equal((await app!.db.pool.query("SELECT count(*)::int AS n FROM inventory_holds WHERE owner_id=$1 AND state='ACTIVE'",[actor])).rows[0].n,1);
+   assert.equal((await app!.db.pool.query('SELECT count(*)::int AS n FROM inventory_history WHERE hold_id=$1',[recoveredId])).rows[0].n,op==='create'?1:2);
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('zao-rental-hold-pending-v1')),null);
+  }
+  await page.getByRole('button',{name:'仮押さえを取り消す',exact:true}).click();await expect(page.getByRole('region',{name:'HOLD詳細'})).toContainText('RELEASED');
+ });
+ await check('unavailable pending storage stops new writes before any network mutation',async()=>{
+  await page.getByRole('button',{name:'新しい要求',exact:true}).click();let writes=0;const listener=(r:import('@playwright/test').Request)=>{if(r.method()==='POST'&&r.url().includes('/api/holds'))writes++;};page.on('request',listener);
+  await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw new DOMException('Unavailable','QuotaExceededError');};});await page.getByRole('button',{name:'グループを仮押さえ',exact:true}).click();await expect(page.getByRole('status')).toContainText('変更を停止');assert.equal(writes,0);await expect(page.getByRole('button',{name:'新しい要求',exact:true})).toBeDisabled();page.off('request',listener);await page.reload();
+ });
  await check('ordinary API rejects CSRF, forged role/actor/expiry, other store, other owner and revoked permission',async()=>{
   const payload={requestKey:randomUUID(),conditions:skiSet('2032-02-01')};
   for(const headers of [{},{origin:'https://untrusted.invalid'}])assert.equal((await editor.request.post('/api/holds',{headers,data:payload})).status(),403);

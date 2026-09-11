@@ -17,6 +17,7 @@ CREATE TABLE inventory_holds(
  allocation_stage text NOT NULL DEFAULT 'PROVISIONAL' CHECK(allocation_stage IN ('PROVISIONAL','PREPARATION_FIXED','RENTAL_FIXED')),
  version integer NOT NULL DEFAULT 1 CHECK(version>0)
 );
+CREATE INDEX inventory_holds_owner_idx ON inventory_holds(owner_id,created_at DESC,id);
 CREATE UNIQUE INDEX inventory_one_active_reservation ON inventory_holds(reservation_id) WHERE state='ACTIVE';
 CREATE TABLE inventory_claims(
  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, hold_id uuid NOT NULL REFERENCES inventory_holds(id), requirement_key text NOT NULL,
@@ -29,6 +30,7 @@ CREATE UNIQUE INDEX inventory_pole_day ON inventory_claims(pole_id,pole_slot,day
 CREATE INDEX inventory_hold_claims ON inventory_claims(hold_id);
 CREATE TABLE inventory_requests(owner_id text NOT NULL REFERENCES staff_members(id), request_key uuid NOT NULL, fingerprint text NOT NULL CHECK(length(fingerprint)=64), result jsonb NOT NULL, PRIMARY KEY(owner_id,request_key));
 CREATE TABLE inventory_history(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, hold_id uuid NOT NULL REFERENCES inventory_holds(id), actor text NOT NULL REFERENCES staff_members(id), event text NOT NULL, before_data jsonb, after_data jsonb NOT NULL, occurred_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE INDEX inventory_history_hold_idx ON inventory_history(hold_id,id);
 -- Trusted future operational input, no app-role writer or public endpoint. Blocking only in E06.
 CREATE TABLE inventory_replans(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, actor text NOT NULL REFERENCES staff_members(id), before_claims jsonb NOT NULL, after_claims jsonb NOT NULL, occurred_at timestamptz NOT NULL DEFAULT clock_timestamp());
 CREATE TABLE inventory_constraints(id uuid PRIMARY KEY, asset_id uuid REFERENCES ledger_assets(id), pole_id uuid REFERENCES ledger_poles(id), starts_on date NOT NULL, ends_on date NOT NULL CHECK(ends_on>=starts_on), kind text NOT NULL CHECK(kind IN ('MAINTENANCE','OUT','TRANSFER_UNVERIFIED')), evidence_ref text NOT NULL CHECK(length(evidence_ref) BETWEEN 1 AND 160), CHECK((asset_id IS NULL)<>(pole_id IS NULL)));

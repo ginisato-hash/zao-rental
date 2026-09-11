@@ -26,32 +26,53 @@ export class HoldService {
   const h=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=$1 AND owner_id=$2',[holdId,this.principal.subject])).rows[0];
   if(!h)throw new HoldError('FORBIDDEN',403);await this.authorize(c,edit,[h.pickup_store,h.return_store]);return h;
  }
+ private normalizeError(e:unknown):never{
+  if(e instanceof HoldError)throw e;
+  const {code,message}=e as {code?:string;message?:string};
+  // pg-pool 3.x acquisition errors have no SQLSTATE; keep the documented bounded outcome.
+  if(['55P03','57014','40P01','40001'].includes(code??'')||['timeout exceeded when trying to connect','Connection terminated due to connection timeout'].includes(message??''))throw new HoldError('INDETERMINATE',503);
+  if(['23505','23514','23503'].includes(code??''))throw new HoldError('CONFLICT',409);
+  throw new HoldError('HOLD_OPERATION_FAILED',500);
+ }
+ private async read<T>(fn:(c:PoolClient,now:Date)=>Promise<T>):Promise<T>{
+  let c:PoolClient|undefined;
+  try{c=await this.pool.connect();await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+   await c.query("SET LOCAL statement_timeout='5000ms'; SET LOCAL idle_in_transaction_session_timeout='10000ms'");
+   await this.authorize(c,false);const result=await fn(c,await this.now(c));await c.query('COMMIT');return result;
+  }catch(e){await c?.query('ROLLBACK').catch(()=>{});return this.normalizeError(e);}finally{c?.release();}
+ }
  private async transaction<T>(edit:boolean,preflight:(c:Conn)=>Promise<void>,fn:(c:PoolClient,now:Date)=>Promise<T>):Promise<T>{
-  await this.authorize(this.pool,edit);await preflight(this.pool); // No allocation/row lock for forbidden requests.
-  const c=await this.pool.connect();
-  try{await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms'; SET LOCAL statement_timeout='5000ms'; SET LOCAL idle_in_transaction_session_timeout='10000ms'");
+  let c:PoolClient|undefined;
+  try{
+   await this.authorize(this.pool,edit);await preflight(this.pool); // No allocation/row lock for forbidden requests.
+   c=await this.pool.connect();await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms'; SET LOCAL statement_timeout='5000ms'; SET LOCAL idle_in_transaction_session_timeout='10000ms'");
    await this.authorize(c,edit);await preflight(c);
    await c.query('SELECT pg_advisory_xact_lock(71820600)');
    await this.authorize(c,edit);await preflight(c);const now=await this.now(c);
    await c.query("SELECT set_config('zao.actor',$1,true)",[this.principal.subject]);
    const value=await fn(c,now);await c.query('COMMIT');return value;
-  }catch(e){await c.query('ROLLBACK').catch(()=>{});if(e instanceof HoldError)throw e;
-   const code=(e as {code?:string}).code;if(['55P03','57014','40P01','40001'].includes(code??''))throw new HoldError('INDETERMINATE',503);
-   if(['23505','23514','23503'].includes(code??''))throw new HoldError('CONFLICT',409);
-   throw new HoldError('HOLD_OPERATION_FAILED',500);
-  }finally{c.release();}
+  }catch(e){await c?.query('ROLLBACK').catch(()=>{});return this.normalizeError(e);}finally{c?.release();}
  }
  private async expire(c:Conn,now:Date){
   const rows=(await c.query<{id:string}>("UPDATE inventory_holds SET state='EXPIRED',version=version+1 WHERE state='ACTIVE' AND allocation_stage='PROVISIONAL' AND expires_at<=$1 AND payment_state IN ('NONE','FAILURE') RETURNING id",[now])).rows;
   if(rows.length)await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=ANY($1::uuid[]) AND active',[rows.map(r=>r.id)]);
  }
- private async view(c:Conn,h:HoldRow,now:Date){
-  const history=(await c.query('SELECT event,actor,occurred_at FROM inventory_history WHERE hold_id=$1 ORDER BY id',[h.id])).rows;
+ private summary(h:HoldRow,now:Date,history:Record<string,unknown>[]){
   return {id:h.id,reservationId:h.reservation_id,conditions:h.conditions,state:effective(h,now),paymentState:h.payment_state,expiresAt:h.expires_at.toISOString(),version:h.version,allocationStage:h.allocation_stage,period:normalizePeriod(h.conditions.period),history,meaning:'TEMPORARY_HOLD_NOT_BOOKING_PAYMENT_OR_HANDOFF'};
  }
- async get(holdId:string){return this.transaction(false,async c=>{await this.owned(c,holdId,false);},async(c,now)=>this.view(c,await this.owned(c,holdId,false),now));}
- async list(){const p=await this.authorize(this.pool,false);const now=await this.now(this.pool);const rows=(await this.pool.query<HoldRow>('SELECT * FROM inventory_holds WHERE owner_id=$1 AND pickup_store=ANY($2::text[]) AND return_store=ANY($2::text[]) ORDER BY created_at DESC,id LIMIT 100',[p.subject,p.storeIds])).rows;return Promise.all(rows.map(h=>this.view(this.pool,h,now)));}
- async options(){await this.authorize(this.pool,false);return (await this.pool.query("SELECT v.id,v.family,v.age,v.tier,v.size,m.name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.family,v.size,v.id LIMIT 500")).rows;}
+ private async view(c:Conn,h:HoldRow,now:Date){
+  const history=(await c.query('SELECT event,actor,occurred_at FROM inventory_history WHERE hold_id=$1 ORDER BY id',[h.id])).rows;
+  return this.summary(h,now,history);
+ }
+ async get(holdId:string){return this.read(async(c,now)=>this.view(c,await this.owned(c,holdId,false),now));}
+ async list(){return this.read(async(c,now)=>{
+  const p=await this.authorize(c,false);
+  const rows=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE owner_id=$1 AND pickup_store=ANY($2::text[]) AND return_store=ANY($2::text[]) ORDER BY created_at DESC,id LIMIT 100',[p.subject,p.storeIds])).rows;
+  const histories=(await c.query('SELECT hold_id,event,actor,occurred_at FROM inventory_history WHERE hold_id=ANY($1::uuid[]) ORDER BY hold_id,id',[rows.map(h=>h.id)])).rows;
+  const grouped=new Map<string,Record<string,unknown>[]>();for(const {hold_id,...event} of histories){const items=grouped.get(hold_id)??[];items.push(event);grouped.set(hold_id,items);}
+  return rows.map(h=>this.summary(h,now,grouped.get(h.id)??[]));
+ });}
+ async options(){return this.read(async c=>(await c.query("SELECT v.id,v.family,v.age,v.tier,v.size,m.name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.family,v.size,v.id LIMIT 500")).rows);}
  private async plan(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
   if(new Date(normalizePeriod(conditions.period).dueAt)<=now)throw new HoldError('PERIOD_ENDED');
   const live=(await c.query<HoldRow>(`SELECT * FROM inventory_holds WHERE state='ACTIVE' AND (expires_at>$1 OR payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR allocation_stage<>'PROVISIONAL') AND ($2::uuid IS NULL OR id<>$2) ORDER BY id LIMIT 81`,[now,ignore])).rows;
@@ -70,22 +91,26 @@ export class HoldService {
   const constraints=(await c.query<{asset_id:string|null;pole_id:string|null;kind:string;start:string;end:string}>(`SELECT asset_id,pole_id,kind,starts_on::text AS start,ends_on::text AS end FROM inventory_constraints LIMIT 10001`)).rows;
   if(fixedClaims.length>100000||constraints.length>10000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const fixed:Placement[]=[...new Map(fixedClaims.map(x=>[x.hold_id+'/'+x.requirement_key,{key:x.hold_id+'/'+x.requirement_key,unit:(x.asset_id??x.pole_id)!,start:x.start,end:x.pickup_store===x.return_store?x.end:'9999-12-31'}])).values()];
-  let transfer=live.some(h=>h.pickup_store!==h.return_store&&h.conditions.period.endDate<conditions.period.startDate);
-  const demands:Demand[]=requirements.map(r=>{
-   const start=r.job.c.period.startDate,end=r.job.c.pickupStore===r.job.c.returnStore?r.job.c.period.endDate:'9999-12-31';
+  // A second, diagnostic-only match relaxes custody/transfer constraints. It never creates claims.
+  // Only report a transfer prerequisite if those constraints actually explain infeasibility.
+  const demandsFor=(diagnostic:boolean):Demand[]=>requirements.map(r=>{
+   const start=r.job.c.period.startDate,end=diagnostic||r.job.c.pickupStore===r.job.c.returnStore?r.job.c.period.endDate:'9999-12-31';
    const candidates=units.filter(u=>{
     if(pin&&r.job.id==='candidate'&&r.memberKey===pin.requirementKey&&u.id!==pin.assetId)return false;
     if(!r.variantIds.includes(u.variant_id)||u.status!=='AVAILABLE'||u.quantity<1)return false;
-    if(u.store_id!==r.job.c.pickupStore){transfer=true;return false;}
-    const blocks=constraints.filter(x=>(x.asset_id===u.id||x.pole_id===u.id)&&x.start<=r.job.c.period.endDate&&x.end>=start);
-    if(blocks.some(x=>x.kind==='TRANSFER_UNVERIFIED'))transfer=true;
-    return !blocks.length;
+    if(!diagnostic&&u.store_id!==r.job.c.pickupStore)return false;
+    return !constraints.some(x=>(x.asset_id===u.id||x.pole_id===u.id)&&x.start<=r.job.c.period.endDate&&x.end>=start&&(!diagnostic||x.kind!=='TRANSFER_UNVERIFIED'));
    }).map(u=>u.id);
    return {key:r.key,start,end,candidates};
   });
   try{
-   const matching=matchPeriods(demands,new Map(units.map(u=>[u.id,u.quantity])),fixed);
-   if(!matching)return {result:transfer?'TRANSFER_PLAN_REQUIRED':'INSUFFICIENT',witness:[],replanned:[]};
+   const capacities=new Map(units.map(u=>[u.id,u.quantity]));
+   const matching=matchPeriods(demandsFor(false),capacities,fixed);
+   if(!matching){
+    const diagnosticFixed=fixed.map(p=>({...p,end:fixedClaims.find(c=>c.hold_id+'/'+c.requirement_key===p.key)!.end}));
+    const diagnostic=matchPeriods(demandsFor(true),capacities,diagnosticFixed);
+    return {result:diagnostic?'TRANSFER_PLAN_REQUIRED':'INSUFFICIENT',witness:[],replanned:[]};
+   }
    const used=new Map<string,Set<number>>();for(const x of fixedClaims)if(x.pole_id){const k=x.pole_id+'/'+x.day;const slots=used.get(k)??new Set();slots.add(x.pole_slot!);used.set(k,slots);}
    const witness:Witness[]=matching.map(p=>{
     const r=requirements.find(r=>r.key===p.key)!,u=units.find(u=>u.id===p.unit)!,slots:Record<string,number>={};

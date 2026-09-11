@@ -91,3 +91,15 @@ of a ski/boot pair identifies one whole Asset, no side-level state. Loan-cycle-b
 server-persisted batch candidates and fact-preserving cross-store receipt are E12 work;
 E06 does not implement or claim those operations. E06 blocks invalidating master edits,
 which must not be reused as a reason to reject future factual receipt.
+
+
+Independent review round 1 corrections: owner/history indexes support bounded list reads;
+list/get/options use one read-only snapshot connection and batched list history, without the
+inventory write lock. Pool-acquisition timeouts, including preflight, normalize to INDETERMINATE.
+After a failed strict match, a bounded diagnostic match relaxes only location/transfer custody
+constraints (never maintenance, exact variants, capacities, or fixed physical witnesses). Only
+diagnostic success reports TRANSFER_PLAN_REQUIRED; it does not authorize or prove an E07 transfer.
+Pending UI mutation envelopes are stored before sending in per-tab sessionStorage, bound to the
+verified session stamp. Reload restores same-key reconciliation and blocks new writes; failure to
+store/recover fails closed. A new verified session discards the old session's local envelope; server
+HOLD records remain owner-scoped. No credentials or session cookies are stored in this envelope.

@@ -108,12 +108,45 @@ try{
   const foreign=requestFor('2030-04-02');foreign.pickupStore='ONSEN_BASE';foreign.returnStore='ONSEN_BASE';const destinationResult=await create(foreign);console.log('DESTINATION_BEFORE_RECEIPT '+destinationResult.result);assert.equal(destinationResult.result,'TRANSFER_PLAN_REQUIRED');
   await db.pool.query("INSERT INTO inventory_constraints VALUES($1,$2,NULL,'2030-05-01','2030-05-01','TRANSFER_UNVERIFIED','synthetic-E07-input')",[randomUUID(),fid(1201)]);const transferResult=await create(requestFor('2030-05-01'));console.log('UNVERIFIED_TRANSFER '+transferResult.result);assert.equal(transferResult.result,'TRANSFER_PLAN_REQUIRED');assert.equal((await (await service()).get(r.holdId!)).conditions.returnStore,'ONSEN_BASE');
  });await reset();
+ await check('unrelated cross-store return cannot misclassify missing or maintained components as transfer capacity',async()=>{
+  const board=requestFor('2030-07-01',[variants.board]);board.members[0]!.items[0]!.family='SNOWBOARD';board.returnStore='ONSEN_BASE';assert.equal((await create(board)).result,'CREATED');
+  const blocker=randomUUID();await db.pool.query("INSERT INTO inventory_constraints VALUES($1,$2,NULL,'2030-07-02','2030-07-02','MAINTENANCE','synthetic-unrelated-transfer')",[blocker,fid(1201)]);
+  assert.equal((await create(requestFor('2030-07-02'))).result,'INSUFFICIENT');
+  // Even a relevant other-store component cannot cure a different, genuinely missing component.
+  const mixed=requestFor('2030-07-02');mixed.members.push({key:'board-b',product:'SINGLE',age:'ADULT',tier:'REGULAR',items:[{family:'SNOWBOARD',variantIds:[variants.board]}]});
+  assert.equal((await create(mixed)).result,'INSUFFICIENT');
+  await db.pool.query('DELETE FROM inventory_constraints WHERE id=$1',[blocker]);
+ });await reset();
  await check('pending/unknown payment retains claims across TTL; late success cannot confirm a released inventory promise',async()=>{
   const r=await create(requestFor('2030-06-01'));const c=await db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[actor]);await c.query("UPDATE inventory_holds SET payment_state='UNKNOWN' WHERE id=$1",[r.holdId]);await c.query('COMMIT');}finally{c.release();}
   await reset();assert.equal((await create(requestFor('2030-06-01'))).result,'INSUFFICIENT');await assert.rejects((await service()).command('cancel',randomUUID(),undefined,r.holdId),{code:'PAYMENT_RECONCILIATION_REQUIRED'});
   assert.equal(paymentDecision('SUCCESS',false,true,false),'INVENTORY_REACQUIRE_REQUIRED');assert.equal((await db.pool.query("SELECT count(*)::int AS n FROM inventory_holds WHERE state='CONFIRMED'")).rows[0].n,0);
  });await reset();
  await check('application HOLD role cannot read credentials, edit staff/custody/audit, or create DDL',async()=>{for(const sql of ['SELECT * FROM auth_session','SELECT * FROM auth_account','UPDATE staff_members SET active=false','UPDATE ledger_assets SET status=\'AVAILABLE\'','DELETE FROM inventory_history','UPDATE inventory_replans SET actor=actor','INSERT INTO inventory_constraints SELECT * FROM inventory_constraints','CREATE TABLE escape_hold(id int)'])await assert.rejects(roles!.holdPool.query(sql),{code:'42501'});});
+ await check('indexed owner/history reads batch 100 holds on one connection while another owner can write',async()=>{
+  const c=await db.pool.connect();let first:string;
+  try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[actor]);
+   await c.query('INSERT INTO inventory_reservations SELECT gen_random_uuid(),$1 FROM generate_series(1,240)',[actor]);
+   const inserted=await c.query(`INSERT INTO inventory_holds(id,reservation_id,owner_id,pickup_store,return_store,conditions,starts_at,due_at,occupancy_start,occupancy_end,expires_at,state)
+    SELECT gen_random_uuid(),r.id,r.owner_id,'MOUNTAIN_BASE','MOUNTAIN_BASE',jsonb_set($2::jsonb,'{reservationId}',to_jsonb(r.id)), '2033-01-01 08:30+09','2033-01-01 17:00+09','2033-01-01','2033-01-01','2033-01-01','RELEASED'
+    FROM inventory_reservations r WHERE r.owner_id=$1 AND NOT EXISTS(SELECT 1 FROM inventory_holds h WHERE h.reservation_id=r.id) RETURNING id`,[actor,requestFor('2033-01-01')]);
+   first=inserted.rows[0].id;await c.query('UPDATE inventory_holds SET version=version+1 WHERE id=ANY($1::uuid[])',[inserted.rows.map(r=>r.id)]);await c.query('UPDATE inventory_holds SET version=version+1 WHERE id=ANY($1::uuid[])',[inserted.rows.map(r=>r.id)]);await c.query('COMMIT');
+  }finally{c.release();}
+  await db.pool.query('ANALYZE inventory_holds; ANALYZE inventory_history');
+  const ownerPlan=(await db.pool.query("EXPLAIN (FORMAT JSON) SELECT * FROM inventory_holds WHERE owner_id=$1 AND pickup_store=ANY($2::text[]) AND return_store=ANY($2::text[]) ORDER BY created_at DESC,id LIMIT 100",[actor,['MOUNTAIN_BASE','ONSEN_BASE']])).rows[0];
+  const historyPlan=(await db.pool.query('EXPLAIN (FORMAT JSON) SELECT event,actor,occurred_at FROM inventory_history WHERE hold_id=$1 ORDER BY id',[first])).rows[0];
+  assert.match(JSON.stringify(ownerPlan),/inventory_holds_owner_idx/);assert.match(JSON.stringify(historyPlan),/inventory_history_hold_idx/);
+  assert.ok((await db.pool.query('SELECT count(*)::int AS n FROM inventory_history')).rows[0].n>500);
+  const s=await service();let acquired=0;const listener=()=>{acquired++;};roles!.holdPool.on('acquire',listener);
+  try{const listed=await s.list();assert.equal(listed.length,100);assert.ok(listed.every(h=>h.history.length===3));assert.equal(acquired,1);}finally{roles!.holdPool.off('acquire',listener);}
+  const blocked=await roles!.holdPool.connect(),blocked2=await roles!.holdPool.connect();
+  try{const writer=await service(other);const [listed,written]=await Promise.all([s.list(),writer.command('create',randomUUID(),requestFor('2033-01-02'))]);assert.equal(listed.length,100);assert.equal(written.result,'CREATED');}finally{blocked.release();blocked2.release();}
+ });await reset();
+ await check('exhausted real four-connection HOLD pool returns bounded INDETERMINATE on reads and write preflight',async()=>{
+  const s=await service(),clients=[];for(let i=0;i<4;i++)clients.push(await roles!.holdPool.connect());const started=performance.now();
+  try{await Promise.all([s.list(),s.options(),s.command('create',randomUUID(),requestFor('2033-01-03'))].map(p=>assert.rejects(p,{code:'INDETERMINATE',status:503})));assert.ok(performance.now()-started<4000);}finally{clients.forEach(c=>c.release());}
+  assert.equal((await s.command('create',randomUUID(),requestFor('2033-01-03'))).result,'CREATED');
+ });await reset();
  await check('300 combined ski/board synthetic load, full ten-day groups, bounded concurrent latency probe',async()=>{
   await seedInventory(db.pool,true);const boards=(await db.pool.query("SELECT count(*)::int AS n FROM ledger_assets WHERE family IN ('SKI','SNOWBOARD')")).rows[0].n;assert.equal(boards,300);
   const latencies:number[]=[];const s=await service();const iterations=24,concurrency=4;

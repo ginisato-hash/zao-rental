@@ -14,7 +14,7 @@ export async function provisionApplicationRoles(owner:Pool,identity:{namespace:s
   await owner.query(`GRANT USAGE ON SCHEMA public TO ${user}`);
   const tables=suffix==='auth'?['auth_user','auth_session','auth_account','auth_verification']:['ledger_models','ledger_variants','ledger_assets','ledger_poles','ledger_bundles'];
   await owner.query(`GRANT SELECT,INSERT,UPDATE${suffix==='auth'?',DELETE':''} ON ${tables.join(',')} TO ${user}`);
-  if(suffix==='ledger')await owner.query(`GRANT SELECT ON ledger_stores,ledger_records,ledger_bundle_components,ledger_history,ledger_locations,staff_members,staff_store_access,staff_permission_overrides,staff_role_permissions TO ${user}`);
+  if(suffix==='ledger')await owner.query(`GRANT SELECT ON ledger_stores,ledger_records,ledger_bundle_components,ledger_history,ledger_locations TO ${user}`);
   if(suffix==='auth'){
    await owner.query(`GRANT SELECT,INSERT,UPDATE ON staff_members TO ${user}`);
    await owner.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON staff_store_access,staff_permission_overrides TO ${user}`);

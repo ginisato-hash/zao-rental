@@ -69,7 +69,7 @@ try{
   assert.equal((await owner.query('SELECT count(*)::int AS n FROM ledger_history')).rows[0].n,n);
  });
  await check('application DB roles cannot DDL, create roles, edit audit, change permissions from ledger role, or read hashes',async()=>{
-  for(const sql of ['CREATE TABLE escape_probe(id int)',"UPDATE staff_members SET role='ADMIN'",'DELETE FROM ledger_history','UPDATE ledger_history SET actor=actor','INSERT INTO ledger_history SELECT * FROM ledger_history LIMIT 1','ALTER TABLE ledger_assets DISABLE TRIGGER ALL','CREATE ROLE escape_role','SELECT * FROM auth_session','SELECT * FROM staff_users'])await assert.rejects(app!.roles.ledgerPool.query(sql),(e:{code:string})=>e.code==='42501');
+  for(const sql of ['CREATE TABLE escape_probe(id int)',"UPDATE staff_members SET role='ADMIN'",'DELETE FROM ledger_history','UPDATE ledger_history SET actor=actor','INSERT INTO ledger_history SELECT * FROM ledger_history LIMIT 1','ALTER TABLE ledger_assets DISABLE TRIGGER ALL','CREATE ROLE escape_role','SELECT * FROM auth_session','SELECT * FROM staff_users','SELECT * FROM staff_members','SELECT * FROM staff_store_access','SELECT * FROM staff_permission_overrides','SELECT * FROM staff_role_permissions'])await assert.rejects(app!.roles.ledgerPool.query(sql),(e:{code:string})=>e.code==='42501');
   for(const sql of ['SELECT * FROM ledger_assets','DELETE FROM staff_audit','UPDATE staff_audit SET event=event','CREATE TABLE escape_auth(id int)'])await assert.rejects(app!.roles.authPool.query(sql),(e:{code:string})=>e.code==='42501');
  });
  await check('logout revokes old session; re-login reads the same stored Asset and stale session stamp is refused',async()=>{

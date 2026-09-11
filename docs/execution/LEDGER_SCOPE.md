@@ -20,6 +20,11 @@ is not implemented by this ledger. No age/tier substitution exists. Immutable va
 future reviewed correction workflow for a mistaken size/category; this PR does not silently rewrite
 the identity of already registered physical stock. Basic updates include model name/brand/notes,
 variant notes, Asset status/notes/explicit BSL, pole quantity/status/notes, and bundle name/notes.
+A DB-generated size identity key folds ASCII case and whitespace, so `160 cm`, `160CM` and
+`160 Cm` cannot be separate variants of the same model/age/tier. Size filtering uses this same key.
+The entered label is retained; this is lexical normalization, not automatic numeric/unit conversion,
+shoe-size equivalence or fit calculation. Different unit systems/semantic labels and correction of
+mistaken sizes still require the future reviewed intake/correction workflow.
 Every update requires expected version and reason. Sales remain disabled; physical status alone
 does not certify safety, binding fit or date/store availability.
 
@@ -36,6 +41,10 @@ does not certify safety, binding fit or date/store availability.
   pools (6 + 4 pairs), and two bundle definitions. IDs, model names, sizes and store allocations are
   test placeholders. Initially all ski-boot BSL values are unknown; an explicitly synthetic test
   simulates recording a measured marking. No actual boot measurement is asserted.
+- Provenance uniqueness is per resource: `(resource, sourceDocument, sourceLocator)`. A single
+  inventory-sheet row may supply both a model description and an Asset record; this is accepted,
+  while a second record of the same resource citing that row is rejected. Detail/history preserve
+  the resource and citation. This is not global cross-table deduplication or proof of physical identity.
 - Each row retains source document and object locator. An import checksum and advisory lock make
   replay atomic/idempotent; changed source content is stopped rather than treated as replacement.
 - Production registration can hold UNVERIFIED intake references; SYNTHETIC stays explicit and immutable.

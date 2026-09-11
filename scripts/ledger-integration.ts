@@ -115,6 +115,31 @@ try {
     await assert.rejects(db.pool.query("UPDATE ledger_history SET reason='erased'"),{code:'23514'});await assert.rejects(db.pool.query('DELETE FROM ledger_locations'),{code:'23514'});
     await assert.rejects(raw(db.pool,c=>c.query('DELETE FROM ledger_assets WHERE id=$1',[id(201)])),{code:'23514'});
   });
+  await check('size format variants collide within one model/age/tier and size filters use the same key',async()=>{
+    const before=(await service.list('variants')).total;
+    for(const size of ['160CM','160 Cm','160   cm'])await assert.rejects(service.create('variants',{...SAMPLE.variants[0].data,size,sourceLocator:'size-format-'+size}),{code:'DUPLICATE_RECORD'});
+    const duplicate=await http(request('variants','POST',{...SAMPLE.variants[0].data,size:'160CM',sourceLocator:'http-size-format'}));
+    assert.equal(duplicate.status,409);assert.deepEqual(await duplicate.json(),{error:'DUPLICATE_RECORD'});
+    await assert.rejects(raw(db.pool,c=>c.query(`INSERT INTO ledger_variants(id,model_id,family,age,tier,size,notes,source_kind,source_document,source_locator) VALUES($1,$2,'SKI','ADULT','REGULAR','160CM','','SYNTHETIC','review-regression','raw-size-format')`,[randomUUID(),id(1)])),{code:'23505'});
+    assert.equal((await service.list('variants')).total,before);
+    const exact=await service.list('assets',{size:'160 cm'});const alternate=await service.list('assets',{size:'160CM'});
+    assert.equal(alternate.total,exact.total);assert.ok(exact.total>0);assert.deepEqual(alternate.items.map(r=>r.id),exact.items.map(r=>r.id));
+    const premium=await service.create('variants',{...SAMPLE.variants[0].data,size:'160CM',tier:'PREMIUM',sourceLocator:'distinct-tier-size'});
+    assert.equal(premium.tier,'PREMIUM');assert.notEqual(premium.id,id(101));
+  });
+  await check('provenance is unique within a resource and may cite the same source across model and Asset',async()=>{
+    const asset=await service.get('assets',id(201));const input={...SAMPLE.models[0].data,code:'SHARED-CITATION',sourceDocument:asset.sourceDocument,sourceLocator:asset.sourceLocator};
+    const model=await service.create('models',input);const loaded=await service.get('models',model.id);
+    assert.equal(loaded.sourceDocument,asset.sourceDocument);assert.equal(loaded.sourceLocator,asset.sourceLocator);
+    assert.equal(loaded.history.length,1);assert.equal((await service.get('assets',asset.id)).history.length,asset.history.length);
+    await assert.rejects(service.create('models',{...input,code:'SHARED-CITATION-DUP'}),{code:'DUPLICATE_RECORD'});
+  });
+  await check('HTTP rejects an Asset family that mismatches its variant and leaves no row or audit record',async()=>{
+    const before=(await service.list('assets')).total;const history=(await db.pool.query('SELECT count(*)::int AS n FROM ledger_history')).rows[0].n;
+    const response=await http(request('assets','POST',{...SAMPLE.assets[0].data,family:'SNOWBOARD',sourceLocator:'http-family-mismatch'}));
+    assert.equal(response.status,422);assert.deepEqual(await response.json(),{error:'CONSTRAINT_VIOLATION'});
+    assert.equal((await service.list('assets')).total,before);assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM ledger_history')).rows[0].n,history);
+  });
   await check('sample checksum mismatch is not silently imported as replacement inventory',async()=>{
     await db.pool.query("UPDATE ledger_import_receipts SET checksum=repeat('0',64)");await assert.rejects(seedLedgerSample(db.pool),/checksum drift/);
   });

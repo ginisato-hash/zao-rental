@@ -8,6 +8,7 @@ test('ledger components show samples, pair labels, scope filters, BSL and readba
  await page.getByRole('combobox',{name:'年齢区分',exact:true}).selectOption('KIDS');await expect(page.getByText('1 件の台帳記録')).toBeVisible();await expect(page.getByRole('cell',{name:'子供 / Regular 100 cm',exact:true})).toBeVisible();
  await page.getByRole('combobox',{name:'クラス',exact:true}).selectOption('PREMIUM');await expect(page.getByText('0 件の台帳記録')).toBeVisible();
  await page.getByRole('combobox',{name:'年齢区分',exact:true}).selectOption('');await page.getByRole('combobox',{name:'クラス',exact:true}).selectOption('');
+ await page.getByLabel('サイズ',{exact:true}).fill('160CM');await expect(page.getByText('1 件の台帳記録')).toBeVisible();await expect(page.getByRole('cell',{name:'大人 / Regular 160 cm',exact:true})).toBeVisible();await page.getByLabel('サイズ',{exact:true}).fill('');
  await page.getByRole('button',{name:'詳細：検証用スキーブーツ 26.5 cm'}).click();const detail=page.getByRole('complementary',{name:'台帳詳細'});await expect(detail.getByText('要確認・未記録',{exact:true})).toBeVisible();
  await page.screenshot({path:`.local/screenshots/ledger-${info.project.name}-detail.png`,fullPage:true});
  await page.getByRole('button',{name:'基本情報を更新'}).click();const form=page.getByRole('region',{name:'更新フォーム'});await form.getByLabel('備考',{exact:true}).fill('合成サンプルの表示確認');await form.getByLabel('更新理由').fill('画面テストで確認');await form.getByRole('button',{name:'変更を保存'}).click();await expect(detail.getByText('合成サンプルの表示確認',{exact:true})).toBeVisible();await expect(detail.getByText('更新 · 画面テストで確認')).toBeVisible();

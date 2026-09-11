@@ -31,7 +31,8 @@ export class LedgerService {
     parseResource(resource);validateFilters(filters);this.checkStore(filters.storeId);
     const values:unknown[]=[resource,[...this.scope]];
     const clauses=["resource=$1","(NOT (data ? 'storeId') OR data->>'storeId'=ANY($2::text[]))"];
-    for(const key of ['storeId','age','tier','size','status'] as const)if(filters[key]!==undefined){values.push(filters[key]);clauses.push(`data->>'${key}'=$${values.length}`);}
+    for(const key of ['storeId','age','tier','status'] as const)if(filters[key]!==undefined){values.push(filters[key]);clauses.push(`data->>'${key}'=$${values.length}`);}
+    if(filters.size!==undefined){values.push(filters.size);clauses.push(`ledger_size_key(data->>'size')=ledger_size_key($${values.length})`);}
     if(filters.sport){values.push(filters.sport);clauses.push(`CASE WHEN data->>'family' IN ('SKI','SKI_BOOT','POLE','SKI_SET') THEN 'SKI' WHEN data->>'family' IN ('SNOWBOARD','SNOWBOARD_BOOT','SNOWBOARD_SET') THEN 'SNOWBOARD' ELSE 'WEAR' END=$${values.length}`);}
     if(filters.q){values.push(filters.q);clauses.push(`position(lower($${values.length}) in lower(concat_ws(' ',data->>'name',data->>'code',data->>'size')))>0`);}
     const where=clauses.join(' AND ');

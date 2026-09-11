@@ -28,7 +28,8 @@ use the existing driver alongside the existing Drizzle foundation, without an OR
 Separate models, immutable size/age/tier variants, physical Assets, size/store/status pole pools,
 and commercial bundles. Bundle components are a read-only requirements view of the bundle family;
 they cannot INSERT assets or quantities. UUIDs are opaque and store-independent. A ski pair has
-one Asset/ID with two copies of the same label. The same provenance row cannot be entered twice.
+one Asset/ID with two copies of the same label. The same provenance row cannot be entered twice
+within the same resource; a model and an Asset may deliberately share one citation. The resource is part of the provenance identity.
 This cannot detect a human registering the same physical pair under two newly invented source
 records; physical intake/label reconciliation remains a later staff procedure, not a claimed AI check.
 
@@ -68,4 +69,5 @@ webServer lifecycle start and stop only this worktree's temporary processes.
 Sources checked for constraints/triggers and data-layer authorization:
 [PostgreSQL constraints](https://www.postgresql.org/docs/18/ddl-constraints.html),
 [PostgreSQL triggers](https://www.postgresql.org/docs/18/sql-createtrigger.html),
+[PostgreSQL generated columns](https://www.postgresql.org/docs/18/ddl-generated-columns.html),
 [Next authentication](https://nextjs.org/docs/app/guides/authentication).

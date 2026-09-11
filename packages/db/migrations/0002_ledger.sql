@@ -10,11 +10,16 @@ CREATE TABLE ledger_models (
  source_document text NOT NULL CHECK(length(btrim(source_document)) BETWEEN 1 AND 160), source_locator text NOT NULL CHECK(length(btrim(source_locator)) BETWEEN 1 AND 160),
  UNIQUE(source_document,source_locator), version integer NOT NULL DEFAULT 1 CHECK(version>0), created_at timestamptz NOT NULL DEFAULT clock_timestamp(), updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
+-- Lexical identity only: fold ASCII case/whitespace, never convert units or fit sizes.
+CREATE FUNCTION ledger_size_key(value text) RETURNS text LANGUAGE sql IMMUTABLE STRICT AS $$
+ SELECT lower(regexp_replace(value COLLATE "C", '[[:space:]]+', '', 'g'))
+$$;
 CREATE TABLE ledger_variants (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), model_id uuid NOT NULL, family text NOT NULL CHECK(family IN ('SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','POLE')),
  age text NOT NULL CHECK(age IN ('ADULT','KIDS')), tier text NOT NULL CHECK(tier IN ('REGULAR','PREMIUM')),
  size text NOT NULL CHECK(length(size) BETWEEN 1 AND 32 AND size=btrim(size)),
- FOREIGN KEY(model_id,family) REFERENCES ledger_models(id,family), UNIQUE(id,family), UNIQUE(model_id,age,tier,size),
+ size_key text GENERATED ALWAYS AS (ledger_size_key(size)) STORED,
+ FOREIGN KEY(model_id,family) REFERENCES ledger_models(id,family), UNIQUE(id,family), UNIQUE(model_id,age,tier,size_key),
  notes text NOT NULL CHECK(length(notes)<=500), source_kind text NOT NULL CHECK(source_kind IN ('SYNTHETIC','UNVERIFIED')),
  source_document text NOT NULL CHECK(length(btrim(source_document)) BETWEEN 1 AND 160), source_locator text NOT NULL CHECK(length(btrim(source_locator)) BETWEEN 1 AND 160),
  UNIQUE(source_document,source_locator), version integer NOT NULL DEFAULT 1 CHECK(version>0), created_at timestamptz NOT NULL DEFAULT clock_timestamp(), updated_at timestamptz NOT NULL DEFAULT clock_timestamp()

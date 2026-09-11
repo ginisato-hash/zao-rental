@@ -28,9 +28,11 @@ export class HoldService {
  }
  private normalizeError(e:unknown):never{
   if(e instanceof HoldError)throw e;
-  const {code,message}=e as {code?:string;message?:string};
-  // pg-pool 3.x acquisition errors have no SQLSTATE; keep the documented bounded outcome.
-  if(['55P03','57014','40P01','40001'].includes(code??'')||['timeout exceeded when trying to connect','Connection terminated due to connection timeout'].includes(message??''))throw new HoldError('INDETERMINATE',503);
+  const code=(e as {code?:string}|null)?.code;
+  // pg-pool acquisition timeouts have no SQLSTATE. Match the timeout category, not version-specific prose.
+  // Coded auth/permission failures and unrelated errors must retain their separate fail-closed result.
+  const uncodedTimeout=e instanceof Error&&code===undefined&&/\b(?:timeout|timed out)\b/i.test(e.message);
+  if(['55P03','57014','40P01','40001'].includes(code??'')||uncodedTimeout)throw new HoldError('INDETERMINATE',503);
   if(['23505','23514','23503'].includes(code??''))throw new HoldError('CONFLICT',409);
   throw new HoldError('HOLD_OPERATION_FAILED',500);
  }

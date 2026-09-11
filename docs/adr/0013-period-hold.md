@@ -103,3 +103,9 @@ Pending UI mutation envelopes are stored before sending in per-tab sessionStorag
 verified session stamp. Reload restores same-key reconciliation and blocks new writes; failure to
 store/recover fails closed. A new verified session discards the old session's local envelope; server
 HOLD records remain owner-scoped. No credentials or session cookies are stored in this envelope.
+
+LOW E06-05 follow-up: uncoded library timeout errors are classified by timeout category,
+not exact version-specific sentences. Fake transport regressions cover changed wording and
+ensure coded auth/permission or unrelated failures do not become transient timeout outcomes.
+The real four-connection exhaustion test remains the installed-library upgrade check; no
+dependency/authentication/billing setting changes and no automatic retry were introduced.

@@ -28,3 +28,10 @@ Permission vs store scope, admin management/audit, least-privilege DB roles, CSR
 tests. The maintained library owns crypto/session behavior. No OIDC or email provider is connected.
 The original future refund/period inventory tasks and production operation remain incomplete.
 Use the existing documents-only launch, no tools/code execution/external retrieval or Runner.
+
+Current owner update supersedes E05-only scope: supervised E06 period allocation/group HOLD
+and necessary E03 time/state/API contracts, including mutable provisional reallocation;
+read ADR 0013 and E06_SCOPE. Exact PR #5 merge is separately authorized and recorded. Preserve
+0001–0003, existing auth and canonical business sources. E06 stops at a new Draft PR and static
+Claude review (initial + two rereviews), no tools/external retrieval. No E07 live operations,
+Square, production, PR #3 adoption or Runner changes. Do not mark other E03 items complete.

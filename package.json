@@ -24,7 +24,9 @@
     "check:secrets": "node scripts/check-secrets.mjs",
     "test:controller:macos": "node --import tsx scripts/test-controller-macos.ts",
     "controller:export": "node --import tsx scripts/export-controller.ts",
-    "test:auth": "node --import tsx tests/auth/staff-flow.ts"
+    "test:auth": "node --import tsx tests/auth/staff-flow.ts",
+    "test:inventory": "node --import tsx tests/inventory/real-postgres.ts",
+    "test:holds-ui": "node --import tsx tests/inventory/normal-ui.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

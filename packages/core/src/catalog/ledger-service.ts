@@ -22,6 +22,7 @@ export class LedgerService {
     const client=await this.pool.connect();
     try {
       await client.query('BEGIN');
+      await client.query("SET LOCAL lock_timeout='1500ms'; SET LOCAL statement_timeout='5000ms'");
       await client.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason',$2,true)",[this.principal!.subject,reason]);
       const result=await fn(client);await client.query('COMMIT');return result;
     }catch(error){await client.query('ROLLBACK');sanitized(error);}
@@ -70,6 +71,11 @@ export class LedgerService {
     return this.transaction(data.reason as string,async client=>{
       // Scope belongs in the locking statement: forbidden stores must not be locked at all.
       const storeScoped=resource==='assets'||resource==='poles';
+      if(storeScoped){
+        const visible=await client.query(`SELECT id FROM ${tables[resource]} WHERE id=$1 AND store_id=ANY($2::text[])`,[id,[...this.scope]]);
+        if(visible.rowCount!==1)throw new LedgerError('NOT_FOUND',404);
+        await client.query('SELECT pg_advisory_xact_lock(71820600)');
+      }
       const locked=await client.query(`SELECT id FROM ${tables[resource]} WHERE id=$1${storeScoped?' AND store_id=ANY($2::text[])':''} FOR UPDATE`,storeScoped?[id,[...this.scope]]:[id]);
       if(locked.rowCount!==1)throw new LedgerError('NOT_FOUND',404);
       const prior=await this.detail(client,resource,id);

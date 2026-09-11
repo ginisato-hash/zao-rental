@@ -1,0 +1,31 @@
+{
+  "original_task": "E12",
+  "status": "PLANNED_NOT_IMPLEMENTED",
+  "canonical_contract": "docs/RETURN_RULES.md",
+  "owner_decision": "2026-09-11 single Asset per pair, identical IDs; overrides proposed side-only receipt",
+  "depends_on_contracts": [
+    "E06 allocation and physical receipt separation",
+    "E07 custody/receipt reconciliation",
+    "E12 loan_item and rental cycle binding"
+  ],
+  "required_acceptance": [
+    "mixed reservations",
+    "partial return across Assets and renters",
+    "early and overdue",
+    "cross-store actual receipt despite future conflict",
+    "same-ID duplicate both labels",
+    "cross-terminal race",
+    "saved candidate resume",
+    "stale loan-cycle scan rejection",
+    "inspection pending",
+    "single-Asset exception without side states",
+    "pole quantity versus loan attribution",
+    "distinct scan/confirmation/actual receipt timestamps"
+  ],
+  "not_e06": [
+    "camera/continuous scan UI",
+    "loan or receipt runtime",
+    "label printing rollout",
+    "Square or fees"
+  ]
+}

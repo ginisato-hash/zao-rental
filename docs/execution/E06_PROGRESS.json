@@ -1,0 +1,19 @@
+{
+  "task": "E06",
+  "base_sha": "1dbf07d9934472ccb6f29b93cd9014b87f417fb7",
+  "mode": "SUPERVISED",
+  "runner": "UNATTENDED_HOLD",
+  "pr3": "DRAFT_HELD_NOT_ADOPTED",
+  "e03": "TIME_STATE_API_SUBSET_ONLY",
+  "development_hold_ttl_seconds": 600,
+  "implementation": "IMPLEMENTED",
+  "review": "PENDING_INDEPENDENT_STATIC_REVIEW",
+  "limits": [
+    "E07 transfer/receipt/preparation/checkout contract only",
+    "Payment contract only; no confirmation/provider calls",
+    "No production or actual customer/inventory data",
+    "No physical phone acceptance"
+  ],
+  "evidence": "Exact-head local/CI logs and static manifest in private Draft PR",
+  "verification": "Full local suite plus final changed-preview regression required; exact head evidence in PR"
+}

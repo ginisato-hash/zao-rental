@@ -35,3 +35,11 @@ supervised E03 ledger contracts and E04 ledger/API/component implementation and 
 PR #3 remains held; no code is adopted from it. E02 remains UNATTENDED_HOLD and its policy is
 unchanged. See ADR 0011, LEDGER_SCOPE.md (current 300 combined sets / 200 wear assumptions),
 and LEDGER_PROGRESS.json. Existing original documents remain immutable historical references.
+
+2026-09-11 latest: owner-authorized exact PR #5 merge then supervised E06/time subset,
+with mutable provisional witnesses and fixed-preparation/rental contract boundaries.
+See ADR 0013 / E06_SCOPE. E06 review initial + at most two rereviews, new PR remains Draft.
+
+Owner-confirmed return behavior has one current canonical source: `docs/RETURN_RULES.md`.
+It overrides any earlier side-only receipt proposal. E12_RETURN_FOLLOWUP.json records pending
+acceptance; E06 does not implement return/scanner/loan operations or side management.

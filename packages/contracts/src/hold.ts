@@ -29,7 +29,7 @@ export function paymentDecision(state:PaymentBoundary,active:boolean,expired:boo
  if(state==='SUCCESS')return (active&&!expired||reacquired)?'INVENTORY_ONLY_VALID_PAYMENT_VERIFICATION_REQUIRED':'INVENTORY_REACQUIRE_REQUIRED';
  return expired?'MAY_EXPIRE':'MAY_CHANGE';
 }
-// E07 input contract only. Even a claimed COMMITTED arrival is unverified until E07 protects it.
+// Untrusted external hint only: flags do not grant capacity. E07 uses protected database transfer projections.
 export type TransferEvidence={batchId:string;scheduledAt:string;state:'REQUESTED'|'COMMITTED'|'SEALED'|'DEPARTED'|'RECEIVED';actualReceivedAt:string|null;inspectionReady:boolean;protectedAllocation:boolean};
 export function transferDecision(e:TransferEvidence,addingLine=false){
  if(addingLine&&['SEALED','DEPARTED','RECEIVED'].includes(e.state))return 'BATCH_CLOSED';

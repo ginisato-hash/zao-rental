@@ -30,7 +30,7 @@ try{
  const ledgerHttp=ledgerHandler(async()=>{const s=await resolveStaff(auth,db.pool,authHeaders);return s.status==='authorized'?ledgerPrincipal(s.principal):null;},p=>new LedgerService(db.pool,p),origin);
  await check('populated PR5 upgrade preserves original migration hashes, real password session and normal protected ledger API',async()=>{
   const before=await ledgerHttp(new Request(origin+'/api/ledger/assets',{headers:authHeaders}));assert.equal(before.status,200);const n=(await before.json()).total;
-  await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM foundation_migrations')).rows[0].n,4);
+  await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM foundation_migrations')).rows[0].n,migrationPlan.length);
   assert.equal((await resolveStaff(auth,db.pool,authHeaders)).status,'authorized');const after=await ledgerHttp(new Request(origin+'/api/ledger/assets',{headers:authHeaders}));assert.equal(after.status,200);assert.equal((await after.json()).total,n);
   const update=await ledgerHttp(new Request(origin+'/api/ledger/assets/'+fid(1201),{method:'PATCH',headers:{cookie,origin,'content-type':'application/json'},body:JSON.stringify({version:1,reason:'Synthetic upgrade check',notes:'Persisted after PR5 upgrade'})}));assert.equal(update.status,200);
   assert.equal((await (await ledgerHttp(new Request(origin+'/api/ledger/assets/'+fid(1201),{headers:authHeaders}))).json()).notes,'Persisted after PR5 upgrade');

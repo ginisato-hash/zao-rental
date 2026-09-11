@@ -26,7 +26,9 @@
     "controller:export": "node --import tsx scripts/export-controller.ts",
     "test:auth": "node --import tsx tests/auth/staff-flow.ts",
     "test:inventory": "node --import tsx tests/inventory/real-postgres.ts",
-    "test:holds-ui": "node --import tsx tests/inventory/normal-ui.ts"
+    "test:holds-ui": "node --import tsx tests/inventory/normal-ui.ts",
+    "test:transfer": "node --import tsx tests/transfer/real-postgres.ts",
+    "test:transfers-ui": "node --import tsx tests/transfer/normal-ui.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

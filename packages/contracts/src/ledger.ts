@@ -12,7 +12,7 @@ export type LedgerInput = Record<string, unknown>;
 export type LedgerRecord = {
   id:string; resource:Resource; name:string; code:string; version:number; notes:string;
   family:Family|'SKI_SET'|'SNOWBOARD_SET'; age?:string; tier?:string; size?:string;
-  modelId?:string; variantId?:string; storeId?:StoreId; initialStoreId?:StoreId;
+  custody?:string; modelId?:string; variantId?:string; storeId?:StoreId; initialStoreId?:StoreId;
   status?:string; quantity?:number; unit?:string; labelCopies?:number;
   bslStatus?:string; bslMm?:number|null; bslEvidence?:string; brand?:string;
   components?:{family:string; quantity:number; unit:string}[];

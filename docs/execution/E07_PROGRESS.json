@@ -1,0 +1,32 @@
+{
+  "task": "E07",
+  "status": "CANDIDATE_WITH_EXTERNAL_EXACT_HEAD_EVIDENCE",
+  "base": "ace5fd2251d5bbe54950196daf4e514287bd803d",
+  "pr6": {
+    "approved_head": "63121d0df8650e12bcc053db8a7eba797331b7b5",
+    "merge_commit": "ace5fd2251d5bbe54950196daf4e514287bd803d",
+    "identical_tree": true
+  },
+  "runner": "UNATTENDED_HOLD",
+  "pr3": "DRAFT_HELD_NO_ADOPTION",
+  "e07_merge_authorized": false,
+  "review_budget": {
+    "initial": 1,
+    "rereviews": 2
+  },
+  "operational_values": {
+    "scheduled_start": "17:00 Asia/Tokyo",
+    "automatic_receipt": false,
+    "readiness": "explicit staff estimate and basis; actual confirmation separate"
+  },
+  "test_data": "synthetic only; not observed inventory",
+  "future": [
+    "customer lending and return",
+    "continuous camera return mode",
+    "real staff/device acceptance",
+    "operational route/loading/preparation validation",
+    "production migration and publication",
+    "explicit operational reconciliation of unresolved transfer issues; no automatic clear"
+  ],
+  "evidence": "Exact-head command logs, CI, manifest and Claude result are attached to the Draft PR; this source file does not pre-claim PASS."
+}

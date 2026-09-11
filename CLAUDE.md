@@ -35,3 +35,9 @@ read ADR 0013 and E06_SCOPE. Exact PR #5 merge is separately authorized and reco
 0001–0003, existing auth and canonical business sources. E06 stops at a new Draft PR and static
 Claude review (initial + two rereviews), no tools/external retrieval. No E07 live operations,
 Square, production, PR #3 adoption or Runner changes. Do not mark other E03 items complete.
+
+Latest owner authority: supervised E07 after the separately verified exact-head PR #6 merge.
+Read ADR 0014 and E07_SCOPE; implement transfer planning/dispatch/receipt and E06 integration only.
+E07 ends at a Draft PR with static review (initial + two rereviews), never merge. Customer returns,
+E08+, production, PR #3 adoption and Runner activation remain outside scope. Preserve the finite
+2026-09-11T19:38:34Z deadline and stop only this worktree's owned resources.

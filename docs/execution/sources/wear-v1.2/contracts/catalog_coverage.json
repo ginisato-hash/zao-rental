@@ -1,0 +1,26 @@
+{
+  "status": "SOURCE_PORTALS_IDENTIFIED_NOT_FULL_CATALOG",
+  "photo_scope_owner": [
+    "SKI",
+    "SNOWBOARD"
+  ],
+  "wear_photo_scope": "UNCONFIRMED",
+  "past_seasons_working_assumption": [
+    "2024/25",
+    "2025/26"
+  ],
+  "new_season": [
+    "2026/27"
+  ],
+  "full_product_rows_extracted": false,
+  "reference_index": "../reference/Salomon_Catalog_Source_Index_v1_1.json",
+  "snowboard_categories": [
+    "BOARDS",
+    "BOOTS",
+    "BINDINGS",
+    "YOUTH",
+    "SOFTGOODS",
+    "TECH_BOOK"
+  ],
+  "boundary": "Manufacturer product range is not shop inventory. Historical facts remain versioned."
+}

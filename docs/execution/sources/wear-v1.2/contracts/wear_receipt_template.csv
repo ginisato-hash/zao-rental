@@ -1,0 +1,2 @@
+﻿source_document_id,source_line_id,document_kind,model_name,garment_kind,quantity,quantity_unit,size_raw,store_id,model_identity_status,existing_asset_id,note
+DEMO_ONLY,line-001,EXPECTED_DELIVERY,合成ウェアA,JACKET,1,PIECE,M,MOUNTAIN_BASE,UNVERIFIED,,合成例。実在モデル/数量ではない

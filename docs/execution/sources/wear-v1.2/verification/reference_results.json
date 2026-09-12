@@ -1,0 +1,871 @@
+{
+  "kind": "REFERENCE_PACK_CHECK_NOT_APPLICATION_TEST",
+  "passed": 216,
+  "failed": 0,
+  "cases": [
+    {
+      "case": "base SHA preserved",
+      "pass": true
+    },
+    {
+      "case": "18 existing products",
+      "pass": true
+    },
+    {
+      "case": "216 existing prices",
+      "pass": true
+    },
+    {
+      "case": "ADULT 12 durations",
+      "pass": true
+    },
+    {
+      "case": "ADULT AM PM equal",
+      "pass": true
+    },
+    {
+      "case": "ADULT half below daily",
+      "pass": true
+    },
+    {
+      "case": "ADULT half split no cheaper day",
+      "pass": true
+    },
+    {
+      "case": "ADULT day1 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day2 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day2 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day2 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day3 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day3 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day3 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day4 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day4 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day4 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day5 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day5 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day5 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day6 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day6 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day6 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day7 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day7 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day7 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day8 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day8 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day8 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day9 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day9 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day9 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT day10 positive int",
+      "pass": true
+    },
+    {
+      "case": "ADULT day10 increasing",
+      "pass": true
+    },
+    {
+      "case": "ADULT day10 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal2 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal3 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal4 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal5 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal6 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal7 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal8 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT marginal9 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+3",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+4",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+5",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+6",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+7",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+8",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 1+9",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+3",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+4",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+5",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+6",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+7",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 2+8",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 3+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 3+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 3+3",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 3+4",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 3+5",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 3+6",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 3+7",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 4+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 4+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 4+3",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 4+4",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 4+5",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 4+6",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 5+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 5+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 5+3",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 5+4",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 5+5",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 6+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 6+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 6+3",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 6+4",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 7+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 7+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 7+3",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 8+1",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 8+2",
+      "pass": true
+    },
+    {
+      "case": "ADULT no split saving 9+1",
+      "pass": true
+    },
+    {
+      "case": "ADULTHALF_DAY_AM bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTHALF_DAY_PM bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_1 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_2 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_3 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_4 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_5 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_6 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_7 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_8 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_9 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "ADULTDAY_10 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDS 12 durations",
+      "pass": true
+    },
+    {
+      "case": "KIDS AM PM equal",
+      "pass": true
+    },
+    {
+      "case": "KIDS half below daily",
+      "pass": true
+    },
+    {
+      "case": "KIDS half split no cheaper day",
+      "pass": true
+    },
+    {
+      "case": "KIDS day1 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day2 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day2 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day2 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day3 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day3 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day3 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day4 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day4 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day4 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day5 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day5 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day5 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day6 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day6 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day6 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day7 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day7 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day7 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day8 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day8 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day8 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day9 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day9 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day9 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS day10 positive int",
+      "pass": true
+    },
+    {
+      "case": "KIDS day10 increasing",
+      "pass": true
+    },
+    {
+      "case": "KIDS day10 average nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal2 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal3 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal4 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal5 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal6 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal7 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal8 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS marginal9 nonincrease",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+3",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+4",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+5",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+6",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+7",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+8",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 1+9",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+3",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+4",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+5",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+6",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+7",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 2+8",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 3+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 3+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 3+3",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 3+4",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 3+5",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 3+6",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 3+7",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 4+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 4+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 4+3",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 4+4",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 4+5",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 4+6",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 5+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 5+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 5+3",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 5+4",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 5+5",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 6+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 6+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 6+3",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 6+4",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 7+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 7+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 7+3",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 8+1",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 8+2",
+      "pass": true
+    },
+    {
+      "case": "KIDS no split saving 9+1",
+      "pass": true
+    },
+    {
+      "case": "KIDSHALF_DAY_AM bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSHALF_DAY_PM bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_1 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_2 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_3 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_4 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_5 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_6 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_7 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_8 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_9 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "KIDSDAY_10 bundle discounted",
+      "pass": true
+    },
+    {
+      "case": "adult_regular_day1 age consistent",
+      "pass": true
+    },
+    {
+      "case": "adult_regular_day1 eligible SET",
+      "pass": true
+    },
+    {
+      "case": "adult_regular_day1",
+      "pass": true
+    },
+    {
+      "case": "adult_premium_day1 age consistent",
+      "pass": true
+    },
+    {
+      "case": "adult_premium_day1 eligible SET",
+      "pass": true
+    },
+    {
+      "case": "adult_premium_day1",
+      "pass": true
+    },
+    {
+      "case": "kids_day1 age consistent",
+      "pass": true
+    },
+    {
+      "case": "kids_day1 eligible SET",
+      "pass": true
+    },
+    {
+      "case": "kids_day1",
+      "pass": true
+    },
+    {
+      "case": "adult_half age consistent",
+      "pass": true
+    },
+    {
+      "case": "adult_half eligible SET",
+      "pass": true
+    },
+    {
+      "case": "adult_half",
+      "pass": true
+    },
+    {
+      "case": "adult_regular_day10 age consistent",
+      "pass": true
+    },
+    {
+      "case": "adult_regular_day10 eligible SET",
+      "pass": true
+    },
+    {
+      "case": "adult_regular_day10",
+      "pass": true
+    },
+    {
+      "case": "adult_wear_only",
+      "pass": true
+    },
+    {
+      "case": "discount rounding 110->104",
+      "pass": true
+    },
+    {
+      "case": "no actual production approval",
+      "pass": true
+    },
+    {
+      "case": "blank production cleaning policy",
+      "pass": true
+    }
+  ]
+}

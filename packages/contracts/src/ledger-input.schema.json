@@ -27,7 +27,9 @@
             "SKI_BOOT",
             "SNOWBOARD_BOOT",
             "POLE",
-            "WEAR"
+            "WEAR",
+            "WEAR_JACKET",
+            "WEAR_PANTS"
           ]
         },
         "notes": {
@@ -52,6 +54,10 @@
           "minLength": 1,
           "maxLength": 160,
           "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "catalogSeason": {
+          "type": "string",
+          "pattern": "^20[0-9]{2}/[0-9]{2}$"
         }
       },
       "required": [
@@ -115,7 +121,9 @@
             "SNOWBOARD",
             "SKI_BOOT",
             "SNOWBOARD_BOOT",
-            "POLE"
+            "POLE",
+            "WEAR_JACKET",
+            "WEAR_PANTS"
           ]
         },
         "age": {
@@ -129,7 +137,8 @@
           "type": "string",
           "enum": [
             "REGULAR",
-            "PREMIUM"
+            "PREMIUM",
+            "STANDARD"
           ]
         },
         "size": {
@@ -160,6 +169,18 @@
           "minLength": 1,
           "maxLength": 160,
           "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+        },
+        "compatibleSports": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "SKI",
+              "SNOWBOARD"
+            ]
+          }
         }
       },
       "required": [

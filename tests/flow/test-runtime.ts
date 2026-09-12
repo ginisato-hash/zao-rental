@@ -1,3 +1,4 @@
+import {WearService} from '../../packages/core/src/wear/service';
 import {Pool} from 'pg';
 import {getRuntime} from '../../apps/web/src/lib/staff-runtime';
 import {BookingService,type FlowIdentity} from '../../packages/core/src/payment/booking-service';
@@ -9,3 +10,5 @@ function setup(){if(process.env.NODE_ENV!=='development')throw new FlowError('TE
 const gateway:PaymentGateway={kind:'SIMULATED_DEV',async create(request:PaymentRequest){const old=receipts.get(request.attemptId);if(old)return old;const {pool}=setup();const now=(await pool.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now.toISOString();const o:PaymentObservation={providerId:'sim_'+request.attemptId,referenceId:request.bookingId,idempotencyKey:request.idempotencyKey,merchantId:request.merchantId,locationId:request.locationId,amountJpy:request.amountJpy,currency:request.currency,status:'COMPLETED',updatedAt:now,completedAt:now};receipts.set(request.attemptId,o);if(process.env.ZAO_TEST_FLOW_FAULT==='SAVE_THEN_LOSE')throw new Error('SYNTHETIC_RESPONSE_LOST');return o;},async lookup(request){return receipts.get(request.attemptId)??null;}};
 export function testFlowService(identity:FlowIdentity){const {r,pool}=setup();return new BookingService(pool,r.authPool,identity,gateway,{merchantId:'SYNTHETIC-MERCHANT',locations:{MOUNTAIN_BASE:'SYNTHETIC-MOUNTAIN',ONSEN_BASE:'SYNTHETIC-ONSEN'},nodeEnv:'development'});}
 export function testFlowOrigin(){return setup().r.config.origin;}
+
+export function testWearService(identity:FlowIdentity){const {r,pool}=setup();return new WearService(pool,r.authPool,identity);}

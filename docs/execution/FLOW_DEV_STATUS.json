@@ -114,7 +114,7 @@
     "physical smartphone camera not verified",
     "E13 full Sandbox milestone not complete"
   ],
-  "next": "Adopt wear/catalog v1.2 into existing branch; preserve custody DB exact-boundary blocker.",
+  "next": "Checkpoint CI and static quantity review; continue approved incomplete work without per-phase handoff.",
   "prohibitions": [
     "no new PR merge",
     "no real Square/production/data",
@@ -124,11 +124,10 @@
   "local_verification": "docs/execution/evidence/flow-dev/local-summary.json",
   "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
   "budget_checkpoint": {
-    "at": "2026-09-12T15:54:23.907315+00:00",
-    "elapsed_this_run_seconds": 8868,
-    "deadline_unchanged": true,
+    "at": "2026-09-12T17:11:15.692814+00:00",
     "claude_starts": 2,
-    "claude_remaining": 6
+    "remaining": 6,
+    "deadline_unchanged": true
   },
   "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
   "reviews": [
@@ -250,5 +249,21 @@
     "recorded_at": "2026-09-12T15:31:41.344241+00:00",
     "document": "docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md",
     "budget_reset": false
+  },
+  "wear_adoption": {
+    "pack_id": "ZAO-WEAR-CATALOG-UX-20260913-V1_2",
+    "record": "docs/execution/WEAR_ADOPTION.json",
+    "state": "QUANTITY_FULL_VERIFY_PASSED_REVIEW_PENDING",
+    "budget_reset": false,
+    "inventory_override": {
+      "document": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md",
+      "sha256": "41911b8d169944c803daf59a24d2e43a96a4642a6e2008498ea44d54b0159cf6",
+      "at": "2026-09-12T16:15:11.995192+00:00",
+      "state": "IMPLEMENTING_QUANTITY_POOLS",
+      "preserved": "outputs/flow-dev/wear-quantity-switch",
+      "previous_serialized_tests": "HISTORICAL_SUPERSEDED",
+      "budget_reset": false
+    },
+    "acceptance": "docs/execution/WEAR_ACCEPTANCE_STATUS.json"
   }
 }

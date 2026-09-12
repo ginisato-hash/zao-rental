@@ -17,7 +17,7 @@ function request(path:string,method='GET',body?:unknown){return new Request('htt
 const db=await startIsolatedPostgres();
 try {
   const service=new LedgerService(db.pool,admin,async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */});const http=ledgerHandler(async()=>admin,p=>new LedgerService(db.pool,p,async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */}));
-  await check('ordered concurrent migrations apply 0001 through 0011 exactly once',async()=>{await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.deepEqual((await db.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows,[{id:'0001'},{id:'0002'},{id:'0003'},{id:'0004'},{id:'0005'},{id:'0006'},{id:'0007'},{id:'0008'},{id:'0009'},{id:'0010'},{id:'0011'}]);});
+  await check('ordered concurrent migrations apply 0001 through 0013 exactly once',async()=>{await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.deepEqual((await db.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows,[{id:'0001'},{id:'0002'},{id:'0003'},{id:'0004'},{id:'0005'},{id:'0006'},{id:'0007'},{id:'0008'},{id:'0009'},{id:'0010'},{id:'0011'},{id:'0012'},{id:'0013'}]);});
   await check('traceable synthetic sample is atomic and concurrent replay creates no duplicates or audit events',async()=>{
     await seedLedgerSample(db.pool);const before=(await db.pool.query('SELECT count(*)::int AS n FROM ledger_history')).rows[0].n;
     await Promise.all([seedLedgerSample(db.pool),seedLedgerSample(db.pool)]);

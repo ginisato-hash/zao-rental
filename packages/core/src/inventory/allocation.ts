@@ -1,5 +1,6 @@
+import {wearCapacity} from './wear-capacity';
 import type {PoolClient} from 'pg';
-import {HoldError,normalizePeriod,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
+import {HoldError,normalizePeriod,variantMatches,isWear,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {transferProjection,destinationFeasible,sourceReservations} from '../transfer/projection';
 import {dependencyScope,type ScopeNode} from './dependency-scope';
 import {matchPeriods,type Demand,type Placement} from './period-matching';
@@ -14,22 +15,24 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   if(new Date(normalizePeriod(conditions.period).dueAt)<=now)throw new HoldError('PERIOD_ENDED');
   // Bounded metadata scan, not a LIMIT that silently discards existing promises.
   const nodes=(await c.query<ScopeNode>(`SELECT id,occupancy_start::text AS start,CASE WHEN pickup_store<>return_store THEN '9999-12-31' ELSE occupancy_end::text END AS end,
-   ARRAY(SELECT DISTINCT jsonb_array_elements_text(item->'variantIds') FROM jsonb_array_elements(conditions->'members') member CROSS JOIN LATERAL jsonb_array_elements(member->'items') item) AS variants
+   ARRAY(SELECT DISTINCT jsonb_array_elements_text(item->'variantIds') FROM jsonb_array_elements(conditions->'members') member CROSS JOIN LATERAL jsonb_array_elements(member->'items') item WHERE item->>'family' NOT IN ('WEAR_JACKET','WEAR_PANTS')) AS variants
    FROM inventory_holds WHERE state='ACTIVE' AND (expires_at>$1 OR payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR allocation_stage<>'PROVISIONAL') AND ($2::uuid IS NULL OR id<>$2) ORDER BY id LIMIT 10001`,[now,ignore])).rows;
   if(nodes.length>10000)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  let scope:string[];try{scope=dependencyScope({id:'candidate',start:conditions.period.startDate,end:conditions.pickupStore===conditions.returnStore?conditions.period.endDate:'9999-12-31',variants:conditions.members.flatMap(m=>m.items.flatMap(i=>i.variantIds))},nodes);}catch(e){if(e instanceof HoldError&&e.code==='INDETERMINATE')return {result:'INDETERMINATE',witness:[],replanned:[]};throw e;}
+  let scope:string[];try{scope=dependencyScope({id:'candidate',start:conditions.period.startDate,end:conditions.pickupStore===conditions.returnStore?conditions.period.endDate:'9999-12-31',variants:conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).flatMap(i=>i.variantIds))},nodes);}catch(e){if(e instanceof HoldError&&e.code==='INDETERMINATE')return {result:'INDETERMINATE',witness:[],replanned:[]};throw e;}
   const live=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=ANY($1::uuid[]) ORDER BY id',[scope])).rows;
   const pinned=(await c.query<{hold_id:string}>(`SELECT DISTINCT cl.hold_id FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.active AND cl.hold_id=ANY($2::uuid[]) AND (p.state<>'PLANNED' OR b.issue IS NOT NULL OR b.planned_ready_at<$1)`,[now,scope])).rows.map(r=>r.hold_id);
   const mutable=live.filter(h=>h.due_at>now&&!h.transfer_attention&&!pinned.includes(h.id)&&h.allocation_stage==='PROVISIONAL'&&(['NONE','FAILURE'].includes(h.payment_state)||h.payment_state==='SUCCESS'&&h.confirmed_at instanceof Date));
   // All non-replanned live promises remain fixed, including outside the closure.
   const fixedIds=nodes.filter(h=>!mutable.some(m=>m.id===h.id)).map(h=>h.id);
   const jobs=[...mutable.map(h=>({id:h.id,c:h.conditions})),{id:'candidate',c:conditions}];
-  const requirements=jobs.flatMap(j=>j.c.members.flatMap(m=>m.items.map(item=>({...item,age:m.age,tier:m.tier,key:j.id+'/'+m.key+':'+item.family,memberKey:m.key+':'+item.family,job:j}))));
+  const requirements=jobs.flatMap(j=>j.c.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).map(item=>({...item,member:m,key:j.id+'/'+m.key+':'+item.family,memberKey:m.key+':'+item.family,job:j}))));
   if(requirements.length>240)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  const variantIds=[...new Set(requirements.flatMap(r=>r.variantIds))];
+  const checkedRequirements=[...requirements,...conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(item=>({...item,member:m})))];
+  const variantIds=[...new Set(checkedRequirements.flatMap(r=>r.variantIds))];
   const transfers=await transferProjection(c,variantIds);if(transfers.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  const variants=(await c.query<{id:string;family:string;age:string;tier:string}>('SELECT id,family,age,tier FROM ledger_variants WHERE id=ANY($1::uuid[])',[variantIds])).rows;
-  for(const r of requirements)for(const variantId of r.variantIds){const v=variants.find(v=>v.id===variantId);if(!v||v.family!==r.family||v.age!==r.age||v.tier!==r.tier)throw new HoldError('VARIANT_MISMATCH');}
+  const variants=(await c.query<import('../../../contracts/src/hold').PromiseVariant>(`SELECT v.id,v.family,v.age,v.tier,v.model_id,to_jsonb(v)->'compatible_sports' AS compatible_sports,to_jsonb(m)->>'catalog_season' AS catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[variantIds])).rows;
+  for(const r of checkedRequirements)for(const variantId of r.variantIds){const v=variants.find(v=>v.id===variantId);if(!variantMatches(r.member,r,v))throw new HoldError('VARIANT_MISMATCH');}
+  const wear=await wearCapacity(c,conditions,now,ignore);if(!wear.feasible)return {result:'INSUFFICIENT',witness:[],replanned:[]};
   const units=(await c.query<Unit>(`SELECT a.id,a.variant_id,a.family,v.age,v.tier,a.store_id,1 AS quantity,a.status FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=ANY($1::uuid[]) UNION ALL SELECT p.id,p.variant_id,p.family,v.age,v.tier,p.store_id,p.quantity,p.status FROM ledger_poles p JOIN ledger_variants v ON v.id=p.variant_id WHERE p.variant_id=ANY($1::uuid[]) ORDER BY id LIMIT 3001`,[variantIds])).rows;
   for(const u of [...units])if(u.family==='POLE'){u.quantity-=transfers.filter(p=>p.destination_pole_id===u.id&&p.state==='READY').length;for(const p of transfers.filter(p=>p.destination_pole_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state)))units.push({...u,id:p.id,quantity:1,transfer_piece_id:p.id,physical_pole_id:u.id});}
   if(units.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
@@ -42,7 +45,7 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   fixed.push(...receivedDay.map(p=>({key:'received/'+p.id,unit:p.unit,start:p.day,end:p.day})));
   // A second, diagnostic-only match relaxes custody/transfer constraints. It never creates claims.
   // Only report a transfer prerequisite if those constraints actually explain infeasibility.
-  const demandsFor=(diagnostic:boolean):Demand[]=>requirements.map(r=>{
+  const demandsFor=(diagnostic:boolean):Demand[]=>requirements.filter(r=>!isWear(r.family)).map(r=>{
    const start=r.job.c.period.startDate,end=diagnostic||r.job.c.pickupStore===r.job.c.returnStore?r.job.c.period.endDate:'9999-12-31';
    const candidates=units.filter(u=>{
     if(pin&&r.job.id==='candidate'&&r.memberKey===pin.requirementKey&&u.id!==pin.assetId)return false;

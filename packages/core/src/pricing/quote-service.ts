@@ -1,3 +1,4 @@
+import {variantMatches,type PromiseVariant} from '../../../contracts/src/hold';
 import {createHash,randomUUID} from 'node:crypto';
 import sourceDocument from '../../../../config/pricing/zao-2026-27-v1.draft.json';
 import type {Pool,PoolClient} from 'pg';
@@ -35,9 +36,9 @@ export class QuoteService {
  private async hold(c:Conn,input:QuoteInput,now?:Date){await this.auth(c,'QUOTE_CREATE',[input.conditions.pickupStore,input.conditions.returnStore]);if(!input.holdId)return null;const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[input.holdId])).rows[0];if(!h||h.owner_id!==this.principal.subject)throw new PricingError('FORBIDDEN',403);await this.auth(c,'QUOTE_CREATE',[h.pickup_store,h.return_store]);if(hash(h.conditions)!==hash(input.conditions))throw new PricingError('HOLD_CONDITIONS_MISMATCH',409);if(now&&(h.state!=='ACTIVE'||h.expires_at<=now))throw new PricingError('HOLD_EXPIRED_OR_RELEASED',409);if(h.transfer_attention||now&&await this.attention(c,h.id,now)||!['NONE','FAILURE'].includes(h.payment_state))throw new PricingError('HOLD_RECONCILIATION_REQUIRED',409);return h;}
  private async validateVariants(c:Conn,conditions:HoldConditions){
   const ids=[...new Set(conditions.members.flatMap(m=>m.items.flatMap(i=>i.variantIds)))];
-  const rows=(await c.query<{id:string;family:string;age:string;tier:string}>('SELECT id,family,age,tier FROM ledger_variants WHERE id=ANY($1::uuid[])',[ids])).rows;
+  const rows=(await c.query<PromiseVariant>(`SELECT v.id,v.family,v.age,v.tier,v.model_id,to_jsonb(v)->'compatible_sports' AS compatible_sports,to_jsonb(m)->>'catalog_season' AS catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[ids])).rows;
   const byId=new Map(rows.map(v=>[v.id,v]));
-  for(const m of conditions.members)for(const item of m.items)for(const id of item.variantIds){const v=byId.get(id);if(!v||v.family!==item.family||v.age!==m.age||v.tier!==m.tier)throw new PricingError('VARIANT_CONDITIONS_MISMATCH',422);}
+  for(const m of conditions.members)for(const item of m.items)for(const id of item.variantIds){const v=byId.get(id);if(!variantMatches(m,item,v))throw new PricingError('VARIANT_CONDITIONS_MISMATCH',422);}
  }
 
  async create(key:string,value:unknown){id(key);const input=parseQuote(value),fingerprint=hash(input);return this.tx('QUOTE_CREATE',async c=>{await this.auth(c,'QUOTE_CREATE',[input.conditions.pickupStore,input.conditions.returnStore]);if(input.holdId){const h=(await c.query('SELECT owner_id,pickup_store,return_store FROM inventory_holds WHERE id=$1',[input.holdId])).rows[0];if(!h||h.owner_id!==this.principal.subject)throw new PricingError('FORBIDDEN',403);await this.auth(c,'QUOTE_CREATE',[h.pickup_store,h.return_store]);}},async(c,now)=>{

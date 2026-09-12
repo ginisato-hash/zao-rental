@@ -12,6 +12,12 @@ export async function provisionFlowRole(owner:Pool,identity:{namespace:string;da
  await owner.query(`GRANT SELECT,INSERT,UPDATE ON rental_bookings,rental_payment_attempts TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT ON rental_provider_events,rental_notifications,rental_requests TO ${user}`);
  await owner.query(`GRANT UPDATE(payment_state,confirmed_at,version) ON inventory_holds TO ${user}`);
+ // Owner-adopted quantity-wear development tables only. No additional writes to
+ // equipment ledger, old custody tables, authentication tables or production roles.
+ await owner.query(`GRANT SELECT,INSERT,UPDATE ON wear_pools,wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts TO ${user}`);
+ await owner.query(`GRANT SELECT,INSERT ON wear_requests,wear_history TO ${user}`);
+ await owner.query(`GRANT SELECT ON wear_claims TO ${user}`);
+ await owner.query(`GRANT USAGE ON SEQUENCE wear_history_id_seq TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);
  const flowDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};const flowPool=new Pool({...flowDb,max:4,connectionTimeoutMillis:2000});const close=trackPoolLifecycle(flowPool);return {flowDb,flowPool,close};
 }

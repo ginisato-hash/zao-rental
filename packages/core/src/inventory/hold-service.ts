@@ -1,3 +1,4 @@
+import {writeWearClaims} from './wear-capacity';
 import {planAllocation,writeAllocationClaims} from './allocation';
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
@@ -72,6 +73,9 @@ export class HoldService {
   const grouped=new Map<string,Record<string,unknown>[]>();for(const {hold_id,...event} of histories){const items=grouped.get(hold_id)??[];items.push(event);grouped.set(hold_id,items);}
   const attention=await this.attention(c,rows.map(h=>h.id),now);return rows.map(h=>this.summary(attention.includes(h.id)?{...h,transfer_attention:'TRANSFER_RECONCILIATION_REQUIRED'}:h,now,grouped.get(h.id)??[]));
  });}
+ // Narrow catalog read through the existing authorized inventory reader. Recommendation
+ // has no model-table grants; never broaden its DB role to obtain display metadata.
+ async recommendationCatalog(){return this.read(async c=>{const rows=(await c.query<import('../../../contracts/src/recommendation').Variant>('SELECT v.id,v.family,v.age,v.tier,v.size,v.model_id,v.compatible_sports,m.catalog_season,m.name AS model_name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.id LIMIT 2001')).rows;if(rows.length>2000)throw new HoldError('INDETERMINATE_CATALOG_LIMIT',503);return rows;});}
  async options(){return this.read(async c=>(await c.query("SELECT v.id,v.family,v.age,v.tier,v.size,m.name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.family,v.size,v.id LIMIT 500")).rows);}
  async availability(input:unknown,replaceHoldId?:string,context?:CandidateContext){const conditions=parseConditions(input);return this.transaction(false,async c=>{
   await this.authorize(c,false,[conditions.pickupStore,conditions.returnStore]);if(replaceHoldId){const old=await this.owned(c,replaceHoldId,false);if(old.reservation_id!==conditions.reservationId)throw new HoldError('IMMUTABLE_RESERVATION');if(old.allocation_stage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(old.payment_state))throw new HoldError('ALLOCATION_FIXED',409);}
@@ -83,7 +87,7 @@ export class HoldService {
   let pin:{requirementKey:string;assetId:string}|undefined;
   if(op==='reassign'){if(!input||typeof input!=='object'||Object.keys(input).sort().join(',')!=='assetId,requirementKey')throw new HoldError('INVALID_INPUT');pin=input as typeof pin;if(!pin||typeof pin.requirementKey!=='string'||typeof pin.assetId!=='string')throw new HoldError('INVALID_INPUT');id(pin.assetId);}
   const fingerprint=createHash('sha256').update(canonical({op,holdId:holdId??null,conditions,pin:pin??null,...(expectedVersion===undefined?{}:{expectedVersion})})).digest('hex');
-  const preflight=async(c:Conn)=>{if(conditions)await this.authorize(c,true,[conditions.pickupStore,conditions.returnStore]);if(holdId){const old=await this.owned(c,holdId,true);if(pin){conditions=old.conditions;if(!conditions.members.some(m=>m.items.some(i=>i.family!=='POLE'&&m.key+':'+i.family===pin!.requirementKey)))throw new HoldError('INVALID_REQUIREMENT');}if(conditions&&conditions.reservationId!==old.reservation_id)throw new HoldError('IMMUTABLE_RESERVATION');}if(conditions){const r=(await c.query('SELECT owner_id FROM inventory_reservations WHERE id=$1',[conditions.reservationId])).rows[0];if(r&&r.owner_id!==this.principal.subject)throw new HoldError('FORBIDDEN',403);}};
+  const preflight=async(c:Conn)=>{if(conditions)await this.authorize(c,true,[conditions.pickupStore,conditions.returnStore]);if(holdId){const old=await this.owned(c,holdId,true);if(pin){conditions=old.conditions;if(!conditions.members.some(m=>m.items.some(i=>i.family!=='POLE'&&!i.family.startsWith('WEAR_')&&m.key+':'+i.family===pin!.requirementKey)))throw new HoldError('INVALID_REQUIREMENT');}if(conditions&&conditions.reservationId!==old.reservation_id)throw new HoldError('IMMUTABLE_RESERVATION');}if(conditions){const r=(await c.query('SELECT owner_id FROM inventory_reservations WHERE id=$1',[conditions.reservationId])).rows[0];if(r&&r.owner_id!==this.principal.subject)throw new HoldError('FORBIDDEN',403);}};
   return this.transaction(true,preflight,async(c,now)=>{
    const previous=(await c.query<{fingerprint:string;result:Outcome}>('SELECT fingerprint,result FROM inventory_requests WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,key])).rows[0];
    if(previous&&previous.fingerprint!==fingerprint)throw new HoldError('IDEMPOTENCY_MISMATCH',409);
@@ -121,6 +125,7 @@ export class HoldService {
      await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=ANY($1::uuid[]) AND active',[replanIds]);
      for(const otherId of plan.replanned){const other=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=$1',[otherId])).rows[0]!;await writeAllocationClaims(c,otherId,other.conditions,plan.witness.filter(w=>w.holdId===otherId));}
      await writeAllocationClaims(c,target,conditions,plan.witness.filter(w=>w.holdId==='candidate'));
+     if([conditions,old?.conditions].some(value=>value?.members.some(m=>m.items.some(i=>i.family.startsWith('WEAR_')))))await writeWearClaims(c,target,conditions,now);
      const after=(await c.query('SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,day FROM inventory_claims WHERE hold_id=ANY($1::uuid[]) AND active ORDER BY id',[[...replanIds,target]])).rows;
      await c.query('SELECT inventory_record_replan($1::jsonb,$2::jsonb)',[JSON.stringify(before),JSON.stringify(after)]);
      outcome={result:old?'AMENDED':'CREATED',holdId:target};

@@ -1,0 +1,432 @@
+{
+  "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
+  "budget_reset": false,
+  "as_of": "2026-09-12T17:11:15.691964+00:00",
+  "source_tests": 57,
+  "items": [
+    {
+      "id": "PRICE-01",
+      "title": "上下単品/セットの全12区分×2年齢",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-02",
+      "title": "道具216既存価格不変",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-03",
+      "title": "大人1日セット合計",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-04",
+      "title": "Premium1日衣類追加",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-05",
+      "title": "子供1日",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-06",
+      "title": "半日",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-07",
+      "title": "20%と5%",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-08",
+      "title": "割引半円",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-09",
+      "title": "同一人条件",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-10",
+      "title": "板だけ/靴だけ",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-11",
+      "title": "期間違い",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-12",
+      "title": "coupon未設定併用",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-13",
+      "title": "道具除去",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "PRICE-14",
+      "title": "早割境界",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-01",
+      "title": "上下不足",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-02",
+      "title": "別サイズ上下",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-03",
+      "title": "二重チャネル",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-04",
+      "title": "競技共有",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-05",
+      "title": "競技専用品",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-06",
+      "title": "年齢区分",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-07",
+      "title": "未来の同一個体",
+      "state": "SUPERSEDED_QUANTITY_PERIOD_CLAIMS",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "INV-08",
+      "title": "仮割当組替え",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-09",
+      "title": "20人最大入力",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-10",
+      "title": "HTTP攻撃",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-11",
+      "title": "変更失敗",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "INV-12",
+      "title": "配送中",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "UI-01",
+      "title": "wearのみ",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "UI-02",
+      "title": "混在グループ",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "UI-03",
+      "title": "料金カード",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "UI-04",
+      "title": "未選択既定",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "UI-05",
+      "title": "写真不足",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "UI-06",
+      "title": "長い入力",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "UI-07",
+      "title": "再読込",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "UI-08",
+      "title": "古い応答",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "UI-09",
+      "title": "guest認可",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "OPS-01",
+      "title": "片側ではない片部位返却",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-02",
+      "title": "スキー左右不変",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-03",
+      "title": "連続混在返却",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "OPS-04",
+      "title": "重複返却",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-05",
+      "title": "返却受領",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-06",
+      "title": "清掃予定と実績",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-07",
+      "title": "計画バッファ",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "OPS-08",
+      "title": "遅延清掃",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-09",
+      "title": "異店舗受領",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-10",
+      "title": "サイズ交換",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-11",
+      "title": "早期返却",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "OPS-12",
+      "title": "権限取消",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "CAT-01",
+      "title": "モデル名数量のみ",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "CAT-02",
+      "title": "snowboard過去版",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "CAT-03",
+      "title": "写真の同一性",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "CAT-04",
+      "title": "200着単位不明",
+      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "CAT-05",
+      "title": "同じ表再取込",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "CAT-06",
+      "title": "数量減",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "CAT-07",
+      "title": "モデル説明共用",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "CAT-08",
+      "title": "期限安全回帰",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    },
+    {
+      "id": "CAT-09",
+      "title": "混在負荷",
+      "state": "NOT_IMPLEMENTED",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": null
+    },
+    {
+      "id": "CAT-10",
+      "title": "既存DBmigration",
+      "state": "PARTIAL",
+      "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
+      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+    }
+  ],
+  "quantity_override_cases": {
+    "1-4": "real-postgres.ts",
+    "5": "PASSED group-capacity.ts: same booking two jackets, one Mountain and one Onsen receipt, pants remain",
+    "6": "normal-ui.ts booking-number lookup (no garment recognition)",
+    "7-12": "real-postgres.ts and normal-ui.ts; actual next-day readiness shown at DB boundary",
+    "13": "real-postgres.ts separate plan/dispatch/actual receipt/ready",
+    "14": "real-postgres.ts protected quantity decrement",
+    "15-17": "group-capacity.ts twenty persons,100 requirements,10days,TTL; normal UI20 not yet exercised",
+    "18": "real-postgres.ts return Onsen then explicit transfer toMountain",
+    "19-20": "normal-ui.ts unfinished pants retained, no extra payment calls"
+  },
+  "gaps": [
+    "Full mixed continuous equipment scan return blocked by exact existing custody DB boundary",
+    "Guest-owned BFF is not connected; current preview requires staff session",
+    "Content/media import/release and actual owner photos incomplete",
+    "No full three-season Salomon catalog",
+    "No real200 wear units, sizes or cleaning time",
+    "No real Square/Sandbox, phone, production, invoice, email or deployment"
+  ],
+  "full_verification": {
+    "record": "docs/execution/evidence/flow-dev/wear-quantity/commands.json",
+    "commands": 33,
+    "exit_code": 0,
+    "review": "PENDING"
+  }
+}

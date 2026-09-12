@@ -1,0 +1,292 @@
+[
+  {
+    "id": "R01",
+    "name": "カスカワスポーツ蔵王",
+    "url": "https://zao-skirental.jp/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "2025/26",
+    "observation": "税込ウェア上下1日4500、2日8000、3日11500、以後1日4500。道具Regularセット1日5500。",
+    "limitations": "10日43000は掲載式の計算値。子供500円引きの適用範囲をウェアへ推測しない。"
+  },
+  {
+    "id": "R02",
+    "name": "蔵王レンタサービス",
+    "url": "https://zaoski.makino-fruits.com/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "未記載",
+    "observation": "税込ウェア上下1日3500/HP3200、2日6500/5900、3日9500/8600、5日15500/14000。",
+    "limitations": "HP券提示条件。新季の料金確定ではない。"
+  },
+  {
+    "id": "R03",
+    "name": "蔵王ライザ",
+    "url": "https://www.zaoliza.co.jp/wntr/rentals/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "未記載",
+    "observation": "ウェア大人4時間3500/1日4000、子供2500/3000。",
+    "limitations": "古い感染症注意が残る。リフト付き10000円は純レンタルと比較しない。"
+  },
+  {
+    "id": "R04",
+    "name": "川場スキー場",
+    "url": "https://www.kawaba.co.jp/rental/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "ページの料金版は公開前再確認",
+    "observation": "上下大人当日5500/事前5300、小人4700/4500。",
+    "limitations": "大人高校生以上・小人中学生以下。事前決済は取り置き保証でないと明記。ZAOの13歳境界/在庫確保とは異なる。"
+  },
+  {
+    "id": "R05",
+    "name": "パルコール嬬恋",
+    "url": "https://tsumagoiskiresort.life/rentals/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "未記載",
+    "observation": "税込1日大人道具5500、上下5000、道具+上下10000。子供4000、3500、5500。",
+    "limitations": "子供小学6年以下。予約リンクと事前予約不可の記述が併存、予約方式の模倣根拠にはしない。"
+  },
+  {
+    "id": "R06",
+    "name": "アルピナスポーツ志賀高原",
+    "url": "https://www.alpinasports.jp/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "2025/26 明示",
+    "observation": "税込大人上下4h2400/1日3000/2日5400/3日7800/4日10200。子供半額。道具5000+上下3000に対し合計7000。",
+    "limitations": "前日23:59までWeb決済10%引き。ZAOへ同じ価格・締切は移植しない。襟カバーの都度洗濯と全着洗濯は別。"
+  },
+  {
+    "id": "R07",
+    "name": "SPICY 白馬",
+    "url": "https://spicy.co.jp/winter/",
+    "kind": "RENTAL_RATE_VERSION_CONFLICT",
+    "observed_at": "2026-09-13",
+    "season": "本文2025/26・検索に2026/27が混在",
+    "observation": "取得本文の上下大人1日5000/2日8000/3日11000、子供3000/5000/7000。",
+    "limitations": "検索抜粋に6600/11000/15000等の別季値。最新単一価格として採用せず相場集計から除外。"
+  },
+  {
+    "id": "R08",
+    "name": "YamaSport ニセコ",
+    "url": "https://www.yamasportniseko.com/ja/pricing",
+    "kind": "RENTAL_RATE_VERSION_CONFLICT",
+    "observed_at": "2026-09-13",
+    "season": "2025/26",
+    "observation": "最終取得本文は大人上または下2720/4320/5920、10日11760。上下単純合算5440/8640/11840、10日23520。",
+    "limitations": "別取得では各3060、10日13230。割引/取得版差未解決。表示原単位は1点。最新価格平均から除外し、期間割引の形だけ参照。"
+  },
+  {
+    "id": "R09",
+    "name": "Rhythm Japan",
+    "url": "https://rhythmjapan.com/winter-rentals-services",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "版・店舗の最終選択は要再確認",
+    "observation": "上または下大人3800/6100/7800、子供2600/3700/4300。",
+    "limitations": "上下合算1日7600/5200は計算値、公式セット価格ではない。キッズ3〜13歳の表示。"
+  },
+  {
+    "id": "R10",
+    "name": "みやぎ蔵王えぼし",
+    "url": "https://eboshi.co.jp/winter/rental/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "未記載",
+    "observation": "道具+ウェアのフルセット大人5時間8000/1日9000、子供5000/6000。",
+    "limitations": "ウェア単独額はこの本文から未確定。小物は対象外。"
+  },
+  {
+    "id": "R11",
+    "name": "アミューズスポーツ北海道",
+    "url": "https://amuse-sports.com/rental/item/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "公開前再確認",
+    "observation": "スキー/ボード共通上下 通常1日5000/2日6500/3日7500/4日8500、Web4000/5200/6000/6800。4日以後1日2000。",
+    "limitations": "フルセットWeb8000は帽子/ゴーグル/手袋込み、価格品質/配送条件も異なる。"
+  },
+  {
+    "id": "R12",
+    "name": "裏磐梯スキー場",
+    "url": "https://www.urabandai-ski.jp/facility/rental/",
+    "kind": "RENTAL_RATE",
+    "observed_at": "2026-09-13",
+    "season": "未記載",
+    "observation": "上下大人3000、子供2000。道具セット4000/3000。",
+    "limitations": "料金表の期間/税の明記は取得箇所で未確認。子供は小学生まで。参考下限、同条件中央値には使わない。"
+  },
+  {
+    "id": "R13",
+    "name": "スプリングバレー仙台泉",
+    "url": "https://www.springvalley.co.jp/winter/rental_shop/rental",
+    "kind": "RENTAL_RATE_PARTIAL",
+    "observed_at": "2026-09-13",
+    "season": "未確定",
+    "observation": "公式検索抜粋に時間別ウェア料金、取得本文は該当額を十分抽出できず。",
+    "limitations": "数値比較/推奨表の計算根拠から除外。"
+  },
+  {
+    "id": "R14",
+    "name": "休暇村岩手網張温泉",
+    "url": "https://qkamura.or.jp/iwate/ski/",
+    "kind": "RENTAL_RATE_PARTIAL",
+    "observed_at": "2026-09-13",
+    "season": "未確定",
+    "observation": "公式検索抜粋にウェア料金、取得本文は古いキャッシュ/該当数値未検証。",
+    "limitations": "数値比較/推奨表の計算根拠から除外。"
+  },
+  {
+    "id": "T01",
+    "name": "Booqable quantity tracking",
+    "url": "https://help.booqable.com/en/articles/6820234-how-to-track-rental-products-in-quantities",
+    "kind": "IMPLEMENTATION",
+    "observed_at": "2026-09-13",
+    "season": "2026",
+    "observation": "数量追跡は個体IDなし、variant/location別の数で管理。",
+    "limitations": "個体追跡の速さとの比較。ZAOは混在返却・洗浄追跡を優先して衣類個体方式を推奨。"
+  },
+  {
+    "id": "T02",
+    "name": "Booqable variants",
+    "url": "https://help.booqable.com/en/articles/90773-how-to-create-different-variations-of-one-product",
+    "kind": "IMPLEMENTATION",
+    "observed_at": "2026-09-13",
+    "season": "取得時点",
+    "observation": "色・サイズ等のvariant、サイズ別/店舗別在庫を管理。",
+    "limitations": "特定メーカーのサイズ同一性を証明するものではない。"
+  },
+  {
+    "id": "T03",
+    "name": "Booqable product settings",
+    "url": "https://help.booqable.com/en/articles/90053-how-to-adjust-product-settings",
+    "kind": "IMPLEMENTATION",
+    "observed_at": "2026-09-13",
+    "season": "2025",
+    "observation": "予約前後のbufferで準備/清掃時間を保護。既存注文に設定変更を自動反映しない。",
+    "limitations": "Booqableは暦時間。ZAOの清掃時間を決める根拠ではない。allow shortageは採用しない。"
+  },
+  {
+    "id": "T04",
+    "name": "Booqable downtime",
+    "url": "https://help.booqable.com/en/articles/12505664-how-to-schedule-downtime-for-your-products",
+    "kind": "IMPLEMENTATION",
+    "observed_at": "2026-09-13",
+    "season": "2026",
+    "observation": "個体/数量で整備・修理・不足期間を登録、開始/停止と権限を分離。",
+    "limitations": "仕様を参考にするがサービス導入はしない。"
+  },
+  {
+    "id": "T05",
+    "name": "TWICE product bundles",
+    "url": "https://www.twicecommerce.com/docs/creating-product-bundles",
+    "kind": "IMPLEMENTATION",
+    "observed_at": "2026-09-13",
+    "season": "2026",
+    "observation": "bundleでも各構成品の在庫追跡を維持。",
+    "limitations": "掲載上nested bundles不可、1製品数量1の制約あり。ZAOは既存構成品をflatten、同じ制約を無理に継承しない。"
+  },
+  {
+    "id": "T06",
+    "name": "Rentman serial numbers",
+    "url": "https://support.rentman.io/hc/en-us/articles/360013086279-Manage-Serial-Numbers",
+    "kind": "IMPLEMENTATION",
+    "observed_at": "2026-09-13",
+    "season": "取得時点",
+    "observation": "個体の位置/状態をシリアル/QRで追跡。virtual combination自体にserialを付けない。",
+    "limitations": "既存システムを置換する推薦ではない。"
+  },
+  {
+    "id": "T07",
+    "name": "Rentman import",
+    "url": "https://support.rentman.io/hc/en-us/articles/24320695034642-Equipment-Import-How-do-I-Format-my-Import-File-for-Serialized-Equipment",
+    "kind": "IMPLEMENTATION",
+    "observed_at": "2026-09-13",
+    "season": "取得時点",
+    "observation": "商品共通列と個体列を区別、未入力QRの生成、類似表記の重複リスク。",
+    "limitations": "ZAOは原本数量から登録計画へ展開、同じ表でIDを再発行しない。"
+  },
+  {
+    "id": "T08",
+    "name": "Salomon winter garment care",
+    "url": "https://www.salomon.com/en-gb/sg/a/how-to-wash-your-ski-snowboard-jacket-and-pants",
+    "kind": "CARE",
+    "observed_at": "2026-09-13",
+    "season": "2020/取得時点",
+    "observation": "素材ごとの洗濯・乾燥を区別し、完全乾燥と取扱確認が必要。",
+    "limitations": "個々のラベルを優先。予約ごとの一律洗浄頻度や実所要時間をこの資料だけで保証しない。"
+  },
+  {
+    "id": "T09",
+    "name": "Salomon GoreTex care",
+    "url": "https://www.salomon.com/en-us/sg/a/how-to-wash-gore-tex-clothing-and-restore-durable-water-repellency-dwr",
+    "kind": "CARE",
+    "observed_at": "2026-09-13",
+    "season": "2026",
+    "observation": "防水メンブレン衣類の洗剤/乾燥/撥水回復の注意。",
+    "limitations": "すべての当店ウェアが同素材とは仮定しない。"
+  },
+  {
+    "id": "T10",
+    "name": "Salomon sizing example",
+    "url": "https://salomon.jp/products/mountain-flex-lc26516",
+    "kind": "SIZE_EXAMPLE",
+    "observed_at": "2026-09-13",
+    "season": "現行商品ページ",
+    "observation": "メンズボトムスにウエスト/ヒップ/股下の寸法案内あり。",
+    "limitations": "このパンツは当店ウェアではない。サイズ表の構造例のみ、実レンタルの万能サイズ表として流用禁止。"
+  },
+  {
+    "id": "T11",
+    "name": "国税庁 総額表示",
+    "url": "https://www.nta.go.jp/taxes/shiraberu/taxanswer/shohi/6902.htm",
+    "kind": "TAX_DISPLAY",
+    "observed_at": "2026-09-13",
+    "season": "掲載基準2025-04-01",
+    "observation": "消費者向けにあらかじめ表示する価格の税込総額表示。",
+    "limitations": "既存ZAOの税区分承認を代行しない。公開前に全価格版を整合させる。"
+  },
+  {
+    "id": "C01",
+    "name": "Salomon snowboard catalog",
+    "url": "https://salomon.jp/pages/snowboard-catalog",
+    "kind": "CATALOG_PORTAL",
+    "observed_at": "2026-09-13",
+    "season": "2024/25 2025/26 2026/27",
+    "observation": "年式別boards/boots/bindings/youth/softgoods/tech bookへの入口。",
+    "limitations": "入口確認のみ。全SKUと数値抽出はこのパックの成果ではない。"
+  },
+  {
+    "id": "C02",
+    "name": "Salomon snowboard categories",
+    "url": "https://salomon.jp/pages/snowboarding",
+    "kind": "CATALOG_PORTAL",
+    "observed_at": "2026-09-13",
+    "season": "取得時点",
+    "observation": "ボード/ブーツ/ビンディング等カテゴリー。",
+    "limitations": "スキー記事からボード仕様を推測しない。"
+  },
+  {
+    "id": "C03",
+    "name": "Salomon ski catalog",
+    "url": "https://salomon.jp/pages/product-catalog",
+    "kind": "CATALOG_PORTAL",
+    "observed_at": "2026-09-13",
+    "season": "2025/26 2026/27",
+    "observation": "スキー/ブーツ/ビンディング/ポール等の公式資料入口。",
+    "limitations": "過去資料の取り違え・現物年式の推測禁止。"
+  },
+  {
+    "id": "C04",
+    "name": "Salomon SIGHT example",
+    "url": "https://salomon.jp/products/sight-l479249",
+    "kind": "CATALOG_EXAMPLE",
+    "observed_at": "2026-09-13",
+    "season": "現行掲載版は要対応確認",
+    "observation": "モデル名/商品コード/形状/用途説明の構造例。",
+    "limitations": "実在庫への割当・年式確定・写真再利用は未実施。"
+  }
+]

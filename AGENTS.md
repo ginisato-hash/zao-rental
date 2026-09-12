@@ -1,3 +1,5 @@
+Current v1.2 owner adoption: read docs/execution/WEAR_ADOPTION.md and WEAR_ADOPTION.json. Same FLOW-DEV-R1 budget; preserve pending exact custody boundary.
+
 Current bounded owner approval: read docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md.
 The dedicated development custody DB/UI boundary in that document is approved; other
 privilege expansion remains prohibited. Historical rejection records remain unchanged.

@@ -1,0 +1,110 @@
+{
+  "version": "1.1",
+  "recorded_date": "2026-09-12",
+  "purpose": "公式カタログの収集入口一覧。全商品マスターではない。",
+  "season_interpretation": {
+    "prior_two_seasons": [
+      "2024/25",
+      "2025/26"
+    ],
+    "separate_upcoming_season": "2026/27",
+    "status": "年式を個別指定していないユーザー発言に対する明示した作業前提"
+  },
+  "sources": [
+    {
+      "sport": "SKI",
+      "season": "2024/25",
+      "url": "https://salomon.jp/a/archives/columns/3333",
+      "status": "PORTAL_CONFIRMED",
+      "product_rows_extracted": false
+    },
+    {
+      "sport": "SKI",
+      "season": "2025/26",
+      "url": "https://salomon.jp/a/archives/columns/4834",
+      "status": "PORTAL_AND_CATEGORY_LINKS_CONFIRMED",
+      "categories": [
+        "ALPINE SKI",
+        "BINDING&BOOTS",
+        "GOGGLE&BACK PROTECTIVE",
+        "HELMET"
+      ],
+      "product_rows_extracted": false
+    },
+    {
+      "sport": "SKI",
+      "season": "2026/27",
+      "url": "https://salomon.jp/a/archives/columns/8948",
+      "status": "PORTAL_AND_CATEGORY_LINKS_CONFIRMED",
+      "categories": [
+        "SKI",
+        "BINDING",
+        "BOOTS",
+        "POLE",
+        "HLEMET and PROTECTIVE",
+        "GOGGLE",
+        "WEAR / GLOVE / BEANIE"
+      ],
+      "product_rows_extracted": false
+    },
+    {
+      "sport": "SNOWBOARD",
+      "season": "2024/25",
+      "url": "https://salomon.jp/pages/snowboard-catalog",
+      "section": "FALL WINTER 2024-25",
+      "status": "SEASON_AND_CATEGORY_LINKS_CONFIRMED",
+      "categories": [
+        "INTRODUCTION",
+        "BOARDS",
+        "BOOTS",
+        "BINDINGS",
+        "YOUTH",
+        "SOFTGOODS",
+        "HELMET&GOGGLE",
+        "TECH BOOK"
+      ],
+      "product_rows_extracted": false
+    },
+    {
+      "sport": "SNOWBOARD",
+      "season": "2025/26",
+      "url": "https://salomon.jp/pages/snowboard-catalog",
+      "section": "FALL WINTER 2025-26",
+      "status": "SEASON_AND_CATEGORY_LINKS_CONFIRMED",
+      "categories": [
+        "INTRODUCTION",
+        "BOARDS",
+        "BOOTS",
+        "BINDINGS",
+        "YOUTH",
+        "SOFTGOODS",
+        "HELMET&GOGGLE",
+        "TECH BOOK"
+      ],
+      "product_rows_extracted": false
+    },
+    {
+      "sport": "SNOWBOARD",
+      "season": "2026/27",
+      "url": "https://salomon.jp/pages/snowboard-catalog",
+      "section": "FALL WINTER 2026-27",
+      "status": "SEASON_AND_CATEGORY_LINKS_CONFIRMED",
+      "categories": [
+        "INTRODUCTION",
+        "BOARDS",
+        "BOOTS",
+        "BINDINGS",
+        "YOUTH",
+        "SOFTGOODS",
+        "PROTECTIVE",
+        "PARTS & SIZING",
+        "TECH BOOK"
+      ],
+      "product_rows_extracted": false
+    }
+  ],
+  "document": {
+    "filename": "ZAO_Rental_Premium_Catalog_UI_Plan_v1_1.md",
+    "sha256": "6ec4194fbb9e45c3df97978b11aea4ab561cdc746358b0111842b22ee4aca598"
+  }
+}

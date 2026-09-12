@@ -1,0 +1,15 @@
+﻿id,provider,season,adult_short_jpy,adult_day1_jpy,kids_day1_jpy,adult_day3_jpy,unit_tax,channel,adult_prebook_day1_jpy,notes,url
+R01,カスカワ／蔵王,2025/26,,4500,,11500,税込・上下,通常,,地域の直接比較,https://zao-skirental.jp/
+R02,蔵王レンタサービス,年式未記載,,3500,,9500,税込・上下,通常,3200,HP券提示で割引,https://zaoski.makino-fruits.com/
+R03,蔵王ライザ,年式未記載,3500,4000,3000,,上下・税要再確認,4h／1日,,リフト付きプランは除外,https://www.zaoliza.co.jp/wntr/rentals/
+R04,川場,版要再確認,,5500,4700,,上下,当日,5300,年齢区分は高校生以上,https://www.kawaba.co.jp/rental/
+R05,パルコール嬬恋,年式未記載,,5000,3500,,税込・上下,1日,,道具込み10000／子供5500,https://tsumagoiskiresort.life/rentals/
+R06,アルピナ／志賀,2025/26,2400,3000,1500,7800,税込・上下,通常,2700,事前10%は掲載条件から計算,https://www.alpinasports.jp/
+R07,SPICY／白馬,取得版不一致,,5000,3000,11000,上下,2025/26取得本文,,26/27抜粋と不一致・集計除外,https://spicy.co.jp/winter/
+R08,YamaSport／ニセコ,取得版不一致,,5440,3520,11840,上下単純合算,最終取得本文×2,,D10=23520、別版あり・集計除外,https://www.yamasportniseko.com/ja/pricing
+R09,Rhythm,版・店舗要再確認,,7600,5200,15600,上下単純合算,上/下各価格×2,,公式セット価格ではない,https://rhythmjapan.com/winter-rentals-services
+R10,えぼし,年式未記載,,,,,フルセット,1日,,大人9000／子供6000、ウェア単独不明,https://eboshi.co.jp/winter/rental/
+R11,アミューズ,版要再確認,,5000,,7500,上下,通常,4000,D4=8500、その後+2000/日,https://amuse-sports.com/rental/item/
+R12,裏磐梯,年式未記載,,3000,2000,,上下,期間/税要確認,,子供は小学生まで,https://www.urabandai-ski.jp/facility/rental/
+R13,スプリングバレー,数値未検証,,,,,取得不足,除外,,検索抜粋は料金確定に使わない,https://www.springvalley.co.jp/winter/rental_shop/rental
+R14,網張,数値未検証,,,,,取得不足,除外,,本文旧版・数値比較除外,https://qkamura.or.jp/iwate/ski/

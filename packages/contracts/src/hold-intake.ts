@@ -2,8 +2,8 @@ import {canonical,HOLD_TTL_SECONDS,HoldError,newIntakeWindow,normalizePeriod,typ
 
 // Size choices are omitted only from this comparison, never from the saved promise,
 // feasibility solver, final quote equality or immutable request fingerprint.
-export type HoldScope=Omit<HoldConditions,'members'>&{members:{key:string;product:HoldConditions['members'][number]['product'];age:HoldConditions['members'][number]['age'];tier:HoldConditions['members'][number]['tier'];families:HoldConditions['members'][number]['items'][number]['family'][]}[]};
-export function holdScope(c:HoldConditions):HoldScope{return {...c,members:c.members.map(m=>({key:m.key,product:m.product,age:m.age,tier:m.tier,families:m.items.map(i=>i.family).sort()})).sort((a,b)=>a.key.localeCompare(b.key))};}
+export type HoldScope=Omit<HoldConditions,'members'>&{members:{key:string;product:HoldConditions['members'][number]['product'];age:HoldConditions['members'][number]['age'];tier:HoldConditions['members'][number]['tier'];wear?:boolean;wearSport?:'SKI'|'SNOWBOARD';models?:{family:string;modelId:string;season:string}[];families:HoldConditions['members'][number]['items'][number]['family'][]}[]};
+export function holdScope(c:HoldConditions):HoldScope{return {...c,members:c.members.map(m=>({key:m.key,product:m.product,age:m.age,tier:m.tier,...(m.wear!==undefined?{wear:m.wear}:{}),...(m.wearSport?{wearSport:m.wearSport}:{}),...(m.items.some(i=>i.modelPromise)?{models:m.items.filter(i=>i.modelPromise).map(i=>({family:i.family,modelId:i.modelPromise!.modelId,season:i.modelPromise!.season})).sort((a,b)=>a.family.localeCompare(b.family))}:{}),families:m.items.map(i=>i.family).sort()})).sort((a,b)=>a.key.localeCompare(b.key))};}
 export type IntakeHold={id:string;reservation_id:string;owner_id:string;conditions:HoldConditions;expires_at:Date;due_at:Date;state:string;payment_state:PaymentBoundary;allocation_stage:string;version:number;transfer_attention:string|null};
 // Constructed by the recommendation service, never accepted from HTTP bodies.
 // A full group scope plus one member key avoids mistaking a one-person candidate for

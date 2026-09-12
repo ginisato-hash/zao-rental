@@ -41,3 +41,12 @@ Read ADR 0014 and E07_SCOPE; implement transfer planning/dispatch/receipt and E0
 E07 ends at a Draft PR with static review (initial + two rereviews), never merge. Customer returns,
 E08+, production, PR #3 adoption and Runner activation remain outside scope. Preserve the finite
 2026-09-11T19:38:34Z deadline and stop only this worktree's owned resources.
+
+Current owner authority (2026-09-12 JST): exact E07 PR7 head was independently re-reviewed and
+merged as 0743950977bb074cdc6833e17c0980239150829e. Continue supervised E08 private pricing/quotes
+only, under ADR 0015 and E08_SCOPE / E08_PROGRESS. This supersedes earlier E07-only stopping scope
+and expired deadline, not business rules or Runner policy. E08 ends at a new Draft PR; never merge.
+Static Claude E08 review initial + max two rereviews, existing Team/extra credits OFF/tools disabled.
+Current finite deadline is 2026-09-12T03:49:57Z, started 2026-09-11T23:49:57Z; rereading does not extend it.
+No customer publication, tax assumptions, Square, charge, E09+, real data, new services or PR3 adoption.
+E02 stays UNATTENDED_HOLD. Stop only this worktree's owned DB/Web/browser resources.

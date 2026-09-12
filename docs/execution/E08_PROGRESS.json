@@ -1,0 +1,28 @@
+{
+  "task": "E08",
+  "status": "CANDIDATE_REQUIRING_EXACT_HEAD_CI_AND_STATIC_REVIEW",
+  "base": "0743950977bb074cdc6833e17c0980239150829e",
+  "runner": "UNATTENDED_HOLD",
+  "pr3": "DRAFT_HELD_NO_ADOPTION",
+  "production_pricing": false,
+  "payment_connected": false,
+  "tax": "PENDING_OWNER_CONFIRMATION",
+  "source_price_json_changed": false,
+  "quote_ttl_seconds": 600,
+  "quote_ttl_scope": "DEVELOPMENT_ONLY_PRODUCTION_UNAPPROVED",
+  "coupon_limit_scope": "ACTIVE_RESERVATIONS_ONLY_NOT_LIFETIME_REDEMPTIONS",
+  "review_budget": {
+    "initial": 1,
+    "rereviews": 2
+  },
+  "deadline": "2026-09-12T03:49:57Z",
+  "evidence": "Exact-head local commands, CI, manifest and reviewer output on Draft PR; this source file does not claim PASS.",
+  "future": [
+    "real coupon redemption/lifetime limits and confirmation",
+    "production tax/sales/rental scopes/quote TTL",
+    "commercial price-editor publication/approval UI",
+    "booking/payment/AmendmentQuote boundary",
+    "real staff and physical phone acceptance",
+    "production migration/publication"
+  ]
+}

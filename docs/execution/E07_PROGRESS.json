@@ -1,6 +1,6 @@
 {
   "task": "E07",
-  "status": "CANDIDATE_WITH_EXTERNAL_EXACT_HEAD_EVIDENCE",
+  "status": "MERGED_EXACT_HEAD_AFTER_FINAL_STATIC_REVIEW",
   "base": "ace5fd2251d5bbe54950196daf4e514287bd803d",
   "pr6": {
     "approved_head": "63121d0df8650e12bcc053db8a7eba797331b7b5",
@@ -9,7 +9,7 @@
   },
   "runner": "UNATTENDED_HOLD",
   "pr3": "DRAFT_HELD_NO_ADOPTION",
-  "e07_merge_authorized": false,
+  "e07_merge_authorized": "Separately authorized exact head; executed and recorded",
   "review_budget": {
     "initial": 1,
     "rereviews": 2
@@ -28,5 +28,15 @@
     "production migration and publication",
     "explicit operational reconciliation of unresolved transfer issues; no automatic clear"
   ],
-  "evidence": "Exact-head command logs, CI, manifest and Claude result are attached to the Draft PR; this source file does not pre-claim PASS."
+  "evidence": "Exact-head command logs, CI, manifest and Claude result are attached to the Draft PR; this source file does not pre-claim PASS.",
+  "pr7_final": {
+    "head": "5b488ea40abfb9d2a110b78036325fa3d7a11b48",
+    "snapshot_sha256": "5b8799f72e78e1171576c4f25125789a0eab2c64e51f436ff6a8c9a9fda58bc7",
+    "verdict": "REVIEW_PASS",
+    "unresolved_code_findings": 0,
+    "review_url": "https://github.com/ginisato-hash/zao-rental/pull/7#issuecomment-5641979950",
+    "ci_url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34625440922",
+    "merge_commit": "0743950977bb074cdc6833e17c0980239150829e",
+    "e07_review_invocations_remaining": 0
+  }
 }

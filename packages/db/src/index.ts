@@ -8,7 +8,7 @@ import * as schema from './schema';
 export const migrationsDirectory = fileURLToPath(new URL('../migrations/', import.meta.url));
 
 export const migrationPlan = [
-  {id:'0001', file:'0001_foundation.sql'}, {id:'0002', file:'0002_ledger.sql'}, {id:'0003',file:'0003_staff_auth.sql'}, {id:'0004',file:'0004_period_hold.sql'}, {id:'0005',file:'0005_store_transfer.sql'},
+  {id:'0001', file:'0001_foundation.sql'}, {id:'0002', file:'0002_ledger.sql'}, {id:'0003',file:'0003_staff_auth.sql'}, {id:'0004',file:'0004_period_hold.sql'}, {id:'0005',file:'0005_store_transfer.sql'}, {id:'0006',file:'0006_pricing_quote.sql'},
 ] as const;
 export async function migrate(pool: Pool): Promise<void> {
   const entries=await Promise.all(migrationPlan.map(async entry => {

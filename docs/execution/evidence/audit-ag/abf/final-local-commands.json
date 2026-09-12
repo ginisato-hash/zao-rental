@@ -1,0 +1,24 @@
+[
+  {
+    "command": [
+      "npm",
+      "run",
+      "test:stabilization-upgrade"
+    ],
+    "exit_code": 0,
+    "start": "2026-09-12T11:06:06.426958+00:00",
+    "end": "2026-09-12T11:06:08.557865+00:00",
+    "log": "/Users/gini/Documents/Codex/2026-09-10/mac-codex-zao-rental-project-zmi/outputs/recommendation-e09/stabilization-s01/upgrade-2.log"
+  },
+  {
+    "command": [
+      "npm",
+      "run",
+      "test:stabilization-s01"
+    ],
+    "exit_code": 0,
+    "start": "2026-09-12T11:06:08.558232+00:00",
+    "end": "2026-09-12T11:06:20.882906+00:00",
+    "log": "/Users/gini/Documents/Codex/2026-09-10/mac-codex-zao-rental-project-zmi/outputs/recommendation-e09/stabilization-s01/after-5.log"
+  }
+]

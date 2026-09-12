@@ -1,0 +1,92 @@
+{
+  "delegation_id": "ZAO-AUDIT-AG-20260912-R1",
+  "authorization_sha256": "74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb",
+  "approval_comment": {
+    "id": 5645441833,
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5645441833",
+    "body_sha256": "74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb",
+    "readback_exact": true,
+    "never_edit_approval_comment": true
+  },
+  "base_sha": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "starting_head": "01da3e79cf5193bb76438ed832face51c9a9ebc9",
+  "current_run": {
+    "run_id": "ZAO-AUDIT-AG-20260912-R1-run01",
+    "start_utc": "2026-09-12T10:37:21+00:00",
+    "deadline_utc": "2026-09-12T18:37:21+00:00",
+    "start_jst": "2026-09-12T19:37:21+09:00",
+    "deadline_jst": "2026-09-13T03:37:21+09:00",
+    "adopted_at_utc": "2026-09-12T10:52:34+00:00",
+    "total_run_budget_seconds": 86400,
+    "prior_completed_run_seconds": 0,
+    "counting": "Conservatively includes the15minutes of inherited S01 work before adoption",
+    "max_model_starts_after_adoption": 8,
+    "historical_model_starts": 4,
+    "old_unused_budgets_discarded": true
+  },
+  "review_budget": {
+    "historical_starts": 4,
+    "after_adoption_starts": 0,
+    "shared_maximum": 8,
+    "reserve_final_integration": 1,
+    "old_unused_not_added": true
+  },
+  "items": {
+    "A": {
+      "state": "TESTED_REVIEW_PENDING",
+      "evidence": [
+        "docs/execution/evidence/audit-ag/abf/manifest.json"
+      ],
+      "commits": [],
+      "reviewed": false
+    },
+    "B": {
+      "state": "TESTED_REVIEW_PENDING",
+      "evidence": [
+        "docs/execution/evidence/audit-ag/abf/manifest.json"
+      ],
+      "commits": [],
+      "reviewed": false
+    },
+    "C": {
+      "state": "TODO",
+      "evidence": [],
+      "commits": [],
+      "reviewed": false
+    },
+    "D": {
+      "state": "TODO",
+      "evidence": [],
+      "commits": [],
+      "reviewed": false
+    },
+    "E": {
+      "state": "TODO",
+      "evidence": [],
+      "commits": [],
+      "reviewed": false
+    },
+    "F": {
+      "state": "TESTED_REVIEW_PENDING",
+      "evidence": [
+        "docs/execution/evidence/audit-ag/abf/manifest.json"
+      ],
+      "commits": [],
+      "reviewed": false
+    },
+    "G": {
+      "state": "TODO",
+      "evidence": [],
+      "commits": [],
+      "reviewed": false
+    }
+  },
+  "integration": "TODO",
+  "next": "C/D counterexamples and protection reconciliation",
+  "prohibitions": [
+    "no merge/main push",
+    "no production/Square/real data",
+    "no privileges/billing change",
+    "PR3/Runner remain held"
+  ]
+}

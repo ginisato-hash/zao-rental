@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {randomBytes,randomUUID,createHash} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {migrate,migrationPlan,migrationsDirectory} from '@rental/db';
+import {startIsolatedPostgres} from '../../scripts/postgres';
+import {provisionApplicationRoles} from '../../scripts/application-roles';
+import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
+import {createStaffAuth,loadStaff,resolveStaff} from '../../packages/auth/src/staff-auth';
+import {writeAccount} from '../../packages/auth/src/accounts';
+import {authHandler} from '../../apps/web/src/lib/auth-http';
+import {HoldService} from '../../packages/core/src/inventory/hold-service';
+import {QuoteService} from '../../packages/core/src/pricing/quote-service';
+import {seedRecommendation,fid} from '../recommendation/fixture';
+import {skiSet} from '../inventory/fixture';
+let failed=false;const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;
+try{
+ for(const m of migrationPlan.slice(0,7)){const sql=await readFile(migrationsDirectory+'/'+m.file,'utf8');await db.pool.query(sql);await db.pool.query('CREATE TABLE IF NOT EXISTS foundation_migrations(id text PRIMARY KEY,checksum text NOT NULL)');await db.pool.query('INSERT INTO foundation_migrations VALUES($1,$2)',[m.id,createHash('sha256').update(sql).digest('hex')]);}
+ await seedRecommendation(db.pool);const password=randomBytes(24).toString('base64url'),origin='http://127.0.0.1:34567';
+ const root=await bootstrapDevelopmentAdmin(db.pool,{email:'upgrade-root@example.invalid',displayName:'合成移行管理者',password}),admin=(await loadStaff(db.pool,root))!;
+ const settings={displayName:'合成移行担当',active:true,role:'ADMIN' as const,scope:'ALL' as const,storeIds:[],permissions:{INVENTORY_VIEW:true,INVENTORY_EDIT:true,HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true}};
+ const id=(await writeAccount(db.pool,admin,undefined,{...settings,email:'upgrade-staff@example.invalid',password})).id!,principal=(await loadStaff(db.pool,id))!;
+ const now=new Date('2035-01-01T00:00:00Z'),holds=new HoldService(db.pool,principal,()=>now),quotes=new QuoteService(db.pool,principal,()=>now);
+ await quotes.initializePrivate(randomUUID(),'2035-01-01','2036-12-31');const hold=await holds.command('create',randomUUID(),skiSet('2035-01-03')),quote=(await quotes.create(randomUUID(),{conditions:hold.hold!.conditions,holdId:hold.holdId,couponCode:null,wantAdvance:false})).quote;
+ roles=await provisionApplicationRoles(db.pool,db.identity);const auth=createStaffAuth(roles.authPool,{origin,secret:randomBytes(32).toString('hex')}),handler=authHandler(auth,roles.authPool,origin,roles.authPool);
+ const login=async()=>handler(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:'upgrade-staff@example.invalid',password})}));const response=await login();assert.equal(response.status,200);const cookie=response.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ');
+ const before=(await db.pool.query('SELECT count(*)::int AS n FROM ledger_assets')).rows[0].n,revision=(await loadStaff(db.pool,id))!.revision;
+ await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM foundation_migrations')).rows[0].n,migrationPlan.length);
+ assert.equal((await loadStaff(db.pool,id))!.revision,revision);assert.equal((await resolveStaff(auth,roles.authPool,new Headers({cookie}))).status,'authorized');assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM ledger_assets')).rows[0].n,before);
+ assert.deepEqual((await quotes.get(quote.id)).snapshot,quote.snapshot);assert.equal((await quotes.get(quote.id)).snapshotSha256,quote.snapshotSha256);assert.equal((await holds.get(hold.holdId!)).expiresAt,hold.hold!.expiresAt);assert.equal((await holds.get(hold.holdId!)).state,'ACTIVE');assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM inventory_claims WHERE hold_id=$1 AND active',[hold.holdId])).rows[0].n,3);
+ const renamed=await writeAccount(roles.authPool,admin,id,{...settings,displayName:'合成移行後',expectedRevision:revision});assert.equal(renamed.account!.revision,(await loadStaff(db.pool,id))!.revision);assert.ok(renamed.account!.revision>revision);await assert.rejects(writeAccount(roles.authPool,admin,id,{...settings,expectedRevision:revision}),{status:409});const after=(await loadStaff(db.pool,id))!.revision;assert.equal((await login()).status,200);assert.equal((await loadStaff(db.pool,id))!.revision,after);
+ for(const sql of ['SELECT id FROM staff_members','UPDATE inventory_holds SET version=version WHERE false','DELETE FROM ledger_history WHERE false'])await assert.rejects(roles.ledgerPool.query(sql),{code:'42501'});await assert.rejects(roles.authPool.query('UPDATE ledger_assets SET notes=notes WHERE id=$1',[fid(1201)]),{code:'42501'});
+ console.log('PASS populated 0007 -> current additive migration: staff/password/session/ledger/active HOLD/claims/immutable quote preserved; revision CAS active; grants unchanged.');
+}catch(e){console.error('UPGRADE_FAILED '+((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));failed=true;}finally{await roles?.close();await db.stop();console.log('Owned upgrade PostgreSQL stopped.');}if(failed)process.exit(1);

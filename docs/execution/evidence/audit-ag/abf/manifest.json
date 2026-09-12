@@ -1,0 +1,55 @@
+{
+  "scope": "A/B/F",
+  "baseline_head": "01da3e79cf5193bb76438ed832face51c9a9ebc9",
+  "before": "0/10 passed; actual defects, no skip",
+  "after": "23/23 ordinary session/UI/API/real PostgreSQL; 2/2 body units; populated0007 upgrade PASS",
+  "files": [
+    {
+      "file": "before-complete.log",
+      "bytes": 5061,
+      "sha256": "7ec0624eec81312d3867428de798ccc0918970f83bb9b7d9c6c63c988d384898"
+    },
+    {
+      "file": "after-5.log",
+      "bytes": 2401,
+      "sha256": "b31b77192bd5dc84f1fd9a4535218e3992c47acaa45023ccf4906f281df04573"
+    },
+    {
+      "file": "upgrade-2.log",
+      "bytes": 299,
+      "sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+    },
+    {
+      "file": "body-unit.log",
+      "bytes": 361,
+      "sha256": "c9e65af2bac616b638e19c5e8f872fba671d7bd3e09c9490016db563fff482b3"
+    },
+    {
+      "file": "lint-1.log",
+      "bytes": 54,
+      "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e"
+    },
+    {
+      "file": "typecheck-3.log",
+      "bytes": 130,
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+    },
+    {
+      "file": "build-1.log",
+      "bytes": 1347,
+      "sha256": "008898d458a6a5b156df19efdbc94ab5560aa738d97c3b2da1b649588a0b9a47"
+    },
+    {
+      "file": "final-local-commands.json",
+      "bytes": 704,
+      "sha256": "7577b8ba50d446046d2c001671ab1bb84e7bc3a353ee6ba5d489a62560056fd5"
+    }
+  ],
+  "limitations": [
+    "Review pending",
+    "before.log fixture provenance collision was corrected before meaningful baseline; not a product defect",
+    "after-1/2 UI alert ambiguity; after-3 Playwright page Response.json hung after200; browser was terminated, finally stopped all owned resources. Final test checks completed UI plus ordinary GET/DB readback, not inaccessible page response body.",
+    "upgrade-1 used SINGLE fixture but expected3claims; corrected to explicit SKI_SET, failed flag preserves exit after cluster cleanup.",
+    "No production or real accounts; no new DB grants or SECURITY DEFINER."
+  ]
+}

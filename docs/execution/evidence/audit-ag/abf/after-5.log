@@ -1,0 +1,39 @@
+
+> zao-rental@0.1.0 test:stabilization-s01
+> node --import tsx tests/stabilization/s01.ts
+
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore disable root-first
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore permission root-first
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore store root-first
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore role root-first
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore disable second-first
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore permission second-first
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore store second-first
+A_CONFLICT {"error":"STALE_STAFF_REVISION"}
+PASS A stale name-only form cannot restore role second-first
+PASS A missing revision is rejected atomically, not accepted as old-client overwrite
+PASS B inventory-lock wait observes committed permission revocation before update
+PASS B inventory-lock wait observes committed store revocation before update
+PASS B inventory-lock wait observes committed disable revocation before update
+PASS A invalid/stale versions preserve every field; name-only changes advance settings but login does not
+PASS A actor revocation committed before settings boundary denies target update with no partial audit
+PASS B new Asset registration rechecks permission after inventory wait
+PASS B new Asset registration rechecks store after inventory wait
+PASS B new Asset registration rechecks disable after inventory wait
+PASS B target-row wait also precedes final authorization; forbidden store never joins locks
+PASS B write wins first boundary; concurrent revocation waits through ledger commit then takes effect
+PASS B normal permitted create/update succeeds; ledger role still cannot read staff or mutate audit
+F_BODY_BYTES 18267
+PASS F max normal direct create/amend/availability/quote passes HTTP and actual database
+PASS F stream UTF8 finite group cap accepts exact24576 and rejects one byte over
+AUTH_PIPELINE_CODE BODY_TOO_LARGE
+PASS F excess body and small-route caps reject before mutation; auth/CSRF order retained
+S01 normal authentication/API/PostgreSQL: 23 passed; 0 failed; 0 skipped.
+Owned S01 Web/browser/PostgreSQL stopped.

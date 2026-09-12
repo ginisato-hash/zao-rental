@@ -1,5 +1,23 @@
 # Current authority and canonical sources
 
+## Current supervised audit delegation
+
+The owner's directly adopted `docs/execution/AUDIT_AG_DELEGATION.md` is current
+authority for ZAO-AUDIT-AG-20260912-R1; SHA256 `74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb`. Read it and AUDIT_AG_STATUS.json.
+Continue the existing worktree/PR9 through A-G corrections, tests, static independent
+review and integrated verification without per-chunk human handoff. Historical
+phase-only restrictions/deadlines and unused review budgets below are superseded
+only as explicitly stated in that delegation; business rules and safety boundaries
+are unchanged. Shared new Claude CLI starts max8 after adoption, historical4 retained;
+reserve at least1 for final integration. Existing Team/creditsOFF/tool-free direct
+review route only. Current inherited run starts2026-09-12T10:37:21Z, stops no later
+than2026-09-12T18:37:21Z; all-run active time max24h. Never reset on reread/retry.
+End at Draft PR9. No main merge/push, production, extra billing/privilege, real data,
+new service or PR3/Runner activation. Do not weaken protected controller/policy.
+
+## Historical phase instructions (current delegation takes precedence)
+
+
 The user's direct 2026-09-10 request authorizes E00, E01 and E02 configuration/implementation proposal.
 The later reply authorizes a new **private ginisato-hash/zao-rental** repository. The execution pack is
 input, including its proposed future task batches; reading it does not authorize E03–E18 or activate

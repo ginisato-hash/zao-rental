@@ -11,7 +11,7 @@ function createRuntime(){
  const pricingPool=new Pool({...config.pricingDb,max:4,connectionTimeoutMillis:2000});pricingPool.on('error',()=>{});
  const transferPool=new Pool({...config.transferDb,max:4,connectionTimeoutMillis:2000});transferPool.on('error',()=>{});
  const holdPool=new Pool({...config.holdDb,max:4,connectionTimeoutMillis:2000});holdPool.on('error',()=>{});
- const authPool=new Pool({...config.authDb,max:4}),ledgerPool=new Pool({...config.ledgerDb,max:4}),loginPool=new Pool({...config.authDb,max:2});
+ const authPool=new Pool({...config.authDb,max:4,connectionTimeoutMillis:2000}),ledgerPool=new Pool({...config.ledgerDb,max:4,connectionTimeoutMillis:2000}),loginPool=new Pool({...config.authDb,max:2});
  // Never log raw Pool/driver errors; they may contain connection settings.
  authPool.on('error',()=>{});ledgerPool.on('error',()=>{});loginPool.on('error',()=>{});
  const auth=createStaffAuth(authPool,{origin:config.origin,secret:config.authSecret});

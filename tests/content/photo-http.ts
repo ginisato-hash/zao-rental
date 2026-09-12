@@ -1,4 +1,5 @@
 import {staffState,getRuntime,publicStamp} from '../../apps/web/src/lib/staff-runtime';
+import {decodePhotoBase64} from '../../packages/core/src/content/photo-input';
 import {PrivatePhotoJobs} from '../../packages/core/src/content/photo-job';
 import {ContentInputError} from '../../packages/core/src/content/bulk-plan';
 import {PhotoFileFixture} from './photo-fixture';
@@ -14,6 +15,6 @@ export async function photoFixtureHandler(request:Request){try{
  const reader=request.body?.getReader();if(!reader)throw new ContentInputError('PHOTO_BODY');const chunks:Uint8Array[]=[];let size=0;try{for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>14*1024*1024){await reader.cancel();return Response.json({error:'BODY_TOO_LARGE'},{status:413,headers});}chunks.push(part.value);}}finally{reader.releaseLock();}
  const raw=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));let result:unknown;
  if(action==='/prepare'){if(!raw||Object.keys(raw).sort().join()!=='files,jobId'||!Array.isArray(raw.files))throw new ContentInputError('PHOTO_REQUEST');const offers=Object.keys((await store.file.read()).state.catalog.commercialRevisions);result=await service.prepare(subject,raw.jobId,raw.files,offers);}
- else if(action==='/upload'){if(!raw||Object.keys(raw).sort().join()!=='base64,index,jobId'||typeof raw.base64!=='string'||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(raw.base64))throw new ContentInputError('PHOTO_REQUEST');const bytes=Buffer.from(raw.base64,'base64');if(bytes.length>10*1024*1024)throw new ContentInputError('PHOTO_SIZE');result=await service.upload(subject,raw.jobId,raw.index,bytes);}
+ else if(action==='/upload'){if(!raw||Object.keys(raw).sort().join()!=='base64,index,jobId')throw new ContentInputError('PHOTO_REQUEST');const bytes=decodePhotoBase64(raw.base64);result=await service.upload(subject,raw.jobId,raw.index,bytes);}
  else throw new ContentInputError('PHOTO_REQUEST');return Response.json(result,{headers});
  }catch(e){const code=e instanceof ContentInputError?e.code:'PHOTO_FIXTURE_FAILED';return Response.json({error:code},{status:code==='CONTENT_FORBIDDEN'?403:e instanceof ContentInputError?409:500,headers});}}

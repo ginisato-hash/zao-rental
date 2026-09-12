@@ -433,10 +433,11 @@
   "content_fixture": {
     "state": "PARTIAL_TESTED_REVIEW_PENDING",
     "record": "docs/execution/CONTENT_FIXTURE_PROGRESS.md",
-    "normal_UI_cases": 8,
+    "normal_UI_cases": 9,
     "photo_count": 50,
     "realPhotos": false,
     "realCMSDB": false,
-    "equipment_content_targets": 18
+    "equipment_content_targets": 18,
+    "input_boundary": "photo-input/record.json; 2beforefail/2afterpass,9HTTPUI; finalnewheadCIpending"
   }
 }

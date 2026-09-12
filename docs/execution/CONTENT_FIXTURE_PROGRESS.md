@@ -44,3 +44,19 @@ fixture lock; no reservation DB connection is held.123unit and8ordinary UI tests
 lint and typecheck then passed. The final CI must run the complete latest tree.
 The8UI cases also cover explicit photo pause,50file response-loss recovery and the
 18real equipment offer codes as synthetic content-only fixtures. No prices changed.
+
+## Final input boundary followup
+
+Current head predecessor c2d2ca... used a repeated capturing base64 regex that raised
+RangeError for a valid9MiB payload. The same extracted-boundary regression failed
+then passed with bounded canonical decode/roundtrip (exact10MiB included). Invalid
+pad bits/whitespace/missing padding and >10MiB stay rejected. Normal authenticated
+HTTP9MiB reaches manifest mismatch409 with no write, not generic500; this is a
+transport test, not a real10MiB photo decode claim.
+
+CI34713516439/attempt1 failed the final expect while47 resumed sequential photo
+operations were still in progress. Every photo response is now individually
+verified with the existing per-operation timeout, then the final status is checked.
+No timeout/size/count expansion, retry or skip. Local9UI cases passed, preserving
+50real decodes of small synthetic PNGs and ownership cleanup. Final new-head CI
+and review remain required. Evidence: evidence/flow-dev/photo-input/record.json.

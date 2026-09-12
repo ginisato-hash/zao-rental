@@ -1,0 +1,39 @@
+{
+  "source_head": "c2d2ca1626faf56a9a4d20e6f148a43f0856abc4",
+  "before": [
+    {
+      "command": "node --import tsx --test tests/unit/photo-input.test.ts",
+      "exit_code": 1,
+      "result": "2 failed; old regex exhausts stack for valid9MiB/10MiB"
+    }
+  ],
+  "after": [
+    {
+      "command": "node --import tsx --test tests/unit/photo-input.test.ts",
+      "exit_code": 0,
+      "result": "2passed"
+    },
+    {
+      "command": "npm run lint",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=.local/browsers npm run test:content-fixture",
+      "exit_code": 0,
+      "result": "9passed"
+    }
+  ],
+  "ci_before": {
+    "run": 34713516439,
+    "attempt": 1,
+    "conclusion": "failure",
+    "checkout": "fd8d06fabb8bfe2ca0af85db7a394f5c29e84f62",
+    "failure": "batch final expect during47 sequentialuploads; changed test to verify every explicitresponse with unchanged peroperation timeout; no skipped photo/retry/limit increase"
+  },
+  "scope": "base64 unit transport boundary, not actual10MiBimage decode; normalHTTP9MiB reaches missingmanifest409 instead of500.50smallsyntheticPNGactualdecoders+UIpassed",
+  "at": "2026-09-12T19:28:49.202237+00:00"
+}

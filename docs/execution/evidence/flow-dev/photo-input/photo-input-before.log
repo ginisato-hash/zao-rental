@@ -1,0 +1,54 @@
+✖ photo transport decodes valid 9MiB and exact 10MiB without regex stack growth (30.121375ms)
+✖ photo transport rejects oversized, noncanonical and malformed encodings (26.740375ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 311.533542
+
+✖ failing tests:
+
+test at tests/unit/photo-input.test.ts:1:143
+✖ photo transport decodes valid 9MiB and exact 10MiB without regex stack growth (30.121375ms)
+  RangeError: Maximum call stack size exceeded
+      at RegExp.test (<anonymous>)
+      at decodePhotoBase64 (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/packages/core/src/content/photo-input.ts:3:94)
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/unit/photo-input.test.ts:5:99)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.start (node:internal/test_runner/test:1096:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+
+test at tests/unit/photo-input.test.ts:1:383
+✖ photo transport rejects oversized, noncanonical and malformed encodings (26.740375ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /PHOTO_SIZE/. Input:
+  
+  'RangeError: Maximum call stack size exceeded'
+  
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/unit/photo-input.test.ts:8:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: RangeError: Maximum call stack size exceeded
+        at RegExp.test (<anonymous>)
+        at decodePhotoBase64 (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/packages/core/src/content/photo-input.ts:3:94)
+        at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/unit/photo-input.test.ts:8:20)
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/unit/photo-input.test.ts:8:9)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19),
+    expected: /PHOTO_SIZE/,
+    operator: 'throws',
+    diff: 'simple'
+  }

@@ -1,6 +1,6 @@
 {
   "task": "E08",
-  "status": "CANDIDATE_REQUIRING_EXACT_HEAD_CI_AND_STATIC_REVIEW",
+  "status": "MERGED_AFTER_EXACT_HEAD_REVIEW_AND_CI",
   "base": "0743950977bb074cdc6833e17c0980239150829e",
   "runner": "UNATTENDED_HOLD",
   "pr3": "DRAFT_HELD_NO_ADOPTION",
@@ -24,5 +24,10 @@
     "booking/payment/AmendmentQuote boundary",
     "real staff and physical phone acceptance",
     "production migration/publication"
-  ]
+  ],
+  "approved_head": "fac4fbd9556d26b8a50c1bf98925c44ccb5e841e",
+  "merge_commit": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "review": "REVIEW_PASS_NO_UNRESOLVED_CODE_FINDINGS",
+  "review_record": "https://github.com/ginisato-hash/zao-rental/pull/8#issuecomment-5642473259",
+  "final_ci": "https://github.com/ginisato-hash/zao-rental/actions/runs/34663662991"
 }

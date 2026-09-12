@@ -1,0 +1,11 @@
+✔ transitive date/variant/group custody closure includes later chained requirements, not unrelated groups (1.131292ms)
+✔ period search with Hall pruning agrees with independent exhaustive enumeration over 250 small fixed-capacity cases (25.403125ms)
+✔ per-day feasibility cannot replace continuous-Asset witness and explicit search limit stays indeterminate (0.12875ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 290.470083

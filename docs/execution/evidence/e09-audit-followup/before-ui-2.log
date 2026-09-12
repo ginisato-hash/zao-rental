@@ -1,0 +1,80 @@
+
+> zao-rental@0.1.0 test:recommendation-audit
+> node --import tsx tests/recommendation/audit-followup-ui.ts
+
+SAME_DAY {"slot":"DAY","now":"2035-06-01T10:00:00+09:00","stage":"HOLD_SAVED","outcome":"RENTAL_ALREADY_STARTED","holdState":"ACTIVE","quotePresent":false}
+FAIL same-day DAY 10:00 normal login/UI -> selected group -> HOLD -> quote -> reread AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:37:49)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:34:3)
+SAME_DAY {"slot":"AM","now":"2035-06-02T10:00:00+09:00","stage":"HOLD_SAVED","outcome":"RENTAL_ALREADY_STARTED","holdState":"ACTIVE","quotePresent":false}
+FAIL same-day AM 10:00 normal login/UI -> selected group -> HOLD -> quote -> reread AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:37:49)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:34:3)
+SAME_DAY {"slot":"PM","now":"2035-06-03T14:00:00+09:00","stage":"HOLD_SAVED","outcome":"RENTAL_ALREADY_STARTED","holdState":"ACTIVE","quotePresent":false}
+FAIL same-day PM 14:00 normal login/UI -> selected group -> HOLD -> quote -> reread AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:37:49)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:34:3)
+FAIL same-day committed quote response loss: reload/replay preserves both keys, counts, expiry, snapshot hash AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:46:357)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:44:2)
+INTAKE_CLOSE {"slot":"AM","date":"2035-06-05","now":"2035-06-05T12:00:00+09:00","holdStatus":422,"quoteStatus":409}
+PASS new intake rejects AM start=2035-06-05 at 2035-06-05T12:00:00+09:00 without stock writes
+INTAKE_CLOSE {"slot":"DAY","date":"2035-06-06","now":"2035-06-06T17:00:00+09:00","holdStatus":422,"quoteStatus":409}
+PASS new intake rejects DAY start=2035-06-06 at 2035-06-06T17:00:00+09:00 without stock writes
+INTAKE_CLOSE {"slot":"PM","date":"2035-06-07","now":"2035-06-07T17:00:00+09:00","holdStatus":422,"quoteStatus":409}
+PASS new intake rejects PM start=2035-06-07 at 2035-06-07T17:00:00+09:00 without stock writes
+INTAKE_CLOSE {"slot":"MULTIDAY","date":"2035-06-07","now":"2035-06-08T10:00:00+09:00","holdStatus":201,"quoteStatus":409}
+FAIL new intake rejects MULTIDAY start=2035-06-07 at 2035-06-08T10:00:00+09:00 without stock writes AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:53:388)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:52:3)
+INTAKE_CLOSE {"slot":"MULTIDAY","date":"2035-06-09","now":"2035-06-09T17:00:00+09:00","holdStatus":201,"quoteStatus":409}
+FAIL new intake rejects MULTIDAY start=2035-06-09 at 2035-06-09T17:00:00+09:00 without stock writes AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:53:388)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:52:3)
+FAIL near AM cutoff new quote expires at12:00, HOLD lease never extended; saved quote remains immutable AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:56:565)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:56:2)
+LEDGER_CM {"size":"150 cm","family":"SKI","eligible":true,"selected":true}
+PASS normal ledger registration -> recommendation SKI "150 cm" eligible=true
+LEDGER_CM {"size":"150 CM","family":"SKI","eligible":true,"selected":false}
+FAIL normal ledger registration -> recommendation SKI "150 CM" eligible=true AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:64:433)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:60:61)
+LEDGER_CM {"size":"150 Cm","family":"SKI","eligible":true,"selected":false}
+FAIL normal ledger registration -> recommendation SKI "150 Cm" eligible=true AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:64:433)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:60:61)
+LEDGER_CM {"size":"150\tCM","family":"SKI","eligible":true,"selected":false}
+FAIL normal ledger registration -> recommendation SKI "150\tCM" eligible=true AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:64:433)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:60:61)
+LEDGER_CM {"size":"26.5 cm","family":"SKI_BOOT","eligible":true,"selected":true}
+PASS normal ledger registration -> recommendation SKI_BOOT "26.5 cm" eligible=true
+LEDGER_CM {"size":"26.5 CM","family":"SKI_BOOT","eligible":true,"selected":false}
+FAIL normal ledger registration -> recommendation SKI_BOOT "26.5 CM" eligible=true AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:64:433)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:60:61)
+LEDGER_CM {"size":"26.5  Cm","family":"SKI_BOOT","eligible":true,"selected":false}
+FAIL normal ledger registration -> recommendation SKI_BOOT "26.5  Cm" eligible=true AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:64:433)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:60:61)
+LEDGER_CM {"size":"150","family":"SKI","eligible":false,"selected":false}
+PASS normal ledger registration -> recommendation SKI "150" eligible=false
+LEDGER_CM {"size":"M","family":"SKI","eligible":false,"selected":false}
+PASS normal ledger registration -> recommendation SKI "M" eligible=false
+LEDGER_CM {"size":"150 mm","family":"SKI","eligible":false,"selected":false}
+PASS normal ledger registration -> recommendation SKI "150 mm" eligible=false
+E09 audit normal UI/API/PostgreSQL: 8 passed; 12 failed; 0 skipped. Synthetic local password sessions; real app roles/DB. Clock and response delivery controlled only by test owner. No physical device claim.
+Owned audit Web, browser and PostgreSQL stopped.

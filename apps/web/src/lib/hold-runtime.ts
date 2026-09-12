@@ -1,5 +1,6 @@
 import 'server-only';
 import {getRuntime,staffState,publicStamp} from './staff-runtime';
+import {GROUP_JSON_BYTES,DEFAULT_JSON_BYTES} from '../../../../packages/contracts/src/http-body-limits';
 import {readJson} from './ledger-http';
 import {LedgerError} from '../../../../packages/contracts/src/ledger';
 import {HoldError} from '../../../../packages/contracts/src/hold';
@@ -19,15 +20,16 @@ export async function handleHold(request:Request){
   const service=new HoldService(runtime.holdPool,state.principal);
   if(request.method==='GET')return Response.json(path==='/options'?await service.options():path===''?await service.list():await service.get(path.slice(1)),{headers});
   if(!post)throw new HoldError('METHOD_NOT_ALLOWED',405);
-  const body=await readJson(request);
+  const groupBody=isPreview||path===''||/^\/[a-f0-9-]{36}\/amend$/.test(path);
+  const body=await readJson(request,groupBody?GROUP_JSON_BYTES:DEFAULT_JSON_BYTES);
   if(isPreview)return Response.json(await service.availability(body,preview?.[1]),{headers});
   if(!body||typeof body!=='object'||Array.isArray(body))throw new HoldError('INVALID_INPUT');
   const b=body as Record<string,unknown>;
   const match=/^\/([a-f0-9-]{36})\/(amend|cancel|expire|reassign)$/.exec(path);
   if(path!==''&&!match)throw new HoldError('NOT_FOUND',404);
   const op=match?match[2] as 'amend'|'cancel'|'expire'|'reassign':'create';
-  const keys=op==='create'||op==='amend'?['requestKey','conditions']:op==='reassign'?['requestKey','requirementKey','assetId']:['requestKey'];
+  const keys=op==='create'||op==='amend'?['requestKey','conditions',...(op==='amend'&&'expectedVersion' in b?['expectedVersion']:[])]:op==='reassign'?['requestKey','requirementKey','assetId']:['requestKey'];
   if(Object.keys(b).length!==keys.length||Object.keys(b).some(k=>!keys.includes(k))||typeof b.requestKey!=='string')throw new HoldError('INVALID_INPUT');
-  const result=await service.command(op,b.requestKey,op==='reassign'?{requirementKey:b.requirementKey,assetId:b.assetId}:b.conditions,match?.[1]);return Response.json(result,{headers,status:result.result==='CREATED'?201:200});
+  const result=await service.command(op,b.requestKey,op==='reassign'?{requirementKey:b.requirementKey,assetId:b.assetId}:b.conditions,match?.[1],op==='amend'&&'expectedVersion' in b?b.expectedVersion as number:undefined);return Response.json(result,{headers,status:result.result==='CREATED'?201:200});
  }catch(e){const error=e instanceof HoldError||e instanceof LedgerError?e:new HoldError('HOLD_OPERATION_FAILED',500);return Response.json({error:error.code},{status:error.status,headers});}
 }

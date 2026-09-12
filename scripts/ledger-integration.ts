@@ -16,8 +16,8 @@ async function raw(pool:Pool,fn:(c:PoolClient)=>Promise<unknown>){const c=await 
 function request(path:string,method='GET',body?:unknown){return new Request('http://ledger.test/api/ledger/'+path,{method,headers:{origin:'http://ledger.test','content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});}
 const db=await startIsolatedPostgres();
 try {
-  const service=new LedgerService(db.pool,admin);const http=ledgerHandler(async()=>admin,p=>new LedgerService(db.pool,p));
-  await check('ordered concurrent migrations apply 0001 through 0006 exactly once',async()=>{await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.deepEqual((await db.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows,[{id:'0001'},{id:'0002'},{id:'0003'},{id:'0004'},{id:'0005'},{id:'0006'}]);});
+  const service=new LedgerService(db.pool,admin,async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */});const http=ledgerHandler(async()=>admin,p=>new LedgerService(db.pool,p,async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */}));
+  await check('ordered concurrent migrations apply 0001 through 0008 exactly once',async()=>{await Promise.all([migrate(db.pool),migrate(db.pool)]);assert.deepEqual((await db.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows,[{id:'0001'},{id:'0002'},{id:'0003'},{id:'0004'},{id:'0005'},{id:'0006'},{id:'0007'},{id:'0008'}]);});
   await check('traceable synthetic sample is atomic and concurrent replay creates no duplicates or audit events',async()=>{
     await seedLedgerSample(db.pool);const before=(await db.pool.query('SELECT count(*)::int AS n FROM ledger_history')).rows[0].n;
     await Promise.all([seedLedgerSample(db.pool),seedLedgerSample(db.pool)]);
@@ -83,9 +83,9 @@ try {
     assert.equal((await service.list('assets',{offset:100})).items.length,0);assert.equal((await service.list('assets',{offset:100})).total,6);
   });
   await check('real-DB HTTP boundary rejects anonymous, customer, read-only staff and out-of-store access',async()=>{
-    const anonymous=ledgerHandler(async()=>null,p=>new LedgerService(db.pool,p));assert.equal((await anonymous(request('assets','POST',SAMPLE.assets[0].data))).status,401);
-    const customer=ledgerHandler(async()=>({subject:'test-customer',role:'CUSTOMER',storeIds:['MOUNTAIN_BASE']}),p=>new LedgerService(db.pool,p));assert.equal((await customer(request('assets'))).status,403);
-    const staff=ledgerHandler(async()=>({subject:'test-staff',role:'STAFF',storeIds:['MOUNTAIN_BASE']}),p=>new LedgerService(db.pool,p));
+    const anonymous=ledgerHandler(async()=>null,p=>new LedgerService(db.pool,p,async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */}));assert.equal((await anonymous(request('assets','POST',SAMPLE.assets[0].data))).status,401);
+    const customer=ledgerHandler(async()=>({subject:'test-customer',role:'CUSTOMER',storeIds:['MOUNTAIN_BASE']}),p=>new LedgerService(db.pool,p,async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */}));assert.equal((await customer(request('assets'))).status,403);
+    const staff=ledgerHandler(async()=>({subject:'test-staff',role:'STAFF',storeIds:['MOUNTAIN_BASE']}),p=>new LedgerService(db.pool,p,async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */}));
     assert.equal((await staff(request('assets','POST',SAMPLE.assets[0].data))).status,403);
     assert.equal((await staff(request('assets/'+id(202)))).status,404);assert.equal((await staff(request('assets?storeId=ONSEN_BASE'))).status,403);
     const allowed=await staff(request('assets'));assert.equal(allowed.status,200);assert.ok((await allowed.json()).items.every((r:{storeId:string})=>r.storeId==='MOUNTAIN_BASE'));
@@ -149,13 +149,13 @@ try {
       // The gate pauses a real PostgreSQL transaction after its scoped read (before any permitted lock); not a mock DB.
       client.query=(async(text:string,values?:unknown[])=>{const result=await query(text,values);if(text.includes('SELECT id FROM')&&text.includes(table)){signal();await gate;}return result;}) as PoolClient['query'];
       const controlledPool={connect:async()=>client} as unknown as Pool;
-      const outsider=new LedgerService(controlledPool,{subject:'other-store-admin',role:'ADMIN',storeIds:['MOUNTAIN_BASE']});
+      const outsider=new LedgerService(controlledPool,{subject:'other-store-admin',role:'ADMIN',storeIds:['MOUNTAIN_BASE']},async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */});
       const attempt=outsider.update(resource,recordId,{version:prior.version,reason:'out-of-scope counterexample',notes:'must not be written'}).then(()=>undefined,e=>e as LedgerError);
       try {
         await Promise.race([reached,attempt.then(()=>{throw new Error('Scoped authorization probe was not reached');})]);
         // NOWAIT gives an immediate, deterministic failure if the outsider locked this real row.
         await raw(db.pool,c=>c.query(`SELECT id FROM ${table} WHERE id=$1 FOR UPDATE NOWAIT`,[recordId]));
-        const owner=new LedgerService(db.pool,{subject:'owning-store-admin',role:'ADMIN',storeIds:['ONSEN_BASE']});
+        const owner=new LedgerService(db.pool,{subject:'owning-store-admin',role:'ADMIN',storeIds:['ONSEN_BASE']},async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */});
         const updated=await owner.update(resource,recordId,{version:prior.version,reason:'legitimate concurrent update',notes:'SYNTHETIC owner update'});
         assert.equal(updated.version,prior.version+1);
       } finally {client.query=original;release();const denial=await attempt;assert.equal(denial?.code,'NOT_FOUND');assert.equal(denial?.status,404);}

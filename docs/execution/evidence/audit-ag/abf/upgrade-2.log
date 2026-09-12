@@ -1,0 +1,6 @@
+
+> zao-rental@0.1.0 test:stabilization-upgrade
+> node --import tsx tests/stabilization/upgrade.ts
+
+PASS populated 0007 -> current additive migration: staff/password/session/ledger/active HOLD/claims/immutable quote preserved; revision CAS active; grants unchanged.
+Owned upgrade PostgreSQL stopped.

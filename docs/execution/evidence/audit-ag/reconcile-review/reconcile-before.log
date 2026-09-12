@@ -1,0 +1,30 @@
+✔ missing or invalid server write authorizer fails closed before any database access (0.717375ms)
+✖ missing or invalid stock reconciler is rejected before any database access (0.984792ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 267.935292
+
+✖ failing tests:
+
+test at tests/unit/ledger-write-configuration.test.ts:1:582
+✖ missing or invalid stock reconciler is rejected before any database access (0.984792ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (<ZAO_WORKTREE>/tests/unit/ledger-write-configuration.test.ts:12:54)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { code: 'STOCK_RECONCILIATION_NOT_CONFIGURED' },
+    operator: 'throws',
+    diff: 'simple'
+  }

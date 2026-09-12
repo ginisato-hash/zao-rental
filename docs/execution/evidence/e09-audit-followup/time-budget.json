@@ -1,0 +1,14 @@
+{
+  "authority": "Latest owner-approved new four-hour E09 audit followup window; not a review-budget reset",
+  "started_at_utc": "2026-09-12T07:02:10.709598+00:00",
+  "deadline_utc": "2026-09-12T11:02:10.709598+00:00",
+  "started_at_jst": "2026-09-12T16:02:10.709598+09:00",
+  "deadline_jst": "2026-09-12T20:02:10.709598+09:00",
+  "max_review_calls_remaining": 1,
+  "prior_calls": {
+    "initial": 1,
+    "rereviews": 1
+  },
+  "pr": 9,
+  "no_merge": true
+}

@@ -1,0 +1,99 @@
+{
+  "base": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "prior_reviewed_head": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+  "chunk_commits": {
+    "B-review": "5bcd435db2245265de8ed6b62852ec82614012b9",
+    "CD": "9936cff8c48d576dca09416fb05c3e96c12482ac",
+    "E": "7f695b2f961707211da796f217473528222208f0",
+    "G": "e30404d530e4e25e80379c679a62de0e412bfdbb"
+  },
+  "files": [
+    {
+      "file": "cd-before.log",
+      "source_sha256": "ee561497d41c7aaf2a88f68b81b53cd9a182350030bd5e7277c85f979d4ddc4c",
+      "saved_sha256": "a13086b1c954a4b1cc375e4be9817c8f71e735b2cbf462a7609cfa7e1afb9e89",
+      "bytes": 1471
+    },
+    {
+      "file": "cd-after-4.log",
+      "source_sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+      "saved_sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+      "bytes": 1720
+    },
+    {
+      "file": "eg-before-3.log",
+      "source_sha256": "63036a449adf1349471cd8481aab037db19d68885a4c2f58ff4781f728f94408",
+      "saved_sha256": "63036a449adf1349471cd8481aab037db19d68885a4c2f58ff4781f728f94408",
+      "bytes": 987
+    },
+    {
+      "file": "b-review-before.log",
+      "source_sha256": "db697741b1a69afbf311ea8e04ab5936e7b3dc965636b54217a8473dcf4bd538",
+      "saved_sha256": "ce17a1c0fe0bb82075878573891ceacaeaf179f5a8240ef788e18c655a26789e",
+      "bytes": 997
+    },
+    {
+      "file": "b-review-after.log",
+      "source_sha256": "a177b235b1af7abc2a21c548b0970ef96c96f266f801faab7a5cc9d4edab4e29",
+      "saved_sha256": "a177b235b1af7abc2a21c548b0970ef96c96f266f801faab7a5cc9d4edab4e29",
+      "bytes": 215
+    },
+    {
+      "file": "e-oracle.log",
+      "source_sha256": "9990a3e035c99f5558283e5aca1becf7925a570a7b09b94d55b1a24c7a6b5a69",
+      "saved_sha256": "9990a3e035c99f5558283e5aca1becf7925a570a7b09b94d55b1a24c7a6b5a69",
+      "bytes": 491
+    },
+    {
+      "file": "test-stabilization-cd.log",
+      "source_sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+      "saved_sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+      "bytes": 1720
+    },
+    {
+      "file": "test-stabilization-eg.log",
+      "source_sha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b",
+      "saved_sha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b",
+      "bytes": 1053
+    },
+    {
+      "file": "test-stabilization-mixed.log",
+      "source_sha256": "1ffd7fb37fa922deed1bf82b4b32f77037778f99037f4ec22701f8f487cacfc9",
+      "saved_sha256": "1ffd7fb37fa922deed1bf82b4b32f77037778f99037f4ec22701f8f487cacfc9",
+      "bytes": 2125
+    },
+    {
+      "file": "commands.json",
+      "source_sha256": "4ffab99d559acb04d8db32a00331a1e4837c4b1a58734e711bb5c49c913df9e3",
+      "saved_sha256": "4ffab99d559acb04d8db32a00331a1e4837c4b1a58734e711bb5c49c913df9e3",
+      "bytes": 5398
+    },
+    {
+      "file": "audit-ag-mixed.json",
+      "source_sha256": "f45a45491ca19b4a281fc13a64561195f5a09f125e57987f486b9fb032ee85fe",
+      "saved_sha256": "f45a45491ca19b4a281fc13a64561195f5a09f125e57987f486b9fb032ee85fe",
+      "bytes": 8405
+    }
+  ],
+  "verification": {
+    "directory": ".local/evidence/2026-09-12T11-59-19.845Z",
+    "commands": 26,
+    "exit_codes": "all0"
+  },
+  "counterexamples": {
+    "CD": "same4 cases failed before; final18passed",
+    "EG": "E3andG2 failed; existing mismatch-rejection passed; final8passed",
+    "B-review": "missing callback did not reject before; rejects after"
+  },
+  "test_harness_diagnostics": {
+    "eg-before.log": "wrong existing role property; setup TypeError, not a product finding; pg_ctl proved stopped",
+    "eg-before-2.log": "bootstrap intentionally has no automatic pricing rights; fixture corrected via explicit synthetic account",
+    "mixed-after-1.log": "old build because typecheck stopped build; could not create90HOLDs; not final evidence",
+    "mixed-typecheck-1-and-2": "test-local inference errors; explicit Placement annotation fixed",
+    "verify-integrated-1.log": "new scarcity assertion used201-success helper against correct200-insufficient result; strict200+INSUFFICIENT assertion corrected"
+  },
+  "permissions": "existing app roles; no grant expansion",
+  "data": "synthetic only",
+  "physical_device": false,
+  "no_live_runner_or_model_tests": true
+}

@@ -1,0 +1,11 @@
+S01_SCHEMA_MAX_BYTES [18865,18932,18974,19058]
+✔ current schema maxima plus normal HOLD/amend/quote wrappers fit finite24KiB UTF8 (8.794167ms)
+✔ readJson counts actual split UTF8 stream, ignores declared length, cancels overflow (13.309791ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 229.88325

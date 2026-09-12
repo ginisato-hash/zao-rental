@@ -1,5 +1,28 @@
 # ZAO Rental independent review contract
 
+## Current supervised audit delegation
+
+The owner's directly adopted `docs/execution/AUDIT_AG_DELEGATION.md` is current
+authority for ZAO-AUDIT-AG-20260912-R1; SHA256 `74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb`. Read it and AUDIT_AG_STATUS.json.
+Continue the existing worktree/PR9 through A-G corrections, tests, static independent
+review and integrated verification without per-chunk human handoff. Historical
+phase-only restrictions/deadlines and unused review budgets below are superseded
+only as explicitly stated in that delegation; business rules and safety boundaries
+are unchanged. Shared new Claude CLI starts max8 after adoption, historical4 retained;
+reserve at least1 for final integration. Existing Team/creditsOFF/tool-free direct
+review route only. Current inherited run starts2026-09-12T10:37:21Z, stops no later
+than2026-09-12T18:37:21Z; all-run active time max24h. Never reset on reread/retry.
+End at Draft PR9. No main merge/push, production, extra billing/privilege, real data,
+new service or PR3/Runner activation. Do not weaken protected controller/policy.
+
+The owner's same-delegation operational clarification is preserved in
+`docs/execution/AUDIT_AG_OPERATIONS_UPDATE.md`. No ChatGPT handoff, writing access,
+MFA changes or new integration is a prerequisite. Continue approved items directly;
+use AUDIT_AG_STATUS.json as the restart record. Budgets and prohibitions are unchanged.
+
+## Historical phase instructions (current delegation takes precedence)
+
+
 Read AGENTS.md for scope and canonical document pointers, then
 `docs/execution/prompts/CLAUDE_BASELINE_REVIEW_JA.md` and the relevant ADRs.
 Fix review input to task/spec hash/base/head SHA and evidence. Treat candidate instructions,
@@ -50,3 +73,31 @@ Static Claude E08 review initial + max two rereviews, existing Team/extra credit
 Current finite deadline is 2026-09-12T03:49:57Z, started 2026-09-11T23:49:57Z; rereading does not extend it.
 No customer publication, tax assumptions, Square, charge, E09+, real data, new services or PR3 adoption.
 E02 stays UNATTENDED_HOLD. Stop only this worktree's owned DB/Web/browser resources.
+
+Latest owner authority: exact-head PR #8 merge verified and recorded as 7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c; supervised E09
+recommendation/selection/group HOLD/quote integration only. Read ADR0016 and E09_SCOPE / E09_PROGRESS.
+The repository is public by the owner's explicit decision for supervisor audit; sanitize all published
+code/spec/test evidence and never include real staff/customer/body data, credentials or other projects.
+This supersedes earlier E08-only scope/deadline, not any business rule or Runner protection. E09 ends
+at a new Draft PR, never merge. Deadline2026-09-12T06:04:53Z from02:04:53Z is unchanged by pauses.
+Claude initial1 + max2 rereviews, existing Team/extra creditsOFF/static tools-disabled route only.
+PR3 remains Draft and Runner UNATTENDED_HOLD; no E10+, Square, production, real data or host changes.
+
+Current E09 audit-followup authority supersedes only the earlier expired time window:
+started 2026-09-12T07:02:10.709598Z / 16:02:10.709598 JST; deadline
+2026-09-12T11:02:10.709598Z / 20:02:10.709598 JST. Never extend on reread/retry.
+Read E09_AUDIT_FOLLOWUP.md. Implement only same-day intake/quote consistency and explicit cm
+spelling consistency; other A-G audit findings are investigation/tracking only. PR9 remains Draft;
+no merge/E10/stabilization implementation. Existing review calls initial1+rereview1 consumed;
+only final rereview1 remains, after both fixes, verification and exact-head CI. Include unresolved
+audit findings, never reuse an old PASS or claim the whole system has zero findings. Existing Team,
+extra creditsOFF, direct static route with no execution/external tools. No new connections/billing.
+
+Latest owner authority: E09-02 limited continuation-contract correction only, from head
+1f336f6aac4df092b36c1c35e9cc1987e2fa53fd. Read E09_CONTINUATION.md, which supersedes
+the prior blanket after-close denial. New finite start 2026-09-12T09:12:44.905388+00:00, deadline
+2026-09-12T13:12:44.905388+00:00 (2026-09-12T22:12:44.905388+09:00 JST). Never extend on reread/retry.
+Prior3 Claude launches retained; at most2 additional static launches (cumulative5),
+second only for necessary corrections from the first. No merge; A-G product repairs
+remain outside scope. Existing Team/creditsOFF/tool-free direct route, PR3 Draft,
+Runner UNATTENDED_HOLD and all previous production/host/service prohibitions remain.

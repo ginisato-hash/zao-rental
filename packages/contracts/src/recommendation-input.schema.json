@@ -1,0 +1,148 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "pickupStore": {
+      "enum": [
+        "MOUNTAIN_BASE",
+        "ONSEN_BASE"
+      ]
+    },
+    "returnStore": {
+      "enum": [
+        "MOUNTAIN_BASE",
+        "ONSEN_BASE"
+      ]
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "startDate": {
+          "type": "string",
+          "pattern": "^20[0-9]{2}-[0-9]{2}-[0-9]{2}$"
+        },
+        "endDate": {
+          "type": "string",
+          "pattern": "^20[0-9]{2}-[0-9]{2}-[0-9]{2}$"
+        },
+        "slot": {
+          "enum": [
+            "AM",
+            "PM",
+            "DAY",
+            "MULTIDAY"
+          ]
+        }
+      },
+      "required": [
+        "startDate",
+        "endDate",
+        "slot"
+      ]
+    },
+    "members": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]{1,24}$"
+          },
+          "sport": {
+            "enum": [
+              "SKI",
+              "SNOWBOARD"
+            ]
+          },
+          "heightCm": {
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 250
+          },
+          "footCm": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 50,
+            "multipleOf": 0.1
+          },
+          "adultAtStart": {
+            "type": "boolean"
+          },
+          "tier": {
+            "enum": [
+              "REGULAR",
+              "PREMIUM"
+            ]
+          },
+          "ski": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "weightKg": {
+                    "type": "number",
+                    "minimum": 5,
+                    "maximum": 300
+                  },
+                  "ageAtStart": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 120
+                  },
+                  "level": {
+                    "enum": [
+                      "BEGINNER",
+                      "INTERMEDIATE",
+                      "ADVANCED"
+                    ]
+                  }
+                },
+                "required": [
+                  "weightKg",
+                  "ageAtStart",
+                  "level"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "poleVariantId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "sport",
+          "heightCm",
+          "footCm",
+          "adultAtStart",
+          "tier",
+          "ski",
+          "poleVariantId"
+        ]
+      }
+    }
+  },
+  "required": [
+    "pickupStore",
+    "returnStore",
+    "period",
+    "members"
+  ]
+}

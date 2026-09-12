@@ -1,0 +1,19 @@
+{
+  "baseline_head": "f5c57ccf72b7be2281e7dd7070e61c22e551fcc1",
+  "command": "node --import tsx --test tests/unit/ledger-write-configuration.test.ts",
+  "classification": "unit configuration guard; no database accessed",
+  "logs": [
+    {
+      "file": "reconcile-before.log",
+      "exit_code": 1,
+      "original_sha256": "1826122b287dc91f8b27b47aadc4f8fc3a87c50c26208a96f7be1dd527c2cfb0",
+      "saved_sha256": "d2fd53c0c56709316bb3fcae68f7e1997cdddbb92acac50434022f739763fcf3"
+    },
+    {
+      "file": "reconcile-after.log",
+      "exit_code": 0,
+      "original_sha256": "b9cf9ded41bba5e4d7225aada6d22ea325952d2e2991749df2750ced1589a55e",
+      "saved_sha256": "b9cf9ded41bba5e4d7225aada6d22ea325952d2e2991749df2750ced1589a55e"
+    }
+  ]
+}

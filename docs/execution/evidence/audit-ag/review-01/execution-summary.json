@@ -1,0 +1,70 @@
+{
+  "state": "RETURNED",
+  "scope": "A/B/F implementation checkpoint; C/D/E/G pending",
+  "round_after_adoption": 1,
+  "cumulative_cli_start": 5,
+  "started_at": "2026-09-12T11:33:40.351286+00:00",
+  "finished_at": "2026-09-12T11:42:16.855834+00:00",
+  "head_sha": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+  "snapshot_sha256": "5b2c8614d2dfb55b2b07ddaabcf6b89010a25dc76d90484792c2e291a02b40a3",
+  "timeout_seconds": 900,
+  "exit_code": 0,
+  "capabilities": {
+    "tools": [
+      "StructuredOutput"
+    ],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.220",
+    "fast_mode_state": "off"
+  },
+  "hook_events": [],
+  "rate_limit_events": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789217400,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "is_error": false,
+  "result_subtype": "success",
+  "permission_denials": [],
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 250610,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 49738,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 250610,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 49738,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 250610,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 250610
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "billing": "Existing Team, isUsingOverage=false; displayed model cost is not evidence of an added charge"
+}

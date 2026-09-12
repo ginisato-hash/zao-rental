@@ -1,0 +1,25 @@
+
+> zao-rental@0.1.0 test:pricing
+> node --import tsx tests/pricing/real-postgres.ts
+
+PASS populated exact PR7 prefix -> latest additive migrations concurrent migration preserves staff session, HOLD and transfer
+PASS PRICE_EDIT alone cannot turn STAFF or assigned-store ADMIN into a price administrator
+PASS no auto grants, draft invisible, explicit private source initialization, idempotent authorized setup
+PASS whole group explicit table -> quote DB snapshot; re-read immutable and replay does not duplicate
+PASS all occupied dates one price book, future rental and actual variant constraints; no client prices
+PASS draft edits are optimistic and isolated; activation predecessor and backdating are guarded
+PASS concurrent activation and quote never mix two versions; previous quote amount/hash remain unchanged
+PASS scheduled immutable version activates by DB time; no previous-book date fallback or ambiguous successor
+PASS HOLD owner/content/expiry coupling; quote does not extend 10 minutes or mutate claims
+PASS late transfer attention is derived while HOLD remains live; no persisted issue flag is needed
+PASS coupon quotes never consume capacity; explicit combination computes integer total and records terms version
+PASS future reservation adapter capacity is atomic across connections and idempotent; redemption still absent
+PASS expiry invalidates current use without rewriting snapshot and releases reservation capacity only
+PASS E08-01: expired quote keeps expiry as primary status even when linked HOLD is released
+PASS cutoff is inclusive for payment qualification but a zero-lifetime preview is refused; no locked-in early discount
+PASS concurrent HOLD amendment serializes quote check; pending/unknown payment blocks further use
+PASS zero-total coupon remains a private unconfirmed no-payment gate, never a charge
+PASS password/session/ordinary handler rejects anonymous, CSRF, spoof, other actor, scope and noneditor
+PASS app DB cannot DDL, access passwords, alter HOLD, change audit/quotes/books; audit actor is verified caller
+E08 real PostgreSQL: 19 passed; 0 skipped. Synthetic accounts; injected service clock. Coupon reservation is not redemption. No payment/production operation.
+Owned E08 PostgreSQL stopped.

@@ -1,0 +1,53 @@
+
+> zao-rental@0.1.0 test:recommendation-continuation
+> node --import tsx tests/recommendation/continuation-ui.ts
+
+CONTINUATION_PREVIEW {"status":409}
+FAIL 16:55 group ->17:01 one-member length/price ->UI selection/amend/quote/reread; no lease renewal ERR_ASSERTION AssertionError
+{"actual":409,"expected":201}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:36:279)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:34:2)
+PASS 17:01 rejects new same-day HOLD/unlinked quote; future reservation remains allowed after hours
+PASS expired HOLD cannot continue at 17:05:00
+PASS expired HOLD cannot continue at 17:05:01
+PASS expired HOLD cannot continue at next-day
+PASS DAY due closes continuation even with lease time left
+PASS AM due closes continuation even with lease time left
+SCOPE_REFUSAL member 422
+SCOPE_REFUSAL tier 422
+SCOPE_REFUSAL age 422
+SCOPE_REFUSAL product 422
+SCOPE_REFUSAL store 422
+SCOPE_REFUSAL period 422
+SCOPE_REFUSAL slot 422
+SCOPE_REFUSAL reservation 422
+PASS after-close full-group non-size mutations cannot borrow old HOLD; original stays intact
+FAIL other owner, fixed, unknown payment, transfer attention, stale version refused before mutation ERR_ASSERTION AssertionError
+{"actual":422,"expected":403}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:45:271)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:45:2)
+FAIL two different holds race for last145cm after close; one succeeds, loser original retained ERR_ASSERTION AssertionError
+{"actual":0,"expected":1}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:48:860)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:48:2)
+FAIL lost amendment HTTP response replays saved selection keys and expires honestly at17:05 ERR_ASSERTION AssertionError
+{"actual":409,"expected":201}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:49:521)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:49:2)
+FAIL HOLD saved then missing coupon quote fails; retry exact key after development coupon configuration ERR_ASSERTION AssertionError
+{"actual":409,"expected":201}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:50:233)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:50:2)
+FAIL lock wait crossing17:05 rereads server clock and refuses amendment; forbidden never waits stock lock ERR_ASSERTION AssertionError
+{"actual":false,"expected":true}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:51:728)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:13:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/continuation-ui.ts:51:2)
+PASS cancel/read remain available after intake cutoff; operational reassign shares protection/no renewal
+E09-02 normal UI/API/real PostgreSQL: 8 passed; 6 failed; 0 skipped. Synthetic individual password sessions. Test-owner DB clock/synchronization only; no real device or live payment.
+Owned continuation Web/browser/PostgreSQL stopped.

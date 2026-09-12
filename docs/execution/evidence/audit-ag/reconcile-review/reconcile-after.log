@@ -1,0 +1,10 @@
+✔ missing or invalid server write authorizer fails closed before any database access (0.684542ms)
+✔ missing or invalid stock reconciler is rejected before any database access (0.082917ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 252.915167

@@ -1,0 +1,642 @@
+{
+  "created_at": "2026-09-12T11:33:38.770509+00:00",
+  "delegation": "ZAO-AUDIT-AG-20260912-R1",
+  "scope": "A/B/F implementation checkpoint; C/D/E/G pending",
+  "round_after_adoption": 1,
+  "cumulative_cli_start": 5,
+  "shared_max": 8,
+  "historical_starts": 4,
+  "base_sha": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "head_sha": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+  "previous_head": "01da3e79cf5193bb76438ed832face51c9a9ebc9",
+  "snapshot_sha256": "5b2c8614d2dfb55b2b07ddaabcf6b89010a25dc76d90484792c2e291a02b40a3",
+  "snapshot_bytes": 537951,
+  "snapshot_characters": 521580,
+  "file_count": 73,
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 1657,
+      "sha256": "ab57763f6f3085f3a0f94e5b38b75c4e36c7f5c9f2ba0665312625124ed04853",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 8509,
+      "sha256": "37c495423b7a35ce43fc9b0ecfcc5de5d6a3e75e78f0709a7527120d6dc8ac1d",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "CLAUDE.md",
+      "bytes": 7647,
+      "sha256": "97b3e00b9bda10b6a9279e6144084aee0a6068b35014c775aa3e26611e949f91",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "apps/web/src/app/api/staff-users/[[...record]]/route.ts",
+      "bytes": 1846,
+      "sha256": "1c142e491caba2a93db6045cfed89bc9a231f8ef3ce5c487479288fba3965b68",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/StaffManagement.tsx",
+      "bytes": 7225,
+      "sha256": "524e65fabf187e3d3857f95fc2a187dc34897132cf5ee954a2efb3c2a00a4e99",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/StaffSessionBoundary.tsx",
+      "bytes": 2168,
+      "sha256": "33e17b3ebaa1af8d806a25f25017da280cfa90540c168ae5ec8308bcb121d23d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/auth-http.ts",
+      "bytes": 6267,
+      "sha256": "794af4ca2c794a3c17b0b8fbe29028ae2e7075ada4bf614fd5881a800debd208",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/hold-runtime.ts",
+      "bytes": 3310,
+      "sha256": "1de9158eebc618840313be6e8e8017a65acb9febbb8a64392b3c3244b0f76dce",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/ledger-http.ts",
+      "bytes": 3263,
+      "sha256": "b3c82d5beb2cb5a625b6843980ab847e495fee4c7ed1e66dd3d850946425cb50",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/ledger-runtime.ts",
+      "bytes": 2224,
+      "sha256": "e5b3571aaeb1e4fd8861a85d9d8e6db5ff5b5002c488cac7d950e84fadfe7146",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/quote-http.ts",
+      "bytes": 2300,
+      "sha256": "013104753ddfd9c3c415c1e19eada00934c6b343cdb178bf1308a9c6e55c2f31",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/staff-runtime.ts",
+      "bytes": 1913,
+      "sha256": "018e3b68529e948f7aa0089021851dc93e602c07345fa045c638c94e60f973a3",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/OPERATIONS.md",
+      "bytes": 5707,
+      "sha256": "3afb790abdc704aa0b0cec7e16bdf97df71f79553a3db66349afb279b5fd62e3",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/AUDIT_AG_DELEGATION.md",
+      "bytes": 19310,
+      "sha256": "74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/AUDIT_AG_IMPLEMENTATION.md",
+      "bytes": 4706,
+      "sha256": "b2ec629552922af52db734b610374f9bf390189b50c94d860b5da27ec4d9671b",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/AUDIT_AG_STATUS.json",
+      "bytes": 2611,
+      "sha256": "284df97259263b9e1418040abd5795a70ea1e15bf705b471a965cb53df82bc57",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/E09_AUDIT_FOLLOWUP.md",
+      "bytes": 14508,
+      "sha256": "ee5b5b111c570e8cec55d1a76a318ad259c1cd62c83a1ae5eb8f4ac6682b1a94",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/E09_CONTINUATION.md",
+      "bytes": 10054,
+      "sha256": "556ea363e6ea20c1ae04fca40acda7b37156296ac0334eb0553920d0e6a04574",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/SCOPE.md",
+      "bytes": 6441,
+      "sha256": "db1b76fb2ec9feb21b0b99cd0a8ea7a2ffc66ab14968cb9739c337b25cfca254",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/after-5.log",
+      "bytes": 2401,
+      "sha256": "b31b77192bd5dc84f1fd9a4535218e3992c47acaa45023ccf4906f281df04573",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/before-complete.log",
+      "bytes": 5061,
+      "sha256": "7ec0624eec81312d3867428de798ccc0918970f83bb9b7d9c6c63c988d384898",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/body-unit.log",
+      "bytes": 361,
+      "sha256": "c9e65af2bac616b638e19c5e8f872fba671d7bd3e09c9490016db563fff482b3",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/build-1.log",
+      "bytes": 1347,
+      "sha256": "008898d458a6a5b156df19efdbc94ab5560aa738d97c3b2da1b649588a0b9a47",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/final-local-commands.json",
+      "bytes": 704,
+      "sha256": "7577b8ba50d446046d2c001671ab1bb84e7bc3a353ee6ba5d489a62560056fd5",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/lint-1.log",
+      "bytes": 54,
+      "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/manifest.json",
+      "bytes": 2071,
+      "sha256": "b75645aa39e0d051f00145937588b21961cfcd68c9c1593a5bbab3809965ad08",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/typecheck-3.log",
+      "bytes": 130,
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/upgrade-2.log",
+      "bytes": 299,
+      "sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/abf/verify-commands.json",
+      "bytes": 4747,
+      "sha256": "d673fe05acd1794508f2c7f57416d21b327ba3ecf063944612a418b736c7f14d",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2785,
+      "sha256": "49c5ef7d0b30850529d5466664aedc2ef2d657589c87a99bdcc6b7a78636d8b8",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/accounts.ts",
+      "bytes": 5786,
+      "sha256": "161c3e6336d5f06de736e38fed9b95c2a504a3cc45e92c2b76f4d866f152c1dc",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/ledger-write-authority.ts",
+      "bytes": 1283,
+      "sha256": "1bfa4155c1cea0b7c19726b871c86c894321cb5af07525415d6a8aede6be6263",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/password.ts",
+      "bytes": 885,
+      "sha256": "ea46af8ed56836cbc8b06ae4f97ed6cb5e7920dc99e8b852c89a16745380abfc",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/staff-auth.ts",
+      "bytes": 4585,
+      "sha256": "1c95af6686629baa9c06f89fd8b29324a69be7f9f438ad09ea5beedeabde3592",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/staff-input.schema.json",
+      "bytes": 4084,
+      "sha256": "486a5f1229eaa5d7a76c378efd77b893b1bd2a1f997be102f1b1c205cd7c99b7",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold-input.schema.json",
+      "bytes": 2910,
+      "sha256": "be301090c11d7e1a975eedfab18d626318da60ba1f7670102830bd58e4f5b75f",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold-intake.ts",
+      "bytes": 4212,
+      "sha256": "6148eabf67e7f1263dbee2e0d93449fa91c0d5c37d4922c7ea48e52ab09cf2f0",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "bytes": 5313,
+      "sha256": "e0ae7629f6ef71effb55b934d341ead7f370d8be042cfac3c2aac42ec1829fff",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/http-body-limits.ts",
+      "bytes": 332,
+      "sha256": "2de46a76d98137a9d7f89e89fae09900fe9cb1f4d6fc4d0bb34639d51a106228",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/ledger-input.schema.json",
+      "bytes": 12292,
+      "sha256": "7e515e084450d7aad0c6b292f2db859bf025e75522585f068bd224c52668557e",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "bytes": 4188,
+      "sha256": "d8b73315a23b3523ed759b16bb64c17f91051c6c8dbfee97d72a24cfda8c044d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "bytes": 8328,
+      "sha256": "c6613b800dcc808572d901c042a96aae789db1fbf440a8c9733fc4fd717bf0db",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/catalog/ledger-service.ts",
+      "bytes": 8352,
+      "sha256": "8ea80a33a9a82fa9b86da33f6a9ac30ba54f95a845da15191279177fe8f0af3e",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/hold-service.ts",
+      "bytes": 23014,
+      "sha256": "65e89fc4faf01fb9fa961ac35071279e2e3b6aad5091417573e055cffd4476c0",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/intake-context.ts",
+      "bytes": 971,
+      "sha256": "0ce6ec0c858fce5fad1bc9492339a7c296b645d4e808052fce63547c913cdccd",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/pricing/quote-service.ts",
+      "bytes": 19499,
+      "sha256": "e005ca2dfc566df6ac1e9aa4ebff407329c686661f4947465d34c1972e937c88",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "bytes": 530,
+      "sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "bytes": 14076,
+      "sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "bytes": 7226,
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "bytes": 8294,
+      "sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "bytes": 17126,
+      "sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "bytes": 7743,
+      "sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "bytes": 3459,
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "bytes": 1309,
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "bytes": 2555,
+      "sha256": "af1dedf4271fcbfeadef15603231274d635e58a3fb8406c3577cba11ff796d34",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/application-roles.ts",
+      "bytes": 5867,
+      "sha256": "2a536f536e545ed194b474949ed1f33bfc4d71c093fbeb49d3ae29bb5346d4f1",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/development-app.ts",
+      "bytes": 2488,
+      "sha256": "76e0a80ba755fa3f4a8e2bca1956809e017bd11f978367fc4ca423737172142e",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/integration.ts",
+      "bytes": 7086,
+      "sha256": "9085fb3ebdc81aefccc25ed5c2283cabfcff2a9b3ba9535454a73e16bf6246ba",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/ledger-integration.ts",
+      "bytes": 22734,
+      "sha256": "6843a5422038a6f7e6c0497f2c6913a49cce11b27af298cc2fb31f2a88045964",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/postgres.ts",
+      "bytes": 2235,
+      "sha256": "5f4a0c4bffe22fff9a6882a8a74d46606282d46751a35037661afa376210facf",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/verify.mjs",
+      "bytes": 1604,
+      "sha256": "803141959bc135e3f3a70b996837bba72e87bfee9ecba0549d4b268ce303a3c7",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/auth/staff-flow.ts",
+      "bytes": 24452,
+      "sha256": "23e23b2eadd6eb8a54ffcf3d901f0bf792fc57c232bcec41191dc1465674a9b2",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/fixtures/ledger-sample.ts",
+      "bytes": 12126,
+      "sha256": "d4b1332a452d4c828f75f1285cf798b54014d5c495e684e4a29771647e3a8982",
+      "selection": "only imported fixtureId helper; unrelated sample object omitted"
+    },
+    {
+      "path": "tests/inventory/fixture.ts",
+      "bytes": 4337,
+      "sha256": "3de0854d3b398de7f7dc067bd4c182726484ffd3dbe39b7549c3bc2882169d8c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/inventory/normal-ui.ts",
+      "bytes": 12537,
+      "sha256": "27766835a462de8342bebe19561f040b9f66d438fa51428d0c26a0467b89c9b9",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/pricing/real-postgres.ts",
+      "bytes": 22547,
+      "sha256": "e411faec6eb454dd65ec29faf64031995470fa0caa53f3b6a279291fe6740bac",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/recommendation/fixture.ts",
+      "bytes": 3626,
+      "sha256": "4b44d31db4fbb163e35d68e9426534e0c41e279157e7eb5e7201f63ad8e3f25d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/recommendation/real-postgres.ts",
+      "bytes": 21392,
+      "sha256": "b61ca88b2d7023b2cd5f7ac37bd83dc3a4ce7ac88f3b5b5ce1193f39580ebe0e",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/stabilization/s01.ts",
+      "bytes": 23569,
+      "sha256": "f11aa2e74cfe990dde08fe93d7b3aa5ce561303a4b95e4e3d82f0a9156eb7503",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/stabilization/upgrade.ts",
+      "bytes": 5526,
+      "sha256": "7ed57860253e05f1b7a59c9273fc161c5fe9eeef5be77cf34c3c2915edb3b025",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/transfer/real-postgres.ts",
+      "bytes": 27699,
+      "sha256": "3c369748f0e09f09d234dd6aed4a55051dbc4d58076857ea869472c99a755c53",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/unit/group-body.test.ts",
+      "bytes": 2959,
+      "sha256": "9e32e7f2989b62975bf405461f4279da6827fbcc0a387f7441ed3d6322c74334",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tools/automation/review-contract.ts",
+      "bytes": 932,
+      "sha256": "f32456b0cb00c80cd2ae9d48afa5d32837cfcf9447b03517723172536cdb55e0",
+      "selection": "full numbered file"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "Exact-head CI correspondence",
+      "bytes": 2754,
+      "sha256": "eb529681361246721ad09db389e4128066a2fd57a44f292a99869c88ed7aaa56"
+    },
+    {
+      "label": "local-verification/commands.json",
+      "bytes": 4747,
+      "sha256": "d673fe05acd1794508f2c7f57416d21b327ba3ecf063944612a418b736c7f14d"
+    },
+    {
+      "label": "local-verification/test-stabilization-s01.log",
+      "bytes": 2401,
+      "sha256": "b2d964351d3488e023617316e391ca6fb7af91332c416d2e44befdf6d2af12ac"
+    },
+    {
+      "label": "local-verification/test-stabilization-upgrade.log",
+      "bytes": 299,
+      "sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+    },
+    {
+      "label": "local-verification/test-auth.log",
+      "bytes": 2445,
+      "sha256": "f33f15ee630c32e3020a298c9d40a341be18c7eb22f0a166d192dcba5f126d6f"
+    },
+    {
+      "label": "local-verification/test-integration.log",
+      "bytes": 3090,
+      "sha256": "59bcc1a8596db225feeb26b76962f5339f60e23b96e54aadb8ce8916972f22cd"
+    },
+    {
+      "label": "local-verification/test-recommendation-continuation.log",
+      "bytes": 1985,
+      "sha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65"
+    },
+    {
+      "label": "local-verification/check-secrets.log",
+      "bytes": 210,
+      "sha256": "764421a8a55df4344d8462e2af2fe45684d10b940973652935100b2672cbdad0"
+    },
+    {
+      "label": "ci-verification/commands.json",
+      "bytes": 4532,
+      "sha256": "7f0ec5f3f36c906a82256cae163d35eab2c17aef4d5bda01423322a4c826450c"
+    },
+    {
+      "label": "ci-verification/test-stabilization-s01.log",
+      "bytes": 2401,
+      "sha256": "b2d964351d3488e023617316e391ca6fb7af91332c416d2e44befdf6d2af12ac"
+    },
+    {
+      "label": "ci-verification/test-stabilization-upgrade.log",
+      "bytes": 299,
+      "sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+    },
+    {
+      "label": "ci-verification/test-auth.log",
+      "bytes": 2445,
+      "sha256": "f33f15ee630c32e3020a298c9d40a341be18c7eb22f0a166d192dcba5f126d6f"
+    },
+    {
+      "label": "ci-verification/test-integration.log",
+      "bytes": 3078,
+      "sha256": "dc5f293e41f1355a98e6e4a166320d658f81f8969ba158c1fce5546fb5ffba17"
+    },
+    {
+      "label": "ci-verification/test-recommendation-continuation.log",
+      "bytes": 1985,
+      "sha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65"
+    },
+    {
+      "label": "ci-verification/check-secrets.log",
+      "bytes": 210,
+      "sha256": "01904e9616dce8452af906022143fea3522a943f9e75d792fed215b02aa5a3cc"
+    },
+    {
+      "label": "review-3/review.json",
+      "bytes": 10119,
+      "sha256": "1755a0c4290b9a05a485b6503e49bcc108a60b7b8d2a9d2d179195e9b2f5697d"
+    },
+    {
+      "label": "Verified unchanged launch contract",
+      "bytes": 751,
+      "sha256": "12070772c1dfccf411a5a399bd6a1708f162bc0edc463df081320fded09dda50"
+    }
+  ],
+  "scan": {
+    "credential_urls": 0,
+    "provider_tokens": 0,
+    "private_keys": 0,
+    "non_synthetic_emails": 0,
+    "session_or_hash_values": 0
+  },
+  "redactions": 0,
+  "instructions_sha256": "b1cbce24c9f9e10b2565f78b207515987e307aebcb1d460c8c6ee5d54b3da47d",
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34690468515,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34690468515",
+    "event": "pull_request",
+    "head_sha": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+    "base_sha": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+    "conclusion": "success",
+    "checked_out_sha": "68c1bf1db5e25a58e161ccedcf7f163f5ab39dcf",
+    "checked_out_kind": "PR_MERGE",
+    "checked_out_merge_sha": "68c1bf1db5e25a58e161ccedcf7f163f5ab39dcf",
+    "integration_candidate_sha": "68c1bf1db5e25a58e161ccedcf7f163f5ab39dcf",
+    "integration_parents": [
+      "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+      "8467d11a53f74a7028c9a5d92ef2d3b00600c598"
+    ],
+    "merge_parents": [
+      "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+      "8467d11a53f74a7028c9a5d92ef2d3b00600c598"
+    ],
+    "merge_tree_sha": "c3856235fd733e11c11fb40b241c822d6090b5c6",
+    "head_tree_sha": "c3856235fd733e11c11fb40b241c822d6090b5c6",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-68c1bf1db5e25a58e161ccedcf7f163f5ab39dcf",
+    "artifact_digest": "sha256:55ba4061b3c6fc4b5c3b6efac096e8b2f47029da305c122742dc8cbd01947f4e"
+  },
+  "destination": "Anthropic Claude Code existing Team, extraOFF",
+  "uncommitted_work_included": false,
+  "source": "git show fixed HEAD only; independent local C/D work not transmitted",
+  "lock_sha256": "c53c5ece7de574ce78e95cec573948275ee05fce6d9902089c250c6c70d71623"
+}

@@ -1,0 +1,352 @@
+{
+  "synthetic": true,
+  "environment": {
+    "platform": "darwin",
+    "node": "v24.15.0",
+    "cpu": "Apple M2 Pro",
+    "postgres": "18.4",
+    "transport": "Next HTTP loopback with normal password session"
+  },
+  "boardAssets": 300,
+  "bootAssets": 300,
+  "polePairs": 150,
+  "initialLiveHolds": 90,
+  "initialComponents": 270,
+  "initialSavedQuotes": 100,
+  "peoplePerHold": 1,
+  "componentsPerHold": 3,
+  "recommendationPeople": 2,
+  "recommendationCandidatesPerPerson": "SKI5; SNOWBOARD3 from explicit fixture",
+  "period": "independent DAY dates2039-01-01 onward; separate operation clock2038-12-01",
+  "concurrency": 6,
+  "batches": 8,
+  "operations": [
+    {
+      "operation": "transfer history HTTP",
+      "requests": 8,
+      "errors": 0,
+      "p50Ms": 9.511042000000089,
+      "p95Ms": 20.96629099999973
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "requests": 8,
+      "errors": 0,
+      "p50Ms": 14.879957999999533,
+      "p95Ms": 31.992084000000432
+    },
+    {
+      "operation": "direct availability HTTP",
+      "requests": 8,
+      "errors": 0,
+      "p50Ms": 19.876667000000452,
+      "p95Ms": 45.339500000000044
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "requests": 8,
+      "errors": 0,
+      "p50Ms": 56.88429199999973,
+      "p95Ms": 74.13150000000041
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "requests": 8,
+      "errors": 0,
+      "p50Ms": 61.281958000000486,
+      "p95Ms": 78.66204199999993
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "requests": 8,
+      "errors": 0,
+      "p50Ms": 130.75412499999948,
+      "p95Ms": 151.5388750000002
+    },
+    {
+      "operation": "transfer dispatch with expired HOLD cleanup HTTP",
+      "requests": 1,
+      "errors": 0,
+      "p50Ms": 16.15191700000014,
+      "p95Ms": 16.15191700000014
+    },
+    {
+      "operation": "quote list after HOLD expiry HTTP",
+      "requests": 1,
+      "errors": 0,
+      "p50Ms": 8.456958000000668,
+      "p95Ms": 8.456958000000668
+    },
+    {
+      "operation": "transfer actual receive HTTP",
+      "requests": 1,
+      "errors": 0,
+      "p50Ms": 12.862500000000182,
+      "p95Ms": 12.862500000000182
+    }
+  ],
+  "measuredOperationInvocations": 51,
+  "measuredHttpRequests": 59,
+  "setupRequestsExcluded": true,
+  "timeouts": 0,
+  "indeterminate": 0,
+  "raw": [
+    {
+      "operation": "transfer history HTTP",
+      "ms": 20.96629099999973,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 31.992084000000432,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 45.339500000000044,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 74.13150000000041,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 78.66204199999993,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 151.5388750000002,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer history HTTP",
+      "ms": 12.651749999999993,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 16.20562500000051,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 22.756207999999788,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 59.17845899999975,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 63.62095800000043,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 131.84170799999993,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer history HTTP",
+      "ms": 8.693749999999454,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 14.879957999999533,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 18.41437500000029,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 52.317541999999776,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 59.23791700000038,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 131.10862499999985,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer history HTTP",
+      "ms": 9.339125000000422,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 14.470374999999876,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 19.876667000000452,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 57.03654199999983,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 61.44658299999992,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 130.63808300000073,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer history HTTP",
+      "ms": 13.062292000000525,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 16.501499999999396,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 36.65662499999962,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 59.41350000000057,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 63.29579199999989,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 133.86062500000025,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer history HTTP",
+      "ms": 9.511042000000089,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 14.48504199999934,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 19.060332999999446,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 56.88429199999973,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 61.281958000000486,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 130.75412499999948,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer history HTTP",
+      "ms": 8.704792000000452,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 13.698374999999942,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 17.251874999999927,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 51.610749999999825,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 55.90641600000072,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 125.31087500000012,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer history HTTP",
+      "ms": 12.524917000000642,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list 100 HTTP",
+      "ms": 17.704625000000306,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "direct availability HTTP",
+      "ms": 22.175083000000086,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD amend HTTP",
+      "ms": 56.68249999999989,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "HOLD create plus quote save HTTP",
+      "ms": 61.06779199999983,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "recommendation preview HTTP",
+      "ms": 130.53941600000053,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer dispatch with expired HOLD cleanup HTTP",
+      "ms": 16.15191700000014,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "quote list after HOLD expiry HTTP",
+      "ms": 8.456958000000668,
+      "status": "SUCCESS"
+    },
+    {
+      "operation": "transfer actual receive HTTP",
+      "ms": 12.862500000000182,
+      "status": "SUCCESS"
+    }
+  ],
+  "productionGuarantee": false,
+  "physicalDevice": false
+}

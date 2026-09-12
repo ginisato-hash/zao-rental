@@ -1,0 +1,56 @@
+
+> zao-rental@0.1.0 test:stabilization-s01
+> node --import tsx tests/stabilization/s01.ts
+
+FAIL A stale name-only form cannot restore disable AssertionError
+{"actual":200,"expected":409}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:27:291)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:23:64)
+FAIL A stale name-only form cannot restore permission AssertionError
+{"actual":200,"expected":409}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:27:291)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:23:64)
+FAIL A stale name-only form cannot restore store AssertionError
+{"actual":200,"expected":409}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:27:291)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:23:64)
+FAIL A stale name-only form cannot restore role AssertionError
+{"actual":200,"expected":409}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:27:291)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:23:64)
+FAIL A missing revision is rejected atomically, not accepted as old-client overwrite AssertionError
+{"actual":200,"expected":422}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:32:270)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:32:2)
+FAIL B inventory-lock wait observes committed permission revocation before update AssertionError
+{"actual":200,"expected":403}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:40:29)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:34:57)
+FAIL B inventory-lock wait observes committed store revocation before update AssertionError
+{"actual":200,"expected":403}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:40:29)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:34:57)
+FAIL B inventory-lock wait observes committed disable revocation before update AssertionError
+{"actual":200,"expected":403}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:40:29)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:34:57)
+F_BODY_BYTES 18267
+FAIL F max normal direct create/amend/availability/quote passes HTTP and actual database AssertionError
+{"actual":413,"expected":200}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:47:216)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:46:2)
+FAIL F stream UTF8 finite group cap accepts exact24576 and rejects one byte over Error
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:51:20)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:11:60)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/stabilization/s01.ts:50:2)
+S01 normal authentication/API/PostgreSQL: 0 passed; 10 failed; 0 skipped.
+Owned S01 Web/browser/PostgreSQL stopped.

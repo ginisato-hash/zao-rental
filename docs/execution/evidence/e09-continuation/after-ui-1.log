@@ -1,0 +1,29 @@
+
+> zao-rental@0.1.0 test:recommendation-continuation
+> node --import tsx tests/recommendation/continuation-ui.ts
+
+CONTINUATION_PREVIEW {"status":201}
+PASS 16:55 group ->17:01 one-member length/price ->UI selection/amend/quote/reread; no lease renewal
+PASS 17:01 rejects new same-day HOLD/unlinked quote; future reservation remains allowed after hours
+PASS expired HOLD cannot continue at 17:05:00
+PASS expired HOLD cannot continue at 17:05:01
+PASS expired HOLD cannot continue at next-day
+PASS DAY due closes continuation even with lease time left
+PASS AM due closes continuation even with lease time left
+SCOPE_REFUSAL member 409
+SCOPE_REFUSAL tier 409
+SCOPE_REFUSAL age 409
+SCOPE_REFUSAL product 409
+SCOPE_REFUSAL store 409
+SCOPE_REFUSAL period 409
+SCOPE_REFUSAL slot 422
+SCOPE_REFUSAL reservation 422
+PASS after-close full-group non-size mutations cannot borrow old HOLD; original stays intact
+PASS other owner, fixed, unknown payment, transfer attention, stale version refused before mutation
+PASS two different holds race for last145cm after close; one succeeds, loser original retained
+PASS lost amendment HTTP response replays saved selection keys and expires honestly at17:05
+PASS HOLD saved then missing coupon quote fails; retry exact key after development coupon configuration
+PASS lock wait crossing17:05 rereads server clock and refuses amendment; forbidden never waits stock lock
+PASS cancel/read remain available after intake cutoff; operational reassign shares protection/no renewal
+E09-02 normal UI/API/real PostgreSQL: 14 passed; 0 failed; 0 skipped. Synthetic individual password sessions. Test-owner DB clock/synchronization only; no real device or live payment.
+Owned continuation Web/browser/PostgreSQL stopped.

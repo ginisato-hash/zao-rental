@@ -1,0 +1,30 @@
+{
+  "base": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "source_sha256": "f32456b0cb00c80cd2ae9d48afa5d32837cfcf9447b03517723172536cdb55e0",
+  "flags": [
+    "--safe-mode",
+    "-p",
+    "--tools",
+    "",
+    "--strict-mcp-config",
+    "--mcp-config",
+    "{\"mcpServers\":{}}",
+    "--setting-sources",
+    "",
+    "--disable-slash-commands",
+    "--no-session-persistence",
+    "--no-chrome",
+    "--permission-mode",
+    "dontAsk",
+    "--max-turns",
+    "3",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--include-hook-events"
+  ],
+  "route": "direct supervised static; not Runner",
+  "cwd": "fresh empty directory",
+  "childEnvironment": "allowlist; no credential overrides",
+  "tools": "StructuredOutput formatting only"
+}

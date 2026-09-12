@@ -1,0 +1,16 @@
+
+> zao-rental@0.1.0 test:stabilization-eg
+> node --import tsx tests/stabilization/eg.ts
+
+PASS E nine identical board units for ten same-day people is INSUFFICIENT, not search exhaustion
+PASS E 81 independent live groups / 243 components do not cap a disjoint request
+PASS E same candidate units on disjoint days preserve every original claim/TTL under concurrent new requests
+PASS E connected 81 live single-component promises exceed old whole-repository cap safely
+PASS E transitive size/date chain rearranges all dependent witnesses but not unrelated/fixed groups
+MEASURE variant-validation {"people":20,"components":60,"allQueries":12,"variantQueries":1}
+PASS G maximum group quote validates all 60 component selections with one variant query
+MEASURE quote-list {"quotes":100,"queries":15}
+PASS G 100 quote listing has bounded SQL with owner/store, immutable hash, HOLD validity
+PASS G batched selection preserves family, age/tier, missing variant and owner rejection
+E/G real PostgreSQL: 8 passed; 0 failed; 0 skipped.
+Owned E/G PostgreSQL stopped.

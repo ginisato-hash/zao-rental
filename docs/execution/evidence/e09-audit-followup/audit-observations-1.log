@@ -1,0 +1,8 @@
+AUDIT_OBSERVATION {"id":"A","status":"REPRODUCED_OPEN_NOT_FIXED","mode":"ordinary UI + API + real PostgreSQL","beforeActive":false,"afterActive":true,"editRestored":true,"revisionIncreased":true}
+AUDIT_OBSERVATION {"id":"B","status":"REPRODUCED_OPEN_NOT_FIXED","mode":"normal authenticated API + real PostgreSQL lock race","writeAfterRevocationStatus":200,"storedAfterRevoke":true}
+AUDIT_OBSERVATION {"id":"C","status":"REPRODUCED_OPEN_NOT_FIXED","mode":"normal authenticated API + real PostgreSQL","effectiveHoldState":"EXPIRED","activeClaims":3,"assetMaintenanceStatus":422,"poleReductionStatus":422}
+AUDIT_OBSERVATION {"id":"D","status":"REPRODUCED_OPEN_NOT_FIXED","mode":"normal authenticated API + real PostgreSQL","pieceStates":["READY","READY"],"activeReferencingClaims":0,"assetMaintenanceStatus":422,"poleReductionStatus":422}
+AUDIT_OBSERVATION {"id":"E","status":"REPRODUCED_OPEN_NOT_FIXED","mode":"pure solver reproduction, not HTTP/DB load","units":9,"members":10,"days":1,"candidatesPerMember":9,"outcome":"INDETERMINATE","knownShortageProof":"10 simultaneous distinct single-capacity placements cannot fit9 units"}
+AUDIT_OBSERVATION {"id":"F","status":413,"mode":"actual schema + HTTP parser unit reproduction; IDs syntactically valid, DB existence not asserted","members":20,"componentsPerMember":3,"variantsPerComponent":6,"utf8Bytes":18267,"limit":16384}
+AUDIT_PROBES_COMPLETED 6 open observations; not acceptance passes, no fixes to A-G.
+Owned audit-observation Web, browser and PostgreSQL stopped.

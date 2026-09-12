@@ -6,7 +6,7 @@ import {trackPoolLifecycle} from './pool-lifecycle';
 export async function provisionApplicationRoles(owner:Pool,identity:{namespace:string;database:string;dbPort:number}) {
  if(!/^zr_[a-f0-9]{12}$/.test(identity.namespace)||identity.database!==identity.namespace)throw new Error('INVALID_OWNED_DATABASE');
  const connections:Connection[]=[];
- for(const suffix of ['auth','ledger','hold','transfer','pricing']) {
+ for(const suffix of ['auth','ledger','hold','transfer','pricing','recommendation']) {
   const user=`${identity.namespace}_${suffix}`,password=randomBytes(24).toString('hex');
   // Identifiers/password below are generated locally and strictly restricted, not task/user input.
   await owner.query(`CREATE ROLE ${user} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
@@ -33,14 +33,16 @@ export async function provisionApplicationRoles(owner:Pool,identity:{namespace:s
   }
   if(suffix==='transfer'){await owner.query(`GRANT SELECT,INSERT,UPDATE ON transfer_batches,transfer_pieces,transfer_requests TO ${user}`);await owner.query(`GRANT SELECT ON transfer_history TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION transfer_pool(uuid,text,text),transfer_move_stock(uuid,text,timestamptz) TO ${user}`);}
   if(suffix==='pricing'){await owner.query(`GRANT SELECT ON staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,ledger_stores,ledger_models,ledger_variants,inventory_holds,inventory_claims,transfer_pieces,transfer_batches,pricing_history TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE ON price_books TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON price_activations,coupon_versions,price_quotes,coupon_reservations TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);}
+  if(suffix==='recommendation'){await owner.query(`GRANT SELECT ON staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,ledger_stores,ledger_variants,recommendation_history TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON recommendation_previews TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE ON recommendation_selections TO ${user}`);}
   connections.push({host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password});
  }
  await owner.query(`REVOKE ALL ON DATABASE ${identity.database} FROM PUBLIC`);
- const authDb=connections[0]!,ledgerDb=connections[1]!,holdDb=connections[2]!,transferDb=connections[3]!,pricingDb=connections[4]!;
+ const authDb=connections[0]!,ledgerDb=connections[1]!,holdDb=connections[2]!,transferDb=connections[3]!,pricingDb=connections[4]!,recommendationDb=connections[5]!;
+ const recommendationPool=new Pool({...recommendationDb,max:4,connectionTimeoutMillis:2000});const closeRecommendation=trackPoolLifecycle(recommendationPool);
  const pricingPool=new Pool({...pricingDb,max:4,connectionTimeoutMillis:2000});const closePricing=trackPoolLifecycle(pricingPool);
  const transferPool=new Pool({...transferDb,max:4,connectionTimeoutMillis:2000});const closeTransfer=trackPoolLifecycle(transferPool);
  const holdPool=new Pool({...holdDb,max:4,connectionTimeoutMillis:2000});
  const authPool=new Pool({...authDb,max:4}),ledgerPool=new Pool({...ledgerDb,max:4});
  const closeAuth=trackPoolLifecycle(authPool),closeLedger=trackPoolLifecycle(ledgerPool),closeHold=trackPoolLifecycle(holdPool);
- return {pricingDb,pricingPool,authDb,ledgerDb,holdDb,transferDb,authPool,ledgerPool,holdPool,transferPool,async close(){await Promise.all([closeAuth(),closeLedger(),closeHold(),closeTransfer(),closePricing()]);}};
+ return {recommendationDb,recommendationPool,pricingDb,pricingPool,authDb,ledgerDb,holdDb,transferDb,authPool,ledgerPool,holdPool,transferPool,async close(){await Promise.all([closeAuth(),closeLedger(),closeHold(),closeTransfer(),closePricing(),closeRecommendation()]);}};
 }

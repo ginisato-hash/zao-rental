@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict';
+import {randomBytes,randomUUID} from 'node:crypto';
+import {performance} from 'node:perf_hooks';
+import os from 'node:os';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {chromium,expect} from '@playwright/test';
+import {startDevelopmentApp} from '../../scripts/development-app';
+import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
+import {seedRecommendation,inputFor,fid,variants} from '../recommendation/fixture';
+import {skiSet,requestFor} from '../inventory/fixture';
+const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');let app:Awaited<ReturnType<typeof startDevelopmentApp>>|undefined,failed=false;
+const day=(n:number)=>new Date(Date.UTC(2039,0,1+n)).toISOString().slice(0,10);
+try{
+ app=await startDevelopmentApp({built:true});await seedRecommendation(app.db.pool,true);await bootstrapDevelopmentAdmin(app.db.pool,{email:'mixed-root@example.invalid',displayName:'合成混在管理者',password});const {origin}=app,owner=app.db.pool;
+ await owner.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2038-12-01T10:00:00+09:00'::timestamptz$$");
+ for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
+ async function login(email:string){const c=await browser.newContext({baseURL:origin});c.setDefaultTimeout(10000);const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(origin+'/staff/ledger');await p.close();return c;}
+ const root=await login('mixed-root@example.invalid');const settings={email:'mixed-actor@example.invalid',password,displayName:'合成混在担当',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{INVENTORY_VIEW:true,INVENTORY_EDIT:true,HOLD_VIEW:true,HOLD_EDIT:true,TRANSFER_VIEW:true,TRANSFER_PLAN:true,TRANSFER_DISPATCH:true,TRANSFER_RECEIVE:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true}};const created=await root.request.post('/api/staff-users',{headers:{origin},data:settings});assert.equal(created.status(),201);const actor=(await created.json()).id as string,c=await login(settings.email);
+ const post=async(path:string,data:unknown,status=200)=>{const r=await c.request.post(path,{headers:{origin},data});assert.equal(r.status(),status);return r.json();};
+ await post('/api/quotes/private-initialize',{operation:'initializePrivate',input:{requestKey:randomUUID(),rentalFrom:'2039-01-01',rentalUntil:'2040-12-31'}},201);
+ const create=async(n:number)=>{const r=await post('/api/holds',{requestKey:randomUUID(),conditions:skiSet(day(n))},201);assert.equal(r.result,'CREATED');return r;};
+ const held=[];for(let i=0;i<90;i++)held.push(await create(i));for(let i=0;i<100;i++){const h=held[i%held.length]!;await post('/api/quotes',{requestKey:randomUUID(),input:{conditions:h.hold.conditions,holdId:h.holdId,wantAdvance:false,couponCode:null}},201);}
+ // Unrelated real movement has no references, yet must coexist with HOLD/quote locks.
+ const t=await post('/api/transfers',{requestKey:randomUUID(),input:{sourceStore:'MOUNTAIN_BASE',destinationStore:'ONSEN_BASE',scheduledDate:'2038-12-01',plannedReadyAt:'2038-12-01T19:00:00+09:00',neededBy:'2039-01-01T08:30:00+09:00',basis:'SYNTHETIC A-G mixed operations',lines:[{assetId:fid(7104+100)}]}},201);
+ const counts=(await owner.query('SELECT family,count(*)::int AS n FROM ledger_assets GROUP BY family')).rows;assert.equal(counts.filter(x=>['SKI','SNOWBOARD'].includes(x.family)).reduce((n,x)=>n+x.n,0),300);assert.equal(counts.filter(x=>x.family.endsWith('BOOT')).reduce((n,x)=>n+x.n,0),300);assert.equal((await owner.query('SELECT sum(quantity)::int AS n FROM ledger_poles')).rows[0].n,150);
+ type Timing={operation:string;ms:number;status:string};const times:Timing[]=[];
+ async function measured(operation:string,fn:()=>Promise<unknown>){const started=performance.now();let status='SUCCESS';try{await fn();}catch(e){status=(e as {code?:string}).code??(e as Error).name;throw e;}finally{times.push({operation,ms:performance.now()-started,status});}}
+ for(let batch=0;batch<8;batch++){
+  const n=100+batch,amend=held[batch]!,conditions=structuredClone(amend.hold.conditions);conditions.members[0]!.items[0]!.variantIds=[variants.ski,variants.skiAlt];
+  await Promise.all([
+   measured('recommendation preview HTTP',async()=>{const r=await post('/api/recommendations',{requestKey:randomUUID(),input:inputFor(day(n)),replaceHoldId:null},201);assert.ok(r.preview.offered.every((o:{candidates:{RECOMMENDED:unknown}})=>o.candidates.RECOMMENDED));}),
+   measured('HOLD create plus quote save HTTP',async()=>{const h=await create(n);const q=await post('/api/quotes',{requestKey:randomUUID(),input:{conditions:h.hold.conditions,holdId:h.holdId,wantAdvance:false,couponCode:null}},201);assert.equal(q.quote.validity,'VALID_PRIVATE_ESTIMATE');}),
+   measured('HOLD amend HTTP',async()=>{const r=await post('/api/holds/'+amend.holdId+'/amend',{requestKey:randomUUID(),conditions,expectedVersion:amend.hold.version});assert.equal(r.result,'AMENDED');assert.equal(r.hold.expiresAt,amend.hold.expiresAt);}),
+   measured('quote list 100 HTTP',async()=>{const r=await c.request.get('/api/quotes');assert.equal(r.status(),200);assert.equal((await r.json()).length,100);}),
+   measured('transfer history HTTP',async()=>{const r=await c.request.get('/api/transfers/'+t.batch.id);assert.equal(r.status(),200);assert.equal((await r.json()).state,'PLANNED');}),
+   measured('direct availability HTTP',async()=>{const r=await post('/api/holds/availability',requestFor(day(n)));assert.equal(r.result,'FEASIBLE');})
+  ]);
+ }
+ // Explicit dispatch/actual receive/prepare during other operations: never time-based auto receipt.
+ await owner.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2038-12-01T17:00:00+09:00'::timestamptz$$");
+ await measured('transfer dispatch with expired HOLD cleanup HTTP',()=>post('/api/transfers/'+t.batch.id+'/dispatch',{requestKey:randomUUID(),input:{}}));
+ assert.equal((await owner.query('SELECT store_id FROM ledger_assets WHERE id=$1',[fid(7204)])).rows[0].store_id,'MOUNTAIN_BASE');const pieceIds=t.batch.pieces.map((p:{id:string})=>p.id);
+ await Promise.all([measured('transfer actual receive HTTP',()=>post('/api/transfers/'+t.batch.id+'/receive',{requestKey:randomUUID(),input:{pieceIds}})),measured('quote list after HOLD expiry HTTP',async()=>{const r=await c.request.get('/api/quotes');assert.equal(r.status(),200);assert.ok((await r.json()).every((q:{validity:string})=>q.validity==='EXPIRED'));})]);
+ const ready=await post('/api/transfers/'+t.batch.id+'/ready',{requestKey:randomUUID(),input:{pieceIds}});assert.equal(ready.batch.pieces[0].state,'CLOSED');assert.equal((await create(120)).result,'CREATED');
+ // Ordinary authenticated UI remains connected to these real results, then revocation removes them.
+ const page=await c.newPage();await page.goto('/staff/quotes');await expect(page.getByRole('heading',{name:'非公開の料金・見積',exact:true})).toBeVisible();assert.ok((await page.textContent('body'))!.includes('請求'));await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await mkdir('.local/screenshots',{recursive:true});await page.screenshot({path:'.local/screenshots/audit-ag-quotes-mobile-width.png',fullPage:true});
+ const current=(await (await root.request.get('/api/staff-users')).json()).items.find((x:{id:string})=>x.id===actor);const changed=await root.request.patch('/api/staff-users/'+actor,{headers:{origin},data:{displayName:settings.displayName,active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{...settings.permissions,QUOTE_VIEW:false},expectedRevision:current.revision}});assert.equal(changed.status(),200);assert.equal((await c.request.get('/api/quotes')).status(),403);await page.reload();await expect(page.getByRole('heading',{name:'見積の利用権限が必要です'})).toBeVisible();
+ const operations=[...new Set(times.map(t=>t.operation))].map(operation=>{const rows=times.filter(t=>t.operation===operation),ms=rows.map(t=>t.ms).sort((a,b)=>a-b);return {operation,requests:ms.length,errors:rows.filter(t=>t.status!=='SUCCESS').length,p50Ms:ms[Math.ceil(ms.length*.5)-1],p95Ms:ms[Math.ceil(ms.length*.95)-1]};});
+ const report={synthetic:true,environment:{platform:process.platform,node:process.version,cpu:os.cpus()[0]?.model,postgres:'18.4',transport:'Next HTTP loopback with normal password session'},boardAssets:300,bootAssets:300,polePairs:150,initialLiveHolds:90,initialComponents:270,initialSavedQuotes:100,peoplePerHold:1,componentsPerHold:3,recommendationPeople:2,recommendationCandidatesPerPerson:'SKI5; SNOWBOARD3 from explicit fixture',period:'independent DAY dates2039-01-01 onward; separate operation clock2038-12-01',concurrency:6,batches:8,operations,measuredOperationInvocations:times.length,measuredHttpRequests:times.length+8,setupRequestsExcluded:true,timeouts:0,indeterminate:0,raw:times,productionGuarantee:false,physicalDevice:false};await mkdir('.local/benchmarks',{recursive:true});await writeFile('.local/benchmarks/audit-ag-mixed.json',JSON.stringify(report,null,2));console.log('A_G_MIXED '+JSON.stringify({...report,raw:undefined}));console.log('PASS ordinary login / 90 live HOLD270components /100 quotes /6 concurrent operation families /actual movement /revocation /mobile width;0 skipped');
+}catch(e){failed=true;console.error('MIXED_FAILED '+((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').filter(l=>l.includes('/tests/stabilization/mixed.ts:')).join('\n'));}finally{await browser.close();await app?.stop();console.log('Owned mixed Web/browser/PostgreSQL stopped.');}if(failed)process.exit(1);

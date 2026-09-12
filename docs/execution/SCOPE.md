@@ -1,5 +1,28 @@
 # Current authority and canonical sources
 
+## Current supervised audit delegation
+
+The owner's directly adopted `docs/execution/AUDIT_AG_DELEGATION.md` is current
+authority for ZAO-AUDIT-AG-20260912-R1; SHA256 `74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb`. Read it and AUDIT_AG_STATUS.json.
+Continue the existing worktree/PR9 through A-G corrections, tests, static independent
+review and integrated verification without per-chunk human handoff. Historical
+phase-only restrictions/deadlines and unused review budgets below are superseded
+only as explicitly stated in that delegation; business rules and safety boundaries
+are unchanged. Shared new Claude CLI starts max8 after adoption, historical4 retained;
+reserve at least1 for final integration. Existing Team/creditsOFF/tool-free direct
+review route only. Current inherited run starts2026-09-12T10:37:21Z, stops no later
+than2026-09-12T18:37:21Z; all-run active time max24h. Never reset on reread/retry.
+End at Draft PR9. No main merge/push, production, extra billing/privilege, real data,
+new service or PR3/Runner activation. Do not weaken protected controller/policy.
+
+The owner's same-delegation operational clarification is preserved in
+`docs/execution/AUDIT_AG_OPERATIONS_UPDATE.md`. No ChatGPT handoff, writing access,
+MFA changes or new integration is a prerequisite. Continue approved items directly;
+use AUDIT_AG_STATUS.json as the restart record. Budgets and prohibitions are unchanged.
+
+## Historical phase instructions (current delegation takes precedence)
+
+
 The user's direct 2026-09-10 request authorizes E00, E01 and E02 configuration/implementation proposal.
 The later reply authorizes a new **private ginisato-hash/zao-rental** repository. The execution pack is
 input, including its proposed future task batches; reading it does not authorize E03–E18 or activate
@@ -57,3 +80,12 @@ Static Claude E08 review initial + max two rereviews, existing Team/extra credit
 Current finite deadline is 2026-09-12T03:49:57Z, started 2026-09-11T23:49:57Z; rereading does not extend it.
 No customer publication, tax assumptions, Square, charge, E09+, real data, new services or PR3 adoption.
 E02 stays UNATTENDED_HOLD. Stop only this worktree's owned DB/Web/browser resources.
+
+Latest owner authority: exact-head PR #8 merge verified and recorded as 7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c; supervised E09
+recommendation/selection/group HOLD/quote integration only. Read ADR0016 and E09_SCOPE / E09_PROGRESS.
+The repository is public by the owner's explicit decision for supervisor audit; sanitize all published
+code/spec/test evidence and never include real staff/customer/body data, credentials or other projects.
+This supersedes earlier E08-only scope/deadline, not any business rule or Runner protection. E09 ends
+at a new Draft PR, never merge. Deadline2026-09-12T06:04:53Z from02:04:53Z is unchanged by pauses.
+Claude initial1 + max2 rereviews, existing Team/extra creditsOFF/static tools-disabled route only.
+PR3 remains Draft and Runner UNATTENDED_HOLD; no E10+, Square, production, real data or host changes.

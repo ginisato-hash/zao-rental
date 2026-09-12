@@ -8,7 +8,7 @@ export const variants={ski:fid(1101),skiAlt:fid(1102),boot:fid(1103),pole:fid(11
 export function requestFor(date:string,ids=[variants.ski]):HoldConditions{return {reservationId:randomUUID(),pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:date,endDate:date,slot:'DAY'},members:[{key:'person-a',product:'SINGLE',age:'ADULT',tier:'REGULAR',items:[{family:'SKI',variantIds:ids}]}]};}
 export function skiSet(date:string):HoldConditions{const c=requestFor(date);c.members[0]!.product='SKI_SET';c.members[0]!.items.push({family:'SKI_BOOT',variantIds:[variants.boot]},{family:'POLE',variantIds:[variants.pole]});return c;}
 export async function seedInventory(pool:Pool,load=false){
- const svc=new LedgerService(pool,{subject:'synthetic-inventory-seed',role:'ADMIN',storeIds:['MOUNTAIN_BASE','ONSEN_BASE']});
+ const svc=new LedgerService(pool,{subject:'synthetic-inventory-seed',role:'ADMIN',storeIds:['MOUNTAIN_BASE','ONSEN_BASE']},async()=>{/* Explicit synthetic fixture boundary; normal runtime uses verifyLedgerWrite. */},async()=>{/* Explicit fixture-only lifecycle boundary; normal runtime uses reconcileLedgerProtection. */});
  const provenance=(locator:string)=>({notes:'SYNTHETIC E06, not observed inventory',sourceKind:'SYNTHETIC',sourceDocument:'tests/inventory/fixture.ts',sourceLocator:locator});
  const c=await pool.connect();
  try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor','synthetic-inventory-seed',true),set_config('zao.reason','E06 SYNTHETIC seed',true)");

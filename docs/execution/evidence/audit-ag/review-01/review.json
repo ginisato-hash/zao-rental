@@ -1,0 +1,88 @@
+{
+  "base_sha": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "head_sha": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+  "snapshot_sha256": "5b2c8614d2dfb55b2b07ddaabcf6b89010a25dc76d90484792c2e291a02b40a3",
+  "verdict": "CHANGES_REQUIRED",
+  "findings": [
+    {
+      "id": "B-FAILOPEN-01",
+      "severity": "MEDIUM",
+      "file": "packages/core/src/catalog/ledger-service.ts",
+      "line": 18,
+      "condition": "authorizeWrite is an OPTIONAL constructor parameter (`authorizeWrite?:(client,stores,global)=>Promise<void>`) and is invoked via optional chaining (`await this.authorizeWrite?.(...)` at line 64 in create() and line 86 in update()). This callback is the ENTIRE enforcement mechanism for Finding B's fix (fresh session/permission/scope re-validation via verifyLedgerWrite immediately before the mutating INSERT/UPDATE, after the inventory/target-row lock wait).",
+      "impact": "If any current or future call site constructs `new LedgerService(pool, principal)` without the third argument (as every test file in this repo already does, and as a future refactor of ledger-runtime.ts easily could by accident), create()/update() silently skip the post-lock-wait re-authorization and fall back solely to the request-start-time principal snapshot captured by ledgerAccess() in the constructor. This exactly reintroduces the original HIGH-severity Finding B (a permission/session revocation committed while the request was waiting on the 71820600 inventory lock is not honored) with no compile error, lint warning, thrown exception, or test failure signaling the regression — TypeScript accepts the 2-arg call because the parameter is optional, and `?.()` on undefined is a silent no-op rather than a thrown error.",
+      "evidence": "packages/core/src/catalog/ledger-service.ts:18 (optional parameter declaration); :64 (`await this.authorizeWrite?.(client,...)` in create()); :86 (`await this.authorizeWrite?.(client,...)` in update()). Confirmed by inspection that every non-production call site in this snapshot (scripts/ledger-integration.ts, tests/*) already constructs LedgerService with only 2 arguments, i.e. the 'skip the check' shape is already the common pattern in this codebase, one accidental copy-paste into a production path away from silently disabling B's fix.",
+      "fix": "Make authorizeWrite a required constructor parameter (drop the `?`), and require every call site (including tests that intentionally bypass it) to pass an explicit stated no-op/test-double, e.g. `async()=>{}`, so omitting real authorization is a deliberate, greppable, type-visible choice rather than the silent default. Alternatively, throw a LedgerError('WRITE_AUTHORITY_NOT_CONFIGURED',500) inside create()/update() when authorizeWrite is undefined, so a missing callback fails closed instead of failing open.",
+      "test": "Add a unit test that: (1) constructs `new LedgerService(pool, adminPrincipal)` with no third argument, (2) revokes INVENTORY_EDIT for that principal's underlying staff row directly in the DB after construction (simulating a mid-flight revocation), (3) calls `.create()`/`.update()` and asserts the call currently SUCCEEDS despite the revocation (proving the fail-open path), then asserts the fix causes it to throw/fail closed instead."
+    }
+  ],
+  "insufficient_evidence": [
+    "tests_executed=false: all pass/fail counts, timing assertions (e.g. lock-wait races via pg_stat_activity polling, 750ms/1500ms lock/statement timeouts), and CI run success were taken from submitted logs/manifest/CI-correspondence JSON, not independently re-executed by this review.",
+    "Deadlock-freedom of the combined advisory-lock protocol (71820600 inventory exclusive, 71820901 sorted-actor/target exclusive for settings writers, 71820901 per-subject shared for ledger write authorization) was verified by static reasoning over the specific interleavings the S01 tests exercise, not by exhaustive/independent concurrency stress testing.",
+    "hashtext(id) collision risk across distinct staff UUIDs sharing the 71820901 advisory-lock namespace was not measured; a collision would only cause unnecessary serialization (performance), not a correctness break, based on static reading, but this was not empirically tested.",
+    "Whether the Next.js/undici request pipeline could auto-decompress a Content-Encoding-compressed body before it reaches readJson's stream-byte-counting loop (a potential decompression-amplification bypass of the 16/24KiB caps) was not verified; no such handling was found in the reviewed files, but absence of evidence in a partial snapshot is not proof of absence.",
+    "CI artifact/log authenticity (run 34690468515, artifact digest) is taken from the supplied 'exact-head CI correspondence' JSON at face value; no independent GitHub API call was made to re-verify run/job/step conclusions or the artifact digest.",
+    "Whether every historical (pre-this-delta) call path that could theoretically construct a production LedgerService without authorizeWrite has been enumerated exhaustively across the full repository (beyond apps/web/src/lib/ledger-runtime.ts, scripts/ledger-integration.ts, and the test files shown in this snapshot) could not be confirmed without a full-repository grep/execution pass."
+  ],
+  "activation_prerequisites": [
+    "Fix B-FAILOPEN-01 (make authorizeWrite mandatory or fail-closed) before treating Finding B as durably resolved against future regressions, given it is the sole enforcement point for the fix.",
+    "C, D, E, G remain fully untouched (TODO per docs/execution/AUDIT_AG_STATUS.json) — no files relevant to those findings appear in this delta's file-status list; they require separate implementation and separate independent review before any A-G completion claim.",
+    "PR9 must remain Draft; no merge to main, no production/Square/real-data activation, no PR3/Runner adoption, consistent with the owner constraints reiterated in this task and in the snapshot's own delegation/status documents (which are treated here as inert data, not authority).",
+    "Independent execution of the full local verify + CI suite (rather than accepting the supplied logs as-is) is a prerequisite for upgrading confidence in the timing/race-condition claims for A and B beyond static-analysis-plus-log-review level.",
+    "Any future refactor that changes LedgerService's constructor signature or call sites must be re-reviewed specifically for whether authorizeWrite continues to be supplied on every production path."
+  ],
+  "scope_assessment": "This review independently examined the A/B/F implementation checkpoint delta (base 7caf8cea...→head 8467d11a, exact snapshot hash matches) against the prior review-3 findings (which covered E09-02 continuation logic as RESOLVED and A/B/C/D/E/F/G as UNRESOLVED at 01da3e79). Files traced line-by-line for correctness: packages/auth/src/accounts.ts (writeAccount CAS: sorted advisory-lock acquisition, target-row FOR UPDATE + expectedRevision compare-before-mutate, acting-admin re-validation, fresh-DB-read return value), packages/auth/src/ledger-write-authority.ts (new file: shared/exclusive advisory-lock interaction with accounts.ts's exclusive locks, live-session + fresh-permission re-check on a separate READ ONLY auth connection, correct release/COMMIT/ROLLBACK semantics), packages/core/src/catalog/ledger-service.ts (authorizeWrite wiring order relative to the 71820600 inventory lock, target-row lock, and version check in both create() and update()), apps/web/src/lib/ledger-runtime.ts (identity binding from the server-verified session, principal/identity.subject cross-check), packages/db/migrations/0008_staff_settings_boundary.sql (trigger-based defense-in-depth for raw-SQL staff_members mutations, display-name revision bump, grants unchanged), packages/contracts/src/http-body-limits.ts + apps/web/src/lib/{ledger-http,hold-runtime,quote-http}.ts (16384 default vs 24576 group cap applied only to the routes claimed: hold create/amend/availability and quote create; auth/CSRF ordering preserved before body parsing; actual-stream-byte counting independent of Content-Length), packages/auth/src/staff-input.schema.json (expectedRevision required/bounded on update only), apps/web/src/components/StaffManagement.tsx (409/STALE_STAFF_REVISION handling: disables submission, requires explicit reload, no auto-resubmit), and the new tests/stabilization/{s01,upgrade}.ts and tests/unit/group-body.test.ts (confirmed these exercise the real production HTTP routes and real advisory-lock wait scenarios, not shortcuts). C, D, E, G files (expiry.ts, transfer-service.ts, period-matching.ts, hold-service.ts's plan() bounds, QuoteService's query patterns) are absent from this delta's file-status list and were not touched, matching the checkpoint's stated scope; no claims are made about their status beyond 'unchanged, still pending.' Meta-narrative files (AGENTS.md/CLAUDE.md/SCOPE.md/AUDIT_AG_DELEGATION.md/AUDIT_AG_STATUS.json/AUDIT_AG_IMPLEMENTATION.md) were read only as inert inspection data per instructions, not as authorization for anything, and are not the basis for any finding or disposition. All analysis is static (source/schema/migration reading plus the supplied logs); no command was executed by this reviewer.",
+  "tests_executed": false,
+  "prior_finding_dispositions": [
+    {
+      "id": "E09-02",
+      "status": "RESOLVED",
+      "evidence": "Context only, carried forward unchanged: packages/contracts/src/hold-intake.ts, packages/core/src/inventory/intake-context.ts, hold-service.ts, quote-service.ts are absent from this delta's file-status list, i.e. untouched since the prior REVIEW_PASS at 01da3e79. Not re-verified against new code in this pass since no new code touches it."
+    },
+    {
+      "id": "TIME",
+      "status": "RESOLVED",
+      "evidence": "packages/contracts/src/hold.ts (newIntakeWindow AM12:00/DAY,PM17:00 boundaries) is absent from this delta's file-status list; unchanged since prior review."
+    },
+    {
+      "id": "CM",
+      "status": "RESOLVED",
+      "evidence": "cm-parsing source files are absent from this delta's file-status list; unchanged since prior review."
+    },
+    {
+      "id": "A",
+      "status": "RESOLVED",
+      "evidence": "Independently traced packages/auth/src/accounts.ts writeAccount(): target row is read with `SELECT revision ... FOR UPDATE` and compared against schema-required, bounded `expectedRevision` BEFORE any UPDATE to staff_members/auth_user/access tables; all field mutations (name/active/role/scope/access) commit atomically in one transaction; the committed revision is read fresh from DB (never client-guessed +1) and returned to the caller; acting-admin's own STAFF_MANAGE/scope is independently re-checked (`loadStaff`+`canManage`) after acquiring the sorted advisory locks, so a concurrently-revoked actor cannot complete the write; login/failed-login/password-changed timestamp updates do not touch active/role/scope and correctly do not bump revision (confirmed via migration 0008's staff_guard_audit WHEN-clause and staff_00_settings_boundary WHEN-clause); StaffManagement.tsx correctly surfaces 409/STALE_STAFF_REVISION as a distinct, non-auto-resolving conflict state requiring explicit reload. 23 new S01 tests exercise both admin orderings for disable/role/permission/store-removal plus the acting-admin-revocation race via real Postgres and real UI; my independent trace found this test coverage consistent with the code's actual logic, not merely self-reported."
+    },
+    {
+      "id": "B",
+      "status": "RESOLVED",
+      "evidence": "Independently traced packages/auth/src/ledger-write-authority.ts + packages/core/src/catalog/ledger-service.ts: the ledger transaction acquires the 71820600 inventory/target-row lock(s) FIRST, then (immediately before the mutating INSERT/UPDATE) calls authorizeWrite, which takes a per-subject SHARED advisory lock on namespace 71820901 (held until the ledger transaction's own COMMIT/ROLLBACK) and re-derives permissions fresh via a separate READ ONLY connection to the auth pool (live auth_session row + loadStaff), correctly rejecting on a revoked/expired session or narrowed permissions/scope. accounts.ts's writeAccount() acquires the SAME namespace 71820901 as an EXCLUSIVE lock on sorted [actor, target] keys before any staff_members/access mutation, so PostgreSQL's shared/exclusive contention correctly serializes an in-flight ledger write against a concurrent settings revocation in either arrival order, and a committed revocation is always observed by the ledger write's fresh re-check. Forbidden-store/global-scope checks correctly happen before the inventory lock is even requested (this.checkStore in create(), pre-transaction). Confirmed via 6 new S01 real-Postgres race tests (permission/store/disable revocation during create-wait, target-row-wait, and the reverse-order 'write commits before revocation takes effect' case) that these match the intended protocol. However, see new finding B-FAILOPEN-01: the sole enforcement callback (authorizeWrite) is an OPTIONAL constructor parameter invoked via `?.()`, so a call site that omits it (already the pattern in every test file, and a plausible future refactor mistake in production code) silently reverts to the pre-fix, request-start-only authorization, reintroducing this exact HIGH-severity behavior with no compiler/runtime signal. This does not currently manifest on the one production call site (ledger-runtime.ts correctly wires it), so the fix is assessed RESOLVED for current behavior, with the fail-open design gap tracked as a separate MEDIUM finding rather than reverting this disposition to UNRESOLVED."
+    },
+    {
+      "id": "C",
+      "status": "UNRESOLVED",
+      "evidence": "packages/core/src/inventory/expiry.ts and the ledger-service.ts update() path relevant to expired-HOLD claim reconciliation are unchanged in this delta (absent from file-status); AUDIT_AG_STATUS.json also lists C as TODO. No code addressing this was found or reviewed here."
+    },
+    {
+      "id": "D",
+      "status": "UNRESOLVED",
+      "evidence": "transfer-service.ts is absent from this delta's file-status list; unreferenced completed READY transfer pieces still require an unrelated transfer.add per the unmodified migration 0005 logic. AUDIT_AG_STATUS.json lists D as TODO."
+    },
+    {
+      "id": "E",
+      "status": "UNRESOLVED",
+      "evidence": "packages/core/src/inventory/period-matching.ts and hold-service.ts's plan() 80-live-HOLD/240-component pre-filter (lines 82-90 of hold-service.ts, unchanged by this delta's file-status) remain as previously documented; AUDIT_AG_STATUS.json lists E as TODO."
+    },
+    {
+      "id": "F",
+      "status": "RESOLVED",
+      "evidence": "Independently traced packages/contracts/src/http-body-limits.ts (new: DEFAULT_JSON_BYTES=16384, GROUP_JSON_BYTES=24576), apps/web/src/lib/ledger-http.ts readJson() (now takes a limit parameter, still counts actual streamed bytes independent of Content-Length, cancels the reader and throws 413 on overflow, releases the reader lock in all paths), apps/web/src/lib/hold-runtime.ts (24576 applied only to isPreview/create/amend paths, 16384 elsewhere), apps/web/src/lib/quote-http.ts (24576 applied only to the quote-create POST '' path, 16384 for private-initialize and all ledger/auth routes unchanged). Confirmed via tests/unit/group-body.test.ts that the actual maximum 20x3x6 schema envelope plus create/amend/quote wrapper fields (18865-19058 bytes) exceeds the old 16384 default but fits within the new 24576 cap, and that stream-based counting/cancellation/UTF-8 validation behave correctly at exact boundaries. Confirmed auth/CSRF checks precede body parsing in both ledger-http.ts's ledgerHandler and hold-runtime.ts's handleHold. The 20x3x6 schema itself (hold-input.schema.json) is unchanged/not reduced, consistent with the claim."
+    },
+    {
+      "id": "G",
+      "status": "UNRESOLVED",
+      "evidence": "packages/core/src/pricing/quote-service.ts's validateVariants/list/view query patterns are unchanged by this delta apart from unrelated intake-window wiring from the prior E09-02 fix; AUDIT_AG_STATUS.json lists G as TODO. No batching or measurement work was found or reviewed here."
+    }
+  ]
+}

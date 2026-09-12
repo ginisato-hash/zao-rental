@@ -1,13 +1,14 @@
 import {LedgerError,ledgerAccess,parseResource,type LedgerPrincipal,type LedgerFilters} from '../../../../packages/contracts/src/ledger';
 import type {LedgerService} from '../../../../packages/core/src/catalog/ledger-service';
+import {DEFAULT_JSON_BYTES,type JsonByteLimit} from '../../../../packages/contracts/src/http-body-limits';
 type Service=Pick<LedgerService,'list'|'get'|'create'|'update'>;
 const headers={'Cache-Control':'private, no-store','Vary':'Cookie'};
-export async function readJson(request:Request):Promise<unknown> {
+export async function readJson(request:Request,limit:JsonByteLimit=DEFAULT_JSON_BYTES):Promise<unknown> {
   if(request.headers.get('content-type')?.split(';')[0]!=='application/json')throw new LedgerError('JSON_REQUIRED',415);
   const reader=request.body?.getReader();if(!reader)throw new LedgerError('INVALID_INPUT',422);
   const chunks:Uint8Array[]=[];let length=0;
   try {
-    for(;;){const {value,done}=await reader.read();if(done)break;length+=value.byteLength;if(length>16384){await reader.cancel();throw new LedgerError('BODY_TOO_LARGE',413);}chunks.push(value);}
+    for(;;){const {value,done}=await reader.read();if(done)break;length+=value.byteLength;if(length>limit){await reader.cancel();throw new LedgerError('BODY_TOO_LARGE',413);}chunks.push(value);}
     const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
     try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes)) as unknown;}catch{throw new LedgerError('INVALID_JSON',422);}
   }finally{reader.releaseLock();}

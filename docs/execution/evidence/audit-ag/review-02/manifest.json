@@ -1,0 +1,802 @@
+{
+  "created_at": "2026-09-12T12:09:52.168548+00:00",
+  "delegation": "ZAO-AUDIT-AG-20260912-R1",
+  "scope": "Final integrated A-G review, B-FAILOPEN-01 correction and C/D/E/G interactions",
+  "round_after_adoption": 2,
+  "cumulative_cli_start": 6,
+  "shared_max": 8,
+  "historical_starts": 4,
+  "base_sha": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "head_sha": "f5c57ccf72b7be2281e7dd7070e61c22e551fcc1",
+  "previous_head": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+  "snapshot_sha256": "89250ffd57e26c6874fdbb037d94816749d4d02718d755cdf65cf1365b997a8b",
+  "snapshot_bytes": 764495,
+  "snapshot_characters": 744246,
+  "file_count": 93,
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 1657,
+      "sha256": "ab57763f6f3085f3a0f94e5b38b75c4e36c7f5c9f2ba0665312625124ed04853",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 8836,
+      "sha256": "414dded1dce15161b095daa157e162af20802eb32bb7ff332ea4056daca76008",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "CLAUDE.md",
+      "bytes": 7974,
+      "sha256": "4fb5d9ccf4e3118e7be862bb2f1f1b7cd395c941c48947043888a31b6fd20125",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "apps/web/src/app/api/staff-users/[[...record]]/route.ts",
+      "bytes": 1846,
+      "sha256": "1c142e491caba2a93db6045cfed89bc9a231f8ef3ce5c487479288fba3965b68",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/StaffSessionBoundary.tsx",
+      "bytes": 2168,
+      "sha256": "33e17b3ebaa1af8d806a25f25017da280cfa90540c168ae5ec8308bcb121d23d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/TransferWorkspace.tsx",
+      "bytes": 13216,
+      "sha256": "6989ff563891caadd6c3c56216c65077ea220b1e97b34c2fee7757c76b10bda4",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/auth-http.ts",
+      "bytes": 6267,
+      "sha256": "794af4ca2c794a3c17b0b8fbe29028ae2e7075ada4bf614fd5881a800debd208",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/hold-runtime.ts",
+      "bytes": 3310,
+      "sha256": "1de9158eebc618840313be6e8e8017a65acb9febbb8a64392b3c3244b0f76dce",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/ledger-http.ts",
+      "bytes": 3263,
+      "sha256": "b3c82d5beb2cb5a625b6843980ab847e495fee4c7ed1e66dd3d850946425cb50",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/ledger-runtime.ts",
+      "bytes": 2443,
+      "sha256": "63bb04c36c289a699553a055c4677a43664796055bc36ed179602989c9b597ae",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/quote-http.ts",
+      "bytes": 2300,
+      "sha256": "013104753ddfd9c3c415c1e19eada00934c6b343cdb178bf1308a9c6e55c2f31",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/staff-runtime.ts",
+      "bytes": 1913,
+      "sha256": "018e3b68529e948f7aa0089021851dc93e602c07345fa045c638c94e60f973a3",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/OPERATIONS.md",
+      "bytes": 5707,
+      "sha256": "3afb790abdc704aa0b0cec7e16bdf97df71f79553a3db66349afb279b5fd62e3",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/STATE_MACHINES.md",
+      "bytes": 3655,
+      "sha256": "9f81565d24664ead35bc3e424f8be36423336d9251b9c742004728a3a8e2938d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/AUDIT_AG_DELEGATION.md",
+      "bytes": 19310,
+      "sha256": "74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/AUDIT_AG_IMPLEMENTATION.md",
+      "bytes": 11440,
+      "sha256": "f2922729d80cfe70ca9ad6755dbf7c90bad8088b69d718729a00bfc82731e179",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/AUDIT_AG_OPERATIONS_UPDATE.md",
+      "bytes": 7555,
+      "sha256": "0b1f755b864f39b2aec5756b0222b263126bfe0956217427811c17931e665886",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/AUDIT_AG_STATUS.json",
+      "bytes": 7669,
+      "sha256": "7b35f4b83c0e7c0898c7c1c99354958a85ec7a1bfa00386413a733db7ea68f16",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/E07_SCOPE.md",
+      "bytes": 1561,
+      "sha256": "486ed781dd70f3540a13e9d8ce49b2faacb45dd056950ebdee13b44b4bbf7b54",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/E09_AUDIT_FOLLOWUP.md",
+      "bytes": 14912,
+      "sha256": "382847a24677bbf8ec2498de2ad2050876252de402a5cff7a3233e8c5dd76cee",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/E09_CONTINUATION.md",
+      "bytes": 10054,
+      "sha256": "556ea363e6ea20c1ae04fca40acda7b37156296ac0334eb0553920d0e6a04574",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/SCOPE.md",
+      "bytes": 6768,
+      "sha256": "004e7aeca1408b46717969c7ad586d89505a29ac6fd20e4973104299a2bb6bdb",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/audit-ag-mixed.json",
+      "bytes": 8405,
+      "sha256": "f45a45491ca19b4a281fc13a64561195f5a09f125e57987f486b9fb032ee85fe",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/b-review-after.log",
+      "bytes": 215,
+      "sha256": "a177b235b1af7abc2a21c548b0970ef96c96f266f801faab7a5cc9d4edab4e29",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/b-review-before.log",
+      "bytes": 997,
+      "sha256": "ce17a1c0fe0bb82075878573891ceacaeaf179f5a8240ef788e18c655a26789e",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/cd-after-4.log",
+      "bytes": 1720,
+      "sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/cd-before.log",
+      "bytes": 1471,
+      "sha256": "a13086b1c954a4b1cc375e4be9817c8f71e735b2cbf462a7609cfa7e1afb9e89",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/commands.json",
+      "bytes": 5398,
+      "sha256": "4ffab99d559acb04d8db32a00331a1e4837c4b1a58734e711bb5c49c913df9e3",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/e-oracle.log",
+      "bytes": 491,
+      "sha256": "9990a3e035c99f5558283e5aca1becf7925a570a7b09b94d55b1a24c7a6b5a69",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/eg-before-3.log",
+      "bytes": 987,
+      "sha256": "63036a449adf1349471cd8481aab037db19d68885a4c2f58ff4781f728f94408",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/manifest.json",
+      "bytes": 4317,
+      "sha256": "9f7ae5a770004725d4a0f5553e08236739d444e132a5a3074a40518db35f99fb",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/test-stabilization-cd.log",
+      "bytes": 1720,
+      "sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/test-stabilization-eg.log",
+      "bytes": 1053,
+      "sha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/integrated/test-stabilization-mixed.log",
+      "bytes": 2125,
+      "sha256": "1ffd7fb37fa922deed1bf82b4b32f77037778f99037f4ec22701f8f487cacfc9",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/review-01/execution-summary.json",
+      "bytes": 1983,
+      "sha256": "723f18d3f57a543c58dde686330e177ec19f5df51c6c2be6fa3932f86c3d3f81",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/review-01/launch-contract.json",
+      "bytes": 751,
+      "sha256": "12070772c1dfccf411a5a399bd6a1708f162bc0edc463df081320fded09dda50",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/review-01/manifest.json",
+      "bytes": 23093,
+      "sha256": "9b6655482dca653f201a46888df3e9e4e2ae37169b1926571e1b75dec07d2e8f",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "docs/execution/evidence/audit-ag/review-01/review.json",
+      "bytes": 16279,
+      "sha256": "7907e16ac0496052d3cac1dec91484ab9393e4f377c9432bb47727827402dbf1",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "package.json",
+      "bytes": 3019,
+      "sha256": "8690cbe82a7011b0e098180c97739c9abaf4e831b37417a95b67d058666d977a",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/accounts.ts",
+      "bytes": 5786,
+      "sha256": "161c3e6336d5f06de736e38fed9b95c2a504a3cc45e92c2b76f4d866f152c1dc",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/ledger-write-authority.ts",
+      "bytes": 1283,
+      "sha256": "1bfa4155c1cea0b7c19726b871c86c894321cb5af07525415d6a8aede6be6263",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/password.ts",
+      "bytes": 885,
+      "sha256": "ea46af8ed56836cbc8b06ae4f97ed6cb5e7920dc99e8b852c89a16745380abfc",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/staff-auth.ts",
+      "bytes": 4585,
+      "sha256": "1c95af6686629baa9c06f89fd8b29324a69be7f9f438ad09ea5beedeabde3592",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/staff-input.schema.json",
+      "bytes": 4084,
+      "sha256": "486a5f1229eaa5d7a76c378efd77b893b1bd2a1f997be102f1b1c205cd7c99b7",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold-input.schema.json",
+      "bytes": 2910,
+      "sha256": "be301090c11d7e1a975eedfab18d626318da60ba1f7670102830bd58e4f5b75f",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold-intake.ts",
+      "bytes": 4212,
+      "sha256": "6148eabf67e7f1263dbee2e0d93449fa91c0d5c37d4922c7ea48e52ab09cf2f0",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "bytes": 5313,
+      "sha256": "e0ae7629f6ef71effb55b934d341ead7f370d8be042cfac3c2aac42ec1829fff",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/ledger-input.schema.json",
+      "bytes": 12292,
+      "sha256": "7e515e084450d7aad0c6b292f2db859bf025e75522585f068bd224c52668557e",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "bytes": 4188,
+      "sha256": "d8b73315a23b3523ed759b16bb64c17f91051c6c8dbfee97d72a24cfda8c044d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "bytes": 8328,
+      "sha256": "c6613b800dcc808572d901c042a96aae789db1fbf440a8c9733fc4fd717bf0db",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/recommendation-input.schema.json",
+      "bytes": 3283,
+      "sha256": "dacc6b604fd4d6b991228a5759af2047cc2d69f4a85ff7cf4363fde08548707c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/recommendation.ts",
+      "bytes": 4843,
+      "sha256": "ae61f4374e03782e066a5302f76f2109f8387d2ec1019feec2739b04461ee568",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/transfer.ts",
+      "bytes": 2844,
+      "sha256": "b53ecebb5a9309136f7fa9effa45aff6528a7983747fb10ee0580928a3f111bd",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/catalog/ledger-service.ts",
+      "bytes": 8700,
+      "sha256": "03cc6436db2bef3a25b1fcccc191fbda948d1e3bb41f08eafb1881b1feaf5491",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/catalog/reconcile-protection.ts",
+      "bytes": 3229,
+      "sha256": "3631b85200f62b9ee78ff13f9db3b4c7f8968e05b4794f83361b1830d5e95dbe",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/dependency-scope.ts",
+      "bytes": 1117,
+      "sha256": "be9c0ef1a37c44e4a5d0146f4e32cb72f55201c82a9af324e312872f133a6fdc",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/expiry.ts",
+      "bytes": 563,
+      "sha256": "a9375787d5f50e2ea4ad0c16ec5a7979c2fd6db3bea2d205bbb9112f5a763baa",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/hold-service.ts",
+      "bytes": 25212,
+      "sha256": "4ff9090af516f16cfc132818133321aa39af0945a733af697348f8b3a6121d94",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/intake-context.ts",
+      "bytes": 971,
+      "sha256": "0ce6ec0c858fce5fad1bc9492339a7c296b645d4e808052fce63547c913cdccd",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/period-matching.ts",
+      "bytes": 3028,
+      "sha256": "41eab490c1c4dfdf1c2961ac0c050048a1692da646e2843fb7f0d93e97b20069",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/pricing/quote-service.ts",
+      "bytes": 20642,
+      "sha256": "11cd4e0e87bf1f053ce88178c7897b00dfeb8b2642b29025593cb37071aef97a",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/recommendation/recommendation-service.ts",
+      "bytes": 14006,
+      "sha256": "2657a83b3696748afe4624037662ebbf292c429f4515ce4c5bdfdd0f9bc9e77e",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/transfer/completion.ts",
+      "bytes": 873,
+      "sha256": "94defd72f8733872e5a620cf584c5466aa1add372833fad49412743b49fda203",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/transfer/projection.ts",
+      "bytes": 2056,
+      "sha256": "ec59785dba5822226bfcd9873e5435001ccd857107952f87c4a2ef9427839734",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/transfer/transfer-service.ts",
+      "bytes": 18767,
+      "sha256": "9f715d878b672a9ddeaed2927336dbfe706a3ef61cc9ff960639aa77a3c002d4",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "bytes": 530,
+      "sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "bytes": 14076,
+      "sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "bytes": 7226,
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "bytes": 8294,
+      "sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "bytes": 17126,
+      "sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "bytes": 7743,
+      "sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "bytes": 3459,
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "bytes": 1309,
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/application-roles.ts",
+      "bytes": 5867,
+      "sha256": "2a536f536e545ed194b474949ed1f33bfc4d71c093fbeb49d3ae29bb5346d4f1",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/development-app.ts",
+      "bytes": 2488,
+      "sha256": "76e0a80ba755fa3f4a8e2bca1956809e017bd11f978367fc4ca423737172142e",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/ledger-integration.ts",
+      "bytes": 23385,
+      "sha256": "d8905a37c849d63298f22ea516b83ecd66264c25654225d1724ed1989e038c9c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/postgres.ts",
+      "bytes": 2235,
+      "sha256": "5f4a0c4bffe22fff9a6882a8a74d46606282d46751a35037661afa376210facf",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/verify.mjs",
+      "bytes": 1682,
+      "sha256": "f424c8eeaacd3dfbb1364bb614de2173d5b2af2e1b4636791d1042af8e6b2214",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/fixtures/ledger-sample.ts",
+      "bytes": 12126,
+      "sha256": "d4b1332a452d4c828f75f1285cf798b54014d5c495e684e4a29771647e3a8982",
+      "selection": "only imported fixtureId helper; unrelated sample object omitted"
+    },
+    {
+      "path": "tests/inventory/fixture.ts",
+      "bytes": 4430,
+      "sha256": "4d5c9f8bcec5615f363135829839ade9abbbc3394e3b7843042851b666f7fbdf",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/inventory/real-postgres.ts",
+      "bytes": 25774,
+      "sha256": "71a0dce71a05fb03137d8d6807d1b54c5d585faf61e531266041eb1c700f0867",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/recommendation/fixture.ts",
+      "bytes": 3626,
+      "sha256": "4b44d31db4fbb163e35d68e9426534e0c41e279157e7eb5e7201f63ad8e3f25d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/stabilization/cd.ts",
+      "bytes": 20913,
+      "sha256": "17269654d967e69c4978c64342b6b3d9dae38f489899493a309abf7dedd65d6c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/stabilization/eg.ts",
+      "bytes": 10368,
+      "sha256": "ac4545f9efeba944cf8624d6a188c0fa7a5fe5858c19f0919499da54fbee80fb",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/stabilization/mixed.ts",
+      "bytes": 10208,
+      "sha256": "f3759bb6b4fa97674f8294e329de86e667584fc3fc3585074a357bc4b7c6a239",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/stabilization/s01.ts",
+      "bytes": 23569,
+      "sha256": "f11aa2e74cfe990dde08fe93d7b3aa5ce561303a4b95e4e3d82f0a9156eb7503",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/stabilization/upgrade.ts",
+      "bytes": 5526,
+      "sha256": "7ed57860253e05f1b7a59c9273fc161c5fe9eeef5be77cf34c3c2915edb3b025",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/transfer/normal-ui.ts",
+      "bytes": 12211,
+      "sha256": "831ae592395657668b0d37fa2e393563d26627cb7726b3f26d6c9a1d1eb7f6f5",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/transfer/real-postgres.ts",
+      "bytes": 27701,
+      "sha256": "7b13498ab5eb5b5c671d5bec7afc21d2fa1b5997794ddff37517b271d2c7ef09",
+      "selection": "exact incremental patch below; no duplicate"
+    },
+    {
+      "path": "tests/unit/group-body.test.ts",
+      "bytes": 2959,
+      "sha256": "9e32e7f2989b62975bf405461f4279da6827fbcc0a387f7441ed3d6322c74334",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/unit/ledger-write-configuration.test.ts",
+      "bytes": 591,
+      "sha256": "ec37a8d88ae3fccb8f384cdada5c85623c05b29138dcee98d5c0413d2f51acc4",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/unit/period-scope.test.ts",
+      "bytes": 2910,
+      "sha256": "0091ba75ee5cc68ff7fa35bcebf630841ddbceb2c4b81b197b048ff03315b661",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tools/automation/review-contract.ts",
+      "bytes": 932,
+      "sha256": "f32456b0cb00c80cd2ae9d48afa5d32837cfcf9447b03517723172536cdb55e0",
+      "selection": "full numbered file"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "Exact-head CI correspondence",
+      "bytes": 2754,
+      "sha256": "ba31fa77c6664385ff8b8e91ecc54fa50f59ed7ba43a7d306a61772552763147"
+    },
+    {
+      "label": "local-verification/commands.json",
+      "bytes": 5398,
+      "sha256": "4ffab99d559acb04d8db32a00331a1e4837c4b1a58734e711bb5c49c913df9e3"
+    },
+    {
+      "label": "local-verification/test-stabilization-s01.log",
+      "bytes": 2401,
+      "sha256": "b2d964351d3488e023617316e391ca6fb7af91332c416d2e44befdf6d2af12ac"
+    },
+    {
+      "label": "local-verification/test-stabilization-upgrade.log",
+      "bytes": 299,
+      "sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+    },
+    {
+      "label": "local-verification/test-stabilization-cd.log",
+      "bytes": 1720,
+      "sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2"
+    },
+    {
+      "label": "local-verification/test-stabilization-eg.log",
+      "bytes": 1053,
+      "sha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b"
+    },
+    {
+      "label": "local-verification/test-stabilization-mixed.log",
+      "bytes": 2125,
+      "sha256": "1ffd7fb37fa922deed1bf82b4b32f77037778f99037f4ec22701f8f487cacfc9"
+    },
+    {
+      "label": "local-verification/test-recommendation-continuation.log",
+      "bytes": 1985,
+      "sha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65"
+    },
+    {
+      "label": "local-verification/test-inventory.log",
+      "bytes": 2909,
+      "sha256": "7fc562686036eff14e68d09ab07ab27bb44b1a0540bcc0697f5e97f46171f185"
+    },
+    {
+      "label": "local-verification/test-transfer.log",
+      "bytes": 2397,
+      "sha256": "6151b6bed307c54b8542daab2fa3f27038487ea1876752f7a65801c5b8166a90"
+    },
+    {
+      "label": "local-verification/test-pricing.log",
+      "bytes": 2236,
+      "sha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3"
+    },
+    {
+      "label": "local-verification/check-secrets.log",
+      "bytes": 210,
+      "sha256": "550c4b0c1f35f1233a90c7746632eab84dde0896cd0b4b9157ebff1a03f172fc"
+    },
+    {
+      "label": "ci-verification/commands.json",
+      "bytes": 5183,
+      "sha256": "bd3ef4a44701e87b0770e1d0ebefe6f8aeb1893f6392841b632afed6809663d8"
+    },
+    {
+      "label": "ci-verification/test-stabilization-s01.log",
+      "bytes": 2401,
+      "sha256": "b2d964351d3488e023617316e391ca6fb7af91332c416d2e44befdf6d2af12ac"
+    },
+    {
+      "label": "ci-verification/test-stabilization-upgrade.log",
+      "bytes": 299,
+      "sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+    },
+    {
+      "label": "ci-verification/test-stabilization-cd.log",
+      "bytes": 1720,
+      "sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2"
+    },
+    {
+      "label": "ci-verification/test-stabilization-eg.log",
+      "bytes": 1053,
+      "sha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b"
+    },
+    {
+      "label": "ci-verification/test-stabilization-mixed.log",
+      "bytes": 2129,
+      "sha256": "353093856720ead5d003b77c834780a2fd2ee3b5dc71ff53e44783d23c84c4a7"
+    },
+    {
+      "label": "ci-verification/test-recommendation-continuation.log",
+      "bytes": 1985,
+      "sha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65"
+    },
+    {
+      "label": "ci-verification/test-inventory.log",
+      "bytes": 2925,
+      "sha256": "22070287faf64d4c40519ea3d3fe047529ef40922d17a85b7214f96e9a5ed28b"
+    },
+    {
+      "label": "ci-verification/test-transfer.log",
+      "bytes": 2397,
+      "sha256": "6151b6bed307c54b8542daab2fa3f27038487ea1876752f7a65801c5b8166a90"
+    },
+    {
+      "label": "ci-verification/test-pricing.log",
+      "bytes": 2236,
+      "sha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3"
+    },
+    {
+      "label": "ci-verification/check-secrets.log",
+      "bytes": 210,
+      "sha256": "15232d4e48c9e1f27e2a4d553ae4cf299ff8a0a13930298eb636321d2a8d4ca6"
+    },
+    {
+      "label": "audit-ag/review-01/review.json",
+      "bytes": 16279,
+      "sha256": "7907e16ac0496052d3cac1dec91484ab9393e4f377c9432bb47727827402dbf1"
+    },
+    {
+      "label": "Verified unchanged launch contract",
+      "bytes": 751,
+      "sha256": "12070772c1dfccf411a5a399bd6a1708f162bc0edc463df081320fded09dda50"
+    }
+  ],
+  "scan": {
+    "credential_urls": 0,
+    "provider_tokens": 0,
+    "private_keys": 0,
+    "non_synthetic_emails": 0,
+    "session_or_hash_values": 0
+  },
+  "redactions": 0,
+  "instructions_sha256": "8f3da4bf1ab39e142fc9a56ad2668d728a504334696dc3054cf87321651bef3e",
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34692615608,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34692615608",
+    "event": "pull_request",
+    "head_sha": "f5c57ccf72b7be2281e7dd7070e61c22e551fcc1",
+    "base_sha": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+    "conclusion": "success",
+    "checked_out_sha": "7faaae1c2157cd0d27d24a606caf6126f49377cc",
+    "checked_out_kind": "PR_MERGE",
+    "checked_out_merge_sha": "7faaae1c2157cd0d27d24a606caf6126f49377cc",
+    "integration_candidate_sha": "7faaae1c2157cd0d27d24a606caf6126f49377cc",
+    "integration_parents": [
+      "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+      "f5c57ccf72b7be2281e7dd7070e61c22e551fcc1"
+    ],
+    "merge_parents": [
+      "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+      "f5c57ccf72b7be2281e7dd7070e61c22e551fcc1"
+    ],
+    "merge_tree_sha": "f7a6298c435df90305110590cfc05ad77c809ded",
+    "head_tree_sha": "f7a6298c435df90305110590cfc05ad77c809ded",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-7faaae1c2157cd0d27d24a606caf6126f49377cc",
+    "artifact_digest": "sha256:0808d796b813b275161a2c4c2a744bb8d2d3c366ef3be19142de461560ae9267"
+  },
+  "destination": "Anthropic Claude Code existing Team, extraOFF",
+  "uncommitted_work_included": false,
+  "source": "git show fixed HEAD only; uncommitted records are excluded",
+  "lock_sha256": "c53c5ece7de574ce78e95cec573948275ee05fce6d9902089c250c6c70d71623"
+}

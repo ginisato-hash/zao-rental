@@ -1,5 +1,6 @@
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
+import {closeReadyTransfers} from './completion';
 import {expireInventoryHolds} from '../inventory/expiry';
 import {loadStaff,type StaffPrincipal,type Permission} from '../../../auth/src/staff-auth';
 import {TransferError,parsePlan,uuid,object,lines,canonical,tokyoDate,type TransferOperation,type TransferLine} from '../../../contracts/src/transfer';
@@ -28,7 +29,7 @@ export class TransferService{
   if(b.state!=='PLANNED'||tokyoDate(now)>b.scheduled_date)throw new TransferError('BATCH_CLOSED',409);
   if(Number((await c.query('SELECT count(*) AS n FROM transfer_pieces WHERE batch_id=$1',[b.id])).rows[0].n)+input.reduce((n,x)=>n+('assetId'in x?1:x.quantity),0)>200)throw new TransferError('BATCH_LIMIT',422);
   // Archive a completed quantity witness only after every old claim is inactive. No IDs are relabelled.
-  await c.query(`UPDATE transfer_pieces p SET state='CLOSED' WHERE state='READY' AND NOT EXISTS(SELECT 1 FROM transfer_batches b WHERE b.id=p.batch_id AND b.issue IS NOT NULL) AND NOT EXISTS(SELECT 1 FROM inventory_claims WHERE active AND (transfer_piece_id=p.id OR asset_id=p.asset_id))`);
+  for(const item of input)await closeReadyTransfers(c,'assetId'in item?{assetId:item.assetId}:{poleId:item.poleId});
   for(const line of input){const asset='assetId'in line,id=asset?line.assetId:line.poleId,quantity=asset?1:line.quantity;
    const stock=(await c.query(`SELECT * FROM ${asset?'ledger_assets':'ledger_poles'} WHERE id=$1 AND store_id=$2 AND status='AVAILABLE'`,[id,b.source_store])).rows[0];if(!stock)throw new TransferError('STOCK_NOT_READY',409);
    if((await c.query(`SELECT 1 FROM inventory_constraints WHERE ${asset?'asset_id':'pole_id'}=$1 AND starts_on<=$2 AND ends_on>=$2 LIMIT 1`,[id,b.scheduled_date])).rowCount)throw new TransferError('STOCK_CONSTRAINED',409);
@@ -78,6 +79,7 @@ export class TransferService{
      const v=object(input,['pieceIds']);if(!Array.isArray(v.pieceIds)||!v.pieceIds.length||v.pieceIds.length>200||new Set(v.pieceIds).size!==v.pieceIds.length)throw new TransferError('INVALID_SELECTION');for(const id of v.pieceIds)uuid(id);
      const rows=(await c.query('SELECT * FROM transfer_pieces WHERE batch_id=$1 AND id=ANY($2::uuid[])',[b.id,v.pieceIds])).rows;if(rows.length!==v.pieceIds.length||rows.some(p=>p.state!==(op==='receive'?'IN_TRANSIT':'RECEIVED')))throw new TransferError('STALE_SELECTION',409);
      for(const p of rows){if(op==='ready'&&p.asset_id&&(await c.query("SELECT 1 FROM ledger_assets WHERE id=$1 AND status='AVAILABLE'",[p.asset_id])).rowCount!==1)throw new TransferError('STOCK_NOT_READY',409);await c.query('SELECT transfer_move_stock($1,$2,$3)',[p.id,op,now]);}
+     if(op==='ready')await closeReadyTransfers(c,{batchId:b.id});
     }
     if(op==='cancel'){object(input,[]);if(b.state!=='PLANNED')throw new TransferError('PHYSICAL_TRANSFER_CANNOT_CANCEL',409);await c.query("UPDATE transfer_pieces SET state='CANCELLED' WHERE batch_id=$1 AND state='PLANNED'",[b.id]);await c.query("UPDATE transfer_batches SET state='CANCELLED',issue='CANCELLED_TRANSFER' WHERE id=$1",[b.id]);}
     if(op==='issue'){const v=object(input,['reason']);if(typeof v.reason!=='string'||!v.reason.trim()||v.reason.length>160)throw new TransferError('INVALID_REASON');await c.query('UPDATE transfer_batches SET issue=$2 WHERE id=$1',[b.id,v.reason]);}

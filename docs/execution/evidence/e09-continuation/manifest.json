@@ -1,0 +1,46 @@
+{
+  "baseline": "1f336f6aac4df092b36c1c35e9cc1987e2fa53fd",
+  "classification": "baseline14 cases8pass6fail -> same14pass, final strengthened17pass; pure4pass; existing audit20pass; verify21commands exit0",
+  "files": [
+    {
+      "path": "after-ui-1.log",
+      "sha256": "e16f541d6586bce68e258fd6bc320d94ab9e8d089b8d2bd3fa52eed5815fe6b5",
+      "bytes": 1734
+    },
+    {
+      "path": "before-ui.log",
+      "sha256": "fb1ac606c3960e64841155637dcff0f60ce5106aa07571dfd2e4396311c96023",
+      "bytes": 4552
+    },
+    {
+      "path": "commands.json",
+      "sha256": "e84f3d5805dc3a5c0e11fad4f5a23d6d0bc622089bc263c2984d5ca810a99ceb",
+      "bytes": 4305
+    },
+    {
+      "path": "prior-review-counterexample.log",
+      "sha256": "9951d889fe5d2d9fb1b1233d4e6156a96384ea9e80806464a7552943c57f099e",
+      "bytes": 2115
+    },
+    {
+      "path": "test-recommendation-audit.log",
+      "sha256": "631f0cdbe9d0e4e579ea45897a35674c7f232f2a50a4b951dd36f1ab0684253e",
+      "bytes": 3858
+    },
+    {
+      "path": "test-recommendation-continuation.log",
+      "sha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65",
+      "bytes": 1985
+    },
+    {
+      "path": "time-budget.json",
+      "sha256": "f201b3cd6ccf8f8beaf214b48150fb49b8107171d8ef97e0d4b22974eaeedd5a",
+      "bytes": 334
+    },
+    {
+      "path": "unit-1.log",
+      "sha256": "12e583064df537bf2b59b79a728b9d4ce8f441ef8d5a01b8b254b7f7aeaefe6a",
+      "bytes": 528
+    }
+  ]
+}

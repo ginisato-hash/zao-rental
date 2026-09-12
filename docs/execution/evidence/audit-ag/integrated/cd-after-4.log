@@ -1,0 +1,24 @@
+
+> zao-rental@0.1.0 test:stabilization-cd
+> node --import tsx tests/stabilization/cd.ts
+
+PASS C expired unpaid group claim reconciles in ordinary Asset maintenance, audited once
+PASS C expired group no longer blocks pole reduction without unrelated HOLD command
+PASS D unreferenced actual receipt/readiness closes Asset and pair witnesses immediately
+PASS D closed movement permits ordinary maintenance/quantity without next transfer.add
+PASS C protects ACTIVE despite ledger status/quantity request
+PASS C protects PENDING despite ledger status/quantity request
+PASS C protects UNKNOWN despite ledger status/quantity request
+PASS C protects SUCCESS despite ledger status/quantity request
+PASS C protects PREPARATION_FIXED despite ledger status/quantity request
+PASS C protects RENTAL_FIXED despite ledger status/quantity request
+PASS C failed-payment expired lease releases but unrelated protected groups stay intact
+PASS C concurrent hold first: new valid claim and maintenance cannot both win
+PASS C concurrent ledger first: new valid claim and maintenance cannot both win
+PASS D live referenced READY remains protected; partial transit, cancel, completion, replay and future stock stay consistent
+PASS D unresolved issue retains actual received/ready facts and blocks unsafe ledger cleanup
+PASS D closing receipt never enables same-day continuation reuse; next-day demand can use actual stock
+PASS D concurrent ready first: completion and new group never double count physical/projection stock
+PASS D concurrent hold first: completion and new group never double count physical/projection stock
+C/D ordinary authentication/API/real PostgreSQL: 18 passed; 0 failed;0 skipped.
+Owned C/D Web/browser/PostgreSQL stopped.

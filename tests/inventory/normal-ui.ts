@@ -66,7 +66,7 @@ try{
   for(const extra of [{role:'ADMIN'},{owner_id:'spoof'},{expiresAt:'2099-01-01'}])assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:{...payload,...extra}})).status(),422);
   const foreign=requestFor('2032-02-01');foreign.pickupStore='ONSEN_BASE';assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:{requestKey:randomUUID(),conditions:foreign}})).status(),403);
   assert.equal((await admin.request.get('/api/holds/'+holdId,{headers:{'x-role':'STAFF','x-user-id':actor}})).status(),403);
-  assert.equal((await admin.request.patch('/api/staff-users/'+actor,{headers:{origin},data:{...settings,permissions:{HOLD_VIEW:true,HOLD_EDIT:false}}})).status(),200);
+  assert.equal((await admin.request.patch('/api/staff-users/'+actor,{headers:{origin},data:{...settings,expectedRevision:(await app!.db.pool.query('SELECT revision FROM staff_members WHERE id=$1',[actor])).rows[0].revision,permissions:{HOLD_VIEW:true,HOLD_EDIT:false}}})).status(),200);
   assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:payload})).status(),403);await page.evaluate(()=>window.dispatchEvent(new Event('pageshow')));await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();await expect(page.getByRole('heading',{name:'期間在庫と仮押さえ',exact:true})).toHaveCount(0);
  });
  console.log(`E06 normal UI/API/PostgreSQL: ${count} passed; 0 skipped. Synthetic real password auth; viewport simulation, not physical phone.`);

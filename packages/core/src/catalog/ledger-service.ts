@@ -15,7 +15,7 @@ function sanitized(error:unknown):never {
 // never via a header, cookie, environment flag or production route.
 export class LedgerService {
   private readonly scope;
-  constructor(private readonly pool:Pool, private readonly principal:LedgerPrincipal|null) {this.scope=ledgerAccess(principal);}
+  constructor(private readonly pool:Pool, private readonly principal:LedgerPrincipal|null,private readonly authorizeWrite:(client:PoolClient,stores:typeof this.scope,global:boolean)=>Promise<void>,private readonly reconcileStock:(resource:'assets'|'poles',id:string,version:number)=>Promise<void>) {this.scope=ledgerAccess(principal);if(typeof authorizeWrite!=='function')throw new LedgerError('WRITE_AUTHORITY_NOT_CONFIGURED',500);if(typeof reconcileStock!=='function')throw new LedgerError('STOCK_RECONCILIATION_NOT_CONFIGURED',500);}
   private checkStore(store:unknown) {if(typeof store==='string' && !this.scope.includes(store as typeof this.scope[number]))throw new LedgerError('FORBIDDEN',403);}
   private async transaction<T>(reason:string,fn:(client:PoolClient)=>Promise<T>):Promise<T> {
     ledgerAccess(this.principal,true);
@@ -59,6 +59,9 @@ export class LedgerService {
   async create(resource:Resource,input:unknown):Promise<LedgerDetail> {
     parseResource(resource);ledgerAccess(this.principal,true);const data=parseInput(resource,'create',input);this.checkStore(data.storeId);
     return this.transaction('REGISTER',async client=>{
+      // Statement triggers also take this lock; explicitly wait before final authorization.
+      await client.query('SELECT pg_advisory_xact_lock(71820600)');
+      await this.authorizeWrite(client,typeof data.storeId==='string'?[data.storeId as typeof this.scope[number]]:[],!['assets','poles'].includes(resource));
       const keys=Object.keys(data);const names=keys.map(k=>columns[k]!);const values=keys.map(k=>data[k]);
       if(resource==='assets'){names.push('initial_store_id');values.push(data.storeId);}
       const id=randomUUID();names.push('id');values.push(id);
@@ -68,18 +71,20 @@ export class LedgerService {
   }
   async update(resource:Resource,id:string,input:unknown):Promise<LedgerDetail> {
     parseResource(resource);ledgerAccess(this.principal,true);assertId(id);const data=parseInput(resource,'update',input);
+    if((resource==='assets'||resource==='poles')&&('status' in data||'quantity' in data))await this.reconcileStock(resource,id,data.version as number);
     return this.transaction(data.reason as string,async client=>{
       // Scope belongs in the locking statement: forbidden stores must not be locked at all.
       const storeScoped=resource==='assets'||resource==='poles';
       if(storeScoped){
         const visible=await client.query(`SELECT id FROM ${tables[resource]} WHERE id=$1 AND store_id=ANY($2::text[])`,[id,[...this.scope]]);
         if(visible.rowCount!==1)throw new LedgerError('NOT_FOUND',404);
-        await client.query('SELECT pg_advisory_xact_lock(71820600)');
       }
+      await client.query('SELECT pg_advisory_xact_lock(71820600)');
       const locked=await client.query(`SELECT id FROM ${tables[resource]} WHERE id=$1${storeScoped?' AND store_id=ANY($2::text[])':''} FOR UPDATE`,storeScoped?[id,[...this.scope]]:[id]);
       if(locked.rowCount!==1)throw new LedgerError('NOT_FOUND',404);
       const prior=await this.detail(client,resource,id);
       if(prior.version!==data.version)throw new LedgerError('STALE_VERSION',409);
+      await this.authorizeWrite(client,prior.storeId?[prior.storeId]:[],!storeScoped);
       const keys=Object.keys(data).filter(k=>k!=='version'&&k!=='reason');const values=keys.map(k=>data[k]);values.push(id,data.version);
       const updated=await client.query(`UPDATE ${tables[resource]} SET ${keys.map((k,i)=>`${columns[k]}=$${i+1}`).join(',')} WHERE id=$${values.length-1} AND version=$${values.length}`,values);
       if(updated.rowCount!==1)throw new LedgerError('STALE_VERSION',409);

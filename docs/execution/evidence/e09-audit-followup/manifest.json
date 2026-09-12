@@ -1,0 +1,70 @@
+{
+  "baseline": "447d29e78488cfc2bd376c6e2ede20d372469acc",
+  "files": [
+    {
+      "file": "after-ui-1.log",
+      "sha256": "ad3f0b485ab06876b6a6e68ec48588a08610b7a36a3e9f429cfe6833bd81b8cf",
+      "bytes": 3858
+    },
+    {
+      "file": "audit-observations-1.log",
+      "sha256": "cc5e5baf6ef04ee4f2651bc1d38e9d2c6fca36fcfa202e9e5d54e518c01cbc28",
+      "bytes": 1517
+    },
+    {
+      "file": "before-ui-2.log",
+      "sha256": "2826f8d5bcd388718b50f7c78df768967b3569e28040776737211fb43056c271",
+      "bytes": 9118
+    },
+    {
+      "file": "before-ui.log",
+      "sha256": "49ed391a759d54433c1d4cf02549e1759e397577ec74032e8345af424bc1885a",
+      "bytes": 331
+    },
+    {
+      "file": "owner-audit-request.txt",
+      "sha256": "1dbc55391888ba1717a2104b7306b29ba798b4fe4d744c8195541a340fab641c",
+      "bytes": 5718
+    },
+    {
+      "file": "pricing-compatibility.log",
+      "sha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3",
+      "bytes": 2236
+    },
+    {
+      "file": "time-budget.json",
+      "sha256": "075bee4de383c1ad10bc0fba97b1fc77af55156fc41d6ca4ada05560d4d5c1fd",
+      "bytes": 457
+    },
+    {
+      "file": "verify-1.log",
+      "sha256": "961d13fc71c4c0e6e3df49d117d9df42629b512d8cd1289c933dc4adb7b0d38d",
+      "bytes": 18991
+    },
+    {
+      "file": "verify-2.log",
+      "sha256": "22964977a510e470e908ef0fb99167a508ef72a6b91864f55258524fc00816e8",
+      "bytes": 21333
+    }
+  ],
+  "before_ui_exit_code": 1,
+  "after_ui_exit_code": 0,
+  "observations_exit_code": 0,
+  "setup_error": "before-ui.log only is test setup assertion200 vs actual201, not product failure",
+  "after_ui_note": "after-ui-1 used the first corrected cm parser; final restricted explicit-unit parser is checked by final-head verify/CI. Both accept the same listed positive cases.",
+  "observations_note": "A-D normal sessions and real DB; E pure solver; F schema/HTTP parser only; observed failures remain open, not CI acceptance passes",
+  "compatibility_regressions": {
+    "verify-1": {
+      "exit_code": 1,
+      "issue": "HOLD ended-period code changed; restored PERIOD_ENDED"
+    },
+    "verify-2": {
+      "exit_code": 1,
+      "issue": "Quote past-period code changed; restored RENTAL_ALREADY_STARTED"
+    },
+    "pricing-compatibility": {
+      "exit_code": 0,
+      "count": 19
+    }
+  }
+}

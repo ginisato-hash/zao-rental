@@ -1,0 +1,240 @@
+
+> zao-rental@0.1.0 verify
+> node scripts/verify.mjs
+
+
+> zao-rental@0.1.0 check:reference
+> node scripts/check-reference.mjs
+
+PASS 32 bootstrap specification/config/test files byte-identical; entrypoints intentionally integrated.
+
+> zao-rental@0.1.0 check:secrets
+> node scripts/check-secrets.mjs
+
+PASS 278 tracked/candidate files checked for private keys, provider tokens and credential-bearing DB URLs. Pattern scan is not comprehensive.
+
+> zao-rental@0.1.0 test:reference
+> python3 -m unittest discover -s tests -p test_*.py -v
+
+test_age_and_tier_isolation_preserved (test_operations_seed.OperationsSeedTests) ... ok
+test_customer_length_choices_preserve_original_bounds (test_operations_seed.OperationsSeedTests) ... ok
+test_day_block_and_inspection_survive_location_change (test_operations_seed.OperationsSeedTests) ... ok
+test_future_gap_does_not_enable_rotation (test_operations_seed.OperationsSeedTests) ... ok
+test_hold_swap_and_selected_length_contract (test_operations_seed.OperationsSeedTests) ... ok
+test_hours_and_no_new_cutoff (test_operations_seed.OperationsSeedTests) ... ok
+test_no_automatic_refund_or_price_rewrite_on_early_return (test_operations_seed.OperationsSeedTests) ... ok
+test_not_a_production_activation (test_operations_seed.OperationsSeedTests) ... ok
+test_owner_facing_hours_and_documents_are_synchronized (test_operations_seed.OperationsSeedTests) ... ok
+test_refund_amounts_requests_and_uncertainty_guardrails (test_operations_seed.OperationsSeedTests) ... ok
+test_rental_windows_and_ten_day_limit (test_operations_seed.OperationsSeedTests) ... ok
+test_runtime_acceptance_is_not_claimed_as_executed (test_operations_seed.OperationsSeedTests) ... ok
+test_selected_staff_permission_not_hidden_bypass (test_operations_seed.OperationsSeedTests) ... ok
+test_timezone_and_two_store_scope (test_operations_seed.OperationsSeedTests) ... ok
+test_transfer_future_commitment_and_no_retroactive_departure (test_operations_seed.OperationsSeedTests) ... ok
+test_transfer_schedule_is_not_guaranteed_ten_minute_readiness (test_operations_seed.OperationsSeedTests) ... ok
+test_catalog_categories_and_pole_policy (test_pricing_seed.PricingSeedTests) ... ok
+test_extra_day_increments_remain_positive_nonincreasing (test_pricing_seed.PricingSeedTests) ... ok
+test_generation_metadata_reproduces_initial_whole_day_table (test_pricing_seed.PricingSeedTests) ... ok
+test_half_day_advance_discount_examples (test_pricing_seed.PricingSeedTests) ... ok
+test_half_day_golden_values_and_same_am_pm (test_pricing_seed.PricingSeedTests) ... ok
+test_money_is_positive_integer_yen_on_100_yen_grid (test_pricing_seed.PricingSeedTests) ... ok
+test_no_implicit_production_publication (test_pricing_seed.PricingSeedTests) ... ok
+test_product_count_uniqueness_and_duration_completeness (test_pricing_seed.PricingSeedTests) ... ok
+test_sets_are_not_more_expensive_than_components (test_pricing_seed.PricingSeedTests) ... ok
+test_total_increases_average_daily_price_decreases (test_pricing_seed.PricingSeedTests) ... ok
+test_whole_day_golden_values_keep_approved_curve (test_pricing_seed.PricingSeedTests) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.008s
+
+OK
+
+> zao-rental@0.1.0 lint
+> eslint . --max-warnings=0
+
+
+> zao-rental@0.1.0 typecheck
+> next typegen apps/web && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+
+> zao-rental@0.1.0 test:unit
+> node --import tsx --test tests/unit/*.test.ts tests/automation/*.test.ts tests/catalog/*.test.ts
+
+✔ controller uses pinned policy, signed approval and reviewer receipt; stops without merging (349.752542ms)
+✔ candidate policy edits and forged reviewer receipts cannot self-approve (112.904375ms)
+✔ stale receipt, unknown review verdict and SHA mismatch all fail closed (619.700459ms)
+✔ auth/quota errors are durable stops without repeated model invocations (297.569208ms)
+✔ INTENT recovery reconciles existing effects, never repeats an unknown branch/PR/model (145.580625ms)
+✔ CI failure repairs at most twice; never invokes reviewer for failing CI (380.734167ms)
+✔ repository-wide lease is shared by separate worktree processes; stale time never steals it (215.225708ms)
+✔ restricted command builder rejects shell/ref/environment injection (121.868958ms)
+✔ timeout, cancel and worker crash kill the owned child/grandchild group and preserve unrelated process (1375.580125ms)
+✔ two worktree processes racing an empty repository lock produce exactly one owner (150.942083ms)
+✔ controller SIGKILL disconnects guardian and removes its worker descendants (414.135584ms)
+✔ one static review builder preserves restrictions and legacy review has no executable argv (118.385875ms)
+✔ push registry suppresses a candidate pre-push hook against a real local remote (1264.916125ms)
+✔ unsigned or self-modified READY approval is rejected (5.677041ms)
+✔ valid signature still requires exact spec hash and expiry (0.567042ms)
+✔ activation flags are refused even with signed approval (0.337083ms)
+✔ task claim is exclusive and expired lease is not stolen (24.196959ms)
+✔ policy inside worktree or with unpinned hash is rejected (5.815542ms)
+✔ exact-head CI and review stop for human approval (0.714833ms)
+✔ new push invalidates old review even after new CI passes (0.258459ms)
+✔ empty, pending or stale CI cannot pass (0.501ms)
+✔ missing, malformed or incomplete review cannot pass (0.387958ms)
+✔ protected, traversing and out-of-scope changes stop (0.505667ms)
+✔ maximum two repair rounds, then escalation (0.18525ms)
+✔ budget and wall-clock exhaustion stop (0.128417ms)
+✔ auth and quota errors stop without API fallback (0.245375ms)
+✔ plan has bounded repair and no merge or main push (0.255125ms)
+✔ a failing CI test enters bounded repair before requiring review (0.13675ms)
+✔ unknown review verdicts cannot advance even with otherwise valid evidence (0.44775ms)
+✔ unknown severity labels cannot advance under a PASS verdict (0.443417ms)
+✔ PASS still requires acceptable severity; blockers require bounded repair (0.418708ms)
+✔ PASS with any unverified item remains blocked (0.1175ms)
+✔ strict ledger contract rejects authority/identity/transfer fields and stock-as-availability assumptions (1.897708ms)
+✔ role and store scope are both required; no implicit global administrator (0.29875ms)
+✔ filters are finite and do not silently widen a miss across age/tier (0.169708ms)
+✔ anonymous and insufficient-role HTTP calls never construct storage or trust headers (13.3615ms)
+✔ anonymous and empty identities are denied on server (0.728542ms)
+✔ customer cannot enter staff or admin; staff cannot enter admin (0.084625ms)
+✔ explicit allowed role is accepted (0.058833ms)
+✔ telemetry only accepts foundation events (0.141209ms)
+✔ worktree paths separate stable DB, role, ports and seed namespace (0.142291ms)
+✔ occupied port fails rather than attaching to existing service (17.629042ms)
+✔ ambient database target is refused without revealing it (0.101041ms)
+✔ Tokyo golden AM/PM, whole-date occupancy, month/year boundaries and inclusive ten days (7.765334ms)
+✔ bundle completeness, forbidden client expiry/identity, unique group member and variant candidates (1.263792ms)
+✔ period solver finds flexible A155 constrained B150; bounded exhaustion is indeterminate (9.60525ms)
+✔ payment contract never converts UNKNOWN to failure or late success to inventory confirmation (0.107917ms)
+✔ E07 contract: 17:00 schedule is no receipt; sealed/departed additions denied; protected receipt still needs E07 (0.094875ms)
+✔ cross-store source custody fence overlaps all later use, but not an earlier unrelated date (0.2475ms)
+✔ pool timeout wording changes preserve bounded outcomes on read acquisition and write preflight (9.617625ms)
+✔ coded authentication or permission errors and unknown failures never become retryable timeouts or leak details (0.194709ms)
+✔ new intake separates contract start, same-day deadline and immutable conditions (10.843833ms)
+✔ future quotes keep start bound; no backdated MULTIDAY or after-close first-day intake (0.141417ms)
+✔ ledger lexical cm equivalence, never missing/other units or unknown sizes (0.158625ms)
+✔ database stop must wait for delayed socket end after pool.end resolves (0.490291ms)
+✔ background connection errors fail closure without exposing attached client (0.344833ms)
+✔ all 216 explicit amounts through product/duration calculation; no runtime curve (22.105291ms)
+✔ half-day early explicit examples 5320 / 6460 / 2850 and integer HALF_UP (0.279042ms)
+✔ JST previous-day 15:00 inclusive payment qualification; quote never qualifies payment (0.225542ms)
+✔ explicit stacking, applicable coupon scope/window/min/cap; no negative totals or double discount (1.227042ms)
+✔ mixed members eligibility/minimum basis; set components never become extra price lines (0.422ms)
+✔ strict quote and coupon inputs reject prices, role, duplicates, dates, unknown product and incomplete table (0.394417ms)
+✔ owner rules use independent explicit targets and +1cm, no DIN or BSL computation (0.724542ms)
+✔ 145/150/155, anchored direction choice and deterministic shorter tie (0.193417ms)
+✔ original absolute window includes both boundaries and excludes one centimetre outside (0.0635ms)
+✔ real exact-size variant IDs, no age/class substitution, no hidden larger boots or text guessing (0.341792ms)
+✔ snowboard does not require detailed age/weight/level, ski age13 boundary and forged fields reject (4.113833ms)
+✔ Argon2id has independent salts and verifies only the supplied password (259.033333ms)
+✔ canonical email is case/outer-space stable; password policy adds no composition rules (0.322084ms)
+✔ role, permission and ALL scope are independently required for staff management (0.087833ms)
+✔ staff input cannot grant unimplemented refund permissions or forge subject (0.498708ms)
+✔ ordinary runtime without owned development connection fails closed and cannot attach a remote DB (0.460291ms)
+✔ transfer input rejects authority fields, impossible dates, model-free fake IDs and invalid pair quantities (1.788542ms)
+✔ pair labels never create two assets; duplicate selected Asset or pool lines rejected (0.141292ms)
+✔ forecast is not immediate stock, automatic receipt, late readiness or another-store capacity (0.228708ms)
+✔ cancelled transfer keeps source PAIR protection while a promise needs reconciliation (0.099958ms)
+ℹ tests 76
+ℹ suites 0
+ℹ pass 76
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5834.816334
+
+> zao-rental@0.1.0 test:controller:macos
+> node --import tsx scripts/test-controller-macos.ts
+
+{"test":"actual installed Codex sandbox / macOS Seatbelt","codexVersion":"codex-cli 0.153.4","runtimeHashes":{"codex":"87a08119b8effa519f0ecb552dc98043f58a8200bf2ec5da60f76890c33e9c3a","node":"a5ebb9adc969c8fcc486823ada530a4130b0d56edf954de7b05c280170487b1a"},"profileHash":"837935fe3611bcc1e7faf7d3884d0543d4459b6f5943b899cd32789e01f68904","sourceSha":"447d29e78488cfc2bd376c6e2ede20d372469acc","releaseHash":"ffa65e86c01ac5770c16ee9b44b4b1c335358c8eef05be8df00a4628fcbf125b","denials":{"policyWrite":"EPERM","policyRename":"EPERM","stateWrite":"EPERM","gitRead":"EPERM","codexRead":"EPERM","codexWrite":"EPERM","claudeRead":"EPERM","claudeWrite":"EPERM","envRead":"EPERM","envWrite":"EPERM","outsideRead":"EPERM","outsideSignal":"EPERM","scratchWrite":"ALLOWED","networkConnect":"EPERM","symlinkWrite":"EPERM","credentialEnv":[]},"loopbackControlConnected":true,"scratchWriteVerified":true,"guardianEnvironmentKeys":["PATH","__CF_USER_TEXT_ENCODING"],"environment":"clean PATH/LANG/TMPDIR only","modelCalls":0}
+PASS actual sandbox worker and grandchild terminated on timeout; no external process scanned or killed.
+PASS actual sandbox denies policy/state writes, git reads, codex/claude/env reads+writes, rename, symlink writes, out-of-scope reads and ancestor signals; network connect is denied against a reachable test-owned loopback listener; allowed workspace and scratch writes succeed.
+
+> zao-rental@0.1.0 test:integration
+> node --import tsx scripts/integration.ts && node --import tsx scripts/ledger-integration.ts
+
+{"postgres":"PostgreSQL 18.4 on x86_64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.3.2), 64-bit","database":"zr_326fcce47072","user":"zr_326fcce47072","port":22420}
+PASS fresh migration and concurrent replay are idempotent
+PASS seed is worktree scoped and repeatable
+PASS concurrent duplicate telemetry records one event
+PASS SQL constraints reject unsupported event and foreign seed
+PASS failed transaction leaves no partial event
+PASS migration checksum drift is rejected
+PASS unauthenticated database client is rejected
+Owned PostgreSQL process stopped.
+PASS failed initial migration rolls back DDL and ledger, releases lock, then recovers
+PASS statement timeout cancels queries on two distinct pooled backends
+Owned recovery-test PostgreSQL process stopped.
+Integration: 9 passed; 0 skipped. No booking/payment runtime claims.
+PASS ordered concurrent migrations apply 0001 through 0007 exactly once
+PASS traceable synthetic sample is atomic and concurrent replay creates no duplicates or audit events
+PASS duplicate Asset UUID and duplicate pair source are rejected by PostgreSQL
+PASS two ski labels reference one pair; boards and boot pairs are one Asset each
+PASS product / variant / family / Asset references reject missing or mismatched parents
+PASS set definitions expose exact components without creating any physical stock
+PASS pole quantities count pairs, reject negatives in SQL and reject fractional API input
+PASS unknown ski BSL stays null; recorded BSL needs source; snowboard boots need no alpine BSL
+PASS Asset identity/custody/category cannot be rewritten; initial store history survives updates
+PASS optimistic update concurrency accepts only one writer and audits only committed changes
+PASS store/sport/age/tier/size/state search returns only exact ledger matches without substitution
+PASS real-DB HTTP boundary rejects anonymous, customer, read-only staff and out-of-store access
+PASS HTTP registration, reload and versioned update retain source and full history
+PASS every catalogue resource supports protected read/create/basic update and retains identity fields
+PASS malformed/oversized/origin-forged inputs and protected history writes are rejected
+PASS size format variants collide within one model/age/tier and size filters use the same key
+PASS provenance is unique within a resource and may cite the same source across model and Asset
+PASS HTTP rejects an Asset family that mismatches its variant and leaves no row or audit record
+PASS out-of-store update takes no Asset or pole row lock and cannot block the owning store
+PASS sample checksum mismatch is not silently imported as replacement inventory
+Owned ledger PostgreSQL process stopped.
+PASS failed 0002 upgrade preserves 0001 data, releases lock, then recovers without schema destruction
+Owned ledger-upgrade PostgreSQL process stopped.
+Ledger integration: 21 passed; 0 skipped. Synthetic samples only; no booking/fit/auth-provider claims.
+
+> zao-rental@0.1.0 test:inventory
+> node --import tsx tests/inventory/real-postgres.ts
+
+PASS populated PR5 upgrade preserves original migration hashes, real password session and normal protected ledger API
+PASS remaining one, six concurrent requests across pooled connections: exactly one whole HOLD succeeds
+PASS missing one group member or set component leaves zero partial claims
+PASS AM whole-day asset and pole claims reject same-day PM
+PASS daily one free but no continuous asset cannot satisfy a two-day request
+PASS flexible A150/155 and constrained B150 find A155+B150 atomically
+PASS provisional other-owner HOLD can be safely rearranged without changing its promise or expiry
+PASS prepared/lent fixed allocations cannot move; failed replacement retains complete old hold
+PASS safe explicit asset replacement succeeds; replacement breaking another reservation fails without losing old hold or TTL
+PASS explicit provisional asset reassignment preserves exact conditions and rejects non-candidate model/size
+PASS concurrent replacements never duplicate physical claims, future commitments do not consume unrelated periods
+PASS idempotency, payload mismatch, cancellation/expiration races and retries conserve quantity
+PASS ten inclusive dates hold all three components and direct ledger edits cannot invalidate protected stock
+PASS age/tier mismatch, unauthorized owner/store and lock waiting are denied without inventory mutation
+SOURCE_AFTER_RETURN TRANSFER_PLAN_REQUIRED
+DESTINATION_BEFORE_RECEIPT TRANSFER_PLAN_REQUIRED
+UNVERIFIED_TRANSFER TRANSFER_PLAN_REQUIRED
+PASS cross-store return records future custody fence, unverified transfers never turn other-store stock into capacity
+PASS unrelated cross-store return cannot misclassify missing or maintained components as transfer capacity
+PASS pending/unknown payment retains claims across TTL; late success cannot confirm a released inventory promise
+PASS application HOLD role cannot read credentials, edit staff/custody/audit, or create DDL
+PASS indexed owner/history reads batch 100 holds on one connection while another owner can write
+PASS exhausted real four-connection HOLD pool returns bounded INDETERMINATE on reads and write preflight
+{"synthetic":true,"combinedSkiBoardAssets":300,"componentsAdditional":true,"node":"v24.15.0","platform":"darwin","arch":"arm64","cpu":"Apple M2 Pro","postgres":"18.4","concurrency":4,"iterations":24,"operation":"availability ten-day ski set with provisional replan","p50_ms":7.667416999999659,"p95_ms":12.05395899999985,"hold_acquisition":{"operation":"ten-day ski set HOLD with accumulated provisional replans","iterations":24,"concurrency":4,"p50_ms":44.650792000000365,"p95_ms":125.55279200000041},"productionGuarantee":false}
+PASS 300 combined ski/board synthetic load, full ten-day groups, bounded concurrent latency probe
+E06 real PostgreSQL: 21 passed; 0 skipped.
+Owned E06 PostgreSQL stopped.
+
+> zao-rental@0.1.0 test:transfer
+> node --import tsx tests/transfer/real-postgres.ts
+
+PASS populated exact PR6 prefix upgrade preserves staff password session, ledger and HOLD claims
+PASS committed plan preserves current location and supports an exact future destination HOLD only once
+PASS departure requires 17:00; no automatic receipt, late additions or post-dispatch cancellation
+PASS HOLD release after dispatch retains physical transfer; future allocation cannot auto-move a dispatched witness
+PASS receiver scope, actual receipt history, readiness separation and immutable Asset identity
+Owned E07 PostgreSQL stopped.
+E07_DB_FAILED same-day reuse forbidden at destination; another date remains possible ERR_ASSERTION
+{"actual":{"code":"INTAKE_CLOSED","status":409},"expected":{"code":"PERIOD_ENDED"}}
+Verification failed; evidence: .local/evidence/2026-09-12T07-28-10.503Z

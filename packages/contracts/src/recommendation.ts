@@ -21,7 +21,9 @@ export function parseRecommendation(value:unknown):RecommendationInput{
 }
 export function sizing(profile:Pick<Profile,'heightCm'|'footCm'>){const targetCm=profile.heightCm-20;return {targetCm,minCm:targetCm-15,maxCm:targetCm+15,bootCm:(Math.round(profile.footCm*10)+10)/10};}
 // Only explicit numeric centimetres are eligible. Unknown legacy text is never guessed.
-export function centimetres(size:string):number|null{const m=/^(\d{1,3}(?:\.\d)?)\s*cm$/.exec(size.trim());return m?Number(m[1]):null;}
+// Case matches ledger_size_key's lexical fold. Retain the existing whitespace
+// allowance around a contiguous numeric value and explicit cm unit; never infer units.
+export function centimetres(size:string):number|null{const m=/^(\d{1,3}(?:\.\d)?)\s*cm$/i.exec(size.trim());return m?Number(m[1]):null;}
 export function rankCandidates<T extends {lengthCm:number}>(all:T[],target:number):Record<Direction,T|null>{
  const ordered=all.filter(x=>Math.abs(x.lengthCm-target)<=15).sort((a,b)=>Math.abs(a.lengthCm-target)-Math.abs(b.lengthCm-target)||a.lengthCm-b.lengthCm);
  const recommended=ordered[0]??null;

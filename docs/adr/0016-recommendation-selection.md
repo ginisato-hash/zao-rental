@@ -93,3 +93,39 @@ UI regression first reproduces that display error, then checks missing LONGER at
 synthetic catalog. Only cards with an actual candidate now show price or price-error information.
 HOLD, inventory, sizing, discount arithmetic and authorization are unchanged. A fresh review and CI
 must target the amended head; the first PASS does not mean the LOW was already resolved.
+
+## E09 audit followup: new intake is not the product start timestamp
+
+The owner-authorized audit reproduced DAY10:00, AM10:00 and PM14:00 as successful
+recommendation/selection/HOLD followed by RENTAL_ALREADY_STARTED in quote creation.
+`newIntakeWindow` in the existing HOLD contract now shares the new-request acceptance check
+between availability, HOLD create/amend and quote preview/create. It uses OPERATIONS.md:
+on the first Tokyo date AM closes12:00, other products close17:00; a start date already past
+is refused, including MULTIDAY whose return is still future. Future bookings remain accepted.
+This does not implement physical handoff or open the shop before08:30: online staff planning
+ahead of pickup remains possible. PM earliest pickup remains13:00; the12:00–13:00 gap is not
+a new closure. Late first-day MULTIDAY intake is bounded by shop17:00, not its last return date.
+
+Product startsAt/dueAt and WHOLE_TOKYO_DATE_V1 occupancy remain unchanged. New quotes made
+before product start keep the existing start-time bound. At/after start, while intake is open,
+their time bound becomes that day's intake close. Expiry is still the minimum of that bound,
+quote TTL, linked HOLD expiry, coupon expiry and estimated early-discount cutoff. Existing
+HOLD600-second leases, amend/retry non-extension and immutable stored quote hashes stay intact.
+A near-close HOLD can retain its original lease beyond intake close; that lease never authorizes
+a new after-close request or a valid after-close newly-created quote. It is not a checkout promise.
+Idempotency lookup still precedes new intake validation; original saved results can be reconciled
+after a clock boundary without generating new keys or renewing expiry. Operational reassign keeps
+its existing full-period/state/payment checks rather than treating it as a new booking intake.
+No clock value is added to conditions/fingerprints. No migration or canonical price edit.
+
+The cm parser now accepts case-insensitive explicit cm, matching the ledger's case folding,
+and retains its existing whitespace allowance between a contiguous number and cm (and edge trim).
+This is lexical spelling compatibility: no unit conversion, missing-unit guessing or joining split
+digits/letters. Ledger supports other size text, but that does not make it a numeric recommendation.
+Height-20±15, foot+1, exact age/class and explicit model-policy acceptance are unchanged.
+Normal authenticated ledger registration tests verify actual candidate variant IDs for cm/CM/Cm,
+tabs/spaces and26.5, and exclusion of150/M/150mm; preexisting lowercase variants cannot mask a failure.
+
+Known A-G findings remain OPEN under E09_AUDIT_FOLLOWUP.md. Their old dependencies are not fixed by
+these two corrections or by a scoped static review. Merge readiness and production readiness are
+separate decisions; both require the outstanding gates, and neither is authorized in this task.

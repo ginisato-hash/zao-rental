@@ -59,3 +59,13 @@ This supersedes earlier E08-only scope/deadline, not any business rule or Runner
 at a new Draft PR, never merge. Deadline2026-09-12T06:04:53Z from02:04:53Z is unchanged by pauses.
 Claude initial1 + max2 rereviews, existing Team/extra creditsOFF/static tools-disabled route only.
 PR3 remains Draft and Runner UNATTENDED_HOLD; no E10+, Square, production, real data or host changes.
+
+Current E09 audit-followup authority supersedes only the earlier expired time window:
+started 2026-09-12T07:02:10.709598Z / 16:02:10.709598 JST; deadline
+2026-09-12T11:02:10.709598Z / 20:02:10.709598 JST. Never extend on reread/retry.
+Read E09_AUDIT_FOLLOWUP.md. Implement only same-day intake/quote consistency and explicit cm
+spelling consistency; other A-G audit findings are investigation/tracking only. PR9 remains Draft;
+no merge/E10/stabilization implementation. Existing review calls initial1+rereview1 consumed;
+only final rereview1 remains, after both fixes, verification and exact-head CI. Include unresolved
+audit findings, never reuse an old PASS or claim the whole system has zero findings. Existing Team,
+extra creditsOFF, direct static route with no execution/external tools. No new connections/billing.

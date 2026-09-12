@@ -1,11 +1,11 @@
 {
   "task": "E09",
-  "status": "CANDIDATE_REQUIRING_EXACT_HEAD_CI_AND_STATIC_REVIEW",
+  "status": "AUDIT_FOLLOWUP_DRAFT_WITH_OPEN_FINDINGS",
   "base": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
   "runner": "UNATTENDED_HOLD",
   "pr3": "DRAFT_HELD_NO_ADOPTION",
   "repository_visibility": "PUBLIC_OWNER_AUTHORIZED_SUPERVISOR_AUDIT",
-  "deadline": "2026-09-12T06:04:53Z",
+  "deadline": "2026-09-12T11:02:10.709598+00:00",
   "review_budget": {
     "initial": 1,
     "rereviews": 2
@@ -40,5 +40,29 @@
     "verdict": "REVIEW_PASS",
     "finding": "LOW E09-01 candidate-less card shows reference price",
     "response": "Minimal per-direction candidate guard + real normal UI regression; final-head CI/rereview pending"
+  },
+  "prior_deadline": "2026-09-12T06:04:53Z",
+  "audit_followup": {
+    "started_at_utc": "2026-09-12T07:02:10.709598+00:00",
+    "started_at_jst": "2026-09-12T16:02:10.709598+09:00",
+    "deadline_jst": "2026-09-12T20:02:10.709598+09:00",
+    "reviewed_baseline_head": "447d29e78488cfc2bd376c6e2ede20d372469acc",
+    "implemented": [
+      "same-day intake/quote time consistency",
+      "explicit cm spelling consistency"
+    ],
+    "open": [
+      "A stale staff form",
+      "B ledger authority lock-wait race",
+      "C expired HOLD claims",
+      "D unreferenced READY transfer",
+      "E solver limits/scope",
+      "F HTTP/schema limit mismatch",
+      "G repeated quote SQL/mixed load"
+    ],
+    "review_calls_already_consumed": 2,
+    "remaining_review_calls": 1,
+    "system_zero_findings": false,
+    "evidence": "E09_AUDIT_FOLLOWUP.md and per-head PR evidence; final CI/review pending until actual records published"
   }
 }

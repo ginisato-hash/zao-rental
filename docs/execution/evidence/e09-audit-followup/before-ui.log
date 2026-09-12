@@ -1,0 +1,7 @@
+
+> zao-rental@0.1.0 test:recommendation-audit
+> node --import tsx tests/recommendation/audit-followup-ui.ts
+
+AUDIT_SETUP_FAILURE AssertionError
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09/tests/recommendation/audit-followup-ui.ts:26:217)
+Owned audit Web, browser and PostgreSQL stopped.

@@ -23,6 +23,23 @@ export function normalizePeriod(p:Period){
  const dueAt=new Date(p.endDate+(p.slot==='AM'?'T12:00:00+09:00':'T17:00:00+09:00')).toISOString();
  return {timezone:'Asia/Tokyo',policy:OCCUPANCY_POLICY,dates,days,startsAt,dueAt,occupancyStartsAt:new Date(first-9*3600000).toISOString(),occupancyEndsAt:new Date(last+15*3600000).toISOString()};
 }
+// New requests may book ahead, or be accepted on their first Tokyo date while the
+// selected product still has time left. OPERATIONS.md closes first-day intake at17:00
+// (AM12:00); this is distinct from a MULTIDAY contract's final return deadline.
+// Never put these clock-dependent decisions into saved conditions or request fingerprints.
+export function newIntakeWindow(period:Period,now:Date){
+ const normalized=normalizePeriod(period),ms=now.getTime();
+ if(!Number.isFinite(ms))throw new HoldError('INVALID_CLOCK');
+ if(ms>=Date.parse(normalized.dueAt))throw new HoldError('PERIOD_ENDED');
+ const today=new Date(ms+9*3600000).toISOString().slice(0,10);
+ if(period.startDate<today)throw new HoldError('START_DATE_PAST',409);
+ const intakeClosesAt=new Date(period.startDate+(period.slot==='AM'?'T12:00:00+09:00':'T17:00:00+09:00')).toISOString();
+ if(ms>=Date.parse(intakeClosesAt))throw new HoldError('INTAKE_CLOSED',409);
+ // Ahead-of-slot quotes retain the original start-time bound. Once that time has
+ // arrived, a new quote uses the still-open intake deadline, never a past expiry.
+ const quoteBoundaryAt=ms<Date.parse(normalized.startsAt)?normalized.startsAt:intakeClosesAt;
+ return {intakeClosesAt,quoteBoundaryAt};
+}
 export type PaymentBoundary='NONE'|'PENDING'|'UNKNOWN'|'SUCCESS'|'FAILURE';
 export function paymentDecision(state:PaymentBoundary,active:boolean,expired:boolean,reacquired:boolean){
  if(state==='PENDING'||state==='UNKNOWN')return 'RECONCILIATION_REQUIRED';

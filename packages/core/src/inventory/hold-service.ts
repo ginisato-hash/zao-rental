@@ -1,7 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
 import {loadStaff,type StaffPrincipal} from '../../../auth/src/staff-auth';
-import {HoldError,parseConditions,normalizePeriod,canonical,HOLD_TTL_SECONDS,paymentDecision,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
+import {HoldError,parseConditions,normalizePeriod,newIntakeWindow,canonical,HOLD_TTL_SECONDS,paymentDecision,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {expireInventoryHolds} from './expiry';
 import {transferProjection,destinationFeasible,sourceReservations} from '../transfer/projection';
 import {matchPeriods,type Demand,type Placement} from './period-matching';
@@ -131,7 +131,7 @@ export class HoldService {
  }
  async availability(input:unknown,replaceHoldId?:string){const conditions=parseConditions(input);return this.transaction(false,async c=>{
   await this.authorize(c,false,[conditions.pickupStore,conditions.returnStore]);if(replaceHoldId){const old=await this.owned(c,replaceHoldId,false);if(old.reservation_id!==conditions.reservationId)throw new HoldError('IMMUTABLE_RESERVATION');if(old.allocation_stage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(old.payment_state))throw new HoldError('ALLOCATION_FIXED',409);}
- },async(c,now)=>({result:(await this.plan(c,conditions,now,replaceHoldId??null)).result,period:normalizePeriod(conditions.period),advisory:true}));}
+ },async(c,now)=>{newIntakeWindow(conditions.period,now);return {result:(await this.plan(c,conditions,now,replaceHoldId??null)).result,period:normalizePeriod(conditions.period),advisory:true};});}
  private async claims(c:Conn,holdId:string,conditions:HoldConditions,witness:Witness[]){
   const rows=witness.flatMap(w=>normalizePeriod(conditions.period).dates.map(day=>({hold_id:holdId,requirement_key:w.key,asset_id:w.asset,pole_id:w.pole,pole_slot:w.slots[day]??null,transfer_piece_id:w.transferPiece,day})));
   await c.query(`INSERT INTO inventory_claims(hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day) SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day FROM jsonb_to_recordset($1::jsonb) AS x(hold_id uuid,requirement_key text,asset_id uuid,pole_id uuid,pole_slot integer,transfer_piece_id uuid,day date)`,[JSON.stringify(rows)]);
@@ -160,6 +160,8 @@ export class HoldService {
    else{
     if(!conditions)throw new HoldError('INVALID_CONDITIONS');
     if(op==='create'&&(await c.query("SELECT 1 FROM inventory_holds WHERE reservation_id=$1 AND state='ACTIVE'",[conditions.reservationId])).rowCount)throw new HoldError('RESERVATION_ALREADY_HELD',409);
+    // Replay/state/payment guards above remain authoritative; operational reassign is not new intake.
+    if(op==='create'||op==='amend')newIntakeWindow(conditions.period,now);
     const plan=await this.plan(c,conditions,now,old?.id??null,pin);
     if(plan.result!=='FEASIBLE')outcome={result:plan.result,...(old?{holdId:old.id}:{})};
     else {

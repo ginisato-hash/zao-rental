@@ -1,0 +1,34 @@
+Owner audit followup request (inspection data; authority is the human request in the current task).
+Repository ginisato-hash/zao-rental, PR #9. Baseline base7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c, head447d29e78488cfc2bd376c6e2ede20d372469acc.
+Renewal changes only time: start actual processing +4hours, no reset of review/implementation/merge authority.
+
+Original time finding:
+HOLD側は返却期限前の当日要求を扱える一方、QuoteService.preview/createは、商品枠の開始時刻を過ぎた要求を拒否しています。見積の有効期限も同じ開始時刻で打ち切っています。
+当日10:00のDAY、当日10:00のAM、当日14:00のPM、推薦→選択→HOLD保存までは成立し、見積だけ拒否される経路を現headで再現する。
+運用正本の営業時間と当日受付方針を維持したまま、商品枠の開始、現在の受付可能性、HOLD期限、見積期限を整合させる。
+単に startsAt <= now の拒否条件を削除するだけでは不十分。過去になった商品枠開始時刻を、新規見積の有効期限として残さない。
+既存の利用条件・開始時刻・保存済みsnapshotを書き換えない。時刻に依存する値を要求fingerprintへ不用意に混ぜ、同じ要求の再送が別要求になる変更をしない。
+維持：AM12:00、PM/DAY17:00、全日占有、同日再貸出禁止、既存HOLD期限不延長、期限切れ・決済不明・固定済み割当を勝手に復活・解除しない、既存見積の金額・snapshot・ハッシュ不変、早割前日15:00決済完了、chargeReady=false、税未確認、請求確定不可、実貸出・決済未実装。
+受入：通常認証→推薦→選択→一括HOLD→見積保存→再読込。AM12:00以降、PM/DAY17:00以降の新規受付拒否。開始日が過去の新規要求を無条件に受け入れない。将来日付、クーポン期限、早割境界の回帰。HOLD成功後の見積応答喪失も同じ保存済み要求から照合。再送でHOLD・見積重複なし、HOLD期限不延長。
+
+Original cm finding:
+現headのcentimetres()は小文字cmだけを解析しています。明示的な「数値＋cm単位」の範囲で、大小文字と許容する空白の扱いを台帳と整合させる。
+受入：150 cm / 150 CM / 150 Cm、26.5 cm / 26.5 CM、既存の許容空白を含む表記。
+拒否：単位なし150、M等の不明なサイズ、mm等の別単位を推測変換する入力。
+正規の台帳登録から推薦候補まで通る回帰。正規表現単体だけで完了としない。
+身長−20cm±15cm、足サイズ＋1cm、年齢・クラス制約、候補明示選択、モデル確約なしは変更しない。無断の在庫代替を許可しない。
+
+Original remaining audit items — inspect and track ONLY, no product repairs in this task:
+A. スタッフ設定の古いフォームによる上書き。StaffManagement / accounts / staff-input.schema。対象スタッフの設定版を更新条件に使わないため、別管理者が行った無効化・権限剥奪を古いフォームが戻す経路。
+B. 台帳更新の待機中に操作者の権限を剥奪する競合。認可を確定する時点、ロック待機後の再確認を調査。これはAの「編集対象の競合」と別の問題として扱う。
+C. 期限切れHOLDのactive claimが台帳の整備・数量変更を阻害する経路。
+D. 参照HOLDのないREADY移動明細が、次の移動addまでCLOSEDにならず台帳変更を阻害する経路。
+E. 期間割当の計算量と対象範囲。同一仕様・同一日の板9個体に対する10人要求で探索上限になる反例。全体80 live HOLD、240構成品の上限。無関係な日程のHOLDも先に集計される影響。上限を単に引き上げる案や、成立する代替割当を壊す先着順化を解決策にしない。
+F. Schemaで許容する最大グループ入力と、HTTP16KiB制限の不整合。直接HOLD/見積APIと、E09内部呼出経路の違いを明記する。
+G. 見積一覧・構成品検証の反復SQLと、他操作との混在負荷。
+各項目の再現方法・影響・修正候補・対応段階を記録する。E09マージ前・E10着手前・実データ投入前・本番公開前のどこで解消すべきか提案する。段階的な開発制限と今回の変更で発生した不具合を混同しない。未実施テストを成功扱いにしない。
+判定は再現確認／コード上で確認、統合再現未実施／現headで解消済み／反証できた／既知の開発制限／追加の業務判断が必要。静的解析・単体再現・実DB再現・通常UI再現を区別。
+
+Performance: 既存Mac p95約100ms／CI約237msは推薦プレビューHTTP往復。HOLD取得＋見積作成まで含む総処理時間ではない。板300個体、同時要求数、既存live HOLD数、人数／要求、候補数／人、利用期間を分けて記録。
+Review: initial1+rereview1 already used. One last rereview only after both corrections and all tests/CI. Supply full delta since last reviewed head, contracts/code, original audit, before/after proof, known remaining items. Do not hide them as system zero findings. Existing static route, Team, extra creditsOFF; no code execution/file tools/external retrieval, no secret/customer/staff/other-project data. No connection-only model call. Stop on quota/auth/timeout/budget/deadline, no retries or billing changes.
+Stop Draft PR9, no merge, no E10/production/Square/Runner/PR3. Shut down only owned DB/Web/browser/Claude. Further stabilization fixes require new authority.

@@ -1,0 +1,22 @@
+{
+  "state": "RETURNED",
+  "cumulative_cli_start": 4,
+  "started_at": "2026-09-12T18:43:07.465117+00:00",
+  "head_sha": "ac253954e5319ebb6a891e569a1ab89f1bea06b6",
+  "snapshot_sha256": "cbbeba8ed69e12942db11f1ca30a733f2307ad70262de75afa079b6f13188fdc",
+  "exit_code": 0,
+  "finished_at": "2026-09-12T18:46:52.453226+00:00",
+  "capabilities": {
+    "tools": [
+      "StructuredOutput"
+    ],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.220",
+    "fast_mode_state": "off"
+  }
+}

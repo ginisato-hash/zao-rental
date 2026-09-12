@@ -1,0 +1,11 @@
+✔ photo candidates require exact existing offer, explicit role and bounded order; no fuzzy binding (0.631334ms)
+✔ duplicate upload/concurrent terminal replies commit each photo once, byte reuse never grants rights (26.912625ms)
+✔ fixed manifest rejects replaced bytes/duplicate names; malformed image records failure without publishing (0.328792ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 255.415875

@@ -48,3 +48,45 @@ that set and checks expected-current. Restore produces a new manifest and rechec
 rights; no old booking or price snapshot changes. Only a pure resulting state/audit/outbox
 is implemented and tested with local synthetic state. No persistent CMS transaction,
 publication authority, DB role or public route exists; this is not complete CMS P0.
+
+
+## Supervised local fixture checkpoint
+
+`PrivateContentWorkflow` now persists trusted plans, CAS draft revisions and private
+release/current/audit/outbox through an adapter port. The shipped adapter is only
+`tests/content/file-fixture.ts`: per-worktree bounded file lock, private atomic rename,
+no stale-lock stealing. It reauthorizes the real library session before and after
+acquiring the fixture lock. Synthetic CONTENT grants are explicitly seeded in this
+fixture file; they are not actual staff DB permissions or a production role change.
+The normal apps/web has no CMS fixture route. The development test app also requires
+explicit launcher composition and private fixture root; production NODE_ENV rejects it.
+
+Normal password UI can import CSV, preserve invalid targets, recover saved request/job,
+create a private release and restore to a new manifest. Old revisions are immutable.
+Actual Web-process restart retains file state and the real auth DB session. This is
+local fixture persistence, not PostgreSQL CMS isolation, fsync/crash durability,
+public publication or a connected production content repository.
+
+Photo jobs pin at most200 filenames, byte counts and SHA256s,500MiB total. Each request
+carries at most10MiB of original bytes (14MiB bounded JSON transport). Sequential
+real decoding and10 derivatives do not use a reservation DB connection. The local
+fixture stores hash-addressed originals and derivatives privately; only authenticated,
+job-owner-scoped sanitized320px WebP is renderable. Original files are not served.
+A restart/retry resumes exact job/index/hash and never counts a completed item twice.
+An explicit pause or leaving the page aborts further client requests; an in-flight
+server operation may finish, so the next action reads the existing job first.
+Failed commits may leave unreferenced private bytes until the owned fixture is removed;
+there is no background cleanup or public orphan route. This is not malware scanning.
+
+Exact offer_code__role__sort filenames yield candidates only, with SERVICE support.
+Unknown names and duplicate role/order remain flagged. Source-byte reuse does not
+copy rights. Every real photo binding, rights, consent, alt and publication remains
+unconfirmed. No actual owner photos or three-season full SKU catalog have arrived.
+The normal fixture UI test processes50 synthetic images, loses one response, reloads
+and resumes47 remaining files without duplicate results. Only first20 thumbnails are
+shown in this minimal fixture. Full gallery/rights editing and customer CMS are incomplete.
+
+Manufacturer JSON rows preserve source sheet/row, sport, season, SKU, quantity unit
+and ADD/REPLACE uncertainty. Same row hash is staged once; changed source cells retain
+both versions and require reconciliation. No source stage creates stock, models,
+price mappings, or overwrites a historical season. The fixture UI covers both sports.

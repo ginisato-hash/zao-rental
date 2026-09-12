@@ -1,7 +1,7 @@
 {
   "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
   "budget_reset": false,
-  "as_of": "2026-09-12T18:20:36.043013+00:00",
+  "as_of": "2026-09-12T19:00:41.213015+00:00",
   "source_tests": 57,
   "items": [
     {
@@ -418,16 +418,25 @@
   "gaps": [
     "Full mixed continuous equipment scan return blocked by exact existing custody DB boundary",
     "Guest-owned BFF is not connected; current preview requires staff session",
-    "Content/media import/release and actual owner photos incomplete",
+    "Local content/media import/release fixture tested; production CMS/guest/rights/gallery and actual owner photos remain incomplete",
     "No full three-season Salomon catalog",
     "No real200 wear units, sizes or cleaning time",
     "No real Square/Sandbox, phone, production, invoice, email or deployment"
   ],
   "full_verification": {
-    "record": "docs/execution/evidence/flow-dev/wear-review3/commands.json",
-    "commands": 34,
+    "record": "docs/execution/evidence/flow-dev/content-fixture/commands.json",
+    "commands": 35,
     "exit_code": 0,
-    "review": "Review3 CHANGES_REQUIRED; corrected WEAR-PRICE-01 awaits new-head review",
-    "supplement": "114unit tests +10normal UI tests passed after pure release-plan and third mixed-group case additions; remote final-head CI will run complete34commands"
+    "supplement": "123unit/8UI plus lint/typecheck after exclusive decoder gate; see local-supplement.json",
+    "review": "Final integrated new-head review pending; previous scoped review4 PASS with LOW followup"
+  },
+  "content_fixture": {
+    "state": "PARTIAL_TESTED_REVIEW_PENDING",
+    "record": "docs/execution/CONTENT_FIXTURE_PROGRESS.md",
+    "normal_UI_cases": 8,
+    "photo_count": 50,
+    "realPhotos": false,
+    "realCMSDB": false,
+    "equipment_content_targets": 18
   }
 }

@@ -34,7 +34,8 @@ export class WearService{
   id(bookingId);store(receivingStore);const p=await this.authorize('BOOKING_VIEW',[receivingStore]);
   if(!p.permissions.includes('RENTAL_RETURN')&&!p.permissions.includes('RENTAL_CHECKOUT'))throw new WearError('FORBIDDEN',403);
   const b=(await this.pool.query<{id:string;state:string;version:number;conditions:HoldConditions}>('SELECT id,state,version,conditions FROM rental_bookings WHERE id=$1',[bookingId])).rows[0];if(!b)throw new WearError('BOOKING_NOT_FOUND',404);
-  const canReturn=p.permissions.includes('RENTAL_RETURN'),canCheckout=p.permissions.includes('RENTAL_CHECKOUT')&&b.conditions.pickupStore===receivingStore;
+  const allowedHere=(permission:'RENTAL_RETURN'|'RENTAL_CHECKOUT')=>p.storeIds.includes(receivingStore as never)&&p.permissions.includes(permission);
+  const canReturn=allowedHere('RENTAL_RETURN'),canCheckout=allowedHere('RENTAL_CHECKOUT')&&b.conditions.pickupStore===receivingStore;
   if(!canReturn&&!canCheckout)throw new WearError('FORBIDDEN',403);
   // A scoped recipient may accept a cross-store return without being the creator.
   // Contact/QR secrets are not returned. Mutation still reloads version and authority.

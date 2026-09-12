@@ -11,7 +11,7 @@
     "max_total_seconds": 86400,
     "prior_run_seconds": 0,
     "max_claude_starts": 8,
-    "claude_starts": 3,
+    "claude_starts": 4,
     "reserve_final_review": 1,
     "prior_delegation_starts": 3,
     "prior_delegation_unused_not_added": true
@@ -31,9 +31,9 @@
     "body_updated_and_readback": true
   },
   "review_budget": {
-    "new_starts": 3,
+    "new_starts": 4,
     "maximum": 8,
-    "remaining": 5,
+    "remaining": 4,
     "reserve_final": 1,
     "previous_AG_starts": 3,
     "historical_E09_starts": 4,
@@ -114,19 +114,19 @@
     "physical smartphone camera not verified",
     "E13 full Sandbox milestone not complete"
   ],
-  "next": "Push exact tested checkpoint, CI/review4; continue independent approved CMS fixture work within original budget.",
+  "next": "Run exact-head CI and final integrated static review. Full equipment custody boundary remains blocked.",
   "prohibitions": [
     "no new PR merge",
     "no real Square/production/data",
     "PR3/Runner held",
     "no privileges/cost/host changes"
   ],
-  "local_verification": "docs/execution/evidence/flow-dev/local-summary.json",
+  "local_verification": "docs/execution/evidence/flow-dev/content-fixture/commands.json",
   "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
   "budget_checkpoint": {
-    "at": "2026-09-12T18:20:36.043930+00:00",
-    "claude_starts": 3,
-    "remaining": 5,
+    "at": "2026-09-12T19:00:41.212210+00:00",
+    "claude_starts": 4,
+    "remaining": 4,
     "deadline_unchanged": true
   },
   "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
@@ -148,7 +148,7 @@
       "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646846388"
     }
   ],
-  "working_record": "34-command full verification passes; supplemental114unit+10normalUI passes. Mixed200/400physical parts +300boards +90liveHOLD100quotes measured by operation. Review3 price finding corrected; new-head CI/review pending.",
+  "working_record": "Full35 commands PASS then supplemental123unit/8UI plus lint/typecheck PASS. Photo decoder race before2/after1; explicit scope LOW addressed. Exact new-head CI and review pending.",
   "followup": "docs/execution/FLOW_DEV_REVIEW_FOLLOWUP.md",
   "corrected_local_verification": {
     "at": "2026-09-12T15:14:22.979203+00:00",
@@ -267,15 +267,24 @@
     "acceptance": "docs/execution/WEAR_ACCEPTANCE_STATUS.json"
   },
   "latest_review": {
-    "round": 3,
-    "head": "0ed175ae9734848fb2eb2f7372c60a4e625ad208",
-    "snapshot_sha256": "b1f47dcfa1cfef2114cb080cf8d3bdd1fc6de6a25bc11a3ae8c5f00b17dcc98c",
-    "verdict": "CHANGES_REQUIRED",
+    "round": 4,
+    "head": "ac253954e5319ebb6a891e569a1ab89f1bea06b6",
+    "snapshot_sha256": "cbbeba8ed69e12942db11f1ca30a733f2307ad70262de75afa079b6f13188fdc",
+    "verdict": "REVIEW_PASS",
     "findings": [
-      "WEAR-PRICE-01"
+      "LOW WEAR-BOOKING-SCOPE-IMPLICIT-01; explicit scoped followup and regression added"
     ],
-    "comment": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647709920",
-    "remaining_starts": 5
+    "comment": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647984144"
   },
-  "as_of": "2026-09-12T18:11:28.384896+00:00"
+  "as_of": "2026-09-12T18:11:28.384896+00:00",
+  "content_fixture": {
+    "state": "LOCAL_UI_TESTED_PENDING_INTEGRATED_REVIEW",
+    "normal_auth": "real library password/session/PostgreSQL, synthetic staff",
+    "storage": "dedicated private file fixture, not production CMS PostgreSQL",
+    "cases": 8,
+    "photo_files": 50,
+    "actual_photos": 0,
+    "source_row_import": "staging only, no inventory write",
+    "record": "docs/execution/CONTENT_FIXTURE_PROGRESS.md"
+  }
 }

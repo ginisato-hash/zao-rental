@@ -1,3 +1,4 @@
+import {writeAccount,listAccounts} from '../../packages/auth/src/accounts';
 import {WearService} from '../../packages/core/src/wear/service';
 import type {RecommendationInput} from '../../packages/contracts/src/recommendation';
 import assert from 'node:assert/strict';
@@ -75,5 +76,18 @@ try{
   const completed=await wearService.transfer(randomUUID(),{...input,expectedRevision:partial.value.transfer.revision});assert.equal(completed.transfer.state,'RECEIVED');assert.equal(completed.receipts.length,2);assert.equal((await x.db.pool.query('SELECT sum(total)::int n FROM wear_pools')).rows[0].n,total);assert.equal((await wearService.overview('ONSEN_BASE')).pools.find(p=>p.variant_id===source.variant_id)!.ready,0);
  });
  await check('wear quantity requirement cannot be reassigned to an individual Asset',async()=>{await assert.rejects(x.holds.command('reassign',randomUUID(),{requirementKey:'wear-b:WEAR_JACKET',assetId:randomUUID()},first!.hold!.id,first!.hold!.version),{code:'INVALID_REQUIREMENT'});});
+ await check('real lock wait rechecks receiving scope and denies revoked authority before quantity mutation',async()=>{
+  const before=(await x.db.pool.query('SELECT count(*)::int n FROM wear_unresolved_returns')).rows[0].n,blocker=await x.db.pool.connect();let request:Promise<unknown>|undefined;
+  try{await blocker.query('BEGIN');await blocker.query('SELECT pg_advisory_xact_lock(71820600)');request=wearService.unresolved(randomUUID(),{variantId:fixtures.selection.jacketVariantId,store:'MOUNTAIN_BASE',quantity:1,reason:'SYNTHETIC revocation while waiting'}).catch(e=>e);
+   let observed=false;for(let n=0;n<150;n++){if((await x.db.pool.query("SELECT 1 FROM pg_stat_activity WHERE usename=$1 AND wait_event_type='Lock' AND query LIKE 'SELECT pg_advisory_xact_lock(71820600)%'",[x.flow.flowDb.user])).rowCount){observed=true;break;}await new Promise(r=>setTimeout(r,3));}assert.equal(observed,true,'operation must reach the actual global inventory lock');
+   const current=(await listAccounts(x.roles.authPool,x.bp)).find(a=>a.id===x.actor)!;await writeAccount(x.roles.authPool,x.bp,x.actor,{displayName:current.displayName,active:true,role:current.role,scope:'ASSIGNED',storeIds:['ONSEN_BASE'],permissions:current.permissions,expectedRevision:current.revision});
+  }finally{await blocker.query('COMMIT');blocker.release();}
+  const result=await request;assert.equal((result as {code:string}).code,'FORBIDDEN');assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM wear_unresolved_returns')).rows[0].n,before);
+  const guard=await x.db.pool.connect();try{await guard.query('BEGIN');await guard.query('SELECT pg_advisory_xact_lock(71820600)');await assert.rejects(wearService.unresolved(randomUUID(),{variantId:fixtures.selection.jacketVariantId,store:'MOUNTAIN_BASE',quantity:1,reason:'SYNTHETIC preflight refusal'}),{code:'FORBIDDEN'});}finally{await guard.query('COMMIT');guard.release();}
+ });
+ await check('booking lookup explicitly scopes each operation; cross-store recipient sees no contact and cannot dispatch from another store',async()=>{
+  await assert.rejects(wearService.bookingSummary(premiumBookingId,'MOUNTAIN_BASE'),{code:'FORBIDDEN'});const info=await wearService.bookingSummary(premiumBookingId,'ONSEN_BASE');assert.equal(info.canReturn,true);assert.equal(info.canCheckout,false);assert.equal('contact' in info,false);
+  const current=(await listAccounts(x.roles.authPool,x.bp)).find(a=>a.id===x.actor)!;await writeAccount(x.roles.authPool,x.bp,x.actor,{displayName:current.displayName,active:true,role:current.role,scope:'ASSIGNED',storeIds:['ONSEN_BASE'],permissions:{...current.permissions,RENTAL_RETURN:false},expectedRevision:current.revision});await assert.rejects(wearService.bookingSummary(premiumBookingId,'ONSEN_BASE'),{code:'FORBIDDEN'});
+ });
  console.log(`WEAR real PostgreSQL ${count} passed; normal library session and real roles; synthetic quantity checkout/return executed; no real stock, Square, equipment custody or phone.`);
 }catch(e){failed=true;console.error('WEAR_DB_FAILED '+stage+' '+((e as {code?:string}).code??(e as Error).name));console.error((e as Error).stack?.split('\n').filter(l=>l.includes('/tests/wear/')).join('\n'));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));}finally{await x.close();console.log('Owned wear PostgreSQL and pools stopped.');}if(failed)process.exit(1);

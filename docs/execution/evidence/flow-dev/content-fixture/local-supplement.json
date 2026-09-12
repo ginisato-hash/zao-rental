@@ -1,0 +1,46 @@
+{
+  "recorded_at": "2026-09-12T19:12:12.529999+00:00",
+  "full_verification": ".local/evidence/2026-09-12T19-01-18.065Z",
+  "full_commands": 35,
+  "full_exit_code": 0,
+  "after_full_verify_changes": [
+    "photo decoder admission gate",
+    "actual-decoder duplicate counterexample",
+    "revocation during decode",
+    "explicit UI pause",
+    "18 exact equipment offer-code content bulk regression"
+  ],
+  "supplemental_commands": [
+    {
+      "command": "npm run lint",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run test:unit",
+      "exit_code": 0,
+      "tests": 123,
+      "log": "content-final-unit.log"
+    },
+    {
+      "command": "npm run test:content-fixture",
+      "exit_code": 0,
+      "cases": 8,
+      "log": "content-final-ui.log"
+    }
+  ],
+  "full_current_head_ci_required": true,
+  "photo_decoder_before": {
+    "expected": 1,
+    "actual": 2,
+    "exit_code": 1
+  },
+  "photo_decoder_after": {
+    "expected": 1,
+    "actual": 1,
+    "exit_code": 0
+  }
+}

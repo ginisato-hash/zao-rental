@@ -16,9 +16,9 @@ test('role, permission and ALL scope are independently required for staff manage
  const principal:StaffPrincipal={subject:'synthetic',role:'ADMIN',scope:'ALL',permissions:['STAFF_MANAGE'],storeIds:['MOUNTAIN_BASE','ONSEN_BASE'],revision:1};
  assert.ok(canManage(principal));assert.equal(canManage({...principal,role:'STAFF'}),false);assert.equal(canManage({...principal,permissions:[]}),false);assert.equal(canManage({...principal,scope:'ASSIGNED'}),false);
 });
-test('staff input cannot grant unimplemented refund/price permissions or forge subject',()=>{
+test('staff input cannot grant unimplemented refund permissions or forge subject',()=>{
  const input={displayName:'Synthetic',active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{},email:'synthetic@example.invalid',password:'synthetic test-only phrase'};
- assert.ok(parseAccount(input,true));for(const extra of [{subject:'spoof'},{permissions:{PRICE_EDIT:true}},{permissions:{REFUND_OVERRIDE:true}},{permissions:{STAFF_MANAGE:true}},{storeIds:['UNKNOWN']},{storeIds:[]}])assert.throws(()=>parseAccount({...input,...extra},true));
+ assert.ok(parseAccount(input,true));assert.ok(parseAccount({...input,role:"ADMIN",scope:"ALL",permissions:{QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true}},true));for(const extra of [{subject:'spoof'},{permissions:{REFUND_OVERRIDE:true}},{permissions:{STAFF_MANAGE:true}},{storeIds:['UNKNOWN']},{storeIds:[]}])assert.throws(()=>parseAccount({...input,...extra},true));
 });
 test('ordinary runtime without owned development connection fails closed and cannot attach a remote DB',()=>{
  assert.equal(parseRuntime(undefined),null);assert.throws(()=>parseRuntime(JSON.stringify({origin:'https://production.invalid'})),/INVALID_DEVELOPMENT_RUNTIME/);

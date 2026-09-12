@@ -67,6 +67,15 @@
           },
           "TRANSFER_RECEIVE": {
             "type": "boolean"
+          },
+          "QUOTE_VIEW": {
+            "type": "boolean"
+          },
+          "QUOTE_CREATE": {
+            "type": "boolean"
+          },
+          "PRICE_EDIT": {
+            "type": "boolean"
           }
         }
       },
@@ -159,6 +168,15 @@
             "type": "boolean"
           },
           "TRANSFER_RECEIVE": {
+            "type": "boolean"
+          },
+          "QUOTE_VIEW": {
+            "type": "boolean"
+          },
+          "QUOTE_CREATE": {
+            "type": "boolean"
+          },
+          "PRICE_EDIT": {
             "type": "boolean"
           }
         }

@@ -1,0 +1,29 @@
+
+> zao-rental@0.1.0 test:flow-payment
+> node --import tsx tests/flow/payment.ts
+
+PASS ordinary password login gives real expiring session; production composition has no payment adapter
+PASS quote/HOLD/contact -> immutable synthetic booking; replay and concurrent payment create exactly once
+PASS confirmation protects claims after original 10 minute TTL without extending it or changing price snapshot
+PASS UNKNOWN response loss persists same key and never creates again with another key; lookup recovers once
+PASS late successful response after TTL is PAYMENT_REVIEW, never resurrects claims or confirms overbooking
+PASS verified referenceId mismatch cannot confirm
+PASS verified merchantId mismatch cannot confirm
+PASS verified locationId mismatch cannot confirm
+PASS verified amountJpy mismatch cannot confirm
+PASS verified currency mismatch cannot confirm
+PASS verified idempotencyKey mismatch cannot confirm
+PASS duplicate event payload is stable; terminal completion ignores delayed pending/failed notifications
+PASS real raw signature rejects modified body/URL, malformed events; capture time is not generic updated_at
+PASS signed webhook -> trusted provider lookup -> DB dedup; embedded paid flag and out-of-order body cannot confirm
+PASS terminal failed attempt is not silently restarted or promoted by a contradictory completion
+PASS confirmed provisional witness remains flexible within saved variants, preserving other promises and original TTL
+PASS new application role cannot DDL/read credentials/alter price, audit, or HOLD conditions/expiry
+PASS handoff reader needs explicit booking permission/store; creator identity and live access removal are enforced
+PASS lease expiry while source quote read waits prevents a new payment submission
+FLOW_PAYMENT_FAILED confirmation rereads lease time after actual claim-read lock wait and retains manual review protection ERR_ASSERTION
+{"actual":"CONFIRMED_DEV","expected":"PAYMENT_REVIEW"}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/flow/payment.ts:54:72)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/flow/payment.ts:9:124)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/flow/payment.ts:50:2)
+Owned FLOW payment PostgreSQL stopped.

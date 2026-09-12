@@ -61,3 +61,11 @@ presentation is not yet changed. Tests do not prove real smartphone/camera readi
 - https://developer.squareup.com/reference/square/objects/CardPaymentTimeline — captured_at, not arbitrary updated_at, is card capture evidence.
 - https://github.com/soldair/node-qrcode — pinned QR encoding implementation.
 - https://github.com/cozmo/jsQR — raw image QR decode test. No remote image/scan service.
+
+## Review correction boundary
+
+Source validation and confirmation reread the server inventory clock after awaited validation.
+UNKNOWN fallback requires current stored pickup/return scope even when a provider response is lost.
+0011 only enforces scan-before-confirmation on the unconnected receipt table; actual physical
+receipt remains a separate timestamp and may precede scanning. No writer grants are added.
+See FLOW_DEV_REVIEW_FOLLOWUP.md for red/green SQL synchronization and remaining evidence limits.

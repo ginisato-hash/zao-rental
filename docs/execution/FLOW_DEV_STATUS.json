@@ -11,7 +11,7 @@
     "max_total_seconds": 86400,
     "prior_run_seconds": 0,
     "max_claude_starts": 8,
-    "claude_starts": 0,
+    "claude_starts": 1,
     "reserve_final_review": 1,
     "prior_delegation_starts": 3,
     "prior_delegation_unused_not_added": true
@@ -31,9 +31,9 @@
     "body_updated_and_readback": true
   },
   "review_budget": {
-    "new_starts": 0,
+    "new_starts": 1,
     "maximum": 8,
-    "remaining": 8,
+    "remaining": 7,
     "reserve_final": 1,
     "previous_AG_starts": 3,
     "historical_E09_starts": 4,
@@ -41,11 +41,10 @@
   },
   "items": {
     "E10": {
-      "state": "TESTED_REVIEW_PENDING",
+      "state": "CORRECTED_REVIEW_PENDING",
       "depends_on": [],
       "tests": [
-        "real password/session/PostgreSQL payment18 cases",
-        "full verify90 unit tests before supplemental fourth pure return-contract test"
+        "23 real PostgreSQL cases, including actual lock waits and ephemeral provider process loss"
       ],
       "review": null,
       "next": "exact-head CI and independent static review",
@@ -105,7 +104,7 @@
     "physical smartphone camera not verified",
     "E13 full Sandbox milestone not complete"
   ],
-  "next": "Create Draft PR; exact-head CI; direct static Claude review; no work around the recorded permission rejections.",
+  "next": "Commit corrections; obtain exact new-head CI; static review2 (1/8 used;7remaining). E12/E13 remain BLOCKED.",
   "prohibitions": [
     "no new PR merge",
     "no real Square/production/data",
@@ -120,5 +119,114 @@
     "deadline_unchanged": true,
     "claude_starts": 0,
     "claude_remaining": 8
+  },
+  "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
+  "reviews": [
+    {
+      "state": "RETURNED",
+      "started_at": "2026-09-12T14:50:24.260563+00:00",
+      "head_sha": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+      "snapshot_sha256": "a21cfe89e97fe319a01ef258499611889c8132789a8e66129a6466847d88b4e6",
+      "cumulative_cli_start": 1,
+      "verdict": "REVIEW_PASS_WITH_TWO_LOW_AND_LIMITATIONS",
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646674330"
+    }
+  ],
+  "working_record": "Progress-only post-head update; source code remains reviewed commit, final JSON also posted to PR.",
+  "followup": "docs/execution/FLOW_DEV_REVIEW_FOLLOWUP.md",
+  "corrected_local_verification": {
+    "at": "2026-09-12T15:14:22.979203+00:00",
+    "exit_code": 0,
+    "commands": 28,
+    "payment_cases": 23,
+    "UI_cases": 5,
+    "record": "docs/execution/evidence/flow-dev/review-1-followup/corrected-verify-commands.json"
+  },
+  "previous_head_sha": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+  "previous_ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34700107256,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34700107256",
+    "event": "pull_request",
+    "head_sha": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+    "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "conclusion": "success",
+    "checked_out_sha": "451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "checked_out_kind": "PR_MERGE",
+    "checked_out_merge_sha": "451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "integration_candidate_sha": "451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "integration_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "1e54db6c23312984db2f86ccb267a1bc49dde8ba"
+    ],
+    "merge_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "1e54db6c23312984db2f86ccb267a1bc49dde8ba"
+    ],
+    "merge_tree_sha": "6845918d548afdf5a8d2f1b741927e4b6c21905d",
+    "head_tree_sha": "6845918d548afdf5a8d2f1b741927e4b6c21905d",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "artifact_digest": "sha256:4035bb551fd43a0050af12a3994cb296e5a7d0cba938408a9aa84f05546c0134"
   }
 }

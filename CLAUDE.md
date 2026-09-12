@@ -15,6 +15,11 @@ than2026-09-12T18:37:21Z; all-run active time max24h. Never reset on reread/retr
 End at Draft PR9. No main merge/push, production, extra billing/privilege, real data,
 new service or PR3/Runner activation. Do not weaken protected controller/policy.
 
+The owner's same-delegation operational clarification is preserved in
+`docs/execution/AUDIT_AG_OPERATIONS_UPDATE.md`. No ChatGPT handoff, writing access,
+MFA changes or new integration is a prerequisite. Continue approved items directly;
+use AUDIT_AG_STATUS.json as the restart record. Budgets and prohibitions are unchanged.
+
 ## Historical phase instructions (current delegation takes precedence)
 
 

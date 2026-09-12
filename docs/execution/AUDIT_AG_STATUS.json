@@ -22,71 +22,176 @@
     "counting": "Conservatively includes the15minutes of inherited S01 work before adoption",
     "max_model_starts_after_adoption": 8,
     "historical_model_starts": 4,
-    "old_unused_budgets_discarded": true
+    "old_unused_budgets_discarded": true,
+    "elapsed_seconds_at_record": 5132,
+    "remaining_this_run_seconds_at_record": 23668,
+    "remaining_total_seconds_at_record": 81268
   },
   "review_budget": {
     "historical_starts": 4,
-    "after_adoption_starts": 0,
+    "after_adoption_starts": 1,
     "shared_maximum": 8,
     "reserve_final_integration": 1,
-    "old_unused_not_added": true
+    "old_unused_not_added": true,
+    "remaining_starts": 7
   },
   "items": {
     "A": {
-      "state": "TESTED_REVIEW_PENDING",
+      "state": "VERIFIED",
       "evidence": [
         "docs/execution/evidence/audit-ag/abf/manifest.json"
       ],
-      "commits": [],
-      "reviewed": false
+      "commits": [
+        "6b7ec09ca7a994ba1b6d20c5ced32186cbce530a",
+        "8467d11a53f74a7028c9a5d92ef2d3b00600c598"
+      ],
+      "reviewed": true,
+      "dependencies": [],
+      "blocked_reason": null,
+      "next": "independent review",
+      "review_result": "RESOLVED at8467d11; final integration still pending",
+      "counterexample": "abf/before-complete.log: old A/B/F 0/10; final after5.log 23/23",
+      "fix_result": "full local verify and exact-head CI34690468515 attempt1 success"
     },
     "B": {
       "state": "TESTED_REVIEW_PENDING",
       "evidence": [
-        "docs/execution/evidence/audit-ag/abf/manifest.json"
+        "docs/execution/evidence/audit-ag/abf/manifest.json",
+        "docs/execution/evidence/audit-ag/integrated/manifest.json"
       ],
-      "commits": [],
-      "reviewed": false
+      "commits": [
+        "c5f50b7e385b5028fb0996c13dbdb7b6f9baf0e8",
+        "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+        "5bcd435db2245265de8ed6b62852ec82614012b9"
+      ],
+      "reviewed": false,
+      "dependencies": [
+        "A locking protocol"
+      ],
+      "blocked_reason": null,
+      "next": "final integrated review",
+      "review_result": "current route confirmed; MEDIUM B-FAILOPEN-01 corrected, re-review pending",
+      "counterexample": "abf/before-complete.log: old A/B/F 0/10; final after5.log 23/23",
+      "fix_result": "full local verify and exact-head CI34690468515 attempt1 success"
     },
     "C": {
-      "state": "TODO",
-      "evidence": [],
-      "commits": [],
-      "reviewed": false
+      "state": "TESTED_REVIEW_PENDING",
+      "evidence": [
+        "docs/execution/evidence/audit-ag/integrated/manifest.json"
+      ],
+      "commits": [
+        "9936cff8c48d576dca09416fb05c3e96c12482ac"
+      ],
+      "reviewed": false,
+      "dependencies": [
+        "B authorization order"
+      ],
+      "blocked_reason": null,
+      "next": "mixed/full regression then final integrated review",
+      "review_result": "NOT_STARTED",
+      "counterexample": "cd-before.log 0/4; same cases after1 4/4",
+      "fix_result": "targeted eligible expiry;16/16 CD +21 inventory regression"
     },
     "D": {
-      "state": "TODO",
-      "evidence": [],
-      "commits": [],
-      "reviewed": false
+      "state": "TESTED_REVIEW_PENDING",
+      "evidence": [
+        "docs/execution/evidence/audit-ag/integrated/manifest.json"
+      ],
+      "commits": [
+        "9936cff8c48d576dca09416fb05c3e96c12482ac"
+      ],
+      "reviewed": false,
+      "dependencies": [
+        "C targeted reconciliation"
+      ],
+      "blocked_reason": null,
+      "next": "mixed/full regression then final integrated review",
+      "review_result": "NOT_STARTED",
+      "counterexample": "cd-before.log 0/4; same cases after1 4/4",
+      "fix_result": "18/18 CD including both completion/new-HOLD orders; local fullverify26commands passed"
     },
     "E": {
-      "state": "TODO",
-      "evidence": [],
-      "commits": [],
-      "reviewed": false
+      "state": "TESTED_REVIEW_PENDING",
+      "evidence": [
+        "docs/execution/evidence/audit-ag/integrated/manifest.json"
+      ],
+      "commits": [
+        "7f695b2f961707211da796f217473528222208f0",
+        "e30404d530e4e25e80379c679a62de0e412bfdbb"
+      ],
+      "reviewed": false,
+      "dependencies": [
+        "C/D custody and claims"
+      ],
+      "blocked_reason": null,
+      "next": "mixed/full regression then final integrated review",
+      "review_result": "NOT_STARTED",
+      "fix_result": "81independent/243components;82connected+maximum20people60components; transitive date/variant/custody;250 independent oracle cases"
     },
     "F": {
-      "state": "TESTED_REVIEW_PENDING",
+      "state": "VERIFIED",
       "evidence": [
         "docs/execution/evidence/audit-ag/abf/manifest.json"
       ],
-      "commits": [],
-      "reviewed": false
+      "commits": [
+        "19ac3f72e664934153e494e0601a091c5e63d555",
+        "8467d11a53f74a7028c9a5d92ef2d3b00600c598"
+      ],
+      "reviewed": true,
+      "dependencies": [],
+      "blocked_reason": null,
+      "next": "independent review",
+      "review_result": "RESOLVED at8467d11; final integration still pending",
+      "counterexample": "abf/before-complete.log: old A/B/F 0/10; final after5.log 23/23",
+      "fix_result": "full local verify and exact-head CI34690468515 attempt1 success"
     },
     "G": {
-      "state": "TODO",
-      "evidence": [],
-      "commits": [],
-      "reviewed": false
+      "state": "TESTED_REVIEW_PENDING",
+      "evidence": [
+        "docs/execution/evidence/audit-ag/integrated/manifest.json"
+      ],
+      "commits": [
+        "e30404d530e4e25e80379c679a62de0e412bfdbb"
+      ],
+      "reviewed": false,
+      "dependencies": [
+        "E scope and C/D protection"
+      ],
+      "blocked_reason": null,
+      "next": "mixed/full regression then final integrated review",
+      "review_result": "NOT_STARTED",
+      "fix_result": "60->1 component SELECT,510->15 list SQL;90liveHOLD/100quote six-operation mixed HTTP success"
     }
   },
-  "integration": "TODO",
-  "next": "C/D counterexamples and protection reconciliation",
+  "integration": "LOCAL_VERIFIED_CI_AND_INDEPENDENT_REVIEW_PENDING",
+  "next": "push exact candidate, verify CI integration, independent integrated review; address findings within shared budget",
   "prohibitions": [
     "no merge/main push",
     "no production/Square/real data",
     "no privileges/billing change",
     "PR3/Runner remain held"
-  ]
+  ],
+  "operations_update": {
+    "id": 5645624350,
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5645624350",
+    "source_sha256": "0b1f755b864f39b2aec5756b0222b263126bfe0956217427811c17931e665886",
+    "body_sha256": "da5f1a4198d29a61e2249298fe22c59b42eab2aa51deafaa13236ae8b1a21820",
+    "readback_exact": true,
+    "original_unchanged": true,
+    "budget_reset": false
+  },
+  "recorded_at": "2026-09-12T12:02:53.470006+00:00",
+  "last_pushed_head": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+  "progress_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5645537220",
+  "reviews": [
+    {
+      "head": "8467d11a53f74a7028c9a5d92ef2d3b00600c598",
+      "snapshot": "5b2c8614d2dfb55b2b07ddaabcf6b89010a25dc76d90484792c2e291a02b40a3",
+      "verdict": "CHANGES_REQUIRED",
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5645700465",
+      "evidence": "docs/execution/evidence/audit-ag/review-01",
+      "remaining_finding": "B-FAILOPEN-01 mandatory authorizer; implemented, regression passed, re-review pending"
+    }
+  ],
+  "integration_evidence": "docs/execution/evidence/audit-ag/integrated/manifest.json"
 }

@@ -1,0 +1,22 @@
+FAIL C expired unpaid group claim reconciles in ordinary Asset maintenance, audited once ERR_ASSERTION
+{"actual":422,"expected":200}
+    at <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:19:77)
+    at async check (<ZAO_WORKTREE>/tests/stabilization/cd.ts:9:60)
+    at async <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:18:2)
+FAIL C expired group no longer blocks pole reduction without unrelated HOLD command ERR_ASSERTION
+{"actual":422,"expected":200}
+    at <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:21:112)
+    at async check (<ZAO_WORKTREE>/tests/stabilization/cd.ts:9:60)
+    at async <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:21:2)
+FAIL D unreferenced actual receipt/readiness closes Asset and pair witnesses immediately ERR_ASSERTION
+{"actual":false,"expected":true}
+    at <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:25:10)
+    at check (<ZAO_WORKTREE>/tests/stabilization/cd.ts:9:66)
+    at <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:24:8)
+FAIL D closed movement permits ordinary maintenance/quantity without next transfer.add ERR_ASSERTION
+{"actual":422,"expected":200}
+    at <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:27:115)
+    at async check (<ZAO_WORKTREE>/tests/stabilization/cd.ts:9:60)
+    at async <anonymous> (<ZAO_WORKTREE>/tests/stabilization/cd.ts:27:2)
+C/D ordinary authentication/API/real PostgreSQL: 0 passed; 4 failed;0 skipped.
+Owned C/D Web/browser/PostgreSQL stopped.

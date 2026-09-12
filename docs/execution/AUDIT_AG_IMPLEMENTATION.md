@@ -66,3 +66,94 @@ claims and immutable quote; simultaneous migrators and unchanged DB grants verif
 Independent review and whole A–G integration are pending at this checkpoint.
 
 A/B/F integration checkpoint: full `npm run verify` passed at local evidence2026-09-12T11-09-49.855Z. All commands exit0, no skipped cases. Migration count expectations were updated to the registered plan; no applied migration content changed.
+
+
+## C/D: targeted protection lifecycle
+
+The ordinary ledger status/quantity path invokes a separate reconciliation transaction
+using the existing transfer role, after early current inventory permission/store/version
+checks. It acquires the existing inventory lock and shared actor key, checks the actual
+server session again, and expires only eligible unpaid provisional groups touching the
+requested resource. It excludes physical IN_TRANSIT/RECEIVED/READY witnesses. Payment
+PENDING/UNKNOWN/SUCCESS, preparation/rental allocation stages and live leases are not
+released. It then closes unreferenced, issue-free READY projections touching that resource.
+The following ledger transaction re-locks and re-authorizes; the two connections/transactions
+are **not** one atomic write. An intervening valid HOLD is refused by the unchanged stock
+guard, while completed reconciliation itself remains durable and audited. No grant changes,
+new endpoint, customer return or background worker.
+
+READY without active dependent claims now closes in the actual ready operation, and target
+ledger reconciliation handles previously completed projections. Explicit cancellation or
+ordinary eligible HOLD expiry continues to leave dispatched physical movements/history in
+place, as required by the existing E07 contract. Closing never changes receipt quantities,
+location facts, idempotency keys or history. Source/destination slices leave the virtual
+projection exactly once. A CLOSED physical movement still blocks reuse on its transport day
+inside period matching; closing must not create an after17:00 same-day continuation loophole.
+
+CD baseline: 0/4, identical cases after initial fix4/4. Expanded tests cover unpaid expiry,
+all protected payment/allocation states, both inventory-lock race orders, partial receipt,
+issue retention, referenced READY, explicit cancel/cleanup, replay, future physical stock,
+same-day continuation rejection, and both completion/new-HOLD lock orders. Old E07 tests
+which expected unreferenced READY now assert CLOSED strictly, not either state; readiness UI
+counts CLOSED as prepared. These are lifecycle corrections, not weaker stock expectations.
+
+## E: dependency scope and capacity proof
+
+Read at most10001 live promise metadata rows; if more than10000 exist return INDETERMINATE,
+never silently discard rows. Follow a conservative **transitive group closure**: a shared
+variant plus intersecting inclusive custody intervals connects whole groups (including their
+other components). Cross-store return intervals extend to9999-12-31, preserving custody
+fences. Store is not used to sever graph edges. Initial day/variant filtering alone is unsafe.
+After closure, read full conditions only for connected groups. Connected mutable requirements
+retain the240 bound; the old whole-repository80 bound is removed. Non-replanned live claims,
+including outside the closure, are kept as fixed witnesses for all relevant physical/pole units.
+Transfer and maintenance rows are filtered by relevant immutable variant/resource identities,
+not by guessing that an unrelated date implies unrelated custody. Constraints and projection
+quantities remain active in both real and diagnostic matching.
+
+Remaining explicit guards:10000 live metadata rows,1000000 dependency-edge inspections,
+240 connected mutable+candidate requirements,3000 physical/virtual units and relevant transfer
+pieces,10000 relevant constraints,100000 relevant fixed daily claims,100000 matching visits;
+existing database lock/statement timeouts. Hitting a guard returns INDETERMINATE, not a success
+or sold-out claim. No higher global cap is claimed as the underlying fix.
+
+At interval starts, capacitated bipartite Hall checks prove obvious insufficiency before
+period backtracking (9 units/10 simultaneous people). Residual free capacity precedes
+augmenting chains. A successful per-day matching alone never proves a continuous Asset:
+the bounded backtracking still chooses one unit for the entire interval. Fixed placements,
+quantity capacity and all-group atomic writes remain. Independent exhaustive enumeration of
+250 deterministic small cases checks equivalence, including fixed capacity. Real PostgreSQL
+covers81 independent groups/243 components,81 connected single-unit promises, simultaneous
+independent demands, transitive variant+date chains and cross-store future custody.
+
+## G: bounded repeatable reads and mixed HTTP operations
+
+Variant validation reads the union of IDs once, then verifies every member/item against the
+map: family, age, tier and presence are still individually enforced. Quote get/list share a
+batch view that validates current request principal/store scope, each owner and snapshot hash,
+then reads referenced holds and transfer-attention together. All state remains inside the
+existing repeatable-read transaction for lists; no cross-request/user cache. Later requests
+revalidate the actual session/current permission revision as before. No price/snapshot rewrite.
+
+Real-PG before/after:60 component validation SELECTs→1 (total71→12 at the injected-clock
+service boundary);100 quotes sharing valid HOLD:510→15 total SQL statements. Normal-runtime
+clock queries add their own statement; this is not a claim of identical counts for HTTP/auth.
+The mixed HTTP test uses normal synthetic password sessions,300 combined ski/board Assets,
+300 boot Assets,150 pole pairs,90 live one-person DAY HOLDs/270 components and100 saved quotes.
+It runs6 operation families concurrently over8 batches and records operation-specific raw
+latencies, errors, timeouts and INDETERMINATE. HOLD-create-plus-quote is two HTTP requests per
+measured invocation. Setup requests are excluded. Actual dispatch/receive/readiness are
+separately recorded. Mobile390px is a viewport simulation, not a physical phone test.
+Historical E09 preview-only Mac~100ms/CI~237ms values remain preview-only; neither those nor
+this synthetic loopback test guarantees production performance.
+
+## Independent checkpoint01 and remaining integration
+
+Claude at8467d11 independently confirmed A/F and the current B normal route, but reported
+MEDIUM B-FAILOPEN-01: an optional authorizeWrite could be accidentally omitted. A failing
+configuration test was added before correction. LedgerService now requires the function at
+type level and fails closed at runtime before DB access if omitted/invalid. All fixture-only
+callers explicitly name their no-op boundary; the only apps caller uses verifyLedgerWrite.
+No ordinary-path principal/header/env bypass was introduced. The shared review count is1/8,
+old E09 actual4 retained separately. C/D/E/G and this correction still require independent
+integrated confirmation. The prior scoped review is not a new-head PASS.

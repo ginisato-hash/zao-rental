@@ -13,7 +13,7 @@ test('period search with Hall pruning agrees with independent exhaustive enumera
  for(let caseId=0;caseId<250;caseId++){const cap=new Map(units.map(u=>[u,1+rnd(2)]));const fixed:Placement[]=rnd(2)?[{key:'fixed',unit:units[rnd(3)]!,start:date(1),end:date(1)}]:[];const demands:Demand[]=Array.from({length:1+rnd(5)},(_,i)=>{const start=rnd(3);return {key:'p'+i,start:date(start),end:date(start+rnd(3-start)),candidates:units.filter(()=>rnd(3)!==0)};});
   function brute(i:number,placed:Placement[]):boolean{if(i===demands.length)return true;const d=demands[i]!;for(const unit of d.candidates){const p:Placement={key:d.key,unit,start:d.start,end:d.end};const next=[...placed,p];let valid=true;for(let day=0;day<3;day++)if(next.filter(x=>x.unit===unit&&x.start<=date(day)&&x.end>=date(day)).length>cap.get(unit)!)valid=false;if(valid&&brute(i+1,next))return true;}return false;}
   const expected=brute(0,fixed),actual=matchPeriods(demands,cap,fixed);assert.equal(actual!==null,expected,'case '+caseId);
-  if(actual)for(const d of demands){const p=actual.find(x=>x.key===d.key)!;assert.ok(d.candidates.includes(p.unit));assert.equal(p.start,d.start);assert.equal(p.end,d.end);}
+  if(actual)for(const d of demands){const p:Placement=actual.find(x=>x.key===d.key)!;assert.ok(d.candidates.includes(p.unit));assert.equal(p.start,d.start);assert.equal(p.end,d.end);}
  }
 });
 test('per-day feasibility cannot replace continuous-Asset witness and explicit search limit stays indeterminate',()=>{

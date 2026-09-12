@@ -1,3 +1,8 @@
+> Historical original audit/reproduction record. Current owner delegation and item status are
+> [AUDIT_AG_DELEGATION.md](AUDIT_AG_DELEGATION.md), [AUDIT_AG_OPERATIONS_UPDATE.md](AUDIT_AG_OPERATIONS_UPDATE.md),
+> and [AUDIT_AG_STATUS.json](AUDIT_AG_STATUS.json). Findings, old budgets and stop gates below
+> describe their original head; do not apply them as current authority or overwrite the evidence.
+
 # E09 audit followup — two corrections, seven open tracking items
 
 Authority: owner followup plus renewed four-hour window. Start2026-09-12T07:02:10.709598Z

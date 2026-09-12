@@ -36,7 +36,10 @@
     "test:recommendation-audit": "node --import tsx tests/recommendation/audit-followup-ui.ts",
     "test:recommendation-continuation": "node --import tsx tests/recommendation/continuation-ui.ts",
     "test:stabilization-s01": "node --import tsx tests/stabilization/s01.ts",
-    "test:stabilization-upgrade": "node --import tsx tests/stabilization/upgrade.ts"
+    "test:stabilization-upgrade": "node --import tsx tests/stabilization/upgrade.ts",
+    "test:stabilization-cd": "node --import tsx tests/stabilization/cd.ts",
+    "test:stabilization-eg": "node --import tsx tests/stabilization/eg.ts",
+    "test:stabilization-mixed": "node --import tsx tests/stabilization/mixed.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

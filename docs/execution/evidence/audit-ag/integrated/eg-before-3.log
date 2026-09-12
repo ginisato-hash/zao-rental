@@ -1,0 +1,14 @@
+FAIL E nine identical board units for ten same-day people is INSUFFICIENT, not search exhaustion INDETERMINATE
+FAIL E 81 independent live groups / 243 components do not cap a disjoint request ERR_ASSERTION
+{"actual":"INDETERMINATE","expected":"CREATED"}
+FAIL E same candidate units on disjoint days preserve every original claim/TTL under concurrent new requests ERR_ASSERTION
+{"actual":false,"expected":true}
+MEASURE variant-validation {"people":20,"components":60,"allQueries":71,"variantQueries":60}
+FAIL G maximum group quote validates all 60 component selections with one variant query ERR_ASSERTION
+{"actual":60,"expected":1}
+MEASURE quote-list {"quotes":100,"queries":510}
+FAIL G 100 quote listing has bounded SQL with owner/store, immutable hash, HOLD validity ERR_ASSERTION
+{"actual":false,"expected":true}
+PASS G batched selection preserves family, age/tier, missing variant and owner rejection
+E/G real PostgreSQL: 1 passed; 5 failed; 0 skipped.
+Owned E/G PostgreSQL stopped.

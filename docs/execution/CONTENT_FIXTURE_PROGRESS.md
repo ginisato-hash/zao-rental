@@ -54,8 +54,9 @@ pad bits/whitespace/missing padding and >10MiB stay rejected. Normal authenticat
 HTTP9MiB reaches manifest mismatch409 with no write, not generic500; this is a
 transport test, not a real10MiB photo decode claim.
 
-CI34713516439/attempt1 failed the final expect while47 resumed sequential photo
-operations were still in progress. Every photo response is now individually
+CI34713516439/attempt1 failed at the final expect after resuming47 sequential photo
+operations. The sanitized log identifies the assertion position, but does not prove
+whether its timeout or a preceding rejected operation caused the missing text. Every photo response is now individually
 verified with the existing per-operation timeout, then the final status is checked.
 No timeout/size/count expansion, retry or skip. Local9UI cases passed, preserving
 50real decodes of small synthetic PNGs and ownership cleanup. Final new-head CI

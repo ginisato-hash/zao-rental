@@ -32,7 +32,7 @@
     "attempt": 1,
     "conclusion": "failure",
     "checkout": "fd8d06fabb8bfe2ca0af85db7a394f5c29e84f62",
-    "failure": "batch final expect during47 sequentialuploads; changed test to verify every explicitresponse with unchanged peroperation timeout; no skipped photo/retry/limit increase"
+    "failure": "final expect after47 sequential upload path; original sanitized log does not prove timeout versus preceding rejection. New test verifies each200 independently with unchanged peroperation timeout; no retry/limit increase."
   },
   "scope": "base64 unit transport boundary, not actual10MiBimage decode; normalHTTP9MiB reaches missingmanifest409 instead of500.50smallsyntheticPNGactualdecoders+UIpassed",
   "at": "2026-09-12T19:28:49.202237+00:00"

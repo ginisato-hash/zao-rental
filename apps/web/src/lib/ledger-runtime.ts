@@ -2,6 +2,7 @@ import 'server-only';
 import {ledgerHandler} from './ledger-http';
 import {getRuntime,staffState,publicStamp} from './staff-runtime';
 import {LedgerService} from '../../../../packages/core/src/catalog/ledger-service';
+import {reconcileLedgerProtection} from '../../../../packages/core/src/catalog/reconcile-protection';
 import {verifyLedgerWrite} from '../../../../packages/auth/src/ledger-write-authority';
 import {ledgerPrincipal} from '../../../../packages/auth/src/staff-auth';
 import {LedgerError} from '../../../../packages/contracts/src/ledger';
@@ -21,7 +22,7 @@ export async function handleLedger(request:Request){
  },principal=>{
   if(!runtime)throw new LedgerError('STORAGE_NOT_CONNECTED',503);
   if(!identity||identity.subject!==principal.subject)throw new LedgerError('FORBIDDEN',403);
-  const verified=identity;return new LedgerService(runtime.ledgerPool,principal,(client,stores,global)=>verifyLedgerWrite(client,runtime.authPool,verified,stores,global));
+  const verified=identity;return new LedgerService(runtime.ledgerPool,principal,(client,stores,global)=>verifyLedgerWrite(client,runtime.authPool,verified,stores,global),(resource,id,version)=>reconcileLedgerProtection(runtime.transferPool,runtime.authPool,verified,resource,id,version));
  },runtime?.config.origin);
  const response=await handler(request);
  if(response.status===404&&/^\/api\/ledger\/(assets|poles)\/[a-f0-9-]{36}$/.test(new URL(request.url).pathname))return Response.json({error:'FORBIDDEN'},{status:403,headers:{'Cache-Control':'private, no-store','Vary':'Cookie'}});

@@ -98,6 +98,9 @@ export class HoldService {
   const constraints=(await c.query<{asset_id:string|null;pole_id:string|null;kind:string;start:string;end:string}>(`SELECT asset_id,pole_id,kind,starts_on::text AS start,ends_on::text AS end FROM inventory_constraints LIMIT 10001`)).rows;
   if(fixedClaims.length>100000||constraints.length>10000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const fixed:Placement[]=[...sourceReservations(transfers),...new Map(fixedClaims.filter(x=>x.pickup_store!==x.return_store||x.end>=requirements.reduce((min,r)=>r.job.c.period.startDate<min?r.job.c.period.startDate:min,'9999-12-31')).map(x=>[x.hold_id+'/'+x.requirement_key,{key:x.hold_id+'/'+x.requirement_key,unit:(x.asset_id??x.transfer_piece_id??x.pole_id)!,start:x.start,end:x.pickup_store===x.return_store?x.end:'9999-12-31'}])).values()];
+  // CLOSED stops virtual projection, not the no-same-day-reuse promise of physical transport.
+  const receivedDay=(await c.query<{id:string;unit:string;day:string}>(`SELECT p.id,coalesce(p.asset_id,p.destination_pole_id) AS unit,b.scheduled_date::text AS day FROM transfer_pieces p JOIN transfer_batches b ON b.id=p.batch_id WHERE p.state='CLOSED' AND coalesce(p.asset_id,p.destination_pole_id)=ANY($1::uuid[]) AND b.scheduled_date BETWEEN $2::date AND $3::date`,[units.map(u=>u.id),jobs.reduce((d,j)=>j.c.period.startDate<d?j.c.period.startDate:d,'9999-12-31'),jobs.reduce((d,j)=>j.c.period.endDate>d?j.c.period.endDate:d,'0001-01-01')])).rows;
+  fixed.push(...receivedDay.map(p=>({key:'received/'+p.id,unit:p.unit,start:p.day,end:p.day})));
   // A second, diagnostic-only match relaxes custody/transfer constraints. It never creates claims.
   // Only report a transfer prerequisite if those constraints actually explain infeasibility.
   const demandsFor=(diagnostic:boolean):Demand[]=>requirements.map(r=>{

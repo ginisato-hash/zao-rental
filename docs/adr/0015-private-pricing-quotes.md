@@ -62,3 +62,9 @@ version/locking/audit/permissions/HOLD tests, plus ordinary built Next UI -> pas
 The UI has no embedded public price table; price metadata comes from the protected API and pricing
 imports in client code are type-only. E08_SCOPE maps implemented and future work; exact-head evidence,
 CI and external static review are attached to the Draft PR. Static reviewers do not execute tests.
+
+E08-01 review correction: quote expiry is the primary unusable status. HOLD-derived reasons are
+computed for an otherwise time-valid quote, so a released/changed HOLD cannot hide EXPIRED. Amounts,
+snapshot hashes, expiry deadlines, refusal behavior and chargeReady=false are unchanged. A real-DB
+regression first failed on the reviewed head (HOLD_EXPIRED_OR_RELEASED vs EXPIRED), then passes with
+this guard. This changes staff-facing diagnosis only, not commercial or payment policy.

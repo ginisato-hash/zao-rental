@@ -6,6 +6,7 @@ import {heldIntake} from './intake-context';
 import type {CandidateContext} from '../../../contracts/src/hold-intake';
 import {expireInventoryHolds} from './expiry';
 import {transferProjection,destinationFeasible,sourceReservations} from '../transfer/projection';
+import {dependencyScope,type ScopeNode} from './dependency-scope';
 import {matchPeriods,type Demand,type Placement} from './period-matching';
 type Conn=Pick<PoolClient,'query'>;
 type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:string;return_store:string;conditions:HoldConditions;expires_at:Date;due_at:Date;state:'ACTIVE'|'EXPIRED'|'RELEASED';payment_state:PaymentBoundary;allocation_stage:string;version:number;transfer_attention:string|null};
@@ -79,23 +80,29 @@ export class HoldService {
  async options(){return this.read(async c=>(await c.query("SELECT v.id,v.family,v.age,v.tier,v.size,m.name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.family,v.size,v.id LIMIT 500")).rows);}
  private async plan(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
   if(new Date(normalizePeriod(conditions.period).dueAt)<=now)throw new HoldError('PERIOD_ENDED');
-  const live=(await c.query<HoldRow>(`SELECT * FROM inventory_holds WHERE state='ACTIVE' AND (expires_at>$1 OR payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR allocation_stage<>'PROVISIONAL') AND ($2::uuid IS NULL OR id<>$2) ORDER BY id LIMIT 81`,[now,ignore])).rows;
-  if(live.length>80)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  const transfers=await transferProjection(c);if(transfers.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  const pinned=(await c.query<{hold_id:string}>(`SELECT DISTINCT cl.hold_id FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.active AND (p.state<>'PLANNED' OR b.issue IS NOT NULL OR b.planned_ready_at<$1)`,[now])).rows.map(r=>r.hold_id);
+  // Bounded metadata scan, not a LIMIT that silently discards existing promises.
+  const nodes=(await c.query<ScopeNode>(`SELECT id,occupancy_start::text AS start,CASE WHEN pickup_store<>return_store THEN '9999-12-31' ELSE occupancy_end::text END AS end,
+   ARRAY(SELECT DISTINCT jsonb_array_elements_text(item->'variantIds') FROM jsonb_array_elements(conditions->'members') member CROSS JOIN LATERAL jsonb_array_elements(member->'items') item) AS variants
+   FROM inventory_holds WHERE state='ACTIVE' AND (expires_at>$1 OR payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR allocation_stage<>'PROVISIONAL') AND ($2::uuid IS NULL OR id<>$2) ORDER BY id LIMIT 10001`,[now,ignore])).rows;
+  if(nodes.length>10000)return {result:'INDETERMINATE',witness:[],replanned:[]};
+  let scope:string[];try{scope=dependencyScope({id:'candidate',start:conditions.period.startDate,end:conditions.pickupStore===conditions.returnStore?conditions.period.endDate:'9999-12-31',variants:conditions.members.flatMap(m=>m.items.flatMap(i=>i.variantIds))},nodes);}catch(e){if(e instanceof HoldError&&e.code==='INDETERMINATE')return {result:'INDETERMINATE',witness:[],replanned:[]};throw e;}
+  const live=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=ANY($1::uuid[]) ORDER BY id',[scope])).rows;
+  const pinned=(await c.query<{hold_id:string}>(`SELECT DISTINCT cl.hold_id FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.active AND cl.hold_id=ANY($2::uuid[]) AND (p.state<>'PLANNED' OR b.issue IS NOT NULL OR b.planned_ready_at<$1)`,[now,scope])).rows.map(r=>r.hold_id);
   const mutable=live.filter(h=>h.due_at>now&&!h.transfer_attention&&!pinned.includes(h.id)&&h.allocation_stage==='PROVISIONAL'&&['NONE','FAILURE'].includes(h.payment_state));
-  const fixedIds=live.filter(h=>!mutable.includes(h)).map(h=>h.id);
+  // All non-replanned live promises remain fixed, including outside the closure.
+  const fixedIds=nodes.filter(h=>!mutable.some(m=>m.id===h.id)).map(h=>h.id);
   const jobs=[...mutable.map(h=>({id:h.id,c:h.conditions})),{id:'candidate',c:conditions}];
   const requirements=jobs.flatMap(j=>j.c.members.flatMap(m=>m.items.map(item=>({...item,age:m.age,tier:m.tier,key:j.id+'/'+m.key+':'+item.family,memberKey:m.key+':'+item.family,job:j}))));
   if(requirements.length>240)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const variantIds=[...new Set(requirements.flatMap(r=>r.variantIds))];
+  const transfers=await transferProjection(c,variantIds);if(transfers.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const variants=(await c.query<{id:string;family:string;age:string;tier:string}>('SELECT id,family,age,tier FROM ledger_variants WHERE id=ANY($1::uuid[])',[variantIds])).rows;
   for(const r of requirements)for(const variantId of r.variantIds){const v=variants.find(v=>v.id===variantId);if(!v||v.family!==r.family||v.age!==r.age||v.tier!==r.tier)throw new HoldError('VARIANT_MISMATCH');}
   const units=(await c.query<Unit>(`SELECT a.id,a.variant_id,a.family,v.age,v.tier,a.store_id,1 AS quantity,a.status FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=ANY($1::uuid[]) UNION ALL SELECT p.id,p.variant_id,p.family,v.age,v.tier,p.store_id,p.quantity,p.status FROM ledger_poles p JOIN ledger_variants v ON v.id=p.variant_id WHERE p.variant_id=ANY($1::uuid[]) ORDER BY id LIMIT 3001`,[variantIds])).rows;
   for(const u of [...units])if(u.family==='POLE'){u.quantity-=transfers.filter(p=>p.destination_pole_id===u.id&&p.state==='READY').length;for(const p of transfers.filter(p=>p.destination_pole_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state)))units.push({...u,id:p.id,quantity:1,transfer_piece_id:p.id,physical_pole_id:u.id});}
   if(units.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  const fixedClaims=(await c.query<Claim>(`SELECT c.transfer_piece_id,c.hold_id,c.requirement_key,c.asset_id,c.pole_id,c.pole_slot,c.day::text,h.occupancy_start::text AS start,h.occupancy_end::text AS end,h.pickup_store,h.return_store FROM inventory_claims c JOIN inventory_holds h ON h.id=c.hold_id WHERE c.active AND h.id=ANY($1::uuid[]) LIMIT 100001`,[fixedIds])).rows;
-  const constraints=(await c.query<{asset_id:string|null;pole_id:string|null;kind:string;start:string;end:string}>(`SELECT asset_id,pole_id,kind,starts_on::text AS start,ends_on::text AS end FROM inventory_constraints LIMIT 10001`)).rows;
+  const fixedClaims=(await c.query<Claim>(`SELECT c.transfer_piece_id,c.hold_id,c.requirement_key,c.asset_id,c.pole_id,c.pole_slot,c.day::text,h.occupancy_start::text AS start,h.occupancy_end::text AS end,h.pickup_store,h.return_store FROM inventory_claims c JOIN inventory_holds h ON h.id=c.hold_id WHERE c.active AND h.id=ANY($1::uuid[]) AND (c.asset_id=ANY($2::uuid[]) OR c.pole_id=ANY($2::uuid[]) OR c.transfer_piece_id=ANY($2::uuid[])) LIMIT 100001`,[fixedIds,units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
+  const constraints=(await c.query<{asset_id:string|null;pole_id:string|null;kind:string;start:string;end:string}>(`SELECT asset_id,pole_id,kind,starts_on::text AS start,ends_on::text AS end FROM inventory_constraints WHERE asset_id=ANY($1::uuid[]) OR pole_id=ANY($1::uuid[]) LIMIT 10001`,[units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   if(fixedClaims.length>100000||constraints.length>10000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const fixed:Placement[]=[...sourceReservations(transfers),...new Map(fixedClaims.filter(x=>x.pickup_store!==x.return_store||x.end>=requirements.reduce((min,r)=>r.job.c.period.startDate<min?r.job.c.period.startDate:min,'9999-12-31')).map(x=>[x.hold_id+'/'+x.requirement_key,{key:x.hold_id+'/'+x.requirement_key,unit:(x.asset_id??x.transfer_piece_id??x.pole_id)!,start:x.start,end:x.pickup_store===x.return_store?x.end:'9999-12-31'}])).values()];
   // CLOSED stops virtual projection, not the no-same-day-reuse promise of physical transport.

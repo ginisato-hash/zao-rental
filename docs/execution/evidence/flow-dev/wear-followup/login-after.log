@@ -1,0 +1,8 @@
+
+> zao-rental@0.1.0 test:flow-restart
+> node --import tsx tests/flow/web-restart.ts
+
+PASS unhydrated login cannot submit credentials; native form transport is POST
+PASS normal login/UI/protected APIs save UNKNOWN after test-provider response loss
+PASS distinct Next PIDs: saved session/booking/attempt/TTL survive; lost ephemeral provider evidence remains UNKNOWN, no replacement attempt or false QR
+Owned restart-test Web/browser/PostgreSQL stopped.

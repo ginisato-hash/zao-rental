@@ -114,7 +114,7 @@
     "physical smartphone camera not verified",
     "E13 full Sandbox milestone not complete"
   ],
-  "next": "Checkpoint CI and static quantity review; continue approved incomplete work without per-phase handoff.",
+  "next": "Exact-head CI and review3; then remaining approved UI/catalog/custody work within unchanged budget.",
   "prohibitions": [
     "no new PR merge",
     "no real Square/production/data",
@@ -124,7 +124,7 @@
   "local_verification": "docs/execution/evidence/flow-dev/local-summary.json",
   "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
   "budget_checkpoint": {
-    "at": "2026-09-12T17:11:15.692814+00:00",
+    "at": "2026-09-12T17:37:23.115343+00:00",
     "claude_starts": 2,
     "remaining": 6,
     "deadline_unchanged": true
@@ -148,7 +148,7 @@
       "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646846388"
     }
   ],
-  "working_record": "Current unreviewed input/recovery checkpoint; final CI/review required for new head.",
+  "working_record": "Quantity pools, saved return batches, transfer UI, login hydration correction and pure content/photo groundwork pass33 local commands; exact-head CI/review pending.",
   "followup": "docs/execution/FLOW_DEV_REVIEW_FOLLOWUP.md",
   "corrected_local_verification": {
     "at": "2026-09-12T15:14:22.979203+00:00",
@@ -253,7 +253,7 @@
   "wear_adoption": {
     "pack_id": "ZAO-WEAR-CATALOG-UX-20260913-V1_2",
     "record": "docs/execution/WEAR_ADOPTION.json",
-    "state": "QUANTITY_FULL_VERIFY_PASSED_REVIEW_PENDING",
+    "state": "QUANTITY_BATCH_UI_FULL_VERIFY_PASSED_REVIEW_PENDING",
     "budget_reset": false,
     "inventory_override": {
       "document": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md",

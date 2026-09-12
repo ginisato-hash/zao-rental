@@ -1,0 +1,12 @@
+
+> zao-rental@0.1.0 test:wear-ui
+> node --import tsx tests/wear/normal-ui.ts
+
+PASS ordinary password UI wear-only -> independent upper/lower -> HOLD/quote -> synthetic booking and isolated payment snapshot
+PASS booking lookup -> real quantity checkout -> partial cross-store return with lost response/reload/same key
+PASS actual wash/dry confirmation remains same-day blocked; ordinary UI displays physical counts without double HOLD
+PASS saved quantity batch survives reload; response loss replays same batch without second receipt
+PASS ordinary quantity transfer UI separates planning, dispatch, actual receipt and ready
+PASS unauthenticated, CSRF, actor spoof and revoked permission cannot change quantities
+WEAR ordinary UI/API/PostgreSQL 6 passed; synthetic staff/password, isolated fake payment; no garment QR, real phone, production or equipment custody.
+Owned wear UI Web/browser/PostgreSQL stopped.

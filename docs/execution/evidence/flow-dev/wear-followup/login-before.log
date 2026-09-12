@@ -1,0 +1,6 @@
+
+> zao-rental@0.1.0 test:flow-restart
+> node --import tsx tests/flow/web-restart.ts
+
+WEB_RESTART_FAILED unhydrated login safety Error; URL/query and credential diagnostics withheld
+Owned restart-test Web/browser/PostgreSQL stopped.

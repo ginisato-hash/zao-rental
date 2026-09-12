@@ -30,7 +30,9 @@
     "test:transfer": "node --import tsx tests/transfer/real-postgres.ts",
     "test:transfers-ui": "node --import tsx tests/transfer/normal-ui.ts",
     "test:pricing": "node --import tsx tests/pricing/real-postgres.ts",
-    "test:quotes-ui": "node --import tsx tests/pricing/normal-ui.ts"
+    "test:quotes-ui": "node --import tsx tests/pricing/normal-ui.ts",
+    "test:recommendation": "node --import tsx tests/recommendation/real-postgres.ts",
+    "test:recommendations-ui": "node --import tsx tests/recommendation/normal-ui.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

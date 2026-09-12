@@ -57,3 +57,12 @@ Static Claude E08 review initial + max two rereviews, existing Team/extra credit
 Current finite deadline is 2026-09-12T03:49:57Z, started 2026-09-11T23:49:57Z; rereading does not extend it.
 No customer publication, tax assumptions, Square, charge, E09+, real data, new services or PR3 adoption.
 E02 stays UNATTENDED_HOLD. Stop only this worktree's owned DB/Web/browser resources.
+
+Latest owner authority: exact-head PR #8 merge verified and recorded as 7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c; supervised E09
+recommendation/selection/group HOLD/quote integration only. Read ADR0016 and E09_SCOPE / E09_PROGRESS.
+The repository is public by the owner's explicit decision for supervisor audit; sanitize all published
+code/spec/test evidence and never include real staff/customer/body data, credentials or other projects.
+This supersedes earlier E08-only scope/deadline, not any business rule or Runner protection. E09 ends
+at a new Draft PR, never merge. Deadline2026-09-12T06:04:53Z from02:04:53Z is unchanged by pauses.
+Claude initial1 + max2 rereviews, existing Team/extra creditsOFF/static tools-disabled route only.
+PR3 remains Draft and Runner UNATTENDED_HOLD; no E10+, Square, production, real data or host changes.

@@ -11,7 +11,7 @@ try {
   console.log(JSON.stringify({ postgres: result.rows[0].version, database: result.rows[0].current_database, user: result.rows[0].current_user, port: db.identity.dbPort }));
   await check('fresh migration and concurrent replay are idempotent', async () => {
     await Promise.all([migrate(db.pool), migrate(db.pool)]);
-    assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM foundation_migrations')).rows[0].n, 6);
+    assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM foundation_migrations')).rows[0].n, 7);
   });
   await check('seed is worktree scoped and repeatable', async () => {
     await seed(db.pool, db.identity.namespace); await seed(db.pool, db.identity.namespace);
@@ -67,7 +67,7 @@ try {
     } finally { observer.release(); }
     await migrate(recovery.pool);
     await migrate(recovery.pool);
-    assert.deepEqual((await recovery.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows, [{ id: '0001' }, { id: '0002' }, { id: '0003' }, { id: '0004' }, { id: '0005' }, { id: '0006' }]);
+    assert.deepEqual((await recovery.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows, [{ id: '0001' }, { id: '0002' }, { id: '0003' }, { id: '0004' }, { id: '0005' }, { id: '0006' }, { id: '0007' }]);
     await seed(recovery.pool, recovery.identity.namespace);
     await recordTelemetry(recovery.pool, randomUUID(), recovery.identity.namespace, 'foundation.probe');
     assert.equal((await recovery.pool.query('SELECT count(*)::int AS n FROM telemetry_events')).rows[0].n, 1);

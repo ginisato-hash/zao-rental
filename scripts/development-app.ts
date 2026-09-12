@@ -12,7 +12,7 @@ export async function startDevelopmentApp(options:{built?:boolean}={}){
   await migrate(db.pool);await seed(db.pool,db.identity.namespace);await assertPortFree(db.identity.webPort);
   roles=await provisionApplicationRoles(db.pool,db.identity);
   const origin=`http://127.0.0.1:${db.identity.webPort}`;
-  const config:DevelopmentRuntime={origin,namespace:db.identity.namespace,authSecret:randomBytes(32).toString('hex'),authDb:roles.authDb,ledgerDb:roles.ledgerDb,holdDb:roles.holdDb,transferDb:roles.transferDb,pricingDb:roles.pricingDb};
+  const config:DevelopmentRuntime={origin,namespace:db.identity.namespace,authSecret:randomBytes(32).toString('hex'),authDb:roles.authDb,ledgerDb:roles.ledgerDb,holdDb:roles.holdDb,transferDb:roles.transferDb,pricingDb:roles.pricingDb,recommendationDb:roles.recommendationDb};
   const env:NodeJS.ProcessEnv={NODE_ENV:options.built?'production':'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config)};
   const args=['node_modules/next/dist/bin/next',options.built?'start':'dev','apps/web',...(options.built?[]:['--webpack']),'--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});

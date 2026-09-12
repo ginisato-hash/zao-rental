@@ -1,0 +1,38 @@
+{
+  "task": "E09",
+  "status": "CANDIDATE_REQUIRING_EXACT_HEAD_CI_AND_STATIC_REVIEW",
+  "base": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+  "runner": "UNATTENDED_HOLD",
+  "pr3": "DRAFT_HELD_NO_ADOPTION",
+  "repository_visibility": "PUBLIC_OWNER_AUTHORIZED_SUPERVISOR_AUDIT",
+  "deadline": "2026-09-12T06:04:53Z",
+  "review_budget": {
+    "initial": 1,
+    "rereviews": 2
+  },
+  "evidence": "Per-head command logs, screenshots, HTTP benchmark, CI and static review on new Draft PR; this source does not preclaim PASS.",
+  "real_body_data": false,
+  "customer_booking_api": false,
+  "charge_ready": false,
+  "production_published": false,
+  "rule_version": "HEIGHT_MINUS_20_WINDOW_15_BOOT_PLUS_1_V1",
+  "pricing_pending_decisions": [
+    "tax",
+    "production date scopes",
+    "production quote TTL",
+    "real coupon policies"
+  ],
+  "pricing_unimplemented": [
+    "redemption and lifetime limits",
+    "price publication approval UI",
+    "booking/payment/AmendmentQuote"
+  ],
+  "next_scope_requires_approval": [
+    "E09 merge",
+    "E10+",
+    "real data",
+    "customer publication",
+    "Square",
+    "production"
+  ]
+}

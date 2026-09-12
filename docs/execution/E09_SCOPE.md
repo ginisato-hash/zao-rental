@@ -1,0 +1,43 @@
+# E09 scope and acceptance mapping
+
+Base 7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c; branch codex/recommendation-e09. TASKS E09 is a preserved proposal, not a live Runner
+queue. This direct owner instruction permits the shared contract/DB/API/UI changes needed to connect
+recommendation with E06/E07/E08; it does not loosen protected Runner paths or complete unrelated E03.
+Read ADR0016 and canonical RECOMMENDATION_ENGINE.md rather than duplicating business rules.
+
+Implemented for synthetic supervised development:
+- strict competition-specific profiles and one versioned size rule;
+- actual complete-set variants + existing period/location/transfer feasibility;
+- anchored recommended/shorter/longer cards, explicit choice/model policy acceptance;
+- saved input/offers/choice, group all-or-nothing HOLD, optimistic amendment, failure retention;
+- durable same-key recovery across HOLD and quote commits, old-response/old-quote rejection;
+- normal email/password staff page /staff/recommendations and /api/recommendations APIs;
+- existing role permissions, scoped owner checks, additive migration and least-privilege app role.
+
+POST /api/recommendations: exact requestKey/input/replaceHoldId, saves an advisory preview only.
+GET /api/recommendations, /options, /UUID: owner-scoped readback/options.
+POST /UUID/select: requestKey + explicit directions/wantAdvance/couponCode/acceptedModelPolicy.
+POST /UUID/resume: empty object; reconciles the saved selection using its original domain keys.
+No browser-supplied amounts, variants, actor, role, reservation completion, transfer, charge or coupon
+consumption are accepted by these new endpoints. Existing domain APIs remain separately protected.
+
+Evidence targets: source price unchanged; independent sizing values; real DB migration from populated
+E08; mixed-sport UI -> ordinary session/API -> real PostgreSQL; duplicate/competing group selection,
+failed/concurrent amendments, domain-response loss, expiry, and forbidden requests; late UI response
+and amount invalidation; 300 combined synthetic equipment units with stated HTTP concurrency/p50/p95.
+Exact pass counts, commands, screenshot/benchmark and CI/reviewer hashes belong to per-head evidence.
+No future feature is skipped and counted as complete.
+
+Unresolved commercial decisions: public model guarantee/equivalent-product policy, pole automatic
+sizing, boot neighboring-size fallback, fitting approval/BSL/DIN, and E08 tax/production dates/TTL/
+real coupon terms. Unimplemented features: customer public booking, real coupon redemption/lifetime
+use limit, commercial price editor/publication approval, booking/payment confirmation, Square,
+checkout/QR/return, real-user and physical-phone validation. Pending operational body-data retention
+and production deployment controls must be approved before real data use. These are not E09 PASS gates.
+
+Review: existing Claude Team, creditsOFF, static supplied documents only, initial1 + max2 rereviews.
+No execution/tools/MCP/hooks/plugins/automatic history or Runner. Manifest, exact SHA, sanitized logs.
+The owner explicitly approved public repository visibility for supervisor audit; only this project's
+sanitized code/specification/synthetic evidence may be published. No credentials, actual body/customer/
+staff information, sales PDFs or other projects. Stop at new Draft PR, never merge or start E10.
+Finite deadline 2026-09-12T06:04:53Z; only owned DB/Web/browser cleanup.

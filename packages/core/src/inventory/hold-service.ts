@@ -136,17 +136,19 @@ export class HoldService {
   const rows=witness.flatMap(w=>normalizePeriod(conditions.period).dates.map(day=>({hold_id:holdId,requirement_key:w.key,asset_id:w.asset,pole_id:w.pole,pole_slot:w.slots[day]??null,transfer_piece_id:w.transferPiece,day})));
   await c.query(`INSERT INTO inventory_claims(hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day) SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day FROM jsonb_to_recordset($1::jsonb) AS x(hold_id uuid,requirement_key text,asset_id uuid,pole_id uuid,pole_slot integer,transfer_piece_id uuid,day date)`,[JSON.stringify(rows)]);
  }
- async command(op:'create'|'amend'|'cancel'|'expire'|'reassign',key:string,input?:unknown,holdId?:string){
+ async command(op:'create'|'amend'|'cancel'|'expire'|'reassign',key:string,input?:unknown,holdId?:string,expectedVersion?:number){
+  if(expectedVersion!==undefined&&(!Number.isInteger(expectedVersion)||expectedVersion<1))throw new HoldError('INVALID_VERSION');
   id(key);if(op!=='create'&&!holdId)throw new HoldError('INVALID_ID');
   let conditions=op==='create'||op==='amend'?parseConditions(input):null;
   let pin:{requirementKey:string;assetId:string}|undefined;
   if(op==='reassign'){if(!input||typeof input!=='object'||Object.keys(input).sort().join(',')!=='assetId,requirementKey')throw new HoldError('INVALID_INPUT');pin=input as typeof pin;if(!pin||typeof pin.requirementKey!=='string'||typeof pin.assetId!=='string')throw new HoldError('INVALID_INPUT');id(pin.assetId);}
-  const fingerprint=createHash('sha256').update(canonical({op,holdId:holdId??null,conditions,pin:pin??null})).digest('hex');
+  const fingerprint=createHash('sha256').update(canonical({op,holdId:holdId??null,conditions,pin:pin??null,...(expectedVersion===undefined?{}:{expectedVersion})})).digest('hex');
   const preflight=async(c:Conn)=>{if(conditions)await this.authorize(c,true,[conditions.pickupStore,conditions.returnStore]);if(holdId){const old=await this.owned(c,holdId,true);if(pin){conditions=old.conditions;if(!conditions.members.some(m=>m.items.some(i=>i.family!=='POLE'&&m.key+':'+i.family===pin!.requirementKey)))throw new HoldError('INVALID_REQUIREMENT');}if(['amend','reassign'].includes(op)&&(old.transfer_attention||(await c.query(`SELECT 1 FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id WHERE cl.hold_id=$1 AND cl.active AND p.state<>'PLANNED' LIMIT 1`,[old.id])).rowCount))throw new HoldError('TRANSFER_ALLOCATION_FIXED',409);if(conditions&&conditions.reservationId!==old.reservation_id)throw new HoldError('IMMUTABLE_RESERVATION');}if(conditions){const r=(await c.query('SELECT owner_id FROM inventory_reservations WHERE id=$1',[conditions.reservationId])).rows[0];if(r&&r.owner_id!==this.principal.subject)throw new HoldError('FORBIDDEN',403);}};
   return this.transaction(true,preflight,async(c,now)=>{
    const previous=(await c.query<{fingerprint:string;result:Outcome}>('SELECT fingerprint,result FROM inventory_requests WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,key])).rows[0];
    if(previous&&previous.fingerprint!==fingerprint)throw new HoldError('IDEMPOTENCY_MISMATCH',409);
    if(previous)return {...previous.result,hold:previous.result.holdId?await this.view(c,await this.owned(c,previous.result.holdId,false),now):null,replayed:true};
+   if(expectedVersion!==undefined&&holdId&&(await this.owned(c,holdId,true)).version!==expectedVersion)throw new HoldError('STALE_HOLD_VERSION',409);
    await expireInventoryHolds(c,now);let outcome:Outcome;
    const old=holdId?await this.owned(c,holdId,true):null;
    if(old&&old.state!=='ACTIVE')outcome={result:old.state,holdId:old.id};

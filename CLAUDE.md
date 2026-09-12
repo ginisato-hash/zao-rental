@@ -69,3 +69,12 @@ no merge/E10/stabilization implementation. Existing review calls initial1+rerevi
 only final rereview1 remains, after both fixes, verification and exact-head CI. Include unresolved
 audit findings, never reuse an old PASS or claim the whole system has zero findings. Existing Team,
 extra creditsOFF, direct static route with no execution/external tools. No new connections/billing.
+
+Latest owner authority: E09-02 limited continuation-contract correction only, from head
+1f336f6aac4df092b36c1c35e9cc1987e2fa53fd. Read E09_CONTINUATION.md, which supersedes
+the prior blanket after-close denial. New finite start 2026-09-12T09:12:44.905388+00:00, deadline
+2026-09-12T13:12:44.905388+00:00 (2026-09-12T22:12:44.905388+09:00 JST). Never extend on reread/retry.
+Prior3 Claude launches retained; at most2 additional static launches (cumulative5),
+second only for necessary corrections from the first. No merge; A-G product repairs
+remain outside scope. Existing Team/creditsOFF/tool-free direct route, PR3 Draft,
+Runner UNATTENDED_HOLD and all previous production/host/service prohibitions remain.

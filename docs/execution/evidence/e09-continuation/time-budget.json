@@ -1,0 +1,7 @@
+{
+  "start_utc": "2026-09-12T09:12:44.905388+00:00",
+  "deadline_utc": "2026-09-12T13:12:44.905388+00:00",
+  "start_jst": "2026-09-12T18:12:44.905388+09:00",
+  "deadline_jst": "2026-09-12T22:12:44.905388+09:00",
+  "scope": "E09-02 limited continuation contract, tests, extra static reviews max2 total5; no merge; A-G tracking only"
+}

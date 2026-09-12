@@ -1,0 +1,12 @@
+✔ same scope continuation has future expiry and preserves all saved conditions/fingerprints (21.131625ms)
+✔ single-member candidate validates full group scope and exact member/version (0.286042ms)
+✔ after-close changed non-size conditions fall back to new intake; future new conditions accepted (0.282917ms)
+✔ expiry, due, fixed/payment/attention and unproven acceptance are never exceptions (0.217542ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 293.768417

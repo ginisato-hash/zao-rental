@@ -1,11 +1,11 @@
 {
   "task": "E09",
-  "status": "AUDIT_FOLLOWUP_DRAFT_WITH_OPEN_FINDINGS",
+  "status": "E09_02_LIMITED_CONTINUATION_FIX_DRAFT_REVIEW_PENDING",
   "base": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
   "runner": "UNATTENDED_HOLD",
   "pr3": "DRAFT_HELD_NO_ADOPTION",
   "repository_visibility": "PUBLIC_OWNER_AUTHORIZED_SUPERVISOR_AUDIT",
-  "deadline": "2026-09-12T11:02:10.709598+00:00",
+  "deadline": "2026-09-12T13:12:44.905388+00:00",
   "review_budget": {
     "initial": 1,
     "rereviews": 2
@@ -60,9 +60,34 @@
       "F HTTP/schema limit mismatch",
       "G repeated quote SQL/mixed load"
     ],
-    "review_calls_already_consumed": 2,
-    "remaining_review_calls": 1,
+    "review_calls_already_consumed": 3,
+    "remaining_review_calls": 0,
     "system_zero_findings": false,
-    "evidence": "E09_AUDIT_FOLLOWUP.md and per-head PR evidence; final CI/review pending until actual records published"
+    "evidence": "E09_AUDIT_FOLLOWUP.md and per-head PR evidence; final CI/review pending until actual records published",
+    "final_review": {
+      "head": "1f336f6aac4df092b36c1c35e9cc1987e2fa53fd",
+      "verdict": "CHANGES_REQUIRED",
+      "finding": "HIGH E09-02; A-G remain open",
+      "record": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5644649889"
+    }
+  },
+  "previous_deadline": "2026-09-12T11:02:10.709598+00:00",
+  "continuation_fix": {
+    "budget": {
+      "start_utc": "2026-09-12T09:12:44.905388+00:00",
+      "deadline_utc": "2026-09-12T13:12:44.905388+00:00",
+      "start_jst": "2026-09-12T18:12:44.905388+09:00",
+      "deadline_jst": "2026-09-12T22:12:44.905388+09:00",
+      "scope": "E09-02 limited continuation contract, tests, extra static reviews max2 total5; no merge; A-G tracking only"
+    },
+    "baseline": "1f336f6aac4df092b36c1c35e9cc1987e2fa53fd",
+    "contract": "E09_CONTINUATION.md",
+    "review_launches_before": 3,
+    "additional_max": 2,
+    "cumulative_max": 5,
+    "scope_only": "E09-02 and necessary regression",
+    "final_ci_review": "per-head PR record pending; no PASS claim",
+    "A_to_G": "OPEN, no product repair",
+    "merge_authorized": false
   }
 }

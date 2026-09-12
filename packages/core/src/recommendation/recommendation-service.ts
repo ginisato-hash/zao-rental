@@ -2,6 +2,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
 import {loadStaff,type StaffPrincipal} from '../../../auth/src/staff-auth';
 import {canonical,HoldError,type HoldConditions} from '../../../contracts/src/hold';
+import {holdScope,type CandidateContext} from '../../../contracts/src/hold-intake';
 import {exact,id,code} from '../../../contracts/src/pricing';
 import {parseRecommendation,buildMembers,sizing,rankCandidates,RECOMMENDATION_RULE,MODEL_POLICY,DIRECTIONS,RecommendationError,type RecommendationInput,type MemberRecommendation,type Direction,type Variant} from '../../../contracts/src/recommendation';
 import {HoldService} from '../inventory/hold-service';
@@ -26,11 +27,13 @@ export class RecommendationService {
   const replacement=replaceHoldId?await this.holds.get(replaceHoldId):null;
   if(replacement&&(replacement.state!=='ACTIVE'||replacement.allocationStage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(replacement.paymentState)))throw new RecommendationError('HOLD_NOT_CHANGEABLE',409);
   const reservationId=replacement?.reservationId??randomUUID(),variants=await this.variants(),offered:MemberRecommendation[]=[];
+  // Full input scope is constructed server-side, separate from the single-person candidate.
+  const scope=holdScope({reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:parsed.members.map(m=>({key:m.key,product:m.sport==='SKI'?'SKI_SET':'SNOWBOARD_SET',age:m.adultAtStart?'ADULT':'KIDS',tier:m.tier,items:(m.sport==='SKI'?['SKI','SKI_BOOT','POLE'] as const:['SNOWBOARD','SNOWBOARD_BOOT'] as const).map(family=>({family,variantIds:[]}))}))});
   let candidateChecks=0;
-  for(const member of parsed.members){const built=buildMembers(member,variants),size=sizing(member),checks:MemberRecommendation['checks']=[],feasible=[];
-   for(const candidate of built.candidates){if(++candidateChecks>120)throw new RecommendationError('INDETERMINATE_CANDIDATE_LIMIT',503);const c:HoldConditions={reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:[candidate.member]};const a=await this.holds.availability(c,replaceHoldId??undefined);checks.push({lengthCm:candidate.lengthCm,result:a.result});if(a.result==='FEASIBLE')feasible.push(candidate);}
+  for(const member of parsed.members){const context:CandidateContext|undefined=replacement?{scope,memberKey:member.key,expectedVersion:replacement.version}:undefined;const built=buildMembers(member,variants),size=sizing(member),checks:MemberRecommendation['checks']=[],feasible=[];
+   for(const candidate of built.candidates){if(++candidateChecks>120)throw new RecommendationError('INDETERMINATE_CANDIDATE_LIMIT',503);const c:HoldConditions={reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:[candidate.member]};const a=await this.holds.availability(c,replaceHoldId??undefined,context);checks.push({lengthCm:candidate.lengthCm,result:a.result});if(a.result==='FEASIBLE')feasible.push(candidate);}
    const candidates=rankCandidates(feasible,size.targetCm);let price:Record<string,unknown>|null=null,priceError:string|null=null;
-   if(candidates.RECOMMENDED){try{price=await this.quotes.preview({conditions:{reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:[candidates.RECOMMENDED.member]},holdId:null,couponCode:null,wantAdvance:false});}catch(e){if(!(e instanceof HoldError)||e.status===403)throw e;priceError=e.code;}}
+   if(candidates.RECOMMENDED){try{price=await this.quotes.preview({conditions:{reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:[candidates.RECOMMENDED.member]},holdId:null,couponCode:null,wantAdvance:false},context&&replaceHoldId?{...context,holdId:replaceHoldId}:undefined);}catch(e){if(!(e instanceof HoldError)||e.status===403)throw e;priceError=e.code;}}
    const reason=built.reason??(feasible.length?checks.some(x=>x.result==='INDETERMINATE')?'INDETERMINATE_SOME_CANDIDATES':null:checks.some(x=>x.result==='INDETERMINATE')?'INDETERMINATE':checks.some(x=>x.result==='TRANSFER_PLAN_REQUIRED')?'TRANSFER_PLAN_REQUIRED':'INSUFFICIENT');
    offered.push({key:member.key,...size,initialLengthCm:candidates.RECOMMENDED?.lengthCm??null,candidates,checks,reason,price,priceError});
   }

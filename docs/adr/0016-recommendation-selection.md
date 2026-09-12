@@ -129,3 +129,16 @@ tabs/spaces and26.5, and exclusion of150/M/150mm; preexisting lowercase variants
 Known A-G findings remain OPEN under E09_AUDIT_FOLLOWUP.md. Their old dependencies are not fixed by
 these two corrections or by a scoped static review. Merge readiness and production readiness are
 separate decisions; both require the outstanding gates, and neither is authorized in this task.
+
+## E09-02 owner clarification — limited live-HOLD continuation
+
+The earlier audit-followup paragraph forbidding every newly-created after-close
+quote is superseded by `docs/execution/E09_CONTINUATION.md`. That document is the
+current single contract for new intake vs verified unchanged-scope600s HOLD work.
+The shared pure decision and DB transfer context are reused by HOLD, recommendation
+and pricing; no duplicated client exemption or new authorization surface. Original
+quote snapshots/leases/occupancy remain unchanged. Full group scope is verified
+separately from one-member candidates; final selected group remains atomic. New
+operations reread server time after lock acquisition and before write. Reservation
+confirmation/payment and post-loan exchange are still separate future boundaries.
+No migration, DB grant, price source or sizing-rule change is needed.

@@ -1,0 +1,131 @@
+{
+  "runId": "2026-09-12T09-31-57.798Z",
+  "commands": [
+    {
+      "command": "npm run check:reference",
+      "exit_code": 0,
+      "start": "2026-09-12T09:31:57.799Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/check-reference.log"
+    },
+    {
+      "command": "npm run check:secrets",
+      "exit_code": 0,
+      "start": "2026-09-12T09:31:57.929Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/check-secrets.log"
+    },
+    {
+      "command": "npm run test:reference",
+      "exit_code": 0,
+      "start": "2026-09-12T09:31:58.103Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-reference.log"
+    },
+    {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "start": "2026-09-12T09:31:58.261Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/lint.log"
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:01.765Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/typecheck.log"
+    },
+    {
+      "command": "npm run test:unit",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:04.495Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-unit.log"
+    },
+    {
+      "command": "npm run test:controller:macos",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:10.397Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-controller-macos.log"
+    },
+    {
+      "command": "npm run test:integration",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:13.928Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-integration.log"
+    },
+    {
+      "command": "npm run test:inventory",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:22.955Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-inventory.log"
+    },
+    {
+      "command": "npm run test:transfer",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:30.527Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-transfer.log"
+    },
+    {
+      "command": "npm run test:pricing",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:32.791Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-pricing.log"
+    },
+    {
+      "command": "npm run test:recommendation",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:35.058Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-recommendation.log"
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:39.329Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/build.log"
+    },
+    {
+      "command": "npm run test:auth",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:48.214Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-auth.log"
+    },
+    {
+      "command": "npm run test:holds-ui",
+      "exit_code": 0,
+      "start": "2026-09-12T09:32:55.591Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-holds-ui.log"
+    },
+    {
+      "command": "npm run test:transfers-ui",
+      "exit_code": 0,
+      "start": "2026-09-12T09:33:00.146Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-transfers-ui.log"
+    },
+    {
+      "command": "npm run test:quotes-ui",
+      "exit_code": 0,
+      "start": "2026-09-12T09:33:04.659Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-quotes-ui.log"
+    },
+    {
+      "command": "npm run test:recommendations-ui",
+      "exit_code": 0,
+      "start": "2026-09-12T09:33:09.606Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-recommendations-ui.log"
+    },
+    {
+      "command": "npm run test:recommendation-audit",
+      "exit_code": 0,
+      "start": "2026-09-12T09:33:16.789Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-recommendation-audit.log"
+    },
+    {
+      "command": "npm run test:recommendation-continuation",
+      "exit_code": 0,
+      "start": "2026-09-12T09:33:22.546Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-recommendation-continuation.log"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exit_code": 0,
+      "start": "2026-09-12T09:33:28.926Z",
+      "log_path": ".local/evidence/2026-09-12T09-31-57.798Z/test-e2e.log"
+    }
+  ]
+}

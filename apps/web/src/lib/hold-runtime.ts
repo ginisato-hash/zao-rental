@@ -1,5 +1,6 @@
 import 'server-only';
 import {getRuntime,staffState,publicStamp} from './staff-runtime';
+import {GROUP_JSON_BYTES,DEFAULT_JSON_BYTES} from '../../../../packages/contracts/src/http-body-limits';
 import {readJson} from './ledger-http';
 import {LedgerError} from '../../../../packages/contracts/src/ledger';
 import {HoldError} from '../../../../packages/contracts/src/hold';
@@ -19,7 +20,8 @@ export async function handleHold(request:Request){
   const service=new HoldService(runtime.holdPool,state.principal);
   if(request.method==='GET')return Response.json(path==='/options'?await service.options():path===''?await service.list():await service.get(path.slice(1)),{headers});
   if(!post)throw new HoldError('METHOD_NOT_ALLOWED',405);
-  const body=await readJson(request);
+  const groupBody=isPreview||path===''||/^\/[a-f0-9-]{36}\/amend$/.test(path);
+  const body=await readJson(request,groupBody?GROUP_JSON_BYTES:DEFAULT_JSON_BYTES);
   if(isPreview)return Response.json(await service.availability(body,preview?.[1]),{headers});
   if(!body||typeof body!=='object'||Array.isArray(body))throw new HoldError('INVALID_INPUT');
   const b=body as Record<string,unknown>;

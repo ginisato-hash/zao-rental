@@ -1,0 +1,6 @@
+
+> zao-rental@0.1.0 test:flow-scope-race
+> node --import tsx tests/flow/scope-race.ts
+
+PASS actual PostgreSQL interleaving: ordinary administrator write holds exclusive actor lock; UNKNOWN fallback waits after old preflight; fresh post-lock store check rejects mutation.
+Owned scope-race PostgreSQL stopped.

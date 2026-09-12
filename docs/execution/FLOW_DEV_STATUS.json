@@ -1,6 +1,6 @@
 {
   "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
-  "authority": "docs/execution/FLOW_DEV_DELEGATION.md; direct owner message",
+  "authority": "docs/execution/FLOW_DEV_DELEGATION.md; direct owner message; FLOW_DEV_CUSTODY_APPROVAL.md",
   "current_run": {
     "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
     "run_id": "ZAO-RENTAL-FLOW-DEV-R1-run01",
@@ -11,7 +11,7 @@
     "max_total_seconds": 86400,
     "prior_run_seconds": 0,
     "max_claude_starts": 8,
-    "claude_starts": 1,
+    "claude_starts": 2,
     "reserve_final_review": 1,
     "prior_delegation_starts": 3,
     "prior_delegation_unused_not_added": true
@@ -31,9 +31,9 @@
     "body_updated_and_readback": true
   },
   "review_budget": {
-    "new_starts": 1,
+    "new_starts": 2,
     "maximum": 8,
-    "remaining": 7,
+    "remaining": 6,
     "reserve_final": 1,
     "previous_AG_starts": 3,
     "historical_E09_starts": 4,
@@ -41,26 +41,36 @@
   },
   "items": {
     "E10": {
-      "state": "CORRECTED_REVIEW_PENDING",
+      "state": "SCOPED_REVIEW_PASS",
       "depends_on": [],
       "tests": [
         "23 real PostgreSQL cases, including actual lock waits and ephemeral provider process loss"
       ],
-      "review": null,
+      "review": {
+        "head": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+        "round": 2,
+        "verdict": "REVIEW_PASS",
+        "new_findings": 0
+      },
       "next": "exact-head CI and independent static review",
       "blocked": [
         "Actual Square transport/Sandbox/external callback and coupon redemption unconnected"
       ]
     },
     "E11": {
-      "state": "TESTED_REVIEW_PENDING",
+      "state": "SCOPED_REVIEW_PASS",
       "depends_on": [
         "E10 core"
       ],
       "tests": [
         "normal UI/API/PostgreSQL5 cases; synthetic group/QR/response-loss/session isolation"
       ],
-      "review": null,
+      "review": {
+        "head": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+        "round": 2,
+        "verdict": "REVIEW_PASS",
+        "new_findings": 0
+      },
       "next": "exact-head CI and independent static review",
       "blocked": [
         "normal runtime UNCONNECTED; private test composition only",
@@ -68,21 +78,21 @@
       ]
     },
     "E12": {
-      "state": "BLOCKED",
+      "state": "PARTIAL_BLOCKED_AUTOREVIEW",
       "depends_on": [
         "E10 commitment"
       ],
       "tests": [
-        "pure return-cycle contract4 cases only; no rental/return DB operation"
+        "Pure cycle contract, QR input4 synthetic frames and explicit management permission UI only; no custody SQL"
       ],
       "review": null,
-      "next": "staff reception, loan cycles and resumable return batches",
+      "next": "QR input tests and exact boundary decision",
       "blocked": [
-        "Automatic approval review rejected custody guard changes and later role/claim write proposal. Neither action executed. No workaround. New custody schema only; no ordinary rental mutation service."
+        "Exact custody guard/SECURITY DEFINER/column grant implementation rejected; no command executed. See FLOW_DEV_EXACT_BOUNDARY.md."
       ]
     },
     "E13": {
-      "state": "PARTIAL_BLOCKED",
+      "state": "IN_PROGRESS",
       "depends_on": [
         "E10",
         "E11",
@@ -92,9 +102,9 @@
         "full regression including A-G passed; development loop to confirmation/QR only"
       ],
       "review": null,
-      "next": "independent review of implemented subset; E12 permission decision required",
+      "next": "Full normal UI/API/DB synthetic loop, final CI and review",
       "blocked": [
-        "Full loop cannot yet reach rental/return mutation; exact permission boundary requires owner decision."
+        "Custody integration awaiting exact automatic-review boundary resolution"
       ]
     }
   },
@@ -104,7 +114,7 @@
     "physical smartphone camera not verified",
     "E13 full Sandbox milestone not complete"
   ],
-  "next": "Commit corrections; obtain exact new-head CI; static review2 (1/8 used;7remaining). E12/E13 remain BLOCKED.",
+  "next": "Adopt wear/catalog v1.2 into existing branch; preserve custody DB exact-boundary blocker.",
   "prohibitions": [
     "no new PR merge",
     "no real Square/production/data",
@@ -114,11 +124,11 @@
   "local_verification": "docs/execution/evidence/flow-dev/local-summary.json",
   "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
   "budget_checkpoint": {
-    "at": "2026-09-12T14:40:25.389113+00:00",
-    "elapsed_this_run_seconds": 4430,
+    "at": "2026-09-12T15:54:23.907315+00:00",
+    "elapsed_this_run_seconds": 8868,
     "deadline_unchanged": true,
-    "claude_starts": 0,
-    "claude_remaining": 8
+    "claude_starts": 2,
+    "claude_remaining": 6
   },
   "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
   "reviews": [
@@ -130,9 +140,16 @@
       "cumulative_cli_start": 1,
       "verdict": "REVIEW_PASS_WITH_TWO_LOW_AND_LIMITATIONS",
       "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646674330"
+    },
+    {
+      "head_sha": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+      "snapshot_sha256": "117ffbfc436eaad3441dfc4711f35fa216dfe4364a280d5d0f97ecdc51f83708",
+      "cumulative_cli_start": 2,
+      "verdict": "REVIEW_PASS",
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646846388"
     }
   ],
-  "working_record": "Progress-only post-head update; source code remains reviewed commit, final JSON also posted to PR.",
+  "working_record": "Current unreviewed input/recovery checkpoint; final CI/review required for new head.",
   "followup": "docs/execution/FLOW_DEV_REVIEW_FOLLOWUP.md",
   "corrected_local_verification": {
     "at": "2026-09-12T15:14:22.979203+00:00",
@@ -228,5 +245,10 @@
     ],
     "artifact_name": "foundation-451ad37e16dd041e7c38e3457ab1651b57f16662",
     "artifact_digest": "sha256:4035bb551fd43a0050af12a3994cb296e5a7d0cba938408a9aa84f05546c0134"
+  },
+  "custody_owner_approval": {
+    "recorded_at": "2026-09-12T15:31:41.344241+00:00",
+    "document": "docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md",
+    "budget_reset": false
   }
 }

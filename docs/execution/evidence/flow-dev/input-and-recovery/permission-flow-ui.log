@@ -1,0 +1,14 @@
+
+> zao-rental@0.1.0 test:flow-ui
+> node --import tsx tests/flow/normal-ui.ts
+
+PASS ordinary ADMIN grants synthetic creator minimum explicit permissions; anonymous/private boundaries stay closed
+PASS administrator form preserves explicit booking permissions and grants/revokes rental choices without role defaults
+OPTIONS_HTTP 200
+PASS normal two-person UI -> recommendations -> explicit choice -> full HOLD/quote -> synthetic contact saved in real DB
+PASS simulated payment response loss -> reload -> same request -> one confirmation/notification and readable opaque QR
+PASS client paid/amount/actor flags, CSRF, foreign quote and real contact cannot create authority
+HTTP_STATUS 200 /api/auth/sign-out
+PASS logout/relogin reloads same DB confirmation; different unprivileged account sees no previous cache
+FLOW ordinary UI/API/PostgreSQL: 6 passed, 0 skipped. Test-only payment composition. Canvas QR decoded, no real phone/camera. Rental/return writes blocked, not tested.
+Owned FLOW Web, browser, PostgreSQL stopped.

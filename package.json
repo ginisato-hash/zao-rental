@@ -41,7 +41,10 @@
     "test:stabilization-eg": "node --import tsx tests/stabilization/eg.ts",
     "test:stabilization-mixed": "node --import tsx tests/stabilization/mixed.ts",
     "test:flow-payment": "node --import tsx tests/flow/payment.ts",
-    "test:flow-ui": "node --import tsx tests/flow/normal-ui.ts"
+    "test:flow-ui": "node --import tsx tests/flow/normal-ui.ts",
+    "test:asset-reader": "node --import tsx tests/flow/asset-reader-ui.ts",
+    "test:flow-restart": "node --import tsx tests/flow/web-restart.ts",
+    "test:flow-scope-race": "node --import tsx tests/flow/scope-race.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

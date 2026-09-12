@@ -1,3 +1,7 @@
+Current bounded owner approval: read docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md.
+The dedicated development custody DB/UI boundary in that document is approved; other
+privilege expansion remains prohibited. Historical rejection records remain unchanged.
+
 ## Current supervised development-flow delegation
 
 Read docs/execution/FLOW_DEV_DELEGATION.md and FLOW_DEV_STATUS.json. The direct owner

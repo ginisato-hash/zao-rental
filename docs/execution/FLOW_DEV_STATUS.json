@@ -11,7 +11,7 @@
     "max_total_seconds": 86400,
     "prior_run_seconds": 0,
     "max_claude_starts": 8,
-    "claude_starts": 2,
+    "claude_starts": 3,
     "reserve_final_review": 1,
     "prior_delegation_starts": 3,
     "prior_delegation_unused_not_added": true
@@ -31,9 +31,9 @@
     "body_updated_and_readback": true
   },
   "review_budget": {
-    "new_starts": 2,
+    "new_starts": 3,
     "maximum": 8,
-    "remaining": 6,
+    "remaining": 5,
     "reserve_final": 1,
     "previous_AG_starts": 3,
     "historical_E09_starts": 4,
@@ -114,7 +114,7 @@
     "physical smartphone camera not verified",
     "E13 full Sandbox milestone not complete"
   ],
-  "next": "Exact-head CI and review3; then remaining approved UI/catalog/custody work within unchanged budget.",
+  "next": "Push exact tested checkpoint, CI/review4; continue independent approved CMS fixture work within original budget.",
   "prohibitions": [
     "no new PR merge",
     "no real Square/production/data",
@@ -124,9 +124,9 @@
   "local_verification": "docs/execution/evidence/flow-dev/local-summary.json",
   "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
   "budget_checkpoint": {
-    "at": "2026-09-12T17:37:23.115343+00:00",
-    "claude_starts": 2,
-    "remaining": 6,
+    "at": "2026-09-12T18:20:36.043930+00:00",
+    "claude_starts": 3,
+    "remaining": 5,
     "deadline_unchanged": true
   },
   "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
@@ -148,7 +148,7 @@
       "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646846388"
     }
   ],
-  "working_record": "Quantity pools, saved return batches, transfer UI, login hydration correction and pure content/photo groundwork pass33 local commands; exact-head CI/review pending.",
+  "working_record": "34-command full verification passes; supplemental114unit+10normalUI passes. Mixed200/400physical parts +300boards +90liveHOLD100quotes measured by operation. Review3 price finding corrected; new-head CI/review pending.",
   "followup": "docs/execution/FLOW_DEV_REVIEW_FOLLOWUP.md",
   "corrected_local_verification": {
     "at": "2026-09-12T15:14:22.979203+00:00",
@@ -253,7 +253,7 @@
   "wear_adoption": {
     "pack_id": "ZAO-WEAR-CATALOG-UX-20260913-V1_2",
     "record": "docs/execution/WEAR_ADOPTION.json",
-    "state": "QUANTITY_BATCH_UI_FULL_VERIFY_PASSED_REVIEW_PENDING",
+    "state": "QUANTITY_UI_AND_MIXED_REGRESSIONS_PASSED_REREVIEW_PENDING",
     "budget_reset": false,
     "inventory_override": {
       "document": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md",
@@ -265,5 +265,17 @@
       "budget_reset": false
     },
     "acceptance": "docs/execution/WEAR_ACCEPTANCE_STATUS.json"
-  }
+  },
+  "latest_review": {
+    "round": 3,
+    "head": "0ed175ae9734848fb2eb2f7372c60a4e625ad208",
+    "snapshot_sha256": "b1f47dcfa1cfef2114cb080cf8d3bdd1fc6de6a25bc11a3ae8c5f00b17dcc98c",
+    "verdict": "CHANGES_REQUIRED",
+    "findings": [
+      "WEAR-PRICE-01"
+    ],
+    "comment": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647709920",
+    "remaining_starts": 5
+  },
+  "as_of": "2026-09-12T18:11:28.384896+00:00"
 }

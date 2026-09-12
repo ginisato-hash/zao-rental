@@ -22,3 +22,8 @@ test('all24 explicit approved wear prices and independent bundle golden cases re
  assert.deepEqual(Object.values(WEAR_TABLE.WEAR_SET_ADULT!),adult);assert.deepEqual(Object.values(WEAR_TABLE.WEAR_SET_KIDS!),kids);
  for(const [age,slot,days,total] of [['ADULT','DAY',1,10925],['ADULT','PM',1,7600],['ADULT','MULTIDAY',10,65740],['KIDS','DAY',1,6460]] as const){const g=gear('a');const c=parseConditions({...base,period:{startDate:'2035-02-01',endDate:'2035-02-'+String(days).padStart(2,'0'),slot},members:[{...g,age}]});assert.equal(calculate(INITIAL_TABLE,{conditions:c,holdId:null,couponCode:null,wantAdvance:true},new Date('2035-01-01'),null).totalJpy,total);}
 });
+
+test('explicit Premium day12350 and wear-only4750 golden preserve discount order',()=>{
+ const g=gear('a');const modelPromise={modelId:id(20),season:'2026/27',variantId:id(1)};const c=parseConditions({...base,members:[{...g,tier:'PREMIUM',items:[{...item('SKI',1),modelPromise},...g.items.slice(1)]}]});assert.equal(calculate(INITIAL_TABLE,{conditions:c,holdId:null,couponCode:null,wantAdvance:true},new Date('2035-01-01'),null).totalJpy,12350);
+ const w=parseConditions({...base,members:[wear('a')]});assert.equal(calculate(INITIAL_TABLE,{conditions:w,holdId:null,couponCode:null,wantAdvance:true},new Date('2035-01-01'),null).totalJpy,4750);
+});

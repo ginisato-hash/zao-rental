@@ -1,0 +1,17 @@
+
+> zao-rental@0.1.0 test:wear-ui
+> node --import tsx tests/wear/normal-ui.ts
+
+PASS ordinary password UI wear-only -> independent upper/lower -> HOLD/quote -> synthetic booking and isolated payment snapshot
+PASS booking lookup -> real quantity checkout -> partial cross-store return with lost response/reload/same key
+PASS actual wash/dry confirmation remains same-day blocked; ordinary UI displays physical counts without double HOLD
+PASS saved quantity batch survives reload; response loss replays same batch without second receipt
+PASS ordinary quantity transfer UI separates planning, dispatch, actual receipt and ready
+PASS maximum20-person Premium model+gear+quantity wear normal UI -> group HOLD and40-line quote
+WEAR_UI_FAILED unknown wear receipt without a local pool stays quarantined and is explicitly matched once through normal UI Error
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/wear/normal-ui.ts:58:463)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/wear/normal-ui.ts:15:67)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/wear/normal-ui.ts:55:2)
+PATH /staff/wear
+STATUS 保存済み。返却と再貸出可能性は別の状態です。
+Owned wear UI Web/browser/PostgreSQL stopped.

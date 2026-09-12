@@ -46,7 +46,8 @@
     "test:flow-restart": "node --import tsx tests/flow/web-restart.ts",
     "test:flow-scope-race": "node --import tsx tests/flow/scope-race.ts",
     "test:wear": "node --import tsx tests/wear/real-postgres.ts && node --import tsx tests/wear/group-capacity.ts",
-    "test:wear-ui": "node --import tsx tests/wear/normal-ui.ts"
+    "test:wear-ui": "node --import tsx tests/wear/normal-ui.ts",
+    "test:wear-mixed": "node --import tsx tests/wear/mixed.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

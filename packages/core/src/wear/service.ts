@@ -30,6 +30,25 @@ export class WearService{
  async register(key:string,value:unknown){const v=exact(value,['variantId','store','quantity','reason']);id(v.variantId);const s=store(v.store),q=quantity(v.quantity);return this.tx('INVENTORY_EDIT',[s],key,v,reason(v.reason),async c=>{const p=await this.ensurePool(c,v.variantId as string,s);if(p.total)throw new WearError('POOL_ALREADY_REGISTERED',409);await c.query('UPDATE wear_pools SET ready=$2 WHERE id=$1',[p.id,q]);return this.getPool(c,p.id);});}
  async adjust(key:string,value:unknown){const v=exact(value,['poolId','expectedRevision','ready','reason']);id(v.poolId);revision(v.expectedRevision);if(!Number.isInteger(v.ready)||Number(v.ready)<0||Number(v.ready)>1000)throw new WearError('INVALID_QUANTITY');await this.authorize('INVENTORY_EDIT');const p=await this.getPool(this.pool,v.poolId);return this.tx('INVENTORY_EDIT',[p.store_id],key,v,reason(v.reason),async c=>{const row=await this.getPool(c,p.id);if(row.revision!==v.expectedRevision)throw new WearError('STALE_REVISION',409);await c.query('UPDATE wear_pools SET ready=$2 WHERE id=$1',[p.id,v.ready]);return this.getPool(c,p.id);});}
  async loans(bookingId:string,receivingStore:string){id(bookingId);store(receivingStore);await this.authorize('BOOKING_VIEW');await this.authorize('RENTAL_RETURN',[receivingStore]);return (await this.pool.query<Loan>('SELECT l.*,v.family,v.size,v.age FROM wear_loans l JOIN ledger_variants v ON v.id=l.variant_id WHERE booking_id=$1 ORDER BY member_key,requirement_key',[bookingId])).rows;}
+ async bookingSummary(bookingId:string,receivingStore:string){
+  id(bookingId);store(receivingStore);const p=await this.authorize('BOOKING_VIEW',[receivingStore]);
+  if(!p.permissions.includes('RENTAL_RETURN')&&!p.permissions.includes('RENTAL_CHECKOUT'))throw new WearError('FORBIDDEN',403);
+  const b=(await this.pool.query<{id:string;state:string;version:number;conditions:HoldConditions}>('SELECT id,state,version,conditions FROM rental_bookings WHERE id=$1',[bookingId])).rows[0];if(!b)throw new WearError('BOOKING_NOT_FOUND',404);
+  const canReturn=p.permissions.includes('RENTAL_RETURN'),canCheckout=p.permissions.includes('RENTAL_CHECKOUT')&&b.conditions.pickupStore===receivingStore;
+  if(!canReturn&&!canCheckout)throw new WearError('FORBIDDEN',403);
+  // A scoped recipient may accept a cross-store return without being the creator.
+  // Contact/QR secrets are not returned. Mutation still reloads version and authority.
+  return {id:b.id,state:b.state,version:b.version,pickupStore:b.conditions.pickupStore,returnStore:b.conditions.returnStore,period:b.conditions.period,canReturn,canCheckout};
+ }
+ async returnWorkspace(receivingStore:string){
+  store(receivingStore);await this.authorize('BOOKING_VIEW',[receivingStore]);await this.authorize('RENTAL_RETURN',[receivingStore]);
+  const [variants,unresolved,batches]=await Promise.all([
+   this.pool.query("SELECT id,family,size,age FROM ledger_variants WHERE family IN ('WEAR_JACKET','WEAR_PANTS') ORDER BY family,age,size,id"),
+   this.pool.query("SELECT u.id,u.variant_id,u.store_id,u.quantity,u.received_at,u.reason,v.family,v.size,v.age FROM wear_unresolved_returns u JOIN ledger_variants v ON v.id=u.variant_id WHERE u.store_id=$1 AND u.receipt_id IS NULL ORDER BY u.received_at,u.id LIMIT 100",[receivingStore]),
+   this.pool.query("SELECT id,revision,created_at,jsonb_array_length(items) AS item_count,(SELECT count(*)::int FROM jsonb_array_elements(items) i WHERE i->>'state'='CANDIDATE') AS pending_count FROM wear_return_batches WHERE store_id=$1 ORDER BY created_at DESC,id LIMIT 50",[receivingStore])
+  ]);
+  return {variants:variants.rows,unresolved:unresolved.rows,batches:batches.rows,limits:{unresolved:100,batches:50}};
+ }
  async checkout(key:string,value:unknown){const v=exact(value,['bookingId','expectedBookingVersion','store','reason']);id(v.bookingId);revision(v.expectedBookingVersion);const s=store(v.store);return this.tx('RENTAL_CHECKOUT',[s],key,v,reason(v.reason),async(c,now)=>{
   const b=(await c.query<{id:string;state:string;version:number;conditions:HoldConditions;hold_id:string}>('SELECT id,state,version,conditions,hold_id FROM rental_bookings WHERE id=$1',[v.bookingId])).rows[0];if(!b||b.state!=='CONFIRMED_DEV')throw new WearError('CONFIRMED_DEVELOPMENT_BOOKING_REQUIRED',409);if(b.version!==v.expectedBookingVersion)throw new WearError('STALE_REVISION',409);if(b.conditions.pickupStore!==s)throw new WearError('FORBIDDEN',403);const period=normalizePeriod(b.conditions.period);if(day(now)!==b.conditions.period.startDate||now>=new Date(period.dueAt))throw new WearError('CHECKOUT_PERIOD_INVALID');
   if((await c.query('SELECT 1 FROM wear_loans WHERE booking_id=$1',[b.id])).rowCount)throw new WearError('ALREADY_CHECKED_OUT',409);

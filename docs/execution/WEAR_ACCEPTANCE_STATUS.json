@@ -1,7 +1,7 @@
 {
   "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
   "budget_reset": false,
-  "as_of": "2026-09-12T17:37:23.114527+00:00",
+  "as_of": "2026-09-12T18:20:36.043013+00:00",
   "source_tests": 57,
   "items": [
     {
@@ -28,9 +28,9 @@
     {
       "id": "PRICE-04",
       "title": "Premium1日衣類追加",
-      "state": "PARTIAL",
+      "state": "TESTED_SUBSET_REVIEW_PENDING",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+      "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "PRICE-05",
@@ -70,9 +70,9 @@
     {
       "id": "PRICE-10",
       "title": "板だけ/靴だけ",
-      "state": "PARTIAL",
+      "state": "TESTED_SUBSET_REVIEW_PENDING",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+      "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "PRICE-11",
@@ -161,9 +161,9 @@
     {
       "id": "INV-09",
       "title": "20人最大入力",
-      "state": "PARTIAL",
+      "state": "TESTED_SUBSET_REVIEW_PENDING",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+      "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "INV-10",
@@ -196,16 +196,16 @@
     {
       "id": "UI-02",
       "title": "混在グループ",
-      "state": "PARTIAL",
+      "state": "TESTED_SUBSET_REVIEW_PENDING",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
+      "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "UI-03",
       "title": "料金カード",
-      "state": "NOT_IMPLEMENTED",
+      "state": "TESTED_SUBSET_REVIEW_PENDING",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": null
+      "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "UI-04",
@@ -217,9 +217,9 @@
     {
       "id": "UI-05",
       "title": "写真不足",
-      "state": "NOT_IMPLEMENTED",
+      "state": "TESTED_SUBSET_REVIEW_PENDING",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": null
+      "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "UI-06",
@@ -336,23 +336,23 @@
     {
       "id": "CAT-01",
       "title": "モデル名数量のみ",
-      "state": "NOT_IMPLEMENTED",
+      "state": "PARTIAL",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": null
+      "evidence": "Pure catalog-source/content-bulk/media/release-plan code and synthetic tests; no persistent CMS or full manufacturer catalog"
     },
     {
       "id": "CAT-02",
       "title": "snowboard過去版",
-      "state": "NOT_IMPLEMENTED",
+      "state": "PARTIAL",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": null
+      "evidence": "Pure catalog-source/content-bulk/media/release-plan code and synthetic tests; no persistent CMS or full manufacturer catalog"
     },
     {
       "id": "CAT-03",
       "title": "写真の同一性",
       "state": "PARTIAL",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": "Pure content-bulk/media-plan tests only; no actual catalog/photo DB import or release"
+      "evidence": "Pure catalog-source/content-bulk/media/release-plan code and synthetic tests; no persistent CMS or full manufacturer catalog"
     },
     {
       "id": "CAT-04",
@@ -366,7 +366,7 @@
       "title": "同じ表再取込",
       "state": "PARTIAL",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": "Pure content-bulk/media-plan tests only; no actual catalog/photo DB import or release"
+      "evidence": "Pure catalog-source/content-bulk/media/release-plan code and synthetic tests; no persistent CMS or full manufacturer catalog"
     },
     {
       "id": "CAT-06",
@@ -380,7 +380,7 @@
       "title": "モデル説明共用",
       "state": "PARTIAL",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": "Pure content-bulk/media-plan tests only; no actual catalog/photo DB import or release"
+      "evidence": "Pure catalog-source/content-bulk/media/release-plan code and synthetic tests; no persistent CMS or full manufacturer catalog"
     },
     {
       "id": "CAT-08",
@@ -392,9 +392,9 @@
     {
       "id": "CAT-09",
       "title": "混在負荷",
-      "state": "NOT_IMPLEMENTED",
+      "state": "TESTED_SUBSET_REVIEW_PENDING",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
-      "evidence": null
+      "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "CAT-10",
@@ -407,11 +407,11 @@
   "quantity_override_cases": {
     "1-4": "real-postgres.ts",
     "5": "PASSED group-capacity.ts: same booking two jackets, one Mountain and one Onsen receipt, pants remain",
-    "6": "normal-ui.ts booking-number exact loan resolution plus persisted return batch and reload",
-    "7-12": "real-postgres.ts/group-capacity.ts/normal-ui.ts: quarantine, duplicates, stale candidate, partial batch, care and next-day readiness",
+    "6": "normal-ui.ts: server-verified booking number, exact cycle; saved return batches discoverable after reload",
+    "7-12": "normal-ui.ts/real-postgres.ts: unresolved without local pool, explicit one-time loan match, noREADY addition; duplicate/stale/2terminal receipt and care readiness",
     "13": "real-postgres.ts and normal-ui.ts plan/dispatch/partial actual receipt/ready; no17:10 arrival",
     "14": "real-postgres.ts protected quantity decrement",
-    "15-17": "group-capacity.ts twenty persons,100 requirements,10days,TTL; normal UI20 not yet exercised",
+    "15-17": "group-capacity.ts plus normal-ui.ts: maximum20x5x10days,600gear+400wear claims,40quote lines,TTL/snapshot preserved",
     "18": "real-postgres.ts return Onsen then explicit transfer toMountain",
     "19-20": "normal-ui.ts unfinished pants retained, no extra payment calls"
   },
@@ -424,9 +424,10 @@
     "No real Square/Sandbox, phone, production, invoice, email or deployment"
   ],
   "full_verification": {
-    "record": "docs/execution/evidence/flow-dev/wear-followup/commands.json",
-    "commands": 33,
+    "record": "docs/execution/evidence/flow-dev/wear-review3/commands.json",
+    "commands": 34,
     "exit_code": 0,
-    "review": "PENDING"
+    "review": "Review3 CHANGES_REQUIRED; corrected WEAR-PRICE-01 awaits new-head review",
+    "supplement": "114unit tests +10normal UI tests passed after pure release-plan and third mixed-group case additions; remote final-head CI will run complete34commands"
   }
 }

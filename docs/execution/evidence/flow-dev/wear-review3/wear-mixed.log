@@ -1,0 +1,5 @@
+WEAR_MIXED_FAILED setup AssertionError
+{"actual":409,"expected":201,"operation":"/api/ledger/models"}
+    at post (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/wear/mixed.ts:20:131)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/wear/mixed.ts:23:60)
+Owned wear mixed200 Web/browser/PostgreSQL stopped.

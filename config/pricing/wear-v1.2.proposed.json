@@ -113,11 +113,12 @@
   "rounding": "INTEGER_JPY_DISCOUNT_HALF_UP_THEN_SUBTRACT",
   "wear_single_piece_sale_enabled": false,
   "inventory": {
-    "mode_proposal": "INDIVIDUAL_JACKET_AND_PANTS_ASSETS",
+    "mode_proposal": "STORE_CATEGORY_COMPONENT_SIZE_QUANTITY_POOLS",
     "total_planned_quantity": 200,
     "quantity_unit": "UNCONFIRMED_GARMENTS_OR_SETS",
     "no_same_day_rehire": true,
-    "production_cleaning_turnaround_minutes": null
+    "production_cleaning_turnaround_minutes": null,
+    "owner_override": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md"
   },
   "sources": [
     "research/sources.csv",

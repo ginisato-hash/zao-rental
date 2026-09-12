@@ -16,9 +16,9 @@ There is currently no production apply endpoint or anonymous import route.
 
 Photographs use sharp0.35.4, already present through Next and now an explicit pinned
 dependency. The byte-only function allows JPEG/PNG/WebP,200files,10MiB each,25MP,
-500MiB total, processed sequentially. It rejects path names, duplicate names, extension/
+500MiB total input and output, processed sequentially. It rejects path names, duplicate names, extension/
 decoded-format mismatch, animation and failed decode. A real decoder re-encodes oriented,
-bounded WebP derivatives without preserving metadata. No arbitrary URL fetch or original
+320/640/960/1440/1920 WebP and JPEG derivatives without preserving metadata. No arbitrary URL fetch or original
 public serving. Every binding/season/sport and rights record remains UNVERIFIED/DRAFT_ONLY,
 even when bytes are identical. Original private storage, malware operations, photo rights,
 content release rollback and complete owner-photo workflows are not connected.
@@ -32,3 +32,19 @@ synthetic test buffers do not establish a real model/season or image rights. The
 source index is a portal index, not a complete extracted three-season SKU catalog.
 Neither content nor photo imports generate physical stock. Quantity imports still require
 source/row reconciliation and approved actual counts;200 wear units remain ambiguous.
+
+Manufacturer reconciliation now keeps source document/locator, raw row hash, sport,
+season, SKU, size, quantity unit and ADD/REPLACE uncertainty. Exact candidates remain
+unapproved source matches. Both sports are supported; no three-season coverage is invented.
+These are pure source planners, not a completed database catalog importer.
+
+The runtime wear seed inventory metadata points to quantity pools under the owner override.
+The original source-pack JSON is unchanged; all24wear and216equipment prices are unchanged.
+No garment IDs are created by media or manufacturer import.
+
+Private release planning validates a fixed offer/locale revision set, source translation,
+media checksum/readiness/rights expiry and current commercial mapping. Commit recomputes
+that set and checks expected-current. Restore produces a new manifest and rechecks current
+rights; no old booking or price snapshot changes. Only a pure resulting state/audit/outbox
+is implemented and tested with local synthetic state. No persistent CMS transaction,
+publication authority, DB role or public route exists; this is not complete CMS P0.

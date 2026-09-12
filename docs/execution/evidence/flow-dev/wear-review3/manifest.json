@@ -1,0 +1,912 @@
+{
+  "created_at": "2026-09-12T17:48:52.134057+00:00",
+  "delegation": "ZAO-RENTAL-FLOW-DEV-R1",
+  "scope": "Quantity wear, persistent return batch, transfer UI, login hydration correction and pure content/photo import foundations; partial FLOW-DEV milestone",
+  "round_after_adoption": 3,
+  "cumulative_cli_start": 3,
+  "shared_max": 8,
+  "historical_starts": {
+    "prior_AG": 3,
+    "prior_E09": 4
+  },
+  "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "head_sha": "0ed175ae9734848fb2eb2f7372c60a4e625ad208",
+  "previous_head": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+  "snapshot_sha256": "b1f47dcfa1cfef2114cb080cf8d3bdd1fc6de6a25bc11a3ae8c5f00b17dcc98c",
+  "snapshot_bytes": 823736,
+  "snapshot_characters": 794005,
+  "file_count": 104,
+  "files": [
+    {
+      "path": "apps/web/src/app/api/bookings/[[...record]]/route.ts",
+      "bytes": 593,
+      "sha256": "bbb6abe26a945b656524b4e2712c7d78c9596f0b899f043d5011fe481d1fcb84",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/app/api/wear/[[...record]]/route.ts",
+      "bytes": 366,
+      "sha256": "eae9afe6381eb1ce5233e963f65aaab8367ae1db18dbe9048badce399f0d62f9",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/app/preview/integrated/page.tsx",
+      "bytes": 768,
+      "sha256": "367fc7ade0dec4bbd22cfa48aeda175fe3d3492e1ca154ec0dbf27e1b5ffba20",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/app/staff/wear/page.tsx",
+      "bytes": 594,
+      "sha256": "b6ccc0f3e3695f42288911380ab345583280edbc8445db96b54062800c247856",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/AssetQrInput.tsx",
+      "bytes": 4673,
+      "sha256": "4aac8335f1740a3785da59730c1ec7d4a863a6f869b08f09709c215d8cee0c8b",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/RecommendationWorkspace.tsx",
+      "bytes": 20251,
+      "sha256": "7d39d7ecc42f8e07a57b27d266ce084ac6ca043022688ac3b575f63bb919f0cf",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/StaffLogin.tsx",
+      "bytes": 1976,
+      "sha256": "e5bc622b22c4385ca2b3f4855ea1b7297627e126d0b3fb62df1808f2618953e0",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/StaffManagement.tsx",
+      "bytes": 7677,
+      "sha256": "cc2d0e1e29b15b8ca4c21bde8f4e110545ad6d50d2a05ea9b8e1a430099f0318",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/WearWorkspace.tsx",
+      "bytes": 14449,
+      "sha256": "03889ba0148323e4a7bd265400a91761b910f7a894c7dd2c0ac864c0fab2b95b",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/components/ledger/LedgerWorkspace.tsx",
+      "bytes": 19319,
+      "sha256": "52be7c38747b75cee8511aa31314a549b2fc05281ed41bbff9535dded81688e5",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/booking-http.ts",
+      "bytes": 2994,
+      "sha256": "e1dffb11658db9e639abfcfb8851054b1a100f50ed529433145bc2837bec31d1",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/ledger-http.ts",
+      "bytes": 3263,
+      "sha256": "b3c82d5beb2cb5a625b6843980ab847e495fee4c7ed1e66dd3d850946425cb50",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/recommendation-http.ts",
+      "bytes": 2700,
+      "sha256": "aab945ea39eb7396bff76518f9a48690312640d0b075af2975e84c4a0ef90e57",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "apps/web/src/lib/wear-http.ts",
+      "bytes": 3625,
+      "sha256": "3fb40b01a05704025e4bef61c1aec923b386ddc6039e30472544ee6cf1b51a1c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "config/pricing/wear-v1.2.proposed.json",
+      "bytes": 3818,
+      "sha256": "a96b4a62bb3ff4e62d5d5a495cb832ea07e1331cfe0be9466156692aede86d7c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/RETURN_RULES.md",
+      "bytes": 5228,
+      "sha256": "7ff4d6394c09f372188396f3755297ba43f78e93ecc42c0d6033f69ec2f55f77",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/adr/0020-wear-quantity-development.md",
+      "bytes": 4959,
+      "sha256": "0c9691bf1016390d94b0a7a63317cf3353470cff479916722d9dd25d4a401668",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/adr/0021-content-photo-development-boundaries.md",
+      "bytes": 2378,
+      "sha256": "4b6d01e90ce176023cfe9a4a826892fda6186fd9ffa4a9424273d2c52a8b52a3",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/FLOW_DEV_BLOCKED_PERMISSIONS.md",
+      "bytes": 3683,
+      "sha256": "c81d4c5beddd9465a9ee444ac22cd59c272dbb62e5dbd4350c67c2a2d5534c07",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md",
+      "bytes": 1023,
+      "sha256": "54a066a76bcf826155359bf2ed5d59750552451e7a4e452a2acdc36b398bb8a8",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/FLOW_DEV_EXACT_BOUNDARY.md",
+      "bytes": 3793,
+      "sha256": "5284c6a4109a5df313a2bd49655c9ff7194f6720a179016e316a787fec14e802",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/FLOW_DEV_INPUT_RECOVERY.md",
+      "bytes": 1927,
+      "sha256": "5b7e3ae5d96fc1521775fc7cffc7f1109f1c5108683480657618d47338765974",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/FLOW_DEV_LOGIN_FOLLOWUP.md",
+      "bytes": 1164,
+      "sha256": "d4c37c794ab056d536f18e1644ed5fd7e13061b906349af6f04ab0c1ec43de1f",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/FLOW_DEV_SCOPE.md",
+      "bytes": 2674,
+      "sha256": "ad77420b5e11b21e990d84e3fc897be1a41884fb86f0bb941f69225f49ad5ba5",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/WEAR_ACCEPTANCE_STATUS.json",
+      "bytes": 19787,
+      "sha256": "d8bb0c7b8ea70653fe7bd8029ca1ee0c1f59e552840e8cc725b66baec8d17e2a",
+      "selection": "all case IDs/status, override matrix and gaps; repeated evidence path/title metadata omitted"
+    },
+    {
+      "path": "docs/execution/WEAR_ADOPTION.md",
+      "bytes": 2200,
+      "sha256": "4381a0532f00b4574a37bebaaf7fdca398c91bbdb13512590a18c64b6ca78449",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md",
+      "bytes": 17556,
+      "sha256": "41911b8d169944c803daf59a24d2e43a96a4642a6e2008498ea44d54b0159cf6",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/sources/wear-v1.2/pricing/wear_pricebook_v1_2.proposed.json",
+      "bytes": 3818,
+      "sha256": "a96b4a62bb3ff4e62d5d5a495cb832ea07e1331cfe0be9466156692aede86d7c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "docs/execution/sources/wear-v1.2/verification/golden_prices.json",
+      "bytes": 1174,
+      "sha256": "cba051fe59a5d85e5c5c054b40fdc9d2bc76e6e92f004f1e74f64d7e4d113662",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "package.json",
+      "bytes": 3652,
+      "sha256": "db5ee21dffdc8809cf765c362c42c7fad4b3308ec5dfa8d33df617a54e95ddb2",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/accounts.ts",
+      "bytes": 5786,
+      "sha256": "161c3e6336d5f06de736e38fed9b95c2a504a3cc45e92c2b76f4d866f152c1dc",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/config.ts",
+      "bytes": 1471,
+      "sha256": "a49092841e3102f5b24b7dd2737dfe01c550a8cdffa4df86b326b0aad09f9a4c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/staff-auth.ts",
+      "bytes": 4651,
+      "sha256": "812d2dcf6e9ad48ffb38652b66178f31406739852ff56f7cc629a531c8b456cf",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/auth/src/staff-input.schema.json",
+      "bytes": 4664,
+      "sha256": "18baf3464cbda63faf8ca8c82061e62741d6b566e8135b5da16f085af219c169",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/asset-qr.ts",
+      "bytes": 309,
+      "sha256": "43afaa36335208004731ece6e258a1d8a29217a915059fa85f598bb7e50849ba",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold-input.schema.json",
+      "bytes": 4159,
+      "sha256": "a413287dedff75b5702991cb5eeaca44866d24f342fc6bc26fa035135e624d98",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold-intake.ts",
+      "bytes": 4614,
+      "sha256": "8d8f3181616b2c2c36868cf138bcf69e869e2f5b169f8e0331c31a7bb1d6958b",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "bytes": 8013,
+      "sha256": "69bb59eb37534fadbadb9f94d7a1c2c4ff1f5ed0ee9e26103784f8ecc83931a8",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/http-body-limits.ts",
+      "bytes": 360,
+      "sha256": "7ff4756dd1b537c606fca5a7b7b5a0d613bfea168a48b798aea25b51b6a0a838",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/ledger-input.schema.json",
+      "bytes": 12798,
+      "sha256": "fcc2dff1da4ce4dabe80d72058e788bb16b20c94fb2bc075dfe014f0e773ae19",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "bytes": 4578,
+      "sha256": "939eb8bc5766b2764e952b0ec82a4ced0725f1840fe4af9da733960c69308a7a",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "bytes": 9850,
+      "sha256": "765529b933e7a80522053cc837ea01f8ea37899ee217d9ffd4ac87a0371b0120",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/recommendation-input.schema.json",
+      "bytes": 4971,
+      "sha256": "7cd89c9b5c71bc880a1c5b8e8b4128026376696f1bfc99673859ea079863ab8d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/recommendation.ts",
+      "bytes": 7007,
+      "sha256": "ba1b208c5b72246daa16d3a1c834b14396eb1c2ae7c7967e4b13582eeb95a709",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/rental-flow.ts",
+      "bytes": 3779,
+      "sha256": "a675637bed5ec787c613109fcaff9f9aae385e8b4a21fca492ff092e74935dd4",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/contracts/src/return-cycle.ts",
+      "bytes": 1928,
+      "sha256": "70fcfcfc490ea194209ee631f8d10a4aae1f6878cecd4ce3c94c84a2fcc5a444",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/catalog/ledger-service.ts",
+      "bytes": 8868,
+      "sha256": "e4d4aa73999196b6ce5fbc46d8754a2945e13466b488b20b5ed6ede62eca1d0c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/content/bulk-plan.ts",
+      "bytes": 5807,
+      "sha256": "34cabb2724d5c7813e975d42a90c73217de19b1f3785ab8b01f963f53cebbede",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/content/media-plan.ts",
+      "bytes": 3012,
+      "sha256": "432b2523c29c456bd7b925325cde16d1074e890fac6e0507360baebf84cb75de",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/allocation.ts",
+      "bytes": 12342,
+      "sha256": "60f5e5b1c91fd17d3aeace67a7241ad9c59e531e87d213b4a129214778fb6e64",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/expiry.ts",
+      "bytes": 563,
+      "sha256": "a9375787d5f50e2ea4ad0c16ec5a7979c2fd6db3bea2d205bbb9112f5a763baa",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/hold-service.ts",
+      "bytes": 15271,
+      "sha256": "a6ec54ffb3a0d2b439408ba7daebbbf3f710d0c5e14f592b01bc7c1dacfe66ec",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/intake-context.ts",
+      "bytes": 971,
+      "sha256": "0ce6ec0c858fce5fad1bc9492339a7c296b645d4e808052fce63547c913cdccd",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/inventory/wear-capacity.ts",
+      "bytes": 2679,
+      "sha256": "4b724331f6f3a426158a39c1def9f40b85ff4c0562ec11be98fc16bf9cafa45f",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/payment/booking-service.ts",
+      "bytes": 18393,
+      "sha256": "7ea2b194f0355ba543f2a8ff4028f7aa8c6a21cedeeddd8ee3022c30c7256f40",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/payment/square-boundary.ts",
+      "bytes": 3508,
+      "sha256": "89ac1d70b71ef7169a44385ec3df300199c838671666795a2fc9e8aa442f6063",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/pricing/quote-service.ts",
+      "bytes": 20821,
+      "sha256": "66c56497ff99ace24b7ff7f40a37feebddce11a8ead04bc67c1f14bc8df15596",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/recommendation/recommendation-service.ts",
+      "bytes": 14508,
+      "sha256": "6fdb1c054a372c91159ac88fbde76f9e1be56530c3b752dca990b6199940af71",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/core/src/wear/service.ts",
+      "bytes": 25176,
+      "sha256": "ac68c3b3037bfb801a5922199a5c63d92e0cc7d0a4804244ed5bc672673fd747",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "bytes": 530,
+      "sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "bytes": 14076,
+      "sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "bytes": 7226,
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "bytes": 8294,
+      "sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "bytes": 17126,
+      "sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "bytes": 7743,
+      "sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "bytes": 3459,
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "bytes": 1309,
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0009_development_booking.sql",
+      "bytes": 5827,
+      "sha256": "bdc31ea49660a1edee75fd20dd3c4043090dc0832698f2356f31af219c7f37c0",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0010_rental_custody.sql",
+      "bytes": 8045,
+      "sha256": "6d07a0dca17e428fcc43d332c8f87ffc35557f5dd23d56e474b6a2d3e30b8816",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0012_integrated_wear_catalog.sql",
+      "bytes": 5596,
+      "sha256": "a6076dbf78245744b0394bcf5a4a5ced868d5798080da19b1b581ba40ad9239d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0013_wear_quantity.sql",
+      "bytes": 12391,
+      "sha256": "ec606b57dc1f27e9b015e6c6cad4e4a26fbfc70479d3a3abc50e5ca54ea8817c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/migrations/0014_wear_return_batch.sql",
+      "bytes": 1875,
+      "sha256": "7f19d23b101cc4c795e6cadf6b773e233eb72b3138647d4c0f6953b77c6bd52c",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "bytes": 2832,
+      "sha256": "44d5a24047ccf876fc5edb8a01489605ba575309a536d25c2189b362395bb230",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "packages/db/src/schema.ts",
+      "bytes": 542,
+      "sha256": "85ab193a5c1ff92377009525da2b14684dda63e1769a30247546c98478650e5a",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/application-roles.ts",
+      "bytes": 6559,
+      "sha256": "9cf87c022a344aa680d0bee046da9a8030867d57e9e9f83505684ccc3ac90444",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/flow-roles.ts",
+      "bytes": 2367,
+      "sha256": "3c58b76b445375b7b478468f4c2141b8e390856ba0059f9db64eecd2de0d563e",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "scripts/integration.ts",
+      "bytes": 7182,
+      "sha256": "7a51be95d91b77211f25236393056b0dc3c488eff6c20abbd7b4e9ead4d7c6a1",
+      "selection": "only exact modified regression/expected-list patch below; unrelated previously reviewed test body omitted"
+    },
+    {
+      "path": "scripts/ledger-integration.ts",
+      "bytes": 24199,
+      "sha256": "79059a5500ffbd7e30f68a929dab1bcbbb250b79b517226b2bb96fb096082e84",
+      "selection": "only exact modified regression/expected-list patch below; unrelated previously reviewed test body omitted"
+    },
+    {
+      "path": "scripts/verify.mjs",
+      "bytes": 1814,
+      "sha256": "02f13dab342bfe9c3c1b84fc036252bafe7f46f118fa19d580614b040e4d757b",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow-app/src/app/api/wear/[[...record]]/route.ts",
+      "bytes": 393,
+      "sha256": "3c3c137b4934d66e3fd01c4573a269f5fb10989bafe98f6edd0da333aa4d1d1b",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow-app/src/app/preview/integrated/page.tsx",
+      "bytes": 84,
+      "sha256": "de9abc04bcafee6c1b52c152048a0b1b506072ceae54b1e7784c01bd51a893c5",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow-app/src/app/staff/wear/page.tsx",
+      "bytes": 76,
+      "sha256": "2b438da40b0bd5974f98236ba16798c8034946d4bd93f297b996aa6de2892b11",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow-app/src/app/test-asset-reader/page.tsx",
+      "bytes": 350,
+      "sha256": "18e1f84b4f1d973439ce9976cec71ab7389dadb675d2c1ce6a8ea4e38ccb014f",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/AssetReaderFixture.tsx",
+      "bytes": 626,
+      "sha256": "b104e6a4dbb53a9a24803bac8bdd10619a357551aaa2429753ade272d098650d",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/asset-reader-ui.ts",
+      "bytes": 6342,
+      "sha256": "812de4a5b172d04be3e2c1441277dcd7253e511f2b949afebd4808dba8e027d6",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/fixture.ts",
+      "bytes": 5851,
+      "sha256": "2d55bc387a411a6a742bbd1a02f472b41931d0aaa28bb0b65926ab0645020cd6",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/launcher.ts",
+      "bytes": 3337,
+      "sha256": "9958afe7b8d596d71e0d138a6ae7e2fd365ffa9ef47813ee7282b832aa54d24f",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/normal-ui.ts",
+      "bytes": 13745,
+      "sha256": "0d6605b16d09e34f36c33e539cb04a64bbaf0f03c441eee9ee2d9b0d0d896ce9",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/scope-race.ts",
+      "bytes": 3117,
+      "sha256": "a2c6fefe83cdf7658f9f50449cbea7b00e76dd21f4d98da26b4b684bb8cd2d1f",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/test-runtime.ts",
+      "bytes": 2450,
+      "sha256": "82a1b6c68e3491c1efa83b052ee48897dacc814b42934fb836cb97caa5cc4886",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/flow/web-restart.ts",
+      "bytes": 6436,
+      "sha256": "7c8e1516c362a8fe5a776ce29dda8dd7ce0c020c31989f6c834175eb220d9fd3",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/stabilization/eg.ts",
+      "bytes": 10455,
+      "sha256": "bebc3f3c8d616f363e3525534fd16347596d3882169ff9c8db5fb61566ccdc4b",
+      "selection": "only exact modified regression/expected-list patch below; unrelated previously reviewed test body omitted"
+    },
+    {
+      "path": "tests/stabilization/s01.ts",
+      "bytes": 23569,
+      "sha256": "0b389d41da5e4c5affb2c2c8f908f17fd82841eeacdb7a5dd2a1e8c81e586a0c",
+      "selection": "only exact modified regression/expected-list patch below; unrelated previously reviewed test body omitted"
+    },
+    {
+      "path": "tests/unit/asset-qr.test.ts",
+      "bytes": 489,
+      "sha256": "39eeffe463f1c182c2fb5e634fd1faa6fa9ca7ad63fc388110dac499a8cbbcbe",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/unit/content-bulk.test.ts",
+      "bytes": 2836,
+      "sha256": "34afd38448530fa73ceaefdc07577000aee7f543a8b4707838b6cbce9eb72dc4",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/unit/group-body.test.ts",
+      "bytes": 2995,
+      "sha256": "9552994f31dcb7b35b6327344dbf33d568b9227cedf38a77a293c2f6abd980b5",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/unit/media-plan.test.ts",
+      "bytes": 1794,
+      "sha256": "64255272b17c54f0b63839139559dc00543ef8e1fac56bb276fa5846c4d2dcdc",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/unit/return-cycle.test.ts",
+      "bytes": 2179,
+      "sha256": "fb309254aff37192120463aba7f97a761a0009570896304e3ca72f8a4cf3e793",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/unit/wear-contract.test.ts",
+      "bytes": 4406,
+      "sha256": "e2cd34f9596bcc78840a551071ec73e6257ddded2fa443089d280156d7af8871",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/wear/fixture.ts",
+      "bytes": 2040,
+      "sha256": "718b33838f726514d8e0becd9489d69c0f8086ae17db21a337ffa5de400cdb90",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/wear/group-capacity.ts",
+      "bytes": 11258,
+      "sha256": "58b89662865a6e53532266b61966fad30b61578d5f042ed5790eb72396abd780",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/wear/normal-ui.ts",
+      "bytes": 16051,
+      "sha256": "a69bef3c4bffac4585d1a87dde78f8626409e15363e32452f01cf76cc0f63603",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tests/wear/real-postgres.ts",
+      "bytes": 17215,
+      "sha256": "36bff08ce9554e145938cedd40e5dda6d771dab3233b73d87093c8ae7d45d5c1",
+      "selection": "full numbered file"
+    },
+    {
+      "path": "tools/automation/review-contract.ts",
+      "bytes": 932,
+      "sha256": "f32456b0cb00c80cd2ae9d48afa5d32837cfcf9447b03517723172536cdb55e0",
+      "selection": "full numbered file"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "Exact-head CI correspondence",
+      "bytes": 2754,
+      "sha256": "f4b92d219c2e48225d75a3f618d0a53d49817f9aa043ba05a7928919ba4b7e76"
+    },
+    {
+      "label": "local-verification/commands.json",
+      "bytes": 6817,
+      "sha256": "ebae5de33fee93e2fceb9dc009ac909a26ef7a14a960e5b3401903c7189895b5"
+    },
+    {
+      "label": "local-verification/test-wear.log",
+      "bytes": 1919,
+      "sha256": "878f7b3c71fa6bc1353de6321343d05e4bcaf43c0a4169af8754a9c70cbc45b7"
+    },
+    {
+      "label": "local-verification/test-wear-ui.log",
+      "bytes": 908,
+      "sha256": "ba406204e5ee15f9f202100e9a7249d519231a6b255b4331b970ba6f16eaa1bc"
+    },
+    {
+      "label": "local-verification/test-flow-payment.log",
+      "bytes": 2355,
+      "sha256": "ad9e77c2274284782fa08d116a3ebfb79e7f6c57c7e55b63c4fe4bc652b25928"
+    },
+    {
+      "label": "local-verification/test-flow-ui.log",
+      "bytes": 1020,
+      "sha256": "fcf952a47c36cf91a6831c3dd8111d0dfab4c2fc8320f5dc3cd9c768d42bd0de"
+    },
+    {
+      "label": "local-verification/test-flow-restart.log",
+      "bytes": 451,
+      "sha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e"
+    },
+    {
+      "label": "ci-verification/commands.json",
+      "bytes": 6602,
+      "sha256": "b23be1c43485c8fcb897f9248baac1b4a446e9f3e7c07ea92dd6d82cc6da97f1"
+    },
+    {
+      "label": "ci-verification/test-wear.log",
+      "bytes": 1920,
+      "sha256": "1f32b97fff2fd43c23ed767c6ae00a1845fc6bc7d0badbba70c2063028df7b4b"
+    },
+    {
+      "label": "ci-verification/test-wear-ui.log",
+      "bytes": 908,
+      "sha256": "ba406204e5ee15f9f202100e9a7249d519231a6b255b4331b970ba6f16eaa1bc"
+    },
+    {
+      "label": "ci-verification/test-flow-payment.log",
+      "bytes": 2355,
+      "sha256": "ad9e77c2274284782fa08d116a3ebfb79e7f6c57c7e55b63c4fe4bc652b25928"
+    },
+    {
+      "label": "ci-verification/test-flow-ui.log",
+      "bytes": 1020,
+      "sha256": "fcf952a47c36cf91a6831c3dd8111d0dfab4c2fc8320f5dc3cd9c768d42bd0de"
+    },
+    {
+      "label": "ci-verification/test-flow-restart.log",
+      "bytes": 451,
+      "sha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e"
+    },
+    {
+      "label": "review-02/review.json",
+      "bytes": 13298,
+      "sha256": "e632856fef78055ca4ca142b08ecaf29c79e137bb5e54387f727f22bf233cd30"
+    },
+    {
+      "label": "wear-before-unit.log",
+      "bytes": 4847,
+      "sha256": "ef5c4a4061794eb4c3323d94e79d45d4ed488014cd3a01f40adf06e7439216b6"
+    },
+    {
+      "label": "login-before.log",
+      "bytes": 232,
+      "sha256": "528e59328d25ec8df7656ef5666314783af7cd97c066438daeeb63aac9f54463"
+    },
+    {
+      "label": "login-after.log",
+      "bytes": 451,
+      "sha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e"
+    },
+    {
+      "label": "ci-credential-redaction.json",
+      "bytes": 480,
+      "sha256": "ce9580e498e70dfb69095991667ac999493d0d8dc9838c9fb3852f69606f87e9"
+    },
+    {
+      "label": "Verified unchanged launch contract",
+      "bytes": 751,
+      "sha256": "48b1d7fab709ff31ec7cf82026133b2962df6cc446040c3c8eb6433e8094bcd6"
+    }
+  ],
+  "scan": {
+    "credential_urls": 0,
+    "provider_tokens": 0,
+    "private_keys": 0,
+    "non_synthetic_emails": 0,
+    "session_or_hash_values": 0
+  },
+  "redactions": 0,
+  "instructions_sha256": "983f588db86013f324347bd0c24b530675e1e2522fc767fcf82980ffadfb776a",
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34708790253,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34708790253",
+    "event": "pull_request",
+    "head_sha": "0ed175ae9734848fb2eb2f7372c60a4e625ad208",
+    "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "conclusion": "success",
+    "checked_out_sha": "8f1bd76efa09718c5ad4f6d2db263763846f3b2a",
+    "checked_out_kind": "PR_MERGE",
+    "checked_out_merge_sha": "8f1bd76efa09718c5ad4f6d2db263763846f3b2a",
+    "integration_candidate_sha": "8f1bd76efa09718c5ad4f6d2db263763846f3b2a",
+    "integration_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "0ed175ae9734848fb2eb2f7372c60a4e625ad208"
+    ],
+    "merge_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "0ed175ae9734848fb2eb2f7372c60a4e625ad208"
+    ],
+    "merge_tree_sha": "c44ce2c68c4c79b4bf4d980be59df7f7182978cb",
+    "head_tree_sha": "c44ce2c68c4c79b4bf4d980be59df7f7182978cb",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-8f1bd76efa09718c5ad4f6d2db263763846f3b2a",
+    "artifact_digest": "sha256:5280d53abf629430d23a8ffc62ed53ff75d820c548b35507686f184d47c5f3f9"
+  },
+  "destination": "Anthropic Claude Code existing Team, extraOFF",
+  "uncommitted_work_included": false,
+  "source": "git show fixed HEAD only; uncommitted records are excluded",
+  "excluded_transmission_files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/execution/AUDIT_AG_STATUS.json",
+    "docs/execution/FLOW_DEV_STATUS.json",
+    "docs/execution/SCOPE.md",
+    "docs/execution/WEAR_ADOPTION.json",
+    "docs/execution/evidence/flow-dev/input-and-recovery/asset-reader-ui-07.log",
+    "docs/execution/evidence/flow-dev/input-and-recovery/full-web-restart-03.log",
+    "docs/execution/evidence/flow-dev/input-and-recovery/permission-flow-ui.log",
+    "docs/execution/evidence/flow-dev/input-and-recovery/pre-wear-lint.log",
+    "docs/execution/evidence/flow-dev/input-and-recovery/pre-wear-types.log",
+    "docs/execution/evidence/flow-dev/input-and-recovery/pre-wear-unit.log",
+    "docs/execution/evidence/flow-dev/input-and-recovery/real-scope-race.log",
+    "docs/execution/evidence/flow-dev/review-02/manifest.json",
+    "docs/execution/evidence/flow-dev/review-02/review.json",
+    "docs/execution/evidence/flow-dev/wear-followup/ci-credential-redaction.json",
+    "docs/execution/evidence/flow-dev/wear-followup/commands.json",
+    "docs/execution/evidence/flow-dev/wear-followup/login-after.log",
+    "docs/execution/evidence/flow-dev/wear-followup/login-before.log",
+    "docs/execution/evidence/flow-dev/wear-followup/test-flow-restart.log",
+    "docs/execution/evidence/flow-dev/wear-followup/test-unit.log",
+    "docs/execution/evidence/flow-dev/wear-followup/test-wear-ui.log",
+    "docs/execution/evidence/flow-dev/wear-followup/test-wear.log",
+    "docs/execution/evidence/flow-dev/wear-followup/wear-batch-db.log",
+    "docs/execution/evidence/flow-dev/wear-followup/wear-batch-ui.log",
+    "docs/execution/evidence/flow-dev/wear-followup/wear-return-mobile-width.png",
+    "docs/execution/evidence/flow-dev/wear-followup/wear-selection-mobile-width.png",
+    "docs/execution/evidence/flow-dev/wear-quantity/check-reference.log",
+    "docs/execution/evidence/flow-dev/wear-quantity/check-secrets.log",
+    "docs/execution/evidence/flow-dev/wear-quantity/commands.json",
+    "docs/execution/evidence/flow-dev/wear-quantity/test-unit.log",
+    "docs/execution/evidence/flow-dev/wear-quantity/test-wear-ui.log",
+    "docs/execution/evidence/flow-dev/wear-quantity/test-wear.log",
+    "docs/execution/evidence/flow-dev/wear-quantity/wear-return-mobile-width.png",
+    "docs/execution/evidence/flow-dev/wear-quantity/wear-selection-mobile-width.png",
+    "docs/execution/sources/wear-v1.2/00_START_HERE.md",
+    "docs/execution/sources/wear-v1.2/01_ADOPTION_AND_PRECEDENCE.md",
+    "docs/execution/sources/wear-v1.2/02_WEAR_PRICING_RESEARCH.md",
+    "docs/execution/sources/wear-v1.2/03_WEAR_BOOKING_IMPLEMENTATION.md",
+    "docs/execution/sources/wear-v1.2/04_SNOWBOARD_CATALOG_PHOTOS_ADDENDUM.md",
+    "docs/execution/sources/wear-v1.2/05_CODEX_HANDOFF.md",
+    "docs/execution/sources/wear-v1.2/CODEX_COPY_PASTE.txt",
+    "docs/execution/sources/wear-v1.2/MANIFEST.json",
+    "docs/execution/sources/wear-v1.2/SHA256SUMS.txt",
+    "docs/execution/sources/wear-v1.2/ZAO_Rental_Wear_Pricing_v1_2.xlsx",
+    "docs/execution/sources/wear-v1.2/contracts/acceptance_tests.csv",
+    "docs/execution/sources/wear-v1.2/contracts/acceptance_tests.json",
+    "docs/execution/sources/wear-v1.2/contracts/catalog_coverage.json",
+    "docs/execution/sources/wear-v1.2/contracts/photo_binding_template.csv",
+    "docs/execution/sources/wear-v1.2/contracts/wear_receipt_template.csv",
+    "docs/execution/sources/wear-v1.2/previous/ZAO_Rental_Premium_Catalog_UI_Pack_v1_1.zip",
+    "docs/execution/sources/wear-v1.2/pricing/base_equipment_v0_4_reference.json",
+    "docs/execution/sources/wear-v1.2/pricing/full_set_prices.csv",
+    "docs/execution/sources/wear-v1.2/pricing/wear_prices.csv",
+    "docs/execution/sources/wear-v1.2/reference/Salomon_Catalog_Source_Index_v1_1.json",
+    "docs/execution/sources/wear-v1.2/reference/ZAO_Rental_Premium_Catalog_UI_Plan_v1_1.md",
+    "docs/execution/sources/wear-v1.2/reference/ZAO_Rental_Public_UX_CMS_Spec_v1.md",
+    "docs/execution/sources/wear-v1.2/reference/history/ZAO_Rental_Premium_Catalog_UI_Plan_v1.md",
+    "docs/execution/sources/wear-v1.2/research/rental_comparison.csv",
+    "docs/execution/sources/wear-v1.2/research/sources.csv",
+    "docs/execution/sources/wear-v1.2/research/sources.json",
+    "docs/execution/sources/wear-v1.2/verification/check_reference.py",
+    "docs/execution/sources/wear-v1.2/verification/reference_results.json",
+    "package-lock.json",
+    "docs/execution/evidence/flow-dev/wear-followup/wear-return-mobile-width.png",
+    "docs/execution/evidence/flow-dev/wear-followup/wear-selection-mobile-width.png",
+    "docs/execution/evidence/flow-dev/wear-quantity/wear-return-mobile-width.png",
+    "docs/execution/evidence/flow-dev/wear-quantity/wear-selection-mobile-width.png"
+  ],
+  "excluded_reason": "Explicit manifest list: lock digest, unrelated historical progress/research/raw attachments, redundant test log and screenshot pixels; required source contracts and exact code delta retained",
+  "lock_sha256": "dcccc0877412fe95970923d52c4d6a54d69b44104a0d3dbba524a2d2906a8562"
+}

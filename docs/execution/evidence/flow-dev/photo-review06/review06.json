@@ -1,0 +1,87 @@
+{
+  "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "head_sha": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+  "snapshot_sha256": "401721a7a62d5d03584bae5e3164a4b86dd94f201486159372e7f2dafe554c56",
+  "verdict": "REVIEW_PASS",
+  "findings": [
+    {
+      "id": "CONTENT-PHOTO-FIXTURE-LOCK-BUDGET-01",
+      "severity": "LOW",
+      "file": "tests/content/file-fixture.ts",
+      "line": 17,
+      "condition": "FileFixture.edit() (used by BOTH ContentRepository transactions and, via PhotoFileFixture.transaction, by all photo-job operations for the same namespace) acquires a single namespace-wide exclusive lock by retrying open(path+'.lock','wx') at most 100 times with a fixed 5ms sleep between attempts (~500ms total budget) before throwing a bare Error('FIXTURE_LOCKED'). By design (per the ADR 'a single bounded exclusive adapter gate now covers decode and commit'), photo-job.ts's upload() runs the real sharp decode/re-encode of up to 10 derivatives INSIDE this same lock. Every shipped test (tests/content/normal-ui.ts, tests/unit/photo-job.test.ts) only exercises tiny synthetic 48x64px (or 12x12px) PNGs that decode near-instantly, never approaching the documented 10MiB/25MP bound the code is built to accept, so the 500ms budget is never actually exercised under realistic latency.",
+      "impact": "If a real (non-tiny) photo's sequential decode+10-derivative re-encode legitimately exceeds ~500ms (plausible near the documented 10MiB/25MP limit), any other concurrent request against the SAME namespace's fixture -- a second photo upload, or an unrelated content bulk/release action, since they share one lock file -- fails with FIXTURE_LOCKED instead of waiting longer or backing off. The two callers handle this inconsistently: tests/content/http.ts maps 'FIXTURE_LOCKED' to a clearly retryable 503, but tests/content/photo-http.ts's catch block (a plain Error is not a ContentInputError and 'FIXTURE_LOCKED' is not special-cased there) collapses it into an opaque 'PHOTO_FIXTURE_FAILED' 500. No data corruption results (the item stays PENDING and is safely retryable per the documented resume design), but the failure is surfaced as a harder, non-actionable error than the underlying condition warrants, and this path is completely untested at the scale the feature claims to support.",
+      "evidence": "tests/content/file-fixture.ts:17-18 (`for(let i=0;i<100;i++){try{lock=await open(...,'wx',...);break;}catch(e){...await new Promise(r=>setTimeout(r,5));}} if(!lock)throw new Error('FIXTURE_LOCKED');`); tests/content/photo-http.ts:20 (`}catch(e){const code=e instanceof ContentInputError?e.code:'PHOTO_FIXTURE_FAILED';return Response.json({error:code},{status:...:500,headers});}}` -- no 'FIXTURE_LOCKED' branch) versus tests/content/http.ts's catch which does special-case FIXTURE_LOCKED to 503; docs/adr/0021...md's own text ('sequential real decoding and 10 derivatives... no reservation DB connection... a single bounded exclusive adapter gate now covers decode and commit') confirms the lock-during-decode design intent but never states or tests a latency bound for it; all photo tests use tiny synthetic images per docs/execution/CONTENT_FIXTURE_PROGRESS.md ('50real decodes of small synthetic PNGs').",
+      "fix": "Either (a) raise/parameterize the lock-acquisition retry budget in file-fixture.ts to a value proportional to worst-case decode time for the documented 10MiB/25MP/10-derivative bound (or make it configurable per test/launcher composition), or (b) have photo-http.ts's catch handler special-case the underlying 'FIXTURE_LOCKED' condition the same way tests/content/http.ts does (503, clearly retryable) so a lock-timeout during a legitimately slow decode is distinguishable from a hard failure to the PhotoWorkspace UI/caller.",
+      "test": "Add a test that uploads a photo near the documented size/pixel bound (e.g. close to 10MiB/25MP, not a 48x64 synthetic pixel) while a second concurrent request targets the same namespace's fixture (another upload, or a content bulk-prepare), and assert either the second request completes after waiting or receives a distinguishable retryable status rather than a generic 500/PHOTO_FIXTURE_FAILED."
+    },
+    {
+      "id": "PHOTO-OFFERS-STALE-READ-01",
+      "severity": "LOW",
+      "file": "tests/content/photo-http.ts",
+      "line": 17,
+      "condition": "The '/prepare' action computes `offers` via `Object.keys((await store.file.read()).state.catalog.commercialRevisions)` OUTSIDE of any lock, then passes this snapshot into `service.prepare(...)`, whose own transactional job-creation logic (photo-job.ts prepare()) runs later inside a freshly-acquired exclusive lock and does not re-derive `offers` from that same locked read.",
+      "impact": "If a concurrent content bulk-commit adds or the catalog otherwise changes offer codes between this outer read and the actual locked job-creation, `photoCandidate()` matching inside the transaction uses a stale offer list. This is purely advisory (affects only the informational `candidate`/`issues` fields used for UI hints, never stored rights/inventory/pricing), so it is not an authorization or data-integrity defect, but it is a real TOCTOU inconsistency in a place the code otherwise takes care to re-check state after acquiring locks (e.g. the authority.assert() re-checks documented elsewhere).",
+      "evidence": "tests/content/photo-http.ts:17 (`const offers=Object.keys((await store.file.read()).state.catalog.commercialRevisions);result=await service.prepare(subject,raw.jobId,raw.files,offers);`) versus photo-job.ts's own `prepare()` which performs its actual state mutation only inside `this.store.transaction(async jobs=>{...})` without re-reading offers from that same locked snapshot.",
+      "fix": "Thread the offers lookup into the same locked transaction used for job creation (e.g. have PrivatePhotoJobs.prepare accept a callback that resolves offers from the transactionally-read record) so candidate matching is computed against the exact state the job is persisted against.",
+      "test": "Add a test that changes catalog commercialRevisions (adds/removes an offer code) concurrently between the offers read and photo-job creation, and assert the persisted job's candidate matching reflects one deterministic, documented point-in-time view rather than an unspecified race outcome."
+    }
+  ],
+  "insufficient_evidence": [
+    "This is a static/code-reading review only (tests_executed=false, no tool execution permitted for this round). Correctness of the shipped CI/local-verification logs as an authoritative record of this exact head's runtime behavior (including the 9 passing content-fixture UI cases and 125 passing unit tests) is accepted as supplied evidence and cross-checked for internal consistency with the source, not independently re-executed or re-fetched.",
+    "The lock-contention / realistic-photo-latency concern in CONTENT-PHOTO-FIXTURE-LOCK-BUDGET-01 is derived from static reasoning about the exclusive-lock retry budget versus the documented 10MiB/25MP/10-derivative processing bound; no test evidence at that scale (only tiny 48x64px/12x12px synthetic images) exists in the supplied logs to confirm or refute whether real decode latency in practice exceeds the ~500ms retry window on the actual CI/dev hardware.",
+    "Whether apps/web/src/components/StaffSessionBoundary.tsx and apps/web/src/lib/staff-runtime.ts (both EXISTED at the prior head, unmodified in this delta, and outside FILE STATUS's M/A list) contain any issue relevant to the new content/photo routes was checked only by reading them as supplied inert context; they were not independently re-derived from first principles in this round since they carry no diff against the previously reviewed head.",
+    "Non-content/photo deltas already covered by review5 (QuoteWorkspace.tsx hydration fix, wear/service.ts bookingSummary scope fix, wear real-postgres.ts new lock-wait tests) were not re-reviewed in this pass per the stated scope boundary; their exclusion here is not a claim they are unreviewed overall, only that this round's substantive first-principles work targeted the new content/photo files."
+  ],
+  "activation_prerequisites": [
+    "Owner resolution of the still-rejected docs/execution/FLOW_DEV_EXACT_BOUNDARY.md custody proposal remains required before serialized equipment loan/return DB writes, continuous QR-scan return UI, or physical equipment-custody reintegration can exist; nothing in the content/photo delta touches that boundary (BLOCKED_AUTOMATIC_APPROVAL_REVIEW per docs/execution/FLOW_DEV_CURRENT_GATES.md).",
+    "Actual CMS PostgreSQL/storage roles, full gallery binding/rights administration, guest-owned BFF, a production release endpoint, and a complete customer-facing UX remain unimplemented; tests/content/file-fixture.ts and tests/content/photo-fixture.ts are explicitly local, NODE_ENV==='development'-only, per-worktree file fixtures with synthetic CONTENT grants -- not a production content repository or storage service -- and do not authorize activation of any of those boundaries.",
+    "Owner ski/snowboard photographs, real photo rights/consent evidence, and complete supplier source documents (three-season Salomon coverage) remain absent; every photo/media record in this delta is marked rights:'UNVERIFIED', publication:'DRAFT_ONLY', and productionPublished:false, and catalogSources never create stock, models, or price mappings.",
+    "Real Square/Sandbox payment transport, external webhook/email delivery, customer information handling, and physical phone/camera-based verification remain out of scope for this delta and unaddressed by it.",
+    "Approximately 200 wear units, their unit meaning/size/store distribution, and actual cleaning/drying duration still require real source confirmation before any real-inventory activation; this content/photo delta does not touch wear inventory counts or the wear price table (WEAR_TABLE unchanged, INITIAL_TABLE unchanged per the '18 approved equipment offer codes' test asserting no price/inventory mutation)."
+  ],
+  "scope_assessment": "This round performed the first substantive, first-principles static review of the content/photo files that review5 incorrectly treated as already covered by omission from a modified-only diff, using the explicit ABSENT-at-ac253954 proof and complete added-file source supplied for this cycle: packages/core/src/content/photo-input.ts, photo-job.ts, workflow.ts; tests/content/PhotoWorkspace.tsx, Workspace.tsx, file-fixture.ts, http.ts, normal-ui.ts, photo-fixture.ts, photo-http.ts; the three tests/flow-app route/page wrappers; and tests/unit/content-workflow.test.ts, photo-input.test.ts, photo-job.test.ts. I traced: input bounds (10MiB/photo, 200 files, 500MiB batch, 200 filenames/SHA256s pinned, 14MiB bounded JSON transport) in photo-job.ts's prepare()/upload() and photo-http.ts's chunked body reader; the canonical-base64 round-trip decoder in photo-input.ts against its RangeError-regression unit tests (before/after logs showing the fix); real sharp decode/derivative generation and EXIF/ICC stripping (existing media-plan.ts, confirmed by normal-ui.ts's meta.exif/meta.icc assertions); hash-addressed private-object storage with symlink/collision/traversal defenses in photo-fixture.ts; owner+session(x-zao-session stamp)+fixture-grant checks re-verified before AND after lock acquisition in both content http.ts and photo-http.ts/photo-job.ts (matching the documented 'reauthorizes before and after acquiring the fixture lock' and confirmed by the dedicated revocation-during-decode unit test); origin-based CSRF checks on all POST content/photo actions; requestKey/planId CAS idempotency and cross-actor plan-theft rejection in workflow.ts's change()/commitBulk()/commitRelease(); the single-exclusive-lock decode gate (fixing the previously-documented double-decode race) and its authority recheck ordering relative to private writes; path/filename/duplicate-name and exact offer_code__role__sort candidate matching in photo-job.ts's photoCandidate(); and the private-release restore/current/audit/outbox semantics (existing release-plan.ts, exercised end-to-end by normal-ui.ts's actual Web-process restart and rights-revocation/restore cases). I did not find any exploitable authorization bypass, path traversal, CSRF gap, decode-once violation, or rights/publication leak in the new code; the two findings raised are a fixture-scoped lock-budget robustness gap under realistic (untested) photo latency and a minor advisory-only stale-read TOCTOU in candidate offer matching, both LOW severity and neither affecting authorization, data integrity, or the documented non-publication/rights-separation guarantees. The E10-E13 milestone blockers (serialized custody, real payment transport, physical verification, production CMS) are preserved unchanged and are outside this delta's scope.",
+  "tests_executed": false,
+  "prior_finding_dispositions": [
+    {
+      "id": "REVIEW5-COVERAGE-GAP-CONTENT-PHOTO",
+      "status": "RESOLVED",
+      "evidence": "review05-coverage-assessment.json self-identified 'INCOMPLETE_NEW_CONTENT_PHOTO_SCOPE' because review5 mistakenly assumed files absent from the modified-only diff were already reviewed at the prior head. This round supplies and substantively reviews the complete added-file source for all 16 files listed in that assessment's actual_added_files, closing the coverage gap for the same head/CI (2e579b9032a4090b9d7aaebc33dfb2a2db629421)."
+    },
+    {
+      "id": "WEAR-BOOKING-SCOPE-IMPLICIT-01",
+      "status": "RESOLVED",
+      "evidence": "Carried forward from review5 without re-derivation: packages/core/src/wear/service.ts is unmodified since review5's confirmation (not in this round's content/photo scope); no regression indicated by unchanged FILE STATUS/diff."
+    },
+    {
+      "id": "WEAR-PRICE-01",
+      "status": "RESOLVED",
+      "evidence": "Carried forward from review5; packages/contracts/src/pricing.ts unmodified in this delta."
+    },
+    {
+      "id": "F1-CLOCK-SOURCE-INCONSISTENCY",
+      "status": "RESOLVED",
+      "evidence": "Carried forward from review5; payment/booking-service.ts absent from this delta, unmodified since prior resolution."
+    },
+    {
+      "id": "F2-CUSTODY-SCHEMA-MISSING-TIME-ORDER-CHECKS",
+      "status": "RESOLVED",
+      "evidence": "Carried forward from review5; migration 0011 absent from this delta, unmodified."
+    },
+    {
+      "id": "FLOW-TIME-1",
+      "status": "RESOLVED",
+      "evidence": "Carried forward from review5; booking-service.ts clock logic unmodified by this delta."
+    },
+    {
+      "id": "FLOW-TIME-2",
+      "status": "RESOLVED",
+      "evidence": "Carried forward from review5; booking-service.ts recordObservation() unmodified by this delta."
+    },
+    {
+      "id": "FLOW-SCOPE-1",
+      "status": "RESOLVED",
+      "evidence": "Carried forward from review5; booking-service.ts markUnknown() unmodified by this delta."
+    }
+  ]
+}

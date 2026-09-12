@@ -61,3 +61,12 @@ verified with the existing per-operation timeout, then the final status is check
 No timeout/size/count expansion, retry or skip. Local9UI cases passed, preserving
 50real decodes of small synthetic PNGs and ownership cleanup. Final new-head CI
 and review remain required. Evidence: evidence/flow-dev/photo-input/record.json.
+
+
+Review6 found2LOW issues: busy photo HTTP mapping and advisory candidate stale
+read. Both counterexamples failed on2e579b9 and passed after the limited correction;
+see evidence/flow-dev/photo-review06/record.json. Additional tests cover UI busy
+reconciliation and real file transaction offer changes. Final-head full verify/CI
+and review7 are pending at this checkpoint. File-lock budget remains unchanged.
+25MP testing uses a344681byte synthetic flat-color PNG, not a10MiB photograph or
+a real-owner photo throughput benchmark. Prior tiny50-image tests remain intact.

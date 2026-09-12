@@ -1,0 +1,65 @@
+
+> zao-rental@0.1.0 test:content-fixture
+> node --import tsx tests/content/normal-ui.ts
+
+PASS normal password authentication plus explicit synthetic CONTENT fixture grant, not role auto-publish
+PASS CSV file dry-run, partial draft commit, lost HTTP response and reload recover original server job once
+PASS private release persists current, audit and outbox through actual Web process restart; width fits
+PASS stale release/rights revocation rejects with pointer preserved; restore is a new private manifest
+PHOTO_RESUME_ITEM 3 HTTP 200
+PHOTO_RESUME_ITEM 4 HTTP 200
+PHOTO_RESUME_ITEM 5 HTTP 200
+PHOTO_RESUME_ITEM 6 HTTP 200
+PHOTO_RESUME_ITEM 7 HTTP 200
+PHOTO_RESUME_ITEM 8 HTTP 200
+PHOTO_RESUME_ITEM 9 HTTP 200
+PHOTO_RESUME_ITEM 10 HTTP 200
+PHOTO_RESUME_ITEM 11 HTTP 200
+PHOTO_RESUME_ITEM 12 HTTP 200
+PHOTO_RESUME_ITEM 13 HTTP 200
+PHOTO_RESUME_ITEM 14 HTTP 200
+PHOTO_RESUME_ITEM 15 HTTP 200
+PHOTO_RESUME_ITEM 16 HTTP 200
+PHOTO_RESUME_ITEM 17 HTTP 200
+PHOTO_RESUME_ITEM 18 HTTP 200
+PHOTO_RESUME_ITEM 19 HTTP 200
+PHOTO_RESUME_ITEM 20 HTTP 200
+PHOTO_RESUME_ITEM 21 HTTP 200
+PHOTO_RESUME_ITEM 22 HTTP 200
+PHOTO_RESUME_ITEM 23 HTTP 200
+PHOTO_RESUME_ITEM 24 HTTP 200
+PHOTO_RESUME_ITEM 25 HTTP 200
+PHOTO_RESUME_ITEM 26 HTTP 200
+PHOTO_RESUME_ITEM 27 HTTP 200
+PHOTO_RESUME_ITEM 28 HTTP 200
+PHOTO_RESUME_ITEM 29 HTTP 200
+PHOTO_RESUME_ITEM 30 HTTP 200
+PHOTO_RESUME_ITEM 31 HTTP 200
+PHOTO_RESUME_ITEM 32 HTTP 200
+PHOTO_RESUME_ITEM 33 HTTP 200
+PHOTO_RESUME_ITEM 34 HTTP 200
+PHOTO_RESUME_ITEM 35 HTTP 200
+PHOTO_RESUME_ITEM 36 HTTP 200
+PHOTO_RESUME_ITEM 37 HTTP 200
+PHOTO_RESUME_ITEM 38 HTTP 200
+PHOTO_RESUME_ITEM 39 HTTP 200
+PHOTO_RESUME_ITEM 40 HTTP 200
+PHOTO_RESUME_ITEM 41 HTTP 200
+PHOTO_RESUME_ITEM 42 HTTP 200
+PHOTO_RESUME_ITEM 43 HTTP 200
+PHOTO_RESUME_ITEM 44 HTTP 200
+PHOTO_RESUME_ITEM 45 HTTP 200
+PHOTO_RESUME_ITEM 46 HTTP 200
+PHOTO_RESUME_ITEM 47 HTTP 200
+PHOTO_RESUME_ITEM 48 HTTP 200
+PHOTO_RESUME_ITEM 49 HTTP 200
+PASS 50 selected synthetic photos survive interrupted upload, same-job resume and authenticated derivative display
+PASS authenticated photo HTTP accepts 9MiB transport to manifest validation and rejects malformed or oversized bytes
+PHOTO_BOUNDARY {"inputPixels":25000000,"inputBytes":344681,"derivatives":10,"gate":"test synchronization after real decode; not a latency benchmark","lockBudgetChanged":false}
+PASS 25MP synthetic photo gate returns retryable busy to concurrent authenticated HTTP and replays once
+PASS real file transaction candidate follows intervening catalog commit; later offer removal preserves replay
+PASS manufacturer source staging keeps sport/season/cell provenance, reimport is idempotent and never writes inventory
+PASS 18 approved equipment offer codes receive one bulk description update without price, release or inventory mutation
+PASS CONTENT fixture revocation and real staff disable deny pending commits without persistent changes
+CONTENT fixture 11 passed: normal password/real session DB, local synthetic content file; no production CMS role/storage/permissions or public release.
+Owned content fixture/Web/browser/PostgreSQL stopped.

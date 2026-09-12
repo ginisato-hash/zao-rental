@@ -1,4 +1,8 @@
 import sharp from 'sharp';
+import {createHash} from 'node:crypto';
+import {PrivatePhotoJobs} from '../../packages/core/src/content/photo-job';
+import {preparePhotoDrafts} from '../../packages/core/src/content/media-plan';
+import {PhotoFileFixture} from './photo-fixture';
 import {PRICE_PRODUCTS,INITIAL_TABLE} from '../../packages/contracts/src/pricing';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
@@ -71,6 +75,37 @@ try{
   const invalid=await send('YR==');assert.equal(invalid.status(),409);assert.equal((await invalid.json()).error,'PHOTO_REQUEST');
   const oversized=await send(Buffer.alloc(10*1024*1024+1).toString('base64'));assert.equal(oversized.status(),409);assert.equal((await oversized.json()).error,'PHOTO_SIZE');
   assert.equal(JSON.stringify((await fixture.read()).photoJobs),before);
+ });
+ await check('25MP synthetic photo gate returns retryable busy to concurrent authenticated HTTP and replays once',async()=>{
+  const store=new PhotoFileFixture(namespace!),jobId=randomUUID(),photo=await sharp({create:{width:5000,height:5000,channels:3,background:'blue'}}).png().toBuffer();
+  assert.ok(photo.length<10*1024*1024);const shape=await sharp(photo).metadata();assert.equal(shape.width!*shape.height!,25_000_000);
+  let entered!:()=>void,release!:()=>void,decodes=0;const at=new Promise<void>(r=>entered=r),gate=new Promise<void>(r=>release=r);
+  const service=new PrivatePhotoJobs(store,{async assert(s){assert.equal(s,subject);}},async files=>{decodes++;const result=await preparePhotoDrafts(files);entered();await gate;return result;});
+  const files=[{filename:'SKI__COVER__01.png',bytes:photo.length,sha256:createHash('sha256').update(photo).digest('hex')}];
+  assert.equal((await context.request.post('/api/photo-fixture/prepare',{headers,data:{jobId,files}})).status(),200);
+  const bp=await context.newPage();await bp.goto('/staff/content-fixture');await expect(bp.getByRole('region',{name:'写真一括fixture'})).toBeVisible();await bp.evaluate(v=>sessionStorage.setItem('zao-private-photo-job',JSON.stringify(v)),{stamp,jobId});
+  const owner=service.upload(subject,jobId,0,photo);await at;
+  try{
+   const busy=await context.request.post('/api/photo-fixture/upload',{headers,data:{jobId,index:0,base64:photo.toString('base64')}});
+   assert.equal(busy.status(),503);assert.equal((await busy.json()).error,'FIXTURE_LOCKED');assert.equal(busy.headers()['retry-after'],'1');
+   const alsoBusy=await context.request.post('/api/content-fixture/bulk-prepare',{headers,data:body({csv:header+'1,BOARD,ja,1,summary,SET,busy'})});assert.equal(alsoBusy.status(),503);
+   assert.equal((await fixture.read()).photoJobs![jobId]!.items[0]!.state,'PENDING');
+   await bp.getByRole('button',{name:'保存済み写真jobを照合'}).click();await expect(bp.getByRole('status',{name:'写真処理状態'})).toContainText('別の写真・説明処理が実行中');
+  }finally{release();await owner;}
+  const replay=await context.request.post('/api/photo-fixture/upload',{headers,data:{jobId,index:0,base64:photo.toString('base64')}});assert.equal(replay.status(),200);assert.equal((await replay.json()).metadata.derivatives.length,10);
+  await bp.getByRole('button',{name:'保存済み写真jobを照合'}).click();await expect(bp.getByRole('status',{name:'写真処理状態'})).toContainText('保存済み。未送信分は');await bp.close();
+  const saved=(await fixture.read()).photoJobs![jobId]!;assert.equal(saved.revision,2);assert.equal(saved.items[0]!.state,'READY');assert.equal(decodes,1);assert.equal(saved.productionPublished,false);
+  console.log('PHOTO_BOUNDARY '+JSON.stringify({inputPixels:25_000_000,inputBytes:photo.length,derivatives:10,gate:'test synchronization after real decode; not a latency benchmark',lockBudgetChanged:false}));
+ });
+ await check('real file transaction candidate follows intervening catalog commit; later offer removal preserves replay',async()=>{
+  const store=new PhotoFileFixture(namespace!),jobId=randomUUID(),files=[{filename:'SYNTHETIC_NEW__COVER__01.png',bytes:1,sha256:'1'.repeat(64)}];
+  let entered!:()=>void,release!:()=>void;const at=new Promise<void>(r=>entered=r),gate=new Promise<void>(r=>release=r);
+  const catalog=fixture.edit(async record=>{entered();await gate;record.state.catalog.commercialRevisions.SYNTHETIC_NEW='SYNTHETIC-TERMS1';});await at;
+  const service=new PrivatePhotoJobs(store,{async assert(s){assert.equal(s,subject);}}),candidate=service.prepare(subject,jobId,files);release();await catalog;
+  assert.equal((await candidate).items[0]!.candidate?.offerCode,'SYNTHETIC_NEW');
+  const read=await context.request.get('/api/photo-fixture?jobId='+jobId,{headers});assert.equal(read.status(),200);assert.equal((await read.json()).items[0].candidate.offerCode,'SYNTHETIC_NEW');
+  await fixture.edit(async record=>{delete record.state.catalog.commercialRevisions.SYNTHETIC_NEW;});
+  const replay=await context.request.post('/api/photo-fixture/prepare',{headers,data:{jobId,files}});assert.equal(replay.status(),200);assert.equal((await replay.json()).items[0].candidate.offerCode,'SYNTHETIC_NEW');
  });
  await check('manufacturer source staging keeps sport/season/cell provenance, reimport is idempotent and never writes inventory',async()=>{
   const cp=await context.newPage();await cp.goto('/staff/content-fixture');const before=(await app!.db.pool.query('SELECT count(*)::int n FROM ledger_assets')).rows[0].n;

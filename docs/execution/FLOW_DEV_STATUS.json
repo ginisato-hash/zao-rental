@@ -11,7 +11,7 @@
     "max_total_seconds": 86400,
     "prior_run_seconds": 0,
     "max_claude_starts": 8,
-    "claude_starts": 4,
+    "claude_starts": 6,
     "reserve_final_review": 1,
     "prior_delegation_starts": 3,
     "prior_delegation_unused_not_added": true
@@ -31,9 +31,9 @@
     "body_updated_and_readback": true
   },
   "review_budget": {
-    "new_starts": 4,
+    "new_starts": 6,
     "maximum": 8,
-    "remaining": 4,
+    "remaining": 2,
     "reserve_final": 1,
     "previous_AG_starts": 3,
     "historical_E09_starts": 4,
@@ -114,7 +114,7 @@
     "physical smartphone camera not verified",
     "E13 full Sandbox milestone not complete"
   ],
-  "next": "Run exact-head CI and final integrated static review. Full equipment custody boundary remains blocked.",
+  "next": "Full verify, normal push, exact-head CI, final scoped review7. Entire equipment custody/guest/CMS milestone remains incomplete.",
   "prohibitions": [
     "no new PR merge",
     "no real Square/production/data",
@@ -124,9 +124,9 @@
   "local_verification": "docs/execution/evidence/flow-dev/content-fixture/commands.json",
   "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
   "budget_checkpoint": {
-    "at": "2026-09-12T19:00:41.212210+00:00",
-    "claude_starts": 4,
-    "remaining": 4,
+    "at": "2026-09-12T20:27:28.960846+00:00",
+    "claude_starts": 6,
+    "remaining": 2,
     "deadline_unchanged": true
   },
   "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
@@ -148,7 +148,7 @@
       "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646846388"
     }
   ],
-  "working_record": "Full35 commands PASS then supplemental123unit/8UI plus lint/typecheck PASS. Photo decoder race before2/after1; explicit scope LOW addressed. Exact new-head CI and review pending.",
+  "working_record": "Latest committed2e579b9 passed35local/34CI checks, review5+6 completed. Review6 twoLOW counterexamples reproduced and fixed. New UI busy and file-catalog regressions require final full verification.",
   "followup": "docs/execution/FLOW_DEV_REVIEW_FOLLOWUP.md",
   "corrected_local_verification": {
     "at": "2026-09-12T15:14:22.979203+00:00",
@@ -253,13 +253,13 @@
   "wear_adoption": {
     "pack_id": "ZAO-WEAR-CATALOG-UX-20260913-V1_2",
     "record": "docs/execution/WEAR_ADOPTION.json",
-    "state": "QUANTITY_UI_AND_MIXED_REGRESSIONS_PASSED_REREVIEW_PENDING",
+    "state": "QUANTITY_SUBSET_REVIEWED_AND_TESTED",
     "budget_reset": false,
     "inventory_override": {
       "document": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md",
       "sha256": "41911b8d169944c803daf59a24d2e43a96a4642a6e2008498ea44d54b0159cf6",
       "at": "2026-09-12T16:15:11.995192+00:00",
-      "state": "IMPLEMENTING_QUANTITY_POOLS",
+      "state": "QUANTITY_POOLS_IMPLEMENTED_TESTED_SCOPED_REVIEW_PASS",
       "preserved": "outputs/flow-dev/wear-quantity-switch",
       "previous_serialized_tests": "HISTORICAL_SUPERSEDED",
       "budget_reset": false
@@ -267,24 +267,23 @@
     "acceptance": "docs/execution/WEAR_ACCEPTANCE_STATUS.json"
   },
   "latest_review": {
-    "round": 4,
-    "head": "ac253954e5319ebb6a891e569a1ab89f1bea06b6",
-    "snapshot_sha256": "cbbeba8ed69e12942db11f1ca30a733f2307ad70262de75afa079b6f13188fdc",
+    "round": 6,
+    "head": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+    "snapshot_sha256": "401721a7a62d5d03584bae5e3164a4b86dd94f201486159372e7f2dafe554c56",
     "verdict": "REVIEW_PASS",
-    "findings": [
-      "LOW WEAR-BOOKING-SCOPE-IMPLICIT-01; explicit scoped followup and regression added"
-    ],
-    "comment": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647984144"
+    "findings": "2LOW fixed locally, awaiting exact new-head CI and review7",
+    "comment": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648474700"
   },
-  "as_of": "2026-09-12T18:11:28.384896+00:00",
+  "as_of": "2026-09-12T20:27:28.960846+00:00",
   "content_fixture": {
-    "state": "LOCAL_UI_TESTED_PENDING_INTEGRATED_REVIEW",
+    "state": "REVIEW6_TWO_LOW_FIXED_PENDING_FINAL_CI_REVIEW",
     "normal_auth": "real library password/session/PostgreSQL, synthetic staff",
     "storage": "dedicated private file fixture, not production CMS PostgreSQL",
-    "cases": 8,
+    "cases": 11,
     "photo_files": 50,
     "actual_photos": 0,
     "source_row_import": "staging only, no inventory write",
-    "record": "docs/execution/CONTENT_FIXTURE_PROGRESS.md"
+    "record": "docs/execution/CONTENT_FIXTURE_PROGRESS.md",
+    "large_synthetic_pixels": 25000000
   }
 }

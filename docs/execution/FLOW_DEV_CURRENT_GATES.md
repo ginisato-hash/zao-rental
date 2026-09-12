@@ -1,6 +1,6 @@
 # Current development gates
 
-Original run01 deadline21:26:35UTC /06:26:35JST, review4of8 completed.
+Original run01 deadline21:26:35UTC /06:26:35JST, review6of8 completed; final review7 pending.
 This is a checkpoint, not permission to extend time or activate services.
 
 - Quantity-wear UI/API/real PostgreSQL, booking/quote and isolated synthetic payment

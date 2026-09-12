@@ -90,3 +90,14 @@ Manufacturer JSON rows preserve source sheet/row, sport, season, SKU, quantity u
 and ADD/REPLACE uncertainty. Same row hash is staged once; changed source cells retain
 both versions and require reconciliation. No source stage creates stock, models,
 price mappings, or overwrites a historical season. The fixture UI covers both sports.
+
+
+Review6 corrections (same approved local-fixture boundary): the ~500ms exclusive
+lock acquisition budget is unchanged. A photo caller encountering contention gets
+HTTP503/FIXTURE_LOCKED + Retry-After:1, and the UI instructs same-job reconciliation,
+without an automatic loop or a replacement job. Tests use a real25MP synthetic PNG
+and all10derivatives, followed by a deterministic test gate; this proves busy/replay
+behavior, not worst-case photo latency. Offer candidates are now derived from the
+same locked repository record as job creation. The browser cannot supply offers;
+replays retain the original saved advisory candidate even after catalog changes.
+No rights/publication, reservation or DB permission boundary changes.

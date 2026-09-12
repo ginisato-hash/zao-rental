@@ -1,0 +1,12 @@
+✔ one immutable pair ID resolves one cycle; no left/right child identifiers (0.724417ms)
+✔ a saved scan can never retarget the latest cycle, version or already-received loan (0.070417ms)
+✔ unknown/no active or ambiguous active cycle is not a successful receipt (0.215375ms)
+✔ invalid saved scan and checkout timestamps cannot become a receipt candidate (0.062625ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 151.54475

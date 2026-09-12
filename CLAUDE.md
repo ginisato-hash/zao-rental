@@ -1,6 +1,21 @@
+## Current supervised development-flow delegation
+
+Read docs/execution/FLOW_DEV_DELEGATION.md and FLOW_DEV_STATUS.json. The direct owner
+now authorizes ZAO-RENTAL-FLOW-DEV-R1 (E10-E13 synthetic development loop) from merged
+main137352fcaa7b28f88aef5100479297f74e64b4aa. Prior A-G delegation is completed; its
+historical budgets are not available here. Run01 deadline2026-09-12T21:26:35Z; max8h/run,
+24h total,8new static Claude starts, >=1 reserved final review. No per-phase handoff.
+Use normal password authentication and restricted APIs/DB; deterministic payment adapter
+only in test composition, absent from normal production routing. Keep chargeReady=false.
+No real Square/Sandbox credentials, external webhook, real people, production, E14+, main
+merge/push, privilege/billing expansion, PR3/Runner or new background services. Preserve
+existing A-G, intake/continuation/cm, prices, pair units and 600-second non-extending HOLD.
+New code ends at Draft PR with honest external/device/production gaps. Historical phase
+instructions below are context; this owner-authorized scope and budget take precedence.
+
 # ZAO Rental independent review contract
 
-## Current supervised audit delegation
+## Historical completed A-G delegation (superseded for this flow run)
 
 The owner's directly adopted `docs/execution/AUDIT_AG_DELEGATION.md` is current
 authority for ZAO-AUDIT-AG-20260912-R1; SHA256 `74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb`. Read it and AUDIT_AG_STATUS.json.

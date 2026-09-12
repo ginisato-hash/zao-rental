@@ -1,0 +1,124 @@
+{
+  "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
+  "authority": "docs/execution/FLOW_DEV_DELEGATION.md; direct owner message",
+  "current_run": {
+    "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
+    "run_id": "ZAO-RENTAL-FLOW-DEV-R1-run01",
+    "start_utc": "2026-09-12T13:26:35+00:00",
+    "deadline_utc": "2026-09-12T21:26:35+00:00",
+    "start_jst": "2026-09-12T22:26:35+09:00",
+    "deadline_jst": "2026-09-13T06:26:35+09:00",
+    "max_total_seconds": 86400,
+    "prior_run_seconds": 0,
+    "max_claude_starts": 8,
+    "claude_starts": 0,
+    "reserve_final_review": 1,
+    "prior_delegation_starts": 3,
+    "prior_delegation_unused_not_added": true
+  },
+  "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "branch": "codex/rental-flow-dev-e10-e13",
+  "pr9_merge": {
+    "checked_at": "2026-09-12T13:29:35.793340+00:00",
+    "head": "f060662206b350a4b26aa653fdc45b04b828fecb",
+    "base": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+    "merge_commit": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "main": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "tree": "dde29c413aa9791bf86054bf6f36e7c2daa02567",
+    "method": "squash",
+    "head_match_forced": true,
+    "protected_paths_unchanged": true,
+    "body_updated_and_readback": true
+  },
+  "review_budget": {
+    "new_starts": 0,
+    "maximum": 8,
+    "remaining": 8,
+    "reserve_final": 1,
+    "previous_AG_starts": 3,
+    "historical_E09_starts": 4,
+    "unused_not_carried": true
+  },
+  "items": {
+    "E10": {
+      "state": "TESTED_REVIEW_PENDING",
+      "depends_on": [],
+      "tests": [
+        "real password/session/PostgreSQL payment18 cases",
+        "full verify90 unit tests before supplemental fourth pure return-contract test"
+      ],
+      "review": null,
+      "next": "exact-head CI and independent static review",
+      "blocked": [
+        "Actual Square transport/Sandbox/external callback and coupon redemption unconnected"
+      ]
+    },
+    "E11": {
+      "state": "TESTED_REVIEW_PENDING",
+      "depends_on": [
+        "E10 core"
+      ],
+      "tests": [
+        "normal UI/API/PostgreSQL5 cases; synthetic group/QR/response-loss/session isolation"
+      ],
+      "review": null,
+      "next": "exact-head CI and independent static review",
+      "blocked": [
+        "normal runtime UNCONNECTED; private test composition only",
+        "Real customer access/terms/email not connected"
+      ]
+    },
+    "E12": {
+      "state": "BLOCKED",
+      "depends_on": [
+        "E10 commitment"
+      ],
+      "tests": [
+        "pure return-cycle contract4 cases only; no rental/return DB operation"
+      ],
+      "review": null,
+      "next": "staff reception, loan cycles and resumable return batches",
+      "blocked": [
+        "Automatic approval review rejected custody guard changes and later role/claim write proposal. Neither action executed. No workaround. New custody schema only; no ordinary rental mutation service."
+      ]
+    },
+    "E13": {
+      "state": "PARTIAL_BLOCKED",
+      "depends_on": [
+        "E10",
+        "E11",
+        "E12"
+      ],
+      "tests": [
+        "full regression including A-G passed; development loop to confirmation/QR only"
+      ],
+      "review": null,
+      "next": "independent review of implemented subset; E12 permission decision required",
+      "blocked": [
+        "Full loop cannot yet reach rental/return mutation; exact permission boundary requires owner decision."
+      ]
+    }
+  },
+  "external_gaps": [
+    "Square Sandbox connection and real requests not authorized",
+    "real notification provider not connected",
+    "physical smartphone camera not verified",
+    "E13 full Sandbox milestone not complete"
+  ],
+  "next": "Create Draft PR; exact-head CI; direct static Claude review; no work around the recorded permission rejections.",
+  "prohibitions": [
+    "no new PR merge",
+    "no real Square/production/data",
+    "PR3/Runner held",
+    "no privileges/cost/host changes"
+  ],
+  "local_verification": "docs/execution/evidence/flow-dev/local-summary.json",
+  "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
+  "budget_checkpoint": {
+    "at": "2026-09-12T14:40:25.389113+00:00",
+    "elapsed_this_run_seconds": 4430,
+    "deadline_unchanged": true,
+    "claude_starts": 0,
+    "claude_remaining": 8
+  }
+}

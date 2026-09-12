@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-09-12T14:40:25.389113+00:00",
+  "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "full_verify": {
+    "exit_code": 0,
+    "commands": 28,
+    "record": "local-verify-commands.json",
+    "flow_payment_during_verify": 17
+  },
+  "supplemental_after_new_handoff_test": {
+    "npm run typecheck": 0,
+    "npm run lint": 0,
+    "npm run test:flow-payment": 0,
+    "payment_cases": 18,
+    "node --import tsx --test tests/unit/return-cycle.test.ts": 0
+  },
+  "UI_cases": 5,
+  "camera_evidence": "canvas QR decode and viewport 390/1280; no physical phone",
+  "real_DB": true,
+  "authentication": "ordinary individual synthetic email/password, real session and protected API",
+  "payment": "test-only deterministic adapter; no Square call",
+  "red_green": {
+    "case": "contradictory completion after provider terminal failure",
+    "before": "PAYMENT_REVIEW expected, CONFIRMED_DEV observed; exit1",
+    "after": "initial and later contradictory completion remain PAYMENT_REVIEW; exit0"
+  },
+  "old_full_verify_failures": [
+    "typecheck readonly test env assignment, corrected",
+    "migration expected list0001-0008 needed0009/0010; scripts/integration and ledger-integration corrected"
+  ],
+  "resources": "each test reports owned database/web/browser stopped",
+  "gaps": [
+    "E12 ordinary loan/return mutation and full E13 loop blocked",
+    "Square/Sandbox external connection not authorized",
+    "real notification/phone not verified"
+  ],
+  "pure_return_contract_cases": 4,
+  "return_contract_red_green": "invalid stored scan/checkout timestamp: before exit1; after exit0"
+}

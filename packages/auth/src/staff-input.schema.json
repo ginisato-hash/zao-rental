@@ -76,6 +76,18 @@
           },
           "PRICE_EDIT": {
             "type": "boolean"
+          },
+          "BOOKING_VIEW": {
+            "type": "boolean"
+          },
+          "BOOKING_CREATE": {
+            "type": "boolean"
+          },
+          "RENTAL_CHECKOUT": {
+            "type": "boolean"
+          },
+          "RENTAL_RETURN": {
+            "type": "boolean"
           }
         }
       },
@@ -177,6 +189,18 @@
             "type": "boolean"
           },
           "PRICE_EDIT": {
+            "type": "boolean"
+          },
+          "BOOKING_VIEW": {
+            "type": "boolean"
+          },
+          "BOOKING_CREATE": {
+            "type": "boolean"
+          },
+          "RENTAL_CHECKOUT": {
+            "type": "boolean"
+          },
+          "RENTAL_RETURN": {
             "type": "boolean"
           }
         }

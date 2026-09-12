@@ -1,0 +1,37 @@
+✔ one immutable pair ID resolves one cycle; no left/right child identifiers (0.989375ms)
+✔ a saved scan can never retarget the latest cycle, version or already-received loan (0.074041ms)
+✔ unknown/no active or ambiguous active cycle is not a successful receipt (0.21675ms)
+✖ invalid saved scan and checkout timestamps cannot become a receipt candidate (1.2385ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 248.084541
+
+✖ failing tests:
+
+test at tests/unit/return-cycle.test.ts:1:1734
+✖ invalid saved scan and checkout timestamps cannot become a receipt candidate (1.2385ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'RECEIPT_CANDIDATE_ONLY'
+  - 'INVALID_TIME'
+  
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/unit/return-cycle.test.ts:9:161)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'RECEIPT_CANDIDATE_ONLY',
+    expected: 'INVALID_TIME',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

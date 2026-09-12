@@ -1,0 +1,1 @@
+Test-only composition. Never deploy this app. Real staff session/auth and normal APIs are reused. Only synthetic payment gateway is added here; apps/web must not import it. No database owner connection in the child. No real Square, people, email or production permission.

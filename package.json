@@ -39,14 +39,18 @@
     "test:stabilization-upgrade": "node --import tsx tests/stabilization/upgrade.ts",
     "test:stabilization-cd": "node --import tsx tests/stabilization/cd.ts",
     "test:stabilization-eg": "node --import tsx tests/stabilization/eg.ts",
-    "test:stabilization-mixed": "node --import tsx tests/stabilization/mixed.ts"
+    "test:stabilization-mixed": "node --import tsx tests/stabilization/mixed.ts",
+    "test:flow-payment": "node --import tsx tests/flow/payment.ts",
+    "test:flow-ui": "node --import tsx tests/flow/normal-ui.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",
     "better-auth": "1.7.4",
     "drizzle-orm": "0.45.2",
+    "jsqr": "1.4.0",
     "next": "16.3.4",
     "pg": "8.23.0",
+    "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -54,6 +58,7 @@
     "@playwright/test": "1.63.0",
     "@types/node": "24.10.1",
     "@types/pg": "8.23.1",
+    "@types/qrcode": "1.5.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "ajv": "8.20.0",

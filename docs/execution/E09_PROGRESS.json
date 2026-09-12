@@ -34,5 +34,11 @@
     "customer publication",
     "Square",
     "production"
-  ]
+  ],
+  "initial_review": {
+    "head": "8cfbc7aa0ee21501694b72071ae6589c9ef4ba51",
+    "verdict": "REVIEW_PASS",
+    "finding": "LOW E09-01 candidate-less card shows reference price",
+    "response": "Minimal per-direction candidate guard + real normal UI regression; final-head CI/rereview pending"
+  }
 }

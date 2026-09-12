@@ -85,3 +85,11 @@ a later candidate may see a newer committed inventory state. Final atomic group 
 Load evidence uses exactly150 ski pairs +150 boards with300 boot pairs and150 pole pairs, all labeled
 SYNTHETIC. E09 HTTP measurements include login-session validation, DB reads/solve, price lookup and
 preview persistence, not isolated CPU/DB timings and not inherited E06 measurements.
+
+Initial independent static review (head8cfbc7aa0ee21501694b72071ae6589c9ef4ba51) returned REVIEW_PASS
+with LOW E09-01: an unavailable direction still displayed the member's reference amount. The normal
+UI regression first reproduces that display error, then checks missing LONGER at height200/target180
+(recommended166cm) and missing SHORTER at height149/target129 (recommended134cm) against the actual
+synthetic catalog. Only cards with an actual candidate now show price or price-error information.
+HOLD, inventory, sizing, discount arithmetic and authorization are unchanged. A fresh review and CI
+must target the amended head; the first PASS does not mean the LOW was already resolved.

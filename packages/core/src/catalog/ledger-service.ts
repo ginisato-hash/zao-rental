@@ -15,7 +15,7 @@ function sanitized(error:unknown):never {
 // never via a header, cookie, environment flag or production route.
 export class LedgerService {
   private readonly scope;
-  constructor(private readonly pool:Pool, private readonly principal:LedgerPrincipal|null,private readonly authorizeWrite:(client:PoolClient,stores:typeof this.scope,global:boolean)=>Promise<void>,private readonly reconcileStock?:(resource:'assets'|'poles',id:string,version:number)=>Promise<void>) {this.scope=ledgerAccess(principal);if(typeof authorizeWrite!=='function')throw new LedgerError('WRITE_AUTHORITY_NOT_CONFIGURED',500);}
+  constructor(private readonly pool:Pool, private readonly principal:LedgerPrincipal|null,private readonly authorizeWrite:(client:PoolClient,stores:typeof this.scope,global:boolean)=>Promise<void>,private readonly reconcileStock:(resource:'assets'|'poles',id:string,version:number)=>Promise<void>) {this.scope=ledgerAccess(principal);if(typeof authorizeWrite!=='function')throw new LedgerError('WRITE_AUTHORITY_NOT_CONFIGURED',500);if(typeof reconcileStock!=='function')throw new LedgerError('STOCK_RECONCILIATION_NOT_CONFIGURED',500);}
   private checkStore(store:unknown) {if(typeof store==='string' && !this.scope.includes(store as typeof this.scope[number]))throw new LedgerError('FORBIDDEN',403);}
   private async transaction<T>(reason:string,fn:(client:PoolClient)=>Promise<T>):Promise<T> {
     ledgerAccess(this.principal,true);
@@ -71,7 +71,7 @@ export class LedgerService {
   }
   async update(resource:Resource,id:string,input:unknown):Promise<LedgerDetail> {
     parseResource(resource);ledgerAccess(this.principal,true);assertId(id);const data=parseInput(resource,'update',input);
-    if((resource==='assets'||resource==='poles')&&('status' in data||'quantity' in data))await this.reconcileStock?.(resource,id,data.version as number);
+    if((resource==='assets'||resource==='poles')&&('status' in data||'quantity' in data))await this.reconcileStock(resource,id,data.version as number);
     return this.transaction(data.reason as string,async client=>{
       // Scope belongs in the locking statement: forbidden stores must not be locked at all.
       const storeScoped=resource==='assets'||resource==='poles';

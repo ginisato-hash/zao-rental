@@ -157,3 +157,17 @@ callers explicitly name their no-op boundary; the only apps caller uses verifyLe
 No ordinary-path principal/header/env bypass was introduced. The shared review count is1/8,
 old E09 actual4 retained separately. C/D/E/G and this correction still require independent
 integrated confirmation. The prior scoped review is not a new-head PASS.
+
+## Integrated review LOW follow-up
+
+Review02 at f5c57ccf confirmed A-G resolved, with LOW RECONCILE-OPTIONAL-01.
+Omitting the fourth LedgerService callback skipped C/D reconciliation and retained
+the old protected-stock rejection; it was not a permission bypass. Both callbacks
+are now mandatory at type level and checked at construction before DB access.
+The stock callback is invoked directly. Normal ledger-runtime still supplies
+reconcileLedgerProtection; synthetic service fixtures explicitly select their
+fixture-only lifecycle boundary. No production fallback/no-op was introduced.
+The same added configuration regression fails on f5c57ccf (1/2 pass) and passes
+after correction (2/2), separately from the real PostgreSQL/normal API C/D suite.
+See evidence/audit-ag/reconcile-review and review-02. Final exact-head CI and
+independent correction confirmation are recorded in AUDIT_AG_STATUS and PR9.

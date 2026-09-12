@@ -1,0 +1,70 @@
+{
+  "state": "RETURNED",
+  "scope": "Final integrated A-G review, B-FAILOPEN-01 correction and C/D/E/G interactions",
+  "round_after_adoption": 2,
+  "cumulative_cli_start": 6,
+  "started_at": "2026-09-12T12:09:53.599360+00:00",
+  "finished_at": "2026-09-12T12:15:07.843097+00:00",
+  "head_sha": "f5c57ccf72b7be2281e7dd7070e61c22e551fcc1",
+  "snapshot_sha256": "89250ffd57e26c6874fdbb037d94816749d4d02718d755cdf65cf1365b997a8b",
+  "timeout_seconds": 900,
+  "exit_code": 0,
+  "capabilities": {
+    "tools": [
+      "StructuredOutput"
+    ],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.220",
+    "fast_mode_state": "off"
+  },
+  "hook_events": [],
+  "rate_limit_events": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789217400,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "is_error": false,
+  "result_subtype": "success",
+  "permission_denials": [],
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 355331,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 29489,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 355331,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 29489,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 355331,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 355331
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "billing": "Existing Team; isUsingOverage=false. Estimated model cost is not an additional charge."
+}

@@ -78,18 +78,18 @@ try{
   await page.close();page=await login(editor,emails.editor);await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/ledger/assets',{headers:{'x-zao-session':oldStamp}})).status(),409);assert.equal((await (await editor.request.get(`/api/ledger/assets/${assetId}`)).json()).notes,'E05 再読込確認');
  });
  await check('permission and store removals are enforced by normal APIs, while old displayed data is unmounted',async()=>{
-  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,role:'MANAGER',permissions:{INVENTORY_EDIT:false}}})).status(),200);
+  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision,role:'MANAGER',permissions:{INVENTORY_EDIT:false}}})).status(),200);
   assert.equal((await editor.request.post('/api/ledger/assets',{headers:{origin},data:{}})).status(),403);
   await page.evaluate(()=>window.dispatchEvent(new Event('pageshow')));await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();await expect(page.getByRole('heading',{name:'道具の台帳'})).toHaveCount(0);
-  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,storeIds:['ONSEN_BASE']}})).status(),200);
+  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision,storeIds:['ONSEN_BASE']}})).status(),200);
   assert.equal((await editor.request.get('/api/ledger/assets?storeId=MOUNTAIN_BASE')).status(),403);
-  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:settings})).status(),200);
+  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision}})).status(),200);
  });
  await check('account disabled via normal management API invalidates all sessions and rejects correct-password login',async()=>{
-  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,active:false}})).status(),200);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
+  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision,active:false}})).status(),200);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
   assert.equal((await editor.request.post('/api/auth/sign-in/email',{headers:{origin},data:{email:emails.editor,password}})).status(),401);
   assert.equal((await owner.query('SELECT count(*)::int AS n FROM auth_session WHERE "userId"=$1',[editorId])).rows[0].n,0);
-  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:settings})).status(),200);
+  assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision}})).status(),200);
  });
  await check('five concurrent wrong-password attempts lock the account; correct password cannot bypass lock',async()=>{
   const results=await Promise.all(Array.from({length:5},()=>editor.request.post('/api/auth/sign-in/email',{headers:{origin},data:{email:emails.editor,password:newPassword}})));

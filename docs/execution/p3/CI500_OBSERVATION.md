@@ -7,3 +7,11 @@ P3ではno-costの限定診断として、スタッフ処理の500だけにserve
 再発時：CI run/attempt/head/checkout、操作段階、server相関ID、許可済み分類、成功／失敗回数と影響を保存する。未知codeはOTHER。DBの内容をdumpしたり、同じ操作を別keyで繰り返して消したりしない。
 
 現時点：再現した失敗1件、限られた後続成功という証拠だけ。再発率や本番影響率は推定しない。P3内部作業のblockerにはせず、公開判定ではOwnerが残余リスクを確認する。現行headで繰り返す／正常ユーザーの保存不能／認可やデータ整合への影響が確認された場合はlaunch blockerへ格上げし、修正と独立検証まで公開しない。
+
+## P3診断収集の限定修正 CODEX-P3-01
+
+初回snapshot固定後の追加確認で、tests/flow/launcher.tsがAUTH_PIPELINE_CODE以外のstderrを捨て、新しい構造化診断も消すことを確認した。初回Claude PASSは原文どおり保存し、この別の反例を完了根拠から隠さない。
+
+通常password HTTP→保護POST→専用合成DBの一時triggerで23514を発生させる反例は、旧launcherでは診断0件で失敗、新launcherでは安全な1件の収集まで成功。clientは従来generic500、transaction rollbackにより半端なaccountなし。これは元CI500の原因の再現ではなく、将来のエラーを観測できるかの試験。
+
+テスト用launcherにだけ、厳密な4キー／固定code・phase・category／server UUIDのJSONを再構成して転送する処理を追加。任意のraw stderrを保存しない。分割chunk・複数行・上限超過行の後半を検証し、古いAUTH_PIPELINE_CODEの限定経路も維持する。fixture以外の権限／認証／product処理は変えない。npm run test:staff-diagnosticで同じ実HTTP/DB反例を再実行できる。新しいCI・追加静的レビューの対象とする。

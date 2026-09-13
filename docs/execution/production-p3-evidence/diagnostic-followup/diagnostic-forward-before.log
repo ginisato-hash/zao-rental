@@ -1,0 +1,19 @@
+Owned diagnostic Web/PostgreSQL/request context stopped.
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: STAFF_DIAGNOSTIC_NOT_FORWARDED
+
+0 !== 1
+
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p3/tests/readiness/staff-diagnostic.ts:20:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.15.0

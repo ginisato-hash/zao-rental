@@ -1,0 +1,11 @@
+# CODEX-P3-01 diagnostic collection follow-up
+
+First static snapshot/head e9cc1dca7494fdd70fac3a971be1fc54761849df returned Claude REVIEW_PASS/findings0. Its original result is retained. Separately, Codex found tests/flow/launcher.ts:29 dropped STAFF_OPERATION_DIAGNOSTIC while allowing only old AUTH_PIPELINE_CODE. This caller was absent from the first static snapshot. Overall readiness was held for this scoped correction, not silently passed.
+
+Counterexample on the first head: ordinary password HTTP sign-in -> protected staff POST -> test-owned real PostgreSQL temporary trigger raises23514. Client generic500 and account transaction rollback already passed; the diagnostic collection assertion failed (zero instead of one), exit1. After bounded strict forwarding: the identical HTTP/DB test passed, exit0, one safe WRITE/23514 record with generated UUID and no raw message/detail/password. Trigger exists only in that disposable test database, no applied migration or app privileges changed. It is an injected fault proving diagnostic plumbing, not the root cause of historicalCI34749426170.
+
+Added2 streaming/schema tests to the original2 producer tests: fragmented/coalesced/end-of-stream/oversized-line-suffix handling and rejection of extra/private/invalid fields. The test launcher validates and reconstructs only the four approved fields; no raw stderr persistence. The production route remains byte-identical to the first reviewed P3 head. Existing auth/CSRF/store permissions remain.
+
+Final follow-up verify45 Mac commands passed; shared test launcher is exercised across all ordinary UI suites. CI expected44 Linux commands (Mac controller-boundary test is platform-specific). Square harness remains10 transport+23existing real-PG payment cases. No actual provider/credential/data/production activation. First P3 CI and review are historical for the first head; final CI/static review must target the new correction head.
+
+The first review's nonblocking missing P2 status-delta context is supplied to the follow-up as an exact base-to-first-head metadata diff plus preserved-file/comment equality evidence. No P2 status product logic exists. All real-provider/device/Owner gates and historical CI500 observation remain.

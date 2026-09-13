@@ -4,8 +4,8 @@
   "started_jst": "2026-09-13T20:12:34+09:00",
   "base": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
   "branch": "codex/production-activation-prep-p3",
-  "state": "LOCAL_VERIFIED_CI_REVIEW_PENDING",
-  "claude_starts": 0,
+  "state": "FOLLOWUP_LOCAL_VERIFIED_CI_REVIEW_PENDING",
+  "claude_starts": 1,
   "historical_p2_starts": 2,
   "old_unused_added": false,
   "productionActivation": false,
@@ -49,19 +49,77 @@
       "state": "DRAFTED_NOT_APPROVED"
     }
   },
-  "next": "Create Draft PR, exact-head CI, static independent review; never merge P3.",
+  "next": "New exact-head CI, necessary follow-up static review for CODEX-P3-01 and evidence omission; remain Draft.",
   "local_verification": {
-    "run": "2026-09-13T11-34-34.460Z",
-    "commands": 44,
+    "run": "2026-09-13T12-05-46.850Z",
+    "commands": 45,
     "exit_code": 0
   },
   "new_tests": {
     "transport_scenarios": 10,
     "existing_real_pg_payment_cases": 23,
-    "diagnostic_unit": 2
+    "diagnostic_unit": 4,
+    "diagnostic_authenticated_real_pg": 1
   },
   "remaining": [
     "Exact-head CI/static review",
     "Owner choices and real-provider/device/stock activation are not performed"
-  ]
+  ],
+  "first_review": {
+    "base_sha": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+    "head_sha": "e9cc1dca7494fdd70fac3a971be1fc54761849df",
+    "snapshot_sha256": "f96e9920be7ac6d39d116992b7b667812738e8554516de26d7ed93e3debab6e6",
+    "verdict": "REVIEW_PASS",
+    "findings": [],
+    "insufficient_evidence": [
+      "docs/execution/PRODUCTION_P2_STATUS.json is listed as Modified (M) in FILE STATUS, but no diff hunk for it appears in the supplied 'EXACT MODIFIED-FILE DELTA' patch set (only AGENTS.md, CLAUDE.md, apps/web route.ts, SCOPE.md, package.json, scripts/verify.mjs diffs were provided). The narrative claims this reflects only historical P2 metadata reconciliation, consistent with PRODUCTION_P3_STATUS.json's historical_p2_starts:2/old_unused_added:false, but the actual byte-level change to this specific file cannot be independently confirmed from the evidence given (not a blocking gap since the file is a status record rather than executable code, but flagged as an evidentiary omission).",
+      "Real TrustedIngressAdapter behavior across an actual hosting/dispatcher boundary (peer binding surviving Request cloning/middleware/edge runtimes) remains unverifiable from static review of this fixture-only interface; unchanged from prior rounds and correctly left as a hosting-selection gate rather than resolved.",
+      "Real Square Sandbox transport behavior (actual TLS handshake, real merchant/location/webhook registration, real credential resolver, real rate limits) cannot be verified from the loopback/fixture harness in tests/readiness/square-activation.ts and scripts/square-activation.mjs; the harness is internally consistent with the contracts in square-sandbox.ts/square-transport.ts/square-boundary.ts but is not evidence of real Sandbox connectivity.",
+      "Historical CI34749426170 staff-create HTTP500 root cause remains not causally reproduced or explained; the new staff-operation-diagnostic.ts is a bounded forward-looking aid (correlationId/phase/allowlisted SQLSTATE only) and does not itself constitute proof of the original cause, consistent with CI500_OBSERVATION.md's own framing.",
+      "Backup/restore RPO/RTO, off-host storage, PITR, and credential-separation claims remain based solely on a synthetic cold same-major-version local cluster copy (docs/execution/production-p2-evidence/restore.json, unchanged in this diff); no real provider, off-host transfer, or production-scale drill evidence exists.",
+      "Guest policy proposal traffic assumptions (20-person groups, shared-NAT peer counts, HTTP-request-per-guest estimates underlying the BALANCED/strict/relaxed candidates) are explicitly unmeasured hypotheses per GUEST_POLICY_PROPOSAL.md itself and cannot be verified or falsified by static review.",
+      "Real device (iPhone Safari/Android Chrome) and field CWV results remain NOT_RUN per FIELD_DEVICE_CHECKLIST.md; no synthetic substitute is claimed as equivalent, and this cannot be verified further by static review."
+    ],
+    "activation_prerequisites": [
+      "Owner must select and cryptographically approve (exact SHA-256 digest, protected release process) real numeric guest security policy values before any production guest composition uses non-null configuration; config/production/guest.pending.json remains OWNER_PENDING/null and productionActivation:false, unchanged by this diff.",
+      "A real TrustedIngressAdapter must be implemented and reviewed at the actual hosting/dispatcher boundary (Vercel, Cloudflare, or a specific reverse proxy) before any guest-facing peer-derived rate limiting can be trusted in production; current adapter is fixture-only per HOSTING_INGRESS_DECISION.md.",
+      "Real Square Sandbox/production credentials, application/merchant/location mapping, webhook signature key, dual-key rotation implementation, and an approved test-charge/refund policy must be separately obtained and reviewed before any real transport (FetchSquareSandboxTransport with a live SquareFetch and credential resolver) is wired into a runtime composition; SquareSandboxGateway remains unconnected.",
+      "A real storage/CDN provider (R2, S3+CloudFront, or Vercel Blob) must be selected and an adapter implemented/tested (immutable key/content-hash enforcement, purge-receipt verification) before any real original/derivative media leaves the existing PostgreSQL-backed CMS boundary; no contract or credential exists yet per STORAGE_DECISION.md.",
+      "A transactional real-import writer for stock intake must be implemented, reviewed, and explicitly approved (exact source hash, unit/season/store resolution, minimal DB role) before any dry-run catalog plan can be committed against real inventory; commitImportDryRun remains applied:false/requiresAuthorizedLedgerCommit:true, unchanged.",
+      "Owner-approved real backup/PITR provider, off-host storage location, and final RPO/RTO targets must replace the current synthetic cold same-major-cluster drill before any production backup/restore SLA can be claimed.",
+      "Real device test execution (iPhone Safari, Android Chrome, on an Owner-approved reachable non-public HTTPS test environment) must occur and be recorded before REAL_DEVICE/FIELD_CWV launch gates can move off OWNER_PENDING/EXTERNAL_PENDING.",
+      "Before any future production activation, MAIN_PROTECTION (Ruleset23161641), CI status, and default-branch provenance must be re-verified live rather than relying on this dated P3 snapshot (docs/execution/p3/MAIN_PROTECTION.md already states this explicitly).",
+      "Any future introduction of NEXT_PUBLIC_* environment variables into the runtime process remains fail-closed by the existing blanket regex in production-operations.ts (carried from base, unchanged by this diff); no exception should be added without a reviewed allowlist change.",
+      "Final commercial/legal/tax/coupon/cleaning-time/NAP/media-rights/Search-Console decisions in OWNER_DECISIONS_REQUIRED.md all remain explicit Owner gates with no numeric or contractual defaults auto-adopted by this PR."
+    ],
+    "scope_assessment": "Reviewed the full exact-head file delta (AGENTS.md/CLAUDE.md/SCOPE.md header banner additions; apps/web staff-users route.ts phase-tracking and diagnostic-logging change with its accompanying full diff hunk; package.json/scripts/verify.mjs script-list substitution of test:flow-payment with test:square-activation) plus every newly introduced file supplied in full: apps/web/src/lib/staff-operation-diagnostic.ts, its unit test tests/unit/staff-operation-diagnostic.test.ts, scripts/square-activation.mjs, tests/readiness/square-activation.ts, and the full set of docs/adr, docs/execution/PRODUCTION_P3_*, docs/execution/p3/*, and docs/execution/production-p3-evidence/* documentation/evidence files. Cross-checked the diagnostic implementation against its unit test and against the actual call sites in route.ts to confirm: (a) the diagnostic is only constructed and logged server-side when the resolved status is >=500, (b) the client-visible response body/status is unchanged from before this diff ({error:known.code}, unchanged status mapping), (c) only a server-generated randomUUID correlationId, a fixed enum phase, and an allowlisted SQLSTATE-or-OTHER category are emitted, using Object.getOwnPropertyDescriptor to read only the error's own 'code' property (verified this avoids invoking hostile getters/proxies and inherited-prototype codes, matching the supplied unit test's proxy/getter/inherited-object cases), with no message/stack/SQL/request/identity fields anywhere in the diagnostic object. Cross-checked the SQLSTATE allowlist against upstream error paths in packages/auth/src/accounts.ts (which already converts 23505 into a named LedgerError before it would reach the route handler) to confirm the allowlist targets exactly the class of currently-unhandled transient/constraint/timeout Postgres codes that would otherwise surface as generic 500s. Independently traced every tests/readiness/square-activation.ts scenario (same-idempotency-replay, response-loss-provider-lookup, timeout-no-retry, socket-abort, wrong-amount/currency/location, wrong-merchant, duplicate-out-of-order-webhook, auth-quota-stop) against the underlying contract code in packages/core/src/payment/square-sandbox.ts, square-transport.ts, and square-boundary.ts, confirming the expected error codes at each assertion (e.g., squareObservation's own currency validation firing before matchPayment for the wrong-currency case) are consistent with the actual synchronous logic of those files, and that the loopback socket-abort test uses a test-owned HTTP server with bounded timeouts and destroys all sockets/closes the server in a finally block (no unbounded hang, no TLS/real Square contact). Confirmed scripts/square-activation.mjs invokes only two fixed argv-array child processes (no shell string, no injection surface) and that package.json/scripts/verify.mjs consistently reference the new test:square-activation script in place of the old test:flow-payment entry, with test:flow-payment itself still present and separately invoked from inside the new harness (no duplication or dropped coverage). Verified config/production/guest.pending.json and config/production/launch-gates.json are absent from the modified-file list (confirmed unchanged), consistent with the claim that production configuration/gates were not touched by this diff. Verified internal numeric consistency of all three GUEST_POLICY_PROPOSAL.md candidate rows against the existing guestSecurityPolicy() cross-field inequalities in packages/contracts/src/guest-security.ts and guest.schema.json bounds. Cross-checked CATALOG_ACTIVATION.md's claims about commitImportDryRun against the actual stock-import-plan.ts/import-staging.ts logic (applied:false, requiresAuthorizedLedgerCommit:true) and found them accurate. Did not and could not independently execute any code or CI (tests_executed=false per required scope); relied on the supplied local-verification and CI logs/artifact-exclusion records, which are internally consistent with each other and with the diff, and cross-referenced the actual GitHub job log excerpt (checked-out SHA a5a6728..., head e9cc1dc..., base eb9e940f..., conclusion success) against the ci.json summary for exact-head correspondence. Found no functional or security defect introduced by this diff within the reviewed scope. This scoped PASS covers only the P3 preparation artifacts and bounded diagnostic/harness code actually changed; it does not evaluate, resolve, or authorize any of the explicitly-gated external/Owner items (real Square Sandbox, real ingress provider, real storage/import/backup providers, real device tests, final legal/commercial terms, or any future production activation/merge), all of which remain open per the project's own documentation.",
+    "tests_executed": false,
+    "prior_finding_dispositions": [
+      {
+        "id": "P2-01",
+        "status": "RESOLVED",
+        "evidence": "Carried forward from the PR13 merge record embedded in docs/execution/production-p3-evidence/pr13-merge-gates.json (review.prior_finding_dispositions), which shows the NEXT_PUBLIC_* blanket-regex fix and its red/green test evidence already merged into base eb9e940fca5eb75956b60d76082ea7a0cb230ee6 prior to this PR14 diff; this PR14 delta does not touch packages/contracts/src/production-operations.ts or its test, so the resolution is unchanged and not reopened."
+      },
+      {
+        "id": "P2-02",
+        "status": "RESOLVED",
+        "evidence": "Same embedded PR13 merge record shows the isolated-backup.ts credential-consistency fix and its Postgres 28P01 wrong-password regression test already merged into base prior to this PR14 diff; unchanged/not reopened by this PR14 delta."
+      },
+      {
+        "id": "MAIN_PROTECTION",
+        "status": "RESOLVED",
+        "evidence": "docs/execution/p3/MAIN_PROTECTION.md and docs/execution/production-p3-evidence/ruleset-23161641.json show Ruleset23161641 (Protect main) as enforcement:active with required PR/status-check/squash-only/non-fast-forward and empty bypass_actors, read-only verified in this P3 round. This is an external Owner-controlled GitHub setting, not a code fix in this diff, and the document itself correctly cautions that this dated snapshot must be re-verified live before any future production activation rather than treated as a permanent resolution."
+      },
+      {
+        "id": "CI500-34749426170",
+        "status": "UNRESOLVED",
+        "evidence": "docs/execution/p3/CI500_OBSERVATION.md and docs/execution/production-p2-evidence/ci-first-failure.json both explicitly state the original staff-create HTTP500 root cause was never conclusively reproduced or retained; this PR14 diff adds only a bounded forward-looking diagnostic (staff-operation-diagnostic.ts: correlationId/phase/allowlisted SQLSTATE, no message/stack) and explicitly does not claim the historical failure is explained or fixed, consistent with the instruction not to treat later CI success as a root-cause resolution."
+      }
+    ]
+  },
+  "local_finding": {
+    "id": "CODEX-P3-01",
+    "state": "FIXED_LOCAL_VERIFIED",
+    "review_pending": true
+  }
 }

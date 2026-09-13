@@ -1,0 +1,13 @@
+{
+  "id": "CODEX-P3-01",
+  "severity": "LOW",
+  "status": "REPRODUCED_REQUIRED_FIX",
+  "head": "e9cc1dca7494fdd70fac3a971be1fc54761849df",
+  "file": "tests/flow/launcher.ts",
+  "line": 29,
+  "trigger": "A genuine staff POST500 produces STAFF_OPERATION_DIAGNOSTIC JSON, but the child stderr filter only forwards AUTH_PIPELINE_CODE lines.",
+  "impact": "The new bounded diagnostic is discarded in this CI UI launcher; historical500 recurrence cannot be investigated using it. No auth/business or payment behavior changed.",
+  "evidence": "diagnostic-forward-before.log; ordinary password HTTP/protected POST/real isolated PostgreSQL injected23514; expected one safe diagnostic, observed zero; exit1",
+  "historical_ci500_root_cause": "Still unresolved. The injected failure proves only diagnostic plumbing.",
+  "next": "Bounded strict allowlist line forwarder + fragmented/oversized/leak tests + same realHTTP regression; full regression and exact-head CI; one necessary follow-up static review with previously omitted launcher and P2 metadata delta."
+}

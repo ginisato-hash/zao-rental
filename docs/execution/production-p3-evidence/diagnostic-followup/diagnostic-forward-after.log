@@ -1,0 +1,6 @@
+
+> zao-rental@0.1.0 test:staff-diagnostic
+> node --import tsx tests/readiness/staff-diagnostic.ts
+
+PASS ordinary password HTTP -> protected staff POST -> owned real-PG injected23514 -> generic500 + bounded diagnostic collected; transaction rollback verified
+Owned diagnostic Web/PostgreSQL/request context stopped.

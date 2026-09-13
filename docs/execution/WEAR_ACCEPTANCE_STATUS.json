@@ -1,7 +1,7 @@
 {
   "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
   "budget_reset": false,
-  "as_of": "2026-09-12T19:00:41.213015+00:00",
+  "as_of": "2026-09-12T20:58:06.355025+00:00",
   "source_tests": 57,
   "items": [
     {
@@ -14,63 +14,63 @@
     {
       "id": "PRICE-02",
       "title": "道具216既存価格不変",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "PRICE-03",
       "title": "大人1日セット合計",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "PRICE-04",
       "title": "Premium1日衣類追加",
-      "state": "TESTED_SUBSET_REVIEW_PENDING",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "PRICE-05",
       "title": "子供1日",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "PRICE-06",
       "title": "半日",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "PRICE-07",
       "title": "20%と5%",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "PRICE-08",
       "title": "割引半円",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "PRICE-09",
       "title": "同一人条件",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "PRICE-10",
       "title": "板だけ/靴だけ",
-      "state": "TESTED_SUBSET_REVIEW_PENDING",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
@@ -105,28 +105,28 @@
     {
       "id": "INV-01",
       "title": "上下不足",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "INV-02",
       "title": "別サイズ上下",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "INV-03",
       "title": "二重チャネル",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "INV-04",
       "title": "競技共有",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
@@ -161,7 +161,7 @@
     {
       "id": "INV-09",
       "title": "20人最大入力",
-      "state": "TESTED_SUBSET_REVIEW_PENDING",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
@@ -189,21 +189,21 @@
     {
       "id": "UI-01",
       "title": "wearのみ",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "UI-02",
       "title": "混在グループ",
-      "state": "TESTED_SUBSET_REVIEW_PENDING",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
     {
       "id": "UI-03",
       "title": "料金カード",
-      "state": "TESTED_SUBSET_REVIEW_PENDING",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
@@ -217,7 +217,7 @@
     {
       "id": "UI-05",
       "title": "写真不足",
-      "state": "TESTED_SUBSET_REVIEW_PENDING",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
@@ -231,7 +231,7 @@
     {
       "id": "UI-07",
       "title": "再読込",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
@@ -273,14 +273,14 @@
     {
       "id": "OPS-04",
       "title": "重複返却",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "OPS-05",
       "title": "返却受領",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
@@ -308,7 +308,7 @@
     {
       "id": "OPS-09",
       "title": "異店舗受領",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
@@ -322,14 +322,14 @@
     {
       "id": "OPS-11",
       "title": "早期返却",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
     {
       "id": "OPS-12",
       "title": "権限取消",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
@@ -357,7 +357,7 @@
     {
       "id": "CAT-04",
       "title": "200着単位不明",
-      "state": "TESTED_SUBSET_NOT_REVIEWED",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "tests/unit/wear-contract.test.ts; tests/wear/real-postgres.ts; tests/wear/normal-ui.ts; tests/wear/group-capacity.ts"
     },
@@ -392,7 +392,7 @@
     {
       "id": "CAT-09",
       "title": "混在負荷",
-      "state": "TESTED_SUBSET_REVIEW_PENDING",
+      "state": "TESTED_SUBSET_SCOPED_REVIEW_PASS",
       "spec_status": "Original retained; garment-Asset clauses superseded by quantity override",
       "evidence": "wear-review3 evidence: explicit goldens, SINGLE order regression,10normalUI,20x5,200/400physical-part mixed HTTP; not production/guest/real-device complete"
     },
@@ -431,13 +431,16 @@
     "review": "Final integrated new-head review pending; previous scoped review4 PASS with LOW followup"
   },
   "content_fixture": {
-    "state": "PARTIAL_TESTED_REVIEW_PENDING",
-    "record": "docs/execution/CONTENT_FIXTURE_PROGRESS.md",
-    "normal_UI_cases": 9,
-    "photo_count": 50,
-    "realPhotos": false,
-    "realCMSDB": false,
-    "equipment_content_targets": 18,
-    "input_boundary": "photo-input/record.json; 2beforefail/2afterpass,9HTTPUI; finalnewheadCIpending"
+    "cases": 11,
+    "storage": "isolated private file fixture; production CMS absent",
+    "review": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890",
+    "photos": "50tiny synthetic photos plus one25MP synthetic image under deterministic contention; no actual owner photo/latency guarantee"
+  },
+  "review_coverage": {
+    "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+    "wear": "review4 baseline plus review5 explicit-scope/price readiness; code unchanged thereafter",
+    "content": "review6 substantive first review, review7 LOW corrections",
+    "final_review": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890",
+    "scope": "Only tested subset. PARTIAL/NOT_IMPLEMENTED are not promoted; all57pack criteria are not complete."
   }
 }

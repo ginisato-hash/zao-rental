@@ -1,0 +1,160 @@
+{
+  "pack_id": "ZAO-WEAR-CATALOG-UX-20260913-V1_2",
+  "version": "1.2",
+  "status": "RESEARCH_AND_DEVELOPMENT_INSTRUCTION_NOT_DEPLOYED",
+  "generated_date": "2026-09-13",
+  "precedence_file": "01_ADOPTION_AND_PRECEDENCE.md",
+  "previous_pack_preserved": true,
+  "previous_sha256": "823b25352a31a41c713ad1639f87f61800498afdfb6207f7cd1ecd54a4506461",
+  "web_primary_source_records": 29,
+  "rental_operator_pages_investigated": 14,
+  "app_acceptance_cases_designed": 57,
+  "reference_math_checks_passed": 216,
+  "app_tests_executed_by_this_pack": false,
+  "full_salomon_catalog_extracted": false,
+  "repository_modified": false,
+  "contains_private_sales_or_supplier_originals": false,
+  "files": [
+    {
+      "path": "00_START_HERE.md",
+      "size_bytes": 1701,
+      "sha256": "74494a86d9d78e8b86d76b6a87ac56aae9d0dcbb8011d4c3df7ea3cdcbf92b09"
+    },
+    {
+      "path": "01_ADOPTION_AND_PRECEDENCE.md",
+      "size_bytes": 3168,
+      "sha256": "7de77316183b9859d68dc88032aa0f356d3756db353fea57967e15c321eb23af"
+    },
+    {
+      "path": "02_WEAR_PRICING_RESEARCH.md",
+      "size_bytes": 8540,
+      "sha256": "164c520233469e64125188032eb1a286d180d2ece7dc27481914a0a2dafe21d4"
+    },
+    {
+      "path": "03_WEAR_BOOKING_IMPLEMENTATION.md",
+      "size_bytes": 9620,
+      "sha256": "663b273ba6d9ad694eaaa3ba8e473cb1f3625df7ce22f8eafd921ccc7947b4d0"
+    },
+    {
+      "path": "04_SNOWBOARD_CATALOG_PHOTOS_ADDENDUM.md",
+      "size_bytes": 3066,
+      "sha256": "91ce10d5215e1b2520d42a28b57e5b634d6a8c821c37d396c0f3d6b76ac10895"
+    },
+    {
+      "path": "05_CODEX_HANDOFF.md",
+      "size_bytes": 5468,
+      "sha256": "a4a831de472c7f4907b63f8b56e63eb3db3e71d88f3dad9be2fa57f8899b30ff"
+    },
+    {
+      "path": "CODEX_COPY_PASTE.txt",
+      "size_bytes": 2247,
+      "sha256": "6138911ac039f7c0f26b723cc8ad0f41c6ead0b93a6c953cbf50a0f013d8de41"
+    },
+    {
+      "path": "ZAO_Rental_Wear_Pricing_v1_2.xlsx",
+      "size_bytes": 25281,
+      "sha256": "49276eb4a88ad18c705360626600f83d40c4f9f814d72f3c9d4f4d6074d50a28"
+    },
+    {
+      "path": "contracts/acceptance_tests.csv",
+      "size_bytes": 7735,
+      "sha256": "be06f6189c8c92536e54246040249abb1002f9138578ca457ac7188e5b95828b"
+    },
+    {
+      "path": "contracts/acceptance_tests.json",
+      "size_bytes": 14641,
+      "sha256": "c0858fb43a54d27e39078ef244c4fc24526525f0a9e7245443524c7b180eae37"
+    },
+    {
+      "path": "contracts/catalog_coverage.json",
+      "size_bytes": 605,
+      "sha256": "b05d787c8cf03d5dd1ec2a094ba5fb0dfacfc5ac991dee6886d88c3376f93f5e"
+    },
+    {
+      "path": "contracts/photo_binding_template.csv",
+      "size_bytes": 273,
+      "sha256": "abf9b4113d2df41777a08e391f9ae7aadfcbff99088b121959dfa3a9448d1808"
+    },
+    {
+      "path": "contracts/wear_receipt_template.csv",
+      "size_bytes": 307,
+      "sha256": "d97605504577caff0e28e7bc362aaa19ede557cc59bb6a0f0b45ff65270f65e8"
+    },
+    {
+      "path": "previous/ZAO_Rental_Premium_Catalog_UI_Pack_v1_1.zip",
+      "size_bytes": 46926,
+      "sha256": "823b25352a31a41c713ad1639f87f61800498afdfb6207f7cd1ecd54a4506461"
+    },
+    {
+      "path": "pricing/base_equipment_v0_4_reference.json",
+      "size_bytes": 10998,
+      "sha256": "23ce25f237e6e6928669525c10df7f4e0452f7ee617e349f79df2a7cc856eaa7"
+    },
+    {
+      "path": "pricing/full_set_prices.csv",
+      "size_bytes": 8482,
+      "sha256": "8700edf1c9e34842d8c14180b7be1d6bb964a91313cb56b234b1dfa6fce938a2"
+    },
+    {
+      "path": "pricing/wear_pricebook_v1_2.proposed.json",
+      "size_bytes": 3818,
+      "sha256": "a96b4a62bb3ff4e62d5d5a495cb832ea07e1331cfe0be9466156692aede86d7c"
+    },
+    {
+      "path": "pricing/wear_prices.csv",
+      "size_bytes": 2131,
+      "sha256": "3d37dd0473e77ee1528dac43141975b55ff2a8f16e03b3594de887b74f4e3785"
+    },
+    {
+      "path": "reference/Salomon_Catalog_Source_Index_v1_1.json",
+      "size_bytes": 2900,
+      "sha256": "10cb8184a38878ab6a69e4293f3445bdb41cd2319929e7874aeb4e4baa5e2926"
+    },
+    {
+      "path": "reference/ZAO_Rental_Premium_Catalog_UI_Plan_v1_1.md",
+      "size_bytes": 30489,
+      "sha256": "6ec4194fbb9e45c3df97978b11aea4ab561cdc746358b0111842b22ee4aca598"
+    },
+    {
+      "path": "reference/ZAO_Rental_Public_UX_CMS_Spec_v1.md",
+      "size_bytes": 51319,
+      "sha256": "c236912e43e8a3b6e73045ef6005fea1b32546c28687f59f1e0cbed60d5195f9"
+    },
+    {
+      "path": "reference/history/ZAO_Rental_Premium_Catalog_UI_Plan_v1.md",
+      "size_bytes": 22834,
+      "sha256": "10cf373bbf3c605f9a79db1e1ca5a525cbabf2325047cc40743872f9e0b4355c"
+    },
+    {
+      "path": "research/rental_comparison.csv",
+      "size_bytes": 2204,
+      "sha256": "0665890ed889a364fc053f3e54c2163cbabde9a5f7469c5e7b0e78a4bbbe9f5b"
+    },
+    {
+      "path": "research/sources.csv",
+      "size_bytes": 8971,
+      "sha256": "e4eb772943560ab090ee1980b35678fe4069b9d6815787fc0c5cd635120555c4"
+    },
+    {
+      "path": "research/sources.json",
+      "size_bytes": 13173,
+      "sha256": "c7d38ac0a6f6b4b04c96de5733aacc61d9e0a8f0f3e70e13cff1279aad6d6e11"
+    },
+    {
+      "path": "verification/check_reference.py",
+      "size_bytes": 2870,
+      "sha256": "dc278d6738cc1395ace501f039172d1ee78616acf1132602eecda893dc62af06"
+    },
+    {
+      "path": "verification/golden_prices.json",
+      "size_bytes": 1174,
+      "sha256": "cba051fe59a5d85e5c5c054b40fdc9d2bc76e6e92f004f1e74f64d7e4d113662"
+    },
+    {
+      "path": "verification/reference_results.json",
+      "size_bytes": 16271,
+      "sha256": "6f7ec4c37d31aa3348253aa9b6e233ab7f4790e0504eaf68e2efec955d05a378"
+    }
+  ],
+  "hash_scope": "All payload files listed; manifest and SHA256SUMS exclude themselves."
+}

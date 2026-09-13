@@ -1,0 +1,82 @@
+{
+  "state": "RETURNED",
+  "scope": "Quantity wear, persistent return batch, transfer UI, login hydration correction and pure content/photo import foundations; partial FLOW-DEV milestone",
+  "round_after_adoption": 3,
+  "cumulative_cli_start": 3,
+  "started_at": "2026-09-12T17:50:34.677568+00:00",
+  "head_sha": "0ed175ae9734848fb2eb2f7372c60a4e625ad208",
+  "snapshot_sha256": "b1f47dcfa1cfef2114cb080cf8d3bdd1fc6de6a25bc11a3ae8c5f00b17dcc98c",
+  "billing_check": {
+    "checked_at": "2026-09-12T14:30:03.982489+00:00",
+    "source": "Claude Team admin usage + personal usage UI, read only",
+    "extra_usage_enabled": false,
+    "auto_recharge_enabled": false,
+    "confirmed_within_approved_billing_scope": true,
+    "session_used_percent": 0,
+    "weekly_used_percent": 36,
+    "browser_tab_owned_and_closed": true,
+    "model_probe_starts": 0
+  },
+  "timeout_seconds": 900,
+  "pid": 51441,
+  "exit_code": 0,
+  "finished_at": "2026-09-12T18:01:06.489700+00:00",
+  "capabilities": {
+    "tools": [
+      "StructuredOutput"
+    ],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.220",
+    "fast_mode_state": "off"
+  },
+  "hook_events": [],
+  "rate_limit_events": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789242600,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "is_error": false,
+  "result_subtype": "success",
+  "permission_denials": [],
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 391402,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 61472,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 391402,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 61472,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 391402,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 391402
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "reported_cost_usd": 3.270498
+}

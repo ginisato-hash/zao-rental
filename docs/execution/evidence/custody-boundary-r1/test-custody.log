@@ -1,0 +1,34 @@
+
+> zao-rental@0.1.0 test:custody
+> node --import tsx tests/custody/boundary-counterexample.ts && node --import tsx tests/custody/real-postgres.ts && node --import tsx tests/custody/scenarios.ts
+
+PASS approved receipt-only boundary exists in migrated real PostgreSQL
+Owned counterexample database stopped.
+PASS new functions deny PUBLIC; app has no owner membership, DDL, location/history/state writes
+PASS normal library session confirmed synthetic booking -> exact preparation -> serialized pair/boot/pole checkout; replay once
+PASS duplicate same-ID side labels persist one exact-cycle candidate; separate terminal retains pinned cycle
+PASS future promise is created before physical return
+PASS two terminals confirm once; partial cross-store changes actual location, preserves other OUT items and original price/TTL
+PASS owner SQL/GUC cannot reuse receipt-specific location exception; other staff receipt is denied
+PASS temporary tables and writable-schema tables/functions/operators cannot hijack pinned receipt function
+PASS receipt UUID cannot be used by a different real staff session or without the actual receiving scope
+PASS stale loan candidate is rejected without changing the old loan or other candidates
+PASS receive is not sellable; inspection does not remove same-day or original contract date block
+PASS pole PAIR receipt moves one physical unit to actual destination pending inspection; repeat cannot inflate
+PASS custody role cannot unfix a rental or read/modify private effect rows
+PASS same receipt actor with removed receiving-store scope is rejected inside UUID function
+PASS unapplied receipt ignores hostile temp/schema objects; unrelated owner function cannot move an OUT asset
+PASS session actor/store restriction and lock-wait permission removal reject before receipt mutation
+PASS lock-wait staff disable invalidates the session and leaves the OUT item untouched
+CUSTODY real PostgreSQL 16 cases passed; no real people, inventory, Square or device.
+Owned custody PostgreSQL stopped.
+PASS booking creator hands off to distinct scoped pickup staff; returned items may be received by another authorized staff
+PASS two-member pole partial return, concurrent terminals, replay and inspection conserve every PAIR
+PASS existing transfer cannot dispatch a checked-out individual or consume OUT pole quantity
+PASS snowboard and snowboard-boot use one immutable Asset each, receive cross-store and retain same-day block
+PASS saved old scan never retargets a new cycle; new scan resolves new exact loan and receipt
+PASS MULTIDAY continuation is not permission for after-hours physical checkout
+PASS UUID function itself rechecks permission removal after inventory-lock wait
+PASS UUID function itself rejects staff disable/session invalidation after inventory-lock wait
+CUSTODY scenarios 8 passed; real PostgreSQL, synthetic stock and normal password/session.
+Owned scenario PostgreSQL stopped.

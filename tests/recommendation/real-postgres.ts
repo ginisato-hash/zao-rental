@@ -1,3 +1,4 @@
+import {legacyHold} from '../fixtures/legacy-prefix';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
@@ -27,7 +28,7 @@ try{
  const actor=(await writeAccount(db.pool,bp,undefined,{...settings,email:'e09-actor@example.invalid',password})).id!,principal=(await loadStaff(db.pool,actor))!;
  const editorId=(await writeAccount(db.pool,bp,undefined,{...settings,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true},email:'e09-price@example.invalid',password})).id!,editor=(await loadStaff(db.pool,editorId))!;
  const prePrice=new QuoteService(db.pool,editor,()=>now);await prePrice.initializePrivate(randomUUID(),'2035-01-01','2036-12-31');
- const preHolds=new HoldService(db.pool,principal,()=>now),oldHold=await preHolds.command('create',randomUUID(),requestFor('2035-01-02')),oldQuote=(await new QuoteService(db.pool,principal,()=>now).create(randomUUID(),{conditions:oldHold.hold!.conditions,holdId:oldHold.holdId,couponCode:null,wantAdvance:false})).quote;
+ const preHolds=new HoldService(db.pool,principal,()=>now),oldHold=await legacyHold(db.pool,principal.subject,requestFor('2035-01-02'),now),oldQuote=(await new QuoteService(db.pool,principal,()=>now).create(randomUUID(),{conditions:oldHold.hold!.conditions,holdId:oldHold.holdId,couponCode:null,wantAdvance:false})).quote;
  const auth=createStaffAuth(db.pool,{origin,secret}),httpAuth=authHandler(auth,db.pool,origin,db.pool);
  async function login(email:string){const r=await httpAuth(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email,password})}));assert.equal(r.status,200);return r.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ');}
  const cookie=await login('e09-actor@example.invalid');

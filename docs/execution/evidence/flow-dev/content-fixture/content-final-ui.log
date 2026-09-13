@@ -1,0 +1,14 @@
+
+> zao-rental@0.1.0 test:content-fixture
+> node --import tsx tests/content/normal-ui.ts
+
+PASS normal password authentication plus explicit synthetic CONTENT fixture grant, not role auto-publish
+PASS CSV file dry-run, partial draft commit, lost HTTP response and reload recover original server job once
+PASS private release persists current, audit and outbox through actual Web process restart; width fits
+PASS stale release/rights revocation rejects with pointer preserved; restore is a new private manifest
+PASS 50 selected synthetic photos survive interrupted upload, same-job resume and authenticated derivative display
+PASS manufacturer source staging keeps sport/season/cell provenance, reimport is idempotent and never writes inventory
+PASS 18 approved equipment offer codes receive one bulk description update without price, release or inventory mutation
+PASS CONTENT fixture revocation and real staff disable deny pending commits without persistent changes
+CONTENT fixture 8 passed: normal password/real session DB, local synthetic content file; no production CMS role/storage/permissions or public release.
+Owned content fixture/Web/browser/PostgreSQL stopped.

@@ -1,0 +1,55 @@
+{
+  "approval": "ZAO-FLOW-CUSTODY-DB-BOUNDARY-R1",
+  "start_utc": "2026-09-12T22:51:31Z",
+  "deadline_utc": "2026-09-13T04:51:31Z",
+  "start_jst": "2026-09-13T07:51:31+09:00",
+  "deadline_jst": "2026-09-13T13:51:31+09:00",
+  "claude_max_starts": 1,
+  "claude_starts": 0,
+  "historical_flow_starts": 7,
+  "historical_unused_not_added": true,
+  "base": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "initial_head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+  "approval_sha256": "56e1f41a59f8925043051dfc5b8f41d2ecd1b7f70f33a9ad006670bd0e265add",
+  "preserved_progress": {
+    "FLOW_DEV_STATUS": "a86cd20d41b0d9e7b9d23345cc27ca31e96479f54e0b83917a85795225e1493b",
+    "WEAR_ACCEPTANCE_STATUS": "a62776df376c23d48a5056e9687406a8e4ad58131b2145f8a07dd3ff60f1a3d0"
+  },
+  "state": "LOCAL_VERIFIED_AWAIT_CI_REVIEW",
+  "next": "Normal push to existing Draft PR10; verify exact-head CI; one final static review.",
+  "updated_at": "2026-09-13T00:08:01.898254+00:00",
+  "verification": {
+    "verify_exit_code": 0,
+    "commands": 37,
+    "all_command_exit_codes": 0,
+    "source_files_compared": 307,
+    "input_hash_file": "outputs/custody-boundary-r1/verification-inputs.json",
+    "source_unchanged_since_test_start": true,
+    "applied_migrations_0001_through_0014_unchanged": true,
+    "runner_workflows_reference_lockfile_unchanged": true,
+    "db_grouped_cases": 24,
+    "normal_ui_grouped_cases": 5,
+    "counterexamples": {
+      "boundary_absent_before": 1,
+      "boundary_after": 0,
+      "afterhours_before": 1,
+      "afterhours_after": 0
+    },
+    "data": "SYNTHETIC",
+    "auth": "maintained normal email/password session in isolated test app",
+    "camera": "synthetic canvas frames; no physical phone",
+    "verification_run": "2026-09-12T23-58-41.816Z"
+  },
+  "unconnected": [
+    "real Square/Sandbox transport",
+    "production route/deployment",
+    "real staff/customer/stock",
+    "physical smartphone camera/fitting",
+    "operational cleaning/catalog completion"
+  ],
+  "known_limits": [
+    "No production readiness claim; static final review pending",
+    "No timestamp correction/exception inspection UI or paid exchange",
+    "Normal app has no custody mutation route; finite test composition only"
+  ]
+}

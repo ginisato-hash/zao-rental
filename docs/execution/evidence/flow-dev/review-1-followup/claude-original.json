@@ -1,0 +1,46 @@
+{
+  "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "head_sha": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+  "snapshot_sha256": "a21cfe89e97fe319a01ef258499611889c8132789a8e66129a6466847d88b4e6",
+  "verdict": "REVIEW_PASS",
+  "findings": [
+    {
+      "id": "F1-CLOCK-SOURCE-INCONSISTENCY",
+      "severity": "LOW",
+      "file": "packages/core/src/payment/booking-service.ts",
+      "line": 32,
+      "condition": "gateway.create() throws (simulated response loss) and markUnknown() runs",
+      "impact": "markUnknown() sets rental_payment_attempts.updated_at using raw SQL clock_timestamp() instead of the injectable inventory_clock() used by every other state transition in this service (this.time(c)). Under a controlled/mocked test clock (as used throughout tests/flow/fixture.ts's x.clock()), this one column silently uses real wall-clock time while every other timestamp in the same row/booking uses the mocked domain clock, producing an audit-trail inconsistency that is invisible to current assertions (updated_at is not compared in any test) but would corrupt any future reconciliation logic that trusts updated_at as domain time.",
+      "evidence": "packages/core/src/payment/booking-service.ts line 32: `await c.query(\"UPDATE rental_payment_attempts SET state='UNKNOWN',updated_at=clock_timestamp() WHERE id=$1 AND state='SUBMITTING'\",[attemptId]);` versus every other transition (e.g. recordObservation) which passes the mocked `now` parameter explicitly to `updated_at`.",
+      "fix": "Thread `now` (from this.time(c) inside the transaction) into the UPDATE instead of calling clock_timestamp() directly, matching the pattern used elsewhere in this file.",
+      "test": "Add an assertion in tests/flow/payment.ts's UNKNOWN-response-loss case comparing rental_payment_attempts.updated_at to the fixture's mocked x.now(), which would currently fail."
+    },
+    {
+      "id": "F2-CUSTODY-SCHEMA-MISSING-TIME-ORDER-CHECKS",
+      "severity": "LOW",
+      "file": "packages/db/migrations/0010_rental_custody.sql",
+      "line": 15,
+      "condition": "A future authorized writer role is granted INSERT on rental_receipts before this constraint is added",
+      "impact": "rental_receipts only enforces `CHECK(actual_received_at<=confirmed_at)` at the database level; it does not enforce `scanned_at<=actual_received_at` or `scanned_at<=confirmed_at`, even though the pure contract in packages/contracts/src/return-cycle.ts (receiptDisposition) enforces exactly that ordering in application code. Since no application role currently has write access to this table (confirmed absent from scripts/flow-roles.ts and scripts/application-roles.ts), this is not presently exploitable, but if a future E12 writer bypasses or has a bug in the application-layer check, the database has no independent safety net for this specific ordering invariant, unlike the actual_received_at<=confirmed_at case which IS enforced twice.",
+      "evidence": "packages/db/migrations/0010_rental_custody.sql line 15: `CREATE TABLE rental_receipts(...scanned_at timestamptz NOT NULL,confirmed_at timestamptz NOT NULL,actual_received_at timestamptz NOT NULL,CHECK(actual_received_at<=confirmed_at));` contains only one of the three pairwise ordering checks that packages/contracts/src/return-cycle.ts's receiptDisposition() validates.",
+      "fix": "Add `CHECK(scanned_at<=actual_received_at AND scanned_at<=confirmed_at)` to the rental_receipts table before any role is granted write access to it, as a required activation prerequisite alongside the FLOW_DEV_BLOCKED_PERMISSIONS.md owner decision.",
+      "test": "A future integration test inserting a rental_receipts row with scanned_at after actual_received_at should fail at the database level even if application validation is bypassed; no such test currently exists because the table is unconnected."
+    }
+  ],
+  "insufficient_evidence": [
+    "docs/execution/AUDIT_AG_STATUS.json is listed as modified in the file-status diff but its content/diff was not included in the supplied snapshot, so the claimed reconciliation of prior A-G status against this new delegation could not be verified.",
+    "docs/execution/evidence/flow-dev/flow-booking-desktop.png and flow-booking-mobile-width.png are referenced screenshot artifacts; binary image content was not inspectable, so the mobile/desktop UI rendering claims rest only on the accompanying code-level scrollWidth<=innerWidth assertion in tests/flow/normal-ui.ts, not visual confirmation.",
+    "ADR 0017's explicit claim that a process restart between a successful gateway.create() and DB persistence 'stays incomplete and never creates another request' is asserted in prose but no test in tests/flow/payment.ts exercises an actual process/module restart with the FakeGateway's in-memory receipts map cleared; only the in-process failAfterSave path (gateway.create() itself throwing) is tested, which is a materially different failure mode than persistence failing after a successful gateway call.",
+    "packages/db/src/schema.ts (drizzle schema definitions) was not included in the snapshot and is not listed as modified; its consistency with the new rental_* raw-SQL tables could not be directly confirmed, though the codebase's established pattern of using raw pg queries (not drizzle) for all domain tables makes drift unlikely.",
+    "No independent test execution was performed by this review; all pass/fail evidence (payment-18.log, ui-5.log, return-cycle-after.log, CI run 34700107256) is taken as supplied and cross-checked only for internal logical consistency against the code, not re-run."
+  ],
+  "activation_prerequisites": [
+    "Owner decision on the three items in docs/execution/FLOW_DEV_BLOCKED_PERMISSIONS.md (custody-table writer role, RENTAL_CHECKOUT/RENTAL_RETURN exposure in StaffManagement UI, narrow actual-receipt operation) before any E12 loan/return database write path can exist.",
+    "Addition of the missing scanned_at ordering CHECK constraints on rental_receipts (F2) before any role is granted INSERT/UPDATE on the E12 custody tables.",
+    "Real Square Sandbox credentials and an authorized external webhook endpoint before E10's 'Actual Square transport/Sandbox/external callback' gap can be closed; explicitly BLOCKED_EXTERNAL_NOT_AUTHORIZED per this delegation.",
+    "Physical smartphone/camera verification before any claim of a working continuous-scan return UI, which does not exist in this PR (E12 has no camera/return UI at all, by design)."
+  ],
+  "scope_assessment": "This review examined the E10 payment core (packages/core/src/payment/booking-service.ts, square-boundary.ts, packages/contracts/src/rental-flow.ts, migrations 0009/0010, scripts/flow-roles.ts), the E11 customer/staff booking preview (apps/web BookingWorkspace.tsx, preview/rental route, booking-http.ts, the RecommendationWorkspace.tsx one-line quote-preview link addition), and the E12 unconnected artifacts (packages/contracts/src/return-cycle.ts pure contract, migration 0010 custody schema, and confirmation that no application role in flow-roles.ts or application-roles.ts has any grant on the new custody tables/views, i.e. E12 is genuinely inert as claimed, not merely undocumented). The hold-service.ts change in this delta is a structural extraction of existing PR9 allocation logic into packages/core/src/inventory/allocation.ts, plus one narrow, intentional, test-covered behavioral addition (allowing a CONFIRMED_DEV/SUCCESS+confirmed_at hold to participate in replanning) required for the 'confirmed provisional witness remains flexible' E10 feature; this was traced line-by-line against the diff and found behaviorally faithful except for that documented addition. Payment identity persistence-before-side-effects, UNKNOWN/no-replacement-charge, signature verification/dedup/out-of-order/terminal-contradiction handling, exact price/currency/merchant/location/reference/capture-time matching, HOLD-expiry and full-claim protection at confirmation, auth-before-and-after-lock-wait ordering, creator-vs-scoped-reader separation, and the inability of the normal production route to enable simulation via env/body/cookie were all verified directly against code (not merely against test names) and found consistent with the stated contract. Prior PR9 A-G files not touched by this delta (ledger-service, transfer, quote-service core logic, staff-auth resolution, existing hold intake/period-matching) were not re-reviewed, per instruction. The full E10-E13 rental/return loop (real Sandbox, continuous-scan return UI, real custody reintegration) remains explicitly incomplete and blocked on an owner permission decision; this status is preserved as a blocker independent of the REVIEW_PASS verdict on the submitted, implemented subset, and is not contradicted by any finding in this review.",
+  "tests_executed": false,
+  "prior_finding_dispositions": []
+}

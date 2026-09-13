@@ -1,0 +1,515 @@
+[
+  {
+    "id": "PRICE-01",
+    "group": "PRICE",
+    "title": "上下単品/セットの全12区分×2年齢",
+    "expected": "24明示値と48販売文脈値を独立期待値で照合",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-02",
+    "group": "PRICE",
+    "title": "道具216既存価格不変",
+    "expected": "入力正本SHAと全値が一致",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-03",
+    "group": "PRICE",
+    "title": "大人1日セット合計",
+    "expected": "7500+5000−1000=11500、早割575を引き10925",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-04",
+    "group": "PRICE",
+    "title": "Premium1日衣類追加",
+    "expected": "9000+4000=13000、早割650で12350",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-05",
+    "group": "PRICE",
+    "title": "子供1日",
+    "expected": "4000+3500−700=6800、早割340で6460",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-06",
+    "group": "PRICE",
+    "title": "半日",
+    "expected": "AM/PM同額、0.5日平均に置換しない",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-07",
+    "group": "PRICE",
+    "title": "20%と5%",
+    "expected": "衣類寄与額5000→4000→3800、25%と表示しない",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-08",
+    "group": "PRICE",
+    "title": "割引半円",
+    "expected": "110円の5%は6円引き104円",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-09",
+    "group": "PRICE",
+    "title": "同一人条件",
+    "expected": "代表者1SETで他利用者の衣類を割引しない",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-10",
+    "group": "PRICE",
+    "title": "板だけ/靴だけ",
+    "expected": "衣類セット割を付けない",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-11",
+    "group": "PRICE",
+    "title": "期間違い",
+    "expected": "部分重複日だけで割引せずP0同一期間条件を守る",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-12",
+    "group": "PRICE",
+    "title": "coupon未設定併用",
+    "expected": "bundle/coupon/advanceの未承認併用は拒否",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-13",
+    "group": "PRICE",
+    "title": "道具除去",
+    "expected": "支払前の再見積に同意、支払後旧snapshot不変",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "PRICE-14",
+    "group": "PRICE",
+    "title": "早割境界",
+    "expected": "前日15:00の決済証拠で判定、見積時刻を証拠にしない",
+    "kind": "UNIT_AND_REAL_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-01",
+    "group": "INV",
+    "title": "上下不足",
+    "expected": "パンツ1点不足でも全員分HOLDを部分成功にしない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-02",
+    "group": "INV",
+    "title": "別サイズ上下",
+    "expected": "ジャケットM/パンツLの有効組合せを確保",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-03",
+    "group": "INV",
+    "title": "二重チャネル",
+    "expected": "wear単独とgear+wearが最後の同じ衣類を同時確保できない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-04",
+    "group": "INV",
+    "title": "競技共有",
+    "expected": "ski/board兼用品を二重にcountしない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-05",
+    "group": "INV",
+    "title": "競技専用品",
+    "expected": "compatible_sportsに反する割当をしない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-06",
+    "group": "INV",
+    "title": "年齢区分",
+    "expected": "既存13歳境界/横断禁止を保持",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-07",
+    "group": "INV",
+    "title": "未来の同一個体",
+    "expected": "全期間が同じ用品で成立し、日別寄せ集めにしない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-08",
+    "group": "INV",
+    "title": "仮割当組替え",
+    "expected": "同じ約束内は可能、固定済みは解除しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-09",
+    "group": "INV",
+    "title": "20人最大入力",
+    "expected": "5用品×人数×候補等のUTF8上限を実測して受付",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-10",
+    "group": "INV",
+    "title": "HTTP攻撃",
+    "expected": "超過chunk/偽ContentLengthを拒否、その他APIの小上限を維持",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-11",
+    "group": "INV",
+    "title": "変更失敗",
+    "expected": "元の有効HOLD/TTL保持、旧見積を新条件に使わない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "INV-12",
+    "group": "INV",
+    "title": "配送中",
+    "expected": "両店舗で同じ個体を貸出可能にしない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-01",
+    "group": "UI",
+    "title": "wearのみ",
+    "expected": "靴/スキーレベル等の不要入力なしで上下を予約",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-02",
+    "group": "UI",
+    "title": "混在グループ",
+    "expected": "ski+wear,boardのみ,wearのみを一括で通す",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-03",
+    "group": "UI",
+    "title": "料金カード",
+    "expected": "選択期間総額と追加額、除外小物、early見込みを明示",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-04",
+    "group": "UI",
+    "title": "未選択既定",
+    "expected": "衣類を勝手にONにしない",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-05",
+    "group": "UI",
+    "title": "写真不足",
+    "expected": "別モデル写真で補わずdraft、他の文章処理は継続",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-06",
+    "group": "UI",
+    "title": "長い入力",
+    "expected": "プロフィール入力中はHOLDを開始せず、支払直前に開始",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-07",
+    "group": "UI",
+    "title": "再読込",
+    "expected": "HOLD成功後見積応答喪失で同じ保存結果へ復帰",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-08",
+    "group": "UI",
+    "title": "古い応答",
+    "expected": "別人/別サイズの遅いresponseを無視",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "UI-09",
+    "group": "UI",
+    "title": "guest認可",
+    "expected": "他context閲覧/偽principalを拒否",
+    "kind": "NORMAL_UI_API_DB",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-01",
+    "group": "OPS",
+    "title": "片側ではない片部位返却",
+    "expected": "上だけなら下未返却、上下を同じQRにしない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-02",
+    "group": "OPS",
+    "title": "スキー左右不変",
+    "expected": "片側1読取=1pairの確定仕様を維持",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-03",
+    "group": "OPS",
+    "title": "連続混在返却",
+    "expected": "複数予約の衣類と板を貸出サイクルで照合",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-04",
+    "group": "OPS",
+    "title": "重複返却",
+    "expected": "同一batch/別端末/再送で数が増えない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-05",
+    "group": "OPS",
+    "title": "返却受領",
+    "expected": "受領直後は検品/清掃待ちで即貸出不可",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-06",
+    "group": "OPS",
+    "title": "清掃予定と実績",
+    "expected": "予定ready時刻だけで清掃完了を捏造しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-07",
+    "group": "OPS",
+    "title": "計画バッファ",
+    "expected": "清掃時間込みの将来割当、設定変更で旧予約を消さない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-08",
+    "group": "OPS",
+    "title": "遅延清掃",
+    "expected": "次予約を要対応、固定割当/過去履歴を保護",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-09",
+    "group": "OPS",
+    "title": "異店舗受領",
+    "expected": "実店舗更新＋清掃/配送再評価、受領事実は記録",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-10",
+    "group": "OPS",
+    "title": "サイズ交換",
+    "expected": "新衣類成立後に旧を解除、使用済み旧はdirty",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-11",
+    "group": "OPS",
+    "title": "早期返却",
+    "expected": "同日再貸出・自動返金なし",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "OPS-12",
+    "group": "OPS",
+    "title": "権限取消",
+    "expected": "batchの直前失効/CAS/途中再開を確認",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-01",
+    "group": "CAT",
+    "title": "モデル名数量のみ",
+    "expected": "staging受理、年式/長さを勝手に確定しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-02",
+    "group": "CAT",
+    "title": "snowboard過去版",
+    "expected": "同名別季/幅違いを混同しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-03",
+    "group": "CAT",
+    "title": "写真の同一性",
+    "expected": "画像は候補補助、刻印等確認、類似画像自動確定なし",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-04",
+    "group": "CAT",
+    "title": "200着単位不明",
+    "expected": "パーツ/セットが不明なら400Assetを自動生成しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-05",
+    "group": "CAT",
+    "title": "同じ表再取込",
+    "expected": "別名/並替え/再送でも同一入荷を二重生成しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-06",
+    "group": "CAT",
+    "title": "数量減",
+    "expected": "既存Asset/HOLDを自動削除しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-07",
+    "group": "CAT",
+    "title": "モデル説明共用",
+    "expected": "同じ型の多数Assetへ本文/写真を複製しない",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-08",
+    "group": "CAT",
+    "title": "期限安全回帰",
+    "expected": "当日受付と17時跨ぎ有効HOLDの修正を保持",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-09",
+    "group": "CAT",
+    "title": "混在負荷",
+    "expected": "予約/quote/衣類clean/transfer/importを条件別に計測",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  },
+  {
+    "id": "CAT-10",
+    "group": "CAT",
+    "title": "既存DBmigration",
+    "expected": "元スタッフ/予約/QR/見積が新schemaで保持",
+    "kind": "REAL_DB_API",
+    "priority": "P0",
+    "status": "DESIGNED_NOT_EXECUTED_IN_ZAO_APP"
+  }
+]

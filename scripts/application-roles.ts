@@ -5,6 +5,7 @@ import {trackPoolLifecycle} from './pool-lifecycle';
 // Only called on the owned, fresh local cluster after migrations; never against an ambient URL.
 export async function provisionApplicationRoles(owner:Pool,identity:{namespace:string;database:string;dbPort:number}) {
  if(!/^zr_[a-f0-9]{12}$/.test(identity.namespace)||identity.database!==identity.namespace)throw new Error('INVALID_OWNED_DATABASE');
+ const hasWear=(await owner.query("SELECT to_regclass('public.wear_pools') IS NOT NULL AND to_regclass('public.wear_claims') IS NOT NULL AS present")).rows[0].present;
  const connections:Connection[]=[];
  for(const suffix of ['auth','ledger','hold','transfer','pricing','recommendation']) {
   const user=`${identity.namespace}_${suffix}`,password=randomBytes(24).toString('hex');
@@ -32,8 +33,14 @@ export async function provisionApplicationRoles(owner:Pool,identity:{namespace:s
    await owner.query(`GRANT EXECUTE ON FUNCTION inventory_record_replan(jsonb,jsonb) TO ${user}`);
   }
   if(suffix==='transfer'){await owner.query(`GRANT SELECT,INSERT,UPDATE ON transfer_batches,transfer_pieces,transfer_requests TO ${user}`);await owner.query(`GRANT SELECT ON transfer_history TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION transfer_pool(uuid,text,text),transfer_move_stock(uuid,text,timestamptz) TO ${user}`);}
+  // Quantity-wear adds capacity reads/claims to the existing isolated inventory role.
+  // Existing table privileges, user permissions and all role defaults stay unchanged.
+  if(hasWear&&(suffix==='hold'||suffix==='transfer')){await owner.query(`GRANT SELECT ON wear_pools,wear_claims,wear_loans,wear_receipts,wear_transfers TO ${user}`);}
+  if(hasWear&&suffix==='hold'){await owner.query(`GRANT INSERT,UPDATE(active) ON wear_claims TO ${user}`);await owner.query(`GRANT USAGE ON SEQUENCE wear_claims_id_seq TO ${user}`);}
   if(suffix==='pricing'){await owner.query(`GRANT SELECT ON staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,ledger_stores,ledger_models,ledger_variants,inventory_holds,inventory_claims,transfer_pieces,transfer_batches,pricing_history TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE ON price_books TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON price_activations,coupon_versions,price_quotes,coupon_reservations TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);}
   if(suffix==='recommendation'){await owner.query(`GRANT SELECT ON staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,ledger_stores,ledger_variants,recommendation_history TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON recommendation_previews TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE ON recommendation_selections TO ${user}`);}
+  if((await owner.query("SELECT to_regclass('public.rental_inspection_events') IS NOT NULL AS present")).rows[0].present&&['ledger','hold','transfer'].includes(suffix))await owner.query(`GRANT SELECT ON rental_inventory_blocks,rental_loan_items,rental_inspection_events TO ${user}`);
+  if(suffix==='hold'&&(await owner.query("SELECT to_regclass('public.rental_inspection_events') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT SELECT(id,hold_id) ON rental_bookings TO ${user}`);
   connections.push({host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password});
  }
  await owner.query(`REVOKE ALL ON DATABASE ${identity.database} FROM PUBLIC`);

@@ -1,0 +1,40 @@
+{
+  "source_head": "30f7987311317fb12e43d439981f78500c702b41",
+  "invalid_harness": [
+    "price-ui-ready-before.log",
+    "price-ui-ready-after.log"
+  ],
+  "invalid_harness_reason": "NoJS page is already hidden by StaffSessionBoundary; expecting a disabled nonexistent field was invalid. Both exit1 are preserved, not product counterexamples.",
+  "valid_before": {
+    "file": "price-catalog-gate-before.log",
+    "exit_code": 1,
+    "observation": "PRICE_INITIAL_CATALOG_PENDING_ENABLED true, expected disabled; real normal session plus held actual initialcatalog response"
+  },
+  "valid_after": {
+    "file": "price-catalog-gate-after.log",
+    "exit_code": 0,
+    "observation": "PRICE_INITIAL_CATALOG_PENDING_ENABLED false;7 normalUI/API/realPostgreSQL casespass; releasegate then ordinarywrite201"
+  },
+  "supplement": [
+    {
+      "command": "npm run lint",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "ci": {
+    "run": 34714762487,
+    "attempt": 1,
+    "head": "30f7987311317fb12e43d439981f78500c702b41",
+    "conclusion": "failure",
+    "location": "tests/flow/normal-ui.ts:23:500 finalprice display",
+    "diagnosis": "exact prior CI trigger unconfirmed; deterministic independent initialread race exposure now reproduced and guarded. No retry/timeout escalation."
+  }
+}

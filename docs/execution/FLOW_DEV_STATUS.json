@@ -1,0 +1,881 @@
+{
+  "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
+  "authority": "docs/execution/FLOW_DEV_DELEGATION.md; direct owner message; FLOW_DEV_CUSTODY_APPROVAL.md",
+  "current_run": {
+    "delegation_id": "ZAO-RENTAL-FLOW-DEV-R1",
+    "run_id": "ZAO-RENTAL-FLOW-DEV-R1-run01",
+    "start_utc": "2026-09-12T13:26:35+00:00",
+    "deadline_utc": "2026-09-12T21:26:35+00:00",
+    "start_jst": "2026-09-12T22:26:35+09:00",
+    "deadline_jst": "2026-09-13T06:26:35+09:00",
+    "max_total_seconds": 86400,
+    "prior_run_seconds": 0,
+    "max_claude_starts": 8,
+    "claude_starts": 7,
+    "reserve_final_review": 1,
+    "prior_delegation_starts": 3,
+    "prior_delegation_unused_not_added": true,
+    "ended_at_utc": "2026-09-12T20:58:06.355025+00:00"
+  },
+  "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "branch": "codex/rental-flow-dev-e10-e13",
+  "pr9_merge": {
+    "checked_at": "2026-09-12T13:29:35.793340+00:00",
+    "head": "f060662206b350a4b26aa653fdc45b04b828fecb",
+    "base": "7caf8cea4af29bb0d07ed3a55838257d8a9ffe5c",
+    "merge_commit": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "main": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "tree": "dde29c413aa9791bf86054bf6f36e7c2daa02567",
+    "method": "squash",
+    "head_match_forced": true,
+    "protected_paths_unchanged": true,
+    "body_updated_and_readback": true
+  },
+  "review_budget": {
+    "new_starts": 7,
+    "maximum": 8,
+    "remaining": 1,
+    "reserve_final": 1,
+    "previous_AG_starts": 3,
+    "historical_E09_starts": 4,
+    "unused_not_carried": true
+  },
+  "items": {
+    "E10": {
+      "state": "SCOPED_REVIEW_PASS",
+      "depends_on": [],
+      "tests": [
+        "23 real PostgreSQL cases, including actual lock waits and ephemeral provider process loss"
+      ],
+      "review": {
+        "head": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+        "round": 2,
+        "verdict": "REVIEW_PASS",
+        "new_findings": 0
+      },
+      "next": "External Square/Sandbox remains unconnected; no actual charge authority",
+      "blocked": [
+        "Actual Square transport/Sandbox/external callback and coupon redemption unconnected"
+      ]
+    },
+    "E11": {
+      "state": "SCOPED_REVIEW_PASS",
+      "depends_on": [
+        "E10 core"
+      ],
+      "tests": [
+        "7 normal UI/API/real PostgreSQL cases plus Web restart; synthetic normal login, group, QR, immutable quote and response loss"
+      ],
+      "review": {
+        "head": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+        "round": 2,
+        "verdict": "REVIEW_PASS",
+        "new_findings": 0
+      },
+      "next": "Guest-owned BFF/full customer UX remains not connected",
+      "blocked": [
+        "normal runtime UNCONNECTED; private test composition only",
+        "Real customer access/terms/email not connected"
+      ]
+    },
+    "E12": {
+      "state": "PARTIAL_BLOCKED_AUTOREVIEW",
+      "depends_on": [
+        "E10 commitment"
+      ],
+      "tests": [
+        "Pure cycle contract, QR input4 synthetic frames and explicit management permission UI only; no custody SQL",
+        "Quantity-wear separate new-table subset:12realDB+maximumgroup/batch and10normalUI cases; equipment custody remains unimplemented"
+      ],
+      "review": null,
+      "next": "Resolve exact existing ledger custody boundary before equipment loan/return integration",
+      "blocked": [
+        "Exact custody guard/SECURITY DEFINER/column grant implementation rejected; no command executed. See FLOW_DEV_EXACT_BOUNDARY.md."
+      ]
+    },
+    "E13": {
+      "state": "PARTIAL_INTEGRATION_TESTED_REVIEWED_FULL_MILESTONE_BLOCKED",
+      "depends_on": [
+        "E10",
+        "E11",
+        "E12"
+      ],
+      "tests": [
+        "full regression including A-G passed; development loop to confirmation/QR only"
+      ],
+      "review": {
+        "round": 7,
+        "started_at": "2026-09-12T20:50:27.344912+00:00",
+        "finished_at": "2026-09-12T20:53:29.686690+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+        "snapshot_sha256": "c748f1612b5c2a94251d17d785fe908726a2741ef55eccdebbc57774ed7ef8ac",
+        "verdict": "REVIEW_PASS",
+        "findings": [],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890"
+      },
+      "next": "Continue approved incomplete work from saved budgets after exact-boundary decision; do not infer production completion",
+      "blocked": [
+        "Custody integration awaiting exact automatic-review boundary resolution"
+      ]
+    }
+  },
+  "external_gaps": [
+    "Square Sandbox connection and real requests not authorized",
+    "real notification provider not connected",
+    "physical smartphone camera not verified",
+    "E13 full Sandbox milestone not complete"
+  ],
+  "next": "Resume same Draft PR without budget reset. Exact serialized custody boundary requires a human decision; guest BFF/full customer UI, gallery/rights CMS remain not implemented; actual photos/source data and external Square/physical phone checks remain absent. No main merge or production authority.",
+  "prohibitions": [
+    "no new PR merge",
+    "no real Square/production/data",
+    "PR3/Runner held",
+    "no privileges/cost/host changes"
+  ],
+  "local_verification": "35command full verify +11case stricter UI supplement; final CI34commands at exact PR integration tree",
+  "github_adoption_comment": "https://github.com/ginisato-hash/zao-rental/pull/9#issuecomment-5646524976",
+  "budget_checkpoint": {
+    "stopped_at_utc": "2026-09-12T20:58:06.355025+00:00",
+    "stopped_at_jst": "2026-09-13T05:58:06.355025+09:00",
+    "run_elapsed_seconds": 27091,
+    "total_active_seconds": 27091,
+    "total_remaining_seconds": 59309,
+    "run_deadline_unchanged": "2026-09-12T21:26:35+00:00",
+    "new_claude_starts": 7,
+    "shared_max": 8,
+    "remaining_claude_starts": 1,
+    "budget_reset": false,
+    "extra_usage_off": true,
+    "automatic_resume_scheduled": false
+  },
+  "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
+  "reviews": [
+    {
+      "round": 1,
+      "started_at": "2026-09-12T14:50:24.260563+00:00",
+      "finished_at": "2026-09-12T14:58:29.655476+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+      "snapshot_sha256": "a21cfe89e97fe319a01ef258499611889c8132789a8e66129a6466847d88b4e6",
+      "verdict": "REVIEW_PASS",
+      "findings": [
+        {
+          "id": "F1-CLOCK-SOURCE-INCONSISTENCY",
+          "severity": "LOW"
+        },
+        {
+          "id": "F2-CUSTODY-SCHEMA-MISSING-TIME-ORDER-CHECKS",
+          "severity": "LOW"
+        }
+      ],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646674330"
+    },
+    {
+      "round": 2,
+      "started_at": "2026-09-12T15:24:12.297060+00:00",
+      "finished_at": "2026-09-12T15:29:22.867335+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+      "snapshot_sha256": "117ffbfc436eaad3441dfc4711f35fa216dfe4364a280d5d0f97ecdc51f83708",
+      "verdict": "REVIEW_PASS",
+      "findings": [],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646846388"
+    },
+    {
+      "round": 3,
+      "started_at": "2026-09-12T17:50:34.677568+00:00",
+      "finished_at": "2026-09-12T18:01:06.489700+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "0ed175ae9734848fb2eb2f7372c60a4e625ad208",
+      "snapshot_sha256": "b1f47dcfa1cfef2114cb080cf8d3bdd1fc6de6a25bc11a3ae8c5f00b17dcc98c",
+      "verdict": "CHANGES_REQUIRED",
+      "findings": [
+        {
+          "id": "WEAR-PRICE-01",
+          "severity": "medium"
+        }
+      ],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647709920"
+    },
+    {
+      "round": 4,
+      "started_at": "2026-09-12T18:43:07.465117+00:00",
+      "finished_at": "2026-09-12T18:46:52.453226+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "ac253954e5319ebb6a891e569a1ab89f1bea06b6",
+      "snapshot_sha256": "cbbeba8ed69e12942db11f1ca30a733f2307ad70262de75afa079b6f13188fdc",
+      "verdict": "REVIEW_PASS",
+      "findings": [
+        {
+          "id": "WEAR-BOOKING-SCOPE-IMPLICIT-01",
+          "severity": "low"
+        }
+      ],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647984144"
+    },
+    {
+      "round": 5,
+      "started_at": "2026-09-12T20:04:23.588343+00:00",
+      "finished_at": "2026-09-12T20:08:10.789533+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+      "snapshot_sha256": "5a8f3e2d2574d29b2c85080ce3b8ee50b41aa9b2ac07cef25b372d3882c488dd",
+      "verdict": "REVIEW_PASS",
+      "findings": [],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648388199",
+      "coverage": "initial rawPASS has new-file coverage gap, resolved by review6"
+    },
+    {
+      "round": 6,
+      "started_at": "2026-09-12T20:15:38.022020+00:00",
+      "finished_at": "2026-09-12T20:21:15.043882+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+      "snapshot_sha256": "401721a7a62d5d03584bae5e3164a4b86dd94f201486159372e7f2dafe554c56",
+      "verdict": "REVIEW_PASS",
+      "findings": [
+        {
+          "id": "CONTENT-PHOTO-FIXTURE-LOCK-BUDGET-01",
+          "severity": "LOW"
+        },
+        {
+          "id": "PHOTO-OFFERS-STALE-READ-01",
+          "severity": "LOW"
+        }
+      ],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648474700"
+    },
+    {
+      "round": 7,
+      "started_at": "2026-09-12T20:50:27.344912+00:00",
+      "finished_at": "2026-09-12T20:53:29.686690+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+      "snapshot_sha256": "c748f1612b5c2a94251d17d785fe908726a2741ef55eccdebbc57774ed7ef8ac",
+      "verdict": "REVIEW_PASS",
+      "findings": [],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890"
+    }
+  ],
+  "working_record": "Final code committed and pushed; final status records deliberately remain uncommitted and are mirrored to PR. Review6 twoLOW resolved by review7. Overall E10-E13 and full pack remain incomplete.",
+  "followup": "docs/execution/FLOW_DEV_REVIEW_FOLLOWUP.md",
+  "corrected_local_verification": {
+    "at": "2026-09-12T15:14:22.979203+00:00",
+    "exit_code": 0,
+    "commands": 28,
+    "payment_cases": 23,
+    "UI_cases": 5,
+    "record": "docs/execution/evidence/flow-dev/review-1-followup/corrected-verify-commands.json"
+  },
+  "previous_head_sha": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+  "previous_ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34700107256,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34700107256",
+    "event": "pull_request",
+    "head_sha": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+    "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "conclusion": "success",
+    "checked_out_sha": "451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "checked_out_kind": "PR_MERGE",
+    "checked_out_merge_sha": "451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "integration_candidate_sha": "451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "integration_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "1e54db6c23312984db2f86ccb267a1bc49dde8ba"
+    ],
+    "merge_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "1e54db6c23312984db2f86ccb267a1bc49dde8ba"
+    ],
+    "merge_tree_sha": "6845918d548afdf5a8d2f1b741927e4b6c21905d",
+    "head_tree_sha": "6845918d548afdf5a8d2f1b741927e4b6c21905d",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-451ad37e16dd041e7c38e3457ab1651b57f16662",
+    "artifact_digest": "sha256:4035bb551fd43a0050af12a3994cb296e5a7d0cba938408a9aa84f05546c0134"
+  },
+  "custody_owner_approval": {
+    "recorded_at": "2026-09-12T15:31:41.344241+00:00",
+    "document": "docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md",
+    "budget_reset": false
+  },
+  "wear_adoption": {
+    "pack_id": "ZAO-WEAR-CATALOG-UX-20260913-V1_2",
+    "record": "docs/execution/WEAR_ADOPTION.json",
+    "state": "QUANTITY_TESTED_SCOPED_REVIEW_PASS_FULL_PACK_PARTIAL",
+    "budget_reset": false,
+    "inventory_override": {
+      "document": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md",
+      "sha256": "41911b8d169944c803daf59a24d2e43a96a4642a6e2008498ea44d54b0159cf6",
+      "at": "2026-09-12T16:15:11.995192+00:00",
+      "state": "QUANTITY_POOLS_IMPLEMENTED_TESTED_SCOPED_REVIEW_PASS",
+      "preserved": "outputs/flow-dev/wear-quantity-switch",
+      "previous_serialized_tests": "HISTORICAL_SUPERSEDED",
+      "budget_reset": false
+    },
+    "acceptance": "docs/execution/WEAR_ACCEPTANCE_STATUS.json"
+  },
+  "latest_review": {
+    "round": 7,
+    "started_at": "2026-09-12T20:50:27.344912+00:00",
+    "finished_at": "2026-09-12T20:53:29.686690+00:00",
+    "state": "RETURNED",
+    "exit_code": 0,
+    "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+    "snapshot_sha256": "c748f1612b5c2a94251d17d785fe908726a2741ef55eccdebbc57774ed7ef8ac",
+    "verdict": "REVIEW_PASS",
+    "findings": [],
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890"
+  },
+  "as_of": "2026-09-12T20:58:06.355025+00:00",
+  "content_fixture": {
+    "state": "SCOPED_FINAL_REVIEW_PASS",
+    "normal_auth": "real library password/session/PostgreSQL, synthetic staff",
+    "storage": "dedicated private file fixture, not production CMS PostgreSQL",
+    "cases": 11,
+    "photo_files": 50,
+    "actual_photos": 0,
+    "source_row_import": "staging only, no inventory write",
+    "record": "docs/execution/CONTENT_FIXTURE_PROGRESS.md",
+    "large_synthetic_pixels": 25000000,
+    "review": {
+      "round": 7,
+      "started_at": "2026-09-12T20:50:27.344912+00:00",
+      "finished_at": "2026-09-12T20:53:29.686690+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+      "snapshot_sha256": "c748f1612b5c2a94251d17d785fe908726a2741ef55eccdebbc57774ed7ef8ac",
+      "verdict": "REVIEW_PASS",
+      "findings": [],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890"
+    }
+  },
+  "final_checkpoint": {
+    "state": "SCOPED_DEVELOPMENT_CHECKPOINT_FULL_MILESTONE_INCOMPLETE",
+    "delegation": "ZAO-RENTAL-FLOW-DEV-R1",
+    "base": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+    "head_tree": "d5634ea292754af5cc2c24967949e7d04d3e5cd7",
+    "pr": "https://github.com/ginisato-hash/zao-rental/pull/10",
+    "draft": true,
+    "merged": false,
+    "ci": {
+      "repository_id": 1364387206,
+      "repository": "ginisato-hash/zao-rental",
+      "workflow_id": 355028197,
+      "workflow_path": ".github/workflows/ci.yml",
+      "workflow_state": "active",
+      "run_attempt": 1,
+      "run_id": 34717574946,
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34717574946",
+      "event": "pull_request",
+      "head_sha": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+      "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "conclusion": "success",
+      "checked_out_sha": "307491576020bad7971ac9841c83e4c231f4fd8f",
+      "checked_out_kind": "PR_MERGE",
+      "checked_out_merge_sha": "307491576020bad7971ac9841c83e4c231f4fd8f",
+      "integration_candidate_sha": "307491576020bad7971ac9841c83e4c231f4fd8f",
+      "integration_parents": [
+        "137352fcaa7b28f88aef5100479297f74e64b4aa",
+        "6b146f7e84c77e8626d7c15c454c25f01ac6559e"
+      ],
+      "merge_parents": [
+        "137352fcaa7b28f88aef5100479297f74e64b4aa",
+        "6b146f7e84c77e8626d7c15c454c25f01ac6559e"
+      ],
+      "merge_tree_sha": "d5634ea292754af5cc2c24967949e7d04d3e5cd7",
+      "head_tree_sha": "d5634ea292754af5cc2c24967949e7d04d3e5cd7",
+      "jobs": [
+        {
+          "name": "foundation",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+              "conclusion": "success"
+            },
+            {
+              "name": "Pin npm",
+              "conclusion": "success"
+            },
+            {
+              "name": "Reproducible setup",
+              "conclusion": "success"
+            },
+            {
+              "name": "Browser system libraries (ephemeral runner only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify implemented foundation",
+              "conclusion": "success"
+            },
+            {
+              "name": "Runner simulation only",
+              "conclusion": "success"
+            },
+            {
+              "name": "Preserve command logs and browser diagnostics",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "artifact_name": "foundation-307491576020bad7971ac9841c83e4c231f4fd8f",
+      "artifact_digest": "sha256:cf22da6b1808781ee774751885f2b380e4947e46c13b7b885ef2582a99207f5c"
+    },
+    "local_verification": {
+      "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+      "head_tree": "d5634ea292754af5cc2c24967949e7d04d3e5cd7",
+      "full_verify_base_commit": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+      "full_verify_used_uncommitted_correction": true,
+      "full_commands": 35,
+      "exit_code": 0,
+      "full_verify_source": "/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/.local/evidence/2026-09-12T20-27-29.110Z",
+      "source_changed_during_full_verify": false,
+      "post_verify_changes": [
+        "docs/execution/FLOW_DEV_CURRENT_GATES.md",
+        "tests/content/normal-ui.ts"
+      ],
+      "post_verify_product_changes": false,
+      "post_verify_test_change": "Tightened one UI success-message assertion; same11case content UI rerun exit0",
+      "strict_supplement": {
+        "command": "npm run test:content-fixture",
+        "exit_code": 0,
+        "cases": 11,
+        "record": "photo-review-ui-strict.log",
+        "normal_auth": true,
+        "real_pg_session": true,
+        "content_storage": "local private file fixture"
+      },
+      "ci_must_test_final_commit": true
+    },
+    "review": {
+      "round": 7,
+      "started_at": "2026-09-12T20:50:27.344912+00:00",
+      "finished_at": "2026-09-12T20:53:29.686690+00:00",
+      "state": "RETURNED",
+      "exit_code": 0,
+      "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+      "snapshot_sha256": "c748f1612b5c2a94251d17d785fe908726a2741ef55eccdebbc57774ed7ef8ac",
+      "verdict": "REVIEW_PASS",
+      "findings": [],
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890"
+    },
+    "review_coverage": "prior5 quantity/price integration +6 first substantive new content/photo review +7 twoLOW correction and final regression correspondence",
+    "reviews": [
+      {
+        "round": 1,
+        "started_at": "2026-09-12T14:50:24.260563+00:00",
+        "finished_at": "2026-09-12T14:58:29.655476+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "1e54db6c23312984db2f86ccb267a1bc49dde8ba",
+        "snapshot_sha256": "a21cfe89e97fe319a01ef258499611889c8132789a8e66129a6466847d88b4e6",
+        "verdict": "REVIEW_PASS",
+        "findings": [
+          {
+            "id": "F1-CLOCK-SOURCE-INCONSISTENCY",
+            "severity": "LOW"
+          },
+          {
+            "id": "F2-CUSTODY-SCHEMA-MISSING-TIME-ORDER-CHECKS",
+            "severity": "LOW"
+          }
+        ],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646674330"
+      },
+      {
+        "round": 2,
+        "started_at": "2026-09-12T15:24:12.297060+00:00",
+        "finished_at": "2026-09-12T15:29:22.867335+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "adf6af80a1fd5e89ccaf3d8d459b27ad145352db",
+        "snapshot_sha256": "117ffbfc436eaad3441dfc4711f35fa216dfe4364a280d5d0f97ecdc51f83708",
+        "verdict": "REVIEW_PASS",
+        "findings": [],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5646846388"
+      },
+      {
+        "round": 3,
+        "started_at": "2026-09-12T17:50:34.677568+00:00",
+        "finished_at": "2026-09-12T18:01:06.489700+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "0ed175ae9734848fb2eb2f7372c60a4e625ad208",
+        "snapshot_sha256": "b1f47dcfa1cfef2114cb080cf8d3bdd1fc6de6a25bc11a3ae8c5f00b17dcc98c",
+        "verdict": "CHANGES_REQUIRED",
+        "findings": [
+          {
+            "id": "WEAR-PRICE-01",
+            "severity": "medium"
+          }
+        ],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647709920"
+      },
+      {
+        "round": 4,
+        "started_at": "2026-09-12T18:43:07.465117+00:00",
+        "finished_at": "2026-09-12T18:46:52.453226+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "ac253954e5319ebb6a891e569a1ab89f1bea06b6",
+        "snapshot_sha256": "cbbeba8ed69e12942db11f1ca30a733f2307ad70262de75afa079b6f13188fdc",
+        "verdict": "REVIEW_PASS",
+        "findings": [
+          {
+            "id": "WEAR-BOOKING-SCOPE-IMPLICIT-01",
+            "severity": "low"
+          }
+        ],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5647984144"
+      },
+      {
+        "round": 5,
+        "started_at": "2026-09-12T20:04:23.588343+00:00",
+        "finished_at": "2026-09-12T20:08:10.789533+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+        "snapshot_sha256": "5a8f3e2d2574d29b2c85080ce3b8ee50b41aa9b2ac07cef25b372d3882c488dd",
+        "verdict": "REVIEW_PASS",
+        "findings": [],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648388199",
+        "coverage": "initial rawPASS has new-file coverage gap, resolved by review6"
+      },
+      {
+        "round": 6,
+        "started_at": "2026-09-12T20:15:38.022020+00:00",
+        "finished_at": "2026-09-12T20:21:15.043882+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+        "snapshot_sha256": "401721a7a62d5d03584bae5e3164a4b86dd94f201486159372e7f2dafe554c56",
+        "verdict": "REVIEW_PASS",
+        "findings": [
+          {
+            "id": "CONTENT-PHOTO-FIXTURE-LOCK-BUDGET-01",
+            "severity": "LOW"
+          },
+          {
+            "id": "PHOTO-OFFERS-STALE-READ-01",
+            "severity": "LOW"
+          }
+        ],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648474700"
+      },
+      {
+        "round": 7,
+        "started_at": "2026-09-12T20:50:27.344912+00:00",
+        "finished_at": "2026-09-12T20:53:29.686690+00:00",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+        "snapshot_sha256": "c748f1612b5c2a94251d17d785fe908726a2741ef55eccdebbc57774ed7ef8ac",
+        "verdict": "REVIEW_PASS",
+        "findings": [],
+        "url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648637890"
+      }
+    ],
+    "budget": {
+      "stopped_at_utc": "2026-09-12T20:58:06.355025+00:00",
+      "stopped_at_jst": "2026-09-13T05:58:06.355025+09:00",
+      "run_elapsed_seconds": 27091,
+      "total_active_seconds": 27091,
+      "total_remaining_seconds": 59309,
+      "run_deadline_unchanged": "2026-09-12T21:26:35+00:00",
+      "new_claude_starts": 7,
+      "shared_max": 8,
+      "remaining_claude_starts": 1,
+      "budget_reset": false,
+      "extra_usage_off": true,
+      "automatic_resume_scheduled": false
+    },
+    "cleanup": {
+      "checkedAt": "2026-09-12T20:58:01.444Z",
+      "namespace": "zr_a17b911f5417",
+      "ownedPorts": [
+        27929,
+        37929,
+        37930
+      ],
+      "allPortsFree": true,
+      "ownedFixtureEntries": 0,
+      "browser": "all owned test browser.close awaited; user tabs untouched",
+      "claude": [
+        {
+          "round": 1,
+          "state": "RETURNED",
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T14:58:29.655476+00:00"
+        },
+        {
+          "round": 2,
+          "state": "RETURNED",
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T15:29:22.867335+00:00"
+        },
+        {
+          "round": 3,
+          "state": "RETURNED",
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T18:01:06.489700+00:00"
+        },
+        {
+          "round": 4,
+          "state": "RETURNED",
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T18:46:52.453226+00:00"
+        },
+        {
+          "round": 5,
+          "state": "RETURNED",
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T20:08:10.789533+00:00"
+        },
+        {
+          "round": 6,
+          "state": "RETURNED",
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T20:21:15.043882+00:00"
+        },
+        {
+          "round": 7,
+          "state": "RETURNED",
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T20:53:29.686690+00:00"
+        }
+      ],
+      "unrelatedProcessScan": false,
+      "unrelatedProcessStopped": false,
+      "CIWatch": "returned exit0",
+      "automaticResume": false
+    },
+    "review_factual_assessment": {
+      "head": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+      "review7_verdict": "REVIEW_PASS",
+      "both_review6_low_dispositions": "RESOLVED",
+      "new_code_findings": 0,
+      "raw_review_preserved": true,
+      "factual_corrections": {
+        "local_full_commands": 35,
+        "local_content_cases": 11,
+        "ci_commands": 34,
+        "ci_content_cases": 11,
+        "unit_tests": 126,
+        "strict_ui_supplement_cases": 11,
+        "ci_not_second_local_run": true,
+        "note": "Review7 prose miscounts CI as35 and localcontent as10. Authoritative command manifests and actual GitHub job log show35local/34CI,11UIinboth. The Mac-only finite sandbox denial test accounts for the single command difference. No verdict rewrite or additional model run."
+      },
+      "ci_provenance": {
+        "repository_id": 1364387206,
+        "repository": "ginisato-hash/zao-rental",
+        "workflow_id": 355028197,
+        "workflow_path": ".github/workflows/ci.yml",
+        "workflow_state": "active",
+        "run_attempt": 1,
+        "run_id": 34717574946,
+        "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34717574946",
+        "event": "pull_request",
+        "head_sha": "6b146f7e84c77e8626d7c15c454c25f01ac6559e",
+        "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+        "conclusion": "success",
+        "checked_out_sha": "307491576020bad7971ac9841c83e4c231f4fd8f",
+        "checked_out_kind": "PR_MERGE",
+        "checked_out_merge_sha": "307491576020bad7971ac9841c83e4c231f4fd8f",
+        "integration_candidate_sha": "307491576020bad7971ac9841c83e4c231f4fd8f",
+        "integration_parents": [
+          "137352fcaa7b28f88aef5100479297f74e64b4aa",
+          "6b146f7e84c77e8626d7c15c454c25f01ac6559e"
+        ],
+        "merge_parents": [
+          "137352fcaa7b28f88aef5100479297f74e64b4aa",
+          "6b146f7e84c77e8626d7c15c454c25f01ac6559e"
+        ],
+        "merge_tree_sha": "d5634ea292754af5cc2c24967949e7d04d3e5cd7",
+        "head_tree_sha": "d5634ea292754af5cc2c24967949e7d04d3e5cd7",
+        "jobs": [
+          {
+            "name": "foundation",
+            "conclusion": "success",
+            "steps": [
+              {
+                "name": "Set up job",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+                "conclusion": "success"
+              },
+              {
+                "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+                "conclusion": "success"
+              },
+              {
+                "name": "Pin npm",
+                "conclusion": "success"
+              },
+              {
+                "name": "Reproducible setup",
+                "conclusion": "success"
+              },
+              {
+                "name": "Browser system libraries (ephemeral runner only)",
+                "conclusion": "success"
+              },
+              {
+                "name": "Verify implemented foundation",
+                "conclusion": "success"
+              },
+              {
+                "name": "Runner simulation only",
+                "conclusion": "success"
+              },
+              {
+                "name": "Preserve command logs and browser diagnostics",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+                "conclusion": "success"
+              },
+              {
+                "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+                "conclusion": "success"
+              },
+              {
+                "name": "Complete job",
+                "conclusion": "success"
+              }
+            ]
+          }
+        ],
+        "artifact_name": "foundation-307491576020bad7971ac9841c83e4c231f4fd8f",
+        "artifact_digest": "sha256:cf22da6b1808781ee774751885f2b380e4947e46c13b7b885ef2582a99207f5c"
+      },
+      "direct_job_log_sha256": "bfd521937c0a7c5f76382a2a065c4d4d97833ee2665cfe99e78a5e2afa0f1a49",
+      "actual_job_log_selected_lines": [
+        "foundation\tVerify implemented foundation\t2026-09-12T20:37:22.3387649Z ℹ tests 126",
+        "foundation\tVerify implemented foundation\t2026-09-12T20:37:22.3388214Z ℹ pass 126",
+        "foundation\tVerify implemented foundation\t2026-09-12T20:46:34.1505709Z CONTENT fixture 11 passed: normal password/real session DB, local synthetic content file; no production CMS role/storage/permissions or public release.",
+        "foundation\tVerify implemented foundation\t2026-09-12T20:47:03.6436589Z Verification passed; evidence: .local/evidence/2026-09-12T20-36-57.342Z"
+      ],
+      "ci_command_manifest_sha256": "9e7fa9937cf10cb5ba5e0eef267d87597bcf9db35886b6d4836465da3c96fb25",
+      "status_document_coverage": {
+        "file": "docs/execution/FLOW_DEV_STATUS.json",
+        "deliberately_excluded_in_manifest": true,
+        "not_independently_reviewed": true,
+        "local_diff_verified_as": "reporting counters, links and checkpoint text only; no execution policy or app/DB code",
+        "product_or_script_reference_search_matches": 0,
+        "diff_sha256": "261722efba3df4f3e29727884ae5445e07bccff311d35e5a3b146ed108bb2249"
+      },
+      "static_limitations": [
+        "Reviewer did not execute or refetch tests; supplied logs are evidence, not independent execution",
+        "Prior5+6 source coverage retained for unchanged modules",
+        "Full E10-E13/production milestone remains incomplete"
+      ]
+    },
+    "remaining_findings": [],
+    "remaining_milestone_gates": [
+      "Owner resolution of the still-rejected docs/execution/FLOW_DEV_EXACT_BOUNDARY.md custody proposal remains required before serialized equipment loan/return DB writes, continuous QR-scan return UI, or physical equipment-custody reintegration can exist; this delta (photo-job.ts signature refactor, photo-http.ts/PhotoFileFixture locking fix, PhotoWorkspace.tsx messaging, new regression tests) does not touch that boundary and remains BLOCKED_AUTOMATIC_APPROVAL_REVIEW per docs/execution/FLOW_DEV_CURRENT_GATES.md.",
+      "Actual CMS PostgreSQL/storage roles, full gallery binding/rights administration, guest-owned BFF, a production release endpoint, and a complete customer-facing UX remain unimplemented; tests/content/file-fixture.ts and tests/content/photo-fixture.ts remain explicit local, NODE_ENV==='development'-only, per-worktree file fixtures with synthetic CONTENT grants, and this delta does not add or authorize activation of any production storage/permission boundary -- it only changes how offers are read (now from the same locked record) and how a lock-timeout is surfaced (503/Retry-After instead of a generic 500).",
+      "Owner ski/snowboard photographs, real photo rights/consent evidence, and complete supplier source documents (three-season Salomon coverage) remain absent; every photo/media record continues to be marked rights:'UNVERIFIED', publication:'DRAFT_ONLY', productionPublished:false; the new 25MP test uses a 344,681-byte synthetic flat-blue PNG, not a real owner photograph, and the ADR/progress docs explicitly disclaim any throughput/worst-case-latency benchmark claim from that test.",
+      "Real Square/Sandbox payment transport, external webhook/email delivery, customer information handling, and physical phone/camera-based verification remain untouched by and out of scope for this delta.",
+      "Approximately 200 wear units, their unit meaning/size/store distribution, and actual cleaning/drying duration still require real source confirmation before any real-inventory activation; the wear price table and quantity-wear code are unmodified by this delta and continue under the separately approved new-table development boundary, with no bypass or privilege enlargement introduced here."
+    ],
+    "stopping_reason": "Implemented quantity-wear and submitted content/photo subset have final CI and independent review. Full equipment custody remains blocked; remaining larger guest/gallery/CMS work is not completed. Do not start another implementation chunk with less time than the observed local/full-CI cycle plus up-to15min static review and cleanup; preserve the remaining shared review and total-time budget for a later owner-started run.",
+    "records_note": "Final FLOW_DEV_STATUS and WEAR_ACCEPTANCE_STATUS are record-only uncommitted updates, mirrored in the final PR comment. Reviewed code remains exact head; no commit/review/CI cycle solely for the final report."
+  }
+}

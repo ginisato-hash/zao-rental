@@ -1,3 +1,4 @@
+import {legacyHold} from '../fixtures/legacy-prefix';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
@@ -20,7 +21,7 @@ try{
  const settings={displayName:'合成移行担当',active:true,role:'ADMIN' as const,scope:'ALL' as const,storeIds:[],permissions:{INVENTORY_VIEW:true,INVENTORY_EDIT:true,HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true}};
  const id=(await writeAccount(db.pool,admin,undefined,{...settings,email:'upgrade-staff@example.invalid',password})).id!,principal=(await loadStaff(db.pool,id))!;
  const now=new Date('2035-01-01T00:00:00Z'),holds=new HoldService(db.pool,principal,()=>now),quotes=new QuoteService(db.pool,principal,()=>now);
- await quotes.initializePrivate(randomUUID(),'2035-01-01','2036-12-31');const hold=await holds.command('create',randomUUID(),skiSet('2035-01-03')),quote=(await quotes.create(randomUUID(),{conditions:hold.hold!.conditions,holdId:hold.holdId,couponCode:null,wantAdvance:false})).quote;
+ await quotes.initializePrivate(randomUUID(),'2035-01-01','2036-12-31');const hold=await legacyHold(db.pool,id,skiSet('2035-01-03'),now),quote=(await quotes.create(randomUUID(),{conditions:hold.hold!.conditions,holdId:hold.holdId,couponCode:null,wantAdvance:false})).quote;
  roles=await provisionApplicationRoles(db.pool,db.identity);const auth=createStaffAuth(roles.authPool,{origin,secret:randomBytes(32).toString('hex')}),handler=authHandler(auth,roles.authPool,origin,roles.authPool);
  const login=async()=>handler(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:'upgrade-staff@example.invalid',password})}));const response=await login();assert.equal(response.status,200);const cookie=response.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ');
  const before=(await db.pool.query('SELECT count(*)::int AS n FROM ledger_assets')).rows[0].n,revision=(await loadStaff(db.pool,id))!.revision;

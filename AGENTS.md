@@ -1,6 +1,41 @@
+## Current limited custody authorization
+
+Read docs/execution/CUSTODY_BOUNDARY_APPROVAL.md and CUSTODY_BOUNDARY_STATUS.json.
+ZAO-FLOW-CUSTODY-DB-BOUNDARY-R1 authorizes only the exact development custody boundary,
+serialized checkout/receipt/location, pole PAIR conservation, and related mixed-wear regression.
+Start2026-09-12T22:51:31Z; deadline2026-09-13T04:51:31Z (07:51:31–13:51:31 JST).
+One new Claude static launch, after full local verification and exact-head successful CI.
+Old FLOW starts7/8 and histories remain; no unused budget is added. Preserve applied0001–0014.
+No generic owner bypass. No main merge, real data/Square, production, billing/host rights,
+PR3/Runner or other projects. End at Draft PR10. Earlier exact-boundary rejection is retained
+as history and specifically resolved by the owner's new explicit approval, not erased.
+
+## Historical scope and budgets (not current authorization)
+
+Current v1.2 owner adoption: read docs/execution/WEAR_ADOPTION.md and WEAR_ADOPTION.json. Same FLOW-DEV-R1 budget; preserve pending exact custody boundary.
+
+Current bounded owner approval: read docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md.
+The dedicated development custody DB/UI boundary in that document is approved; other
+privilege expansion remains prohibited. Historical rejection records remain unchanged.
+
+## Current supervised development-flow delegation
+
+Read docs/execution/FLOW_DEV_DELEGATION.md and FLOW_DEV_STATUS.json. The direct owner
+now authorizes ZAO-RENTAL-FLOW-DEV-R1 (E10-E13 synthetic development loop) from merged
+main137352fcaa7b28f88aef5100479297f74e64b4aa. Prior A-G delegation is completed; its
+historical budgets are not available here. Run01 deadline2026-09-12T21:26:35Z; max8h/run,
+24h total,8new static Claude starts, >=1 reserved final review. No per-phase handoff.
+Use normal password authentication and restricted APIs/DB; deterministic payment adapter
+only in test composition, absent from normal production routing. Keep chargeReady=false.
+No real Square/Sandbox credentials, external webhook, real people, production, E14+, main
+merge/push, privilege/billing expansion, PR3/Runner or new background services. Preserve
+existing A-G, intake/continuation/cm, prices, pair units and 600-second non-extending HOLD.
+New code ends at Draft PR with honest external/device/production gaps. Historical phase
+instructions below are context; this owner-authorized scope and budget take precedence.
+
 # ZAO Rental working contract
 
-## Current supervised audit delegation
+## Historical completed A-G delegation (superseded for this flow run)
 
 The owner's directly adopted `docs/execution/AUDIT_AG_DELEGATION.md` is current
 authority for ZAO-AUDIT-AG-20260912-R1; SHA256 `74a56f7fc17f9abce3e2ab953c10cf5344681e44da8cb3936e73fd6fe31e27bb`. Read it and AUDIT_AG_STATUS.json.

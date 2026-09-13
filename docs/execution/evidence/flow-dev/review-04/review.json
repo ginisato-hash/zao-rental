@@ -1,0 +1,66 @@
+{
+  "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+  "head_sha": "ac253954e5319ebb6a891e569a1ab89f1bea06b6",
+  "snapshot_sha256": "cbbeba8ed69e12942db11f1ca30a733f2307ad70262de75afa079b6f13188fdc",
+  "verdict": "REVIEW_PASS",
+  "findings": [
+    {
+      "id": "WEAR-BOOKING-SCOPE-IMPLICIT-01",
+      "severity": "low",
+      "file": "packages/core/src/wear/service.ts",
+      "line": 34,
+      "condition": "bookingSummary() derives canReturn/canCheckout from `p.permissions.includes('RENTAL_RETURN'|'RENTAL_CHECKOUT')`, which is a global (non-store-scoped) permission list on StaffPrincipal. Store-scope safety for these two flags is not independently re-checked in this method; it depends entirely on the single earlier `this.authorize('BOOKING_VIEW',[receivingStore])` call having already confirmed `receivingStore ∈ p.storeIds`, and on the same `p` object/storeIds being reused unchanged for the rest of the function.",
+      "impact": "Not currently exploitable (the call order is correct today, and the returned p.storeIds cannot change mid-function), but the store-scope guarantee for canReturn/canCheckout is not locally self-evident within bookingSummary the way it is in the sibling method returnWorkspace, which explicitly calls `this.authorize('RENTAL_RETURN',[receivingStore])` a second time. A future refactor that reorders these calls, caches/reuses a principal from elsewhere, or removes the BOOKING_VIEW store-scope check would silently regress cross-store authorization without any local assertion catching it.",
+      "evidence": "packages/core/src/wear/service.ts: bookingSummary (lines ~33-42) contrasts with returnWorkspace (lines ~43-51), where the latter calls `await this.authorize('BOOKING_VIEW',[receivingStore]);await this.authorize('RENTAL_RETURN',[receivingStore]);` explicitly before reading unresolved/batches, while bookingSummary only calls authorize('BOOKING_VIEW',[receivingStore]) once and then inspects p.permissions directly for RENTAL_RETURN/RENTAL_CHECKOUT without a second scoped authorize call.",
+      "fix": "Add an explicit scoped check in bookingSummary mirroring returnWorkspace's pattern, e.g. compute canReturn/canCheckout via a store-scoped authorize-style helper (or assert `receivingStore` is in `p.storeIds` locally before setting canReturn/canCheckout), so the invariant is verifiable within the function itself rather than relying on an earlier call's side effect.",
+      "test": "Add a unit/integration test constructing a StaffPrincipal with global RENTAL_RETURN permission but storeIds limited to ONSEN_BASE only, call bookingSummary(bookingId, 'MOUNTAIN_BASE') and assert it throws FORBIDDEN (currently true only because the first authorize('BOOKING_VIEW',['MOUNTAIN_BASE']) call fails); additionally add a white-box test/lint rule that fails if bookingSummary's canReturn/canCheckout computation is ever reached without a preceding store-scoped authorize call covering the exact permission being read."
+    }
+  ],
+  "insufficient_evidence": [
+    "This is a static/code-reading review only (tests_executed=false); all PASS/FAIL claims for tests:wear, tests:wear-ui, tests:wear-mixed, tests:unit (including the WEAR-PRICE-01 before/after regression) are taken from the supplied logs and were not independently re-executed by this reviewer.",
+    "The supplied 'EVIDENCE Exact-head CI correspondence' JSON for head ac253954e5319ebb6a891e569a1ab89f1bea06b6 lists only a single job named 'foundation' with generic setup/verify steps; it does not itemize which of the 34 npm scripts (in particular test:wear, test:wear-ui, test:wear-mixed, or the WEAR-PRICE-01 regression test) actually ran inside that CI job, versus the separately supplied 'ci-verification' command logs (platform linux, distinct environment) whose provenance/authenticity as an authoritative CI run (vs. a locally-run script mislabeled as 'ci-verification') cannot be confirmed from this snapshot.",
+    "packages/core/src/inventory/hold-service.ts, the concrete /api/holds and /api/quotes Next.js route handler files, and the DB trigger runtime behavior (wear_pool_guard, wear_claim_guard, ledger_guard) were not included in this snapshot; productKey()'s callers and the claim-conservation invariants were traced from the supplied files (quote-service.ts, hold.ts, wear service.ts, migrations) but not confirmed by running Postgres or reading hold-service.ts directly.",
+    "Whether any currently-reachable HTTP-exposed staff workflow beyond a hand-crafted /api/holds+/api/quotes body (as used in tests/wear/normal-ui.ts's WEAR-PRICE-01 regression) could reach the pre-fix productKey() defect was inferred from the supplied recommendation-http.ts/booking-http.ts/wear-http.ts/ledger-http.ts routing files plus RecommendationWorkspace.tsx's UI behavior, not from a complete apps/web route tree."
+  ],
+  "activation_prerequisites": [
+    "Owner resolution of the still-rejected docs/execution/FLOW_DEV_EXACT_BOUNDARY.md proposal (0012_rental_operations.sql, rental_assert_actor/rental_apply_receipt/rental_apply_inspection SECURITY DEFINER functions, new flow role grants) remains required before serialized equipment loan/return DB writes, continuous QR-scan return UI, or physical equipment-custody reintegration can exist; nothing in this delta applies that proposal, relaxes any existing guard, or adds any SECURITY DEFINER function -- migrations 0001-0011 and existing ledger_guard/inventory_stock_guard/transfer_move_stock functions are confirmed unchanged (absent from FILE STATUS).",
+    "Real Square Sandbox credentials and an authorized external webhook endpoint remain required before any E10 external payment transport claim; booking-http.ts still returns 503 PAYMENT_NOT_CONNECTED_CHARGE_DISABLED outside composition==='ISOLATED_TEST', and capabilities always reports chargeReady:false.",
+    "Physical smartphone/camera verification of any equipment QR/scan workflow remains required; this PR only adds quantity-wear (non-serialized) UI, and explicitly leaves 'a一括結合は、別途記録した権限境界が未接続です' (combined serialized-equipment scan return integration) unconnected per WearWorkspace.tsx's own footer text.",
+    "Owner confirmation of tax basis, real ~200 wear-unit counts/sizes, actual cleaning turnaround, and real photo/catalog/manufacturer data remain required before config/pricing/wear-v1.2.proposed.json or the new catalog-source.ts/media-plan.ts/release-plan.ts pure planners can back any production commercial or CMS release; all of these remain PROPOSED_DEVELOPMENT_SEED_NOT_PUBLISHED / DRAFT_ONLY with no persistence/authorization adapter.",
+    "Independent execution (not merely reading logs) of tests/wear/real-postgres.ts, tests/wear/group-capacity.ts, tests/wear/normal-ui.ts, tests/wear/mixed.ts, and tests/unit/wear-price-order.test.ts against a live PostgreSQL instance is a prerequisite before treating this review's confirmation of the WEAR-PRICE-01 fix and quantity-conservation invariants as independently verified rather than statically traced."
+  ],
+  "scope_assessment": "Reviewed the exact delta between the previously-reviewed head 0ed175ae9734848fb2eb2f7372c60a4e625ad208 (Review3, verdict CHANGES_REQUIRED on WEAR-PRICE-01) and this head ac253954e5319ebb6a891e569a1ab89f1bea06b6, i.e.: the productKey() fix in packages/contracts/src/pricing.ts (isWear-based gear-item selection replacing items[0] indexing); its two new regression tests (tests/unit/wear-price-order.test.ts and a dedicated normal-ui.ts HTTP-level case); the new WearService.bookingSummary()/returnWorkspace() server-verified-version and cross-store-permission-scoped return-lookup endpoints and their wear-http.ts routing; the corresponding WearWorkspace.tsx UI rework (server-fetched booking version replacing a manually-typed version field, unresolved-return quarantine workspace, saved-batch discovery); the new IntegratedPriceCard component and recommendation.css addition (photo-pending state, 20% wear adjustment display, no substitute photo); the pure catalog-source.ts and release-plan.ts planners and their unit tests; the media-plan.ts expansion to 10 bounded WebP/JPEG derivatives with pre-sharp magic-byte checks and metadata stripping; the new tests/wear/mixed.ts load/performance harness; and the WEAR_ACCEPTANCE_STATUS.json/ADR/docs updates. I traced productKey()'s only caller path (parseQuote->calculate, always via validated HoldConditions where SINGLE members are guaranteed exactly one non-wear item) and confirmed the fix is correct, deterministic regardless of item array order, and does not alter WEAR_SET/SKI_SET/SNOWBOARD_SET pricing paths (which return before reaching the fixed branch). I confirmed the before/after regression logs reproduce the exact reported defect (wrong BOOTS_ONLY key/price selected pre-fix, correct POLES_ONLY key/1500-JPY price post-fix, no 20% bundle discount applied to SINGLE+wear, matching the un-altered 24 wear / 216 equipment price tables). I confirmed no equipment-custody guard, SECURITY DEFINER function, or role grant was added or relaxed, and that migrations 0001-0012/0013/0014 and existing role-provisioning scripts are unchanged by this delta (absent from FILE STATUS). One low-severity, non-exploitable code-consistency observation was identified in WearService.bookingSummary()'s implicit reliance on an earlier authorize() call for store-scope safety of canReturn/canCheckout, contrasted with the more explicit pattern in the sibling returnWorkspace(). The complete E10-E13 milestone -- serialized equipment loan/return writes, continuous scan-return UI, physical custody reintegration, live Square/webhook transport, and physical-device verification -- remains explicitly blocked and not implemented, independent of this verdict on the submitted, implemented quantity-wear/pricing/UI code.",
+  "tests_executed": false,
+  "prior_finding_dispositions": [
+    {
+      "id": "WEAR-PRICE-01",
+      "status": "RESOLVED",
+      "evidence": "packages/contracts/src/pricing.ts productKey() now computes `const gear=m.items.find(i=>!isWear(i.family));if(!gear)throw new PricingError('PRODUCT_NOT_OFFERED');const f=gear.family;` instead of indexing m.items[0], making product-key selection independent of item array order; tests/unit/wear-price-order.test.ts asserts both [wear-items-first] and [gear-first] orderings resolve to SKI_POLES_ONLY_ADULT_STANDARD with identical calculate() output (unitJpy 1500, bundleDiscountJpy 0, totalJpy 6500); tests/wear/normal-ui.ts adds a direct protected HOLD/quote HTTP regression exercising both orderings against a live PostgreSQL-backed service; supplied wear-price-before.log reproduces the original failure (actual 'SKI_BOOTS_ONLY_ADULT_STANDARD' vs expected 'SKI_POLES_ONLY_ADULT_STANDARD') and wear-price-after.log shows the same test passing post-fix."
+    },
+    {
+      "id": "F1-CLOCK-SOURCE-INCONSISTENCY",
+      "status": "RESOLVED",
+      "evidence": "packages/core/src/payment/booking-service.ts is absent from this delta's FILE STATUS list, i.e. unmodified since the prior review that recorded this as resolved; no regression introduced."
+    },
+    {
+      "id": "F2-CUSTODY-SCHEMA-MISSING-TIME-ORDER-CHECKS",
+      "status": "RESOLVED",
+      "evidence": "packages/db/migrations/0011_receipt_timeline.sql is absent from this delta's FILE STATUS list; unmodified, no regression introduced."
+    },
+    {
+      "id": "FLOW-TIME-1",
+      "status": "RESOLVED",
+      "evidence": "booking-service.ts source()/verifyClaims flow unmodified except for the pre-existing wear_claims UNION (already present at the prior review head); clock-reread-before-expiry-check ordering unchanged."
+    },
+    {
+      "id": "FLOW-TIME-2",
+      "status": "RESOLVED",
+      "evidence": "booking-service.ts recordObservation() unmodified by this delta; clock reread after claims-read lock wait remains intact."
+    },
+    {
+      "id": "FLOW-SCOPE-1",
+      "status": "RESOLVED",
+      "evidence": "booking-service.ts markUnknown() unmodified by this delta; dual authorize('BOOKING_CREATE',[stores]) calls around the shared advisory lock remain intact."
+    }
+  ]
+}

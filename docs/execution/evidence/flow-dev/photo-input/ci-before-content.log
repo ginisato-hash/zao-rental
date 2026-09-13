@@ -1,0 +1,13 @@
+
+> zao-rental@0.1.0 test:content-fixture
+> node --import tsx tests/content/normal-ui.ts
+
+PASS normal password authentication plus explicit synthetic CONTENT fixture grant, not role auto-publish
+PASS CSV file dry-run, partial draft commit, lost HTTP response and reload recover original server job once
+PASS private release persists current, audit and outbox through actual Web process restart; width fits
+PASS stale release/rights revocation rejects with pointer preserved; restore is a new private manifest
+Owned content fixture/Web/browser/PostgreSQL stopped.
+CONTENT_FIXTURE_FAILED 50 selected synthetic photos survive interrupted upload, same-job resume and authenticated derivative display Error
+    at <anonymous> (/home/runner/work/zao-rental/zao-rental/tests/content/normal-ui.ts:57:325)
+    at async check (/home/runner/work/zao-rental/zao-rental/tests/content/normal-ui.ts:12:67)
+    at async <anonymous> (/home/runner/work/zao-rental/zao-rental/tests/content/normal-ui.ts:50:2)

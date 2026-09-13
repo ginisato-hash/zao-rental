@@ -1,0 +1,30 @@
+﻿id,name,url,kind,observed_at,season,observation,limitations
+R01,カスカワスポーツ蔵王,https://zao-skirental.jp/,RENTAL_RATE,2026-09-13,2025/26,税込ウェア上下1日4500、2日8000、3日11500、以後1日4500。道具Regularセット1日5500。,10日43000は掲載式の計算値。子供500円引きの適用範囲をウェアへ推測しない。
+R02,蔵王レンタサービス,https://zaoski.makino-fruits.com/,RENTAL_RATE,2026-09-13,未記載,税込ウェア上下1日3500/HP3200、2日6500/5900、3日9500/8600、5日15500/14000。,HP券提示条件。新季の料金確定ではない。
+R03,蔵王ライザ,https://www.zaoliza.co.jp/wntr/rentals/,RENTAL_RATE,2026-09-13,未記載,ウェア大人4時間3500/1日4000、子供2500/3000。,古い感染症注意が残る。リフト付き10000円は純レンタルと比較しない。
+R04,川場スキー場,https://www.kawaba.co.jp/rental/,RENTAL_RATE,2026-09-13,ページの料金版は公開前再確認,上下大人当日5500/事前5300、小人4700/4500。,大人高校生以上・小人中学生以下。事前決済は取り置き保証でないと明記。ZAOの13歳境界/在庫確保とは異なる。
+R05,パルコール嬬恋,https://tsumagoiskiresort.life/rentals/,RENTAL_RATE,2026-09-13,未記載,税込1日大人道具5500、上下5000、道具+上下10000。子供4000、3500、5500。,子供小学6年以下。予約リンクと事前予約不可の記述が併存、予約方式の模倣根拠にはしない。
+R06,アルピナスポーツ志賀高原,https://www.alpinasports.jp/,RENTAL_RATE,2026-09-13,2025/26 明示,税込大人上下4h2400/1日3000/2日5400/3日7800/4日10200。子供半額。道具5000+上下3000に対し合計7000。,前日23:59までWeb決済10%引き。ZAOへ同じ価格・締切は移植しない。襟カバーの都度洗濯と全着洗濯は別。
+R07,SPICY 白馬,https://spicy.co.jp/winter/,RENTAL_RATE_VERSION_CONFLICT,2026-09-13,本文2025/26・検索に2026/27が混在,取得本文の上下大人1日5000/2日8000/3日11000、子供3000/5000/7000。,検索抜粋に6600/11000/15000等の別季値。最新単一価格として採用せず相場集計から除外。
+R08,YamaSport ニセコ,https://www.yamasportniseko.com/ja/pricing,RENTAL_RATE_VERSION_CONFLICT,2026-09-13,2025/26,最終取得本文は大人上または下2720/4320/5920、10日11760。上下単純合算5440/8640/11840、10日23520。,別取得では各3060、10日13230。割引/取得版差未解決。表示原単位は1点。最新価格平均から除外し、期間割引の形だけ参照。
+R09,Rhythm Japan,https://rhythmjapan.com/winter-rentals-services,RENTAL_RATE,2026-09-13,版・店舗の最終選択は要再確認,上または下大人3800/6100/7800、子供2600/3700/4300。,上下合算1日7600/5200は計算値、公式セット価格ではない。キッズ3〜13歳の表示。
+R10,みやぎ蔵王えぼし,https://eboshi.co.jp/winter/rental/,RENTAL_RATE,2026-09-13,未記載,道具+ウェアのフルセット大人5時間8000/1日9000、子供5000/6000。,ウェア単独額はこの本文から未確定。小物は対象外。
+R11,アミューズスポーツ北海道,https://amuse-sports.com/rental/item/,RENTAL_RATE,2026-09-13,公開前再確認,スキー/ボード共通上下 通常1日5000/2日6500/3日7500/4日8500、Web4000/5200/6000/6800。4日以後1日2000。,フルセットWeb8000は帽子/ゴーグル/手袋込み、価格品質/配送条件も異なる。
+R12,裏磐梯スキー場,https://www.urabandai-ski.jp/facility/rental/,RENTAL_RATE,2026-09-13,未記載,上下大人3000、子供2000。道具セット4000/3000。,料金表の期間/税の明記は取得箇所で未確認。子供は小学生まで。参考下限、同条件中央値には使わない。
+R13,スプリングバレー仙台泉,https://www.springvalley.co.jp/winter/rental_shop/rental,RENTAL_RATE_PARTIAL,2026-09-13,未確定,公式検索抜粋に時間別ウェア料金、取得本文は該当額を十分抽出できず。,数値比較/推奨表の計算根拠から除外。
+R14,休暇村岩手網張温泉,https://qkamura.or.jp/iwate/ski/,RENTAL_RATE_PARTIAL,2026-09-13,未確定,公式検索抜粋にウェア料金、取得本文は古いキャッシュ/該当数値未検証。,数値比較/推奨表の計算根拠から除外。
+T01,Booqable quantity tracking,https://help.booqable.com/en/articles/6820234-how-to-track-rental-products-in-quantities,IMPLEMENTATION,2026-09-13,2026,数量追跡は個体IDなし、variant/location別の数で管理。,個体追跡の速さとの比較。ZAOは混在返却・洗浄追跡を優先して衣類個体方式を推奨。
+T02,Booqable variants,https://help.booqable.com/en/articles/90773-how-to-create-different-variations-of-one-product,IMPLEMENTATION,2026-09-13,取得時点,色・サイズ等のvariant、サイズ別/店舗別在庫を管理。,特定メーカーのサイズ同一性を証明するものではない。
+T03,Booqable product settings,https://help.booqable.com/en/articles/90053-how-to-adjust-product-settings,IMPLEMENTATION,2026-09-13,2025,予約前後のbufferで準備/清掃時間を保護。既存注文に設定変更を自動反映しない。,Booqableは暦時間。ZAOの清掃時間を決める根拠ではない。allow shortageは採用しない。
+T04,Booqable downtime,https://help.booqable.com/en/articles/12505664-how-to-schedule-downtime-for-your-products,IMPLEMENTATION,2026-09-13,2026,個体/数量で整備・修理・不足期間を登録、開始/停止と権限を分離。,仕様を参考にするがサービス導入はしない。
+T05,TWICE product bundles,https://www.twicecommerce.com/docs/creating-product-bundles,IMPLEMENTATION,2026-09-13,2026,bundleでも各構成品の在庫追跡を維持。,掲載上nested bundles不可、1製品数量1の制約あり。ZAOは既存構成品をflatten、同じ制約を無理に継承しない。
+T06,Rentman serial numbers,https://support.rentman.io/hc/en-us/articles/360013086279-Manage-Serial-Numbers,IMPLEMENTATION,2026-09-13,取得時点,個体の位置/状態をシリアル/QRで追跡。virtual combination自体にserialを付けない。,既存システムを置換する推薦ではない。
+T07,Rentman import,https://support.rentman.io/hc/en-us/articles/24320695034642-Equipment-Import-How-do-I-Format-my-Import-File-for-Serialized-Equipment,IMPLEMENTATION,2026-09-13,取得時点,商品共通列と個体列を区別、未入力QRの生成、類似表記の重複リスク。,ZAOは原本数量から登録計画へ展開、同じ表でIDを再発行しない。
+T08,Salomon winter garment care,https://www.salomon.com/en-gb/sg/a/how-to-wash-your-ski-snowboard-jacket-and-pants,CARE,2026-09-13,2020/取得時点,素材ごとの洗濯・乾燥を区別し、完全乾燥と取扱確認が必要。,個々のラベルを優先。予約ごとの一律洗浄頻度や実所要時間をこの資料だけで保証しない。
+T09,Salomon GoreTex care,https://www.salomon.com/en-us/sg/a/how-to-wash-gore-tex-clothing-and-restore-durable-water-repellency-dwr,CARE,2026-09-13,2026,防水メンブレン衣類の洗剤/乾燥/撥水回復の注意。,すべての当店ウェアが同素材とは仮定しない。
+T10,Salomon sizing example,https://salomon.jp/products/mountain-flex-lc26516,SIZE_EXAMPLE,2026-09-13,現行商品ページ,メンズボトムスにウエスト/ヒップ/股下の寸法案内あり。,このパンツは当店ウェアではない。サイズ表の構造例のみ、実レンタルの万能サイズ表として流用禁止。
+T11,国税庁 総額表示,https://www.nta.go.jp/taxes/shiraberu/taxanswer/shohi/6902.htm,TAX_DISPLAY,2026-09-13,掲載基準2025-04-01,消費者向けにあらかじめ表示する価格の税込総額表示。,既存ZAOの税区分承認を代行しない。公開前に全価格版を整合させる。
+C01,Salomon snowboard catalog,https://salomon.jp/pages/snowboard-catalog,CATALOG_PORTAL,2026-09-13,2024/25 2025/26 2026/27,年式別boards/boots/bindings/youth/softgoods/tech bookへの入口。,入口確認のみ。全SKUと数値抽出はこのパックの成果ではない。
+C02,Salomon snowboard categories,https://salomon.jp/pages/snowboarding,CATALOG_PORTAL,2026-09-13,取得時点,ボード/ブーツ/ビンディング等カテゴリー。,スキー記事からボード仕様を推測しない。
+C03,Salomon ski catalog,https://salomon.jp/pages/product-catalog,CATALOG_PORTAL,2026-09-13,2025/26 2026/27,スキー/ブーツ/ビンディング/ポール等の公式資料入口。,過去資料の取り違え・現物年式の推測禁止。
+C04,Salomon SIGHT example,https://salomon.jp/products/sight-l479249,CATALOG_EXAMPLE,2026-09-13,現行掲載版は要対応確認,モデル名/商品コード/形状/用途説明の構造例。,実在庫への割当・年式確定・写真再利用は未実施。

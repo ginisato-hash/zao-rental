@@ -1,0 +1,20 @@
+
+> zao-rental@0.1.0 test:wear
+> node --import tsx tests/wear/real-postgres.ts && node --import tsx tests/wear/group-capacity.ts
+
+PASS quantity pools contain no garment Assets, preserve source audit and model edition identity
+PASS mixed equipment+wear and wear-only preview -> explicit selection -> atomic7 claims -> immutable quote
+PASS same shared garments consumed across ski/board; shortage leaves no partial group
+PASS model and season promise survive recommendation/HOLD/quote/payment snapshot; wrong model or class rejected
+PASS same saved request replay preserves original lease and immutable price snapshot
+PASS two parallel last-pool HOLDs succeed once; no cross-store pool mixing or partial claims
+PASS real quantity checkout/foreign return retains planned store and quantity, leaves no same-day ready
+PASS quantity plan protects source; dispatch has no arrival; actual receipts need separate ready confirmation
+PASS quantity transfer partial receipts and two terminals conserve in-transit and destination totals
+PASS wear quantity requirement cannot be reassigned to an individual Asset
+WEAR real PostgreSQL 10 passed; normal library session and real roles; synthetic quantity checkout/return executed; no real stock, Square, equipment custody or phone.
+Owned wear PostgreSQL and pools stopped.
+PASS maximum20x5 holds body 21803 bytes / limit 40960; recommendation20 body 9169 / 16384
+PASS actual20 members x5 components x10days: gear600 claims / wear400 quantity claims,40 commercial lines, atomic amendTTL unchanged; HOLD operation 52ms (not preview HTTP p95)
+PASS same booking Mx2 split Mountain1/Onsen1; pants2 remain on loan; total conserved; future promise retained with actual-ready attention
+Owned wear maximum-group PostgreSQL stopped.

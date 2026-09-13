@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
 import {LedgerError,ledgerAccess,parseInput,parseResource,assertId,validateFilters,type Resource,type LedgerPrincipal,type LedgerFilters,type LedgerRecord,type LedgerDetail} from '../../../contracts/src/ledger';
 const tables:Record<Resource,string>={models:'ledger_models',variants:'ledger_variants',assets:'ledger_assets',poles:'ledger_poles',bundles:'ledger_bundles'};
-const columns:Record<string,string>={code:'code',name:'name',brand:'brand',family:'family',modelId:'model_id',variantId:'variant_id',age:'age',tier:'tier',size:'size',storeId:'store_id',status:'status',quantity:'quantity',bslStatus:'bsl_status',bslMm:'bsl_mm',bslEvidence:'bsl_evidence',notes:'notes',sourceKind:'source_kind',sourceDocument:'source_document',sourceLocator:'source_locator'};
+const columns:Record<string,string>={catalogSeason:'catalog_season',compatibleSports:'compatible_sports',code:'code',name:'name',brand:'brand',family:'family',modelId:'model_id',variantId:'variant_id',age:'age',tier:'tier',size:'size',storeId:'store_id',status:'status',quantity:'quantity',bslStatus:'bsl_status',bslMm:'bsl_mm',bslEvidence:'bsl_evidence',notes:'notes',sourceKind:'source_kind',sourceDocument:'source_document',sourceLocator:'source_locator'};
 type Connection=Pick<PoolClient,'query'>;
 function sanitized(error:unknown):never {
   if(error instanceof LedgerError)throw error;

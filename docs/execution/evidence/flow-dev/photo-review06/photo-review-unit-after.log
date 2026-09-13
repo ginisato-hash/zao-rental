@@ -1,0 +1,13 @@
+✔ photo candidates require exact existing offer, explicit role and bounded order; no fuzzy binding (0.643125ms)
+✔ duplicate upload/concurrent terminal replies commit each photo once, byte reuse never grants rights (26.098792ms)
+✔ fixed manifest rejects replaced bytes/duplicate names; malformed image records failure without publishing (0.2835ms)
+✔ revocation while real decoder is running rejects commit and writes no private objects (7.362625ms)
+✔ photo prepare matches the catalog from the acquired transaction, preserving replay candidates (0.288291ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.792417

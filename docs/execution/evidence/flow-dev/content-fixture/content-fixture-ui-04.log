@@ -1,0 +1,7 @@
+PASS normal password authentication plus explicit synthetic CONTENT fixture grant, not role auto-publish
+PASS CSV file dry-run, partial draft commit, lost HTTP response and reload recover original server job once
+PASS private release persists current, audit and outbox through actual Web process restart; width fits
+PASS stale release/rights revocation rejects with pointer preserved; restore is a new private manifest
+PASS CONTENT fixture revocation and real staff disable deny pending commits without persistent changes
+CONTENT fixture 5 passed: normal password/real session DB, local synthetic content file; no production CMS role/storage/permissions or public release.
+Owned content fixture/Web/browser/PostgreSQL stopped.

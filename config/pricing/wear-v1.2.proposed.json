@@ -1,0 +1,128 @@
+{
+  "schema_version": "PROPOSAL_1.2",
+  "proposal_id": "ZAO-WEAR-CATALOG-UX-20260913-V1_2",
+  "status": "PROPOSED_DEVELOPMENT_SEED_NOT_PUBLISHED",
+  "currency": "JPY",
+  "amount_semantics": "PROPOSED_CONSUMER_GROSS_TOTAL",
+  "tax_confirmation": "PENDING_OWNER_CONFIRMATION",
+  "base_equipment_tax_basis": "PENDING_OWNER_CONFIRMATION",
+  "chargeReady": false,
+  "note": "Combined totals assume existing equipment numbers are comparable consumer gross totals. Do not silently add tax or change base equipment seed.",
+  "sales_effective_from": null,
+  "rental_effective_from": null,
+  "rental_effective_to": null,
+  "wear_unit": "JACKET_PLUS_PANTS_PER_PERSON",
+  "sport_pricing": "SAME_FOR_SKI_AND_SNOWBOARD",
+  "age": {
+    "adult_min": 13,
+    "reference": "RENTAL_START",
+    "cross_category_substitution": false
+  },
+  "products": [
+    {
+      "product_key": "WEAR_SET_ADULT",
+      "age_category": "ADULT",
+      "prices_jpy": {
+        "HALF_DAY_AM": 3000,
+        "HALF_DAY_PM": 3000,
+        "DAY_1": 5000,
+        "DAY_2": 9000,
+        "DAY_3": 12500,
+        "DAY_4": 15500,
+        "DAY_5": 18000,
+        "DAY_6": 20000,
+        "DAY_7": 22000,
+        "DAY_8": 23500,
+        "DAY_9": 25000,
+        "DAY_10": 26500
+      },
+      "components": [
+        {
+          "garment_kind": "JACKET",
+          "quantity": 1
+        },
+        {
+          "garment_kind": "PANTS",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "product_key": "WEAR_SET_KIDS",
+      "age_category": "KIDS",
+      "prices_jpy": {
+        "HALF_DAY_AM": 2000,
+        "HALF_DAY_PM": 2000,
+        "DAY_1": 3500,
+        "DAY_2": 6000,
+        "DAY_3": 8000,
+        "DAY_4": 10000,
+        "DAY_5": 11500,
+        "DAY_6": 13000,
+        "DAY_7": 14500,
+        "DAY_8": 16000,
+        "DAY_9": 17000,
+        "DAY_10": 18000
+      },
+      "components": [
+        {
+          "garment_kind": "JACKET",
+          "quantity": 1
+        },
+        {
+          "garment_kind": "PANTS",
+          "quantity": 1
+        }
+      ]
+    }
+  ],
+  "bundle_adjustment": {
+    "policy_key": "GEAR_SET_WEAR_20_V1",
+    "discount_bps": 2000,
+    "scope": "WEAR_LINE_ONLY",
+    "qualifying_equipment_products": [
+      "SKI_SET_ADULT_REGULAR",
+      "SKI_SET_ADULT_PREMIUM",
+      "SKI_SET_KIDS_REGULAR",
+      "SNOWBOARD_SET_ADULT_REGULAR",
+      "SNOWBOARD_SET_ADULT_PREMIUM",
+      "SNOWBOARD_SET_KIDS_REGULAR"
+    ],
+    "same_member_required": true,
+    "same_booking_required": true,
+    "same_rental_interval_required": true,
+    "same_pickup_return_stores_required": true,
+    "max_wear_set_per_equipment_set": 1,
+    "with_equipment_only": false,
+    "stack_with_advance": true,
+    "coupon_combination_default": "DENY_UNLESS_EXPLICIT_APPROVED_POLICY"
+  },
+  "advance_discount": {
+    "discount_bps": 500,
+    "cutoff": "Previous calendar day at 15:00 Asia/Tokyo",
+    "qualification_event": "PAYMENT_COMPLETED",
+    "half_day_eligible": true,
+    "note": "Preserves v0.2 policy. Final cutoff handling must be reviewed with payment/hold state-machine implementation."
+  },
+  "calculation_order": [
+    "EXPLICIT_EQUIPMENT_AND_WEAR_TABLES",
+    "BUNDLE_ADJUSTMENT_ON_ELIGIBLE_WEAR",
+    "COUPON_ONLY_IF_ALL_COMBINATIONS_APPROVED",
+    "ADVANCE_DISCOUNT_ON_POST_ADJUSTMENT_ELIGIBLE_TOTAL"
+  ],
+  "rounding": "INTEGER_JPY_DISCOUNT_HALF_UP_THEN_SUBTRACT",
+  "wear_single_piece_sale_enabled": false,
+  "inventory": {
+    "mode_proposal": "STORE_CATEGORY_COMPONENT_SIZE_QUANTITY_POOLS",
+    "total_planned_quantity": 200,
+    "quantity_unit": "UNCONFIRMED_GARMENTS_OR_SETS",
+    "no_same_day_rehire": true,
+    "production_cleaning_turnaround_minutes": null,
+    "owner_override": "docs/execution/WEAR_QUANTITY_OWNER_OVERRIDE.md"
+  },
+  "sources": [
+    "research/sources.csv",
+    "02_WEAR_PRICING_RESEARCH.md"
+  ],
+  "base_reference_sha256": "23ce25f237e6e6928669525c10df7f4e0452f7ee617e349f79df2a7cc856eaa7"
+}

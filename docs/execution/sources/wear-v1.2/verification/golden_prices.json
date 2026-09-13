@@ -1,0 +1,56 @@
+[
+  {
+    "name": "adult_regular_day1",
+    "equipment_key": "SKI_SET_ADULT_REGULAR",
+    "age": "ADULT",
+    "slot": "DAY_1",
+    "bundle": true,
+    "advance": true,
+    "expected_total": 10925
+  },
+  {
+    "name": "adult_premium_day1",
+    "equipment_key": "SNOWBOARD_SET_ADULT_PREMIUM",
+    "age": "ADULT",
+    "slot": "DAY_1",
+    "bundle": true,
+    "advance": true,
+    "expected_total": 12350
+  },
+  {
+    "name": "kids_day1",
+    "equipment_key": "SKI_SET_KIDS_REGULAR",
+    "age": "KIDS",
+    "slot": "DAY_1",
+    "bundle": true,
+    "advance": true,
+    "expected_total": 6460
+  },
+  {
+    "name": "adult_half",
+    "equipment_key": "SNOWBOARD_SET_ADULT_REGULAR",
+    "age": "ADULT",
+    "slot": "HALF_DAY_PM",
+    "bundle": true,
+    "advance": true,
+    "expected_total": 7600
+  },
+  {
+    "name": "adult_regular_day10",
+    "equipment_key": "SKI_SET_ADULT_REGULAR",
+    "age": "ADULT",
+    "slot": "DAY_10",
+    "bundle": true,
+    "advance": true,
+    "expected_total": 65740
+  },
+  {
+    "name": "adult_wear_only",
+    "equipment_key": null,
+    "age": "ADULT",
+    "slot": "DAY_1",
+    "bundle": false,
+    "advance": true,
+    "expected_total": 4750
+  }
+]

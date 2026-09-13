@@ -4,7 +4,7 @@ export const stores = ['MOUNTAIN_BASE', 'ONSEN_BASE'] as const;
 export type StoreId = typeof stores[number];
 export const resources = ['models', 'variants', 'assets', 'poles', 'bundles'] as const;
 export type Resource = typeof resources[number];
-export const families = ['SKI', 'SNOWBOARD', 'SKI_BOOT', 'SNOWBOARD_BOOT', 'POLE', 'WEAR'] as const;
+export const families = ['SKI', 'SNOWBOARD', 'SKI_BOOT', 'SNOWBOARD_BOOT', 'POLE', 'WEAR', 'WEAR_JACKET', 'WEAR_PANTS'] as const;
 export type Family = typeof families[number];
 export type LedgerPrincipal = {subject:string; role:'CUSTOMER'|'STAFF'|'ADMIN'; storeIds?:readonly StoreId[]};
 export type Provenance = {sourceKind:'SYNTHETIC'|'UNVERIFIED'; sourceDocument:string; sourceLocator:string};
@@ -13,8 +13,8 @@ export type LedgerRecord = {
   id:string; resource:Resource; name:string; code:string; version:number; notes:string;
   family:Family|'SKI_SET'|'SNOWBOARD_SET'; age?:string; tier?:string; size?:string;
   custody?:string; modelId?:string; variantId?:string; storeId?:StoreId; initialStoreId?:StoreId;
-  status?:string; quantity?:number; unit?:string; labelCopies?:number;
-  bslStatus?:string; bslMm?:number|null; bslEvidence?:string; brand?:string;
+  status?:string; quantity?:number; outPairs?:number; atStorePairs?:number; unit?:string; labelCopies?:number;
+  catalogSeason?:string|null; compatibleSports?:string[]|null; bslStatus?:string; bslMm?:number|null; bslEvidence?:string; brand?:string;
   components?:{family:string; quantity:number; unit:string}[];
   sourceKind:string; sourceDocument:string; sourceLocator:string;
   createdAt:string; updatedAt:string;
@@ -31,7 +31,9 @@ const validators = Object.fromEntries(resources.flatMap(resource => ['create','u
 })));
 export function parseInput(resource:Resource, operation:'create'|'update', value:unknown):LedgerInput {
   if(!validators[`${resource}_${operation}`]!(value)) throw new LedgerError('INVALID_INPUT',422);
-  return value as LedgerInput;
+  const v=value as LedgerInput;
+  if(resource==='variants'&&operation==='create'){const wear=v.family==='WEAR_JACKET'||v.family==='WEAR_PANTS';if(wear?(v.tier!=='STANDARD'||!Array.isArray(v.compatibleSports)):(v.tier==='STANDARD'||v.compatibleSports!==undefined))throw new LedgerError('INVALID_INPUT',422);}
+  return v;
 }
 export function parseResource(value:string):Resource {
   if(!(resources as readonly string[]).includes(value))throw new LedgerError('NOT_FOUND',404);
@@ -48,7 +50,7 @@ export function ledgerAccess(principal:LedgerPrincipal|null, write=false):readon
 export function validateFilters(filters:LedgerFilters):void {
   const allowed=['storeId','sport','age','tier','size','status','q','offset'];
   if(Object.keys(filters).some(k=>!allowed.includes(k)))throw new LedgerError('INVALID_FILTER',422);
-  for(const [key,values] of Object.entries({storeId:stores,sport:['SKI','SNOWBOARD','WEAR'],age:['ADULT','KIDS'],tier:['REGULAR','PREMIUM'],status:['UNVERIFIED','AVAILABLE','MAINTENANCE','RETIRED']})) {
+  for(const [key,values] of Object.entries({storeId:stores,sport:['SKI','SNOWBOARD','WEAR'],age:['ADULT','KIDS'],tier:['REGULAR','PREMIUM','STANDARD'],status:['UNVERIFIED','AVAILABLE','MAINTENANCE','RETIRED']})) {
     const value=filters[key as keyof LedgerFilters];if(value!==undefined && !(values as readonly unknown[]).includes(value))throw new LedgerError('INVALID_FILTER',422);
   }
   for(const value of [filters.size,filters.q])if(value!==undefined && (typeof value!=='string'||value.length>80||!value.trim()))throw new LedgerError('INVALID_FILTER',422);

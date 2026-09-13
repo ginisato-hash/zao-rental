@@ -1,0 +1,8 @@
+PASS normal password authentication plus explicit synthetic CONTENT fixture grant, not role auto-publish
+PASS CSV file dry-run, partial draft commit, lost HTTP response and reload recover original server job once
+CONTENT_FIXTURE_FAILED private release persists current, audit and outbox through actual Web process restart; width fits AssertionError
+{"actual":null,"expected":true}
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/content/normal-ui.ts:39:257)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/content/normal-ui.ts:10:67)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/content/normal-ui.ts:38:2)
+Owned content fixture/Web/browser/PostgreSQL stopped.

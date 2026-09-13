@@ -1,0 +1,13 @@
+
+> zao-rental@0.1.0 test:flow-ui
+> node --import tsx tests/flow/normal-ui.ts
+
+PASS ordinary ADMIN grants synthetic creator minimum explicit permissions; anonymous/private boundaries stay closed
+PASS administrator form preserves explicit booking permissions and grants/revokes rental choices without role defaults
+FLOW_UI_FAILED price setup is disabled before hydration and while initial catalog is unconfirmed Error
+    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/flow/normal-ui.ts:24:223)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/flow/normal-ui.ts:10:67)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/flow/normal-ui.ts:23:238)
+LAST_PAGE /staff/ledger
+ALERT 
+Owned FLOW Web, browser, PostgreSQL stopped.

@@ -1,0 +1,7 @@
+
+> zao-rental@0.1.0 test:flow-restart
+> node --import tsx tests/flow/web-restart.ts
+
+PASS unhydrated login cannot submit credentials; native form transport is POST
+Owned restart-test Web/browser/PostgreSQL stopped.
+WEB_RESTART_FAILED UI price and source Error; URL/query and credential diagnostics withheld

@@ -1,0 +1,62 @@
+{
+  "parent_head": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+  "review_round": 6,
+  "review_url": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5648474700",
+  "findings": [
+    "CONTENT-PHOTO-FIXTURE-LOCK-BUDGET-01",
+    "PHOTO-OFFERS-STALE-READ-01"
+  ],
+  "before": {
+    "unit": {
+      "exit_code": 1,
+      "actual": null,
+      "expected": "FRESH"
+    },
+    "normal_authenticated_http": {
+      "exit_code": 1,
+      "actual": 500,
+      "expected": 503
+    }
+  },
+  "after": {
+    "unit": {
+      "exit_code": 0,
+      "passed": 5
+    },
+    "normal_authenticated_http": {
+      "exit_code": 0,
+      "passed": 10
+    }
+  },
+  "test_adjustment": "The race regression assertions are unchanged; prepare() callers now use the new three-argument signature because advisory offer input was removed in favor of the locked repository context. Subsequent full verify additionally covers actual UI busy message and real file transaction catalog change.",
+  "scale": {
+    "input_pixels": 25000000,
+    "input_bytes": 344681,
+    "derivatives": 10,
+    "image": "synthetic uniform-blue PNG, not a real owner photo",
+    "gate": "explicit test synchronization AFTER real decode to deterministically exceed unchanged lock-acquire budget; NOT a performance/latency benchmark"
+  },
+  "claims_not_made": [
+    "10MiB real image decoded",
+    "200 real photos processed at once",
+    "arbitrary process crash/fsync/stale lock recovery",
+    "production CMS or storage permissions"
+  ],
+  "full_verify": {
+    "exit_code": 0,
+    "commands": 35,
+    "source": ".local/evidence/2026-09-12T20-27-29.110Z/commands.json",
+    "working_tree_based_on": "2e579b9032a4090b9d7aaebc33dfb2a2db629421",
+    "product_changed_during_run": false,
+    "supplement_after": "One UI success-message assertion tightened to distinguish busy instruction from saved success; related11case normalUI rerun required. No product code change after full verify."
+  },
+  "strict_ui_supplement": {
+    "command": "npm run test:content-fixture",
+    "exit_code": 0,
+    "cases": 11,
+    "record": "photo-review-ui-strict.log",
+    "normal_auth": true,
+    "real_pg_session": true,
+    "content_storage": "local private file fixture"
+  }
+}

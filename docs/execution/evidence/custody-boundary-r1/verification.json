@@ -1,0 +1,22 @@
+{
+  "verify_exit_code": 0,
+  "commands": 37,
+  "all_command_exit_codes": 0,
+  "source_files_compared": 307,
+  "input_hash_file": "outputs/custody-boundary-r1/verification-inputs.json",
+  "source_unchanged_since_test_start": true,
+  "applied_migrations_0001_through_0014_unchanged": true,
+  "runner_workflows_reference_lockfile_unchanged": true,
+  "db_grouped_cases": 24,
+  "normal_ui_grouped_cases": 5,
+  "counterexamples": {
+    "boundary_absent_before": 1,
+    "boundary_after": 0,
+    "afterhours_before": 1,
+    "afterhours_after": 0
+  },
+  "data": "SYNTHETIC",
+  "auth": "maintained normal email/password session in isolated test app",
+  "camera": "synthetic canvas frames; no physical phone",
+  "verification_run": "2026-09-12T23-58-41.816Z"
+}

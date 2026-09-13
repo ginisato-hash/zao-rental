@@ -28,9 +28,9 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
    const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});
    // Never persist raw auth/callback/cookie diagnostics.
    const diagnostics=webDiagnosticForwarder(line=>console.error(line));web.stdout.resume();web.stderr.on('data',chunk=>diagnostics.push(chunk));web.stderr.on('end',()=>diagnostics.end());
-   let exited=false;const exit=new Promise<number>(resolve=>{web.once('error',()=>{exited=true;resolve(1);});web.once('exit',code=>{exited=true;resolve(code??1);});});
+   let exited=false,stopRequested=false;const exit=new Promise<number>(resolve=>{web.once('error',()=>{exited=true;resolve(1);});web.once('exit',(code,signal)=>{exited=true;if(!stopRequested)console.error(JSON.stringify({code:'TEST_WEB_UNEXPECTED_EXIT',exitCode:Number.isInteger(code)?code:null,signal:signal==='SIGKILL'||signal==='SIGTERM'||signal==='SIGABRT'?signal:'OTHER'}));resolve(code??1);});});
    let closing:Promise<void>|undefined;
-   return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
+   return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){stopRequested=true;web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
   }
   let current=launch(),stopping:Promise<void>|undefined,restarting=false;
   const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();

@@ -14,3 +14,10 @@ export function webDiagnosticForwarder(emit:(line:string)=>void){
  const finish=()=>{if(!overflow){const safe=safeWebDiagnostic(pending);if(safe)emit(safe);}pending='';overflow=false;};
  return {push(chunk:Uint8Array|string){for(const ch of (typeof chunk==='string'?chunk:Buffer.from(chunk).toString('utf8'))){if(ch==='\n'){finish();continue;}if(!overflow){if(pending.length+ch.length>2048){pending='';overflow=true;}else pending+=ch;}}},end(){finish();}};
 }
+
+/** Test transport failures: classify known messages but never return their contents. */
+export function safeTestTransportFailure(error:unknown){
+ let message='';try{const d=Object.getOwnPropertyDescriptor(error,'message');if(d&&'value' in d&&typeof d.value==='string')message=d.value;}catch{}
+ const category=/ECONNRESET|socket hang up/i.test(message)?'CONNECTION_RESET':/ECONNREFUSED/i.test(message)?'CONNECTION_REFUSED':/ETIMEDOUT|Timeout [0-9]+ms exceeded|timed out/i.test(message)?'TIMEOUT':/Target (page|browser|context).*closed|context.*disposed/i.test(message)?'CONTEXT_CLOSED':'UNCLASSIFIED';
+ return {code:'TEST_HTTP_TRANSPORT_FAILURE',category};
+}

@@ -15,3 +15,9 @@ P3ではno-costの限定診断として、スタッフ処理の500だけにserve
 通常password HTTP→保護POST→専用合成DBの一時triggerで23514を発生させる反例は、旧launcherでは診断0件で失敗、新launcherでは安全な1件の収集まで成功。clientは従来generic500、transaction rollbackにより半端なaccountなし。これは元CI500の原因の再現ではなく、将来のエラーを観測できるかの試験。
 
 テスト用launcherにだけ、厳密な4キー／固定code・phase・category／server UUIDのJSONを再構成して転送する処理を追加。任意のraw stderrを保存しない。分割chunk・複数行・上限超過行の後半を検証し、古いAUTH_PIPELINE_CODEの限定経路も維持する。fixture以外の権限／認証／product処理は変えない。npm run test:staff-diagnosticで同じ実HTTP/DB反例を再実行できる。新しいCI・追加静的レビューの対象とする。
+
+## Separate P3 CI transport observation (not the staff-create500)
+
+CI34756544102/attempt1 at71890ebc4edab35b0a36723fc69fb7f89ea643f8 failed in tests/wear/mixed.ts, mutation-mix, a GET before receiving an HTTP response (Error rather than status AssertionError). The retained log does not identify reset/timeout/child exit. No causal relationship to the historical staff-create500 is established. Earlier same-head local45 checks passed; later success must not be called a cause/fix.
+
+Add test-only safe transport categories and unexpected owned-Web exit code/signal, never raw request/error/credential values. No business code, assertions, request count, timeout, retry or workload is changed. Keep the failed CI and this observation even if the diagnostic rerun succeeds; classify recurrence before deciding a launch gate. This P3 Draft is not production approval.

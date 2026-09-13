@@ -1,0 +1,8 @@
+PASS JA/EN primary content, unique metadata, canonical/hreflang/JSON-LD are in initial HTML; private/query URLs noindex
+PASS guest ordinary mobile UI -> explicit size -> server group total, without early HOLD
+PASS final test payment response loss and reload restore the same booking/QR from real DB without duplicate hold or payment
+PASS cross-guest/CSRF and role/amount tampering rejected; logout drops the former context
+HANDOFF_RESPONSE {"status":200,"pickupTiming":"LATE_PICKUP_ELIGIBLE"}
+PASS guest-confirmed MULTIDAY first-day no-show -> normal staff login/UI -> day2 actual checkout, original contract/price unchanged
+Public/guest UI 5 cases passed; synthetic adapter and mobile viewport, not real device/Square.
+Owned Public browser/Web/PostgreSQL stopped.

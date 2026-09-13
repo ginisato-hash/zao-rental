@@ -1,0 +1,8 @@
+{
+  "at": "2026-09-13T09:45:33.084543+00:00",
+  "test_pid": 98324,
+  "owned_browser_pid": 98326,
+  "signal": "SIGTERM",
+  "reason": "New diagnostic UI sequence exceeded bounded investigation; admin context lacked explicit action timeout. Close owned browser to reject pending action and run test finally cleanup.",
+  "not_product_pass": true
+}

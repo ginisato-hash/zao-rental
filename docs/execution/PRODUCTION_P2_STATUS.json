@@ -134,7 +134,7 @@
   },
   "next": "Commit and Draft PR, exact-head CI, one final scoped static review. New PR must not merge.",
   "local_verify": {
-    "run_id": "2026-09-13T09-08-44.244Z",
+    "run_id": "2026-09-13T09-47-06.094Z",
     "commands": 44,
     "exit_code": 0,
     "new_unit_cases": 14,
@@ -147,5 +147,23 @@
     "sha256": "3e42d9809b3a07a1578e946ea28cb6749adf6a1c970beebfe33feecdc9aa01fe",
     "source_comment": 5652148008,
     "old_worktree_untouched": true
-  }
+  },
+  "ci_history": [
+    {
+      "run": 34749426170,
+      "attempt": 1,
+      "head": "6287c46f06c829f22902060c1c6ca1e41bcb9b01",
+      "conclusion": "failure",
+      "failed_command": "npm run test:public-ui",
+      "stage": "creating synthetic handoff staff after login navigation",
+      "actual_status": 500,
+      "expected_status": 201,
+      "same_head_mac_focused_result": "PASS 5 cases",
+      "root_cause": "Not conclusively reproduced; original CI did not retain a server error category. Do not claim a proven product fix.",
+      "response": "Test now creates through existing authenticated staff management UI; one submission; same protected POST and same expected 201; no retries/timeouts/authorization changes. Retain failure as an unresolved historical CI observation."
+    }
+  ],
+  "known_observations": [
+    "Initial CI synthetic staff-create500 was not reproduced in same-head Mac test. Authenticated UI synchronization strengthens evidence but does not establish the original backend cause."
+  ]
 }

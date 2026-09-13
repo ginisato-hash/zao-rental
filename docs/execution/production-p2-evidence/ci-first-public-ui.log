@@ -1,0 +1,15 @@
+
+> zao-rental@0.1.0 test:public-ui
+> node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts
+
+PASS JA/EN primary content, unique metadata, canonical/hreflang/JSON-LD are in initial HTML; private/query URLs noindex
+PASS guest ordinary mobile UI -> explicit size -> server group total, without early HOLD
+PASS final test payment response loss and reload restore the same booking/QR from real DB without duplicate hold or payment
+PASS cross-guest/CSRF and role/amount tampering rejected; logout drops the former context
+Owned Public browser/Web/PostgreSQL stopped.
+PUBLIC_UI_FAILED guest-confirmed MULTIDAY first-day no-show -> normal staff login/UI -> day2 actual checkout, original contract/price unchanged {"actual":500,"expected":201}
+LAYOUT {"width":1280,"scroll":1280,"wide":[]}
+PAGE_ALERT セッションを確認中…
+    at <anonymous> (/home/runner/work/zao-rental/zao-rental/tests/public/normal-ui.ts:41:336)
+    at async check (/home/runner/work/zao-rental/zao-rental/tests/public/normal-ui.ts:12:66)
+    at async <anonymous> (/home/runner/work/zao-rental/zao-rental/tests/public/normal-ui.ts:37:2)

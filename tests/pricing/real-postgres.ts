@@ -11,7 +11,7 @@ import {authHandler} from '../../apps/web/src/lib/auth-http';
 import {quoteHandler} from '../../apps/web/src/lib/quote-http';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {HoldService} from '../../packages/core/src/inventory/hold-service';
-import {TransferService} from '../../packages/core/src/transfer/transfer-service';
+import {legacyHold,legacyTransfer} from '../fixtures/legacy-prefix';
 import {seedInventory,requestFor,skiSet,variants,fid} from '../inventory/fixture';
 import type {CouponTerms} from '../../packages/contracts/src/pricing';
 let count=0,stage='startup',failed=false;const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;
@@ -21,8 +21,8 @@ try{
  for(const m of migrationPlan.slice(0,5)){const sql=await readFile(migrationsDirectory+'/'+m.file,'utf8');await db.pool.query(sql);await db.pool.query('CREATE TABLE IF NOT EXISTS foundation_migrations(id text PRIMARY KEY,checksum text NOT NULL)');await db.pool.query('INSERT INTO foundation_migrations VALUES($1,$2)',[m.id,createHash('sha256').update(sql).digest('hex')]);}
  await seedInventory(db.pool);const bootstrap=await bootstrapDevelopmentAdmin(db.pool,{email:'e08-bootstrap@example.invalid',displayName:'合成ADMIN',password}),bp=(await loadStaff(db.pool,bootstrap))!;
  const previous=(await writeAccount(db.pool,bp,undefined,{email:'e08-old@example.invalid',password,displayName:'合成旧担当',active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE','ONSEN_BASE'],permissions:{TRANSFER_VIEW:true,TRANSFER_PLAN:true,HOLD_VIEW:true,HOLD_EDIT:true}})).id!;
- const oldP=(await loadStaff(db.pool,previous))!,oldHold=await new HoldService(db.pool,oldP,()=>now).command('create',randomUUID(),requestFor('2035-01-02'));
- const batch=(await new TransferService(db.pool,oldP,()=>now).command('create',randomUUID(),{sourceStore:'MOUNTAIN_BASE',destinationStore:'ONSEN_BASE',scheduledDate:'2035-01-03',plannedReadyAt:'2035-01-03T19:00:00+09:00',neededBy:'2035-01-04T08:30:00+09:00',basis:'SYNTHETIC E08 upgrade transfer',lines:[{assetId:fid(1204)}]})).batch;
+ const oldHold=await legacyHold(db.pool,previous,requestFor('2035-01-02'),now);
+ const batch=await legacyTransfer(db.pool,previous,fid(1204));
  const auth=createStaffAuth(db.pool,{origin,secret}),httpAuth=authHandler(auth,db.pool,origin,db.pool);
  async function login(email:string){const r=await httpAuth(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email,password})}));assert.equal(r.status,200);return r.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ');}
  const oldCookie=await login('e08-old@example.invalid');

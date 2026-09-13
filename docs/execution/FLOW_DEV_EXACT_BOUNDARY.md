@@ -1,3 +1,9 @@
+> Historical rejected proposal, preserved verbatim below. The owner explicitly approved the
+> narrowed implementation under [CUSTODY_BOUNDARY_APPROVAL.md](CUSTODY_BOUNDARY_APPROVAL.md).
+> Current implementation/evidence: [ADR0024](../adr/0024-custody-boundary.md) and
+> [CUSTODY_BOUNDARY_STATUS.json](CUSTODY_BOUNDARY_STATUS.json). The additive file is0015,
+> since0012–0014 had already been applied; application grants are narrower than this old proposal.
+
 # Exact development custody changes requiring automatic approval review resolution
 
 Delegation ZAO-RENTAL-FLOW-DEV-R1. Previous bounded owner approval remains valid.

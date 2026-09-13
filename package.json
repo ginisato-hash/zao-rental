@@ -48,7 +48,9 @@
     "test:wear": "node --import tsx tests/wear/real-postgres.ts && node --import tsx tests/wear/group-capacity.ts",
     "test:wear-ui": "node --import tsx tests/wear/normal-ui.ts",
     "test:wear-mixed": "node --import tsx tests/wear/mixed.ts",
-    "test:content-fixture": "node --import tsx tests/content/normal-ui.ts"
+    "test:content-fixture": "node --import tsx tests/content/normal-ui.ts",
+    "test:custody": "node --import tsx tests/custody/boundary-counterexample.ts && node --import tsx tests/custody/real-postgres.ts && node --import tsx tests/custody/scenarios.ts",
+    "test:custody-ui": "node --import tsx tests/custody/normal-ui.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

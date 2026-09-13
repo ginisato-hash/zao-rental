@@ -1,0 +1,11 @@
+
+> zao-rental@0.1.0 test:custody-ui
+> node --import tsx tests/custody/normal-ui.ts
+
+PASS normal UI Premium model+selected size+quantity wear -> full HOLD/quote -> isolated payment confirmation
+PASS wrong Premium model or length rejected; normal screen prepares exact witness and records all serialized equipment
+PASS quantity wear joins the same reservation/member/cycle without garment assets
+PASS continuous return candidates persist exact cycles; duplicate label and response loss/reload do not duplicate receipt
+PASS normal API refuses unauthenticated/CSRF/actor flags; revocation closes the current screen and blocks saved session
+CUSTODY ordinary UI/API/real PostgreSQL: 5 passed, no skipped. Synthetic payment and data; synthetic camera frames and manual QR input, viewport only, no real phone/Square.
+Owned custody Web/browser/PostgreSQL stopped.

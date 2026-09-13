@@ -1,3 +1,17 @@
+## Current limited custody authorization
+
+Read docs/execution/CUSTODY_BOUNDARY_APPROVAL.md and CUSTODY_BOUNDARY_STATUS.json.
+ZAO-FLOW-CUSTODY-DB-BOUNDARY-R1 authorizes only the exact development custody boundary,
+serialized checkout/receipt/location, pole PAIR conservation, and related mixed-wear regression.
+Start2026-09-12T22:51:31Z; deadline2026-09-13T04:51:31Z (07:51:31–13:51:31 JST).
+One new Claude static launch, after full local verification and exact-head successful CI.
+Old FLOW starts7/8 and histories remain; no unused budget is added. Preserve applied0001–0014.
+No generic owner bypass. No main merge, real data/Square, production, billing/host rights,
+PR3/Runner or other projects. End at Draft PR10. Earlier exact-boundary rejection is retained
+as history and specifically resolved by the owner's new explicit approval, not erased.
+
+## Historical scope and budgets (not current authorization)
+
 Current v1.2 owner adoption: read docs/execution/WEAR_ADOPTION.md and WEAR_ADOPTION.json. Same FLOW-DEV-R1 budget; preserve pending exact custody boundary.
 
 Current bounded owner approval: read docs/execution/FLOW_DEV_CUSTODY_APPROVAL.md.

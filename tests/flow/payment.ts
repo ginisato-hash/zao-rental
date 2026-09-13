@@ -1,3 +1,5 @@
+import {provisionCustodyRole} from '../../scripts/custody-roles';
+import {CustodyService} from '../../packages/core/src/rental/custody-service';
 import assert from 'node:assert/strict';
 import {randomUUID,createHmac} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
@@ -62,17 +64,19 @@ try{
   const first=new BookingService(x.flow.flowPool,x.roles.authPool,x.signed.identity,adapter,simulation);assert.equal((await first.startPayment(d.booking.id,randomUUID())).payments[0].state,'UNKNOWN');
   const restarted=new BookingService(x.flow.flowPool,x.roles.authPool,x.signed.identity,adapter,simulation);const saved=await restarted.reconcile(d.booking.id);assert.equal(saved.state,'PAYMENT_PENDING');assert.equal(saved.payments[0].state,'UNKNOWN');assert.equal(saved.qr,null);assert.notEqual(calls[0]!.pid,calls[1]!.pid);await restarted.startPayment(d.booking.id,randomUUID());assert.deepEqual(calls.map(c=>c.operation),['create','lookup']);assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts WHERE booking_id=$1',[d.booking.id])).rows[0].n,1);
  });
- await check('unconnected receipt schema rejects scan after confirmation, permits earlier physical receipt, grants no application writes',async()=>{
-  // Migration-only synthetic rows, rolled back. This is NOT an ordinary receipt operation or an E12 flow test.
-  const d=await x.draft();const c=await x.db.pool.connect();const loan=randomUUID(),cycle=randomUUID(),batch=randomUUID(),candidate=randomUUID();
-  try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[x.actor]);const asset=(await c.query("SELECT a.id,a.variant_id FROM inventory_claims cl JOIN ledger_assets a ON a.id=cl.asset_id WHERE cl.hold_id=$1 AND cl.active AND a.family='SKI' LIMIT 1",[d.holdId])).rows[0];
-   await c.query("INSERT INTO rental_loan_items(id,cycle_id,booking_id,requirement_key,asset_id,family,variant_id,unit,quantity,pickup_store,checked_out_at,checked_out_by,due_at,state) VALUES($1,$2,$3,'person-a:SKI',$4,'SKI',$5,'PAIR',1,'MOUNTAIN_BASE','2035-02-01T09:00:00+09:00',$6,'2035-02-01T17:00:00+09:00','OUT')",[loan,cycle,d.booking.id,asset.id,asset.variant_id,x.actor]);
-   await c.query("INSERT INTO rental_return_batches(id,owner_id,store_id,created_at) VALUES($1,$2,'MOUNTAIN_BASE','2035-02-01T12:00:00+09:00')",[batch,x.actor]);
-   await c.query("INSERT INTO rental_return_candidates(id,batch_id,request_key,scan_sha256,asset_id,loan_item_id,cycle_id,loan_version,scanned_at,state,outcome) VALUES($1,$2,$3,$4,$5,$6,$7,1,'2035-02-01T12:01:00+09:00','CANDIDATE','SYNTHETIC_CONSTRAINT_TEST')",[candidate,batch,randomUUID(),'0'.repeat(64),asset.id,loan,cycle]);
-   const sql="INSERT INTO rental_receipts(id,loan_item_id,candidate_id,received_store,actor,scanned_at,confirmed_at,actual_received_at) VALUES($1,$2,$3,'MOUNTAIN_BASE',$4,$5,'2035-02-01T12:02:00+09:00','2035-02-01T12:00:00+09:00')";
-   await c.query('SAVEPOINT invalid_scan');await assert.rejects(c.query(sql,[randomUUID(),loan,candidate,x.actor,'2035-02-01T12:03:00+09:00']),{code:'23514'});await c.query('ROLLBACK TO SAVEPOINT invalid_scan');
-   await c.query(sql,[randomUUID(),loan,candidate,x.actor,'2035-02-01T12:01:00+09:00']);assert.equal((await c.query('SELECT count(*)::int n FROM rental_receipts')).rows[0].n,1);
-  }finally{await c.query('ROLLBACK');c.release();}
+ await check('secured receipt schema retains chronology constraints; payment role still has no receipt rights',async()=>{
+  const previous=x.now().toISOString(),d=await x.draft('2035-03-01');await x.service.startPayment(d.booking.id,randomUUID());await x.clock('2035-03-01T10:00:00+09:00');
+  const role=await provisionCustodyRole(x.db.pool,x.db.identity),custody=new CustodyService(role.custodyPool,x.roles.authPool,x.signed.identity);
+  const v=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC chronology fixture'});const out=await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:1});const ski=out.loans.find(l=>l.family==='SKI');
+  const c=await x.db.pool.connect(),loan=ski.id,cycle=ski.cycle_id,batch=randomUUID(),candidate=randomUUID(),asset={id:ski.asset_id};
+  // Receipt inserts below test only the unchanged chronology constraint and roll back.
+  try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[x.actor]);
+   await c.query("INSERT INTO rental_return_batches(id,owner_id,store_id,created_at) VALUES($1,$2,'MOUNTAIN_BASE','2035-03-01T12:00:00+09:00')",[batch,x.actor]);
+   await c.query("INSERT INTO rental_return_candidates(id,batch_id,request_key,scan_sha256,asset_id,loan_item_id,cycle_id,loan_version,scanned_at,state,outcome) VALUES($1,$2,$3,$4,$5,$6,$7,1,'2035-03-01T12:01:00+09:00','CANDIDATE','SYNTHETIC_CONSTRAINT_TEST')",[candidate,batch,randomUUID(),'0'.repeat(64),asset.id,loan,cycle]);
+   const sql="INSERT INTO rental_receipts(id,loan_item_id,candidate_id,received_store,actor,scanned_at,confirmed_at,actual_received_at) VALUES($1,$2,$3,'MOUNTAIN_BASE',$4,$5,'2035-03-01T12:02:00+09:00','2035-03-01T12:00:00+09:00')";
+   await c.query('SAVEPOINT invalid_scan');await assert.rejects(c.query(sql,[randomUUID(),loan,candidate,x.actor,'2035-03-01T12:03:00+09:00']),{code:'23514'});await c.query('ROLLBACK TO SAVEPOINT invalid_scan');
+   await c.query(sql,[randomUUID(),loan,candidate,x.actor,'2035-03-01T12:01:00+09:00']);assert.equal((await c.query('SELECT count(*)::int n FROM rental_receipts')).rows[0].n,1);
+  }finally{await c.query('ROLLBACK');c.release();await role.close();await x.clock(previous);}
   assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_receipts')).rows[0].n,0);await assert.rejects(x.flow.flowPool.query('SELECT * FROM rental_receipts'),{code:'42501'});
  });
  await check('store removal while gateway response is pending cannot authorize UNKNOWN fallback writes',async()=>{

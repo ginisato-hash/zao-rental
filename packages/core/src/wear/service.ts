@@ -55,7 +55,7 @@ export class WearService{
   if((await c.query('SELECT 1 FROM wear_loans WHERE booking_id=$1',[b.id])).rowCount)throw new WearError('ALREADY_CHECKED_OUT',409);
   const wanted=b.conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(i=>({key:m.key+':'+i.family,member:m.key,variant:i.variantIds[0]!})));if(!wanted.length)throw new WearError('NO_WEAR_LINES');
   const claims=(await c.query('SELECT requirement_key,pool_id,count(*)::int days FROM wear_claims WHERE hold_id=$1 AND active GROUP BY requirement_key,pool_id',[b.hold_id])).rows;if(claims.length!==wanted.length||wanted.some(w=>!claims.some(cl=>cl.requirement_key===w.key&&cl.days===period.days)))throw new WearError('WEAR_CLAIMS_MISMATCH');
-  const cycle=randomUUID(),created:Loan[]=[];
+  const cycle=b.id,created:Loan[]=[];
   // All loan lines precede physical movement within the same transaction, so protected
   // claims become ON_LOAN without counting the same booking twice.
   for(const w of wanted){const p=await this.getPool(c,claims.find(cl=>cl.requirement_key===w.key)!.pool_id);if(p.store_id!==s||p.variant_id!==w.variant||p.ready<1)throw new WearError('WEAR_NOT_READY',409);const loanId=randomUUID();await c.query('INSERT INTO wear_loans(id,cycle_id,booking_id,member_key,requirement_key,pool_id,variant_id,quantity,planned_pickup_store,actual_pickup_store,planned_return_store,checked_out_at,actor) VALUES($1,$2,$3,$4,$5,$6,$7,1,$8,$8,$9,$10,$11)',[loanId,cycle,b.id,w.member,w.key,p.id,w.variant,s,b.conditions.returnStore,now,this.identity.subject]);created.push((await c.query<Loan>('SELECT * FROM wear_loans WHERE id=$1',[loanId])).rows[0]!);}

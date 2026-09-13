@@ -1,0 +1,5 @@
+REQUIRED_COUNTEREXAMPLE: authenticated custody cannot apply a receipt; approved receipt-only boundary is absent
+
+false !== true
+
+Owned counterexample database stopped.

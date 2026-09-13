@@ -1,3 +1,4 @@
+import {CustodyService} from '../../packages/core/src/rental/custody-service';
 import {WearService} from '../../packages/core/src/wear/service';
 import {Pool} from 'pg';
 import {getRuntime} from '../../apps/web/src/lib/staff-runtime';
@@ -12,3 +13,9 @@ export function testFlowService(identity:FlowIdentity){const {r,pool}=setup();re
 export function testFlowOrigin(){return setup().r.config.origin;}
 
 export function testWearService(identity:FlowIdentity){const {r,pool}=setup();return new WearService(pool,r.authPool,identity);}
+
+let custodyPool:Pool|undefined;
+export function testCustodyService(identity:FlowIdentity){const {r}=setup();const db=JSON.parse(process.env.ZAO_TEST_CUSTODY_RUNTIME??'null') as Connection|null;
+ if(!db||db.host!=='127.0.0.1'||db.database!==r.config.namespace||db.user!==r.config.namespace+'_custody'||db.port!==r.config.authDb.port||!db.password)throw new FlowError('TEST_CUSTODY_INVALID',503);
+ if(!custodyPool){custodyPool=new Pool({...db,max:4,connectionTimeoutMillis:2000});custodyPool.on('error',()=>{});}return new CustodyService(custodyPool,r.authPool,identity);
+}

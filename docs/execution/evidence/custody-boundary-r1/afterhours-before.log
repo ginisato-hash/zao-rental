@@ -1,0 +1,10 @@
+PASS two-member pole partial return, concurrent terminals, replay and inspection conserve every PAIR
+PASS existing transfer cannot dispatch a checked-out individual or consume OUT pole quantity
+PASS snowboard and snowboard-boot use one immutable Asset each, receive cross-store and retain same-day block
+PASS saved old scan never retargets a new cycle; new scan resolves new exact loan and receipt
+CUSTODY_SCENARIOS_FAILED MULTIDAY continuation is not permission for after-hours physical checkout ERR_ASSERTION
+{"expected":{"code":"FLOW_CONFLICT"}}
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/custody/scenarios.ts:51:46)
+    at async check (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/custody/scenarios.ts:12:67)
+    at async <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev/tests/custody/scenarios.ts:49:2)
+Owned scenario PostgreSQL stopped.

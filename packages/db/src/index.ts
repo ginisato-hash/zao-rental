@@ -8,7 +8,7 @@ import * as schema from './schema';
 export const migrationsDirectory = fileURLToPath(new URL('../migrations/', import.meta.url));
 
 export const migrationPlan = [
-  {id:'0001', file:'0001_foundation.sql'}, {id:'0002', file:'0002_ledger.sql'}, {id:'0003',file:'0003_staff_auth.sql'}, {id:'0004',file:'0004_period_hold.sql'}, {id:'0005',file:'0005_store_transfer.sql'}, {id:'0006',file:'0006_pricing_quote.sql'}, {id:'0007',file:'0007_recommendation.sql'}, {id:'0008',file:'0008_staff_settings_boundary.sql'}, {id:'0009',file:'0009_development_booking.sql'},{id:'0010',file:'0010_rental_custody.sql'},{id:'0011',file:'0011_receipt_timeline.sql'},{id:'0012',file:'0012_integrated_wear_catalog.sql'},{id:'0013',file:'0013_wear_quantity.sql'},{id:'0014',file:'0014_wear_return_batch.sql'},
+  {id:'0001', file:'0001_foundation.sql'}, {id:'0002', file:'0002_ledger.sql'}, {id:'0003',file:'0003_staff_auth.sql'}, {id:'0004',file:'0004_period_hold.sql'}, {id:'0005',file:'0005_store_transfer.sql'}, {id:'0006',file:'0006_pricing_quote.sql'}, {id:'0007',file:'0007_recommendation.sql'}, {id:'0008',file:'0008_staff_settings_boundary.sql'}, {id:'0009',file:'0009_development_booking.sql'},{id:'0010',file:'0010_rental_custody.sql'},{id:'0011',file:'0011_receipt_timeline.sql'},{id:'0012',file:'0012_integrated_wear_catalog.sql'},{id:'0013',file:'0013_wear_quantity.sql'},{id:'0014',file:'0014_wear_return_batch.sql'},{id:'0015',file:'0015_custody_boundary.sql'},
 ] as const;
 export async function migrate(pool: Pool): Promise<void> {
   const entries=await Promise.all(migrationPlan.map(async entry => {

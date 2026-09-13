@@ -13,7 +13,7 @@ export type LedgerRecord = {
   id:string; resource:Resource; name:string; code:string; version:number; notes:string;
   family:Family|'SKI_SET'|'SNOWBOARD_SET'; age?:string; tier?:string; size?:string;
   custody?:string; modelId?:string; variantId?:string; storeId?:StoreId; initialStoreId?:StoreId;
-  status?:string; quantity?:number; unit?:string; labelCopies?:number;
+  status?:string; quantity?:number; outPairs?:number; atStorePairs?:number; unit?:string; labelCopies?:number;
   catalogSeason?:string|null; compatibleSports?:string[]|null; bslStatus?:string; bslMm?:number|null; bslEvidence?:string; brand?:string;
   components?:{family:string; quantity:number; unit:string}[];
   sourceKind:string; sourceDocument:string; sourceLocator:string;

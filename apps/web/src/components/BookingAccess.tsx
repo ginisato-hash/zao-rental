@@ -1,6 +1,7 @@
  'use client';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
+import {BookingRecoveryForm,PrepareBookingRecovery} from './BookingRecovery';
 import type {BookingAccess} from '../../../../packages/core/src/guest/booking-access';
 type View=Awaited<ReturnType<BookingAccess['read']>>&{qrImage:string};
 async function request(path:string,body?:unknown){const r=await fetch('/api/booking-access'+path,{method:body===undefined?'GET':'POST',cache:'no-store',headers:{'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const v=await r.json();if(!r.ok)throw new Error(v.error);return v;}
@@ -11,7 +12,7 @@ export function SaveBookingAccess({bookingId,locale}:{bookingId:string;locale:st
   const key='zao-booking-access-request:'+bookingId;let requestId=sessionStorage.getItem(key);if(!requestId){requestId=crypto.randomUUID();sessionStorage.setItem(key,requestId);}
   await request('/issue',{bookingId,requestId});setSaved(true);setStatus('この端末で元の返却期限まで予約確認・QRを閲覧できます。');
  }catch{setStatus('保存の完了は未確認です。同じ要求を再照合してください。入力用アクセスも失った場合は、メール復旧接続待ちです。');}finally{active.current=false;setBusy(false);}}
- return <section aria-label="予約閲覧の保存"><button disabled={busy} onClick={()=>void save()}>予約閲覧をこの端末へ保存</button><p role="status">{status}</p>{saved&&<Link href={'/'+locale+'/reservation'}>保存した予約とQRを開く</Link>}<p>共有端末では保存せず、利用後は閲覧権を失効してください。別端末へのメール配送は未接続です。</p></section>;
+ return <section aria-label="予約閲覧の保存"><button disabled={busy} onClick={()=>void save()}>予約閲覧をこの端末へ保存</button><p role="status">{status}</p>{saved&&<Link href={'/'+locale+'/reservation'}>保存した予約とQRを開く</Link>}<p>共有端末では保存せず、利用後は閲覧権を失効してください。別端末へのメール配送は未接続です。</p><PrepareBookingRecovery bookingId={bookingId}/></section>;
 }
 function pendingRevoke(){try{return sessionStorage.getItem('zao-booking-access-pending-revoke');}catch{return null;}}
 export function ConfirmedBooking(){
@@ -44,5 +45,5 @@ export function ConfirmedBooking(){
    sessionStorage.removeItem(pendingKey);setPendingBookingId(null);
    ++ticket.current;setView(null);setMessage('この端末の予約閲覧権を失効しました。');
   }catch{setMessage('失効完了は未確認です。再度照合してください。');}finally{revoking.current=false;setBusy(false);setReading(false);}
- }}>この端末の予約閲覧権を失効</button></section>;
+ }}>この端末の予約閲覧権を失効</button><BookingRecoveryForm beforeChange={()=>{revoking.current=true;++ticket.current;setView(null);setReading(true);setBusy(true);}} afterChange={()=>{revoking.current=false;setBusy(false);void reload();}}/></section>;
 }

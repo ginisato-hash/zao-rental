@@ -1,3 +1,19 @@
+## Current Night R1 / Production Preflight P5
+
+Read docs/execution/OWNER_NIGHT_R1_ORIGINAL.md and PRODUCTION_P5_STATUS.json.
+PR15 was exact-head merged through unchanged Ruleset23161641. Continue P5 A-H from
+that merged main: separate read-only booking recovery, local production rehearsal,
+read-only preflight, ingress/Square/storage fixtures, owned disk/test hygiene.
+No per-item Owner handoff. Fixed night deadline2026-09-13T23:00:00Z (08:00 JST),
+P5 static Claude starts max2, existing Team/extraOFF/tools disabled. No budget reset.
+Actual Square/R2/email/deploy/credentials/data/billing/privilege/Ruleset/PR3/Runner
+operations are prohibited. Record external/Owner gates and continue independent work.
+Preserve business contracts, fail-closed production and historical evidence. End at
+one new Draft PR with exact-head CI/review; P5 merge is not authorized. Dispose only
+successful, evidenced, stopped resources owned by this run; preserve failed/unknown.
+
+## Historical P4 and earlier authority (not current scope/deadline)
+
 ## Current supervised Production Activation P4
 
 Read docs/execution/PRODUCTION_P4_APPROVAL.md and PRODUCTION_P4_STATUS.json.

@@ -1,0 +1,11 @@
+import {spawnSync} from 'node:child_process';
+import {randomUUID,createHash} from 'node:crypto';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {diskPreflight,cleanupSuccessfulClusters} from './test-hygiene.ts';
+const name=process.argv[2];if(!/^test:[a-z0-9-]+$/.test(name??'')||process.argv.length!==3)throw new Error('TEST_COMMAND_REQUIRED');
+const runId=randomUUID(),commandId=randomUUID(),directory='.local/evidence/target-'+runId;mkdirSync(directory,{recursive:true});
+console.log('DISK_PREFLIGHT '+JSON.stringify(diskPreflight(process.cwd())));
+const r=spawnSync('npm',['run',name],{encoding:'utf8',maxBuffer:16*1024*1024,env:{...process.env,ZAO_TEST_RUN_ID:runId,ZAO_TEST_COMMAND_ID:commandId,NEXT_TELEMETRY_DISABLED:'1',PLAYWRIGHT_BROWSERS_PATH:'.local/browsers'}});
+const output=(r.stdout??'')+(r.stderr??''),logPath=directory+'/command.log';writeFileSync(logPath,output);process.stdout.write(output);
+const evidence={runId,commandId,exitCode:r.status??1,logPath,logSha256:createHash('sha256').update(output).digest('hex')};
+const cleanup=cleanupSuccessfulClusters(process.cwd(),evidence);writeFileSync(directory+'/result.json',JSON.stringify({...evidence,command:name,cleanup},null,2)+'\n');console.log('TARGET_EVIDENCE '+directory);process.exit(r.status??1);

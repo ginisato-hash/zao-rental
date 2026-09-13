@@ -1,0 +1,37 @@
+{
+  "merge_commit": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+  "main": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+  "tree": "ca1277f6aea9a7b835cbf6e47248f9b579cfb480",
+  "pr15_head": "71a58316cb7f552337e569bf8d039f9557da7a59",
+  "base": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+  "merged_at": "2026-09-13T17:03:25Z",
+  "runner": "UNATTENDED_HOLD",
+  "ruleset_unchanged": true,
+  "ready_ci": {
+    "run_id": 34769760877,
+    "attempt": 1,
+    "event": "pull_request",
+    "repository": "ginisato-hash/zao-rental",
+    "workflow": ".github/workflows/ci.yml",
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34769760877",
+    "base": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+    "head": "71a58316cb7f552337e569bf8d039f9557da7a59",
+    "checkout": "d0123e1ff485b466e6de604bd27ddca2d0f48271",
+    "tree": "ca1277f6aea9a7b835cbf6e47248f9b579cfb480",
+    "conclusion": "success",
+    "artifact_digest": "sha256:406db207dd23e7937292fc8ece65be8ae951527255db324afc6c0ee1c7d37dea",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success"
+      }
+    ],
+    "checked_at": "2026-09-13T17:02:59.753917+00:00"
+  },
+  "review": {
+    "id": 5654640359,
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654640359",
+    "readback_equal": true
+  },
+  "production_activation": false
+}

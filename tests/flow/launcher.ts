@@ -1,3 +1,6 @@
+import {createHmac} from 'node:crypto';
+import {BookingRecovery,type RecoveryMessage} from '../../packages/core/src/guest/booking-recovery';
+import {GuestContexts} from '../../packages/core/src/guest/context';
 import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
 import {webDiagnosticForwarder} from './web-diagnostics';
 import {provisionGuestRole} from '../../scripts/guest-roles';
@@ -13,7 +16,7 @@ import {assertPortFree} from '../../scripts/worktree';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import type {DevelopmentRuntime} from '../../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
-export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean}={}){
+export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean}={}){
  let access:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined;
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
  let guest:Awaited<ReturnType<typeof provisionGuestRole>>|undefined,content:Awaited<ReturnType<typeof provisionContentRole>>|undefined;
@@ -28,6 +31,18 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
   startupPhase='WEB';
   const origin=`http://127.0.0.1:${db.identity.webPort}`;
   const config:DevelopmentRuntime={origin,namespace:db.identity.namespace,authSecret:randomBytes(32).toString('hex'),authDb:roles.authDb,ledgerDb:roles.ledgerDb,holdDb:roles.holdDb,transferDb:roles.transferDb,pricingDb:roles.pricingDb,recommendationDb:roles.recommendationDb};
+  // In-memory delivery capture exists only in the parent test harness. No HTTP
+  // mailbox, environment flag, raw secret file or production route can expose it.
+  const captured:RecoveryMessage[]=[];
+  const recoveryFixture=options.publicP5&&access&&guest?{
+   async enroll(guestToken:string,bookingId:string,requestId:string){
+    const service=new BookingRecovery(access!.accessPool,createHmac('sha256',config.authSecret).update('zao-owned-development-booking-access-v1').digest(),'development-v1',{
+     async deliver(message){captured.push(message);return {messageId:message.messageId,state:'DELIVERED'};},
+     async lookup(messageId){return {messageId,state:captured.some(m=>m.messageId===messageId)?'DELIVERED':'UNKNOWN'};}
+    });
+    return service.prepare(await new GuestContexts(guest!.guestPool).resolve(guestToken),bookingId,requestId);
+   },code(){if(captured.length!==1)throw new Error('SYNTHETIC_MAIL_COUNT');return captured[0]!.code;}
+  }:undefined;
   const env:NodeJS.ProcessEnv={...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin,ZAO_TEST_PUBLIC_INDEXING:'1'}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
   const args=['node_modules/next/dist/bin/next','dev','tests/flow-app','--webpack','--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   function launch(){
@@ -47,7 +62,7 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
     const rejected=await fetch(origin+'/api/custody/booking/00000000-0000-4000-8000-000000000000');if(rejected.status!==401)throw new Error('TEST_ANONYMOUS_CUSTODY_NOT_REJECTED');
    }catch(e){await stop();throw e;}
   }
-  return {origin,db,roles,flow,custody,guest,content,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
+  return {origin,db,roles,flow,custody,guest,content,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
    if(stopping||restarting)throw new Error('TEST_RESTART_NOT_ALLOWED');restarting=true;
    try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();return {oldPid:old,newPid:current.pid};}finally{restarting=false;}
   }};

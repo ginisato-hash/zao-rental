@@ -1,0 +1,20 @@
+{
+  "backupSha256": "e91cbbf2f8994bea1a518e35a3ce99e3442522935e568c48026d1e8acb66ab6e",
+  "schemaSha256": "ade69194e55d191d9025e47dfea173d98071079a457d12e2780c8f1b0bf56d8f",
+  "sourceIdentity": "postgres/run-MYhPHF",
+  "restoredIdentity": "restored-1jz6Un/cluster",
+  "integrityPassed": true,
+  "verifiedAt": "2026-09-13T10:33:09.273Z",
+  "method": "COLD_CLUSTER_SAME_MAJOR",
+  "rpoSeconds": 0,
+  "rtoSeconds": 0.8536422080000002,
+  "productionRpoRtoApproved": false,
+  "tableCount": 81,
+  "rowCount": 180,
+  "syntheticOnly": true,
+  "productionBackup": false,
+  "rolesWithinSameCluster": true,
+  "providerRestore": false,
+  "physicalBackupContainsSyntheticSecrets": true,
+  "backupExcludedFromArtifacts": true
+}

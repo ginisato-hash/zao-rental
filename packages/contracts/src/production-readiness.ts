@@ -1,5 +1,5 @@
 import {HoldError} from './hold';
-export const launchGateIds=['TAX','SALES_SEASON','COUPON','CLEANING','STORE_NAP','CANCEL_REFUND_COPY','LATE_PICKUP_COPY','MEDIA_RIGHTS','GUEST_POLICY','TRUSTED_INGRESS','SQUARE_SANDBOX','STORAGE','REAL_DEVICE','FIELD_CWV','BACKUP_RESTORE','MIGRATION_ROLLBACK','SECRET_ROTATION','ALERT_DELIVERY','PRIVACY_RETENTION','PUBLICATION_APPROVAL'] as const;
+export const launchGateIds=['TAX','SALES_SEASON','COUPON','CLEANING','STORE_NAP','CANCEL_REFUND_COPY','LATE_PICKUP_COPY','MEDIA_RIGHTS','GUEST_POLICY','TRUSTED_INGRESS','SQUARE_SANDBOX','STORAGE','REAL_DEVICE','FIELD_CWV','BACKUP_RESTORE','MIGRATION_ROLLBACK','SECRET_ROTATION','ALERT_DELIVERY','PRIVACY_RETENTION','PUBLICATION_APPROVAL','MAIN_PROTECTION','REAL_CATALOG','DEPLOYMENT_TARGET','RPO_RTO'] as const;
 export type LaunchGateId=typeof launchGateIds[number];
 export type GateEvidence={id:LaunchGateId;state:'OWNER_PENDING'|'EXTERNAL_PENDING'|'VERIFIED'|'FAILED';head:string;policyRevision:string;evidenceRef:string|null;verifiedAt:string|null;expiresAt:string|null};
 /** Backend/deployment evidence input only. A passed checklist does not itself deploy or grant authority. */

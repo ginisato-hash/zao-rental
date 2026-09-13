@@ -1,0 +1,23 @@
+✔ production guest JSON schema, exact approval hash and runtime inequalities; no default/owner values invented (24.238ms)
+✔ trusted ingress uses only request-object-bound dispatcher metadata; all browser IP spellings fail closed (17.091042ms)
+✔ concrete Square transport pins Sandbox/API version/Bearer/auth binding, stable idempotency, no redirects/ambient credentials (6.163958ms)
+✔ concrete Square allowlist rejects wrong host/location/path before credentials; revoked/expired/wrong merchant stops without network (1.045083ms)
+✔ response loss/UNKNOWN never auto retries or changes key; credential/response diagnostics are masked (2.335208ms)
+✔ transport abort cancels body read and settles hung fetch without retry; oversized/invalid JSON fails UNKNOWN (22.465792ms)
+✔ signed duplicate/out-of-order webhook only performs current lookup; tamper and merchant/amount/currency mismatch rejected (1.176417ms)
+✔ media provider separates private originals/derivatives, immutable digest, rights/revision checks and signed ticket bounds (0.660458ms)
+✔ withdrawal requires exact CDN invalidation receipt; signed expiry/legal retention/references gate deletion, never auto-delete (0.365208ms)
+✔ source staging preserves original/normalized provenance, exact match, explicit dry-run commit and same-source idempotency (1.185625ms)
+✔ unresolved/ambiguous manufacturer/year/quantity rows never create stock; reductions/missing rows never delete assets; wear stays quantity (3.177625ms)
+✔ all required operational codes reach a strict structured sink; secret/PII/error bodies cannot enter it (3.979292ms)
+✔ secret lifecycle rejects missing/revoked/expired/duplicate active credentials and documents old-key grace without claiming rotation execution (0.276083ms)
+✔ environment readers require explicit valid private metadata; public secret variables and invalid JSON fail closed without logging raw values (0.239209ms)
+✔ P2-01 unapproved public environment names fail closed regardless of secret-like spelling (0.097834ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 337.999

@@ -1,0 +1,14 @@
+
+> zao-rental@0.1.0 test:asset-reader
+> node --import tsx tests/flow/asset-reader-ui.ts
+
+PASS manual input rejects reservation QR and partial identities; one whole Asset callback only
+PASS synthetic camera frames continuously decode different Assets; duplicate same frame is suppressed; explicit stop releases tracks
+PASS unmount while camera permission is pending stops the late stream without rendering or callbacks
+PASS unmount of an active camera releases this component tracks
+PASS permission denial and missing camera preserve manual fallback without fake acknowledgement
+PASS offline stops owned camera; reconnect never auto-acknowledges or restarts; touch width matrix
+PASS slow camera lookup exposes pending state, suppresses repeat callbacks and does not claim saved before acknowledgement
+PASS reload clears unacknowledged input fixture without inventing a saved return or auto-starting camera
+Asset QR component: 8 passed, 0 skipped. Synthetic canvas MediaStream only; no physical phone/camera and no receipt mutation.
+Owned QR test Web/browser/PostgreSQL stopped.

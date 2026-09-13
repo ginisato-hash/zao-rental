@@ -1,0 +1,13 @@
+{
+  "run": 34749426170,
+  "attempt": 1,
+  "head": "6287c46f06c829f22902060c1c6ca1e41bcb9b01",
+  "conclusion": "failure",
+  "failed_command": "npm run test:public-ui",
+  "stage": "creating synthetic handoff staff after login navigation",
+  "actual_status": 500,
+  "expected_status": 201,
+  "same_head_mac_focused_result": "PASS 5 cases",
+  "root_cause": "Not conclusively reproduced; original CI did not retain a server error category. Do not claim a proven product fix.",
+  "response": "Test now creates through existing authenticated staff management UI; one submission; same protected POST and same expected 201; no retries/timeouts/authorization changes. Retain failure as an unresolved historical CI observation."
+}

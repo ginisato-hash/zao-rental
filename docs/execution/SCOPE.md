@@ -1,3 +1,18 @@
+## Current supervised Production Integration P2
+
+Read docs/execution/PRODUCTION_P2_APPROVAL.md and PRODUCTION_P2_STATUS.json first.
+The direct owner authorizes exact PR12 merge (bdbb7384897fc78001b2a5f238c97996421dc87c)
+and P2 configuration/interfaces/fixtures/code and isolated PostgreSQL restore drill.
+Complete guest config/trusted ingress, Square transport (gateway unchanged), media,
+import dry-run, observability/secrets/device/SEO and launch gates. Preserve business rules.
+No production guest activation/values without approval, real Square/storage/credentials,
+real people/stock, deployment, branch-protection settings, billing/privilege expansion,
+PR3/Runner or merge of the new P2 PR. Existing Team/creditsOFF/static tool-free review.
+Historical budgets are not reusable. Preserve prior evidence and uncommitted progress.
+End at a new Draft PR with exact-head CI/review, owner gates and owned-resource cleanup.
+
+## Historical P1 and earlier scopes (superseded only by P2 above)
+
 ## Current supervised Production Readiness P1
 
 Read docs/execution/PRODUCTION_P1_APPROVAL.md and PRODUCTION_P1_STATUS.json first.

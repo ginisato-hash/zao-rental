@@ -1,4 +1,4 @@
-'use client';
-import {useState} from 'react';
+ 'use client';
+import {useRef,useState} from 'react';
 import {AssetQrInput} from '../../apps/web/src/components/AssetQrInput';
-export default function AssetReaderFixture(){const [ids,setIds]=useState<string[]>([]),[visible,setVisible]=useState(true);return <main style={{maxWidth:640,padding:12}}><h1>SYNTHETIC QR input fixture</h1><p>Input component only. No API, candidate persistence, loan or return operation.</p>{visible&&<AssetQrInput onAsset={async id=>{setIds(old=>[...old,id]);}}/>}<button onClick={()=>setVisible(false)}>入力部品を閉じる</button><output aria-label="検出ID一覧">{ids.join(',')}</output></main>;}
+export default function AssetReaderFixture(){const [ids,setIds]=useState<string[]>([]),[visible,setVisible]=useState(true),[deferred,setDeferred]=useState(false),[started,setStarted]=useState(0),release=useRef<(()=>void)|null>(null);return <main style={{maxWidth:640,padding:12}}><h1>SYNTHETIC QR input fixture</h1><p>Input component only. No API, candidate persistence, loan or return operation.</p><label><input type="checkbox" checked={deferred} onChange={e=>setDeferred(e.target.checked)}/>合成照合応答を保留</label><button onClick={()=>release.current?.()}>合成応答を完了</button><output aria-label="合成照合開始数">{started}</output>{visible&&<AssetQrInput onAsset={async id=>{setStarted(n=>n+1);if(deferred)await new Promise<void>(r=>{release.current=r;});setIds(old=>[...old,id]);}}/>}<button onClick={()=>setVisible(false)}>入力部品を閉じる</button><output aria-label="検出ID一覧">{ids.join(',')}</output></main>;}

@@ -1,0 +1,22 @@
+{
+  "merge_commit": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+  "main": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+  "tree": "8cf7428c60755c80c725438bf15ba6dd61c828f3",
+  "approved_head": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+  "parent": "bdbb7384897fc78001b2a5f238c97996421dc87c",
+  "method": "squash through active ruleset, match-head-commit enforced",
+  "merged_at": "2026-09-13T11:30:52Z",
+  "ready_ci": {
+    "run_id": 34753917549,
+    "attempt": 1,
+    "conclusion": "success",
+    "head_sha": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+    "checked_out_sha": "547e313c4f39de7630cddc4794932f414f1af96c",
+    "trigger": "ready_for_review automatic CI; no manual rerun",
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34753917549"
+  },
+  "ruleset_unchanged": true,
+  "pr3_draft": true,
+  "Runner": "UNATTENDED_HOLD",
+  "merge_activation": false
+}

@@ -1,0 +1,67 @@
+{
+  "stage": "PRODUCTION_ACTIVATION_PREP_P3",
+  "started_utc": "2026-09-13T11:12:34Z",
+  "started_jst": "2026-09-13T20:12:34+09:00",
+  "base": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+  "branch": "codex/production-activation-prep-p3",
+  "state": "LOCAL_VERIFIED_CI_REVIEW_PENDING",
+  "claude_starts": 0,
+  "historical_p2_starts": 2,
+  "old_unused_added": false,
+  "productionActivation": false,
+  "ruleset": 23161641,
+  "ruleset_changed": false,
+  "items": {
+    "1": {
+      "state": "VERIFIED_READ_ONLY",
+      "ruleset": 23161641
+    },
+    "2": {
+      "state": "DRAFTED_NOT_APPROVED"
+    },
+    "3": {
+      "state": "DRAFTED_NOT_APPROVED"
+    },
+    "4": {
+      "state": "DRAFTED_NOT_APPROVED"
+    },
+    "5": {
+      "state": "LOCAL_VERIFIED",
+      "real_square": "NOT_RUN"
+    },
+    "6": {
+      "state": "DRAFTED_NOT_APPROVED"
+    },
+    "7": {
+      "state": "DRAFTED_NOT_APPROVED"
+    },
+    "8": {
+      "state": "DRAFTED_NOT_APPROVED"
+    },
+    "9": {
+      "state": "DRAFTED_NOT_APPROVED"
+    },
+    "10": {
+      "state": "DIAGNOSTIC_VERIFIED_OBSERVATION_UNRESOLVED",
+      "historical_run": 34749426170
+    },
+    "11": {
+      "state": "DRAFTED_NOT_APPROVED"
+    }
+  },
+  "next": "Create Draft PR, exact-head CI, static independent review; never merge P3.",
+  "local_verification": {
+    "run": "2026-09-13T11-34-34.460Z",
+    "commands": 44,
+    "exit_code": 0
+  },
+  "new_tests": {
+    "transport_scenarios": 10,
+    "existing_real_pg_payment_cases": 23,
+    "diagnostic_unit": 2
+  },
+  "remaining": [
+    "Exact-head CI/static review",
+    "Owner choices and real-provider/device/stock activation are not performed"
+  ]
+}

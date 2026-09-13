@@ -1,0 +1,9 @@
+# Historical unresolved observation — CI34749426170
+
+初回P2CI34749426170/attempt1、head6287c46f06c829f22902060c1c6ca1e41bcb9b01で、合成スタッフ作成POSTが201でなく500。元server内部codeは保存されず、原因不明。同head Mac成功、認証済み通常管理画面へ同期を強めた後のCI34750550219、LOW修正後34752316444は成功。この成功だけで原因解消／自然再現なしを証明しない。詳細は既存production-p2-evidence/ci-first-failure.json等を保持する。
+
+P3ではno-costの限定診断として、スタッフ処理の500だけにserver生成相関ID・固定処理段階・allowlist分類を出し、clientには従来のgeneric errorを維持する。password／token／Cookie／email／body／stack／SQL／任意error.messageや任意codeは出さない。新しい外部sinkなし。純粋な診断テストと通常UI回帰で確認し、過去の原因を分かったことにしない。
+
+再発時：CI run/attempt/head/checkout、操作段階、server相関ID、許可済み分類、成功／失敗回数と影響を保存する。未知codeはOTHER。DBの内容をdumpしたり、同じ操作を別keyで繰り返して消したりしない。
+
+現時点：再現した失敗1件、限られた後続成功という証拠だけ。再発率や本番影響率は推定しない。P3内部作業のblockerにはせず、公開判定ではOwnerが残余リスクを確認する。現行headで繰り返す／正常ユーザーの保存不能／認可やデータ整合への影響が確認された場合はlaunch blockerへ格上げし、修正と独立検証まで公開しない。

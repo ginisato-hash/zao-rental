@@ -1,0 +1,19 @@
+
+> zao-rental@0.1.0 test:integration-p2
+> node --import tsx tests/readiness/production-composition.ts && node --import tsx tests/readiness/backup-restore.ts
+
+PASS startup rejects missing/invalid/unapproved config and unconnected ingress before traffic
+PASS two replicas share immutable PG policy and produce secret-free startup audit; config drift and audit failure stop startup
+PASS ordinary guest HTTP boundary refuses spoof headers and missing trusted metadata with no context writes
+PASS trusted dispatcher metadata allows ordinary context -> draft in PG; production-configured handler still refuses simulation
+PASS actual separate PG pools enforce one peer/global budget across replicas including IPv4-mapped aliases
+PASS composed recovery survives access expiry/same-key response loss, then revocation rejects replay without TTL revival
+P2 production composition 6 real-PG/HTTP cases passed; trusted dispatcher fixture and synthetic numeric policy only.
+Owned P2 composition DB pools/cluster stopped.
+PASS stopped owned source before verified cold backup; no live-file copying
+PASS corrupt backup digest stops before restore/start
+PASS restored all tables/rows and immutable migration checksums into a new isolated directory
+PASS restored original credential remains authoritative; a different synthetic password is refused
+PASS pre-migration backup restored; migration replay and failed-DDL rollback preserve inventory/payment/audit tables
+P2 isolated backup/restore: 5 cases passed; synthetic cold same-major cluster, not production SLA or provider restore.
+Owned backup/restore source and restored PostgreSQL stopped.

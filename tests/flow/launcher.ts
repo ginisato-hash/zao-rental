@@ -1,4 +1,4 @@
-import {createHmac} from 'node:crypto';
+import {deriveBookingAccessKeys} from '../../packages/core/src/guest/booking-access-keys';
 import {BookingRecovery,type RecoveryMessage} from '../../packages/core/src/guest/booking-recovery';
 import {GuestContexts} from '../../packages/core/src/guest/context';
 import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
@@ -36,7 +36,7 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
   const captured:RecoveryMessage[]=[];
   const recoveryFixture=options.publicP5&&access&&guest?{
    async enroll(guestToken:string,bookingId:string,requestId:string){
-    const service=new BookingRecovery(access!.accessPool,createHmac('sha256',config.authSecret).update('zao-owned-development-booking-access-v1').digest(),'development-v1',{
+    const service=new BookingRecovery(access!.accessPool,deriveBookingAccessKeys(config.authSecret).recoveryKey,'development-recovery-v1',{
      async deliver(message){captured.push(message);return {messageId:message.messageId,state:'DELIVERED'};},
      async lookup(messageId){return {messageId,state:captured.some(m=>m.messageId===messageId)?'DELIVERED':'UNKNOWN'};}
     });

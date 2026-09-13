@@ -6,6 +6,7 @@ import {flowFixture,simulation} from '../flow/fixture';
 import {provisionGuestRole} from '../../scripts/guest-roles';
 import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
 import {GuestContexts} from '../../packages/core/src/guest/context';
+import {deriveBookingAccessKeys} from '../../packages/core/src/guest/booking-access-keys';
 import {BookingRecovery} from '../../packages/core/src/guest/booking-recovery';
 import {HoldService} from '../../packages/core/src/inventory/hold-service';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
@@ -22,7 +23,7 @@ async function ready(origin:string){for(let i=0;i<100;i++){try{if((await fetch(o
 let x:Awaited<ReturnType<typeof flowFixture>>|undefined,g:Awaited<ReturnType<typeof provisionGuestRole>>|undefined,a:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined,w:Awaited<ReturnType<typeof worker>>|undefined,normal:ReturnType<typeof child>|undefined,restored:Awaited<ReturnType<typeof restoreOwnedCluster>>|undefined,sourceStopped=false,parentPoolsClosed=false,failed=false,stage='setup';
 try{
  x=await flowFixture();g=await provisionGuestRole(x.db.pool,x.db.identity);a=await provisionBookingAccessRole(x.db.pool,x.db.identity);const key=randomBytes(32),contexts=new GuestContexts(g.guestPool),guest=await contexts.create(),actor=await contexts.resolve(guest.token),hservice=new HoldService(x.roles.holdPool,actor),qservice=new QuoteService(x.roles.pricingPool,actor),bservice=new BookingService(x.flow.flowPool,g.guestPool,actor,x.fake,simulation),conditions=skiSet('2035-02-05'),hold=await hservice.command('create',randomUUID(),conditions),quote=(await qservice.create(randomUUID(),{conditions,holdId:hold.holdId,couponCode:null,wantAdvance:false})).quote,booking=await bservice.create(randomUUID(),quote.id,{displayName:'SYNTHETIC Rehearsal',email:'synthetic-rehearsal@example.invalid',termsAccepted:true});await bservice.startPayment(booking.id,randomUUID());let code='';
- await new BookingRecovery(a.accessPool,key,'rehearsal-v1',{async deliver(m){code=m.code;return {messageId:m.messageId,state:'DELIVERED'};},async lookup(messageId){return {messageId,state:'UNKNOWN'};}}).prepare(actor,booking.id,randomUUID());
+ await new BookingRecovery(a.accessPool,deriveBookingAccessKeys(key).recoveryKey,'rehearsal-recovery-v1',{async deliver(m){code=m.code;return {messageId:m.messageId,state:'DELIVERED'};},async lookup(messageId){return {messageId,state:'UNKNOWN'};}}).prepare(actor,booking.id,randomUUID());
  const approved=JSON.parse(readFileSync('config/production/guest.p4-approved-policy.json','utf8'));
  const configuration=productionGuestConfiguration({schemaVersion:1,revision:'SYNTHETIC-P5-REHEARSAL',ingressAdapterId:'synthetic-production-dispatcher',policy:{...approved.policy,version:'synthetic-p5-balanced'}}),config={kind:'SYNTHETIC_LOCAL_REHEARSAL',guestDb:g.guestDb,accessDb:a.accessDb,key:key.toString('base64url'),configuration,configurationSha256:guestConfigurationHash(configuration),externalTransport:'DISABLED',productionActivation:false,chargeReady:false};
  stage='invalid config startup';w=await worker({});assert.equal(w.message.state,'STARTUP_REJECTED');assert.equal(await w.exit,1);w=undefined;

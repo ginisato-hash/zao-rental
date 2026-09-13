@@ -6,6 +6,7 @@ import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {exact} from '../../packages/contracts/src/pricing';
 import {composeProductionGuestSecurity} from '../../packages/core/src/guest/production-composition';
 import {createRequestPeerBoundary} from '../../packages/core/src/guest/request-peer-boundary';
+import {deriveBookingAccessKeys} from '../../packages/core/src/guest/booking-access-keys';
 import {BookingAccess} from '../../packages/core/src/guest/booking-access';
 import {BookingRecovery} from '../../packages/core/src/guest/booking-recovery';
 import {bookingAccessHandler} from '../../apps/web/src/lib/booking-access-http';
@@ -20,7 +21,7 @@ process.once('message',async input=>{try{
  function pool(value:unknown,suffix:string){const d=exact(value,['host','port','database','user','password']) as Connection;if(d.host!=='127.0.0.1'||d.port!==identity.dbPort||d.database!==identity.database||d.user!==identity.namespace+suffix||typeof d.password!=='string'||!d.password)throw new Error();const p=new Pool({...d,max:2});closes.push(trackPoolLifecycle(p));return p;}
  const guestPool=pool(c.guestDb,'_guest'),accessPool=pool(c.accessDb,'_booking_access'),boundary=createRequestPeerBoundary('synthetic-production-dispatcher');
  const component=await composeProductionGuestSecurity({pool:guestPool,configuration:c.configuration,approvedConfigurationSha256:typeof c.configurationSha256==='string'?c.configurationSha256:undefined,serverKey:c.key,ingress:boundary.adapter,audit:async()=>{}});
- const key=Buffer.from(c.key,'base64url'),origin='https://rehearsal.invalid',handler=bookingAccessHandler(new BookingAccess(accessPool,key,'rehearsal-v1'),component.contexts,origin,r=>component.security.service.guard(component.security.peer(r)),new BookingRecovery(accessPool,key,'rehearsal-v1'));
+ const keys=deriveBookingAccessKeys(Buffer.from(c.key,'base64url')),origin='https://rehearsal.invalid',handler=bookingAccessHandler(new BookingAccess(accessPool,keys.accessKey,'rehearsal-v1'),component.contexts,origin,r=>component.security.service.guard(component.security.peer(r)),new BookingRecovery(accessPool,keys.recoveryKey,'rehearsal-recovery-v1'));
  const port=identity.webPort+2;await assertPortFree(port);
  server=createServer(async(req,res)=>{try{
   if(req.url==='/health'){res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({live:true,productionActivation:false}));return;}

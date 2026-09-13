@@ -9,7 +9,8 @@ Authority: [unchanged Night R1](../execution/OWNER_NIGHT_R1_ORIGINAL.md).
 The input/checkout guest context keeps its approved BALANCED policy. Confirmed-booking
 read capability and recovery proof are separate. Recovery never modifies a booking,
 payment, price, due, HOLD, allocation, custody or staff principal. Use the existing
-standard HMAC-SHA256 server key mechanism with separate purpose labels; database stores
+standard HMAC-SHA256 mechanism with independently derived read/recovery roots and
+separate purpose labels; database stores
 only SHA-256 proof/capability digests. No custom password/cryptographic protocol.
 
 Enrollment requires the current guest context and the booking's stored owner, confirmed
@@ -116,3 +117,20 @@ remain. Cleanup intent/result is evidence. These markers are not a hostile-code 
 - [Square signature validation](https://developer.squareup.com/docs/webhooks/step3validate): configured notification URL and exact raw body.
 - [Square signature key replacement](https://developer.squareup.com/reference/square/webhooksubscriptions-api/update-webhook-subscription-signature-key): activation procedure still external.
 - [R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/): bounded bearer access, separate from CMS rights and cache purge.
+
+## P5-F1 corrective review record
+
+Initial independent review returned REVIEW_PASS but retained LOW P5-F1. Codex treated
+that as unresolved, not findings0. No current purpose collision/exploit was demonstrated.
+The structural property (different effective roots) failed after extracting the exact
+existing runtime derivation into a shared function without changing its behavior. This
+is a runtime-equivalent unit counterexample, not an old-head live exploit or DB failure.
+The corrected derivation keeps the P4 access-root label/vector unchanged, derives the
+recovery root with a distinct label, and uses development-recovery-v1 for new recovery
+composition. Test enrollment and the production-mode fixture use the same derivation.
+Old read capabilities and P4 issue replay stay compatible. Previously issued synthetic
+P5 recovery proofs are not silently re-enrolled under another key: mismatched same-key
+prepare/replay fails closed; fresh owner enrollment is explicit. No real proofs exist.
+The independently computed fixed synthetic read-root vector, accidental identical-message
+cross-root test and full response-loss/UI/PG regressions verify the intended property.
+This changes neither secret storage nor credentials/permissions/price/HOLD/business rules.

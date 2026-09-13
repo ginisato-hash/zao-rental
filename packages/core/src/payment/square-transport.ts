@@ -13,8 +13,12 @@ export class FetchSquareSandboxTransport implements SquareSandboxTransport{
   const unknown=call.method==='POST'?'PAYMENT_RESULT_UNKNOWN':'PAYMENT_LOOKUP_UNAVAILABLE';
   // Exact allowlist before fetching a secret. No redirects/query/userinfo/alternate origin.
   const path=call.url.slice(SQUARE_SANDBOX_ORIGIN.length);
-  if(call.version!==SQUARE_VERSION||!call.url.startsWith(SQUARE_SANDBOX_ORIGIN+'/')||
-    !(call.method==='POST'&&path==='/v2/payments'&&call.body&&call.body.location_id===this.locationId&&call.body.amount_money.currency==='JPY'&&Number.isSafeInteger(call.body.amount_money.amount)&&call.body.amount_money.amount>0&&call.body.idempotency_key&&call.body.reference_id&&call.body.autocomplete===true||call.method==='GET'&&/^\/v2\/payments\/[A-Za-z0-9_-]{1,100}$/.test(path)&&call.body===undefined))throw new FlowError('SQUARE_REQUEST_REJECTED',503);
+  const body=call.body;
+  const money=body&&body.amount_money.currency==='JPY'&&Number.isSafeInteger(body.amount_money.amount)&&body.amount_money.amount>0;
+  const payment=call.method==='POST'&&path==='/v2/payments'&&body&&'source_id' in body&&body.location_id===this.locationId&&money&&body.idempotency_key&&body.reference_id&&body.autocomplete===true;
+  const refund=call.method==='POST'&&path==='/v2/refunds'&&body&&'payment_id' in body&&money&&/^[a-f0-9-]{36}$/.test(body.idempotency_key)&&/^[A-Za-z0-9_-]{1,100}$/.test(body.payment_id)&&body.reason==='SYNTHETIC_P4_SANDBOX_TEST';
+  const lookup=call.method==='GET'&&/^\/v2\/(payments|refunds)\/[A-Za-z0-9_-]{1,100}$/.test(path)&&body===undefined;
+  if(call.version!==SQUARE_VERSION||!call.url.startsWith(SQUARE_SANDBOX_ORIGIN+'/')||!(payment||refund||lookup))throw new FlowError('SQUARE_REQUEST_REJECTED',503);
   let response:Response|undefined;
   try{
    call.signal.throwIfAborted();

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "revision": "OWNER-P4-R1",
+  "guestPolicy": "guest.p4-approved-policy.json",
+  "confirmedBookingAccess": "SEPARATE_READ_ONLY_CAPABILITY",
+  "hostingCandidate": "VERCEL_DIRECT",
+  "trustedIngressVerified": false,
+  "independentCouponEnabled": false,
+  "advanceEligibility": "PAYMENT_COMPLETED_BY_PREVIOUS_DAY_15_00_JST",
+  "storageCandidate": "CLOUDFLARE_R2",
+  "backupSelectionTargets": {
+    "rpoSeconds": 300,
+    "rtoSeconds": 14400,
+    "retentionDays": 30,
+    "drill": "MONTHLY_AND_BEFORE_IMPORTANT_MIGRATION",
+    "offHost": true,
+    "encryption": true,
+    "pitr": true,
+    "providerSlaVerified": false
+  },
+  "sandbox": {
+    "authorized": true,
+    "paymentLimit": 20,
+    "refundLimit": 5,
+    "application": "UNCONFIRMED",
+    "secretStore": null,
+    "webhookReceiver": null,
+    "actualPaymentCount": 0,
+    "actualRefundCount": 0,
+    "state": "BLOCKED_PREREQUISITES"
+  },
+  "productionActivation": false
+}

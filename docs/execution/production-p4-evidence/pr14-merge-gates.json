@@ -1,0 +1,226 @@
+{
+  "started_utc": "2026-09-13T13:42:25Z",
+  "started_jst": "2026-09-13T22:42:25+09:00",
+  "base": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+  "head": "6b40d9b74707111d7ecc04a32b86ec0170c76619",
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34757588366,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34757588366",
+    "event": "pull_request",
+    "head_sha": "6b40d9b74707111d7ecc04a32b86ec0170c76619",
+    "base_sha": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+    "conclusion": "success",
+    "checked_out_sha": "25bed13214ac25c81fc70b26be72b13c6f874fb6",
+    "checked_out_kind": "PR_MERGE",
+    "integration_candidate_sha": "25bed13214ac25c81fc70b26be72b13c6f874fb6",
+    "integration_parents": [
+      "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+      "6b40d9b74707111d7ecc04a32b86ec0170c76619"
+    ],
+    "merge_tree_sha": "ab69e1394ea5aa8d44035dc7aacd7bb3658c05b3",
+    "head_tree_sha": "ab69e1394ea5aa8d44035dc7aacd7bb3658c05b3",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-25bed13214ac25c81fc70b26be72b13c6f874fb6",
+    "artifact_digest": "sha256:6a170aba4720b462d5bc9b4ccec47d1bc1f349b34649a953eb8003bde4c18fa2",
+    "artifact_exclusion_check": {
+      "file_count": 93,
+      "path_list_sha256": "90ccda3a5e7651b44ccfef9183544d1527afa0d12d3d73f1e7c2b6d3afd78295",
+      "physical_cluster_or_backup_paths_present": false,
+      "checked_actual_download": true
+    }
+  },
+  "review": {
+    "base_sha": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+    "head_sha": "6b40d9b74707111d7ecc04a32b86ec0170c76619",
+    "snapshot_sha256": "37234aa5809274af3331d4637c5d9840ce273c28a0e375f952e937a519cdc07c",
+    "verdict": "REVIEW_PASS",
+    "findings": [],
+    "insufficient_evidence": [
+      "docs/execution/PRODUCTION_P3_STATUS.json is listed Modified (M) in FILE STATUS, but no diff hunk or full content for it is supplied anywhere in this snapshot (unlike PRODUCTION_P2_STATUS.json, which received an explicit diff and hash-equality proof). It is presumed to be a non-executable progress/metadata record analogous to the P2 status file, but its exact change cannot be independently verified.",
+      "docs/execution/production-p3-evidence/ci-transport-observation.json is listed Added (A) in FILE STATUS but its full content is not shown; ci-34756544102-failure.json and the failure log were supplied separately and appear internally consistent with the narrative, but the exact content of this specific new file cannot be independently confirmed.",
+      "tests/flow/launcher.ts uses the child process 'exit' event (not 'close') to resolve the exit promise that startFlowApp's stop()/restartWeb() await, while webDiagnosticForwarder relies on a separate 'data'/'end' listener on the same stderr stream. Node's own documentation notes 'exit' can fire before stdio streams finish delivering buffered data, which is a theoretical (unconfirmed by execution) ordering hazard for end-of-stream diagnostic flushing in general, though in the specific tests/readiness/staff-diagnostic.ts regression the diagnostic write and app.stop() call are separated by multiple awaited DB round-trips, making the race window negligible in that concrete test as evidenced by consistent PASS/exit0 in both local Mac and CI Linux logs.",
+      "webDiagnosticForwarder decodes each stderr chunk independently via Buffer.from(chunk).toString('utf8') before iterating characters; a multi-byte UTF-8 sequence split exactly across two chunk boundaries would be decoded as replacement characters in each fragment rather than reconstructed. This cannot corrupt the intended pure-ASCII AUTH_PIPELINE_CODE / STAFF_OPERATION_DIAGNOSTIC schema (such corruption would just fail the strict schema match and be safely dropped, which is the designed fail-closed behavior), so it is noted only as a robustness observation, not a demonstrated defect, and not independently verified by execution.",
+      "Real Square Sandbox, real TrustedIngressAdapter/hosting boundary, real storage/CDN/backup providers, real device (iPhone Safari/Android Chrome) testing, and final legal/commercial/tax/coupon/NAP decisions remain unchanged, out of scope for this follow-up, and still open per OWNER_DECISIONS_REQUIRED.md and the first P3 review's own insufficient_evidence list; not re-verified here since none of the touched files in this diff relate to them."
+    ],
+    "activation_prerequisites": [
+      "Owner must still select and cryptographically approve real numeric guest security policy values before any production guest composition uses non-null configuration; unaffected by this diff.",
+      "A real TrustedIngressAdapter, real Square Sandbox credentials/transport, real storage/CDN provider, transactional real-import writer, and real backup/PITR provider all remain unimplemented Owner/provider gates, unchanged by this diff.",
+      "Real device (iPhone Safari/Android Chrome) field testing must still occur before REAL_DEVICE/FIELD_CWV gates can move off NOT_RUN/OWNER_PENDING; unaffected by this diff.",
+      "Before any future production activation or merge, MAIN_PROTECTION (Ruleset23161641), CI status, and default-branch provenance must be re-verified live rather than relying on any dated P3 snapshot, exactly as ADR0030 and MAIN_PROTECTION.md already state.",
+      "The historical CI34749426170 staff-create HTTP500 root cause remains unresolved; staff-operation-diagnostic.ts plus this follow-up's forwarding fix are only a bounded forward-looking aid and must not be treated as proof the original cause is understood or fixed.",
+      "The separate CI34756544102 wear-mixed mutation-mix transport failure remains an unresolved observation; the test-only transport-category/exit-signal classification added here does not establish a cause or a fix, and must not be treated as closing that observation.",
+      "Final commercial/legal/tax/coupon/cleaning-time/NAP/media-rights/backup-SLA/Search-Console decisions in OWNER_DECISIONS_REQUIRED.md remain explicit Owner gates unaffected by this diff.",
+      "This scoped REVIEW_PASS covers only the diagnostic-collection follow-up (tests/flow/web-diagnostics.ts, tests/flow/launcher.ts, tests/wear/mixed.ts, tests/readiness/staff-diagnostic.ts, tests/unit/web-diagnostics.test.ts, package.json/scripts/verify.mjs script wiring) plus the PRODUCTION_P2_STATUS.json metadata-gap evidence; it does not authorize merge, production activation, or re-affirm/extend the first review's own external-gate scope."
+    ],
+    "scope_assessment": "Reviewed the complete exact-file delta from e9cc1dca7494fdd70fac3a971be1fc54761849df (previously fully reviewed P3 head) to 6b40d9b74707111d7ecc04a32b86ec0170c76619: the new tests/flow/web-diagnostics.ts (safeWebDiagnostic strict four-key/fixed-code/allowlisted-phase-category/server-UUID schema check, webDiagnosticForwarder chunk/line buffering with oversized-line-drop semantics, safeTestTransportFailure classification), the tests/flow/launcher.ts diff (replacing the naive AUTH_PIPELINE_CODE-only regex split with webDiagnosticForwarder, plus stopRequested-gated unexpected-exit code/signal reporting), the tests/wear/mixed.ts diff (wiring safeTestTransportFailure into the existing catch-block logging only, no assertion/workload change), the new tests/readiness/staff-diagnostic.ts real HTTP(password sign-in)->protected staff POST->test-owned isolated-PostgreSQL-trigger-injected 23514 regression and its before/after logs, and the new tests/unit/web-diagnostics.test.ts covering schema rejection of extra/invalid/malicious fields, fragmented/coalesced/oversized-line stream handling, and transport-failure classification without leaking messages/URLs/cookies. Cross-checked that apps/web/src/app/api/staff-users/[[...record]]/route.ts, apps/web/src/lib/auth-http.ts, apps/web/src/lib/staff-operation-diagnostic.ts and all migrations/application-roles are byte-identical to the first reviewed head (absent from FILE STATUS), confirming the production route/diagnostic producer and DB privilege model are unchanged and the fix is test-infrastructure-only. Verified the CI run (34757588366) checked out the exact head/base/merge-tree pair, concluded success, and that both local (Mac) and CI (Linux) verify.mjs logs show test:staff-diagnostic passing with the same one-record/exit0 evidence quoted in the local-finding narrative, alongside unaffected ordinary UI/auth/guest/payment/custody/wear/late-pickup regression suites (all fixture/loopback-based, correctly distinguished from real Square/device evidence). Reviewed the PRODUCTION_P2_STATUS.json base-to-first-head diff and proof file supplied to close the first review's own flagged nonblocking metadata-evidence gap, confirming scope (eb9e940f->e9cc1dc), non-executable status-only content, and that the file is unchanged between e9cc1dc and this head. Did not and could not execute any code (tests_executed=false); relied entirely on the supplied diffs, full new-file contents, unit-test assertions, and local/CI log correspondence. Found no functional or security defect in the reviewed diagnostic-collection correction; historical CI500 and the separate wear-mixed CI34756544102 transport observation are both correctly preserved as unresolved rather than claimed fixed. This PASS is scoped to the listed delta only; all previously identified external/Owner activation gates remain open and unaffected.",
+    "tests_executed": false,
+    "prior_finding_dispositions": [
+      {
+        "id": "P2-01",
+        "status": "RESOLVED",
+        "evidence": "Unchanged in this diff (packages/contracts/src/production-operations.ts not in FILE STATUS); carried forward from the PR13 merge record already confirmed resolved in the first P3 review."
+      },
+      {
+        "id": "P2-02",
+        "status": "RESOLVED",
+        "evidence": "Unchanged in this diff (packages/db backup/isolated-backup code not in FILE STATUS); carried forward from the PR13 merge record already confirmed resolved in the first P3 review."
+      },
+      {
+        "id": "MAIN_PROTECTION",
+        "status": "RESOLVED",
+        "evidence": "docs/execution/p3/MAIN_PROTECTION.md unchanged in this diff; still explicitly caveated as a dated snapshot requiring live re-verification before any future activation."
+      },
+      {
+        "id": "CI500-34749426170",
+        "status": "UNRESOLVED",
+        "evidence": "docs/execution/p3/CI500_OBSERVATION.md retains the original unresolved statement unchanged; this diff's staff-operation-diagnostic forwarding fix is explicitly framed as forward-looking plumbing only, not a root-cause explanation, consistent with prior review's disposition."
+      },
+      {
+        "id": "CODEX-P3-01",
+        "status": "RESOLVED",
+        "evidence": "tests/flow/web-diagnostics.ts + tests/flow/launcher.ts now forward only strict four-key/fixed-code-phase-category/server-UUID JSON (or the historical AUTH_PIPELINE_CODE line), reconstructed correctly across fragmented/coalesced chunks with oversized lines fully dropped; diagnostic-forward-before.log shows 0 records/exit1 on the unfixed head, diagnostic-forward-after.log and both local/CI test-staff-diagnostic.log show 1 safe record/exit0 on this head via a real password HTTP sign-in -> protected staff POST -> test-owned isolated-PostgreSQL 23514 trigger fault, with generic500 response and transaction rollback preserved and no password/SYNTHETIC_PRIVATE content leaked; unit tests in tests/unit/web-diagnostics.test.ts cover malicious/extra-field rejection."
+      },
+      {
+        "id": "CI-34756544102-WEAR-TRANSPORT",
+        "status": "UNRESOLVED",
+        "evidence": "docs/execution/p3/CI500_OBSERVATION.md's added section and ci-34756544102-failure.json retain this as an unresolved, uncaused GET-transport failure in tests/wear/mixed.ts mutation-mix; only test-only safeTestTransportFailure classification and unexpected-exit code/signal logging were added (tests/wear/mixed.ts, tests/flow/launcher.ts), with no assertion/retry/timeout/workload change, and the observation is explicitly not claimed resolved even though the current head's CI/local wear-mixed runs pass."
+      },
+      {
+        "id": "P2-METADATA-GAP",
+        "status": "RESOLVED",
+        "evidence": "The first review's own insufficient_evidence item (missing diff hunk for docs/execution/PRODUCTION_P2_STATUS.json between eb9e940f and e9cc1dc) is now closed by the supplied p2-status-reconciliation.diff (explicitly scoped exact_diff_base=eb9e940f/exact_diff_head=e9cc1dc) and p2-status-proof.json (preserved_original_sha256 + current_file_equal_original:true), confirming the file's content and that it is unchanged again between e9cc1dc and this head; this is historical status-metadata reconciliation only, not a claim that any gated production prerequisite was fulfilled."
+      }
+    ]
+  },
+  "snapshot_sha256": "37234aa5809274af3331d4637c5d9840ce273c28a0e375f952e937a519cdc07c",
+  "preserved_status_sha256": "ff3d76c29930316e78362d6e23da44faf3b92adbac0454c16b6306259a5b89ef",
+  "ruleset": {
+    "id": 23161641,
+    "name": "Protect main",
+    "target": "branch",
+    "source_type": "Repository",
+    "source": "ginisato-hash/zao-rental",
+    "enforcement": "active",
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "~DEFAULT_BRANCH"
+        ]
+      }
+    },
+    "rules": [
+      {
+        "type": "deletion"
+      },
+      {
+        "type": "non_fast_forward"
+      },
+      {
+        "type": "pull_request",
+        "parameters": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews_on_push": false,
+          "required_reviewers": [],
+          "require_code_owner_review": false,
+          "require_last_push_approval": false,
+          "required_review_thread_resolution": true,
+          "require_extra_approval_for_unattributed_changes": false,
+          "allowed_merge_methods": [
+            "squash"
+          ]
+        }
+      },
+      {
+        "type": "required_status_checks",
+        "parameters": {
+          "strict_required_status_checks_policy": true,
+          "do_not_enforce_on_create": false,
+          "required_status_checks": [
+            {
+              "context": "foundation",
+              "integration_id": 15368
+            }
+          ]
+        }
+      }
+    ],
+    "node_id": "RRS_lACqUmVwb3NpdG9yec5RUuWGzgFhayk",
+    "created_at": "2026-09-13T20:07:18.949+09:00",
+    "updated_at": "2026-09-13T20:07:19.033+09:00",
+    "bypass_actors": [],
+    "current_user_can_bypass": "never",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ginisato-hash/zao-rental/rulesets/23161641"
+      },
+      "html": {
+        "href": "https://github.com/ginisato-hash/zao-rental/rules/23161641"
+      }
+    }
+  },
+  "unresolved_conversations": 0,
+  "merge_activation": false,
+  "checked_at": "2026-09-13T13:59:53.417658+00:00"
+}

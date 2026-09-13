@@ -1,3 +1,14 @@
+# Current P4 Owner decisions and remaining gates
+
+The Owner has now selected BALANCED input policy, Vercel direct, bounded Square Sandbox
+trials, R2 candidate, backup selection targets and independentcouponOFF. These replace
+only the corresponding P3 proposal rows below; they do not authorize production release.
+See [P4 current table](p4/ACTIVATION_AND_OWNER_GATES.md) and
+[exact metadata](../../config/production/p4-owner-decisions.json).
+Square application/secret store/HTTPS receiver remain unprepared by the Owner's reply.
+
+## Historical P3 decision table (preserved, not current approvals)
+
 # Owner decisions required — P3 / not production approval
 
 P3の内部実装と、実外部接続・公開の承認を分ける一覧です。**この表の推奨は未承認。空欄を自動採用しません。** 承認時は選択値・対象環境・担当者・有効日・対象commit／設定hash・許可操作を記録し、秘密値は記録しません。

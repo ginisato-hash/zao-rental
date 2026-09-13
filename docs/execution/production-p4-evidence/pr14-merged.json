@@ -1,0 +1,12 @@
+{
+  "merge_commit": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+  "main": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+  "tree": "ab69e1394ea5aa8d44035dc7aacd7bb3658c05b3",
+  "parent": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+  "approved_head": "6b40d9b74707111d7ecc04a32b86ec0170c76619",
+  "merged_at": "2026-09-13T14:00:02Z",
+  "ruleset_unchanged": true,
+  "pr3_draft": true,
+  "runner": "UNATTENDED_HOLD",
+  "production_activation": false
+}

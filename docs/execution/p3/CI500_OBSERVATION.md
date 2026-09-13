@@ -1,0 +1,23 @@
+# Historical unresolved observation — CI34749426170
+
+初回P2CI34749426170/attempt1、head6287c46f06c829f22902060c1c6ca1e41bcb9b01で、合成スタッフ作成POSTが201でなく500。元server内部codeは保存されず、原因不明。同head Mac成功、認証済み通常管理画面へ同期を強めた後のCI34750550219、LOW修正後34752316444は成功。この成功だけで原因解消／自然再現なしを証明しない。詳細は既存production-p2-evidence/ci-first-failure.json等を保持する。
+
+P3ではno-costの限定診断として、スタッフ処理の500だけにserver生成相関ID・固定処理段階・allowlist分類を出し、clientには従来のgeneric errorを維持する。password／token／Cookie／email／body／stack／SQL／任意error.messageや任意codeは出さない。新しい外部sinkなし。純粋な診断テストと通常UI回帰で確認し、過去の原因を分かったことにしない。
+
+再発時：CI run/attempt/head/checkout、操作段階、server相関ID、許可済み分類、成功／失敗回数と影響を保存する。未知codeはOTHER。DBの内容をdumpしたり、同じ操作を別keyで繰り返して消したりしない。
+
+現時点：再現した失敗1件、限られた後続成功という証拠だけ。再発率や本番影響率は推定しない。P3内部作業のblockerにはせず、公開判定ではOwnerが残余リスクを確認する。現行headで繰り返す／正常ユーザーの保存不能／認可やデータ整合への影響が確認された場合はlaunch blockerへ格上げし、修正と独立検証まで公開しない。
+
+## P3診断収集の限定修正 CODEX-P3-01
+
+初回snapshot固定後の追加確認で、tests/flow/launcher.tsがAUTH_PIPELINE_CODE以外のstderrを捨て、新しい構造化診断も消すことを確認した。初回Claude PASSは原文どおり保存し、この別の反例を完了根拠から隠さない。
+
+通常password HTTP→保護POST→専用合成DBの一時triggerで23514を発生させる反例は、旧launcherでは診断0件で失敗、新launcherでは安全な1件の収集まで成功。clientは従来generic500、transaction rollbackにより半端なaccountなし。これは元CI500の原因の再現ではなく、将来のエラーを観測できるかの試験。
+
+テスト用launcherにだけ、厳密な4キー／固定code・phase・category／server UUIDのJSONを再構成して転送する処理を追加。任意のraw stderrを保存しない。分割chunk・複数行・上限超過行の後半を検証し、古いAUTH_PIPELINE_CODEの限定経路も維持する。fixture以外の権限／認証／product処理は変えない。npm run test:staff-diagnosticで同じ実HTTP/DB反例を再実行できる。新しいCI・追加静的レビューの対象とする。
+
+## Separate P3 CI transport observation (not the staff-create500)
+
+CI34756544102/attempt1 at71890ebc4edab35b0a36723fc69fb7f89ea643f8 failed in tests/wear/mixed.ts, mutation-mix, a GET before receiving an HTTP response (Error rather than status AssertionError). The retained log does not identify reset/timeout/child exit. No causal relationship to the historical staff-create500 is established. Earlier same-head local45 checks passed; later success must not be called a cause/fix.
+
+Add test-only safe transport categories and unexpected owned-Web exit code/signal, never raw request/error/credential values. No business code, assertions, request count, timeout, retry or workload is changed. Keep the failed CI and this observation even if the diagnostic rerun succeeds; classify recurrence before deciding a launch gate. This P3 Draft is not production approval.

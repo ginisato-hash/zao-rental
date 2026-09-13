@@ -1,0 +1,58 @@
+{
+  "cases": [
+    {
+      "id": "same-idempotency-replay",
+      "evidence": "stateful fixture transport",
+      "passed": true
+    },
+    {
+      "id": "response-loss-provider-lookup",
+      "evidence": "stateful fixture transport",
+      "passed": true
+    },
+    {
+      "id": "timeout-no-retry",
+      "evidence": "fixture fetch and AbortSignal",
+      "passed": true
+    },
+    {
+      "id": "socket-abort",
+      "evidence": "owned loopback HTTP socket, no TLS/Square",
+      "passed": true
+    },
+    {
+      "id": "wrong-amount",
+      "evidence": "fixture provider response",
+      "passed": true
+    },
+    {
+      "id": "wrong-currency",
+      "evidence": "fixture provider response",
+      "passed": true
+    },
+    {
+      "id": "wrong-location",
+      "evidence": "fixture provider response",
+      "passed": true
+    },
+    {
+      "id": "wrong-merchant",
+      "evidence": "trusted account and signed webhook binding",
+      "passed": true
+    },
+    {
+      "id": "duplicate-out-of-order-webhook",
+      "evidence": "signed fixture input and current provider lookup; DB transitions in payment regression",
+      "passed": true
+    },
+    {
+      "id": "auth-quota-stop",
+      "evidence": "fixture status, one call per explicit test",
+      "passed": true
+    }
+  ],
+  "externalSquareRequests": 0,
+  "realCredentials": false,
+  "loopbackSocketClosed": true,
+  "dbStateMachineEvidence": "separate following tests/flow/payment.ts; this file alone is not DB proof"
+}

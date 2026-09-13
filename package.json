@@ -58,7 +58,9 @@
     "demo:public": "node --import tsx tests/public/demo.ts",
     "test:readiness-guest": "node --import tsx tests/readiness/guest-security.ts",
     "test:readiness-ui": "node --import tsx tests/readiness/guest-ui.ts",
-    "test:integration-p2": "node --import tsx tests/readiness/production-composition.ts && node --import tsx tests/readiness/backup-restore.ts"
+    "test:integration-p2": "node --import tsx tests/readiness/production-composition.ts && node --import tsx tests/readiness/backup-restore.ts",
+    "test:square-activation": "node scripts/square-activation.mjs",
+    "test:staff-diagnostic": "node --import tsx tests/readiness/staff-diagnostic.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

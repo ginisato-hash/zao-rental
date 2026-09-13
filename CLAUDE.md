@@ -1,3 +1,15 @@
+## Current supervised Production Activation Prep P3
+
+Read PRODUCTION_P3_APPROVAL.md / PRODUCTION_P3_STATUS.json and OWNER_DECISIONS_REQUIRED.md under docs/execution.
+Owner authorized exact PR13 merge through active Ruleset23161641, then this fresh P3 branch.
+Prepare guest proposals, hosting/ingress/Square/storage/import/backup/device decisions, safe diagnostics,
+and the fixture-only Square activation harness; preserve existing business rules and fail-closed runtime.
+Ruleset evidence is read-only. No real credential/provider/data/deploy/publication/billing/privilege,
+new PR merge, PR3/Runner or persistent process. Existing Team/creditsOFF/static tool-free review.
+Finish at Draft PR with exact-head CI/review, Owner gates, preserved history and owned cleanup.
+
+## Historical P2 and earlier scopes (only superseded by the current P3 owner request)
+
 ## Current supervised Production Integration P2
 
 Read docs/execution/PRODUCTION_P2_APPROVAL.md and PRODUCTION_P2_STATUS.json first.

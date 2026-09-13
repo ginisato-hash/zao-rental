@@ -4,15 +4,15 @@
   "started_jst": "2026-09-13T17:44:56+09:00",
   "base": "bdbb7384897fc78001b2a5f238c97996421dc87c",
   "branch": "codex/production-integration-p2",
-  "state": "LOW_FIXES_LOCALLY_VERIFIED_REVIEW_PENDING",
-  "claude_starts": 1,
+  "state": "SCOPED_REVIEW_PASS_WITH_OWNER_EXTERNAL_GATES",
+  "claude_starts": 2,
   "historical_p1_starts": 1,
   "old_unused_added": false,
   "approval_sha256": "abacf9282fd2477d6831fc2cb3bb19bd6e413eb7140940a412999198e668cd7f",
   "productionActivation": false,
   "items": {
     "1": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "explicit policy JSON/schema/env validation",
         "approved digest / immutable policy / awaited startup audit"
@@ -23,7 +23,7 @@
       ]
     },
     "2": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "out-of-band dispatcher interface",
         "spoof/alias rejection / separate PG pools shared limiter"
@@ -33,7 +33,7 @@
       ]
     },
     "3": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "concrete injectable Sandbox fetch transport",
         "auth/version/merchant/location/timeout/UNKNOWN/webhook fixtures",
@@ -44,7 +44,7 @@
       ]
     },
     "4": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "private immutable namespace/digest",
         "rights/revision/private ticket/purge/delete plan fixtures"
@@ -55,7 +55,7 @@
       ]
     },
     "5": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "source staging/normalization/provenance/unresolved",
         "exact model/variant/quantity/Asset dry-run commit"
@@ -65,7 +65,7 @@
       ]
     },
     "6": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "actual owned cold same-major PostgreSQL backup/restore",
         "all table digest and migration/failure verification"
@@ -75,7 +75,7 @@
       ]
     },
     "7": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "9 fixed structured event codes / strict sink contract"
       ],
@@ -84,7 +84,7 @@
       ]
     },
     "8": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "secret metadata schema/env validation",
         "rotation/revocation/old-key grace runbook"
@@ -95,7 +95,7 @@
       ]
     },
     "9": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "8 synthetic QR component cases + current custody UI/PG",
         "width/touch/offline/reload/slow response"
@@ -105,7 +105,7 @@
       ]
     },
     "10": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "existing JA/EN SSR/canonical/hreflang/robots/sitemap/JSON-LD/noindex regression"
       ],
@@ -114,7 +114,7 @@
       ]
     },
     "11": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "MAIN_PROTECTION launch blocker"
       ],
@@ -123,7 +123,7 @@
       ]
     },
     "12": {
-      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "state": "P2_LOCAL_CONTRACT_SCOPE_VERIFIED_OWNER_GATES_OPEN",
       "implemented": [
         "all owner gates kept null/pending"
       ],
@@ -132,7 +132,7 @@
       ]
     }
   },
-  "next": "Commit and Draft PR, exact-head CI, one final scoped static review. New PR must not merge.",
+  "next": "Owner decides P2 PR merge and selects explicit production/provider/values/device gates. Do not auto-start next stage.",
   "local_verify": {
     "run_id": "2026-09-13T10-25-46.845Z",
     "commands": 44,
@@ -161,6 +161,18 @@
       "same_head_mac_focused_result": "PASS 5 cases",
       "root_cause": "Not conclusively reproduced; original CI did not retain a server error category. Do not claim a proven product fix.",
       "response": "Test now creates through existing authenticated staff management UI; one submission; same protected POST and same expected 201; no retries/timeouts/authorization changes. Retain failure as an unresolved historical CI observation."
+    },
+    {
+      "head": "4d7ed958853759a30d056af901408c27fc08651e",
+      "run": 34750550219,
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "head": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+      "run": 34752316444,
+      "attempt": 1,
+      "conclusion": "success"
     }
   ],
   "known_observations": [
@@ -175,7 +187,304 @@
         "P2-02"
       ],
       "comment": 5652674519,
-      "corrections": "Committed after red/green and actual restore; independent follow-up pending"
+      "corrections": "P2-01 and P2-02 corrected at 7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02 and independently confirmed by review2"
+    },
+    {
+      "head": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+      "verdict": "REVIEW_PASS",
+      "findings": [],
+      "comment": 5652842029,
+      "snapshot_sha256": "06d0164e0e3ea413a7274da8fac53cfc0c94eb19eae1e9d312be66352e7b81e9"
     }
-  ]
+  ],
+  "head": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+  "head_tree": "8cf7428c60755c80c725438bf15ba6dd61c828f3",
+  "pr": "https://github.com/ginisato-hash/zao-rental/pull/13",
+  "finished_utc": "2026-09-13T10:58:25.929482+00:00",
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34752316444,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34752316444",
+    "event": "pull_request",
+    "head_sha": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+    "base_sha": "bdbb7384897fc78001b2a5f238c97996421dc87c",
+    "conclusion": "success",
+    "checked_out_sha": "547e313c4f39de7630cddc4794932f414f1af96c",
+    "checked_out_kind": "PR_MERGE",
+    "integration_candidate_sha": "547e313c4f39de7630cddc4794932f414f1af96c",
+    "integration_parents": [
+      "bdbb7384897fc78001b2a5f238c97996421dc87c",
+      "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02"
+    ],
+    "merge_tree_sha": "8cf7428c60755c80c725438bf15ba6dd61c828f3",
+    "head_tree_sha": "8cf7428c60755c80c725438bf15ba6dd61c828f3",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-547e313c4f39de7630cddc4794932f414f1af96c",
+    "artifact_digest": "sha256:c4c8f61ad601fedb933397dbb2f461b12ee9b6f6ab95e0800406b0e5cea15907",
+    "artifact_exclusion_check": {
+      "file_count": 91,
+      "path_list_sha256": "ac72c68fd969eca6774795a69c5af9e271c38d85a364ef4287b1c5370a7418c7",
+      "physical_cluster_or_backup_paths_present": false,
+      "checked_actual_download": true
+    }
+  },
+  "review": {
+    "verdict": "REVIEW_PASS",
+    "findings": [],
+    "snapshot_sha256": "06d0164e0e3ea413a7274da8fac53cfc0c94eb19eae1e9d312be66352e7b81e9",
+    "manifest": {
+      "id": 5652823838,
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/13#issuecomment-5652823838",
+      "readback_equal": true
+    },
+    "result": {
+      "id": 5652842029,
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/13#issuecomment-5652842029",
+      "readback_equal": true
+    },
+    "tests_executed_by_claude": false,
+    "materials_limits": [
+      "Real TrustedIngressAdapter compatibility with an actual hosting/dispatcher layer (out-of-band peer binding across middleware/edge-runtime request cloning) remains unverifiable from this diff; still fixture-only, unchanged in this correction and correctly left as an owner/provider gate rather than a resolved item.",
+      "The historical CI 34749426170 staff-create HTTP500 root cause remains not conclusively reproduced or explained; ci-investigation-source.json shows source-file correspondence with the prior approved P1 head but this is not proof of the original backend cause. Correctly retained as an open historical observation in status.json/known_observations, not claimed fixed.",
+      "Real embedded-postgres upstream behavior on future version upgrades (whether a later release begins honoring the `password` constructor option on a non-initialising start against pre-existing data) cannot be verified beyond the pinned 18.4.0-beta.17 source excerpt supplied; current excerpt confirms start() never reads options.password, matching the LOW-02 characterization, but this is inherently forward-looking and only pinned to the installed version."
+    ],
+    "activation_prerequisites": [
+      "Owner must supply and approve real numeric guest security policy values and a canonical SHA-256 config digest from a protected release process before any production guest composition uses real values (unchanged by this diff).",
+      "A real TrustedIngressAdapter must be built by the hosting/deployment layer validating the actual reverse-proxy/edge channel; current adapter remains fixture-only and unreferenced by any apps/web route.",
+      "A real SquareFetch implementation, credential resolver, and actual Sandbox/webhook registration require separate Owner approval; SquareSandboxGateway remains unconnected to any real transport or credentials.",
+      "Real storage/CDN provider, secret-provider integration and rotation execution, and GitHub branch protection settings all remain explicit unimplemented/owner-pending gates, unchanged by this correction.",
+      "Owner must approve real backup/PITR provider, off-host storage, and production RPO/RTO values; the current drill remains a local cold same-major-version cluster copy only.",
+      "Any future introduction of a legitimate public NEXT_PUBLIC_* environment variable into the same process environment consulted by secretMetadataFromEnvironment requires an explicit reviewed allowlist change, since the current fail-closed design rejects every nonempty NEXT_PUBLIC_* name unconditionally at this boundary (documented in ADR/runbook, not a defect)."
+    ],
+    "snapshot_files": 33,
+    "snapshot_bytes": 268286,
+    "secret_scan": {
+      "credential_urls": 0,
+      "provider_tokens": 0,
+      "private_keys": 0,
+      "non_synthetic_emails": 0,
+      "session_or_hash_values": 0
+    },
+    "execution": {
+      "state": "RETURNED",
+      "exit_code": 0,
+      "capabilities": {
+        "tools": [
+          "StructuredOutput"
+        ],
+        "mcp_servers": [],
+        "plugins": [],
+        "skills": [],
+        "apiKeySource": "none",
+        "permissionMode": "dontAsk",
+        "model": "claude-sonnet-5",
+        "claude_code_version": "2.1.220",
+        "fast_mode_state": "off"
+      },
+      "hook_events": [],
+      "rate_limit_events": [
+        {
+          "status": "allowed",
+          "resetsAt": 1789298400,
+          "rateLimitType": "five_hour",
+          "overageStatus": "rejected",
+          "overageDisabledReason": "org_level_disabled",
+          "isUsingOverage": false
+        }
+      ]
+    }
+  },
+  "cleanup": {
+    "checked_at": "2026-09-13T10:58:07.661578+00:00",
+    "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p2",
+    "ports": {
+      "21729": {
+        "listeners": [],
+        "exit_code": 1
+      },
+      "31729": {
+        "listeners": [],
+        "exit_code": 1
+      }
+    },
+    "matching_runtime_processes": [],
+    "live_pid_files": [],
+    "claude": [
+      {
+        "record": "review-01/execution.json",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "pid": 7706,
+        "process_exists": false
+      },
+      {
+        "record": "review-02/execution.json",
+        "state": "RETURNED",
+        "exit_code": 0,
+        "pid": 16627,
+        "process_exists": false
+      }
+    ],
+    "browser": {
+      "checked_at": "2026-09-13T10:42:31.192916+00:00",
+      "method": "CUA getState read-only",
+      "browser_id": "1",
+      "owned_tab_ids": [
+        "16",
+        "17"
+      ],
+      "current_tab_ids": [],
+      "owned_tabs_closed": true,
+      "unrelated_apps_not_modified": true
+    },
+    "owned_resources_stopped": true,
+    "cleanup_action": "Existing tests closed their owned pools/servers/browsers. Read-only final verification; no broad process/port kill. Cold synthetic backup files remain ignored and retained."
+  },
+  "final_metadata_uncommitted": true,
+  "metadata_note": "Final status only is saved uncommitted locally and byte-identically in the final PR comment, so the reviewed product head does not change. Historical committed pending records remain intact.",
+  "preservation_proof": {
+    "base": "bdbb7384897fc78001b2a5f238c97996421dc87c",
+    "head": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+    "tree": "8cf7428c60755c80c725438bf15ba6dd61c828f3",
+    "groups": {
+      "applied_migrations": {
+        "files": [
+          "packages/db/migrations/0001_foundation.sql",
+          "packages/db/migrations/0002_ledger.sql",
+          "packages/db/migrations/0003_staff_auth.sql",
+          "packages/db/migrations/0004_period_hold.sql",
+          "packages/db/migrations/0005_store_transfer.sql",
+          "packages/db/migrations/0006_pricing_quote.sql",
+          "packages/db/migrations/0007_recommendation.sql",
+          "packages/db/migrations/0008_staff_settings_boundary.sql",
+          "packages/db/migrations/0009_development_booking.sql",
+          "packages/db/migrations/0010_rental_custody.sql",
+          "packages/db/migrations/0011_receipt_timeline.sql",
+          "packages/db/migrations/0012_integrated_wear_catalog.sql",
+          "packages/db/migrations/0013_wear_quantity.sql",
+          "packages/db/migrations/0014_wear_return_batch.sql",
+          "packages/db/migrations/0015_custody_boundary.sql",
+          "packages/db/migrations/0016_delayed_pickup.sql",
+          "packages/db/migrations/0017_no_pickup_completion.sql",
+          "packages/db/migrations/0018_guest_actor.sql",
+          "packages/db/migrations/0019_content_workspace.sql",
+          "packages/db/migrations/0020_content_media.sql",
+          "packages/db/migrations/0021_guest_security.sql"
+        ],
+        "changed": false
+      },
+      "automation_controller_policy": {
+        "files": [
+          "tools/automation/cli.ts",
+          "tools/automation/controller/adapters.ts",
+          "tools/automation/controller/boundary.ts",
+          "tools/automation/controller/dry-run.ts",
+          "tools/automation/controller/engine.ts",
+          "tools/automation/controller/entry.ts",
+          "tools/automation/controller/process.ts",
+          "tools/automation/controller/release.ts",
+          "tools/automation/controller/store.ts",
+          "tools/automation/controller/supervisor.mjs",
+          "tools/automation/controller/worker-probe.mjs",
+          "tools/automation/fixtures.ts",
+          "tools/automation/review-contract.ts",
+          "tools/automation/runner.ts"
+        ],
+        "changed": false
+      },
+      "price_reference": {
+        "files": [
+          "packages/contracts/src/pricing.ts"
+        ],
+        "changed": false
+      },
+      "gateway": {
+        "files": [
+          "packages/core/src/payment/square-sandbox.ts"
+        ],
+        "changed": false
+      }
+    },
+    "worktree_clean": true,
+    "no_new_schema_or_business_rule_migration": true
+  },
+  "owner_gates_readback": {
+    "observed_at": "2026-09-13T10:50:43.528408+00:00",
+    "main": "bdbb7384897fc78001b2a5f238c97996421dc87c",
+    "main_protected": false,
+    "main_protection_settings_changed": false,
+    "pr3": {
+      "headRefOid": "6d0ec6341d2f67579ef8ed74c4b47a8155c32bf3",
+      "isDraft": true,
+      "number": 3,
+      "state": "OPEN"
+    },
+    "pr13": {
+      "baseRefOid": "bdbb7384897fc78001b2a5f238c97996421dc87c",
+      "headRefOid": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+      "isDraft": true,
+      "number": 13,
+      "state": "OPEN"
+    }
+  }
 }

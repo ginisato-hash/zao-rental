@@ -1,3 +1,4 @@
+import {webDiagnosticForwarder} from './web-diagnostics';
 import {provisionGuestRole} from '../../scripts/guest-roles';
 import {provisionContentRole} from '../../scripts/content-roles';
 import {provisionCustodyRole} from '../../scripts/custody-roles';
@@ -26,10 +27,10 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
   function launch(){
    const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});
    // Never persist raw auth/callback/cookie diagnostics.
-   web.stdout.resume();web.stderr.on('data',chunk=>{for(const line of String(chunk).split('\n'))if(/^AUTH_PIPELINE_CODE [A-Z0-9_]{1,80}$/.test(line))console.error(line);});
-   let exited=false;const exit=new Promise<number>(resolve=>{web.once('error',()=>{exited=true;resolve(1);});web.once('exit',code=>{exited=true;resolve(code??1);});});
+   const diagnostics=webDiagnosticForwarder(line=>console.error(line));web.stdout.resume();web.stderr.on('data',chunk=>diagnostics.push(chunk));web.stderr.on('end',()=>diagnostics.end());
+   let exited=false,stopRequested=false;const exit=new Promise<number>(resolve=>{web.once('error',()=>{exited=true;resolve(1);});web.once('exit',(code,signal)=>{exited=true;if(!stopRequested)console.error(JSON.stringify({code:'TEST_WEB_UNEXPECTED_EXIT',exitCode:Number.isInteger(code)?code:null,signal:signal==='SIGKILL'||signal==='SIGTERM'||signal==='SIGABRT'?signal:'OTHER'}));resolve(code??1);});});
    let closing:Promise<void>|undefined;
-   return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
+   return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){stopRequested=true;web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
   }
   let current=launch(),stopping:Promise<void>|undefined,restarting=false;
   const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();

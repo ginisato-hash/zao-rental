@@ -1,0 +1,18 @@
+✔ invalid saved scan and checkout timestamps cannot become a receipt candidate (0.069208ms)
+✔ staff500 diagnostic emits only server-generated correlation, fixed phase and allowlisted SQLSTATE (3.517333ms)
+✔ unknown/inherited/getter codes and nested cause never leak into diagnostics (0.132042ms)
+✔ Argon2id has independent salts and verifies only the supplied password (260.396375ms)
+✔ canonical email is case/outer-space stable; password policy adds no composition rules (0.305667ms)
+✔ role, permission and ALL scope are independently required for staff management (0.08525ms)
+✔ staff input cannot grant unimplemented refund permissions or forge subject (0.521916ms)
+✔ staff500 diagnostic emits only server-generated correlation, fixed phase and allowlisted SQLSTATE (3.517333ms)
+✔ unknown/inherited/getter codes and nested cause never leak into diagnostics (0.132042ms)
+✔ Argon2id has independent salts and verifies only the supplied password (260.396375ms)
+✔ canonical email is case/outer-space stable; password policy adds no composition rules (0.305667ms)
+✔ role, permission and ALL scope are independently required for staff management (0.08525ms)
+✔ staff input cannot grant unimplemented refund permissions or forge subject (0.521916ms)
+✔ ordinary runtime without owned development connection fails closed and cannot attach a remote DB (0.2105ms)
+ℹ tests 154
+ℹ pass 154
+ℹ fail 0
+ℹ skipped 0

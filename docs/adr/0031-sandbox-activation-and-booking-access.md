@@ -74,3 +74,11 @@ Fixtures exercise SDK requests/signing with synthetic in-memory material, not ac
 - [Square PaymentRefund](https://developer.squareup.com/reference/square/objects/PaymentRefund)
 - [R2 S3 compatibility](https://developers.cloudflare.com/r2/api/s3/api/)
 - [R2 signed URL SDK examples](https://developers.cloudflare.com/r2/api/s3/presigned-urls/)
+
+## BA-01 correction after initial P4 review
+The initial reviewer verdict said REVIEW_PASS while reporting MEDIUM BA-01. Keep the
+original and treat the finding as requiring correction. A cached issuance request must
+remain stable across unknown responses. Only acknowledged explicit revocation clears
+that booking request; a nonsecret pending booking ID supports revoke-ack loss/reload.
+The next explicit Save gesture creates a new request. Old revoked keys still fail in SQL;
+no database/session/inventory authority, expiry or migration is relaxed.

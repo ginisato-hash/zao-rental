@@ -1,0 +1,74 @@
+{
+  "activation_prerequisites": [
+    "Real Square Sandbox application remains UNCONFIRMED, secret store UNSELECTED/UNCONFIGURED, and Sandbox HTTPS webhook receiver NOT_CREATED per docs/execution/PRODUCTION_P4_APPROVAL.md and config/production/p4-owner-decisions.json; actual Sandbox payments/refunds remain 0/0 and must stay blocked until the Owner supplies these three external prerequisites.",
+    "Vercel trusted ingress remains unverified (trustedIngressVerified:false); production composition for /api/booking-access and /api/guest stays fail-closed (503) until a real ingress/rate-limiting boundary is verified live, as already disclosed in docs/adr/0031 and docs/execution/p4/ACTIVATION_AND_OWNER_GATES.md.",
+    "R2/Cloudflare storage integration is SDK-signing fixture proof only (no network); real account/bucket/credential provisioning, CDN purge and object lifecycle remain unimplemented Owner/provider gates.",
+    "Backup RPO<=5min/RTO<=4h/30-day/PITR values in config/production/p4-owner-decisions.json are selection targets only, not a measured or provider-verified SLA.",
+    "Real device (iPhone Safari / Android Chrome) field testing has not been run; only Playwright viewport emulation was exercised (tests/readiness/booking-access-ui.ts).",
+    "Historical CI observations staff-create HTTP500 (run 34749426170) and wear-mixed transport failure (run 34756544102) remain unresolved per docs/execution/p4/ACTIVATION_AND_OWNER_GATES.md; this diff does not touch the implicated files and does not claim to fix them.",
+    "Before any future production activation or merge, MAIN_PROTECTION Ruleset 23161641, CI status and default-branch provenance must be re-verified live rather than relying on this or the PR14 dated snapshot.",
+    "The BookingAccess explicit-revoke-then-resave-same-session defect identified in this review (finding BA-01) should be fixed before the confirmed-booking read capability is relied upon for real users, since it currently causes a permanent per-tab lockout after a legitimate self-revoke."
+  ],
+  "base_sha": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+  "findings": [
+    {
+      "id": "BA-01",
+      "severity": "MEDIUM",
+      "file": "apps/web/src/components/BookingAccess.tsx",
+      "line": 11,
+      "condition": "A guest has saved confirmed-booking access (SaveBookingAccess issues a capability keyed by a client-generated requestId cached in sessionStorage under 'zao-booking-access-request:'+bookingId), then explicitly revokes that device's access via the ConfirmedBooking page's revoke button, and afterward returns to the same browser tab/session and clicks 'save' again for the same booking.",
+      "impact": "The client only mints a new crypto.randomUUID() requestId when sessionStorage has none yet (line 11: `if(!requestId){requestId=crypto.randomUUID();...}`), so after a revoke it resubmits the exact same (bookingId, requestId) pair to POST /api/booking-access/issue. In booking_access.issue (packages/db/migrations/0022_booking_access.sql, the 'IF FOUND THEN' branch checking `old.revoked_at IS NOT NULL`), the primary key (booking_id, request_id) still resolves to the now-revoked row, so the function unconditionally raises BOOKING_ACCESS_DENIED even though the guest still legitimately owns the confirmed booking and would otherwise qualify for a fresh capability. BookingAccess.issue() (packages/core/src/guest/booking-access.ts) catches this and rethrows a generic 401, and the UI shows a misleading '同じ要求を再照合してください...メール復旧接続待ちです' message implying an unresolved-response retry rather than a permanent per-session lockout. The only recovery is closing the tab (clearing sessionStorage); this is not covered by any Owner-disclosed gate and defeats the intended 'revoke, then re-save later' workflow implied by the revoke button's own label.",
+      "evidence": "apps/web/src/components/BookingAccess.tsx lines 9-13 (save()); packages/db/migrations/0022_booking_access.sql booking_access.issue() 'IF FOUND THEN ... old.revoked_at IS NOT NULL ... RAISE EXCEPTION BOOKING_ACCESS_DENIED'; packages/core/src/guest/booking-access.ts issue() catch block rethrowing generic BOOKING_ACCESS_DENIED/401. Neither tests/readiness/booking-access.ts nor tests/readiness/booking-access-ui.ts exercises revoke-then-resave with the same cached requestId; both only cover fresh issuance, exact-key response-loss replay, and rotation via distinct request keys.",
+      "fix": "Either (a) have the client detect an issue failure and mint/store a fresh requestId before allowing another save attempt for that booking (invalidate the cached sessionStorage entry on any /issue error, not just on success), or (b) change booking_access.issue so that a revoked row for the same (booking_id, request_id) is treated as 'not found' for reissue purposes (mint a new capability under a fresh key or update the same row) rather than being denied outright, provided the guest/booking ownership and lock checks still pass.",
+      "test": "Add a case to tests/readiness/booking-access-ui.ts: after issuing a capability and clicking the revoke button on the reservation page, navigate back to the guest booking confirmation view in the same browser context (same sessionStorage) and click 'save' again; assert the request succeeds and a new, usable capability is issued, instead of asserting/observing a permanent BOOKING_ACCESS_DENIED."
+    }
+  ],
+  "head_sha": "8d78268849066478f79f614219eef92425a299ba",
+  "insufficient_evidence": [
+    "docs/execution/PRODUCTION_P3_STATUS.json is listed Modified (M) in FILE STATUS but no diff hunk or full content is supplied anywhere in this snapshot. The task context asserts this is 'reconciled historical metadata, not an executable change' preserved by the P4 metadata delta, and no executable code path reads this file, so it is treated as non-blocking, but the exact byte-level change cannot be independently verified from the supplied evidence.",
+    "package-lock.json is listed Modified (M) (consistent with the new @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner 3.1131.0 dependencies added to package.json) but no diff or content is supplied; the exact resolved dependency tree/transitive versions and lockfile integrity cannot be independently verified from this snapshot.",
+    "Real Square Sandbox application/credentials, real Cloudflare R2 account/bucket/credentials/CDN, and real Vercel trusted-ingress behavior are explicitly NOT_RUN per Owner instruction; all corresponding evidence in this review is SDK/transport fixture or real-PostgreSQL-only, which is correctly distinguished from real external verification in the supplied logs and is not treated here as a claim of real external success.",
+    "tests_executed=false for this review: conclusions rely entirely on the supplied exact diffs, full new-file contents, migration SQL, and the supplied local/CI log correspondence (test-activation-p4.log, test-square-activation.log, test-unit.log, commands.json, GitHub Actions run 34764315454); no code was independently executed to confirm behavior beyond what the supplied logs already assert."
+  ],
+  "prior_finding_dispositions": [
+    {
+      "id": "P2-01",
+      "status": "RESOLVED",
+      "evidence": "Unaffected by this P4 diff (packages/contracts/src/production-operations.ts not in FILE STATUS); carried forward unchanged from the PR14 merge record (docs/execution/production-p4-evidence/pr14-merge-gates.json review.prior_finding_dispositions)."
+    },
+    {
+      "id": "P2-02",
+      "status": "RESOLVED",
+      "evidence": "Unaffected by this P4 diff (packages/db backup/isolated-backup code not in FILE STATUS); carried forward unchanged from the PR14 merge record."
+    },
+    {
+      "id": "MAIN_PROTECTION",
+      "status": "RESOLVED",
+      "evidence": "docs/execution/production-p4-evidence/ruleset-23161641.json shows the same Ruleset 23161641 (required_approving_review_count:0, required_status_checks:[foundation], enforcement:active) unchanged from the PR14 record; still explicitly caveated in that record as a dated snapshot requiring live re-verification before any future activation, which this review reiterates in activation_prerequisites."
+    },
+    {
+      "id": "CI500-34749426170",
+      "status": "UNRESOLVED",
+      "evidence": "docs/execution/p4/ACTIVATION_AND_OWNER_GATES.md retains this as a historical unresolved observation; none of the files implicated in that earlier diagnosis (apps/web/src/lib/staff-operation-diagnostic.ts, staff-users route) are touched by this P4 delta, so its disposition is unchanged and not claimed fixed here."
+    },
+    {
+      "id": "CODEX-P3-01",
+      "status": "RESOLVED",
+      "evidence": "tests/flow/web-diagnostics.ts and tests/flow/launcher.ts diagnostic forwarding remain functionally as previously verified; this P4 diff only adds a 'phase'/category classification to TEST_APP_START_FAILED logging in launcher.ts (adding provisionBookingAccessRole wiring and startupPhase tracking) without altering the safeWebDiagnostic schema or forwarding correctness, consistent with the prior disposition."
+    },
+    {
+      "id": "CI-34756544102-WEAR-TRANSPORT",
+      "status": "UNRESOLVED",
+      "evidence": "docs/execution/p4/ACTIVATION_AND_OWNER_GATES.md explicitly retains this as an unresolved, uncaused wear-mixed transport observation; this P4 diff does not touch tests/wear/mixed.ts or its transport classification, so it remains unaffected and not claimed resolved."
+    },
+    {
+      "id": "P2-METADATA-GAP",
+      "status": "RESOLVED",
+      "evidence": "The earlier PRODUCTION_P2_STATUS.json diff-hunk gap was already closed in the PR14 review via supplied reconciliation diff/proof; that file is unaffected by this P4 diff and not reopened here."
+    }
+  ],
+  "scope_assessment": "Reviewed the complete exact-file delta from base 370de54fb12fcb3b036f886acfb60747b55d9bd7 (approved PR14 merge commit) to head 8d78268849066478f79f614219eef92425a299ba: the new confirmed-booking-access capability (packages/core/src/guest/booking-access.ts, packages/db/migrations/0022_booking_access.sql, apps/web/src/lib/booking-access-http.ts, apps/web/src/lib/booking-access-runtime.ts, apps/web/src/app/api/booking-access/[[...record]]/route.ts, apps/web/src/app/[locale]/reservation/page.tsx, apps/web/src/components/BookingAccess.tsx, scripts/booking-access-role.ts); the Sandbox activation journal and refund trial (packages/core/src/payment/sandbox-activation.ts, packages/core/src/payment/sandbox-refund.ts, packages/db/migrations/0023_sandbox_activation.sql, scripts/sandbox-roles.ts) and their integration into BookingService/square-sandbox/square-transport (packages/core/src/payment/booking-service.ts, square-sandbox.ts, square-transport.ts, packages/contracts/src/rental-flow.ts); the R2 SDK adapter (packages/core/src/content/r2-media.ts) and its unit-test fixture (tests/unit/r2-media.test.ts); Owner-decision metadata files (config/production/*.json, docs/adr/0031, docs/execution/PRODUCTION_P4_APPROVAL.md, PRODUCTION_P4_STATUS.json, p4/ACTIVATION_AND_OWNER_GATES.md, OWNER_DECISIONS_REQUIRED.md, AGENTS.md/CLAUDE.md/SCOPE.md P4 headers); the new readiness tests (tests/readiness/booking-access.ts, sandbox-booking.ts, booking-access-ui.ts, tests/unit/p4-decisions.test.ts) and their real-PostgreSQL/fixture evidence; and the verify.mjs disposable-cluster cleanup change plus migration-count updates in scripts/integration.ts and scripts/ledger-integration.ts. Traced the confirmed-booking capability's full lifecycle (issue/read/revoke/rotation, HMAC-SHA256 derivation, hash-only storage, HttpOnly/SameSite=Strict/Path-scoped cookie, origin/CSRF checks, dedicated execute-only DB role with no table/DDL grants) against the ADR's claims and found them consistent, except for one reproducible defect (finding BA-01): after an explicit self-revoke, the client's cached sessionStorage requestId causes any same-tab re-save attempt to permanently hit the already-revoked (booking_id, request_id) primary key and fail with BOOKING_ACCESS_DENIED, which is not covered by the supplied test suite. Verified the Sandbox activation journal's payment/refund ceilings, replay/idempotency, durable auth/quota stop, and verified-webhook missing-provider-ID recovery path all match the ADR's stated fixed-schema, execute-only-role, non-resettable-budget design, corroborated by the supplied real-PostgreSQL test logs (test-activation-p4.log, test-square-activation.log) and the exact-head CI run (34764315454, conclusion success, checked-out/merge-tree SHAs cross-checked). Verified the R2 adapter uses only injected-credential SDK calls (no ambient credential chain, maxAttempts:1, conditional immutable PUT, digest-checked reads, original-only signed URLs) against an in-process fixture handler, not real R2/CDN. Confirmed BALANCED guest-policy numeric values, independentCouponEnabled:false, and sandbox counters (0 payments/0 refunds) in config/production/p4-owner-decisions.json match tests/unit/p4-decisions.test.ts assertions. Confirmed the two preserved local ENOSPC failures are disk-exhaustion artifacts with root-cause evidence and non-masking correction (verify.mjs now disposes only newly created, stopped, non-symlinked clusters after each successful command), and that this correction does not add retries or change acceptance criteria. Did not and could not execute any code (tests_executed=false); relied entirely on the supplied diffs, full new-file contents, migration SQL, unit-test assertions, and local/CI log correspondence. All previously identified external/Owner activation gates (Square Sandbox application/secret store/webhook receiver, Vercel trusted ingress, real R2 account, backup provider SLA, real device testing) remain open, unaffected by this diff, and are not claimed resolved here.",
+  "snapshot_sha256": "a84a131f3c567fb1bad0d2c5f9e750573f74ec3b55087aecd4b619674a35828e",
+  "tests_executed": false,
+  "verdict": "REVIEW_PASS"
+}

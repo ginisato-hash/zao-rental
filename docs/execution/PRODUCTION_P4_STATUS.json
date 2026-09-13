@@ -30,10 +30,10 @@
     "Vercel trusted ingress",
     "Owner commercial/device/deploy gates"
   ],
-  "stage": "DRAFT_PR_AND_EXACT_HEAD_CI",
+  "stage": "CORRECTIVE_PUSH_CI_REVIEW",
   "pr14_merge_commit": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
-  "state": "LOCAL_VERIFIED_REMOTE_PENDING",
-  "claude_starts": 0,
+  "state": "BA01_LOCALLY_CORRECTED_PENDING_EXACT_CI_REVIEW",
+  "claude_starts": 1,
   "production_activation": false,
   "p4_merge_authorized": false,
   "realSandbox": "BLOCKED_PREREQUISITES",
@@ -44,7 +44,7 @@
   },
   "targeted_evidence_before_full_verify": {
     "booking_access_real_postgres": 9,
-    "normal_ui_real_postgres": 4,
+    "normal_ui_real_postgres": 5,
     "sandbox_fixture_real_postgres": 9,
     "r2_sdk_fixture_tests": 2,
     "real_phone_tests": 0,
@@ -55,13 +55,23 @@
       "2026-09-13T14-31-00.660Z",
       "2026-09-13T14-46-12.576Z"
     ],
-    "successful_run": "2026-09-13T14-51-13.987Z",
+    "successful_run": "2026-09-13T15-32-55.051Z",
     "commands": 46,
     "exit_code": 0,
     "e2e": 18,
     "auto_retry_or_skip_added": false,
-    "owned_successful_clusters_disposed": 52
+    "owned_successful_clusters_disposed": 52,
+    "previous_successful_run": "2026-09-13T14-51-13.987Z"
   },
-  "next": "normal push -> Draft PR -> exact CI -> tool-free independent static review",
-  "external_prerequisites_reconfirmed_by_owner": true
+  "next": "normal corrective commit/push -> exact-head CI -> necessary BA-01 static follow-up",
+  "external_prerequisites_reconfirmed_by_owner": true,
+  "review": {
+    "head": "8d78268849066478f79f614219eef92425a299ba",
+    "original_verdict": "REVIEW_PASS",
+    "findings": 1,
+    "effective_disposition": "CHANGES_REQUIRED",
+    "id": "BA-01",
+    "comment": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654204525",
+    "disposition": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654210613"
+  }
 }

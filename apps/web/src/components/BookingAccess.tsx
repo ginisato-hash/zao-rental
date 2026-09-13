@@ -18,5 +18,20 @@ export function ConfirmedBooking(){
  async function reload(){const n=++ticket.current;setView(null);try{const v=await request('');if(n===ticket.current){setView(v);setMessage('');}}catch{if(n===ticket.current)setMessage('予約の閲覧権がないか、失効・期限切れです。予約を変更する権限はありません。');}}
  useEffect(()=>{let cancelled=false;const n=++ticket.current;request('').then(v=>{if(!cancelled&&n===ticket.current){setView(v);setMessage('');}}).catch(()=>{if(!cancelled&&n===ticket.current)setMessage('予約の閲覧権がないか、失効・期限切れです。');});const blur=()=>{++ticket.current;setView(null);},focus=()=>{void reload();};window.addEventListener('pagehide',blur);window.addEventListener('focus',focus);window.addEventListener('pageshow',focus);return()=>{cancelled=true;window.removeEventListener('pagehide',blur);window.removeEventListener('focus',focus);window.removeEventListener('pageshow',focus);};},[]);
 
- return <section aria-label="保存済み予約"><h1>予約確認・QR</h1><p>開発用の合成予約です。実決済・本番予約ではありません。</p>{view&&<><p>{view.state} / {view.mode}</p><p>{view.period.startDate} → {view.period.endDate}</p><p>{view.pickupStore} → {view.returnStore}</p><p>元の返却期限: <time>{view.dueAt}</time></p><p>保存済み参考総額: {view.totalJpy} JPY（請求確定不可）</p><picture><img src={view.qrImage} width={240} height={240} alt="保存済み予約QR"/></picture><p>QRは予約の識別子です。貸出には店舗スタッフによる認証・権限確認が必要です。</p></>}{message&&<p role="status">{message}</p>}<button onClick={()=>void reload()}>予約を再読込</button><button disabled={busy} onClick={async()=>{++ticket.current;setView(null);setBusy(true);try{await request('/revoke',{});++ticket.current;setView(null);setMessage('この端末の予約閲覧権を失効しました。');}catch{setMessage('失効完了は未確認です。再度照合してください。');}finally{setBusy(false);}}}>この端末の予約閲覧権を失効</button></section>;
+ return <section aria-label="保存済み予約"><h1>予約確認・QR</h1><p>開発用の合成予約です。実決済・本番予約ではありません。</p>{view&&<><p>{view.state} / {view.mode}</p><p>{view.period.startDate} → {view.period.endDate}</p><p>{view.pickupStore} → {view.returnStore}</p><p>元の返却期限: <time>{view.dueAt}</time></p><p>保存済み参考総額: {view.totalJpy} JPY（請求確定不可）</p><picture><img src={view.qrImage} width={240} height={240} alt="保存済み予約QR"/></picture><p>QRは予約の識別子です。貸出には店舗スタッフによる認証・権限確認が必要です。</p></>}{message&&<p role="status">{message}</p>}<button onClick={()=>void reload()}>予約を再読込</button><button disabled={busy} onClick={async()=>{
+  ++ticket.current;setView(null);setBusy(true);
+  try{
+   // Only a non-secret booking ID is kept across a lost revocation acknowledgement.
+   // It can clear client retry metadata, never grant server authority.
+   const pendingKey='zao-booking-access-pending-revoke';
+   if(view)sessionStorage.setItem(pendingKey,view.id);
+   const bookingId=sessionStorage.getItem(pendingKey);
+   await request('/revoke',{});
+   // A later explicit Save gesture starts a fresh request. Never clear on issue error
+   // or unacknowledged revoke, and never revive the revoked database row/key.
+   if(bookingId)sessionStorage.removeItem('zao-booking-access-request:'+bookingId);
+   sessionStorage.removeItem(pendingKey);
+   ++ticket.current;setView(null);setMessage('この端末の予約閲覧権を失効しました。');
+  }catch{setMessage('失効完了は未確認です。再度照合してください。');}finally{setBusy(false);}
+ }}>この端末の予約閲覧権を失効</button></section>;
 }

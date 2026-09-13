@@ -9,8 +9,10 @@ export async function provisionGuestRole(owner:Pool,identity:{namespace:string;d
  await owner.query(`CREATE ROLE ${user} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
  await owner.query(`GRANT CONNECT ON DATABASE ${identity.database} TO ${user}`);await owner.query(`GRANT USAGE ON SCHEMA public TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT ON booking_actors,guest_contexts TO ${user}`);
- await owner.query(`GRANT UPDATE(revoked_at) ON guest_contexts TO ${user}`);
+ await owner.query(`GRANT UPDATE(revoked_at,token_sha256,expires_at) ON guest_contexts TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT,UPDATE ON guest_drafts TO ${user}`);
+ await owner.query(`GRANT SELECT,INSERT ON guest_policy_versions TO ${user}`);
+ await owner.query(`GRANT SELECT,INSERT ON guest_lifecycle TO ${user}`);await owner.query(`GRANT UPDATE(revision,recovery_hash,recovery_until,replay_hash,replay_request,replay_until,retained_at) ON guest_lifecycle TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON guest_rate_buckets TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON guest_security_audit TO ${user}`);await owner.query(`GRANT USAGE ON SEQUENCE guest_security_audit_id_seq TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);
  const guestDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password},guestPool=new Pool({...guestDb,max:4,connectionTimeoutMillis:2000});return {guestDb,guestPool,close:trackPoolLifecycle(guestPool)};
 }

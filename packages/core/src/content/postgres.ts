@@ -1,3 +1,4 @@
+import type {PrivateImmutableObjectStore} from './storage-port';
 import {createHash} from 'node:crypto';
 import type {PhotoJob,PhotoJobStore} from './photo-job';
 import type {Pool} from 'pg';
@@ -28,8 +29,9 @@ export class PostgresContentRepository implements ContentRepository{
 
 // Private bytes are immutable and addressed by digest. Only released derivative paths
 // are exposed by the separate public media handler, never originals or arbitrary files.
-export class PostgresPhotoStore implements PhotoJobStore{
+export class PostgresPhotoStore implements PhotoJobStore,PrivateImmutableObjectStore{
  constructor(private repo:PostgresContentRepository,private pool:Pool){}
  async transaction<T>(fn:(jobs:Record<string,PhotoJob>,context:{offers:readonly string[]})=>Promise<T>){return this.repo.transaction(async state=>{const record=state as ContentWorkflowState&{photoJobs?:Record<string,PhotoJob>};record.photoJobs??={};return fn(record.photoJobs,{offers:Object.keys(state.catalog.commercialRevisions)});});}
+ async readPrivateObject(sha256:string){if(!/^[a-f0-9]{64}$/.test(sha256))throw new ContentInputError('PHOTO_DIGEST_MISMATCH');return (await this.pool.query('SELECT bytes FROM content_media_objects WHERE sha256=$1',[sha256])).rows[0]?.bytes as Buffer|undefined??null;}
  async putPrivateObject(sha256:string,bytes:Buffer){if(createHash('sha256').update(bytes).digest('hex')!==sha256)throw new ContentInputError('PHOTO_DIGEST_MISMATCH');await this.pool.query('INSERT INTO content_media_objects VALUES($1,$2) ON CONFLICT DO NOTHING',[sha256,bytes]);}
 }

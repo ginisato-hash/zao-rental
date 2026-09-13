@@ -1,0 +1,12 @@
+{
+  "headRefOid": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+  "mergeCommit": {
+    "oid": "0a639cb46e58721f0b52a5095674aae4e76c325b"
+  },
+  "mergedAt": "2026-09-13T06:58:30Z",
+  "state": "MERGED",
+  "main": "0a639cb46e58721f0b52a5095674aae4e76c325b",
+  "tree": "d916a3c0b8b7b99655267da1af968e46a4c38ef3",
+  "model_or_deploy_on_merge": false,
+  "runner": "UNATTENDED_HOLD"
+}

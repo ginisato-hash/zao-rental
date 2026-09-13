@@ -1,0 +1,74 @@
+{
+  "started_utc": "2026-09-13T06:57:51.574212+00:00",
+  "started_jst": "2026-09-13T15:57:51.574212+09:00",
+  "pr": {
+    "baseRefOid": "f21b8748dba31803433e1476e143a7a1c040ee3a",
+    "headRefOid": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+    "isDraft": true,
+    "mergeCommit": null,
+    "mergeable": "MERGEABLE",
+    "state": "OPEN",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-13T06:20:59Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/ginisato-hash/zao-rental/actions/runs/34742143077/job/103683524185",
+        "name": "foundation",
+        "startedAt": "2026-09-13T06:11:49Z",
+        "status": "COMPLETED",
+        "workflowName": "Foundation CI"
+      }
+    ]
+  },
+  "main": "f21b8748dba31803433e1476e143a7a1c040ee3a",
+  "ci": {
+    "id": 34742143077,
+    "run_attempt": 1,
+    "head_sha": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+    "conclusion": "success",
+    "event": "pull_request",
+    "workflow_id": 355028197,
+    "html_url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34742143077"
+  },
+  "review": {
+    "base_sha": "f21b8748dba31803433e1476e143a7a1c040ee3a",
+    "head_sha": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+    "snapshot_sha256": "4c1dcd8558ec31827953a9ee049c08dea2a32cb7db28604a15360aef1d1d922e",
+    "verdict": "REVIEW_PASS",
+    "findings": [],
+    "insufficient_evidence": [
+      "The 24h-boundary and revoke-during-wait scenarios were validated by a real, externally-run PostgreSQL probe rather than by my own execution (tests_executed=false here); I did not run any command in this turn. My conclusion rests on (a) static trace of context.ts/booking-actor.ts control flow under documented default PostgreSQL READ COMMITTED semantics, and (b) the provided probe source, its file-identity check against `git show <head>`, and its stdout, all treated as evidence rather than re-executed.",
+      "Whether GuestContexts.change()'s 1500ms lock_timeout could itself surface as a different error class (55P03) under slower revoke-commit timing than the probe exercised was not evaluated; that is a liveness/error-shape question, not part of the disputed authorization-freshness claim, so it is out of scope here.",
+      "General declared launch gaps (real Square/Sandbox, production guest recovery/rate limits/retention/TTL, real NAP/media rights, tax/season/coupon rules, GBP/Search Console, field CWV, legal text, public deployment) are reaffirmed as pending per the prior full review; they were not re-examined in this focused pass."
+    ],
+    "activation_prerequisites": [
+      "All items already declared as explicit launch/production gaps in the prior full review (real Square/Sandbox/external webhook/mail/storage, real data/media rights/NAP, tax/season/coupons/cleaning, production guest recovery/rate limits/retention/TTL, field CWV/real smartphone testing, legal final text, GBP/Search Console, public deployment) remain outstanding for real customer-facing launch; this focused adjudication does not resolve or re-verify them."
+    ],
+    "scope_assessment": "This is a bounded re-adjudication of the single disputed MEDIUM finding GUEST-AUTHZ-LOCK-ORDER from the prior full-scope PR11 review, at the unchanged head 947cb691c. No source delta exists between the prior full review and this snapshot; only the disputed claim and the implementer's counter-trace/counterproof were assessed. Tracing GuestContexts.change() (packages/core/src/guest/context.ts:16) shows: (1) authorizeBookingActor(c,actor,['BOOKING_CREATE']) runs before `SELECT 1 FROM guest_contexts WHERE id=$1 FOR UPDATE`; (2) immediately after that FOR UPDATE lock is granted, `this.read(actor,c)` is invoked on the SAME connection/transaction c, and read() (context.ts:15) itself opens with `await authorizeBookingActor(c,actor,['BOOKING_VIEW'])` — a second, independent freshness check against the live guest_contexts row (revoked_at IS NULL AND expires_at>inventory_clock()), executed as a fresh statement under default PostgreSQL READ COMMITTED, which by definition observes the latest committed data as of that statement, i.e. post-lock-wait state. Both BOOKING_CREATE and BOOKING_VIEW are guest-permitted operations in the same `guestOperations` allow-list (booking-actor.ts:7) and both branch through the identical guest SQL predicate in authorizeBookingActor (booking-actor.ts:12-13); the operations list only affects the static allow-list check, not the revoked_at/expires_at freshness predicate, so there is no meaningful VIEW-vs-CREATE gap for this guest context. The original finding's own quoted evidence block contains the `const d=await this.read(actor,c);` line but its impact/condition text asserts change() \"never re-validates authorization/revocation status after the lock is granted\" without accounting for what read() does on that same connection — this is the specific point the finding missed. The provided real-PostgreSQL probe (two independent connections, one holding an uncommitted revoke/FOR UPDATE on the shared guest_contexts row while GuestContexts.change() runs on the actual guest role, with an explicit wait-on-pg_stat_activity assertion proving B genuinely blocks on the row lock before any resolution) reproduces exactly the sequence specified in the original finding's own \"test\" field, for both a mid-transaction revoke and an exact-24h-boundary expiry, and in both cases change() rejects with GUEST_CONTEXT_EXPIRED after the lock is granted, with the mutation callback never running and zero new holds/bookings. The probe's file-identity assertion against `git show <head>` confirms it ran against the unchanged reviewed code, not a patched variant. Taken together, static trace and the independent PostgreSQL evidence agree: the alleged authorization-freshness gap does not exist in the current code, because read()'s embedded authorizeBookingActor call supplies the exact post-lock recheck the original finding said was missing. This adjudication does not extend to any other file, revisit the declared launch/production gaps, or grant system-wide, production-readiness, or merge authorization; it resolves only the single disputed finding and its associated activation prerequisite from the prior review.",
+    "tests_executed": false,
+    "prior_finding_dispositions": [
+      {
+        "id": "GUEST-AUTHZ-LOCK-ORDER",
+        "status": "RESOLVED",
+        "evidence": "The prior claim that GuestContexts.change() 'never re-validates authorization/revocation status after the lock is granted' is disproved by current code: change() calls this.read(actor,c) on the same connection/transaction immediately after `SELECT 1 FROM guest_contexts WHERE id=$1 FOR UPDATE` succeeds, and read() opens with authorizeBookingActor(c,actor,['BOOKING_VIEW']), re-running the identical revoked_at/expires_at freshness predicate as a fresh statement under default PostgreSQL READ COMMITTED, which observes the row's just-committed post-lock state. This is not a product change (product_code_changed=false) but a correction of the original static trace, which overlooked the effect of its own quoted `const d=await this.read(actor,c);` line. Independent real-PostgreSQL evidence (probe source + verified stdout, file-identity-checked against `git show 947cb691c`) executes precisely the original finding's proposed reproduction for both a revoke-during-wait case and an exact-24h-expiry-during-wait case: in both, the calling side passes initial authorization, is observed genuinely waiting on the real FOR UPDATE lock, and after the blocking transaction commits/the clock advances, change() rejects with GUEST_CONTEXT_EXPIRED before the mutation callback runs, leaving the draft revision, hold count, and booking count unchanged. No counterexample to this recheck was found; the disputed defect does not exist in the unchanged code."
+      }
+    ]
+  },
+  "manifest_sha256": "4c1dcd8558ec31827953a9ee049c08dea2a32cb7db28604a15360aef1d1d922e",
+  "same_integration_tree": true,
+  "head_tree": "d916a3c0b8b7b99655267da1af968e46a4c38ef3",
+  "all_runs": [
+    {
+      "id": 34742143077,
+      "run_attempt": 1,
+      "head_sha": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+      "conclusion": "success",
+      "status": "completed"
+    }
+  ],
+  "allow_squash_merge": true,
+  "preserved_status_sha256": "9b4a2cc60de943cc25eae7443aea4f2190a5697b1c86eb00e2e8d2053a3e7678",
+  "status_comment_equal": true,
+  "dirty": "M docs/execution/PUBLIC_P0_STATUS.json"
+}

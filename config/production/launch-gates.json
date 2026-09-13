@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "productionActivation": false,
+  "policyRevision": "P1-DRAFT-NOT-APPROVED",
+  "commercialValues": null,
+  "guestPolicy": null,
+  "gates": [
+    {
+      "id": "TAX",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "SALES_SEASON",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "COUPON",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "CLEANING",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "STORE_NAP",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "CANCEL_REFUND_COPY",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "LATE_PICKUP_COPY",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "MEDIA_RIGHTS",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "GUEST_POLICY",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "TRUSTED_INGRESS",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "SQUARE_SANDBOX",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "STORAGE",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "REAL_DEVICE",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "FIELD_CWV",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "BACKUP_RESTORE",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "MIGRATION_ROLLBACK",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "SECRET_ROTATION",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "ALERT_DELIVERY",
+      "state": "EXTERNAL_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "PRIVACY_RETENTION",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "PUBLICATION_APPROVAL",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    }
+  ]
+}

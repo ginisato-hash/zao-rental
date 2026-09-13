@@ -55,7 +55,9 @@
     "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts",
     "test:public-content": "node --import tsx tests/public/content-postgres.ts",
     "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",
-    "demo:public": "node --import tsx tests/public/demo.ts"
+    "demo:public": "node --import tsx tests/public/demo.ts",
+    "test:readiness-guest": "node --import tsx tests/readiness/guest-security.ts",
+    "test:readiness-ui": "node --import tsx tests/readiness/guest-ui.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "productionActivation": false,
-  "policyRevision": "P1-DRAFT-NOT-APPROVED",
+  "policyRevision": "P2-DRAFT-NOT-APPROVED",
   "commercialValues": null,
   "guestPolicy": null,
   "gates": [
@@ -178,6 +178,42 @@
     },
     {
       "id": "PUBLICATION_APPROVAL",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "MAIN_PROTECTION",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "REAL_CATALOG",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "DEPLOYMENT_TARGET",
+      "state": "OWNER_PENDING",
+      "head": null,
+      "policyRevision": null,
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "RPO_RTO",
       "state": "OWNER_PENDING",
       "head": null,
       "policyRevision": null,

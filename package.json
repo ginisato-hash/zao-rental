@@ -57,7 +57,8 @@
     "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",
     "demo:public": "node --import tsx tests/public/demo.ts",
     "test:readiness-guest": "node --import tsx tests/readiness/guest-security.ts",
-    "test:readiness-ui": "node --import tsx tests/readiness/guest-ui.ts"
+    "test:readiness-ui": "node --import tsx tests/readiness/guest-ui.ts",
+    "test:integration-p2": "node --import tsx tests/readiness/production-composition.ts && node --import tsx tests/readiness/backup-restore.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

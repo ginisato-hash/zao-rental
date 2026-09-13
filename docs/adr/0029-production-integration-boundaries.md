@@ -1,0 +1,37 @@
+# ADR0029 — Production Integration P2, no production activation
+
+From exact PR12 merge `bdbb7384897fc78001b2a5f238c97996421dc87c`. Owner authority is PRODUCTION_P2_APPROVAL.md. P1 final progress was compared with its final PR comment and preserved without changing its reviewed head. Existing business contracts, 18-tool/216 prices, migrations0001–0021, SquareSandboxGateway and Runner policy stay unchanged.
+
+## Guest configuration and ingress
+
+`production-guest.ts` and `config/production/guest.schema.json` require explicit versioned policy fields; runtime enforces inequalities in addition to schema. `guestConfigurationFromEnvironment` accepts one private JSON setting with no defaults and matches an externally approved canonical digest. A digest is correspondence evidence, not approval: it must be supplied by the future protected deployment configuration, never a request/body/UI. `guest.pending.json` has null configuration/approval/provider. No production numeric values were chosen.
+
+`composeProductionGuestSecurity` validates policy/approval/ingress/key, registers or checks P1's immutable policy in PostgreSQL, and awaits a secret-free startup audit sink before returning a handler dependency. Two separate pools use the same DB rate counters. All instances must share configuration, server-key version and DB. Same version/different numbers stops startup. No new DB rights/migrations.
+
+TrustedIngressAdapter reads verified host-dispatcher/socket metadata outside browser HTTP headers. Tests bind metadata to the exact Request object via a private WeakMap; spoofed Forwarded/XFF/X-Real-IP/cloud headers and cloned requests have no trusted identity. IP spelling is canonicalized before HMAC, including IPv4-mapped IPv6; no raw peer stored/logged. A real adapter must validate its hosting provider's original-peer channel and proxy allowlist. Interface typing does not establish trust in a real ingress; that connection and its edge/DoS tests remain blocked. Admission is shared PostgreSQL fixed-window limiting, not a DDoS claim.
+
+The normal public-runtime still returns no production DB composition; guestHandler still refuses an unconfigured production request. Test composition uses actual GuestSecurity/GuestContexts/HTTP/PG with explicitly synthetic settings; this is not production activation. P1 recovery/revocation/replay/retention and contract preservation regressions remain.
+
+## Square transport, gateway unchanged
+
+FetchSquareSandboxTransport injects both the fetch function and credential resolver. There is no default network call, env credential lookup or normal BookingService wiring. Exact Sandbox origin and create/get paths, API version, merchant/location and credential lifetime are checked. Redirects and ambient cookies are forbidden, response size bounded, errors redacted, signals propagate and stop waiting. There is no retry/new-key loop. Real socket behavior of a future hosting fetch implementation remains a Sandbox connection test; fixtures prove propagation/cancellation of the injected stream only.
+
+Square API request authorization is **Bearer**, not a custom HMAC signing scheme. Webhooks use HMAC-SHA256 over the configured notification URL plus exact raw bytes; existing verification and fresh GetPayment lookup remain. Current production chargeReady=false and SQUARE_UNCONNECTED gates remain. UNKNOWN without a verified provider ID is reconciliation-only, never an invented get-by-idempotency or a fresh charge.
+
+Official sources checked2026-09-13: [REST request auth/version/idempotency](https://developer.squareup.com/docs/build-basics/general-considerations/using-rest-api), [Sandbox](https://developer.squareup.com/docs/devtools/sandbox/overview), [webhook signatures](https://developer.squareup.com/docs/webhooks/step3validate). API version remains P1's2026-08-19. Actual merchant/location ownership verification, tokenization and signed public webhook delivery need separately approved Sandbox setup; no such request occurred.
+
+## Media and import
+
+Existing PostgreSQL CMS releases/revisions/rights/audit/outbox stay authoritative. ProviderMediaStore provides PRIVATE immutable digest keys in separate original/derivative namespaces. Authorization is checked before and after reads/ticket issuance. Private original tickets require approved HTTPS origin and explicit bounded expiry; provider URLs are capabilities and must not enter logs or analytics. Logical CMS withdrawal denies new access immediately. Already issued provider tickets may survive to expiry; CDN invalidation receipt must match request/keys. Physical deletion is planning-only and requires exact plan receipt, no remaining references, passed ticket expiry and known legal retention. Null retention means no deletion. Provider contract tests are in-memory; real storage/CDN, ticket revocation, encryption and durable invalidation-outbox delivery remain unconnected.
+
+Import staging preserves original cells, normalized fields, source hash and sheet/row. Trim whitespace only; do not infer season/model/SKU/units or amounts. Ambiguous and invalid rows enter unresolved queue; cross-row IDs remain checked. Explicit dry-run commit revalidates plan hash/current catalog/source history/existing Asset IDs. Manufacturer catalog never produces stock, missing/decreased rows never delete stock, unknown ADD/REPLACE blocks. Tools remain pair/board Asset units, polesPAIR, wearPIECE quantities. No shop receipt or full Salomon SKU corpus exists in fixtures. No production ledger import writer or stock expansion was executed.
+
+## Backup and operating boundaries
+
+Bundled PostgreSQL has postgres/initdb/pg_ctl but no pg_dump/pg_restore. Rather than install host tooling, the owned synthetic drill uses a **stopped whole-cluster filesystem backup**, verified per-file hashes, then a fresh target directory on the same embedded PostgreSQL major/platform. All app pools disconnect before source stop; no hot copy, external tablespace/symlink or ambient DB. Verification compares all public table row digests and migration checksums, replays migration, and proves failed transaction rollback. RPO0 means no writes after this synthetic quiesce; measured RTO starts before restore and includes verification. Neither value is a production SLA. Physical backups include synthetic password hashes/role metadata and are excluded from Git, CI artifacts and Claude snapshots.
+
+This follows [PostgreSQL filesystem backup constraints](https://www.postgresql.org/docs/18/backup-file.html): stop first and copy the complete cluster. Production needs encrypted off-host storage, PITR/retention decisions, isolated restore target/provider, supported version/platform and approved RPO/RTO. A cold backup is not online/PITR or cross-major migration.
+
+Structured operations use fixed code/event schema and an injected sink; arbitrary Error/request/response/body/PII/secret fields are rejected. Missing/failing sink is explicit, never silently called delivered. Secret schema/env readers hold IDs and lifetime metadata only, with no default credentials. Actual provider adapters/rotation/grace are unconnected; runbook specifies safe order and historical-key needs. No new secret storage or alert service.
+
+Main protection is a launch blocker. Settings remain unchanged (main protected=false at merge check); no automatic setup. Owner must separately approve PR/CI/direct-push/review requirements.

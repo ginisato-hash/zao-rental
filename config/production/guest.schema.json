@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "revision",
+    "ingressAdapterId",
+    "policy"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[-A-Za-z0-9_.]{1,64}$"
+    },
+    "ingressAdapterId": {
+      "type": "string",
+      "pattern": "^[-A-Za-z0-9_.]{1,64}$"
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contextSeconds",
+        "absoluteSeconds",
+        "recoverySeconds",
+        "replaySeconds",
+        "retentionSeconds",
+        "windowSeconds",
+        "peerRequests",
+        "globalRequests",
+        "version"
+      ],
+      "properties": {
+        "contextSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "absoluteSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "recoverySeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "replaySeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "retentionSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "windowSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "peerRequests": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "globalRequests": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[-A-Za-z0-9_.]{1,64}$"
+        }
+      }
+    }
+  },
+  "$comment": "Runtime also enforces cross-field lifetime/budget inequalities; approval uses exact canonical SHA-256."
+}

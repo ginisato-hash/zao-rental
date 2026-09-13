@@ -1,0 +1,151 @@
+{
+  "stage": "PRODUCTION_INTEGRATION_P2",
+  "started_utc": "2026-09-13T08:44:56Z",
+  "started_jst": "2026-09-13T17:44:56+09:00",
+  "base": "bdbb7384897fc78001b2a5f238c97996421dc87c",
+  "branch": "codex/production-integration-p2",
+  "state": "LOCALLY_VERIFIED_CI_REVIEW_PENDING",
+  "claude_starts": 0,
+  "historical_p1_starts": 1,
+  "old_unused_added": false,
+  "approval_sha256": "abacf9282fd2477d6831fc2cb3bb19bd6e413eb7140940a412999198e668cd7f",
+  "productionActivation": false,
+  "items": {
+    "1": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "explicit policy JSON/schema/env validation",
+        "approved digest / immutable policy / awaited startup audit"
+      ],
+      "pending": [
+        "owner production values and deployment composition",
+        "submitted-data retention/legal support"
+      ]
+    },
+    "2": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "out-of-band dispatcher interface",
+        "spoof/alias rejection / separate PG pools shared limiter"
+      ],
+      "pending": [
+        "actual hosting trusted channel/edge capacity"
+      ]
+    },
+    "3": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "concrete injectable Sandbox fetch transport",
+        "auth/version/merchant/location/timeout/UNKNOWN/webhook fixtures",
+        "unchanged SquareSandboxGateway and state regression"
+      ],
+      "pending": [
+        "real credentials/tokenization/merchant binding/Sandbox/webhook E2E"
+      ]
+    },
+    "4": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "private immutable namespace/digest",
+        "rights/revision/private ticket/purge/delete plan fixtures"
+      ],
+      "pending": [
+        "provider/CDN/real rights",
+        "durable provider purge and actual deletion worker"
+      ]
+    },
+    "5": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "source staging/normalization/provenance/unresolved",
+        "exact model/variant/quantity/Asset dry-run commit"
+      ],
+      "pending": [
+        "actual materials/receipts/import approval and transactional writer"
+      ]
+    },
+    "6": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "actual owned cold same-major PostgreSQL backup/restore",
+        "all table digest and migration/failure verification"
+      ],
+      "pending": [
+        "production provider/PITR/off-site restore/full-size capacity/RPO/RTO"
+      ]
+    },
+    "7": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "9 fixed structured event codes / strict sink contract"
+      ],
+      "pending": [
+        "production event wiring/alert destination and delivery/retention"
+      ]
+    },
+    "8": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "secret metadata schema/env validation",
+        "rotation/revocation/old-key grace runbook"
+      ],
+      "pending": [
+        "actual secret provider/rotation",
+        "dual-key guest replay/webhook support not implemented"
+      ]
+    },
+    "9": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "8 synthetic QR component cases + current custody UI/PG",
+        "width/touch/offline/reload/slow response"
+      ],
+      "pending": [
+        "actual iOS/Android/tablet/camera/field Wi-Fi/CWV"
+      ]
+    },
+    "10": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "existing JA/EN SSR/canonical/hreflang/robots/sitemap/JSON-LD/noindex regression"
+      ],
+      "pending": [
+        "public release then Search Console/GBP/Zao applications"
+      ]
+    },
+    "11": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "MAIN_PROTECTION launch blocker"
+      ],
+      "pending": [
+        "owner GitHub protection setting approval; no settings changed"
+      ]
+    },
+    "12": {
+      "state": "LOCAL_SCOPE_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "all owner gates kept null/pending"
+      ],
+      "pending": [
+        "policy/provider/credentials/tax/season/coupon/cleaning/NAP/legal/rights/real stock/domain/RPO/RTO"
+      ]
+    }
+  },
+  "next": "Commit and Draft PR, exact-head CI, one final scoped static review. New PR must not merge.",
+  "local_verify": {
+    "run_id": "2026-09-13T09-08-44.244Z",
+    "commands": 44,
+    "exit_code": 0,
+    "new_unit_cases": 14,
+    "new_pg_http_cases": 6,
+    "new_restore_cases": 4,
+    "asset_reader_cases": 8,
+    "evidence": "docs/execution/production-p2-evidence/commands.json"
+  },
+  "preserved_p1_status": {
+    "sha256": "3e42d9809b3a07a1578e946ea28cb6749adf6a1c970beebfe33feecdc9aa01fe",
+    "source_comment": 5652148008,
+    "old_worktree_untouched": true
+  }
+}

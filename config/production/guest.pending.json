@@ -1,0 +1,7 @@
+{
+  "state": "OWNER_PENDING",
+  "configuration": null,
+  "approvedConfigurationSha256": null,
+  "trustedIngressProvider": null,
+  "productionActivation": false
+}

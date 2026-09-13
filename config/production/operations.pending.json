@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "productionActivation": false,
+  "secretProvider": null,
+  "secrets": [],
+  "rpoSeconds": null,
+  "rtoSeconds": null,
+  "backupProvider": null,
+  "storageProvider": null,
+  "cdnProvider": null,
+  "squareMerchantId": null,
+  "squareLocations": null,
+  "productionDomain": null,
+  "deploymentTarget": null,
+  "alertProvider": null,
+  "mainProtection": {
+    "state": "OWNER_PENDING",
+    "required": [
+      "PR_REQUIRED",
+      "REQUIRED_CI",
+      "DIRECT_PUSH_RESTRICTED",
+      "REVIEW_POLICY_DECIDED"
+    ],
+    "settingsChanged": false
+  }
+}

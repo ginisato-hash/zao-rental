@@ -1,6 +1,6 @@
 {
   "stage": "PUBLIC_CUSTOMER_GUEST_SEO_P0",
-  "state": "LOCAL_VERIFIED_CI_REVIEW_PENDING",
+  "state": "DRAFT_VERIFIED_PUBLIC_P0_SCOPED_REVIEW_PASS",
   "started_utc": "2026-09-13T03:20:52Z",
   "started_jst": "2026-09-13T12:20:52+09:00",
   "approval_sha256": "74934314f40f5fd40dc90ac0b5ae7940f87647e07370572e81b58704d78cb3fb",
@@ -11,12 +11,12 @@
   "pr10_reviewed_head": "0347ed621d293a79cc02e9751da0b81709e4b538",
   "merge_tree_unchanged": true,
   "old_final_status_preserved_sha256": "5045efe420b1e734c29374dcabe3efcb436de59032a22266ea96a3268b74f97b",
-  "review_plan": "One final static review under this next-stage request. No previous unused review counts reused; no automatic re-review assumed.",
-  "claude_starts": 0,
+  "review_plan": "Initial Public P0 static launch1 preserved. Owner explicitly approved exactly one additional unchanged-head counterproof adjudication; Public P0 cumulative2. No old unused starts added.",
+  "claude_starts": 2,
   "prior_FLOW_starts": 7,
   "prior_CUSTODY_starts": 1,
   "deadline": "No new deadline specified in this next-stage approval; earlier finite deadlines belong to historical completed scopes. No scheduler/background continuation.",
-  "next": "Create Draft PR, verify exact head CI, one final static review; never merge",
+  "next": "Draft PR11 awaits owner merge/scope decision. Do not merge, deploy or launch another review. Production gaps remain separately listed.",
   "blocked_external": [
     "actual Square/Sandbox/webhook",
     "production/public deployment",
@@ -60,5 +60,120 @@
     },
     "production_ready": false
   },
-  "final_evidence": "Latest exact-head PR comment links CI, full command logs, static review and transmission manifest; no old PASS reused."
+  "final_evidence": "Latest exact-head PR comment links CI, full command logs, static review and transmission manifest; no old PASS reused.",
+  "pr": 11,
+  "url": "https://github.com/ginisato-hash/zao-rental/pull/11",
+  "head": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+  "ci": {
+    "run": 34742143077,
+    "attempt": 1,
+    "conclusion": "success",
+    "checkout": "d6c89f01b7c4feef4c01e2712edddbe53f06a7ad",
+    "tree": "d916a3c0b8b7b99655267da1af968e46a4c38ef3",
+    "commands": 40
+  },
+  "review": {
+    "state": "CHANGES_REQUIRED",
+    "started_at": "2026-09-13T06:24:42.255254+00:00",
+    "snapshot_sha256": "534a657925cd7a2f793e5502cddd58185f92fa94ca9b50cf556d05f068acfa55",
+    "manifest_url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651647346",
+    "local": "/Users/gini/Documents/Codex/2026-09-10/mac-codex-zao-rental-project-zmi/outputs/public-p0/review-01",
+    "findings": 1,
+    "severity": "MEDIUM",
+    "finished_at": "2026-09-13T06:31:38.420766+00:00",
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651706685"
+  },
+  "record_note": "Intentional uncommitted post-review progress only; full final progress mirrored in PR comment. Product head unchanged. Historical initial verdict remains preserved alongside final adjudication.",
+  "counterproof": {
+    "finding": "GUEST-AUTHZ-LOCK-ORDER",
+    "state": "INDEPENDENTLY_CONFIRMED_COUNTEREVIDENCE",
+    "review_verdict_unchanged": "Original CHANGES_REQUIRED preserved; same-head focused adjudication now REVIEW_PASS",
+    "head": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+    "product_code_changed": false,
+    "reason": "change() calls read(actor,c) after FOR UPDATE; read() immediately calls authorizeBookingActor with the same connection before reading the draft or invoking the mutation callback.",
+    "probe_sha256": "de7bce45e6f18431e9962b9538c60bb2288519c50b77f839a11e9d44a863b0e8",
+    "probe_exit_code": 0,
+    "actual_pg_cases": [
+      "revoke transaction commits while mutation waits",
+      "expiry at exact boundary while mutation waits"
+    ],
+    "result": "Both reject GUEST_CONTEXT_EXPIRED after lock; callback never runs; draft unchanged; zero new HOLD/booking.",
+    "limits": "Direct real PostgreSQL service race, not a newly executed ordinary-UI race; initial proposed scenario preserved. Independent reviewer has not yet considered the new counterevidence. No self-issued PASS.",
+    "next": "No product fix required for this disproved finding; no further model launch."
+  },
+  "cleanup": {
+    "checkedAt": "2026-09-13T06:50:30.775590+00:00",
+    "portsAllFree": [
+      26054,
+      36054,
+      36055
+    ],
+    "ownPostmasterPidFiles": [],
+    "claudePids": [
+      66052,
+      67052
+    ],
+    "claudeExited": true,
+    "browser": "Playwright finally closed all owned browsers; CUA owned billing tabs13/14 closed earlier; pre-existing user apps untouched",
+    "otherProcessesStopped": false
+  },
+  "focused_review": {
+    "state": "REVIEW_PASS",
+    "approval_answer": "同一headの反証確認1回を承認",
+    "head": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+    "snapshot_sha256": "4c1dcd8558ec31827953a9ee049c08dea2a32cb7db28604a15360aef1d1d922e",
+    "manifest_url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651748672",
+    "started_at": "2026-09-13T06:47:58.308305+00:00",
+    "pid": 67052,
+    "p0_cumulative_cli_start": 2,
+    "remaining_approved_additional_starts": 0,
+    "finished_at": "2026-09-13T06:49:49.238066+00:00",
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651786044",
+    "findings": 0,
+    "original_finding": "RESOLVED_BY_COUNTEREVIDENCE_NO_PRODUCT_PATCH"
+  },
+  "review_history": [
+    {
+      "state": "CHANGES_REQUIRED",
+      "started_at": "2026-09-13T06:24:42.255254+00:00",
+      "snapshot_sha256": "534a657925cd7a2f793e5502cddd58185f92fa94ca9b50cf556d05f068acfa55",
+      "manifest_url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651647346",
+      "local": "/Users/gini/Documents/Codex/2026-09-10/mac-codex-zao-rental-project-zmi/outputs/public-p0/review-01",
+      "findings": 1,
+      "severity": "MEDIUM",
+      "finished_at": "2026-09-13T06:31:38.420766+00:00",
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651706685"
+    },
+    {
+      "state": "REVIEW_PASS",
+      "approval_answer": "同一headの反証確認1回を承認",
+      "head": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+      "snapshot_sha256": "4c1dcd8558ec31827953a9ee049c08dea2a32cb7db28604a15360aef1d1d922e",
+      "manifest_url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651748672",
+      "started_at": "2026-09-13T06:47:58.308305+00:00",
+      "pid": 67052,
+      "p0_cumulative_cli_start": 2,
+      "remaining_approved_additional_starts": 0,
+      "finished_at": "2026-09-13T06:49:49.238066+00:00",
+      "url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651786044",
+      "findings": 0,
+      "original_finding": "RESOLVED_BY_COUNTEREVIDENCE_NO_PRODUCT_PATCH"
+    }
+  ],
+  "final_review": {
+    "verdict": "REVIEW_PASS",
+    "basis": "Original full review plus focused independent adjudication, same unchanged head",
+    "unresolved_code_findings": 0,
+    "system_wide_or_production_pass": false,
+    "head": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+    "snapshot_sha256": "4c1dcd8558ec31827953a9ee049c08dea2a32cb7db28604a15360aef1d1d922e",
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651786044",
+    "manifest_url": "https://github.com/ginisato-hash/zao-rental/pull/11#issuecomment-5651748672"
+  },
+  "completed_at": "2026-09-13T06:52:51.160612+00:00",
+  "unverified_details": [
+    "The two new same-head authorization race probes are not committed CI regressions and are not an ordinary-UI race test.",
+    "Slow row-lock timeout 55P03 error presentation was not independently evaluated by focused review.",
+    "Interactive demo:public manual invocation and actual smartphone/field CWV were not performed."
+  ]
 }

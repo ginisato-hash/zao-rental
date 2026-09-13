@@ -1,0 +1,8 @@
+
+> zao-rental@0.1.0 test:readiness-ui
+> node --import tsx tests/readiness/guest-ui.ts
+
+PASS ordinary UI enrolls hashed recovery for saved real-PG preview
+PASS response-loss + owned Web restart + full reload reissues same recovery result without new preview/HOLD or TTL extension
+PASS touch-context width matrix; no recovery code/cookie in screenshot or logs; no real smartphone claim
+Owned P1 guest UI browser/Web/DB stopped.

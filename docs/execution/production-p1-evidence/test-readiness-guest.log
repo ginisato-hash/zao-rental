@@ -1,0 +1,18 @@
+
+> zao-rental@0.1.0 test:readiness-guest
+> node --import tsx tests/readiness/guest-security.ts
+
+PASS policy required and trusted peer cannot be replaced by client forwarding headers
+PASS normal guest API creates policy-bound context and saves draft in real PG
+PASS recovery enrollment strict CSRF/CAS, hash-only storage
+PASS expired access can recover same owned draft, rotates old token and preserves request keys
+PASS response-loss replay gives identical cookie without extending TTL or second audit; another key rejected
+PASS logout rejects active session and recovery, no context/stock revival
+PASS concurrent real-PG rate budget accepts exactly limit across separate service instances
+PASS same policy version cannot silently change parameters across instances
+PASS recovery single-use CAS under concurrent requests and absolute cutoff
+PASS bounded retention redacts expired unsubmitted drafts but not live/contractual data
+PASS P0 disputed race is retained as committed regression: revoke and exact expiry while lock waits reject callback
+PASS confirmed booking recovery retains original owner/price/HOLD expiry and never repeats payment
+P1 guest security 12 actual-PG/API cases passed; no production settings or real data.
+Owned P1 guest DB stopped.

@@ -1,3 +1,17 @@
+## Current supervised Production Readiness P1
+
+Read docs/execution/PRODUCTION_P1_APPROVAL.md and PRODUCTION_P1_STATUS.json first.
+Owner authorized exact PR11 merge (now0a639cb46e58721f0b52a5095674aae4e76c325b), then
+production-readiness contracts/code/fixtures/tests for guest security, Square boundary,
+content/media/import, device/SEO and launch/operational gates. Preserve existing business
+rules and restricted normal payment/runtime composition. Dedicated new worktree only.
+No actual Square/credentials, production deployment, real people/stock, paidprovider,
+host/OS rights, PR3/Runner activation or merge of the new PR. Existing Team/creditsOFF,
+static tools-disabled review only; historical model budgets are not reused.
+Record evidence and pending owner/external decisions; end at a new Draft PR.
+
+## Historical Public P0 scope (superseded by P1 above)
+
 ## Current supervised Public P0 approval
 
 Read docs/execution/PUBLIC_P0_APPROVAL.md and PUBLIC_P0_STATUS.json first.

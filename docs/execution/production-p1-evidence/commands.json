@@ -1,0 +1,263 @@
+{
+  "runId": "2026-09-13T07-39-16.617Z",
+  "commands": [
+    {
+      "command": "npm run check:reference",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:16.618Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/check-reference.log"
+    },
+    {
+      "command": "npm run check:secrets",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:16.752Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/check-secrets.log"
+    },
+    {
+      "command": "npm run test:reference",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:17.172Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-reference.log"
+    },
+    {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:17.356Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/lint.log"
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:22.945Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/typecheck.log"
+    },
+    {
+      "command": "npm run test:unit",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:26.757Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-unit.log"
+    },
+    {
+      "command": "npm run test:controller:macos",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:33.129Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-controller-macos.log"
+    },
+    {
+      "command": "npm run test:integration",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:36.771Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-integration.log"
+    },
+    {
+      "command": "npm run test:inventory",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:46.275Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-inventory.log"
+    },
+    {
+      "command": "npm run test:transfer",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:53.997Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-transfer.log"
+    },
+    {
+      "command": "npm run test:pricing",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:56.415Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-pricing.log"
+    },
+    {
+      "command": "npm run test:recommendation",
+      "exit_code": 0,
+      "start": "2026-09-13T07:39:58.853Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-recommendation.log"
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:03.598Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/build.log"
+    },
+    {
+      "command": "npm run test:auth",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:14.263Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-auth.log"
+    },
+    {
+      "command": "npm run test:holds-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:22.100Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-holds-ui.log"
+    },
+    {
+      "command": "npm run test:transfers-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:26.839Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-transfers-ui.log"
+    },
+    {
+      "command": "npm run test:quotes-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:31.332Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-quotes-ui.log"
+    },
+    {
+      "command": "npm run test:recommendations-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:36.358Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-recommendations-ui.log"
+    },
+    {
+      "command": "npm run test:recommendation-audit",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:44.252Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-recommendation-audit.log"
+    },
+    {
+      "command": "npm run test:recommendation-continuation",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:50.221Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-recommendation-continuation.log"
+    },
+    {
+      "command": "npm run test:stabilization-s01",
+      "exit_code": 0,
+      "start": "2026-09-13T07:40:57.114Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-stabilization-s01.log"
+    },
+    {
+      "command": "npm run test:stabilization-upgrade",
+      "exit_code": 0,
+      "start": "2026-09-13T07:41:09.324Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-stabilization-upgrade.log"
+    },
+    {
+      "command": "npm run test:stabilization-cd",
+      "exit_code": 0,
+      "start": "2026-09-13T07:41:11.414Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-stabilization-cd.log"
+    },
+    {
+      "command": "npm run test:stabilization-eg",
+      "exit_code": 0,
+      "start": "2026-09-13T07:41:15.734Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-stabilization-eg.log"
+    },
+    {
+      "command": "npm run test:stabilization-mixed",
+      "exit_code": 0,
+      "start": "2026-09-13T07:41:21.356Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-stabilization-mixed.log"
+    },
+    {
+      "command": "npm run test:flow-payment",
+      "exit_code": 0,
+      "start": "2026-09-13T07:41:27.913Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-flow-payment.log"
+    },
+    {
+      "command": "npm run test:flow-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:41:31.630Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-flow-ui.log"
+    },
+    {
+      "command": "npm run test:asset-reader",
+      "exit_code": 0,
+      "start": "2026-09-13T07:41:58.267Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-asset-reader.log"
+    },
+    {
+      "command": "npm run test:flow-restart",
+      "exit_code": 0,
+      "start": "2026-09-13T07:42:07.265Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-flow-restart.log"
+    },
+    {
+      "command": "npm run test:flow-scope-race",
+      "exit_code": 0,
+      "start": "2026-09-13T07:42:30.429Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-flow-scope-race.log"
+    },
+    {
+      "command": "npm run test:custody",
+      "exit_code": 0,
+      "start": "2026-09-13T07:42:32.535Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-custody.log"
+    },
+    {
+      "command": "npm run test:custody-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:42:39.182Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-custody-ui.log"
+    },
+    {
+      "command": "npm run test:late-pickup",
+      "exit_code": 0,
+      "start": "2026-09-13T07:43:07.601Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-late-pickup.log"
+    },
+    {
+      "command": "npm run test:wear",
+      "exit_code": 0,
+      "start": "2026-09-13T07:43:10.252Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-wear.log"
+    },
+    {
+      "command": "npm run test:wear-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:43:15.755Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-wear-ui.log"
+    },
+    {
+      "command": "npm run test:wear-mixed",
+      "exit_code": 0,
+      "start": "2026-09-13T07:43:52.739Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-wear-mixed.log"
+    },
+    {
+      "command": "npm run test:content-fixture",
+      "exit_code": 0,
+      "start": "2026-09-13T07:44:57.285Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-content-fixture.log"
+    },
+    {
+      "command": "npm run test:public-guest",
+      "exit_code": 0,
+      "start": "2026-09-13T07:45:30.091Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-public-guest.log"
+    },
+    {
+      "command": "npm run test:public-content",
+      "exit_code": 0,
+      "start": "2026-09-13T07:45:35.045Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-public-content.log"
+    },
+    {
+      "command": "npm run test:public-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:45:37.678Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-public-ui.log"
+    },
+    {
+      "command": "npm run test:readiness-guest",
+      "exit_code": 0,
+      "start": "2026-09-13T07:46:18.961Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-readiness-guest.log"
+    },
+    {
+      "command": "npm run test:readiness-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T07:46:21.202Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-readiness-ui.log"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exit_code": 0,
+      "start": "2026-09-13T07:46:36.547Z",
+      "log_path": ".local/evidence/2026-09-13T07-39-16.617Z/test-e2e.log"
+    }
+  ]
+}

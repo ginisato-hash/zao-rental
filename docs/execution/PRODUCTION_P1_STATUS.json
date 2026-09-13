@@ -1,0 +1,110 @@
+{
+  "stage": "PRODUCTION_READINESS_P1",
+  "started_utc": "2026-09-13T06:57:05Z",
+  "started_jst": "2026-09-13T15:57:05+09:00",
+  "state": "LOCALLY_VERIFIED_CI_REVIEW_PENDING",
+  "base": "0a639cb46e58721f0b52a5095674aae4e76c325b",
+  "branch": "codex/production-readiness-p1",
+  "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p1",
+  "pr11_merge": "0a639cb46e58721f0b52a5095674aae4e76c325b",
+  "claude_starts": 0,
+  "historical_starts": {
+    "PUBLIC_P0": 2,
+    "FLOW": 7,
+    "CUSTODY": 1
+  },
+  "old_unused_added": false,
+  "items": {
+    "1": {
+      "state": "CODE_AND_REAL_PG_UI_VERIFIED_REVIEW_PENDING",
+      "implemented": [
+        "hash-only recovery and bounded same-key replay",
+        "absolute/access/recovery/replay TTL",
+        "logout/revocation/CAS/post-lock authorization",
+        "immutable policy version",
+        "PG peer/global admission budget",
+        "bounded expired unused-draft redaction"
+      ],
+      "pending": [
+        "owner policy values",
+        "trusted hosting ingress and capacity",
+        "submitted/contract data retention and recovery-code-loss process",
+        "actual production composition/key rotation"
+      ]
+    },
+    "2": {
+      "state": "ADAPTER_CONTRACT_FIXTURES_VERIFIED_REVIEW_PENDING",
+      "pending": [
+        "actual Sandbox credentials/transport/tokenization/webhook/reconciliationE2E",
+        "enablement remains blocked"
+      ]
+    },
+    "3": {
+      "state": "PG_RELEASE_AND_STORAGE_INTERFACE_VERIFIED_REVIEW_PENDING",
+      "pending": [
+        "provider choice/credentials/CDN withdrawal",
+        "real media rights"
+      ]
+    },
+    "4": {
+      "state": "IMPORT_VALIDATION_FIXTURES_VERIFIED_REVIEW_PENDING",
+      "pending": [
+        "actual manufacturer/photos/shop receipts",
+        "authorized transactional ledger import execution",
+        "no real quantities or SKU completeness claimed"
+      ]
+    },
+    "5": {
+      "state": "SYNTHETIC_CAMERA_WIDTH_OFFLINE_RELOAD_VERIFIED_REVIEW_PENDING",
+      "pending": [
+        "actual iOS/Android/tablet/field network",
+        "real CWV measurements"
+      ]
+    },
+    "6": {
+      "state": "OWNER_GATES_RECORDED_VALIDATOR_TESTED",
+      "pending": [
+        "tax",
+        "season",
+        "coupon",
+        "cleaning duration",
+        "NAP",
+        "cancel/refund finalcopy",
+        "latepickup finalcopy",
+        "rights"
+      ]
+    },
+    "7": {
+      "state": "EXISTING_SSR_SEO_REGRESSION_VERIFIED",
+      "pending": [
+        "public release approval",
+        "Search Console/GBP/Zao listing"
+      ]
+    },
+    "8": {
+      "state": "CHECKLIST_AND_EVIDENCE_CONTRACT_TESTED",
+      "pending": [
+        "production migration/rollback and backup/restore/PITR rehearsals",
+        "actual alerts/observability/secret rotation",
+        "release approval"
+      ]
+    }
+  },
+  "no_production_activation": true,
+  "next": "Commit approved P1 changes, Draft PR, exact-head CI, one initial independent static P1 review; no new PR merge.",
+  "local_verify": {
+    "run_id": "2026-09-13T07-39-16.617Z",
+    "commands": 43,
+    "exit_code": 0,
+    "record": "docs/execution/production-p1-evidence/commands.json",
+    "new_guest_pg_cases": 12,
+    "new_guest_ui_checks": 3,
+    "new_unit_cases": 11,
+    "asset_reader_cases": 6
+  },
+  "old_p0_final_status_preserved": {
+    "sha256": "9b4a2cc60de943cc25eae7443aea4f2190a5697b1c86eb00e2e8d2053a3e7678",
+    "comment": 5651786554,
+    "copied_only_to_new_branch": true
+  }
+}

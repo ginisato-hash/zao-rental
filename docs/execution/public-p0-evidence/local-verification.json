@@ -1,0 +1,256 @@
+{
+  "recorded_at": "2026-09-13T06:10:57.991054+00:00",
+  "run_id": "2026-09-13T06-02-40.567Z",
+  "command_count": 41,
+  "commands": [
+    {
+      "command": "npm run check:reference",
+      "exit_code": 0,
+      "log_sha256": "d5585857a54ece08cc81e7241049e8de7d0b31a14fef682edf095d4ad1621096"
+    },
+    {
+      "command": "npm run check:secrets",
+      "exit_code": 0,
+      "log_sha256": "10718c1c13762574ec273265660488deef8e2d22997ef1bbd61cc853398af542"
+    },
+    {
+      "command": "npm run test:reference",
+      "exit_code": 0,
+      "log_sha256": "3fe3720cafb4d9bc0357904ca3ab5a2fc627ddf515a0239b7cd71ac904415891"
+    },
+    {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "log_sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e"
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "log_sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+    },
+    {
+      "command": "npm run test:unit",
+      "exit_code": 0,
+      "log_sha256": "795c4907b942a5e502c765bbf00a9f0b05c89951a20b8bf705c46287e5899bf9"
+    },
+    {
+      "command": "npm run test:controller:macos",
+      "exit_code": 0,
+      "log_sha256": "b0591bdffacbd41b7ed93953f54e723cfe8e79ab0508396962da4137ce008e9c"
+    },
+    {
+      "command": "npm run test:integration",
+      "exit_code": 0,
+      "log_sha256": "9ce9249cd8c50b236650cecdea82e8f6cdfd62c394da6df9b02157466500634a"
+    },
+    {
+      "command": "npm run test:inventory",
+      "exit_code": 0,
+      "log_sha256": "d486cdc3380a041e5ea1e8ced9d44e5850852a5f81c6ed46bf5db8aefb4b3ed1"
+    },
+    {
+      "command": "npm run test:transfer",
+      "exit_code": 0,
+      "log_sha256": "6151b6bed307c54b8542daab2fa3f27038487ea1876752f7a65801c5b8166a90"
+    },
+    {
+      "command": "npm run test:pricing",
+      "exit_code": 0,
+      "log_sha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3"
+    },
+    {
+      "command": "npm run test:recommendation",
+      "exit_code": 0,
+      "log_sha256": "5148553421bee416fa3f95cbccc7db3095533db894f1cd0d4be70c9253eb6384"
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "log_sha256": "df590c3ded507bffbfdf33b743dd5453f83f2af1b22ace0d47fbe5c75bd2f53d"
+    },
+    {
+      "command": "npm run test:auth",
+      "exit_code": 0,
+      "log_sha256": "f33f15ee630c32e3020a298c9d40a341be18c7eb22f0a166d192dcba5f126d6f"
+    },
+    {
+      "command": "npm run test:holds-ui",
+      "exit_code": 0,
+      "log_sha256": "1e99ac019109f32c721861e2239c70042774d564a970de3a93503270dbb527cc"
+    },
+    {
+      "command": "npm run test:transfers-ui",
+      "exit_code": 0,
+      "log_sha256": "6da379b58546c18d6a91032e6c8076c1c6099c7dee95d8d0dd851b6a994b9483"
+    },
+    {
+      "command": "npm run test:quotes-ui",
+      "exit_code": 0,
+      "log_sha256": "f04042a28650471e5f38fb7f50e8176bf146c96ff01c3a1449fa487f44bd8136"
+    },
+    {
+      "command": "npm run test:recommendations-ui",
+      "exit_code": 0,
+      "log_sha256": "ca9f892b9384d2cb147b16e00e2661affd9a3d8133fe3e272117f7603417a658"
+    },
+    {
+      "command": "npm run test:recommendation-audit",
+      "exit_code": 0,
+      "log_sha256": "631f0cdbe9d0e4e579ea45897a35674c7f232f2a50a4b951dd36f1ab0684253e"
+    },
+    {
+      "command": "npm run test:recommendation-continuation",
+      "exit_code": 0,
+      "log_sha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65"
+    },
+    {
+      "command": "npm run test:stabilization-s01",
+      "exit_code": 0,
+      "log_sha256": "449153570b79949986f2fa3691ae751ec765fb7dd29c69de88dabe81cdd21a53"
+    },
+    {
+      "command": "npm run test:stabilization-upgrade",
+      "exit_code": 0,
+      "log_sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+    },
+    {
+      "command": "npm run test:stabilization-cd",
+      "exit_code": 0,
+      "log_sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2"
+    },
+    {
+      "command": "npm run test:stabilization-eg",
+      "exit_code": 0,
+      "log_sha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b"
+    },
+    {
+      "command": "npm run test:stabilization-mixed",
+      "exit_code": 0,
+      "log_sha256": "a75940f80623de7fe2fd51844f2dc7c1e067a7e639e6ff68a92e132d1758a8a9"
+    },
+    {
+      "command": "npm run test:flow-payment",
+      "exit_code": 0,
+      "log_sha256": "b5222ce3161f14002c2f65a4294a53a2c23273b45438bcc7c00d93fc60ad1c99"
+    },
+    {
+      "command": "npm run test:flow-ui",
+      "exit_code": 0,
+      "log_sha256": "d3fdf03e74b05a62ebd43b9f8796e9465e5f01a8b137324b01ebabfb34c731bf"
+    },
+    {
+      "command": "npm run test:asset-reader",
+      "exit_code": 0,
+      "log_sha256": "413c44e8a2ab3842008bbce4403f8b398831eac01a8f415e73cf85c6bd685272"
+    },
+    {
+      "command": "npm run test:flow-restart",
+      "exit_code": 0,
+      "log_sha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e"
+    },
+    {
+      "command": "npm run test:flow-scope-race",
+      "exit_code": 0,
+      "log_sha256": "5620dd6666952fc952b8390977d742ef0570f548b32da531a7acadc4f3423644"
+    },
+    {
+      "command": "npm run test:custody",
+      "exit_code": 0,
+      "log_sha256": "1da8f8672e46c54fd92312416c2488b17fe3257a3d80f9ed0025617aeaf5b2ee"
+    },
+    {
+      "command": "npm run test:custody-ui",
+      "exit_code": 0,
+      "log_sha256": "8183d637b97599962cbf24c2c541a24977c7fe5eef02689bb5e36d0c627a17f6"
+    },
+    {
+      "command": "npm run test:late-pickup",
+      "exit_code": 0,
+      "log_sha256": "1a8db5396302c008ee0b686afcd5eb1387a24ebbf5e871a9b078be92f51a42ec"
+    },
+    {
+      "command": "npm run test:wear",
+      "exit_code": 0,
+      "log_sha256": "d2b8518049e3132e32baa9358fc59fa59d7a37c37bd7ea5f4257f38292a7a9f8"
+    },
+    {
+      "command": "npm run test:wear-ui",
+      "exit_code": 0,
+      "log_sha256": "102ab4f5e1204e497360b395a81cb0f218d226c42eb7a0f4080e8fab9884f650"
+    },
+    {
+      "command": "npm run test:wear-mixed",
+      "exit_code": 0,
+      "log_sha256": "7eb80757a4c219156b6b7f1973780ba38f735150d91701f212200fd1a9fc1098"
+    },
+    {
+      "command": "npm run test:content-fixture",
+      "exit_code": 0,
+      "log_sha256": "2434698e9641257a6d986ae419ef7f240a866ee54d42ac2cad6be0858f72fcd7"
+    },
+    {
+      "command": "npm run test:public-guest",
+      "exit_code": 0,
+      "log_sha256": "af53ef49060fe03b9816ff64db68dbf7239ff87026decf9eb519f4421d2503f5"
+    },
+    {
+      "command": "npm run test:public-content",
+      "exit_code": 0,
+      "log_sha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e"
+    },
+    {
+      "command": "npm run test:public-ui",
+      "exit_code": 0,
+      "log_sha256": "d8a54f705b1c71b73117e0e3532105cc9618262309898d48edeef8ee96bf4c2f"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exit_code": 0,
+      "log_sha256": "efc0a5b9aac8ed5492d5dbc179c36bc7c2b4263b9ef12d32ab24b074b807bca0"
+    }
+  ],
+  "images": [
+    {
+      "file": "guest-confirmed-mobile.png",
+      "sha256": "f47ef515ea4e1570b6c5085f2e34bebdec549d38ef15f2c8e248316d5aa93f49",
+      "data": "synthetic",
+      "auth": "guest context / actual synthetic password staff session",
+      "device": "desktop Chromium390px viewport"
+    },
+    {
+      "file": "public-ja-mobile.png",
+      "sha256": "9d938c5d4b9bb67d12fe1f1e5ef62f929142a29c4c820ed17df0bb6c7c5e396c",
+      "data": "synthetic",
+      "auth": "guest context / actual synthetic password staff session",
+      "device": "desktop Chromium390px viewport"
+    },
+    {
+      "file": "public-model-en-mobile.png",
+      "sha256": "973c5f16c2b5e1bef4b17f091383761222750e9e77a742a189a3dda1d0a65f59",
+      "data": "synthetic",
+      "auth": "guest context / actual synthetic password staff session",
+      "device": "desktop Chromium390px viewport"
+    },
+    {
+      "file": "late-pickup-staff-mobile.png",
+      "sha256": "091e435532978848d8fb90e06749fe600224a51f732fd5652524437a523ccfc1",
+      "data": "synthetic",
+      "auth": "guest context / actual synthetic password staff session",
+      "device": "desktop Chromium390px viewport"
+    },
+    {
+      "file": "guest-review-mobile.png",
+      "sha256": "c754e6cf668f48d27c0794561e8bfe9ecbe034f70d8a2e83501a9199a1f654e1",
+      "data": "synthetic",
+      "auth": "guest context / actual synthetic password staff session",
+      "device": "desktop Chromium390px viewport"
+    },
+    {
+      "file": "content-pg-mobile.png",
+      "sha256": "155e75e679e25cd083704effa0f5067fa62901d20d6de16b3e387ed3bce51ccf",
+      "data": "synthetic",
+      "auth": "guest context / actual synthetic password staff session",
+      "device": "desktop Chromium390px viewport"
+    }
+  ]
+}

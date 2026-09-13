@@ -1,0 +1,17 @@
+import {contentSession} from './content-session';
+import {decodePhotoBase64} from '../../../../packages/core/src/content/photo-input';
+import {PrivatePhotoJobs} from '../../../../packages/core/src/content/photo-job';
+import {ContentInputError} from '../../../../packages/core/src/content/bulk-plan';
+const headers={'Cache-Control':'private, no-store','Vary':'Cookie','X-Content-Type-Options':'nosniff'};
+export async function photoHandler(request:Request){try{
+ const session=await contentSession(request),{runtime,subject,photo:store,readDerivative}=session,authority={assert:(s:string)=>session.authority.assert(s,'CONTENT_EDIT')};
+ await authority.assert(subject);const service=new PrivatePhotoJobs(store,authority),url=new URL(request.url),action=url.pathname.slice('/api/content-photos'.length);
+ if(request.method==='GET'&&action===''){if([...url.searchParams.keys()].join()!=='jobId')throw new ContentInputError('PHOTO_QUERY');return Response.json(await service.read(subject,url.searchParams.get('jobId')!),{headers});}
+ if(request.method==='GET'&&action==='/derivative'){if([...url.searchParams.keys()].sort().join()!=='index,jobId')throw new ContentInputError('PHOTO_QUERY');const job=await service.read(subject,url.searchParams.get('jobId')!),index=Number(url.searchParams.get('index')),item=Number.isInteger(index)?job.items[index]:undefined;const derivative=item?.metadata?.derivatives.find(d=>d.requestedWidth===320&&d.format==='webp');if(!derivative)throw new ContentInputError('PHOTO_NOT_READY');const b=await readDerivative(derivative.sha256);await authority.assert(subject);return new Response(new Uint8Array(b),{headers:{...headers,'Content-Type':'image/webp'}});}
+ if(request.method!=='POST'||request.headers.get('origin')!==runtime.config.origin)return Response.json({error:'ORIGIN_REJECTED'},{status:403,headers});if(url.search||request.headers.get('content-type')?.split(';')[0]!=='application/json')throw new ContentInputError('PHOTO_REQUEST');
+ const reader=request.body?.getReader();if(!reader)throw new ContentInputError('PHOTO_BODY');const chunks:Uint8Array[]=[];let size=0;try{for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>14*1024*1024){await reader.cancel();return Response.json({error:'BODY_TOO_LARGE'},{status:413,headers});}chunks.push(part.value);}}finally{reader.releaseLock();}
+ const raw=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));let result:unknown;
+ if(action==='/prepare'){if(!raw||Object.keys(raw).sort().join()!=='files,jobId'||!Array.isArray(raw.files))throw new ContentInputError('PHOTO_REQUEST');result=await service.prepare(subject,raw.jobId,raw.files);}
+ else if(action==='/upload'){if(!raw||Object.keys(raw).sort().join()!=='base64,index,jobId')throw new ContentInputError('PHOTO_REQUEST');const bytes=decodePhotoBase64(raw.base64);result=await service.upload(subject,raw.jobId,raw.index,bytes);}
+ else throw new ContentInputError('PHOTO_REQUEST');return Response.json(result,{headers});
+ }catch(e){if(e instanceof Error&&e.message==='FIXTURE_LOCKED')return Response.json({error:'FIXTURE_LOCKED',retryable:true},{status:503,headers:{...headers,'Retry-After':'1'}});const code=e instanceof ContentInputError?e.code:'PHOTO_FIXTURE_FAILED';return Response.json({error:code},{status:code==='UNAUTHENTICATED'?401:code==='CONTENT_UNCONNECTED'?503:code==='CONTENT_FORBIDDEN'?403:e instanceof ContentInputError?409:500,headers});}}

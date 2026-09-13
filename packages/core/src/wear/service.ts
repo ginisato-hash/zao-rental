@@ -1,4 +1,5 @@
 import {randomUUID,createHash} from 'node:crypto';
+import {physicalPickupWindow} from '../../../contracts/src/pickup';
 import type {Pool,PoolClient} from 'pg';
 import {loadStaff} from '../../../auth/src/staff-auth';
 import {HoldError,canonical,isWear,normalizePeriod,type HoldConditions} from '../../../contracts/src/hold';
@@ -51,7 +52,8 @@ export class WearService{
   return {variants:variants.rows,unresolved:unresolved.rows,batches:batches.rows,limits:{unresolved:100,batches:50}};
  }
  async checkout(key:string,value:unknown){const v=exact(value,['bookingId','expectedBookingVersion','store','reason']);id(v.bookingId);revision(v.expectedBookingVersion);const s=store(v.store);return this.tx('RENTAL_CHECKOUT',[s],key,v,reason(v.reason),async(c,now)=>{
-  const b=(await c.query<{id:string;state:string;version:number;conditions:HoldConditions;hold_id:string}>('SELECT id,state,version,conditions,hold_id FROM rental_bookings WHERE id=$1',[v.bookingId])).rows[0];if(!b||b.state!=='CONFIRMED_DEV')throw new WearError('CONFIRMED_DEVELOPMENT_BOOKING_REQUIRED',409);if(b.version!==v.expectedBookingVersion)throw new WearError('STALE_REVISION',409);if(b.conditions.pickupStore!==s)throw new WearError('FORBIDDEN',403);const period=normalizePeriod(b.conditions.period);if(day(now)!==b.conditions.period.startDate||now>=new Date(period.dueAt))throw new WearError('CHECKOUT_PERIOD_INVALID');
+  const b=(await c.query<{id:string;state:string;version:number;conditions:HoldConditions;hold_id:string}>('SELECT id,state,version,conditions,hold_id FROM rental_bookings WHERE id=$1',[v.bookingId])).rows[0];if(!b||b.state!=='CONFIRMED_DEV')throw new WearError('CONFIRMED_DEVELOPMENT_BOOKING_REQUIRED',409);if(b.version!==v.expectedBookingVersion)throw new WearError('STALE_REVISION',409);if(b.conditions.pickupStore!==s)throw new WearError('FORBIDDEN',403);const period=normalizePeriod(b.conditions.period);if(!physicalPickupWindow(b.conditions.period,now))throw new WearError('CHECKOUT_PERIOD_INVALID');
+  const h=(await c.query('SELECT state,payment_state,confirmed_at,transfer_attention FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];if(!h||h.state!=='ACTIVE'||h.payment_state!=='SUCCESS'||!h.confirmed_at||h.transfer_attention)throw new WearError('INVENTORY_PROTECTION_REQUIRED',409);
   if((await c.query('SELECT 1 FROM wear_loans WHERE booking_id=$1',[b.id])).rowCount)throw new WearError('ALREADY_CHECKED_OUT',409);
   const wanted=b.conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(i=>({key:m.key+':'+i.family,member:m.key,variant:i.variantIds[0]!})));if(!wanted.length)throw new WearError('NO_WEAR_LINES');
   const claims=(await c.query('SELECT requirement_key,pool_id,count(*)::int days FROM wear_claims WHERE hold_id=$1 AND active GROUP BY requirement_key,pool_id',[b.hold_id])).rows;if(claims.length!==wanted.length||wanted.some(w=>!claims.some(cl=>cl.requirement_key===w.key&&cl.days===period.days)))throw new WearError('WEAR_CLAIMS_MISMATCH');

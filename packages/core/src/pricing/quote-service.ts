@@ -2,7 +2,8 @@ import {variantMatches,type PromiseVariant} from '../../../contracts/src/hold';
 import {createHash,randomUUID} from 'node:crypto';
 import sourceDocument from '../../../../config/pricing/zao-2026-27-v1.draft.json';
 import type {Pool,PoolClient} from 'pg';
-import {loadStaff,type Permission,type StaffPrincipal} from '../../../auth/src/staff-auth';
+import type {Permission} from '../../../auth/src/staff-auth';
+import {authorizeBookingActor,type BookingActor} from '../../../auth/src/booking-actor';
 import {HoldError,canonical,utcDate,type HoldConditions} from '../../../contracts/src/hold';
 import {PricingError,parseQuote,parseCoupon,validateTable,INITIAL_TABLE,PRICE_PRODUCTS,DURATIONS,PRIVATE_QUOTE_TTL_SECONDS,calculate,id,exact,money,timestamp,type PriceTable,type CouponTerms,type QuoteInput} from '../../../contracts/src/pricing';
 import {heldIntake} from '../inventory/intake-context';
@@ -13,8 +14,8 @@ type QuoteRow={id:string;actor:string;request_fingerprint:string;book_id:string;
 const hash=(v:unknown)=>createHash('sha256').update(canonical(v)).digest('hex');
 const sourceHash=hash(sourceDocument);
 export class QuoteService {
- constructor(private pool:Pool,private principal:StaffPrincipal,private clock?:()=>Date){}
- private async auth(c:Conn,permission:Permission='QUOTE_VIEW',stores:string[]=[]){const p=await loadStaff(c as Pick<Pool,'query'>,this.principal.subject);if(!p||p.revision!==this.principal.revision||!p.permissions.includes('QUOTE_VIEW')||!p.permissions.includes(permission)||stores.some(s=>!p.storeIds.includes(s as never))||permission==='PRICE_EDIT'&&(p.role!=='ADMIN'||p.scope!=='ALL'))throw new PricingError('FORBIDDEN',403);return p;}
+ constructor(private pool:Pool,private principal:BookingActor,private clock?:()=>Date){}
+ private async auth(c:Conn,permission:Permission='QUOTE_VIEW',stores:string[]=[]){return authorizeBookingActor(c,this.principal,['QUOTE_VIEW',permission],stores);}
  private async time(c:Conn){return this.clock?.()??(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;}
  private async tx<T>(permission:Permission,preflight:(c:Conn)=>Promise<void>,work:(c:PoolClient,now:Date)=>Promise<T>,inventory=false){await this.auth(this.pool,permission);await preflight(this.pool);let c:PoolClient|undefined;try{c=await this.pool.connect();await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='5000ms';SET LOCAL idle_in_transaction_session_timeout='10000ms'");await this.auth(c,permission);await preflight(c);if(inventory)await c.query('SELECT pg_advisory_xact_lock(71820600)');await c.query('SELECT pg_advisory_xact_lock(71820800)');await this.auth(c,permission);await preflight(c);await c.query("SELECT set_config('zao.actor',$1,true)",[this.principal.subject]);const result=await work(c,await this.time(c));await c.query('COMMIT');return result;}catch(e){await c?.query('ROLLBACK').catch(()=>{});if(e instanceof HoldError)throw e;const code=(e as {code?:string}).code;if(['23505','23514','23503'].includes(code??''))throw new PricingError('PRICE_CONFLICT',409);if(['55P03','57014','40001','40P01'].includes(code??''))throw new PricingError('INDETERMINATE',503);throw new PricingError('QUOTE_OPERATION_FAILED',500);}finally{c?.release();}}
  private async read<T>(work:(c:PoolClient,now:Date)=>Promise<T>){let c:PoolClient|undefined;try{c=await this.pool.connect();await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');await c.query("SET LOCAL statement_timeout='5000ms'");await this.auth(c);const result=await work(c,await this.time(c));await c.query('COMMIT');return result;}catch(e){await c?.query('ROLLBACK').catch(()=>{});if(e instanceof HoldError)throw e;throw new PricingError('INDETERMINATE',503);}finally{c?.release();}}

@@ -2,7 +2,7 @@ import {writeWearClaims} from './wear-capacity';
 import {planAllocation,writeAllocationClaims} from './allocation';
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
-import {loadStaff,type StaffPrincipal} from '../../../auth/src/staff-auth';
+import {authorizeBookingActor,type BookingActor} from '../../../auth/src/booking-actor';
 import {HoldError,parseConditions,normalizePeriod,canonical,HOLD_TTL_SECONDS,paymentDecision,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {heldIntake} from './intake-context';
 import type {CandidateContext} from '../../../contracts/src/hold-intake';
@@ -15,12 +15,10 @@ function id(value:string){if(!UUID.test(value))throw new HoldError('INVALID_ID')
 function effective(h:HoldRow,now:Date){return h.state==='ACTIVE'&&h.allocation_stage==='PROVISIONAL'&&h.expires_at<=now&&['NONE','FAILURE'].includes(h.payment_state)?'EXPIRED':h.state;}
 export class HoldService {
  // Clock is a dependency for controlled tests only. Normal runtime always obtains database time.
- constructor(private pool:Pool,private principal:StaffPrincipal,private clock?:()=>Date){}
+ constructor(private pool:Pool,private principal:BookingActor,private clock?:()=>Date){}
  private async now(c:Conn){return this.clock?this.clock():(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;}
  private async authorize(c:Conn,edit:boolean,stores:string[]=[]){
-  const p=await loadStaff(c as Pick<Pool,'query'>,this.principal.subject);
-  if(!p||p.revision!==this.principal.revision||!p.permissions.includes('HOLD_VIEW')||edit&&!p.permissions.includes('HOLD_EDIT')||stores.some(s=>!p.storeIds.includes(s as never)))throw new HoldError('FORBIDDEN',403);
-  return p;
+  return authorizeBookingActor(c,this.principal,['HOLD_VIEW',...(edit?['HOLD_EDIT']:[])],stores);
  }
  private async owned(c:Conn,holdId:string,edit:boolean){
   id(holdId);await this.authorize(c,edit);

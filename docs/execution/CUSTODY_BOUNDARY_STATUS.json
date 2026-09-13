@@ -5,7 +5,7 @@
   "start_jst": "2026-09-13T07:51:31+09:00",
   "deadline_jst": "2026-09-13T13:51:31+09:00",
   "claude_max_starts": 1,
-  "claude_starts": 0,
+  "claude_starts": 1,
   "historical_flow_starts": 7,
   "historical_unused_not_added": true,
   "base": "137352fcaa7b28f88aef5100479297f74e64b4aa",
@@ -15,8 +15,8 @@
     "FLOW_DEV_STATUS": "a86cd20d41b0d9e7b9d23345cc27ca31e96479f54e0b83917a85795225e1493b",
     "WEAR_ACCEPTANCE_STATUS": "a62776df376c23d48a5056e9687406a8e4ad58131b2145f8a07dd3ff60f1a3d0"
   },
-  "state": "LOCAL_VERIFIED_AWAIT_CI_REVIEW",
-  "next": "Normal push to existing Draft PR10; verify exact-head CI; one final static review.",
+  "state": "SCOPED_REVIEW_PASS_DRAFT_STOPPED",
+  "next": "Owner decision for next scope; no main merge or additional review authorized. Preserve final status via PR comment; do not mutate reviewed head to commit post-review status.",
   "updated_at": "2026-09-13T00:08:01.898254+00:00",
   "verification": {
     "verify_exit_code": 0,
@@ -41,15 +41,146 @@
     "verification_run": "2026-09-12T23-58-41.816Z"
   },
   "unconnected": [
-    "real Square/Sandbox transport",
-    "production route/deployment",
-    "real staff/customer/stock",
-    "physical smartphone camera/fitting",
-    "operational cleaning/catalog completion"
+    "Owner explicit approval beyond ZAO-FLOW-CUSTODY-DB-BOUNDARY-R1 remains required before any production deployment, real Square/Sandbox payment transport, real customer/staff data, real device (phone/camera) verification, or public guest-facing checkout/return flow; nothing in this delta authorizes or claims readiness for those.",
+    "PR3/Runner adoption, main-branch merge, and any new host/billing/GitHub permission remain out of scope and not requested or exercised by this delta; the reviewed CI run is the standard PR-merge-candidate check, not a merge to main.",
+    "Real fitting/BSL certification, DIN calculation, and safety sign-off are explicitly not computed by preparation/fit-evidence recording (packages/core/src/rental/custody-service.ts prepare()) and must not be represented as such in any customer-facing rollout.",
+    "Physical checkout via rental_validate_loan() (packages/db/migrations/0015_custody_boundary.sql) is restricted to the exact first occupancy day before 17:00 JST; there is no implemented path for later-day physical handover within a MULTIDAY booking. This is a disclosed, intentionally tested restriction (matches the after-hours counterexample requirement) rather than a defect, but any future operational rollout must separately decide how day-2+ late pickup is to be handled before this boundary can be treated as operationally complete.",
+    "Timestamp correction/exception-inspection workflows, operational cleaning-duration confirmation, and full photo/catalog completeness remain unimplemented and are explicitly disclaimed in docs/execution/CUSTODY_BOUNDARY_VALIDATION.md; no claim of E10–E13 milestone completion should be inferred from this review.",
+    "The custody executor/app roles (scripts/custody-roles.ts, migration 0015 GRANT block) are provisioned only against disposable, namespace-scoped worktree PostgreSQL clusters (zr_[a-f0-9]{12} pattern enforced in the migration's DO block); reuse of this migration/role-provisioning script against any non-disposable or shared database remains unauthorized and unverified."
   ],
   "known_limits": [
-    "No production readiness claim; static final review pending",
-    "No timestamp correction/exception inspection UI or paid exchange",
-    "Normal app has no custody mutation route; finite test composition only"
-  ]
+    "Review excludes historical progress3documents; primary integrity check is separate, not Claude re-review",
+    "CI individual test execution additionally verified from direct GitHub job log after review; no test/model rerun",
+    "Static reviewer did not execute tests",
+    "Later-day MULTIDAY physical pickup and receipt-time corrections/exception inspection remain later work",
+    "No whole E10-E13 completion or production readiness claim"
+  ],
+  "head": "0347ed621d293a79cc02e9751da0b81709e4b538",
+  "review": {
+    "verdict": "REVIEW_PASS",
+    "code_findings": [],
+    "evidence_limitations": [
+      "Exact-head CI evidence (run 34727240097) shows a single generic 'foundation' job with non-itemized step names (Set up job, checkout, setup-node, Pin npm, Reproducible setup, Browser system libraries, 'Verify implemented foundation', 'Runner simulation only', log preservation). It cannot be independently confirmed from CI step metadata alone that test:custody / test:custody-ui specifically executed and passed inside that CI job as opposed to only in the separately supplied self-reported local-verification/ci-verification log bundles; this is the same category of granularity gap noted in prior review rounds (review-prior-07) and is carried forward unresolved for this delta.",
+      "docs/execution/FLOW_DEV_EXACT_BOUNDARY.md, docs/execution/FLOW_DEV_STATUS.json and docs/execution/WEAR_ACCEPTANCE_STATUS.json are listed as Modified (M) in FILE STATUS for this delta, but no diff hunk for any of the three appears in the supplied EXACT MODIFIED-FILE DELTA section. Their actual content changes at this head cannot be verified from the provided evidence. These are tracking/status documents, not code touching authorization, custody, payment, or the reviewed security boundary, so risk is assessed as low, but this remains a genuine evidence gap rather than a reviewed-and-cleared file.",
+      "This is a static/code-reading review only (tests_executed=false); no test, migration, or adversarial SQL scenario was independently re-executed in this session. The supplied real-PostgreSQL adversarial suites (tests/custody/real-postgres.ts, tests/custody/scenarios.ts, tests/custody/normal-ui.ts, tests/custody/boundary-counterexample.ts) and their before/after counterexample logs were read and manually traced against migration 0015 and custody-service.ts for internal logical consistency (lock ordering, GRANT/REVOKE scope, claim-retirement scope, pole-quantity conservation, actor re-validation after lock wait) rather than independently re-run."
+    ],
+    "snapshot_sha256": "0efd190b54374ad889d1de59095fc3592b4e6f067c5236452144bc4073507a24",
+    "manifest_comment": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5649665208",
+    "result_comment": "https://github.com/ginisato-hash/zao-rental/pull/10#issuecomment-5649705981"
+  },
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34727240097,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34727240097",
+    "event": "pull_request",
+    "head_sha": "0347ed621d293a79cc02e9751da0b81709e4b538",
+    "base_sha": "137352fcaa7b28f88aef5100479297f74e64b4aa",
+    "conclusion": "success",
+    "checked_out_sha": "09d68f538c96799d578bd487619175552f0a2123",
+    "checked_out_kind": "PR_MERGE",
+    "checked_out_merge_sha": "09d68f538c96799d578bd487619175552f0a2123",
+    "integration_candidate_sha": "09d68f538c96799d578bd487619175552f0a2123",
+    "integration_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "0347ed621d293a79cc02e9751da0b81709e4b538"
+    ],
+    "merge_parents": [
+      "137352fcaa7b28f88aef5100479297f74e64b4aa",
+      "0347ed621d293a79cc02e9751da0b81709e4b538"
+    ],
+    "merge_tree_sha": "fab3d10296b3f9cef55c1eb88c89310986b87f6a",
+    "head_tree_sha": "fab3d10296b3f9cef55c1eb88c89310986b87f6a",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-09d68f538c96799d578bd487619175552f0a2123",
+    "artifact_digest": "sha256:61c9df051ec195819f427129b154e8d645ebe78e8a59c3efe3ef7fe9a17d5f37"
+  },
+  "cleanup": {
+    "checked_at": "2026-09-13T00:36:36.128055+00:00",
+    "owned_ports": {
+      "27929": {
+        "listening": false,
+        "exit_code": 1
+      },
+      "37929": {
+        "listening": false,
+        "exit_code": 1
+      },
+      "37930": {
+        "listening": false,
+        "exit_code": 1
+      }
+    },
+    "owned_postgres_pid_files": 0,
+    "owned_claude_pid": 26901,
+    "owned_claude_exited": true,
+    "owned_usage_browser_tab_closed": true,
+    "test_browser_web_shutdown": "finite launchers completed cleanup; all verification exit0",
+    "other_processes_modified": false
+  },
+  "stopped_at_utc": "2026-09-13T00:36:36.128055+00:00",
+  "stopped_at_jst": "2026-09-13T09:36:36.128055+09:00",
+  "record_storage": "Only this final status is intentionally uncommitted after review. Runtime/test source remains identical to reviewed head. Same JSON is preserved in the final PR progress comment.",
+  "elapsed_seconds": 6305,
+  "unused_time_seconds_at_stop": 15294,
+  "unused_review_starts": 0
 }

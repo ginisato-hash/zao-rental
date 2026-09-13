@@ -1,0 +1,7 @@
+{
+  "state": "DRAFT_WORDING_REQUIRES_PUBLICATION_REVIEW",
+  "latePickupPolicy": {
+    "ja": "予約開始日より後にお受け取りいただくことも可能ですが、返却期限および料金は変更されません。予約期間中は用品を確保しているため、受取が遅れたことによる未利用日分の返金はありません。",
+    "en": "You may collect a confirmed multi-day booking after its start date, within store opening hours and before the original return deadline. The deadline and price remain unchanged. Equipment is reserved for the original period, so unused days caused by late collection are not refunded."
+  }
+}

@@ -10,8 +10,8 @@ export interface ContentAuthority{assert(subject:string,permission:ContentPermis
 const hash=(x:unknown)=>createHash('sha256').update(canonical(x)).digest('hex');
 const drafts=(s:CatalogReleaseState):Draft[]=>Object.entries(s.draftIds).map(([key,rid])=>{const r=s.revisions.find(r=>r.id===rid);if(!r||key!==r.offerCode+'/'+r.locale)throw new ContentInputError('DRAFT_REFERENCE_INVALID');return {offerCode:r.offerCode,locale:r.locale,revision:s.revisions.filter(x=>x.offerCode===r.offerCode&&x.locale===r.locale).length,content:structuredClone(r.content)};});
 // Transactional application port. The adapter must enforce rollback/serialization and
-// supply server-authenticated subjects. No implementation of this port is wired into
-// normal application routes, staff grants, PostgreSQL roles or a public CMS.
+// supply server-authenticated subjects. Public P0 adds the dedicated development
+// PostgreSQL adapter; production publication remains disabled.
 export class PrivateContentWorkflow{
  constructor(private repo:ContentRepository,private authority:ContentAuthority,private clock:()=>Date=()=>new Date()){}
  private async change<T>(subject:string,permission:ContentPermission,key:string,payload:unknown,fn:(s:ContentWorkflowState)=>Promise<T>|T){

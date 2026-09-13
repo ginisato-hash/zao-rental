@@ -10,7 +10,9 @@ export function StaffSessionBoundary({stamp,children}:{stamp:string;children:Rea
    try{const r=await fetch('/api/session',{cache:'no-store'});const body=await r.json();if(!alive||closed||ticket!==generation)return;if(!r.ok||body.stamp!==stamp)end();else setState('ready');}catch{if(alive&&!closed&&ticket===generation)end();}
   }
   const visibility=()=>{if(document.visibilityState==='hidden'){generation++;setState('checking');}else void check(true);};
-  const hide=()=>{generation++;setState('checking');},show=()=>void check(true);
+  // Initial pageshow can arrive after hydration: recheck without remounting the form.
+  // A BFCache restore must hide stale staff data until the server verifies the session.
+  const hide=()=>{generation++;setState('checking');},show=(event:PageTransitionEvent)=>void check(event.persisted!==false);
   channel.onmessage=event=>{if(['logout','signing-out','password-changed'].includes(event.data))end();else void check(true);};
   document.addEventListener('visibilitychange',visibility);window.addEventListener('pagehide',hide);window.addEventListener('pageshow',show);window.addEventListener('zao-auth-ended',end);
   const timer=setInterval(()=>void check(),15000);void check();channel.postMessage('session-opened');

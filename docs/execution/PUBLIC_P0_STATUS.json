@@ -1,0 +1,64 @@
+{
+  "stage": "PUBLIC_CUSTOMER_GUEST_SEO_P0",
+  "state": "LOCAL_VERIFIED_CI_REVIEW_PENDING",
+  "started_utc": "2026-09-13T03:20:52Z",
+  "started_jst": "2026-09-13T12:20:52+09:00",
+  "approval_sha256": "74934314f40f5fd40dc90ac0b5ae7940f87647e07370572e81b58704d78cb3fb",
+  "base": "f21b8748dba31803433e1476e143a7a1c040ee3a",
+  "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/public-p0",
+  "branch": "codex/public-ux-guest-p0",
+  "pr10_merge": "f21b8748dba31803433e1476e143a7a1c040ee3a",
+  "pr10_reviewed_head": "0347ed621d293a79cc02e9751da0b81709e4b538",
+  "merge_tree_unchanged": true,
+  "old_final_status_preserved_sha256": "5045efe420b1e734c29374dcabe3efcb436de59032a22266ea96a3268b74f97b",
+  "review_plan": "One final static review under this next-stage request. No previous unused review counts reused; no automatic re-review assumed.",
+  "claude_starts": 0,
+  "prior_FLOW_starts": 7,
+  "prior_CUSTODY_starts": 1,
+  "deadline": "No new deadline specified in this next-stage approval; earlier finite deadlines belong to historical completed scopes. No scheduler/background continuation.",
+  "next": "Create Draft PR, verify exact head CI, one final static review; never merge",
+  "blocked_external": [
+    "actual Square/Sandbox/webhook",
+    "production/public deployment",
+    "real media rights/store NAP",
+    "provider storage contract",
+    "GBP/Search Console/site-listing external actions"
+  ],
+  "owner_business_decisions": [
+    "tax",
+    "sales season",
+    "real coupon rules",
+    "cleaning durations",
+    "production TTL",
+    "store addresses/telephone",
+    "media rights",
+    "receipt time correction",
+    "exception inspection",
+    "DIN/fit safety"
+  ],
+  "late_pickup": {
+    "authority": "Direct owner specification 2026-09-13",
+    "state": "REAL_PG_9_PASS_NORMAL_GUEST_STAFF_UI_PASS",
+    "before_test": "day2 10:00 real PostgreSQL FLOW_CONFLICT; log outputs/public-p0/late-pickup-before.log",
+    "blocked": null,
+    "db_boundary_approval": "Owner: 専用開発DBの限定案を承認"
+  },
+  "guest_boundary_approval": "Owner: 専用開発DBのguest分離案を承認",
+  "verified": {
+    "late_pickup_pg": 9,
+    "guest_pg": 7,
+    "guest_integrated_pg": 5,
+    "content_pg": 5,
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "public_guest_ui": 5,
+    "content_ui": 5,
+    "verify": {
+      "run_id": "2026-09-13T06-02-40.567Z",
+      "command_count": 41,
+      "all_exit_zero": true
+    },
+    "production_ready": false
+  },
+  "final_evidence": "Latest exact-head PR comment links CI, full command logs, static review and transmission manifest; no old PASS reused."
+}

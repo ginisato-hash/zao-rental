@@ -1,0 +1,308 @@
+[
+  {
+    "path": "",
+    "locale": "ja",
+    "title": "蔵王のスキー・スノーボードレンタル",
+    "heading": "道具選びを済ませて、雪山へ。",
+    "summary": "スキー、スノーボード、ウェアを一人ずつ選び、グループ全員の日程と用品をまとめて確認できます。",
+    "bullets": [
+      "日程と店舗から選ぶ",
+      "RegularとPremiumを比較",
+      "用品とウェアをまとめて確認"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "",
+    "locale": "en",
+    "title": "Zao ski & snowboard rental",
+    "heading": "Choose your equipment. Enjoy the mountain.",
+    "summary": "Choose ski, snowboard and wear options for each person, then review the entire group together.",
+    "bullets": [
+      "Start with dates and stores",
+      "Compare Regular and Premium",
+      "Review equipment and wear together"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental",
+    "locale": "ja",
+    "title": "蔵王レンタルのプラン比較",
+    "heading": "あなたの滑りに合うプランを。",
+    "summary": "スキーセットは板・ブーツ・ポール、スノーボードセットは板・ブーツ。ウェアだけの選択もできます。",
+    "bullets": [
+      "Regular：サイズ・年齢区分・クラスを選択。モデルは確約しません。",
+      "Premium：モデル・シーズン・長さの明示選択を条件として保存。"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental",
+    "locale": "en",
+    "title": "Compare Zao rental plans",
+    "heading": "Find your plan.",
+    "summary": "A ski set includes skis, boots and poles; a snowboard set includes a board and boots. Wear can also be selected on its own.",
+    "bullets": [
+      "Regular: choose size, age category and class. No specific model promise.",
+      "Premium: your selected model, season and length become part of the promise."
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/ski",
+    "locale": "ja",
+    "title": "蔵王のスキーレンタル・サイズ選択",
+    "heading": "スキーを、サイズから選ぶ。",
+    "summary": "身長と足のサイズから候補を確認し、長さを明示的に選びます。最終的な適合はスタッフが用品と一緒に確認します。",
+    "bullets": [
+      "板は左右1ペアで1個体",
+      "ブーツは左右1組、ポールはサイズ別ペア数量",
+      "身体情報だけでDINや安全適合を自動確定しません"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/ski",
+    "locale": "en",
+    "title": "Zao ski rental & sizing",
+    "heading": "Choose your ski setup.",
+    "summary": "Review size suggestions from height and foot size, then explicitly choose a length. Final fit requires a staff check with the equipment.",
+    "bullets": [
+      "One ski pair is one asset",
+      "Boots are a pair; poles are counted in pairs by size",
+      "Body measurements do not automatically certify DIN or safety"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/snowboard",
+    "locale": "ja",
+    "title": "蔵王のスノーボードレンタル",
+    "heading": "ボードとブーツを、ひとつの選択へ。",
+    "summary": "身長と足のサイズから候補を確認できます。スキー専用の体重・レベル入力は求めません。",
+    "bullets": [
+      "スノーボードは1枚で1個体",
+      "ブーツは左右1組で1個体",
+      "RegularとPremiumの条件を区別して選択"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/snowboard",
+    "locale": "en",
+    "title": "Zao snowboard rental",
+    "heading": "Your board and boots, together.",
+    "summary": "Explore candidates using height and foot size. Ski-specific weight and ability inputs are not required.",
+    "bullets": [
+      "One board is one asset",
+      "One pair of boots is one asset",
+      "Choose between distinct Regular and Premium promises"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/premium",
+    "locale": "ja",
+    "title": "蔵王 Premiumレンタル・モデル指定",
+    "heading": "乗りたいモデルを、確かめて選ぶ。",
+    "summary": "Premiumでは当店で取扱確認されたモデル・シーズン・長さから選びます。メーカーの全ラインアップを当店在庫として表示しません。",
+    "bullets": [
+      "モデル・シーズン・長さを予約条件として保存",
+      "写真・取扱長さ・仕様の照合が必要",
+      "未照合・権利未確認のモデルは公開しません"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/premium",
+    "locale": "en",
+    "title": "Zao Premium rental & model selection",
+    "heading": "Know the model you choose.",
+    "summary": "Premium selection is limited to verified shop models, seasons and lengths. A manufacturer catalogue is not our inventory.",
+    "bullets": [
+      "Model, season and length are saved as selected conditions",
+      "Photos, shop lengths and specifications must be verified",
+      "Unverified models and media are not released"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/wear",
+    "locale": "ja",
+    "title": "蔵王のレンタルウェア・上下サイズ選択",
+    "heading": "ウェアも、旅の前に。",
+    "summary": "ジャケットとパンツのサイズを別々に選びます。道具と一緒でも、ウェアのみでも、グループの選択にまとめられます。",
+    "bullets": [
+      "ウェアはサイズ別の数量在庫",
+      "上下セット、同じ利用者の道具セットとの調整は見積で確認",
+      "受領・洗浄・乾燥・再利用可能性を分離"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/wear",
+    "locale": "en",
+    "title": "Zao ski wear rental & separate sizes",
+    "heading": "Plan your wear before the trip.",
+    "summary": "Select jacket and pants sizes separately. Add wear to equipment or choose wear only within the same group.",
+    "bullets": [
+      "Wear is quantity stock by size",
+      "Review the set price and same-person equipment adjustment in the estimate",
+      "Receipt, washing, drying and readiness are separate"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/kids-family",
+    "locale": "ja",
+    "title": "蔵王の子供・ファミリーレンタル",
+    "heading": "家族みんなの選択を、一緒に。",
+    "summary": "大人・子供それぞれの利用開始時の区分を選び、用品とウェアを利用者ごとに確認します。",
+    "bullets": [
+      "大人・子供の在庫は無条件に代替しません",
+      "一人ずつサイズ候補を明示選択",
+      "全員分が成立する場合だけまとめてHOLD"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "rental/kids-family",
+    "locale": "en",
+    "title": "Zao kids & family rental",
+    "heading": "One plan for the whole family.",
+    "summary": "Choose each person’s age category at the start of the rental and review their equipment and wear separately.",
+    "bullets": [
+      "No automatic substitutions across adult and child categories",
+      "Explicit size choices for each person",
+      "Group HOLD succeeds only when all requirements fit"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "prices",
+    "locale": "ja",
+    "title": "レンタル料金と見積の見方",
+    "heading": "条件を選び、総額を確認。",
+    "summary": "半日から10日まで、商品・人数・日数をもとに見積を確認します。税込・税別の表示基準は公開前の確認事項です。",
+    "bullets": [
+      "ブラウザの入力金額で料金を確定しません",
+      "事前決済5％調整の資格は前日15:00 JSTまでの決済完了で判定",
+      "見積を作るだけで決済完了や早割資格を確定しません"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "prices",
+    "locale": "en",
+    "title": "Rental prices & estimates",
+    "heading": "Choose your options. Review the total.",
+    "summary": "Review an estimate for half-day through ten-day rentals, using products, people and duration. The tax display basis remains subject to pre-publication confirmation.",
+    "bullets": [
+      "Amounts are evaluated on the server",
+      "Advance 5% eligibility requires payment completion by 15:00 JST the previous day",
+      "An estimate alone does not confirm payment or discount eligibility"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "stores/mountain-base",
+    "locale": "ja",
+    "title": "Mountain Baseの受取・返却案内",
+    "heading": "Mountain Base",
+    "summary": "予約で選んだ受取店舗で用品を照合します。別店舗の返却が可能でも、受取店舗を自由に変えることはできません。",
+    "bullets": [
+      "営業時間 08:30–17:00",
+      "正式住所・電話・アクセス詳細は公開前確認中"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "stores/mountain-base",
+    "locale": "en",
+    "title": "Mountain Base pickup & return",
+    "heading": "Mountain Base",
+    "summary": "Collect at the planned pickup store. Cross-store returns do not permit an unplanned change of pickup store.",
+    "bullets": [
+      "Opening hours 08:30–17:00",
+      "Official address, telephone and access details await verification"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "stores/onsen-base",
+    "locale": "ja",
+    "title": "Onsen Baseの受取・返却案内",
+    "heading": "Onsen Base",
+    "summary": "予約と用品の所在地を確認して受け渡します。店舗間の移動予定と実際の到着・受領は別に管理します。",
+    "bullets": [
+      "営業時間 08:30–17:00",
+      "正式住所・電話・アクセス詳細は公開前確認中"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "stores/onsen-base",
+    "locale": "en",
+    "title": "Onsen Base pickup & return",
+    "heading": "Onsen Base",
+    "summary": "Handover requires the booking and equipment to match this store. Planned transfers are distinct from actual arrival and receipt.",
+    "bullets": [
+      "Opening hours 08:30–17:00",
+      "Official address, telephone and access details await verification"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "pickup-return",
+    "locale": "ja",
+    "title": "蔵王レンタルの受取・返却の流れ",
+    "heading": "受取から返却まで。",
+    "summary": "予約内容と用品をスタッフが照合します。返却は用品ごとに記録し、受領と検品を分けます。",
+    "bullets": [
+      "午前枠は12:00返却、午後枠は13:00開始・17:00返却",
+      "1日枠は17:00返却",
+      "同日の再貸出はしません"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "pickup-return",
+    "locale": "en",
+    "title": "Zao rental pickup & return guide",
+    "heading": "From pickup to return.",
+    "summary": "Staff check your booking against the equipment. Returns are recorded per item; receipt and inspection are separate.",
+    "bullets": [
+      "Morning: return by 12:00. Afternoon: 13:00–17:00",
+      "Day rentals: return by 17:00",
+      "Equipment is not rented again on the same day"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "faq",
+    "locale": "ja",
+    "title": "蔵王レンタルのよくある質問",
+    "heading": "出発前の、気になること。",
+    "summary": "サイズ、グループ予約、ウェア、受取時刻について、予約の前に確認できます。",
+    "bullets": [
+      "予約QRだけで用品の貸出や個人情報の閲覧を許可しません",
+      "ウェアのみの予約も選択できます",
+      "価格・期限は保存した見積と予約条件で確認します"
+    ],
+    "revision": "public-p0-draft-v1"
+  },
+  {
+    "path": "faq",
+    "locale": "en",
+    "title": "Zao rental FAQ",
+    "heading": "Before you set off.",
+    "summary": "Find answers about sizes, group choices, wear and pickup timing before booking.",
+    "bullets": [
+      "A booking QR alone does not authorize handover or disclosure",
+      "Wear-only selections are supported",
+      "Check the saved estimate and booking conditions for prices and deadlines"
+    ],
+    "revision": "public-p0-draft-v1"
+  }
+]

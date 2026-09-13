@@ -1,4 +1,5 @@
 import {randomUUID} from 'node:crypto';
+import {pickupTiming} from '../../../contracts/src/pickup';
 import type {PoolClient} from 'pg';
 import {BookingService} from '../payment/booking-service';
 import {FlowError,flowHash,flowId,flowObject,flowStore,flowVersion} from '../../../contracts/src/rental-flow';
@@ -17,7 +18,7 @@ export class CustodyService extends BookingService{
    if(prior){if(prior.fingerprint!==fingerprint)throw new FlowError('IDEMPOTENCY_MISMATCH');// Reconcile saved operation identity, then show the current authorized state.
     // Do not display an old OUT/candidate result after another terminal received it.
     const request=input as {operation:string;v?:{bookingId?:string;batchId?:string}};
-    if(request.operation==='prepare'||request.operation==='checkout')return await this.assignment(c,request.v!.bookingId!) as T;
+    if(request.operation==='prepare'||request.operation==='checkout'||request.operation==='completeNoPickup')return await this.assignment(c,request.v!.bookingId!) as T;
     if(['batch','scan','confirm'].includes(request.operation))return await this.batchView(c,request.operation==='batch'?prior.result.id:request.v!.batchId!) as T;
     return prior.result as T;}
    const result=await fn(c,now);await c.query('INSERT INTO rental_requests(actor,request_key,fingerprint,result) VALUES($1,$2,$3,$4)',[this.identity.subject,key,fingerprint,JSON.stringify(result)]);return result;
@@ -26,7 +27,7 @@ export class CustodyService extends BookingService{
  private async pickup(c:Conn,id:string){const b=await this.booking(c,id);await this.authorize('RENTAL_CHECKOUT',[b.conditions.pickupStore]);return b;}
  private async assignment(c:Conn,id:string){const b=await this.pickup(c,id);const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];
   const items=(await c.query(`SELECT DISTINCT cl.requirement_key,cl.asset_id,cl.pole_id,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family,v.size,m.name,a.bsl_status,a.bsl_mm FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) JOIN ledger_models m ON m.id=v.model_id WHERE cl.hold_id=$1 AND cl.active ORDER BY cl.requirement_key`,[b.hold_id])).rows;
-  return {bookingId:b.id,bookingVersion:b.version,holdVersion:h.version,conditions:b.conditions,items,preparation:(await c.query('SELECT * FROM rental_preparations WHERE id=$1',[b.id])).rows[0]??null,loans:(await c.query('SELECT * FROM rental_loan_items WHERE booking_id=$1 ORDER BY requirement_key',[b.id])).rows};
+  return {bookingId:b.id,bookingVersion:b.version,holdVersion:h.version,conditions:b.conditions,pickupTiming:pickupTiming(b.conditions.period,await this.time(c)),noPickup:(await c.query('SELECT outcome,completed_at FROM rental_no_pickup_events WHERE booking_id=$1',[b.id])).rows[0]??null,items,preparation:(await c.query('SELECT * FROM rental_preparations WHERE id=$1',[b.id])).rows[0]??null,loans:(await c.query('SELECT * FROM rental_loan_items WHERE booking_id=$1 ORDER BY requirement_key',[b.id])).rows};
  }
  async checkoutView(id:string){await this.authorize('RENTAL_CHECKOUT');return this.assignment(this.pool,id);}
  async prepare(key:string,value:unknown){const v=flowObject(value,['bookingId','expectedBookingVersion','expectedHoldVersion','selections','fitEvidence']);flowId(v.bookingId);flowVersion(v.expectedBookingVersion);flowVersion(v.expectedHoldVersion);const evidence=note(v.fitEvidence);
@@ -60,6 +61,9 @@ export class CustodyService extends BookingService{
    for(const i of rows)await c.query(`INSERT INTO rental_loan_items(id,cycle_id,booking_id,requirement_key,asset_id,pole_id,pole_slot,family,variant_id,unit,quantity,pickup_store,checked_out_at,checked_out_by,due_at,state) VALUES($1,$2,$2,$3,$4,$5,$6,$7,$8,$9,1,$10,$11,$12,$13,'OUT')`,[randomUUID(),b.id,i.requirement_key,i.asset_id,i.pole_id,i.pole_slot,i.family,i.variant_id,i.family==='SNOWBOARD'?'BOARD':'PAIR',b.conditions.pickupStore,now,this.identity.subject,period.dueAt]);
    await c.query("UPDATE inventory_holds SET allocation_stage='RENTAL_FIXED',version=version+1 WHERE id=$1",[b.hold_id]);return this.assignment(c,b.id);
   });
+ }
+ async completeNoPickup(key:string,value:unknown){const v=flowObject(value,['bookingId']);flowId(v.bookingId);
+  return this.tx('RENTAL_CHECKOUT',[],key,{operation:'completeNoPickup',v},async c=>{await this.pickup(c,v.bookingId as string);},async c=>{await c.query('SELECT public.rental_complete_no_pickup($1)',[v.bookingId]);return this.assignment(c,v.bookingId as string);});
  }
  private async batch(c:Conn,id:string){flowId(id);const b=(await c.query('SELECT * FROM rental_return_batches WHERE id=$1',[id])).rows[0];if(!b||b.owner_id!==this.identity.subject)throw new FlowError('FORBIDDEN',403);await this.authorize('RENTAL_RETURN',[b.store_id]);return b;}
  private async batchView(c:Conn,id:string){const b=await this.batch(c,id);return {...b,candidates:(await c.query(`SELECT c.*,l.booking_id,l.requirement_key,l.family FROM rental_return_candidates c LEFT JOIN rental_loan_items l ON l.id=c.loan_item_id WHERE c.batch_id=$1 ORDER BY c.scanned_at,c.id`,[id])).rows};}

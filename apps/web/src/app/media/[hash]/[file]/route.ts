@@ -1,0 +1,5 @@
+import {createHash} from 'node:crypto';
+import {publicModels} from '../../../../lib/public-content';
+import {publicRuntime} from '../../../../lib/public-runtime';
+export const dynamic='force-dynamic';
+export async function GET(req:Request,p:{params:Promise<{hash:string;file:string}>}){const {hash,file}=await p.params,empty=()=>new Response(null,{status:404,headers:{'Cache-Control':'no-store'}});if(new URL(req.url).search||!/^[a-f0-9]{64}$/.test(hash)||!/^\d+\.(webp|jpg)$/.test(file))return empty();const path='/media/'+hash+'/'+file,v=(await publicModels()).flatMap(m=>m.media.variants).find(v=>v.src===path),r=publicRuntime();if(!v||!r)return empty();const b=(await r.readPool.query('SELECT bytes FROM content_media_objects WHERE sha256=$1',[hash])).rows[0]?.bytes as Buffer|undefined;if(!b||createHash('sha256').update(b).digest('hex')!==hash)return empty();return new Response(new Uint8Array(b),{headers:{'Content-Type':v.type,'Content-Length':String(b.length),'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex'}});}

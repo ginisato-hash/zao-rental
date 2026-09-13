@@ -1,3 +1,5 @@
+import {provisionGuestRole} from '../../scripts/guest-roles';
+import {provisionContentRole} from '../../scripts/content-roles';
 import {provisionCustodyRole} from '../../scripts/custody-roles';
 import {provisionFlowRole} from '../../scripts/flow-roles';
 import {resolve} from 'node:path';
@@ -9,15 +11,17 @@ import {assertPortFree} from '../../scripts/worktree';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import type {DevelopmentRuntime} from '../../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
-export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean}={}){
+export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean}={}){
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
+ let guest:Awaited<ReturnType<typeof provisionGuestRole>>|undefined,content:Awaited<ReturnType<typeof provisionContentRole>>|undefined;
  let custody:Awaited<ReturnType<typeof provisionCustodyRole>>|undefined;
  try{
   await migrate(db.pool);await seed(db.pool,db.identity.namespace);await assertPortFree(db.identity.webPort);
   roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);custody=await provisionCustodyRole(db.pool,db.identity);
+  if(options.publicP0){guest=await provisionGuestRole(db.pool,db.identity);content=await provisionContentRole(db.pool,db.identity);}
   const origin=`http://127.0.0.1:${db.identity.webPort}`;
   const config:DevelopmentRuntime={origin,namespace:db.identity.namespace,authSecret:randomBytes(32).toString('hex'),authDb:roles.authDb,ledgerDb:roles.ledgerDb,holdDb:roles.holdDb,transferDb:roles.transferDb,pricingDb:roles.pricingDb,recommendationDb:roles.recommendationDb};
-  const env:NodeJS.ProcessEnv={NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
+  const env:NodeJS.ProcessEnv={...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin,ZAO_TEST_PUBLIC_INDEXING:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
   const args=['node_modules/next/dist/bin/next','dev','tests/flow-app','--webpack','--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   function launch(){
    const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});
@@ -28,10 +32,17 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
    return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
   }
   let current=launch(),stopping:Promise<void>|undefined,restarting=false;
-  const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();
-  return {origin,db,roles,flow,custody,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
+  const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();
+  if(options.publicP0){
+   // Next dev cold route compilation can reconnect HMR and reload an active form.
+   // Compile this catch-all before opening a browser; this anonymous read must stay401.
+   try{let ready=false;for(let n=0;n<100;n++){try{if((await fetch(origin+'/api/health')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}if(!ready)throw new Error('TEST_APP_START_TIMEOUT');
+    const rejected=await fetch(origin+'/api/custody/booking/00000000-0000-4000-8000-000000000000');if(rejected.status!==401)throw new Error('TEST_ANONYMOUS_CUSTODY_NOT_REJECTED');
+   }catch(e){await stop();throw e;}
+  }
+  return {origin,db,roles,flow,custody,guest,content,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
    if(stopping||restarting)throw new Error('TEST_RESTART_NOT_ALLOWED');restarting=true;
    try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();return {oldPid:old,newPid:current.pid};}finally{restarting=false;}
   }};
- }catch{await custody?.close();if(flow)await flow.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
+ }catch{await guest?.close();await content?.close();await custody?.close();if(flow)await flow.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
 }

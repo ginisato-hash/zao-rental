@@ -41,6 +41,7 @@ export async function provisionApplicationRoles(owner:Pool,identity:{namespace:s
   if(suffix==='recommendation'){await owner.query(`GRANT SELECT ON staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,ledger_stores,ledger_variants,recommendation_history TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON recommendation_previews TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE ON recommendation_selections TO ${user}`);}
   if((await owner.query("SELECT to_regclass('public.rental_inspection_events') IS NOT NULL AS present")).rows[0].present&&['ledger','hold','transfer'].includes(suffix))await owner.query(`GRANT SELECT ON rental_inventory_blocks,rental_loan_items,rental_inspection_events TO ${user}`);
   if(suffix==='hold'&&(await owner.query("SELECT to_regclass('public.rental_inspection_events') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT SELECT(id,hold_id) ON rental_bookings TO ${user}`);
+  if(['hold','pricing','recommendation'].includes(suffix)&&(await owner.query("SELECT to_regclass('public.guest_contexts') IS NOT NULL AS present")).rows[0].present){await owner.query(`GRANT SELECT ON guest_contexts,booking_actors TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);}
   connections.push({host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password});
  }
  await owner.query(`REVOKE ALL ON DATABASE ${identity.database} FROM PUBLIC`);

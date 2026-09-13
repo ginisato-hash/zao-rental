@@ -1,3 +1,20 @@
+## Current supervised Public P0 approval
+
+Read docs/execution/PUBLIC_P0_APPROVAL.md and PUBLIC_P0_STATUS.json first.
+The owner approved the exact PR10 merge and now authorizes Public customer UX,
+guest-owned booking BFF, SEO P0 and PostgreSQL content/catalog boundaries.
+UI basis: docs/execution/sources/wear-v1.2/reference/ZAO_Rental_Public_UX_CMS_Spec_v1.md,
+as adopted by the current owner request (its old IMPLEMENTATION_NOT_AUTHORIZED label
+is historical). Preserve later quantity-wear and exact Premium contracts.
+New branch from merged main f21b8748dba31803433e1476e143a7a1c040ee3a.
+Never fake a staff principal or drop staff-owner checks to expose guest data.
+No production release/deploy, real Square/Sandbox, external credentials, real data,
+new billing/host rights, PR3/Runner, or merge of this new PR. End at a new Draft PR
+with exact-head CI, existing Team/tool-free static review and explicit gaps.
+Prior flow/custody review histories and consumed budgets stay historical, not reusable.
+
+## Historical scopes (current owner request above takes precedence)
+
 ## Current limited custody authorization
 
 Read docs/execution/CUSTODY_BOUNDARY_APPROVAL.md and CUSTODY_BOUNDARY_STATUS.json.

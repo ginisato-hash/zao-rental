@@ -50,7 +50,12 @@
     "test:wear-mixed": "node --import tsx tests/wear/mixed.ts",
     "test:content-fixture": "node --import tsx tests/content/normal-ui.ts",
     "test:custody": "node --import tsx tests/custody/boundary-counterexample.ts && node --import tsx tests/custody/real-postgres.ts && node --import tsx tests/custody/scenarios.ts",
-    "test:custody-ui": "node --import tsx tests/custody/normal-ui.ts"
+    "test:custody-ui": "node --import tsx tests/custody/normal-ui.ts",
+    "test:late-pickup": "node --import tsx tests/custody/late-pickup.ts",
+    "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts",
+    "test:public-content": "node --import tsx tests/public/content-postgres.ts",
+    "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",
+    "demo:public": "node --import tsx tests/public/demo.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",

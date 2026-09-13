@@ -80,7 +80,7 @@ try{
  await check('permission and store removals are enforced by normal APIs, while old displayed data is unmounted',async()=>{
   assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision,role:'MANAGER',permissions:{INVENTORY_EDIT:false}}})).status(),200);
   assert.equal((await editor.request.post('/api/ledger/assets',{headers:{origin},data:{}})).status(),403);
-  await page.evaluate(()=>window.dispatchEvent(new Event('pageshow')));await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();await expect(page.getByRole('heading',{name:'道具の台帳'})).toHaveCount(0);
+  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();await expect(page.getByRole('heading',{name:'道具の台帳'})).toHaveCount(0);
   assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision,storeIds:['ONSEN_BASE']}})).status(),200);
   assert.equal((await editor.request.get('/api/ledger/assets?storeId=MOUNTAIN_BASE')).status(),403);
   assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision}})).status(),200);

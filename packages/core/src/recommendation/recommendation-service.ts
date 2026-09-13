@@ -1,10 +1,10 @@
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
-import {loadStaff,type StaffPrincipal} from '../../../auth/src/staff-auth';
+import {authorizeBookingActor,type BookingActor} from '../../../auth/src/booking-actor';
 import {canonical,HoldError,type HoldConditions} from '../../../contracts/src/hold';
 import {holdScope,type CandidateContext} from '../../../contracts/src/hold-intake';
 import {exact,id,code} from '../../../contracts/src/pricing';
-import {parseRecommendation,buildMembers,sizing,rankCandidates,RECOMMENDATION_RULE,MODEL_POLICY,DIRECTIONS,RecommendationError,type RecommendationInput,type MemberRecommendation,type Direction} from '../../../contracts/src/recommendation';
+import {parseRecommendation,buildMembers,sizing,rankCandidates,RECOMMENDATION_RULE,MODEL_POLICY,DIRECTIONS,RecommendationError,type RecommendationInput,type MemberRecommendation,type Direction,type Variant} from '../../../contracts/src/recommendation';
 import {HoldService} from '../inventory/hold-service';
 import {QuoteService} from '../pricing/quote-service';
 type Conn=Pick<PoolClient,'query'>;
@@ -12,12 +12,12 @@ type Preview={id:string;owner_id:string;request_key:string;fingerprint:string;ru
 type Selection={preview_id:string;owner_id:string;request_key:string;fingerprint:string;selection:{directions:Record<string,Direction>;wantAdvance:boolean;couponCode:string|null;acceptedModelPolicy:true};conditions:HoldConditions;hold_key:string;quote_key:string;hold_id:string|null;quote_id:string|null;stage:'INTENT'|'HOLD_FAILED'|'HOLD_SAVED'|'COMPLETE';outcome:string|null};
 const hash=(x:unknown)=>createHash('sha256').update(canonical(x)).digest('hex');
 export class RecommendationService {
- constructor(private pool:Pool,private principal:StaffPrincipal,private holds:HoldService,private quotes:QuoteService){}
- private async auth(c:Conn,edit=false,stores:string[]=[]){const p=await loadStaff(c as Pick<Pool,'query'>,this.principal.subject);const permissions=['HOLD_VIEW','QUOTE_VIEW',...(edit?['HOLD_EDIT','QUOTE_CREATE']:[])];if(!p||p.revision!==this.principal.revision||permissions.some(v=>!p.permissions.includes(v as never))||stores.some(s=>!p.storeIds.includes(s as never)))throw new RecommendationError('FORBIDDEN',403);return p;}
+ constructor(private pool:Pool,private principal:BookingActor,private holds:HoldService,private quotes:QuoteService,private variantFilter?:(variants:Variant[])=>Promise<Variant[]>){}
+ private async auth(c:Conn,edit=false,stores:string[]=[]){return authorizeBookingActor(c,this.principal,['HOLD_VIEW','QUOTE_VIEW',...(edit?['HOLD_EDIT','QUOTE_CREATE']:[])],stores);}
  private async owned(c:Conn,previewId:string,edit=false){id(previewId);await this.auth(c,edit);const p=(await c.query<Preview>('SELECT * FROM recommendation_previews WHERE id=$1 AND owner_id=$2',[previewId,this.principal.subject])).rows[0];if(!p)throw new RecommendationError('FORBIDDEN',403);await this.auth(c,edit,[p.input.pickupStore,p.input.returnStore]);return p;}
  private normalize(e:unknown):never{if(e instanceof HoldError)throw e;const code=(e as {code?:string})?.code;if(['55P03','57014','40001','40P01'].includes(code??'')||e instanceof Error&&/timeout|timed out/i.test(e.message))throw new RecommendationError('INDETERMINATE',503);throw new RecommendationError('RECOMMENDATION_FAILED',500);}
  private async tx<T>(lock:string,edit:boolean,preflight:(c:Conn)=>Promise<unknown>,fn:(c:PoolClient)=>Promise<T>){let c:PoolClient|undefined;try{await this.auth(this.pool,edit);await preflight(this.pool);c=await this.pool.connect();await c.query('BEGIN');await c.query("SET LOCAL statement_timeout='5000ms';SET LOCAL idle_in_transaction_session_timeout='15000ms';SET LOCAL lock_timeout='1500ms'");await this.auth(c,edit);await preflight(c);if(!(await c.query<{ok:boolean}>('SELECT pg_try_advisory_xact_lock(71820900,hashtext($1)) AS ok',[lock])).rows[0]!.ok)throw new RecommendationError('OPERATION_IN_PROGRESS',409);await this.auth(c,edit);await preflight(c);await c.query("SELECT set_config('zao.actor',$1,true)",[this.principal.subject]);const value=await fn(c);await c.query('COMMIT');return value;}catch(e){await c?.query('ROLLBACK').catch(()=>{});return this.normalize(e);}finally{c?.release();}}
- private async variants(){await this.auth(this.pool);return this.holds.recommendationCatalog();}
+ private async variants(){await this.auth(this.pool);const variants=await this.holds.recommendationCatalog();return this.variantFilter?this.variantFilter(variants):variants;}
  async options(){return {variants:await this.variants(),ruleVersion:RECOMMENDATION_RULE,modelPolicy:MODEL_POLICY,productionAvailable:false};}
  async list(){const p=await this.auth(this.pool);return (await this.pool.query('SELECT id,input,created_at FROM recommendation_previews WHERE owner_id=$1 AND input->>\'pickupStore\'=ANY($2::text[]) AND input->>\'returnStore\'=ANY($2::text[]) ORDER BY created_at DESC,id LIMIT 50',[p.subject,p.storeIds])).rows;}
  async get(previewId:string){const p=await this.owned(this.pool,previewId);const s=(await this.pool.query<Selection>('SELECT * FROM recommendation_selections WHERE preview_id=$1',[p.id])).rows[0]??null;const hold=s?.hold_id?await this.holds.get(s.hold_id):null;const quote=s?.quote_id?await this.quotes.get(s.quote_id):null;await this.auth(this.pool,false,[p.input.pickupStore,p.input.returnStore]);const matches=Boolean(s&&hold&&hash(hold.conditions)===hash(s.conditions));return {preview:p,selection:s,hold,quote,selectionMatchesHold:matches,meaning:'PRIVATE_PREVIEW_NOT_BOOKING_OR_PAYMENT'};}
@@ -41,6 +41,12 @@ export class RecommendationService {
    const old=(await c.query<Preview>('SELECT * FROM recommendation_previews WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,requestKey])).rows[0];if(old){if(old.fingerprint!==fingerprint)throw new RecommendationError('IDEMPOTENCY_MISMATCH',409);return old.id;}
    const pid=randomUUID();await c.query('INSERT INTO recommendation_previews(id,owner_id,request_key,fingerprint,rule_version,model_policy,input,offered,reservation_id,replacement_hold_id,replacement_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',[pid,this.principal.subject,requestKey,fingerprint,RECOMMENDATION_RULE,MODEL_POLICY,JSON.stringify(parsed),JSON.stringify(offered),reservationId,replaceHoldId,replacement?.version??null]);return pid;
   });return this.get(pid);
+ }
+ async advisory(previewId:string,value:unknown){const p=await this.owned(this.pool,previewId);const x=exact(value,['directions','wantAdvance','couponCode','acceptedModelPolicy']);
+  if(x.acceptedModelPolicy!==true||typeof x.wantAdvance!=='boolean'||x.couponCode!==null||!x.directions||typeof x.directions!=='object'||Array.isArray(x.directions))throw new RecommendationError('INVALID_SELECTION');
+  const directions=x.directions as Record<string,Direction>;if(Object.keys(directions).sort().join()!==p.input.members.map(m=>m.key).sort().join())throw new RecommendationError('INVALID_SELECTION');
+  const members=p.input.members.map(m=>{const d=directions[m.key]!;if(!DIRECTIONS.includes(d))throw new RecommendationError('INVALID_SELECTION');const c=p.offered.find(o=>o.key===m.key)?.candidates[d];if(!c)throw new RecommendationError('CANDIDATE_NOT_OFFERED');return c.member;});
+  return this.quotes.preview({conditions:{...(p.input.contractVersion?{contractVersion:p.input.contractVersion}:{}),reservationId:p.reservation_id,pickupStore:p.input.pickupStore,returnStore:p.input.returnStore,period:p.input.period,members},holdId:null,couponCode:null,wantAdvance:x.wantAdvance});
  }
  async select(previewId:string,requestKey:string,value:unknown){id(requestKey);const p=await this.owned(this.pool,previewId,true);const x=exact(value,['directions','wantAdvance','couponCode','acceptedModelPolicy']);if(x.acceptedModelPolicy!==true||typeof x.wantAdvance!=='boolean'||!x.directions||typeof x.directions!=='object'||Array.isArray(x.directions))throw new RecommendationError('INVALID_SELECTION');const directions=x.directions as Record<string,Direction>;
   if(Object.keys(directions).sort().join()!==p.input.members.map(m=>m.key).sort().join()||Object.values(directions).some(v=>!DIRECTIONS.includes(v)))throw new RecommendationError('INVALID_SELECTION');

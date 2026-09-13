@@ -2,7 +2,8 @@ import {FlowError,matchPayment,type PaymentGateway,type PaymentRequest,type Paym
 import {squareCreateBody,squareObservation,parseVerifiedSquareWebhook} from './square-boundary';
 export const SQUARE_VERSION='2026-08-19';
 export const SQUARE_SANDBOX_ORIGIN='https://connect.squareupsandbox.com';
-export type SquareCall={method:'GET'|'POST';url:string;version:typeof SQUARE_VERSION;body?:ReturnType<typeof squareCreateBody>;signal:AbortSignal};
+export type SandboxRefundBody={idempotency_key:string;payment_id:string;amount_money:{amount:number;currency:'JPY'};reason:'SYNTHETIC_P4_SANDBOX_TEST'};
+export type SquareCall={method:'GET'|'POST';url:string;version:typeof SQUARE_VERSION;body?:ReturnType<typeof squareCreateBody>|SandboxRefundBody;signal:AbortSignal};
 /** No default fetch or credential reader. The owner-approved future transport must bind
  * a Sandbox account/merchant and honor cancellation; fixtures use the exact same port. */
 export interface SquareSandboxTransport{readonly environment:'SANDBOX';readonly merchantId:string;send(call:SquareCall):Promise<{status:number;body:unknown}>;}

@@ -1,0 +1,14 @@
+{
+  "observed_utc": "2026-09-13T16:08:01.887798+00:00",
+  "first_attempt_exit": 1,
+  "first_attempt_log_bytes": 0,
+  "classified": "ENVIRONMENT_BLOCKED_NOT_CODE_REPRODUCTION",
+  "evidence": "zsh cannot create here-document temp file: no space left on device; df128MiB",
+  "action": "only P4 npm-cache and apps/web/.next and tests/flow-app/.next removed; source/evidence/DB/other worktrees preserved",
+  "after_free": "629MiB",
+  "owned_ports": [
+    25533,
+    35533
+  ],
+  "owned_listeners": 0
+}

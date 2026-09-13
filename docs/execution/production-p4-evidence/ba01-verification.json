@@ -1,0 +1,373 @@
+{
+  "runId": "2026-09-13T15-32-55.051Z",
+  "commands": [
+    {
+      "disposed_clusters": 0,
+      "command": "npm run check:reference",
+      "exit_code": 0,
+      "start": "2026-09-13T15:32:55.051Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/check-reference.log",
+      "sha256": "d5585857a54ece08cc81e7241049e8de7d0b31a14fef682edf095d4ad1621096"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run check:secrets",
+      "exit_code": 0,
+      "start": "2026-09-13T15:32:55.177Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/check-secrets.log",
+      "sha256": "0d4715828cfbc56348fdf4e7d9c201e322264f850742fa233cc16e91c66cf39f"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run test:reference",
+      "exit_code": 0,
+      "start": "2026-09-13T15:32:55.607Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-reference.log",
+      "sha256": "4a826197809db9ac35afff3caa0e7c34021b1a499af4f4e345b5b73d8927e706"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run lint",
+      "exit_code": 0,
+      "start": "2026-09-13T15:32:55.761Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/lint.log",
+      "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:01.471Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/typecheck.log",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run test:unit",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:05.641Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-unit.log",
+      "sha256": "c64ad2cd82477d4844089504fa766f8d4871f62ff0d49aa295d1595e5c147f87"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run test:controller:macos",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:12.050Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-controller-macos.log",
+      "sha256": "701fb8b29cebc2c36d8729f4096fea302c3dd7cab904b2d9bd948844f2809987"
+    },
+    {
+      "disposed_clusters": 4,
+      "command": "npm run test:integration",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:15.614Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-integration.log",
+      "sha256": "b103a2d3bf74fc05be96cda7b39f0111fc8954716de213642977c2abe044a9a6"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:inventory",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:25.210Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-inventory.log",
+      "sha256": "69fb782505e4360afc78960abe46d8a21d83a9548bd82b62a4d45702223d4f01"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:transfer",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:33.174Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-transfer.log",
+      "sha256": "6151b6bed307c54b8542daab2fa3f27038487ea1876752f7a65801c5b8166a90"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:pricing",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:35.713Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-pricing.log",
+      "sha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:recommendation",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:38.136Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-recommendation.log",
+      "sha256": "5148553421bee416fa3f95cbccc7db3095533db894f1cd0d4be70c9253eb6384"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run build",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:42.771Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/build.log",
+      "sha256": "e2e04af4505c80ff32ae8ef2abd9e92f27f0447ff8ee2e18494dabbd93730fe9"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:auth",
+      "exit_code": 0,
+      "start": "2026-09-13T15:33:53.946Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-auth.log",
+      "sha256": "f33f15ee630c32e3020a298c9d40a341be18c7eb22f0a166d192dcba5f126d6f"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:holds-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:01.780Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-holds-ui.log",
+      "sha256": "1e99ac019109f32c721861e2239c70042774d564a970de3a93503270dbb527cc"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:transfers-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:06.523Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-transfers-ui.log",
+      "sha256": "6da379b58546c18d6a91032e6c8076c1c6099c7dee95d8d0dd851b6a994b9483"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:quotes-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:11.155Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-quotes-ui.log",
+      "sha256": "f04042a28650471e5f38fb7f50e8176bf146c96ff01c3a1449fa487f44bd8136"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:recommendations-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:16.167Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-recommendations-ui.log",
+      "sha256": "eed04aae814dbc23a7401cd6489f1e23a8bd8332f8425f98abc99e1deb894f07"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:recommendation-audit",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:24.187Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-recommendation-audit.log",
+      "sha256": "631f0cdbe9d0e4e579ea45897a35674c7f232f2a50a4b951dd36f1ab0684253e"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:recommendation-continuation",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:30.153Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-recommendation-continuation.log",
+      "sha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:stabilization-s01",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:36.904Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-stabilization-s01.log",
+      "sha256": "449153570b79949986f2fa3691ae751ec765fb7dd29c69de88dabe81cdd21a53"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:stabilization-upgrade",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:48.911Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-stabilization-upgrade.log",
+      "sha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:stabilization-cd",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:50.861Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-stabilization-cd.log",
+      "sha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:stabilization-eg",
+      "exit_code": 0,
+      "start": "2026-09-13T15:34:54.986Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-stabilization-eg.log",
+      "sha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:stabilization-mixed",
+      "exit_code": 0,
+      "start": "2026-09-13T15:35:00.612Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-stabilization-mixed.log",
+      "sha256": "0889a35f4f3496480a6ac6966fb2cc42a4c164690009eca257f7625997777c44"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:square-activation",
+      "exit_code": 0,
+      "start": "2026-09-13T15:35:06.887Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-square-activation.log",
+      "sha256": "268f595264b532ddadd98f4731ff2abd4e3923a899903200d85e97486d0df9dd"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:flow-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:35:10.786Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-flow-ui.log",
+      "sha256": "d3fdf03e74b05a62ebd43b9f8796e9465e5f01a8b137324b01ebabfb34c731bf"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:asset-reader",
+      "exit_code": 0,
+      "start": "2026-09-13T15:35:36.836Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-asset-reader.log",
+      "sha256": "34632c6704a19573b3a241baebb5be778ea7913ace7ae42c8fc2ece3102b123a"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:flow-restart",
+      "exit_code": 0,
+      "start": "2026-09-13T15:35:47.436Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-flow-restart.log",
+      "sha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:flow-scope-race",
+      "exit_code": 0,
+      "start": "2026-09-13T15:36:10.205Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-flow-scope-race.log",
+      "sha256": "5620dd6666952fc952b8390977d742ef0570f548b32da531a7acadc4f3423644"
+    },
+    {
+      "disposed_clusters": 3,
+      "command": "npm run test:custody",
+      "exit_code": 0,
+      "start": "2026-09-13T15:36:12.482Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-custody.log",
+      "sha256": "1da8f8672e46c54fd92312416c2488b17fe3257a3d80f9ed0025617aeaf5b2ee"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:custody-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:36:18.998Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-custody-ui.log",
+      "sha256": "8183d637b97599962cbf24c2c541a24977c7fe5eef02689bb5e36d0c627a17f6"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:late-pickup",
+      "exit_code": 0,
+      "start": "2026-09-13T15:36:47.001Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-late-pickup.log",
+      "sha256": "1a8db5396302c008ee0b686afcd5eb1387a24ebbf5e871a9b078be92f51a42ec"
+    },
+    {
+      "disposed_clusters": 2,
+      "command": "npm run test:wear",
+      "exit_code": 0,
+      "start": "2026-09-13T15:36:49.675Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-wear.log",
+      "sha256": "0f124cc3deedd164ca8b5593deb5f15f5184a5f4fab58dbe04c9dd63bcdbbf83"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:wear-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:36:54.357Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-wear-ui.log",
+      "sha256": "102ab4f5e1204e497360b395a81cb0f218d226c42eb7a0f4080e8fab9884f650"
+    },
+    {
+      "disposed_clusters": 2,
+      "command": "npm run test:wear-mixed",
+      "exit_code": 0,
+      "start": "2026-09-13T15:37:31.226Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-wear-mixed.log",
+      "sha256": "71ee7e9b28b1c2ad1589348215023330a8af98c7c5cbc122b7b8c5eb8a856898"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:content-fixture",
+      "exit_code": 0,
+      "start": "2026-09-13T15:38:34.717Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-content-fixture.log",
+      "sha256": "2434698e9641257a6d986ae419ef7f240a866ee54d42ac2cad6be0858f72fcd7"
+    },
+    {
+      "disposed_clusters": 2,
+      "command": "npm run test:public-guest",
+      "exit_code": 0,
+      "start": "2026-09-13T15:39:07.522Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-public-guest.log",
+      "sha256": "af53ef49060fe03b9816ff64db68dbf7239ff87026decf9eb519f4421d2503f5"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:public-content",
+      "exit_code": 0,
+      "start": "2026-09-13T15:39:12.592Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-public-content.log",
+      "sha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e"
+    },
+    {
+      "disposed_clusters": 2,
+      "command": "npm run test:public-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:39:14.908Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-public-ui.log",
+      "sha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:staff-diagnostic",
+      "exit_code": 0,
+      "start": "2026-09-13T15:39:57.498Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-staff-diagnostic.log",
+      "sha256": "6a09f8a5b4ec28c3c40ef990d9e7f2a0a43d2042c798f501745115cc8e04c695"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:readiness-guest",
+      "exit_code": 0,
+      "start": "2026-09-13T15:40:04.224Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-readiness-guest.log",
+      "sha256": "6af4274e7aa39863cff57a094fd861208d8e5fd34f92f1e729b6c191dbf7fa88"
+    },
+    {
+      "disposed_clusters": 1,
+      "command": "npm run test:readiness-ui",
+      "exit_code": 0,
+      "start": "2026-09-13T15:40:06.350Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-readiness-ui.log",
+      "sha256": "6ef1b6c27b715cb7408700c5f82ebb3f46166d505d8179414c93d2a30dbdd25c"
+    },
+    {
+      "disposed_clusters": 2,
+      "command": "npm run test:integration-p2",
+      "exit_code": 0,
+      "start": "2026-09-13T15:40:20.689Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-integration-p2.log",
+      "sha256": "e1ae83f8c19c374bd9acaf4b8dca43b70f8918b10ae04e3839e3a9de8c2a126c"
+    },
+    {
+      "disposed_clusters": 6,
+      "command": "npm run test:activation-p4",
+      "exit_code": 0,
+      "start": "2026-09-13T15:40:26.397Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-activation-p4.log",
+      "sha256": "4efbb609ee084be3697afb2f75b024991a361f1a0349100d62bd5d9b4b3eb4d1"
+    },
+    {
+      "disposed_clusters": 0,
+      "command": "npm run test:e2e",
+      "exit_code": 0,
+      "start": "2026-09-13T15:40:50.438Z",
+      "log_path": ".local/evidence/2026-09-13T15-32-55.051Z/test-e2e.log",
+      "sha256": "61f3ee6023c28587a86fa7806539587c3c6e0062a9634d1c3f1f4b806679bdce"
+    }
+  ]
+}

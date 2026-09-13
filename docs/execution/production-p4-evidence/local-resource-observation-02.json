@@ -1,0 +1,10 @@
+{
+  "run": "2026-09-13T14-46-12.576Z",
+  "completed_successfully": 30,
+  "failed_command": "npm run test:custody",
+  "failure": "initdb FATAL could not write base/5/3609: No space left on device",
+  "root_cause_evidence": "Explicit PostgreSQL ENOSPC; no test assertion failed",
+  "correction": "verify disposes only newly created owned stopped clusters after each successful command; preserves logs and pre-existing/live/symlink paths",
+  "acceptance_unchanged": true,
+  "automatic_retry_added": false
+}

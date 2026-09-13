@@ -1,0 +1,99 @@
+{
+  "started_utc": "2026-09-13T13:42:25Z",
+  "started_jst": "2026-09-13T22:42:25+09:00",
+  "approved_pr14_head": "6b40d9b74707111d7ecc04a32b86ec0170c76619",
+  "ready_ci": 34760669587,
+  "historical_p3_starts": 2,
+  "historical_unused_added": false,
+  "owner_connection_answer": {
+    "sandbox_application": "UNCONFIRMED_DO_NOT_ASSUME",
+    "secret_store": "UNSELECTED_UNCONFIGURED",
+    "sandbox_https_webhook": "NOT_CREATED",
+    "real_square_requests": "BLOCKED",
+    "secrets_requested_or_stored": false
+  },
+  "base": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+  "branch": "codex/production-activation-p4",
+  "implemented": [
+    "confirmed-booking-capability",
+    "Sandbox-journal-and-service-composition",
+    "Sandbox-refund-trial",
+    "R2-SDK-adapter",
+    "Owner-decision-metadata"
+  ],
+  "unresolvedExternal": [
+    "Sandbox application unconfirmed",
+    "secret store unselected/unconfigured",
+    "Sandbox HTTPS webhook receiver absent",
+    "email delivery",
+    "actual R2 account/credential/CDN",
+    "Vercel trusted ingress",
+    "Owner commercial/device/deploy gates"
+  ],
+  "stage": "CORRECTIVE_PUSH_CI_REVIEW",
+  "pr14_merge_commit": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+  "state": "BA01_RES_LOCALLY_CORRECTED_PENDING_EXACT_CI_REVIEW",
+  "claude_starts": 2,
+  "production_activation": false,
+  "p4_merge_authorized": false,
+  "realSandbox": "BLOCKED_PREREQUISITES",
+  "external_counts": {
+    "square_payments": 0,
+    "square_refunds": 0,
+    "storage_requests": 0
+  },
+  "targeted_evidence_before_full_verify": {
+    "booking_access_real_postgres": 9,
+    "normal_ui_real_postgres": 6,
+    "sandbox_fixture_real_postgres": 9,
+    "r2_sdk_fixture_tests": 2,
+    "real_phone_tests": 0,
+    "production_route_tests": "503 remains"
+  },
+  "local_verify": {
+    "failed_runs": [
+      "2026-09-13T14-31-00.660Z",
+      "2026-09-13T14-46-12.576Z",
+      "2026-09-13T16-12-11.047Z"
+    ],
+    "successful_run": "2026-09-13T16-13-55.241Z",
+    "commands": 46,
+    "exit_code": 0,
+    "e2e": 18,
+    "auto_retry_or_skip_added": false,
+    "owned_successful_clusters_disposed": 52,
+    "previous_successful_run": "2026-09-13T14-51-13.987Z",
+    "prior_successful_runs": [
+      "2026-09-13T14-51-13.987Z",
+      "2026-09-13T15-32-55.051Z"
+    ],
+    "failure_reason_latest": "React lint rejected synchronous effect state; corrected without lint suppression"
+  },
+  "next": "Full verify, normal corrective push, exact-head CI, necessary residual-finding static confirmation",
+  "external_prerequisites_reconfirmed_by_owner": true,
+  "review": {
+    "head": "d1ab841c918830e8bcd7c1a37096f678586f883b",
+    "verdict": "CHANGES_REQUIRED",
+    "findings": 1,
+    "id": "BA-01-RES",
+    "comment": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654400139"
+  },
+  "review_history": [
+    {
+      "head": "8d78268849066478f79f614219eef92425a299ba",
+      "original_verdict": "REVIEW_PASS",
+      "findings": 1,
+      "effective_disposition": "CHANGES_REQUIRED",
+      "id": "BA-01",
+      "comment": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654204525",
+      "disposition": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654210613"
+    },
+    {
+      "head": "d1ab841c918830e8bcd7c1a37096f678586f883b",
+      "verdict": "CHANGES_REQUIRED",
+      "findings": 1,
+      "id": "BA-01-RES",
+      "comment": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654400139"
+    }
+  ]
+}

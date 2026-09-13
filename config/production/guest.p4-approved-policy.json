@@ -1,0 +1,17 @@
+{
+  "state": "OWNER_APPROVED_VALUES_INGRESS_UNVERIFIED",
+  "purpose": "GUEST_DRAFT_CHECKOUT_ONLY",
+  "policy": {
+    "version": "owner-balanced-p4",
+    "contextSeconds": 3600,
+    "absoluteSeconds": 86400,
+    "recoverySeconds": 43200,
+    "replaySeconds": 600,
+    "retentionSeconds": 86400,
+    "windowSeconds": 60,
+    "peerRequests": 180,
+    "globalRequests": 1200
+  },
+  "hostingCandidate": "VERCEL_DIRECT",
+  "productionActivation": false
+}

@@ -1,3 +1,17 @@
+## Current supervised Production Activation P4
+
+Read docs/execution/PRODUCTION_P4_APPROVAL.md and PRODUCTION_P4_STATUS.json.
+Owner authorized PR14 exact-head merge, now370de54fb12fcb3b036f886acfb60747b55d9bd7.
+Implement approved guest-policy metadata, separate confirmed-booking read capability,
+Sandbox preconnection code/fixtures/real dedicated DB tests and R2 adapter evidence.
+Actual Square application/secret store/HTTPS receiver are unprepared: BLOCK external
+calls only; continue independent work. Vercel ingress stays fail closed; no production,
+real data, new billing/privilege, Ruleset change, new PR merge or PR3/Runner activation.
+Existing Team/creditsOFF/tool-free independent review. Preserve history and finish at
+Draft PR with exact CI/review, Owner gates and owned cleanup.
+
+## Historical P3 and earlier scopes (superseded only by current Owner authority)
+
 ## Current supervised Production Activation Prep P3
 
 Read PRODUCTION_P3_APPROVAL.md / PRODUCTION_P3_STATUS.json and OWNER_DECISIONS_REQUIRED.md under docs/execution.

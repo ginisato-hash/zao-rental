@@ -1,0 +1,21 @@
+{
+  "run_id": 34760669587,
+  "attempt": 1,
+  "event": "pull_request",
+  "repository": "ginisato-hash/zao-rental",
+  "workflow": ".github/workflows/ci.yml",
+  "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34760669587",
+  "base": "eb9e940fca5eb75956b60d76082ea7a0cb230ee6",
+  "head": "6b40d9b74707111d7ecc04a32b86ec0170c76619",
+  "checkout": "25bed13214ac25c81fc70b26be72b13c6f874fb6",
+  "tree": "ab69e1394ea5aa8d44035dc7aacd7bb3658c05b3",
+  "conclusion": "success",
+  "artifact_digest": "sha256:4f489d0af297714ea73b097156815c9aa39f3ec37a3945911bcc34c05287fc7e",
+  "jobs": [
+    {
+      "name": "foundation",
+      "conclusion": "success"
+    }
+  ],
+  "checked_at": "2026-09-13T13:59:44.032835+00:00"
+}

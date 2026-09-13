@@ -1,0 +1,29 @@
+{
+  "finding": "BA-01-RES",
+  "original_review_verdict": "CHANGES_REQUIRED",
+  "review_head": "d1ab841c918830e8bcd7c1a37096f678586f883b",
+  "classification": "CODE_CONFIRMED_AND_ORDINARY_UI_REAL_DB_GUARD_REGRESSION",
+  "before": {
+    "command": "node --import tsx tests/readiness/booking-access-ui.ts",
+    "exit_code": 1,
+    "log": "p4-ba01-res-before-confirmed.log",
+    "sha256": "845b29e625d7edc32b623f3d06655b91b7b4cb790af5ba42e016bee16bf6b303",
+    "failure": "reload GET held at explicit synchronization; revoke unexpectedly enabled while view is null. This assertion does not claim a pre-fix full revoke/resave HTTP trace."
+  },
+  "after": {
+    "same_command": true,
+    "exit_code": 0,
+    "log": "p4-ba01-res-after.log",
+    "sha256": "bf26c4e681e45a4690a2169b718ca3664f401276beb7611b4915b0ff3d56ebd9",
+    "cases": 6
+  },
+  "change": "Initial/reload read must settle before revoke. Require a loaded booking or retained pending-revoke binding; pending binding permits acknowledged retry after response loss/reload. Focus refresh cannot overlap active revoke; old response tickets cannot reveal stale view. Server API/SQL/role/TTL/anti-revival unchanged.",
+  "kept": "same-request issue replay; lost revoke acknowledgement; unrelated client keys; server owner/expiry/revocation; production fail closed",
+  "test_environment_observations": [
+    "initial empty exit1 during ENOSPC, not a code reproduction",
+    "initial new route cleanup raced its own fulfill, corrected by release then unrouteAll wait; not counted as product failure"
+  ],
+  "independent_recheck": "PENDING_NEW_HEAD_CI_AND_NECESSARY_CORRECTIVE_REVIEW",
+  "actual_square_payments": 0,
+  "actual_square_refunds": 0
+}

@@ -1,0 +1,20 @@
+{
+  "run": "2026-09-13T14-31-00.660Z",
+  "failure": "flow-restart startup Error",
+  "commands_passed_before_failure": 28,
+  "initial_error_detail": "withheld by existing safe launcher; exact PostgreSQL cause unavailable",
+  "environment_evidence": [
+    "disk available142MiB at14:44UTC, then here-document ENOSPC",
+    "P4 disposable stopped database clusters1.9GiB",
+    "32 P4-only stopped clusters removed; no live clusters; logs retained",
+    "2GiB free after cleanup"
+  ],
+  "diagnosis": "Resource exhaustion observed; do not claim exact initial exception proven. After owned cleanup same restart assertions passed.",
+  "diagnostic_change": "test launcher fixed phase and allowlisted SQLSTATE only; no raw error/credential logging",
+  "targeted_after_cleanup_exit_code": 0,
+  "retries_or_expectation_changes": false,
+  "historical_observations_unchanged": [
+    "CI34749426170 staff-create500",
+    "CI34756544102 wear HTTP failure"
+  ]
+}

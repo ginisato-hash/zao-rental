@@ -1,0 +1,28 @@
+{
+  "id": "BA-01",
+  "reviewed_head": "8d78268849066478f79f614219eef92425a299ba",
+  "original_verdict": "REVIEW_PASS",
+  "original_findings": 1,
+  "original_severity": "MEDIUM",
+  "implementation_disposition": "CHANGES_REQUIRED_THEN_CORRECTED_PENDING_REVIEW",
+  "before": {
+    "command": "node --import tsx tests/readiness/booking-access-ui.ts",
+    "exit_code": 1,
+    "log_sha256": "88e4c68d232e1cff58ef6fe57a6513633958e3d55849d12634947f118f1c846d",
+    "condition": "acknowledged revocation retained stale issuance request in same tab"
+  },
+  "after": {
+    "same_command_exit_code": 0,
+    "log_sha256": "7bbc72a106ec5e4a393d160d65b78e2a98e7ee63bb48df83ae458a33854c7785",
+    "conditions": [
+      "lost revoke response retains issuance request",
+      "reload and acknowledged revoke clears the matching request",
+      "explicit same-tab Save creates new capability",
+      "old revoked capability stays revoked",
+      "original guest TTL / due / authorization unchanged"
+    ]
+  },
+  "choice": "Clear only after successful explicit revoke acknowledgement; preserve nonsecret pending booking id for lost-ack reload. Do not clear on arbitrary issue errors and do not relax revoked-row rejection.",
+  "new_permissions_or_migrations": false,
+  "next": "full verify / new head CI / necessary finding follow-up"
+}

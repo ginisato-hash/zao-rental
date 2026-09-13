@@ -8,7 +8,7 @@ Run `npm run setup` then `npm run verify` inside this dedicated worktree. `npm r
 
 1. Owner approves all eight numeric guest policy fields and version, legal retention scope and recovery-loss support procedure. No values in pending config are inferred.
 2. Hosting operator supplies a verified dispatcher/socket adapter and secret resolver through existing approved deployment systems. Proxy headers alone are insufficient. Establish same canonical peer, DB and key across replicas, edge limits and capacity tests.
-3. Parse ZAO_PRODUCTION_GUEST_CONFIG using the schema/runtime inequalities. Match its SHA-256 against the separately approved release record. Parse ZAO_PRODUCTION_SECRET_METADATA (IDs only); reject absent/expired/revoked keys, duplicate active keys and public secret variables.
+3. Parse ZAO_PRODUCTION_GUEST_CONFIG using the schema/runtime inequalities. Match its SHA-256 against the separately approved release record. Parse ZAO_PRODUCTION_SECRET_METADATA (IDs only); reject absent/expired/revoked keys, duplicate active keys and every nonempty NEXT_PUBLIC_* setting. No public names are approved at this secret boundary; a future explicit public allowlist requires review.
 4. Compose GuestSecurity; immutable policy/version and startup audit must succeed before traffic. Do not treat `productionActivation:false` or approval digest as an HTTP override. Real runtime wiring and release require separate approval.
 5. Rollout/rollback must preserve old active contexts or intentionally revoke them with an approved incident policy. Never silently change retention/TTL under an old policy version; no automatic TTL extension.
 

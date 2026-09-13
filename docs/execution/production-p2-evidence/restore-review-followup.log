@@ -1,0 +1,7 @@
+PASS stopped owned source before verified cold backup; no live-file copying
+PASS corrupt backup digest stops before restore/start
+PASS restored all tables/rows and immutable migration checksums into a new isolated directory
+PASS restored original credential remains authoritative; a different synthetic password is refused
+PASS pre-migration backup restored; migration replay and failed-DDL rollback preserve inventory/payment/audit tables
+P2 isolated backup/restore: 5 cases passed; synthetic cold same-major cluster, not production SLA or provider restore.
+Owned backup/restore source and restored PostgreSQL stopped.

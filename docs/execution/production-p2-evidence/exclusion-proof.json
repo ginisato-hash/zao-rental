@@ -1,0 +1,14 @@
+{
+  "prior_ci_run": 34750550219,
+  "head": "4d7ed958853759a30d056af901408c27fc08651e",
+  "artifact_file_count": 91,
+  "backup_cluster_or_node_modules_paths_present": false,
+  "tracked_local_files": 0,
+  "git_ignore_rules": [
+    ".gitignore:2:.local/\t.local/backup-drill/owned-proof",
+    ".gitignore:2:.local/\t.local/postgres/owned-proof"
+  ],
+  "artifact_path_list_sha256": "5863194130bae4e417e2796ff44f9fbb98e20a4b9e929bad5b60cf8f42f5f14b",
+  "workflow_upload_scope_file": ".github/workflows/ci.yml",
+  "actual_archive_checked": true
+}

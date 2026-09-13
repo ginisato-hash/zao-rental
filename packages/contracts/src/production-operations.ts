@@ -21,8 +21,10 @@ export type RestoreEvidence={backupSha256:string;schemaSha256:string;sourceIdent
 export function restoreEvidence(input:RestoreEvidence){if(!/^[a-f0-9]{64}$/.test(input.backupSha256)||!/^[a-f0-9]{64}$/.test(input.schemaSha256)||!input.sourceIdentity||!input.restoredIdentity||input.sourceIdentity===input.restoredIdentity||!input.integrityPassed||!Number.isFinite(Date.parse(input.verifiedAt))||input.method!=='COLD_CLUSTER_SAME_MAJOR'||![input.rpoSeconds,input.rtoSeconds].every(n=>Number.isFinite(n)&&n>=0))throw new HoldError('RESTORE_NOT_VERIFIED',503);return {...input,productionRpoRtoApproved:false};}
 
 /** Environment entry contains IDs/lifecycle metadata only, not the secret material.
+ * No NEXT_PUBLIC_* names are approved at this secret boundary. Reject every
+ * nonempty public setting; a future public-config allowlist needs explicit review.
  * No alias/default/public environment fallback or provider lookup happens here. */
 export function secretMetadataFromEnvironment(env:Readonly<Record<string,string|undefined>>,required:readonly SecretPurpose[],now:Date){
- const raw=env.ZAO_PRODUCTION_SECRET_METADATA;if(!raw||Buffer.byteLength(raw)>16384||Object.keys(env).some(k=>/^NEXT_PUBLIC_.*(SECRET|TOKEN|PASSWORD|RECOVERY|DATABASE)/i.test(k)&&env[k]))throw new HoldError('SECRET_METADATA_INVALID',503);
+ const raw=env.ZAO_PRODUCTION_SECRET_METADATA;if(!raw||Buffer.byteLength(raw)>16384||Object.keys(env).some(k=>/^NEXT_PUBLIC_/i.test(k)&&env[k]))throw new HoldError('SECRET_METADATA_INVALID',503);
  let v:unknown;try{v=JSON.parse(raw);}catch{throw new HoldError('SECRET_METADATA_INVALID',503);}if(!Array.isArray(v)||v.length>20)throw new HoldError('SECRET_METADATA_INVALID',503);return activeSecretSet(v,required,now);
 }

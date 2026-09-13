@@ -1,4 +1,4 @@
-import {createHash,randomBytes} from 'node:crypto';
+import {createHash} from 'node:crypto';
 import {cp,mkdir,mkdtemp,readdir,lstat,readFile,access,realpath} from 'node:fs/promises';
 import {resolve,relative,join} from 'node:path';
 import {Pool} from 'pg';
@@ -29,6 +29,7 @@ export async function restoreOwnedCluster(backup:Awaited<ReturnType<typeof backu
  await noPid(directory);if(digest(canonical(backup.manifest))!==backup.sha256||canonical(await files(directory))!==canonical(backup.manifest))throw new Error('RESTORE_DIGEST_MISMATCH');
  await assertPortFree(identity.dbPort);const restored=(await mkdtemp(resolve('.local/postgres')+'/restored-'))+'/cluster';await cp(directory,restored,{recursive:true,errorOnExist:true,force:false});
  if(canonical(await files(restored))!==canonical(backup.manifest))throw new Error('RESTORE_COPY_FAILED');
- const cluster=new EmbeddedPostgres({databaseDir:restored,user:identity.user,password:randomBytes(24).toString('hex'),port:identity.dbPort,persistent:true,createPostgresUser:false,postgresFlags:['-h','127.0.0.1','-c','unix_socket_directories=','-c','log_statement=none'],onLog:()=>{},onError:()=>{}});
+ // Start the copied initialized cluster with its original credential; no rotation.
+ const cluster=new EmbeddedPostgres({databaseDir:restored,user:identity.user,password:backup.auth.password,port:identity.dbPort,persistent:true,createPostgresUser:false,postgresFlags:['-h','127.0.0.1','-c','unix_socket_directories=','-c','log_statement=none'],onLog:()=>{},onError:()=>{}});
  let pool:Pool|undefined;try{await cluster.start();pool=new Pool({host:'127.0.0.1',port:identity.dbPort,...backup.auth});const close=trackPoolLifecycle(pool);await pool.query('SELECT 1');return {pool,directory:restored,async stop(){try{await close();}finally{await cluster.stop();}}};}catch(e){await pool?.end();await cluster.stop();throw e;}
 }

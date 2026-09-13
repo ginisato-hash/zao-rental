@@ -1,0 +1,48 @@
+{
+  "base_sha": "bdbb7384897fc78001b2a5f238c97996421dc87c",
+  "head_sha": "4d7ed958853759a30d056af901408c27fc08651e",
+  "snapshot_sha256": "62307714b5f26f99a5971fde2305b7f1cacaf797957cc2ebdda8bb118bd09da6",
+  "verdict": "REVIEW_PASS",
+  "findings": [
+    {
+      "id": "P2-01",
+      "severity": "LOW",
+      "file": "packages/contracts/src/production-operations.ts",
+      "line": 26,
+      "condition": "A future production deployment sets a secret-like value on a NEXT_PUBLIC_* environment variable whose name does not contain the literal substrings SECRET|TOKEN|PASSWORD|RECOVERY|DATABASE (e.g. NEXT_PUBLIC_SQUARE_APIKEY, NEXT_PUBLIC_STORAGE_CREDENTIAL, NEXT_PUBLIC_SIGNING_CERT).",
+      "impact": "The defense-in-depth guard in secretMetadataFromEnvironment does not fire for these names, giving false assurance that 'public secret variables' are rejected. It does not itself leak anything (the function only validates ZAO_PRODUCTION_SECRET_METADATA), but an operator relying on this check as a safety net for accidental NEXT_PUBLIC_ secret exposure would not be warned for a plausible class of variable names.",
+      "evidence": "line 26: `Object.keys(env).some(k=>/^NEXT_PUBLIC_.*(SECRET|TOKEN|PASSWORD|RECOVERY|DATABASE)/i.test(k)&&env[k])`",
+      "fix": "Broaden the heuristic (add API[_-]?KEY, CREDENTIAL, CERT, PRIVATE, ACCESS to the alternation) or, better, replace the denylist with an explicit allowlist of permitted NEXT_PUBLIC_* names and document this check as heuristic defense-in-depth rather than the primary control.",
+      "test": "Add a case to tests/unit/production-integration.test.ts asserting secretMetadataFromEnvironment throws when e.g. NEXT_PUBLIC_SQUARE_APIKEY is set alongside a valid ZAO_PRODUCTION_SECRET_METADATA payload."
+    },
+    {
+      "id": "P2-02",
+      "severity": "LOW",
+      "file": "scripts/isolated-backup.ts",
+      "line": 32,
+      "condition": "restoreOwnedCluster starts EmbeddedPostgres against a data directory that was byte-for-byte copied from the original stopped cluster (which already contains its own role/password material), while passing a freshly generated random `password` to the constructor; the pool actually authenticates afterward using `backup.auth.password` (the original captured credential) at line 33.",
+      "impact": "No functional or security defect is demonstrated here (evidence shows the restore tests pass), but the code misleadingly implies the restore path rotates/sets a new database password, which could mislead a future maintainer into believing credential rotation occurs during restore, or mask a real regression if a future embedded-postgres upgrade begins honoring this field on non-initialising starts.",
+      "evidence": "line 32: `password:randomBytes(24).toString('hex')` inside the EmbeddedPostgres constructor for a `persistent:true`, already-initialized copied directory, versus line 33 `new Pool({host:'127.0.0.1',port:identity.dbPort,...backup.auth})` which uses the original pre-stop credential.",
+      "fix": "Either drop the misleading `password` field (or pass `backup.auth.password` explicitly for consistency) and add a one-line comment that this field is inert for a start against pre-initialized data, to prevent confusion about whether restore performs credential rotation.",
+      "test": "No new test strictly required; optionally add an assertion that connecting to the restored cluster with a deliberately wrong password fails, pinning that the copied original credential (not the constructor's password field) is authoritative."
+    }
+  ],
+  "insufficient_evidence": [
+    "Whether .local/backup-drill/ and other .local/* paths used by scripts/isolated-backup.ts are excluded via .gitignore from Git/CI artifacts, as asserted in docs/adr/0029 and PRODUCTION_P2_RUNBOOK.md — no .gitignore content or diff was included in the reviewed snapshot.",
+    "Internal behavior of the third-party `embedded-postgres` package regarding the `password` constructor option when starting (not initializing) an already-provisioned data directory — inferred correct/inert only from passing test evidence, not from library source, which was not supplied.",
+    "Whether a real TrustedIngressAdapter implementation at the actual hosting/dispatcher layer can reliably bind out-of-band peer metadata to the same Request object instance that reaches Next.js route handlers (e.g., across middleware/edge-runtime request cloning) — this is explicitly deferred as future work and not reviewable from the current interface-only code."
+  ],
+  "activation_prerequisites": [
+    "Owner must supply and approve exact numeric guest security policy fields plus a canonical SHA-256 config digest from a protected release process (never a request/body/UI) before productionGuestConfiguration/approvedGuestConfiguration/guestConfigurationFromEnvironment can be used with real values.",
+    "A real TrustedIngressAdapter must be implemented by the hosting/deployment layer validating the actual reverse-proxy/edge channel; the current adapter (packages/core/src/guest/trusted-ingress.ts) is fixture-only and not referenced by any apps/web route.",
+    "composeProductionGuestSecurity (packages/core/src/guest/production-composition.ts) must actually be wired into apps/web/src/lib/public-runtime.ts or an equivalent production entrypoint; it is currently unreferenced outside tests.",
+    "A real SquareFetch implementation and an approved credential resolver must be injected into FetchSquareSandboxTransport; SquareSandboxGateway remains unconnected to any real network transport or credentials.",
+    "A real MediaProviderPort (actual storage/CDN provider) must be supplied to ProviderMediaStore; only in-memory/fixture providers exist in this PR.",
+    "Real secret-provider integration and rotation execution must be built for all five secretPurposes; secretRotationRequirements(...).implemented is false for every purpose today.",
+    "Repository owner must explicitly enable GitHub branch protection (MAIN_PROTECTION gate); no settings were changed by this PR.",
+    "Owner must approve real backup/PITR provider, off-host storage, and production RPO/RTO values; the current drill is a local cold same-major-version cluster copy only, with no pg_dump/PITR/provider backup."
+  ],
+  "scope_assessment": "Reviewed the full exact delta bdbb7384...->4d7ed958... against the base snapshot: all newly added contracts/core modules (production-guest.ts, production-operations.ts, trusted-ingress.ts, production-composition.ts, square-transport.ts, import-staging.ts, provider-media.ts), the new backup/restore drill script and its two new test suites, the new unit test file, the modified AssetQrInput/asset-reader tests, the modified public UI staff-creation test, and all new config/doc/evidence files. Confirmed via file-status diff that no changes were made to apps/web routing (guest route, public-runtime.ts, staff-users route), SquareSandboxGateway, migrations 0001-0021, price JSON, or GitHub workflow/branch-protection files — matching the PR's own claims that production guest composition, Square transport, and branch protection remain unconnected/unchanged. Cross-checked the PR's self-reported test counts (14 unit / 6 composition / 4 restore / 8 asset-reader cases) directly against the actual test source and found them accurate, and cross-checked the CI evidence (run 34750550219, head 4d7ed958..., merge tree 1f7ea060...) against the stated head/base, finding it consistent. Traced the trusted-ingress IPv4-mapped-IPv6 canonicalization logic against WHATWG URL serialization semantics and the Square transport's allowlist/redirect/credential/abort handling line-by-line; both are correctly defensive and match their test coverage. Did not and could not verify real third-party infrastructure (actual Square Sandbox, actual storage/CDN, actual hosting trusted-ingress channel, actual secret rotation, actual GitHub settings) since none of that is present in this PR by design. This is a scoped pass on the reviewed diff only, not a whole-system launch-readiness or merge determination.",
+  "tests_executed": false,
+  "prior_finding_dispositions": []
+}

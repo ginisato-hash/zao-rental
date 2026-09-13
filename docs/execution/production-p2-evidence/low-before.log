@@ -1,0 +1,27 @@
+✖ P2-01 unapproved public environment names fail closed regardless of secret-like spelling (3.152916ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 299.121792
+
+✖ failing tests:
+
+test at tests/unit/production-integration.test.ts:1:18082
+✖ P2-01 unapproved public environment names fail closed regardless of secret-like spelling (3.152916ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception: NEXT_PUBLIC_SQUARE_APIKEY
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p2/tests/unit/production-integration.test.ts:39:544)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.start (node:internal/test_runner/test:1096:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { code: 'SECRET_METADATA_INVALID' },
+    operator: 'throws',
+    diff: 'simple'
+  }

@@ -4,8 +4,8 @@
   "started_jst": "2026-09-13T17:44:56+09:00",
   "base": "bdbb7384897fc78001b2a5f238c97996421dc87c",
   "branch": "codex/production-integration-p2",
-  "state": "LOCALLY_VERIFIED_CI_REVIEW_PENDING",
-  "claude_starts": 0,
+  "state": "LOW_FIXES_LOCALLY_VERIFIED_REVIEW_PENDING",
+  "claude_starts": 1,
   "historical_p1_starts": 1,
   "old_unused_added": false,
   "approval_sha256": "abacf9282fd2477d6831fc2cb3bb19bd6e413eb7140940a412999198e668cd7f",
@@ -134,12 +134,12 @@
   },
   "next": "Commit and Draft PR, exact-head CI, one final scoped static review. New PR must not merge.",
   "local_verify": {
-    "run_id": "2026-09-13T09-47-06.094Z",
+    "run_id": "2026-09-13T10-25-46.845Z",
     "commands": 44,
     "exit_code": 0,
-    "new_unit_cases": 14,
+    "new_unit_cases": 15,
     "new_pg_http_cases": 6,
-    "new_restore_cases": 4,
+    "new_restore_cases": 5,
     "asset_reader_cases": 8,
     "evidence": "docs/execution/production-p2-evidence/commands.json"
   },
@@ -165,5 +165,17 @@
   ],
   "known_observations": [
     "Initial CI synthetic staff-create500 was not reproduced in same-head Mac test. Authenticated UI synchronization strengthens evidence but does not establish the original backend cause."
+  ],
+  "review_history": [
+    {
+      "head": "4d7ed958853759a30d056af901408c27fc08651e",
+      "verdict": "REVIEW_PASS",
+      "low_findings": [
+        "P2-01",
+        "P2-02"
+      ],
+      "comment": 5652674519,
+      "corrections": "Committed after red/green and actual restore; independent follow-up pending"
+    }
   ]
 }

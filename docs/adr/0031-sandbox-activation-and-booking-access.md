@@ -82,3 +82,18 @@ remain stable across unknown responses. Only acknowledged explicit revocation cl
 that booking request; a nonsecret pending booking ID supports revoke-ack loss/reload.
 The next explicit Save gesture creates a new request. Old revoked keys still fail in SQL;
 no database/session/inventory authority, expiry or migration is relaxed.
+
+## Residual BA-01-RES: unbound revoke during read
+
+The second independent review resolved the original acknowledged-revoke case but
+found that initial/reload reads temporarily clear the view while revoke remained
+enabled. Record CHANGES_REQUIRED on d1ab841, not a reused PASS. The correction
+disables revoke until the current read settles and a loaded booking or pending
+revocation binding exists. A lost acknowledgement retains that non-secret binding
+and can still be acknowledged after reload; ordinary reads do not overlap active
+revocation. Server owner, original due, revoked-row rejection and roles are unchanged.
+The synchronized initial/reload UI regression and existing lost-response/resave
+flow use real PostgreSQL. A before-fix missing-guard failure is distinct from a
+complete old-head revoke/resave HTTP reproduction. Environment/test-harness failures
+are preserved separately. Final exact-head CI and a necessary corrective review
+must precede any pass claim. No production or external activation is implied.

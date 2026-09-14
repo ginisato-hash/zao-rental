@@ -1,3 +1,15 @@
+## Current R4 — protected S1 Preview ready; one Owner POST handoff pending
+
+Read docs/execution/p6/R4_S1_CHECKPOINT.md and PRODUCTION_P6_STATUS.json.
+R4 Preview allowance1 is consumed. Actual Square0 at checkpoint. No automated POST
+was issued; possible GET budget2 is reserved for one Owner browser operation. Treat
+unknown handoff outcome as possibly consumed; never independently invoke or retry.
+No CLI bypass-secret argv, token/cookie extraction or protection change. Keep both
+accepted R3 and S1 Previews until result; S1 evidence then scoped cleanup only.
+No further deploy, payment, webhook, DB/R2, production or S2 without new authority.
+
+## Historical R4 implementation scope (no fresh budget)
+
 ## Current R4 — bounded Square Sandbox S1 only
 
 Read docs/execution/PRODUCTION_P6_R4_AUTHORITY.md and PRODUCTION_P6_STATUS.json.

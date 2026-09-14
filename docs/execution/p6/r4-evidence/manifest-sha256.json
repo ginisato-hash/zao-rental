@@ -1,11 +1,20 @@
 {
+  "browser-start-protection.json": "e5470f9b408576e23c0ef98caab20ba25edd5d4deb02c6d7e56e2995838a8ab8",
   "build.log": "7c9723a8bf1412b5ef56e3c343c5db0e4052d0a53da2b8311ca4019f057dfdcc",
+  "dry-inputs.json": "c2953ffcad9a18b42b54e2798cd8d51122adbbe6b8d35f891a0badda38d58589",
+  "handoff-reservation.json": "8202a069cecdf016f4554d91cf944bebf46af4959ddc017ec6e848ef144d226a",
   "lint.log": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
   "precheck.json": "b03104864d4d1d64f75329ab82962a55b8d6dcbd5416adcd45e43f5066669465",
+  "preview-dispatch.json": "fb476bf6c63aa78eaa85d77083c0dfbc20bda08998c7c1a7f1ff12b7918fd021",
+  "preview-readback.json": "359b4dcb8f2514eefb564be07f9ee5891f3fda709c8954ec3d7cccb4d9911072",
+  "preview-ready.json": "1ff2d89deb1ca8e5a257b98291050ec7cc7bd7f72ae84cd623e3f17182c8c618",
+  "preview-result.json": "75161156da8c2c97ec43331d1f63c34f958b13476ac325531fedde035816373c",
+  "safe-cloud-build.json": "8f526ba7c7f12303f78acd14d224a26de3306d9d4d9d6e3ba00a7d8adcc907f7",
   "secret-scan.log": "25af88dd69251fb870afb531cea13c8bea9c7c1694a6ee71d034fd94b25c7b42",
   "square-tests.log": "4bcbdd78e72969a889bc92560f006e37ac90068b97d6674833fdfce1e7fbad5c",
   "start.json": "c2004cbf53cae031eb0ebd823af4f1415edc5dc30f5054d51f17f580badfad2f",
   "typecheck.log": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+  "upload-manifest.json": "e7d93e8d1276504744ab05e7bc8a56b7fe5c17edb3d460c62dc73414abd569a9",
   "validated-files.json": "66fa2615c403c414fb0b7a940e831ac6cb45daadc62b615dfa17d8798b3b556e",
   "validation.json": "8289b1098cf91446eb91557949747e52e2fdc9cb516e79e672ba1f9ab828dc64"
 }

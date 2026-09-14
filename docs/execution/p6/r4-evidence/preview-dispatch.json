@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-14T04:08:30.180768+00:00",
+  "args": [
+    "deploy",
+    "--target=preview",
+    "--no-wait",
+    "--format=json",
+    "--non-interactive",
+    "--meta",
+    "zaoCommitSha=dbfbb4a220abb757a0f3bd1f92708e8112fb6067",
+    "--meta",
+    "zaoSourceTree=e78e28a259214d9555d497c15cc93c86fdd95fd0",
+    "--meta",
+    "zaoAcceptance=r4-square-s1-no-payments-no-db"
+  ],
+  "source_head": "dbfbb4a220abb757a0f3bd1f92708e8112fb6067",
+  "source_tree": "e78e28a259214d9555d497c15cc93c86fdd95fd0",
+  "accepted_r3_preview_retained": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+  "limit": 1,
+  "production_flags": false,
+  "production_promotion": false,
+  "env_overrides": false,
+  "retry_forbidden": true
+}

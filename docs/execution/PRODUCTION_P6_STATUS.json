@@ -1,5 +1,5 @@
 {
-  "phase": "R4_LOCAL_GREEN_PREVIEW_READY_TO_DISPATCH",
+  "phase": "BLOCKED_AUTOMATED_AUTHENTICATED_POST_OWNER_SINGLE_OPERATION",
   "authority": "PRODUCTION_P6_R4_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Separate approval for Square Sandbox S1 merchant/location read-only acceptance. Do not send secrets.",
+  "first_owner_action": "One explicit same-origin POST from the existing authenticated Team browser using the local handoff. Never repeat unknown results. Leave the safe result visible and report completion.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -122,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Local fixtures and guards, one protected Preview, one explicit authenticated S1 POST. Stop after S1.",
+  "next": "After Owner result: validate saved summary without re-invocation. PASS permits Preview merchant metadata only. Then remove temporary route, recheck, save evidence and remove S1 deployment. Do not redeploy or proceed S2.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T04:06:19.638052+00:00",
+  "updated_at": "2026-09-14T04:15:02.731748+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -511,7 +511,7 @@
     "started_at_jst": "2026-09-14T12:50:47+09:00",
     "authority_sha256": "576d2db2f170091946a4d3fa4b9dba682728229d2c4a3a616943551451699e3e",
     "preview_limit": 1,
-    "preview_attempts": 0,
+    "preview_attempts": 1,
     "square_get_limit": 2,
     "square_actual_requests": 0,
     "invocation_limit": 1,
@@ -531,6 +531,79 @@
     "spark_task": "P6-SPARK-SQUARE-S1-TEST-01",
     "spark_corrections": 1,
     "invocation_method": "OWNER_TEAM_BROWSER_EXPLICIT_POST_REQUIRED; CLI secret-argument path rejected",
-    "evidence": "p6/r4-evidence/"
+    "evidence": "p6/r4-evidence/",
+    "remaining_preview_attempts": 0,
+    "preview": {
+      "at": "2026-09-14T04:10:36.189819+00:00",
+      "id": "dpl_3UXKvrNyRp1KpRfpPt7jxAYSF5Bo",
+      "url": "zao-rental-4rnscn9pc-zao-food-map.vercel.app",
+      "raw_target": null,
+      "environment": "preview",
+      "classification": "CLI inspect target preview; raw null preserved",
+      "state": "READY",
+      "source": {
+        "zaoCommitSha": "dbfbb4a220abb757a0f3bd1f92708e8112fb6067",
+        "zaoSourceTree": "e78e28a259214d9555d497c15cc93c86fdd95fd0",
+        "zaoAcceptance": "r4-square-s1-no-payments-no-db"
+      },
+      "project_protection": "all_except_custom_domains",
+      "live_aliases": 0,
+      "custom_domains": 0,
+      "production_aliases": 0,
+      "inspect_exit_code": 0,
+      "square_requests": 0,
+      "error_code": null
+    },
+    "S1_result": "NOT_RUN",
+    "handoff": {
+      "at": "2026-09-14T04:15:02.731748+00:00",
+      "phase": "BLOCKED_AUTOMATED_AUTHENTICATED_POST_OWNER_SINGLE_OPERATION",
+      "S1_result": "NOT_RUN",
+      "preview_id": "dpl_3UXKvrNyRp1KpRfpPt7jxAYSF5Bo",
+      "execution_sha": "dbfbb4a220abb757a0f3bd1f92708e8112fb6067",
+      "execution_tree": "e78e28a259214d9555d497c15cc93c86fdd95fd0",
+      "api_version": "2026-08-19",
+      "square_actual_requests_as_of_checkpoint": 0,
+      "actual_post_dispatches": 0,
+      "possible_get_budget_reserved_for_one_owner_operation": 2,
+      "automatic_invocation_allowed_while_handoff_pending": false,
+      "merchant_status": null,
+      "merchant_country": null,
+      "merchant_currency": null,
+      "merchant_id": null,
+      "location_match": null,
+      "merchant_match": null,
+      "card_capability": null,
+      "http_results": null,
+      "reason": "Vercel CLI curl59.9.1 injects a protection-bypass secret into child curl argv; R4 prohibits secret argv. Browser automation exposes read-only DOM evaluation and UI actions, no explicit HTTP POST capability. No UI link is permitted for this temporary route.",
+      "owner_action": "One explicit same-origin POST from the existing authenticated Team browser using the local handoff. Never repeat unknown results. Leave the safe result visible and report completion.",
+      "local_handoff": "work/p6-r4/OWNER_S1_ONE_ACTION.md (outside repository; endpoint URL not published)",
+      "no_secret_read_or_protection_change": true,
+      "counts": {
+        "preview_deployments": 1,
+        "payments": 0,
+        "refunds": 0,
+        "webhooks": 0,
+        "external_db": 0,
+        "r2": 0,
+        "email": 0,
+        "sms": 0,
+        "production_square_requests": 0,
+        "secret_exposure": 0,
+        "production_env_entries": 0,
+        "production_deployments": 0
+      },
+      "resources": {
+        "accepted_r3_preview": "RETAINED",
+        "s1_preview": "RETAINED_FOR_SINGLE_OWNER_OPERATION",
+        "local_db": 0,
+        "local_web": 0,
+        "claude": 0,
+        "spark": "one task completed; one correction; parent integrated",
+        "finite_cli": "all completed",
+        "browser": "only owned tab27 remains, marked handoff; earlier task tabs no longer present"
+      },
+      "next": "After Owner result: validate saved summary without re-invocation. PASS permits Preview merchant metadata only. Then remove temporary route, recheck, save evidence and remove S1 deployment. Do not redeploy or proceed S2."
+    }
   }
 }

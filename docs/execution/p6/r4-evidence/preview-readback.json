@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-14T04:09:22.660623+00:00",
+  "id": "dpl_3UXKvrNyRp1KpRfpPt7jxAYSF5Bo",
+  "url": "zao-rental-4rnscn9pc-zao-food-map.vercel.app",
+  "raw_target": null,
+  "environment": "preview",
+  "classification": "CLI inspect target preview; raw null preserved",
+  "state": "BUILDING",
+  "source": {
+    "zaoCommitSha": "dbfbb4a220abb757a0f3bd1f92708e8112fb6067",
+    "zaoSourceTree": "e78e28a259214d9555d497c15cc93c86fdd95fd0",
+    "zaoAcceptance": "r4-square-s1-no-payments-no-db"
+  },
+  "project_protection": "all_except_custom_domains",
+  "live_aliases": 0,
+  "custom_domains": 0,
+  "production_aliases": 0,
+  "inspect_exit_code": 0,
+  "square_requests": 0
+}

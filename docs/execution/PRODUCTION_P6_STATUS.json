@@ -1,5 +1,5 @@
 {
-  "phase": "R10_S3_NONTERMINAL_DO_NOT_RETRY_RESULT_SAVED_CLEANUP_PENDING",
+  "phase": "R10_S3_NONTERMINAL_DO_NOT_RETRY_CLEANUP_COMPLETE",
   "authority": "PRODUCTION_P6_S3_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "After cleanup: bounded S4 authority only after S3_PASS; otherwise decision on recorded terminal/nonterminal result, never automatic retry",
+  "first_owner_action": "Refund remains PENDING at last authorized lookup. Any later read-only lookup of the existing refund needs separate bounded authority. No new refund POST or S4 execution.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Read back result remotely, remove exactly two S3 routes, validate and delete exact S3 Preview; keep R3, manifests, local guards and provider objects. Never repeat R10.",
+  "next": "R10 terminal; no further provider call. S3_PASS: wait for bounded S4 authority. Other results: preserve uncertainty/failure and wait for Owner decision.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T16:44:07.136729+00:00",
+  "updated_at": "2026-09-14T16:46:21.805334+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -916,7 +916,7 @@
     "origin": "https://zao-rental-imut3w2pk-zao-food-map.vercel.app",
     "preflight": "PASS",
     "result": "p6/s3-evidence/safe-result.json",
-    "cleanup": "PENDING_RESULT_REMOTE_READBACK",
+    "cleanup": "COMPLETE_ROUTES_REMOVED_S3_PREVIEW_DELETED_R3_RETAINED",
     "security": {
       "square_secret_exposure": 0,
       "auth_callback_observation": 0,
@@ -937,6 +937,15 @@
       "sms": 0,
       "main_merge": 0,
       "runner": 0
-    }
+    },
+    "result_commit": "b68fd7b48a3187ebf173775671fc55cc16357ba2",
+    "cleanup_validation": "144_PASS_FAIL0_SKIP0_SECRET_LINT_TYPECHECK_BUILD_EXIT0",
+    "cleanup_evidence": "p6/s3-evidence/preview-cleanup-verification.json",
+    "cleanup_source_hashes": "p6/s3-evidence/cleanup-source-hashes.json",
+    "lifecycle": "p6/s3-evidence/owned-resource-closure.json",
+    "finished_at": "2026-09-14T16:46:21.805334+00:00",
+    "refund_id": "pezzekG1LQRt4MVKF0X4sgRCx1FZY_RGsO2jleY9KU9cwHseVSYTw7u0opBFwDighGLb4MxYQ",
+    "refund_key": "98e94ea9-a081-480d-86f4-5aa491df1d6f",
+    "request_fingerprint": "7434acdd7be721bf57c2198e10855082febd2c992899bedca0f0a929f4746486"
   }
 }

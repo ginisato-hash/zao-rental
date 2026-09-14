@@ -1,3 +1,15 @@
+## Current R10 final — S3_NONTERMINAL_DO_NOT_RETRY; cleanup complete
+
+Read docs/execution/PRODUCTION_P6_STATUS.json and p6/s3-evidence/FINAL_RESULT.md.
+Result commit b68fd7b48a3187ebf173775671fc55cc16357ba2 was remotely verified before removal
+of both S3 routes and exact S3 Preview. R3, manifests, guards and provider objects
+remain.144tests/secrets/lint/typecheck/build pass after cleanup. Owned browser and
+finite validation children exited. R4–R9 histories and R7 security incident unchanged.
+No additional lookup/refund/POST/key/Preview, CreatePayment/S1/webhook/DB/Production/
+main/Runner/model is authorized. S3_PASS permits S4 gate only, not webhook execution.
+
+## Historical R10 result checkpoint
+
 ## Current R10 result — S3_NONTERMINAL_DO_NOT_RETRY; cleanup pending
 
 R10 is terminal. Read PRODUCTION_P6_STATUS.json and p6/s3-evidence/safe-result.json.

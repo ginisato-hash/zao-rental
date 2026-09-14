@@ -1,3 +1,19 @@
+## Current R11/S4 — LOCAL webhook receiver and durable inbox only
+
+Read docs/execution/PRODUCTION_P6_S4_LOCAL_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+R10 remains NONTERMINAL_DO_NOT_RETRY, last refund PENDING; finalization is deferred
+and does not gate local implementation. Never look up or refund it again.
+Implement raw-body signature receiver, additive inbox schema/dedupe, claim/reconcile
+interfaces, fixture/static tests and activation gate. No actual PostgreSQL connection,
+Vercel command/auth/browser/deploy/env, Square API/Console/subscription/delivery,
+Production, booking/inventory/custody mutation, model/subagent, main merge or new PR.
+No auth workflow is needed. Preserve R4–R10 histories. Use existing GitHub auth only;
+if push auth fails, complete local implementation/test/commit and record PUSH_PENDING_AUTH.
+Finish local/GitHub work without intermediate Owner questions. Live activation is a
+separate Owner gate; no permission, credential, billing or Runner changes.
+
+## Historical R10 instructions (unchanged outcome; R11 permits local work only)
+
 ## Current R10 final — S3_NONTERMINAL_DO_NOT_RETRY; cleanup complete
 
 Read docs/execution/PRODUCTION_P6_STATUS.json and p6/s3-evidence/FINAL_RESULT.md.

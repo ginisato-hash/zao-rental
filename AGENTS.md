@@ -1,3 +1,16 @@
+## Current R12 — local durable reconciliation only
+
+Read docs/execution/PRODUCTION_P6_R12_LOCAL_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Continue from green R11; parent alone implements durable coalesced jobs, lease/fencing,
+provider truth decision port/worker, fixture/static tests and activation documentation.
+No actual provider/DB/Vercel/browser/Playwright/model/Runner/scheduler/Production action.
+Preserve R4–R11 histories and R10 LAST_OBSERVED_PENDING / NONTERMINAL_DO_NOT_RETRY.
+Existing booking mutation and payment gates stay unchanged and unconnected to the worker.
+Use existing GitHub auth only; if unavailable finish local work/commits and save PUSH_PENDING_AUTH.
+No intermediate Owner questions, new PR or main merge. Live activation needs separate authority.
+
+## Historical R11 (completed)
+
 ## Current R11/S4 final — local implementation complete; activation pending
 
 Read docs/execution/PRODUCTION_P6_STATUS.json, p6/s4-local/RESULT.md and

@@ -1,5 +1,5 @@
 {
-  "phase": "R11_S4_LOCAL_WEBHOOK_IMPLEMENTED_ACTIVATION_PENDING",
+  "phase": "R12_LOCAL_RECONCILIATION_IMPLEMENTATION",
   "authority": "PRODUCTION_P6_S4_LOCAL_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -997,5 +997,27 @@
     "owned_processes": "FINITE_VALIDATION_CHILDREN_EXITED_NO_DB_WEB_BROWSER_CLAUDE_STARTED",
     "finished_at": "2026-09-14T17:19:23.447389+00:00",
     "secretless_build": "PASS_ISOLATED_OS_ENV_ONLY_NO_ACTUAL_DOTENV"
+  },
+  "r12": {
+    "started_at": "2026-09-14T17:23:50Z",
+    "started_at_jst": "2026-09-15T02:23:50+09:00",
+    "starting_head": "78c99d7c2d8d22fedde0cbf884a609dbedfc414f",
+    "authority": "PRODUCTION_P6_R12_LOCAL_AUTHORITY.md",
+    "authority_sha256": "d2ed36a06be5435e373f1ed8ce97ca17b151b0c9c9d9408e2d4f7dd68541bbbc",
+    "phase": "IMPLEMENTING_LOCAL",
+    "external_counts": {
+      "vercel": 0,
+      "square": 0,
+      "refund": 0,
+      "webhook_subscription": 0,
+      "real_delivery": 0,
+      "postgres": 0,
+      "browser": 0,
+      "playwright": 0,
+      "production": 0,
+      "claude": 0,
+      "spark": 0,
+      "runner": 0
+    }
   }
 }

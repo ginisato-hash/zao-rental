@@ -1,0 +1,21 @@
+✔ runtime compatibility follows engines.node manifest range and rejects malformed major mismatches (2.895958ms)
+✔ runtime pins and constraints in manifest files stay exact (1.434583ms)
+✔ local and CI bootstrap remains pinned to Node24.15.0 (1.329166ms)
+✔ Vercel commands continue to run with pinned npm11.12.1 (0.348833ms)
+✔ P5 preflight never promotes documentation/fixtures/Owner targets to external PASS (0.572834ms)
+✔ P5 exact CI requires repository/workflow/event/head/base/integration tree/run attempt/job success (0.269458ms)
+✔ P5 offline preflight command emits JSON/human summary and exits2 with pending gates (247.562125ms)
+✔ P6 one acceptance location is metadata only; it does not map or activate either internal store (0.642917ms)
+✔ P6 metadata parser never reads credential values, including during error handling (0.293375ms)
+✔ P6 rejects production/development, omitted mode/version, aliases and public settings (0.14675ms)
+✔ P6 URL is exact non-secret HTTPS metadata, not inferred from request headers or aliases (0.405583ms)
+✔ P5 activation metadata rejects production, missing/mixed mapping, credentials and automatic enablement (1.054375ms)
+✔ P5 dual webhook keys verify exact URL/raw bytes, retire exactly at grace and never expose secret (1.213ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 333.796792

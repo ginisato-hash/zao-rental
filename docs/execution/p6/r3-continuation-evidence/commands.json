@@ -1,0 +1,110 @@
+{
+  "head": "de1d530ec65d0a73d23938b4b4fd9f88e178b74f",
+  "lock_before_sha256": "927666d793e396802a611f47b641fb414121f6f371d14afff54a79abbe1377cf",
+  "lock_unchanged": true,
+  "commands": [
+    {
+      "name": "node-version",
+      "args": [
+        "node",
+        "--version"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:05.452979+00:00",
+      "end": "2026-09-14T02:44:05.521103+00:00",
+      "log": "node-version.log"
+    },
+    {
+      "name": "npm-version",
+      "args": [
+        "npm",
+        "--version"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:05.521519+00:00",
+      "end": "2026-09-14T02:44:05.737772+00:00",
+      "log": "npm-version.log"
+    },
+    {
+      "name": "npm-ci",
+      "args": [
+        "npm",
+        "ci",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:05.738184+00:00",
+      "end": "2026-09-14T02:44:13.338760+00:00",
+      "log": "npm-ci.log"
+    },
+    {
+      "name": "lint",
+      "args": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:13.339395+00:00",
+      "end": "2026-09-14T02:44:19.785506+00:00",
+      "log": "lint.log"
+    },
+    {
+      "name": "typecheck",
+      "args": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:19.786305+00:00",
+      "end": "2026-09-14T02:44:25.447178+00:00",
+      "log": "typecheck.log"
+    },
+    {
+      "name": "build",
+      "args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:25.448117+00:00",
+      "end": "2026-09-14T02:44:38.505564+00:00",
+      "log": "build.log"
+    },
+    {
+      "name": "runtime-regression",
+      "args": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/readiness/toolchain-runtime.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts",
+        "tests/unit/production-preflight.test.ts"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:38.506881+00:00",
+      "end": "2026-09-14T02:44:38.879653+00:00",
+      "log": "runtime-regression.log"
+    },
+    {
+      "name": "unit",
+      "args": [
+        "npm",
+        "run",
+        "test:unit"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T02:44:38.880174+00:00",
+      "end": "2026-09-14T02:44:46.001074+00:00",
+      "log": "unit.log"
+    }
+  ],
+  "external_db": 0,
+  "square_requests": 0,
+  "full_verify": "NOT_SELECTED_NO_BUSINESS_CHANGE_OR_DB_SCOPE"
+}

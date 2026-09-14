@@ -1,5 +1,5 @@
 {
-  "phase": "R3_BLOCKED_BOOTSTRAP_ALIAS_STOP",
+  "phase": "R3_LOCAL_GREEN_PREVIEW_DRY_GATE",
   "authority": "PRODUCTION_P6_R2_ORIGINAL.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -121,7 +121,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Owner decision on retaining de-aliased protected bootstrap before local integration and remaining actual Preview. No Square S1.",
+  "next": "Dry-run exact tracked app inputs; spend remaining one protected actual Preview then stop before Square S1.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -220,7 +220,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T02:33:43.139896+00:00",
+  "updated_at": "2026-09-14T02:46:52.624229+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -369,15 +369,35 @@
     "business_changes": false,
     "external_square_requests": 0,
     "external_db_connections": 0,
-    "status": "BLOCKED_EXPLICIT_ALIAS_STOP",
+    "status": "LOCAL_GREEN",
     "bootstrap_id": "dpl_C44zbkSu1uu4WbPNj9uCLA8zDJWP",
     "bootstrap_retained": true,
     "unexpected_alias_removed": true,
     "live_aliases": 0,
     "spark_test_corrections": 1,
     "pure_tests_reported_pass": 4,
-    "local_integration": "NOT_RUN_AFTER_STOP",
-    "evidence": "p6/r3-evidence/"
+    "local_integration": {
+      "head": "de1d530ec65d0a73d23938b4b4fd9f88e178b74f",
+      "node": "24.15.0",
+      "npm": "11.12.1",
+      "npm_ci": 0,
+      "lint": 0,
+      "typecheck": 0,
+      "build": 0,
+      "runtime_regression_pass": 13,
+      "unit_pass": 177,
+      "lock_unchanged": true,
+      "full_verify": "NOT_SELECTED_NO_BUSINESS_CHANGE_NO_EXTERNAL_DB",
+      "evidence": "p6/r3-continuation-evidence/"
+    },
+    "evidence": "p6/r3-evidence/",
+    "alias_update": {
+      "authority": "PRODUCTION_P6_R3_ALIAS_UPDATE.md",
+      "sha256": "8b83e4fd3e7ecbed376bb3e5d1e0b7b26d4b6dabc129f28b1de810f729353cf4",
+      "previous_stop_waived_for_current_bootstrap": true,
+      "generated_protected_preview_alias_allowed": true,
+      "production_alias_still_forbidden": true
+    }
   },
   "r3_owned_resources": {
     "db": 0,

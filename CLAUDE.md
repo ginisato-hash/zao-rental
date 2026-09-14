@@ -1,3 +1,16 @@
+## Current R3 alias clarification — local green; one application Preview allowed
+
+Read docs/execution/PRODUCTION_P6_R3_ALIAS_UPDATE.md and PRODUCTION_P6_STATUS.json.
+Owner permits keeping the protected, de-aliased static bootstrap and continuing.
+Generated Preview URLs/aliases are allowed only for target Preview, protected,
+non-custom and without production routing. No promotion/production alias/domain.
+Local integration green on de1d530; use only the remaining single R3 app Preview.
+Before app HTTP verify target/environment Preview and protection. Keep Square/DB/
+R2/email/SMS unconnected. Never fetch/display env values. No additional deploy retry.
+Delete bootstrap only after verified Preview target, build success and protection.
+
+## Historical R3 alias stop (superseded only by the explicit update)
+
 ## Current P6 R3 stop — bootstrap unexpectedly received standard alias
 
 Read docs/execution/p6/R3_RESULT.md and PRODUCTION_P6_STATUS.json.

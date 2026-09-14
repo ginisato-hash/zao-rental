@@ -1,0 +1,89 @@
+{
+  "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
+  "authority": "PRODUCTION_P6_AUTHORITY.md",
+  "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "branch": "codex/external-acceptance-p6",
+  "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+  "pr16_merge": {
+    "merge_commit": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+    "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+    "tree": "7c0fef850d736b5958fc62ec0ef4189e7bef4514",
+    "pr16_head": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+    "base": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+    "merged_at": "2026-09-14T00:03:38Z",
+    "runner": "UNATTENDED_HOLD",
+    "ruleset_unchanged": true,
+    "ready_ci": {
+      "run_id": 34790597701,
+      "attempt": 1,
+      "event": "pull_request",
+      "repository": "ginisato-hash/zao-rental",
+      "workflow": ".github/workflows/ci.yml",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34790597701",
+      "base": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+      "head": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+      "checkout": "6c1ba1bc4fe9cc6917ea008282bc77c0365eaed1",
+      "tree": "7c0fef850d736b5958fc62ec0ef4189e7bef4514",
+      "conclusion": "success",
+      "artifact_digest": "sha256:262e5985fe3d322bfd31348e72682c13c8374ac47945b6a3740d22fee730ce57",
+      "jobs": [
+        {
+          "name": "foundation",
+          "conclusion": "success"
+        }
+      ],
+      "checked_at": "2026-09-14T00:02:58.295170+00:00"
+    },
+    "review_comment": "https://github.com/ginisato-hash/zao-rental/pull/16#issuecomment-5655309094",
+    "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
+    "production_activation": false
+  },
+  "first_owner_action": "Square Developer Console Applications: ZAO Rental application exists / absent / unclear only; no secret or ID requested",
+  "steps": {
+    "square_application": "UNCONFIRMED",
+    "secret_store": "UNSELECTED_UNCONFIGURED",
+    "https_receiver": "NOT_CREATED",
+    "vercel": "PLAN_ONLY_DEPLOY_REQUIRES_OWNER",
+    "recovery_delivery": "PROVIDER_UNSELECTED",
+    "r2": "PLAN_ONLY_NO_REQUEST",
+    "backup_pitr": "PROVIDER_UNSELECTED"
+  },
+  "external_acceptance": "NOT_RUN",
+  "external_activation_requests": {
+    "square": 0,
+    "r2": 0,
+    "email": 0,
+    "deploy": 0,
+    "payment": 0,
+    "refund": 0
+  },
+  "claude_starts_this_turn": 0,
+  "prior_p5_claude_starts_preserved": 2,
+  "business_rules_changed": false,
+  "productionActivation": false,
+  "runner": "UNATTENDED_HOLD",
+  "draft_pr_created": false,
+  "owner_pending": [
+    "tax",
+    "sales_period",
+    "cleaning",
+    "NAP",
+    "legal_copy",
+    "media_rights",
+    "Salomon_material",
+    "real_inventory",
+    "real_device",
+    "domain",
+    "production_deploy",
+    "Search_Console",
+    "GBP",
+    "ZAO_listing"
+  ],
+  "verification": "P5 Ready CI and review cover unchanged product tree. P6 docs: local link/secret scan/diff checks only; no new full suite, DB, Web or model started.",
+  "historical_unresolved": [
+    "CI34749426170 staff-create HTTP500",
+    "CI34756544102 wear mixed transport"
+  ],
+  "owned_resources_started": [],
+  "next": "Stop and request only Square Step1. Provider facts and explicit activation/deploy/credential approval are required before actual acceptance."
+}

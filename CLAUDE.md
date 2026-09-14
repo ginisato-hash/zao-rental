@@ -1,3 +1,17 @@
+## Current P6 External Acceptance — preconnection preparation
+
+Read docs/execution/PRODUCTION_P6_AUTHORITY.md, PRODUCTION_P6_STATUS.json and p6/README.md.
+PR16 was exact-head squash merged through unchanged Ruleset23161641. Prepare the
+Owner's staged Square/secret/receiver/Vercel/recovery/R2/backup acceptance decisions.
+Stop before external connection and ask only whether a ZAO application already exists
+in Square Developer Console. No real credential/API/provider/deploy/domain/contract,
+real data, permission expansion, Ruleset change, PR3/Runner or new branch merge.
+Preview deployment also needs Owner approval. Business contracts and production
+fail-closed remain unchanged. No additional model review starts authorized this turn.
+Preserve prior review counts and P5 final progress. Documents are not external proof.
+
+## Historical Night R1 / P5 (completed; not current scope/deadline/merge authority)
+
 ## Current Night R1 / Production Preflight P5
 
 Read docs/execution/OWNER_NIGHT_R1_ORIGINAL.md and PRODUCTION_P5_STATUS.json.

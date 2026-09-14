@@ -8,9 +8,9 @@
   "p5_started_utc": "2026-09-13T17:03:51.815162+00:00",
   "base": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
   "branch": "codex/production-preflight-p5",
-  "state": "IMPLEMENTING",
+  "state": "DRAFT_COMPLETE_LOCAL_SCOPE",
   "pr15_merge": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
-  "claude_starts": 0,
+  "claude_starts": 2,
   "claude_start_limit": 2,
   "prior_p4_starts": 3,
   "external_counts": {
@@ -25,31 +25,31 @@
   "runner": "UNATTENDED_HOLD",
   "tasks": {
     "A": {
-      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "state": "LOCAL_VERIFIED_STATIC_REVIEW_PASS",
       "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
     },
     "B": {
-      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "state": "LOCAL_VERIFIED_STATIC_REVIEW_PASS",
       "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
     },
     "C": {
-      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "state": "LOCAL_VERIFIED_STATIC_REVIEW_PASS",
       "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
     },
     "D": {
-      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "state": "LOCAL_VERIFIED_STATIC_REVIEW_PASS",
       "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
     },
     "E": {
-      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "state": "LOCAL_VERIFIED_STATIC_REVIEW_PASS",
       "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
     },
     "F": {
-      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "state": "LOCAL_VERIFIED_STATIC_REVIEW_PASS",
       "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
     },
     "G": {
-      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "state": "LOCAL_VERIFIED_STATIC_REVIEW_PASS",
       "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
     },
     "H": {
@@ -60,7 +60,7 @@
       ]
     }
   },
-  "next": "P5 recovery, local rehearsal/preflight, ingress/Square/storage fixtures and disk hygiene; final Draft CI/static review, never merge P5",
+  "next": "Owner reviews Draft P5; only separately approved external configuration/real acceptance can follow. No P5 merge or activation authorized.",
   "owner_pending": [
     "Sandbox application/secret store/HTTPS receiver",
     "email delivery/support proof",
@@ -69,5 +69,516 @@
     "off-host encrypted PITR backup acceptance",
     "tax/sales/cleaning/NAP/legal/media rights",
     "real catalog/inventory/device/domain/deploy/external listing"
-  ]
+  ],
+  "head": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+  "tree": "7c0fef850d736b5958fc62ec0ef4189e7bef4514",
+  "pr": "https://github.com/ginisato-hash/zao-rental/pull/16",
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34774399526,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34774399526",
+    "event": "pull_request",
+    "head_sha": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+    "base_sha": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+    "conclusion": "success",
+    "checked_out_sha": "6c1ba1bc4fe9cc6917ea008282bc77c0365eaed1",
+    "checked_out_kind": "PR_MERGE",
+    "integration_candidate_sha": "6c1ba1bc4fe9cc6917ea008282bc77c0365eaed1",
+    "integration_parents": [
+      "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+      "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8"
+    ],
+    "merge_tree_sha": "7c0fef850d736b5958fc62ec0ef4189e7bef4514",
+    "head_tree_sha": "7c0fef850d736b5958fc62ec0ef4189e7bef4514",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-6c1ba1bc4fe9cc6917ea008282bc77c0365eaed1",
+    "artifact_digest": "sha256:085d1da24c2175f014312f8470cf3a6441b3bbda241d246997c498424be18fb6",
+    "artifact_exclusion_check": {
+      "file_count": 158,
+      "path_list_sha256": "c83a36d5ae4d1ad88de397919d7ce0c4fdf155093b09f7129a78daf8dfda2589",
+      "physical_cluster_or_backup_paths_present": false,
+      "checked_actual_download": true
+    }
+  },
+  "local_verification": {
+    "head_sha": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+    "tree_sha": "7c0fef850d736b5958fc62ec0ef4189e7bef4514",
+    "command_count": 49,
+    "unit_tests": 173,
+    "production_e2e_tests": 18,
+    "all_exit_zero": true,
+    "evidence_directory": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p5/.local/evidence/2026-09-13T18-21-58.414Z",
+    "disposed_successful_owned_resources": 59,
+    "failed_and_unknown_preserved": true,
+    "commands_sha256": "f9786f65594a772af27e6e7a4a0d1fe99a4389218e3bad014ed9c0779dd07053",
+    "product_tree_clean_at_capture": true
+  },
+  "review": {
+    "base_sha": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+    "head_sha": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+    "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
+    "verdict": "REVIEW_PASS",
+    "findings": [],
+    "insufficient_evidence": [
+      "This review is static inspection only (tests_executed=false, no shell/code execution available); all PASS/log output, the CI run metadata (run 34774399526), and the before/after counterexample logs are self-reported text taken at face value and were not independently re-executed or re-verified against a live GitHub API by this reviewer.",
+      "Cannot independently confirm the hardcoded SHA-256 hex vector in tests/unit/booking-access-keys.test.ts:12 (asserted equal to createHash('sha256').update(accessKey).digest('hex') for the fixed synthetic master Buffer.alloc(32,0x5a)) without executing Node/crypto; its correctness is inferred solely from the provided ci-verification/test-unit.log showing that specific test passing.",
+      "Cannot verify from static reading alone that no other file outside the 8 files in the exact modified-file list still references the old pre-fix single-shared-key derivation pattern anywhere in the full repository (only the files supplied in the snapshot were inspectable); reliance is on the stated 'COMPLETE FILE STATUS' diff list being exhaustive for this delta."
+    ],
+    "activation_prerequisites": [
+      "Real trusted-ingress/Vercel peer-provenance adapter must be verified and wired as the `guard` argument to bookingAccessHandler before any production exposure of either the confirmed-booking read route or the recovery routes (guard remains undefined/unconnected outside the rehearsal fixture in booking-access-runtime.ts/route.ts).",
+      "Real email/SMS delivery provider selection, deliverability/idempotency verification, and a lost-proof/lost-device identity-recovery support policy must be approved before connecting a BookingRecoveryDelivery implementation in booking-access-runtime.ts; delivery stays BOOKING_RECOVERY_DELIVERY_UNCONNECTED until then.",
+      "Square Sandbox application confirmation, secret-store selection/configuration, and an actual HTTPS webhook receiver remain required before Square activation beyond fixture evidence (unaffected by this diff).",
+      "Cloudflare R2 credentials/purge/CDN behavior and real encrypted off-host backup+PITR provider acceptance remain required before storage moves beyond SDK-fixture verification (unaffected by this diff).",
+      "Any future production composition must also wire the same trusted-ingress-derived guard specifically to the recovery endpoints (mirroring tests/readiness/rehearsal-server.ts), not only the read/issue/revoke endpoints, once delivery is connected."
+    ],
+    "scope_assessment": "This second, corrective-only review covers exactly the 8 files in the P5-F1 delta (apps/web/src/lib/booking-access-runtime.ts; docs/adr/0032-*.md; new packages/core/src/guest/booking-access-keys.ts; tests/flow/launcher.ts; tests/readiness/booking-recovery.ts; tests/readiness/production-rehearsal.ts; tests/readiness/rehearsal-server.ts; new tests/unit/booking-access-keys.test.ts), plus their necessary existing dependents (booking-access.ts, booking-recovery.ts, rental-flow.ts, migration 0024) needed to confirm the fix is wired consistently end-to-end. The prior LOW finding P5-F1 concerned BookingAccess and BookingRecovery being derived from one identical HMAC-SHA256 root key/keyVersion, relying only on distinct purpose-string prefixes inside the HMAC message for domain separation. The fix introduces deriveBookingAccessKeys(master), which derives two structurally independent 32-byte subkeys via HMAC-SHA256(master, distinct-label) — an accessKey under the unchanged P4 label ('zao-owned-development-booking-access-v1', preserving byte-for-byte P4 compatibility, confirmed by the fixed-vector unit test) and a recoveryKey under a new distinct label ('zao-owned-development-booking-recovery-root-v1'). Every call site that previously shared one key (runtime, test launcher, readiness booking-recovery test, production-rehearsal, rehearsal-server) was updated consistently to pass accessKey to BookingAccess and recoveryKey to BookingRecovery, with recovery additionally using new distinct keyVersion strings ('development-recovery-v1' / 'rehearsal-recovery-v1') layered on top of the key separation. The new unit test directly reproduces the previously-failing structural property (HMAC under accessKey vs recoveryKey over an identical accidental message must differ) and the supplied before/after counterexample logs show it failing pre-fix and passing post-fix; both this test and the full P4/P5 recovery/rehearsal/UI/real-PostgreSQL regression suites pass in both local-verification and the fresh exact-head CI run (34774399526, conclusion success, integration_parents/head/base/tree all matching the stated base/head). No secret storage, credential handling, DB roles/grants, permissions, price/HOLD/business rules, or unrelated code were touched by this delta. I independently confirm P5-F1 is resolved as a real, tested fix rather than a documentation-only claim; this remains a static, non-executing confirmation and does not constitute production authorization, external provider acceptance, or merge permission — all B-H areas and external/Owner gates are unchanged from the first full review's baseline and are not re-litigated here.",
+    "tests_executed": false,
+    "prior_finding_dispositions": [
+      {
+        "id": "P5-F1",
+        "status": "RESOLVED",
+        "evidence": "packages/core/src/guest/booking-access-keys.ts now derives accessKey and recoveryKey via HMAC-SHA256(master, distinct-label) instead of one shared key; the P4 access-root label/vector is preserved unchanged (fixed SHA-256 hex vector assertion in tests/unit/booking-access-keys.test.ts:12, passing in both local-verification/test-unit.log and ci-verification/test-unit.log), while the recovery root uses a new distinct label and a new distinct keyVersion ('development-recovery-v1'/'rehearsal-recovery-v1') at every call site (booking-access-runtime.ts, tests/flow/launcher.ts, tests/readiness/booking-recovery.ts, tests/readiness/production-rehearsal.ts, tests/readiness/rehearsal-server.ts). The exact structural counterexample from review-01 (accessKey HMAC output equal to recoveryKey HMAC output over an identical message) is directly tested in tests/unit/booking-access-keys.test.ts and is shown failing pre-fix (counterexamples/key-separation-before.log, AssertionError true!==false) and passing post-fix (counterexamples/key-separation-after.log); the same test also passes in the fresh exact-head CI run 34774399526 (success). All P4/P5 recovery/rehearsal/UI/real-PostgreSQL regressions remain green, confirming no compatibility regression from the key/version split."
+      },
+      {
+        "id": "H-CI34749426170-staff-create-500",
+        "status": "UNRESOLVED",
+        "evidence": "Not addressed by this delta; docs/execution/PRODUCTION_P5_ACCEPTANCE.md still retains this as a historical unresolved observation with no new root-cause evidence in this or the prior head."
+      },
+      {
+        "id": "H-CI34756544102-wear-mixed-transport",
+        "status": "UNRESOLVED",
+        "evidence": "Not addressed by this delta; same acceptance document retains this as historical unresolved, and test:wear-mixed is untouched by the P5-F1 diff."
+      },
+      {
+        "id": "P5-R2-credential-memoization",
+        "status": "RESOLVED",
+        "evidence": "Unaffected by this delta; already resolved per review-01 (counterexamples/r2-before.log vs r2-after.log, operation-scoped S3Client fix in r2-media.ts), and R2 rotation unit test still passes in both local and CI test-unit.log at this head."
+      },
+      {
+        "id": "P5-migration-list-0024-omission",
+        "status": "RESOLVED",
+        "evidence": "Unaffected by this delta; already resolved per review-01 (expected migration-id lists updated to include 0024), and test:integration/test:integration-p2 pass cleanly in both local-verification and CI logs at this head."
+      }
+    ]
+  },
+  "manifest_sha256": "91888df7196bdc9aae606c10244175724d66df5fd21bb41b8fe16b55c6624ad8",
+  "manifest_url": "https://github.com/ginisato-hash/zao-rental/pull/16#issuecomment-5655269221",
+  "review_url": "https://github.com/ginisato-hash/zao-rental/pull/16#issuecomment-5655309094",
+  "finished_utc": "2026-09-13T18:45:53.754137+00:00",
+  "preflight": {
+    "schemaVersion": 1,
+    "checkedAt": "2026-09-13T18:37:38.655Z",
+    "head": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+    "tree": "7c0fef850d736b5958fc62ec0ef4189e7bef4514",
+    "main": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+    "offline": false,
+    "worktreeClean": true,
+    "ready": false,
+    "productionActivation": false,
+    "externalRequestsPerformed": 0,
+    "gates": [
+      {
+        "id": "MAIN_PROTECTION",
+        "state": "PASS",
+        "reason": "RULESET23161641_CHECKED",
+        "evidenceKind": "GITHUB_READ_ONLY"
+      },
+      {
+        "id": "FOUNDATION_CI",
+        "state": "PASS",
+        "reason": "EXACT_HEAD_INTEGRATION_CHECKED",
+        "evidenceKind": "GITHUB_READ_ONLY"
+      },
+      {
+        "id": "GUEST_POLICY",
+        "state": "PASS",
+        "reason": "P4_BALANCED_VALUES_ONLY_NOT_RUNTIME_ACTIVATION",
+        "evidenceKind": "OWNER_APPROVAL"
+      },
+      {
+        "id": "TRUSTED_INGRESS",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "BOOKING_RECOVERY",
+        "state": "EXTERNAL_PENDING",
+        "reason": "LOCAL_READ_ONLY_RECOVERY_NOT_EMAIL_OR_IDENTITY_DELIVERY_ACCEPTANCE",
+        "evidenceKind": "LOCAL_ONLY"
+      },
+      {
+        "id": "SQUARE_SANDBOX",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "SQUARE_WEBHOOK",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "SECRET_STORE",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "STORAGE_PROVIDER",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "CATALOG_IMPORT",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "REAL_DEVICE",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "FIELD_CWV",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "BACKUP_PITR",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "BACKUP_RESTORE",
+        "state": "EXTERNAL_PENDING",
+        "reason": "COLD_LOCAL_DRILL_NOT_OFF_HOST_ENCRYPTED_PITR_RESTORE",
+        "evidenceKind": "LOCAL_ONLY"
+      },
+      {
+        "id": "RPO_RTO",
+        "state": "EXTERNAL_PENDING",
+        "reason": "OWNER_SELECTION_TARGETS_NOT_MEASURED_PROVIDER_SLA",
+        "evidenceKind": "OWNER_TARGET"
+      },
+      {
+        "id": "TAX",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "SALES_PERIOD",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "COUPON",
+        "state": "PASS",
+        "reason": "INDEPENDENT_COUPON_DISABLED_EARLY_PAYMENT_RULE_UNCHANGED",
+        "evidenceKind": "OWNER_APPROVAL"
+      },
+      {
+        "id": "CLEANING",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "NAP",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "LEGAL_COPY",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "MEDIA_RIGHTS",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "DOMAIN",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "DEPLOYMENT",
+        "state": "OWNER_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "SEARCH_CONSOLE",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "GBP",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      },
+      {
+        "id": "ZAO_OFFICIAL_LISTING",
+        "state": "EXTERNAL_PENDING",
+        "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+        "evidenceKind": "NONE"
+      }
+    ]
+  },
+  "process_cleanup": {
+    "checkedAt": "2026-09-13T18:45:31.171Z",
+    "root": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p5",
+    "portsFree": [
+      28805,
+      38805,
+      38807
+    ],
+    "retained": [
+      {
+        "resource": ".local/postgres/restored-BmHWd9",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      },
+      {
+        "resource": ".local/postgres/run-9AfB8N",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      },
+      {
+        "resource": ".local/postgres/run-GmKc5R",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      },
+      {
+        "resource": ".local/postgres/run-MaDsGy",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      },
+      {
+        "resource": ".local/postgres/run-TgqrzT",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      },
+      {
+        "resource": ".local/postgres/run-d4NkVg",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      },
+      {
+        "resource": ".local/postgres/run-eU56HN",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      },
+      {
+        "resource": ".local/backup-drill/backup-LHcBjK",
+        "rootMatches": true,
+        "state": "STOPPED",
+        "postgresAlive": false
+      }
+    ],
+    "knownPostgresStopped": true,
+    "reviewProcesses": [
+      {
+        "round": "review-01",
+        "state": "RETURNED",
+        "pid": 16547,
+        "alive": false
+      },
+      {
+        "round": "review-02",
+        "state": "RETURNED",
+        "pid": 26186,
+        "alive": false
+      }
+    ],
+    "webBrowserEvidence": "All successful verify launchers logged Web/browser stop; no manual CUA tab opened for P5; owned application ports verified free.",
+    "cleanupRecords": 129,
+    "uniqueSuccessfulOwnedResourceIds": 129,
+    "failedOrUnknownDeleted": false,
+    "availableBytes": 6268067840,
+    "otherProjectsTouched": false
+  },
+  "observations": {
+    "historical": [
+      {
+        "run": 34749426170,
+        "observation": "staff-create HTTP500",
+        "classification": "historical unresolved observation"
+      },
+      {
+        "run": 34756544102,
+        "observation": "wear mixed transport",
+        "classification": "historical unresolved observation"
+      }
+    ],
+    "p5": [
+      {
+        "evidence": ".local/p5-r2-before.log",
+        "classification": "product defect confirmed by SDK-handler fixture",
+        "condition": "second operation retained FIRST credential instead of SECOND",
+        "fix": "operation-scoped SDK client with fresh resolver",
+        "after": ".local/p5-r2-after.log",
+        "real_r2": false
+      },
+      {
+        "evidence": ".local/evidence/2026-09-13T17-48-58.806Z/test-integration.log",
+        "classification": "test defect",
+        "condition": "strict migration list expected0001-0023 after additive0024",
+        "fix": "append exact0024 to two strict expected lists; no loosening/order/count skip",
+        "ci_failure": 34772726246,
+        "ci_attempt": 1,
+        "ci_evidence": "ci-first-failure-selected.txt",
+        "after": "counterexamples/migration-after.log"
+      },
+      {
+        "evidence": ".local/evidence/target-87d8b7bf-e5e5-4321-91e0-3d37cb0382f4",
+        "classification": "test defect",
+        "condition": "Next SIGTERM exit143 incorrectly expected0",
+        "probe": {
+          "exitCode": 143,
+          "signal": null,
+          "forced": false,
+          "portFreed": true
+        },
+        "fix": "accept requested0/143 only, require not forced and port free",
+        "after": ".local/evidence/target-65817037-cd0e-45e2-88d9-96dd5c900262"
+      },
+      {
+        "evidence": [
+          ".local/evidence/target-ef52bf80-802e-4ffe-a39b-58ab6dd0608f"
+        ],
+        "classification": "test infrastructure defect",
+        "condition": "ownership marker inside uninitialized PG directory",
+        "fix": "sidecar outside directory; failed directory retained"
+      },
+      {
+        "evidence": [
+          ".local/evidence/target-06eab2de-dd14-4421-b889-687811ec570d",
+          ".local/evidence/target-ffebd70d-fa0e-4ec8-9821-d1098e34404c"
+        ],
+        "classification": "test restart navigation observation; exact transport cause unproven",
+        "condition": "active HMR tab navigation after dev restart",
+        "fix": "existing control pattern closes tab, restarts server, waits health, opens new tab in same context",
+        "after": ".local/evidence/target-a82f0eb0-7049-4cc9-ae16-fab6d38bf8fc"
+      }
+    ],
+    "failed_resources_preserved": true,
+    "actual_external_provider_requests": 0
+  },
+  "review_history": [
+    {
+      "round": 1,
+      "head": "6b3a948856777a1d085bd65703d1a3d5a3c30c22",
+      "snapshot_sha256": "82ee2f53b0c2a1bb0531dee93c805a8eb615b8a6f51ef2f4b78a7117ba74f0f5",
+      "verdict": "REVIEW_PASS",
+      "findings": [
+        {
+          "id": "P5-F1",
+          "severity": "LOW",
+          "file": "apps/web/src/lib/booking-access-runtime.ts",
+          "line": 17,
+          "condition": "BookingAccess and BookingRecovery are both constructed from the identical HMAC-SHA256 root key and identical keyVersion label; domain separation between the two capability classes relies solely on distinct purpose-string prefixes embedded inside each JSON-serialized HMAC message, not on independently derived root keys.",
+          "impact": "Reduces cryptographic defense-in-depth: since both the confirmed-booking read capability (BookingAccess) and the recovery code/recovered-read token (BookingRecovery) are HMACed under one shared secret, any future bug that causes a purpose-string collision or an unescaped/ambiguous value in the JSON.stringify-based domain-separation input could let a token minted for one capability be reproduced or confused with the other. Today the purpose strings ('zao-booking-read-v1' vs 'zao-booking-recovery-v1' vs 'zao-booking-recovered-read-v1') are distinct and non-colliding, so no live exploit exists, but the shared-key design removes the structural guarantee that would otherwise make such a future mistake cryptographically inert.",
+          "evidence": "apps/web/src/lib/booking-access-runtime.ts:17-18: `const key=createHmac('sha256',p.r.config.authSecret).update('zao-owned-development-booking-access-v1').digest(); return {p,access:new BookingAccess(pool,key,'development-v1'),recovery:new BookingRecovery(pool,key,'development-v1')};` — the same `key` and `'development-v1'` version string are passed into both `new BookingAccess(...)` (packages/core/src/guest/booking-access.ts) and `new BookingRecovery(...)` (packages/core/src/guest/booking-recovery.ts).",
+          "fix": "Derive two independent root keys from authSecret with distinct labels, e.g. `createHmac('sha256',authSecret).update('zao-booking-access-root-v1').digest()` for BookingAccess and a separate `...update('zao-booking-recovery-root-v1').digest()` for BookingRecovery, so a future purpose-string mistake in one component cannot be leveraged against the other.",
+          "test": "Add a unit test that constructs BookingAccess and BookingRecovery from the same authSecret via bookingAccessRuntime-equivalent derivation and asserts their effective per-purpose HMAC outputs are independent (i.e., that the runtime derives non-identical key material for the two components), failing today since both currently receive the exact same 32-byte key."
+        }
+      ],
+      "original_comment": "https://github.com/ginisato-hash/zao-rental/pull/16#issuecomment-5655155306",
+      "effective_state_at_receipt": "CHANGES_REQUIRED"
+    },
+    {
+      "round": 2,
+      "head": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+      "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
+      "verdict": "REVIEW_PASS",
+      "findings": [],
+      "original_comment": "https://github.com/ginisato-hash/zao-rental/pull/16#issuecomment-5655309094",
+      "effective_state_at_receipt": "REVIEW_PASS"
+    }
+  ],
+  "progress_record_note": "Final status saved locally and in exact-readback PR comment after code review; this metadata remains uncommitted so the reviewed head is unchanged."
 }

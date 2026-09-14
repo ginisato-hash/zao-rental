@@ -1,0 +1,18 @@
+{
+  "operationId": "0b1c85f0-db9f-4bfd-8bef-af8b39b36642",
+  "bookingId": "459563cc-28db-416b-b8d1-73b4d2fa5149",
+  "attemptId": "c9febd47-5d29-49b9-a032-cbca5f258401",
+  "idempotencyKey": "1fc46b8b-ce24-49f6-b809-c1594c2788b5",
+  "amountJpy": 100,
+  "currency": "JPY",
+  "merchantId": "MLKDVEDH1ME21",
+  "sourceKind": "SQUARE_SANDBOX_FIXED_TEST_SOURCE",
+  "sourceId": "cnon:card-nonce-ok",
+  "apiVersion": "2026-08-19",
+  "providerOrigin": "https://connect.squareupsandbox.com",
+  "locationBinding": "SQUARE_SANDBOX_LOCATION_ID",
+  "maxCreatePaymentDispatch": 1,
+  "maxConditionalLookup": 1,
+  "retry": 0,
+  "production": false
+}

@@ -1,0 +1,9 @@
+
+> zao-rental@0.1.0 lint
+> eslint . --max-warnings=0
+
+
+/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/readiness/s2-operator-guard.test.mjs
+  18:2  error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+
+✖ 1 problem (1 error, 0 warnings)

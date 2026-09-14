@@ -842,6 +842,11 @@
     "spark_starts": 0,
     "r4_r6_r7_r8_history": "PRESERVED",
     "production_journal_requirement": "UNCHANGED",
-    "sandbox_exception": "Owner-controlled local exclusive fsync guard + fixed provider idempotency; instance latch defense in depth only"
+    "sandbox_exception": "Owner-controlled local exclusive fsync guard + fixed provider idempotency; instance latch defense in depth only",
+    "authority_commit": "a465f1e4f1469eedb54bb5f70c37405a8c9b8f17",
+    "local_validation": "99_PASS_FAIL0_SKIP0_SECRET_LINT_TYPECHECK_BUILD_EXIT0",
+    "operation_manifest": "p6/s2-evidence/operation-manifest.json",
+    "manifest_file_sha256": "4fa694c818cdbe332523119e117c9d14de0c1b689322489eeeb3c4bc66f49e41",
+    "manifest_fingerprint": "8d0e345cc3f51a0293b146f5afe16673ff38c49db4dcb6ad71c50d775b2306f8"
   }
 }

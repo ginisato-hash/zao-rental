@@ -1,5 +1,5 @@
 {
-  "phase": "BLOCKED_AUTOMATED_AUTHENTICATED_POST_OWNER_SINGLE_OPERATION",
+  "phase": "BLOCKED_BROWSER_SELF_XSS_CONFIRMED_NOT_EXECUTED",
   "authority": "PRODUCTION_P6_R4_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "One explicit same-origin POST from the existing authenticated Team browser using the local handoff. Never repeat unknown results. Leave the safe result visible and report completion.",
+  "first_owner_action": "Owner decision on a compliant authenticated invocation method; do not bypass browser protection, extract credentials or retry the superseded handoff.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T04:15:02.731748+00:00",
+  "updated_at": "2026-09-14T09:49:15Z",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -530,7 +530,7 @@
     },
     "spark_task": "P6-SPARK-SQUARE-S1-TEST-01",
     "spark_corrections": 1,
-    "invocation_method": "OWNER_TEAM_BROWSER_EXPLICIT_POST_REQUIRED; CLI secret-argument path rejected",
+    "invocation_method": "BLOCKED: Owner browser Self-XSS stop confirmed before dispatch; previous handoff superseded, no retry",
     "evidence": "p6/r4-evidence/",
     "remaining_preview_attempts": 0,
     "preview": {
@@ -604,6 +604,46 @@
         "browser": "only owned tab27 remains, marked handoff; earlier task tabs no longer present"
       },
       "next": "After Owner result: validate saved summary without re-invocation. PASS permits Preview merchant metadata only. Then remove temporary route, recheck, save evidence and remove S1 deployment. Do not redeploy or proceed S2."
+    },
+    "owner_handoff_resolution": {
+      "recorded_at_utc": "2026-09-14T09:49:15Z",
+      "recorded_at_jst": "2026-09-14T18:49:15+09:00",
+      "source": "Explicit Owner report in current conversation; not provider telemetry",
+      "observed_head": "28005adddea87696586cf1b6690c239c6260014d",
+      "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+      "phase": "BLOCKED_BROWSER_SELF_XSS_CONFIRMED_NOT_EXECUTED",
+      "S1_result": "NOT_RUN",
+      "owner_report": {
+        "browser": "Chrome DevTools",
+        "blocked_by": "Self-XSS Console paste protection",
+        "allow_pasting_entered": false,
+        "script_executed": false,
+        "explicit_post_dispatched": false,
+        "other_tab_browser_or_method_retried": false
+      },
+      "actual_post_dispatches": 0,
+      "square_actual_requests": 0,
+      "payments": 0,
+      "refunds": 0,
+      "webhook_deliveries": 0,
+      "preview_attempts_consumed": 1,
+      "preview_attempts_remaining": 0,
+      "square_get_limit": 2,
+      "square_get_budget_unspent": 2,
+      "budget_reset": false,
+      "automatic_retry_authorized": false,
+      "classification": "Confirmed pre-dispatch stop, not authentication failure, S1_FAIL, S1_PASS or UNKNOWN",
+      "next_gate": "Owner decision on a compliant authenticated invocation method; do not bypass browser protection, extract credentials or retry the superseded handoff.",
+      "this_update": {
+        "provider_requests": 0,
+        "deployments": 0,
+        "model_starts": 0,
+        "db_web_browser_claude_started": 0
+      },
+      "retained_resources": [
+        "accepted R3 Preview",
+        "protected S1 Preview; no remote mutation in this update"
+      ]
     }
   }
 }

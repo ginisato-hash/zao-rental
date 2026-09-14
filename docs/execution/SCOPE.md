@@ -1,3 +1,16 @@
+## Current R4 — Self-XSS stop; Owner confirms no S1 dispatch
+
+Read docs/execution/p6/R4_S1_CHECKPOINT.md and PRODUCTION_P6_STATUS.json.
+Owner confirms script/POST not executed, no `allow pasting`, no alternative retry.
+S1 NOT_RUN; actual Square0. Preview allowance1 consumed; GET2 unspent is not
+permission to bypass this stop. Earlier Owner handoff is superseded history.
+Do not retry or switch tab/browser/method, disable browser protection, extract
+credentials, redeploy or invoke S1 automatically. Preserve budgets and evidence.
+Await a compliant authenticated invocation decision. No S2/main/Runner/provider
+mutation. Existing R3 and S1 Previews are retained; no resource changes this update.
+
+## Historical Owner handoff (superseded by confirmed pre-dispatch stop)
+
 ## Current R4 — protected S1 Preview ready; one Owner POST handoff pending
 
 Read docs/execution/p6/R4_S1_CHECKPOINT.md and PRODUCTION_P6_STATUS.json.

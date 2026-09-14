@@ -1,4 +1,16 @@
-# R4 S1 checkpoint: protected Preview ready, actual acceptance not yet run
+# Current R4 stop: Owner confirms S1 was not executed
+
+Recorded 2026-09-14 09:49:15 UTC / 18:49:15 JST. Chrome DevTools Self-XSS protection refused Console paste. Owner did not enter `allow pasting`, did not execute the handoff script or dispatch the POST, and did not retry in another tab/browser/method.
+
+**S1 NOT_RUN; POST0; Square requests0**, based on explicit Owner report plus the prior agent no-dispatch record, not provider-wide telemetry. This is a confirmed pre-dispatch browser-protection stop, not authentication failure or an unknown request result. Merchant/location acceptance remains unverified.
+
+The Preview allowance remains consumed (1/1). Square GET allowance2 remains unspent; that does not authorize a workaround or automatic retry. No new deploy, model call, provider request, environment change or local DB/Web/browser/Claude was started for this update. Existing R3/S1 Previews are retained, without changing protection. No payment/refund/webhook/DB/R2/Production/S2 action.
+
+The earlier Owner handoff below is **superseded, for history only**. Stop until a compliant authenticated invocation method is decided. Do not disable Self-XSS, extract credentials, use another browser/tab/method to bypass the stop, or rerun the script. Evidence: [Owner report](r4-evidence/owner-handoff-not-executed.json).
+
+---
+
+# Historical R4 S1 checkpoint: protected Preview ready, actual acceptance not yet run
 
 ## Completed
 

@@ -49,4 +49,4 @@ test('read-only expected context uses merchant/provider binding; batch is one qu
 });
 test('merchant auth/quota stop is durable with no reset function or fresh-event bypass',()=>{assert.match(sql,/CREATE TABLE payment_reconciliation.provider_stops/);assert.match(sql,/INSERT INTO payment_reconciliation.provider_stops/);assert.match(sql,/p_code IN \('AUTH_BLOCKED','RATE_LIMITED'\)/);assert.doesNotMatch(sql,/DELETE FROM payment_reconciliation.provider_stops|TRUNCATE/);});
 
-test('context timestamp formatting is stable and normalized money stays within safe integer bounds',()=>{assert.match(sql,/format_context\(a public.rental_payment_attempts\) RETURNS jsonb\n LANGUAGE sql STABLE/);assert.match(sql,/numeric<=9007199254740991/);});
+test('context timestamp formatting is stable and normalized money stays within safe integer bounds',()=>{assert.match(sql,/format_context\(a public.rental_payment_attempts\) RETURNS jsonb\n LANGUAGE sql STABLE/);assert.match(sql,/numeric<=9007199254740991/);assert.match(sql,/jsonb_build_object\('attemptId',\(a\).id/);});

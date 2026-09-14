@@ -165,9 +165,9 @@ END$$;
 -- Read-only binding through existing unique provider_id, not event-supplied price/status/reference.
 -- UNKNOWN without a recorded provider ID remains a separate unresolved gate.
 CREATE FUNCTION payment_reconciliation.format_context(a public.rental_payment_attempts) RETURNS jsonb
- LANGUAGE sql STABLE SET search_path=pg_catalog,pg_temp AS $$ SELECT jsonb_build_object('expected',jsonb_build_object('attemptId',a.id,'bookingId',a.booking_id,'idempotencyKey',a.idempotency_key,'merchantId',a.merchant_id,'locationId',a.location_id,'amountJpy',a.amount_jpy,'currency',a.currency),
-  'current',jsonb_build_object('state',a.state,'providerId',a.provider_id,'providerState',a.provider_state,'providerUpdatedAt',a.provider_updated_at),
-  'latest',CASE WHEN a.provider_state IN ('PENDING','COMPLETED','FAILED','CANCELED') AND a.provider_updated_at IS NOT NULL THEN jsonb_build_object('providerId',a.provider_id,'referenceId',a.booking_id,'idempotencyKey',a.idempotency_key,'merchantId',a.merchant_id,'locationId',a.location_id,'amountJpy',a.amount_jpy,'currency',a.currency,'status',a.provider_state,'updatedAt',a.provider_updated_at,'completedAt',a.completed_at) ELSE NULL END) $$;
+ LANGUAGE sql STABLE SET search_path=pg_catalog,pg_temp AS $$ SELECT jsonb_build_object('expected',jsonb_build_object('attemptId',(a).id,'bookingId',(a).booking_id,'idempotencyKey',(a).idempotency_key,'merchantId',(a).merchant_id,'locationId',(a).location_id,'amountJpy',(a).amount_jpy,'currency',(a).currency),
+  'current',jsonb_build_object('state',(a).state,'providerId',(a).provider_id,'providerState',(a).provider_state,'providerUpdatedAt',(a).provider_updated_at),
+  'latest',CASE WHEN (a).provider_state IN ('PENDING','COMPLETED','FAILED','CANCELED') AND (a).provider_updated_at IS NOT NULL THEN jsonb_build_object('providerId',(a).provider_id,'referenceId',(a).booking_id,'idempotencyKey',(a).idempotency_key,'merchantId',(a).merchant_id,'locationId',(a).location_id,'amountJpy',(a).amount_jpy,'currency',(a).currency,'status',(a).provider_state,'updatedAt',(a).provider_updated_at,'completedAt',(a).completed_at) ELSE NULL END) $$;
 CREATE FUNCTION payment_reconciliation.load_context(p_environment text,p_merchant text,p_payment text) RETURNS jsonb
  LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
 DECLARE a public.rental_payment_attempts;

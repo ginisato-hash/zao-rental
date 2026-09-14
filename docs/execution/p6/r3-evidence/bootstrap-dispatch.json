@@ -1,0 +1,18 @@
+{
+  "at": "2026-09-14T02:28:59.126326+00:00",
+  "args": [
+    "deploy",
+    "--prebuilt",
+    "--prod",
+    "--skip-domain",
+    "--no-wait",
+    "--format=json",
+    "--non-interactive",
+    "--meta",
+    "zaoAcceptance=p6-r3-static-bootstrap-no-domain-no-provider"
+  ],
+  "limit": 1,
+  "retry": false,
+  "static_bytes": 370,
+  "source_in_repo": false
+}

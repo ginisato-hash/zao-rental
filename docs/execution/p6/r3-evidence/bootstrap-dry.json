@@ -1,0 +1,49 @@
+{
+  "framework": {
+    "name": "Other",
+    "slug": null
+  },
+  "basePath": "OWNED_TEMPORARY_BOOTSTRAP_DIRECTORY",
+  "fileCount": 2,
+  "totalSize": 370,
+  "ignoredCount": 2,
+  "ignored": [
+    ".vercel/project.json",
+    "vercel.json"
+  ],
+  "directories": [
+    {
+      "path": ".vercel",
+      "fileCount": 2,
+      "size": 370
+    }
+  ],
+  "largestFiles": [
+    {
+      "path": ".vercel/output/static/index.html",
+      "size": 228,
+      "mode": 33188,
+      "sha": "a9c7cc6264b85f2cb3c5ab7e430a5b1383f36ab9"
+    },
+    {
+      "path": ".vercel/output/config.json",
+      "size": 142,
+      "mode": 33188,
+      "sha": "13d49e82f971e273c58028dcd6a153978b2a12f0"
+    }
+  ],
+  "files": [
+    {
+      "path": ".vercel/output/config.json",
+      "size": 142,
+      "mode": 33188,
+      "sha": "13d49e82f971e273c58028dcd6a153978b2a12f0"
+    },
+    {
+      "path": ".vercel/output/static/index.html",
+      "size": 228,
+      "mode": 33188,
+      "sha": "a9c7cc6264b85f2cb3c5ab7e430a5b1383f36ab9"
+    }
+  ]
+}

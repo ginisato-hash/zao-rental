@@ -1,0 +1,31 @@
+{
+  "static_only": true,
+  "secrets": false,
+  "files": [
+    {
+      "path": "vercel.json",
+      "bytes": 91,
+      "sha256": "8da6565932dc8ddcbfc420e253ac5ad79d2d593d17db5969735327c01faef873"
+    },
+    {
+      "path": ".vercel/project.json",
+      "bytes": 121,
+      "sha256": "e6cc1101cd9ce92daa93ead75c84f0fa61a024e9ba6053f6736850c5e52f205c"
+    },
+    {
+      "path": ".vercel/output/config.json",
+      "bytes": 142,
+      "sha256": "581728ada63499e08b53afd730e1791f3d9005571ad5c128fa6dcda0f13064a9"
+    },
+    {
+      "path": ".vercel/output/static/index.html",
+      "bytes": 228,
+      "sha256": "f5132896a789ba0dedeb5ef75c75b71aafc3720cd7e660db719912cdffe76212"
+    }
+  ],
+  "allowed_upload": [
+    "config.json",
+    "static/index.html"
+  ],
+  "repo_placeholder_committed": false
+}

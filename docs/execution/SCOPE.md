@@ -1,3 +1,27 @@
+## Current P6 R3 stop — bootstrap unexpectedly received standard alias
+
+Read docs/execution/p6/R3_RESULT.md and PRODUCTION_P6_STATUS.json.
+--skip-domain produced autoAssignCustomDomains=false but a generated alias appeared.
+R3 §28 stop applies. Exact alias removed; protected static bootstrap retained, live
+aliases0. No actual app Preview was attempted. Do not resume or redeploy without
+Owner decision on this stop condition. Prepared toolchain changes are not integrated
+or cloud verified. Square/DB/providers/business/Runner restrictions remain.
+
+## Historical R3 execution scope (stopped at its explicit alias gate)
+
+## Current P6 R3 — bounded Vercel acceptance recovery
+
+Read docs/execution/PRODUCTION_P6_R3_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Owner authorizes minimal Node/npm/build compatibility, one protected static no-domain
+bootstrap placeholder (production metadata allowed), then one actual application Preview.
+Parent owns infrastructure, runtime/config and authority. Spark tasks are bounded
+inventory/test work only. Preserve prior failed Attempt1 and all review budgets.
+Never deploy app as production, pull/display secrets, activate Square/DB/providers,
+add domains, bypass protection, enable Runner or change business rules. Stop on
+unexpected aliases/protection/target/failure. No retry beyond the R3 two bounded objects.
+
+## Historical Attempt1 stop (superseded only by R3's explicit allowance)
+
 ## P6 current checkpoint — first Preview attempt exhausted; stopped
 
 Read docs/execution/p6/PREVIEW_01_RESULT.md and PRODUCTION_P6_STATUS.json.

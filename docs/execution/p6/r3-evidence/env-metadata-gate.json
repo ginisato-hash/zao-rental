@@ -1,0 +1,47 @@
+{
+  "rows": [
+    {
+      "key": "SQUARE_ENVIRONMENT",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret"
+    },
+    {
+      "key": "SQUARE_API_VERSION",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret"
+    },
+    {
+      "key": "SQUARE_SANDBOX_APPLICATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret"
+    },
+    {
+      "key": "SQUARE_SANDBOX_LOCATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret"
+    },
+    {
+      "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret"
+    }
+  ],
+  "production_entries": 0,
+  "values_read": false,
+  "decrypt": false
+}

@@ -1,4 +1,19 @@
-## Current R4 — Owner-approved Playwright invocation amendment
+## Current R4 — one Playwright POST returned UNKNOWN; never retry
+
+The Owner-approved amendment was saved on GitHub before execution. Exact protected
+S1 Preview was verified Ready; normal Owner Team login completed. Durable local guard
+was fsynced before the single POST. HTTP503 yielded no allowlisted S1 summary:
+UNKNOWN_DO_NOT_RETRY. POST1; Square actual count unknown, maximum2 possibly consumed.
+No merchant metadata registration, configuration repair or retry is authorized.
+Preserve the immutable guard and evidence. Finish only the explicitly approved cleanup:
+evidence, temporary route removal, narrow tests/secret scan/lint/typecheck, exact S1
+Preview removal. Keep accepted R3. No new Preview, payment/refund/webhook/DB/R2/S2,
+Claude/Spark/main/Runner. See p6/r4-evidence/playwright-invocation-result.json under
+docs/execution. Historical zero-request records remain historical checkpoints.
+
+## Historical method amendment checkpoint (one invocation now consumed)
+
+## Historical R4 — Owner-approved Playwright invocation amendment
 
 Read docs/execution/PRODUCTION_P6_R4_INVOCATION_AMENDMENT.md and the P6 status.
 Owner approves one same-origin POST from a normal Playwright browser against only

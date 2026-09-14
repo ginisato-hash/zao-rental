@@ -1,4 +1,25 @@
-# Current R4: Playwright method approved; invocation not yet dispatched
+# Current R4: UNKNOWN_DO_NOT_RETRY after one Playwright POST
+
+Amendment commit `8b19da604549b6e87376a283d155d27d69bc2a75` was pushed and
+verified before execution. The exact S1 deployment/origin was Preview / Ready;
+Vercel Authentication Require Log In was enabled with Standard Protection.
+Owner completed ordinary login in the same Playwright context.
+
+A durable exclusive local guard was fsynced before dispatch. Exactly one POST
+returned HTTP503 without the allowlisted S1 summary. **UNKNOWN_DO_NOT_RETRY**.
+Actual Square count and Square HTTP results are unknown; maximum2 GET may have
+been consumed. Country/currency, identities and capability remain unverified.
+No merchant metadata registration, env change or redeploy. No retry.
+
+[Safe evidence](r4-evidence/playwright-invocation-result.json) is saved before
+cleanup. Only the Owner-approved route cleanup, local validations and exact S1
+Preview removal remain. Accepted R3 is retained. No payment/refund/webhook/DB/R2/
+email/SMS/Production Square/S2/Claude/Spark/main operation. The historical POST0/
+Square0 records below apply only before this invocation.
+
+---
+
+# Historical R4: Playwright method approved; invocation not yet dispatched
 
 The Owner's [invocation amendment](../PRODUCTION_P6_R4_INVOCATION_AMENDMENT.md)
 replaces only the superseded Console-paste method. It authorizes one same-origin

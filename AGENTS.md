@@ -1,3 +1,19 @@
+## Current formal R10/S3 — fixed payment lookup and exact Sandbox refund
+
+Read docs/execution/PRODUCTION_P6_S3_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Owner explicitly adopted this authority in normal chat after attachment gate.
+Save/push/read back authority first; fixed refund manifest before provider dispatch.
+Existing S2 payment only, GET1 then100JPY refund1 only after full match; conditional
+GetRefund1 only after successful POST/PENDING/safe ID. Retry0; model starts0.
+One protected Preview; empty controlled POST; exclusive/fsync local guard, instance
+latch and provider idempotency. Not distributed HTTP-once proof or P4 DB authority.
+No CreatePayment/S1/webhook/DB/R2/Production/main/Runner/new credential/new PR.
+Observe browser only after Owner leaves login/callback. Preserve R4–R9 and prior
+adoption rejection evidence. Remote result before exact route/Preview cleanup.
+Keep R3, immutable manifests, guards and provider objects. PASS permits S4 gate only.
+
+## Historical R9 instructions (superseded only within formal R10 authority)
+
 ## Current R9 final — S2_PASS; cleanup complete; S3 requires new authority
 
 Read docs/execution/PRODUCTION_P6_STATUS.json and PRODUCTION_P6_S3_GATE.md.

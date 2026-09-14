@@ -1,6 +1,6 @@
 {
-  "phase": "R9_S2_PASS_CLEANUP_COMPLETE_WAIT_S3_AUTHORITY",
-  "authority": "PRODUCTION_P6_S2_AUTHORITY.md",
+  "phase": "R10_S3_AUTHORIZED_IMPLEMENTATION",
+  "authority": "PRODUCTION_P6_S3_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
   "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Select/approve separate bounded S3 scope in PRODUCTION_P6_S3_GATE.md; S2 requires no repeated login or rerun.",
+  "first_owner_action": "Normal Preview login only if required; next provider scope needs separate S4 authority",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "S2 terminal; wait for explicitly bounded S3 authority. No new POST, lookup, refund, webhook, DB, deploy, S1 or model start.",
+  "next": "Authority remote readback, fixed lookup/refund implementation, validation, one Preview, guarded execution, evidence and cleanup",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T15:51:56.709451+00:00",
+  "updated_at": "2026-09-14T16:16:33.537118+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -883,5 +883,28 @@
     "provider_payment_id": "pezzekG1LQRt4MVKF0X4sgRCx1FZY",
     "request_fingerprint": "19ad7d88b5c1f0bce8e209195e1ee4c84b76e89bf6e14ac306dfc9cc2a84a9d2",
     "idempotency_key": "1fc46b8b-ce24-49f6-b809-c1594c2788b5"
+  },
+  "r10": {
+    "started_at": "2026-09-14T15:57:00Z",
+    "starting_head": "9cae73c16e92844a824c79a74ccea100f94a4f1f",
+    "authority": "PRODUCTION_P6_S3_AUTHORITY.md",
+    "authority_sha256": "844306030e8cc3143ddd74e5ab1be2d201535decfc4a0d92a0a5452b13499380",
+    "prior_authority_adoption_rejections": 3,
+    "owner_plaintext_adoption": "添付の正式Owner Authority R10/S3を採用し、記載範囲の実装・Sandbox照合・100円全額返金・cleanupを承認する",
+    "classification": "NOT_EXECUTED",
+    "preview_limit": 1,
+    "preview_attempts": 0,
+    "payment_lookup_limit": 1,
+    "payment_lookup_dispatches": 0,
+    "refund_post_limit": 1,
+    "refund_post_dispatches": 0,
+    "refund_lookup_limit": 1,
+    "refund_lookup_dispatches": 0,
+    "operator_posts": 0,
+    "retry": 0,
+    "claude_starts": 0,
+    "spark_starts": 0,
+    "create_payment": 0,
+    "s1_rerun": 0
   }
 }

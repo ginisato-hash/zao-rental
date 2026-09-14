@@ -1,5 +1,5 @@
 {
-  "phase": "R8_S1_EVIDENCE_ADOPTED_METADATA_PENDING",
+  "phase": "R8_S1_EVIDENCE_ADOPTED_BLOCKED_VERCEL_LOGIN",
   "authority": "PRODUCTION_P6_R8_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,10 +38,10 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "None during authorized R8. After completion: approve S2 synthetic payment exactly1 with a complete bounded execution authority.",
+  "first_owner_action": "Owner normal Vercel CLI browser login on this Mac; report completion only, never token/callback/MFA values. Then resume metadata-only registration and readback; no S1/deploy.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
-    "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
+    "secret_store": "PREVIEW_EXISTING_SETTINGS_PRESERVED_LOCAL_CLI_AUTH_REQUIRED",
     "https_receiver": "NOT_CREATED_ROUTE_UNCONNECTED",
     "vercel": "PROTECTED_ACTUAL_PREVIEW_BUILD_START_HEALTH_FAIL_CLOSED_VERIFIED",
     "recovery_delivery": "PROVIDER_UNSELECTED",
@@ -68,7 +68,7 @@
   "runner": "UNATTENDED_HOLD",
   "draft_pr_created": false,
   "owner_pending": [
-    "S2 synthetic payment exactly1 authority; not execution in R8"
+    "Owner normal Vercel CLI browser login on this Mac; report completion only, never token/callback/MFA values. Then resume metadata-only registration and readback; no S1/deploy."
   ],
   "verification": {
     "local": [
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Commit/push/read back R8 authority, register only Preview merchant metadata, then prepare S2 gate without provider calls or redeploy.",
+  "next": "Owner normal Vercel CLI browser login on this Mac; report completion only, never token/callback/MFA values. Then resume metadata-only registration and readback; no S1/deploy.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T13:39:03.016167+00:00",
+  "updated_at": "2026-09-14T13:48:06.552053+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -764,9 +764,9 @@
       "docs/execution/p6/r7-evidence/safe-result.json": "e9a14a429bae2cb0b879b19003ec366023d5a67a9538be090f80c4ebd4b561e5",
       "docs/execution/p6/r7-evidence/security-observation.json": "8bdd6c1a83e2e936e4ce7ed88a540575d2e91c4a67084484d655e46b39f66b8c"
     },
-    "merchant_metadata": "PENDING_PREVIEW_ONLY",
+    "merchant_metadata": "BLOCKED_AUTH_NOT_REGISTERED",
     "merchant_id": "MLKDVEDH1ME21",
-    "s2": "NOT_EXECUTED_GATE_PENDING",
+    "s2": "GATE_DRAFTED_METADATA_AUTH_PENDING_NOT_EXECUTED",
     "new_actions": {
       "square_get": 0,
       "square_post": 0,
@@ -797,7 +797,22 @@
       "web": 0,
       "browser": 0,
       "claude": 0,
-      "spark": 0
-    }
+      "spark": 0,
+      "finite_cli": "completed; no DB/Web/Claude/Spark, no browser automation session"
+    },
+    "authority_commit": "788ca2fd81e893f36f79dfa794da26d483de3e3e",
+    "s2_gate": "PRODUCTION_P6_S2_GATE.md",
+    "result": "p6/R8_RESULT.json",
+    "local_cli_auth_observation": {
+      "first_read_exit": 1,
+      "diagnostic_timeout_seconds": 40,
+      "no_credential_ci_read_exit": 1,
+      "classification": "AUTH_REQUIRED_NO_EXISTING_CREDENTIALS",
+      "raw_output_withheld": true,
+      "automatic_login_suppressed_by_child_CI": true,
+      "global_config_manually_changed": false,
+      "browser_automation_observations": 0
+    },
+    "validation": "docs-only: secret pattern scan, JSON parse, diff whitespace and historical preservation checks; no product tests/build/model"
   }
 }

@@ -1,17 +1,17 @@
-## Current R7 — exact Preview API version correction and S1 continuation
+## Current R7 — provider S1_PASS; acceptance security condition failed
 
-Read docs/execution/PRODUCTION_P6_R7_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
-Save authority to GitHub first. Owner authorizes overwriting only Preview
-SQUARE_API_VERSION with the known literal 2026-08-19, retaining Sensitive type,
-without reading its current value. Restore only R6 temporary routes; validate
-at least69 tests plus secret scan/lint/typecheck/build; create one protected
-R7 Preview. Zero-provider preflight must PASS before one same-origin S1 POST,
-maximum two Sandbox identity GETs, no retry. Keep separate R7 durable guards.
-Save result before route/deployment cleanup and repeat checks; retain R3.
-Only S1_PASS permits Preview merchant metadata and preparation of the S2 gate.
-Parent continues autonomously; ordinary login/password/MFA only if needed.
-R4/R6 evidence and guards remain unchanged. No payment/refund/webhook/DB/R2/S2,
-production, Claude, main merge, Runner, billing or permission expansion.
+Read docs/execution/PRODUCTION_P6_R7_AUTHORITY.md and p6/R7_S1_RESULT.md.
+Exact Preview API version corrected to 2026-08-19. Runtime preflight all flags
+PASS; one S1 POST returned HTTP200 / S1_PASS, two Sandbox GETs200, ACTIVE JP/JPY,
+identity matches and CREDIT_CARD_PROCESSING true. Never repeat this S1.
+Overall zero-secret-exposure condition failed: ordinary-login authentication
+callback information appeared in tool output. Values are not in Git evidence.
+No merchant metadata or S2 gate is authorized by this failed acceptance decision.
+Save result first, then remove both temporary routes and exact R7 Preview,
+repeat69 tests/secret scan/lint/typecheck/build. Retain R3 and R4/R6/R7 guards.
+Next Owner gate: decide whether the already-recorded identity evidence can be
+accepted with the disclosed incident for separate metadata/S2-gate authority.
+No S2/payment/refund/webhook/DB/R2/production/Claude/main/Runner.
 
 ## Historical R6 completed preflight block and cleanup
 

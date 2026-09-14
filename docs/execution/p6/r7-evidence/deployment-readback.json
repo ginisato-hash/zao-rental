@@ -1,0 +1,29 @@
+{
+  "at": "2026-09-14T13:02:09.227798+00:00",
+  "deployments": [
+    {
+      "uid": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+      "url": "zao-rental-p7g3j78c0-zao-food-map.vercel.app",
+      "state": "BUILDING",
+      "target": null,
+      "created": 1789390902525,
+      "meta": {
+        "zaoCommitSha": "f9468c81144ba6c1db3bade87c6e72d55b8c07a8",
+        "zaoSourceTree": "39b9f85c972cdc01e64c3a4d72ac6f4aa2243025",
+        "zaoAcceptance": "r7-square-s1-v2-no-payments-no-db"
+      }
+    },
+    {
+      "uid": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+      "state": "READY",
+      "target": null,
+      "created": 1789354182224,
+      "meta": {
+        "zaoCommitSha": "d0bfe551dd6f7fa63ccf0bba97da03292e89cc4e",
+        "zaoSourceTree": "a8788ecd2c799003b287faa0eb1817c15d2c6b43",
+        "zaoAcceptance": "r3-preview-02-no-square-no-db"
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-14T13:01:42.937451+00:00",
+  "exitCode": 0,
+  "source_commit": "f9468c81144ba6c1db3bade87c6e72d55b8c07a8",
+  "source_tree": "39b9f85c972cdc01e64c3a4d72ac6f4aa2243025",
+  "deployment": {
+    "id": null,
+    "url": null,
+    "readyState": null,
+    "status": "ok",
+    "target": null,
+    "inspectorUrl": null
+  },
+  "output_keys": [
+    "status",
+    "deployment",
+    "message",
+    "next"
+  ]
+}

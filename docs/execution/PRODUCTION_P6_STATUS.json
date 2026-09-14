@@ -1,5 +1,5 @@
 {
-  "phase": "R7_LOCAL_GREEN_API_VERSION_CORRECTED",
+  "phase": "R7_PROVIDER_PASS_SECURITY_ACCEPTANCE_FAILED_CLEANUP_PENDING",
   "authority": "PRODUCTION_P6_R7_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "None while R7 can proceed; ordinary login/password/MFA only if required.",
+  "first_owner_action": "Review the authentication-output incident and decide whether to accept the already-recorded read-only S1 identity evidence for a separate metadata/S2-gate authorization; never repeat R7 S1.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -48,7 +48,7 @@
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
   },
-  "external_acceptance": "R3_PREVIEW_BOUNDED_PASS_R4_UNKNOWN_R6_BLOCKED_R7_AUTHORIZED_NOT_RUN",
+  "external_acceptance": "R3_BOUNDED_PASS_R4_UNKNOWN_R6_BLOCKED_R7_PROVIDER_PASS_SECURITY_FAILED",
   "external_activation_requests": {
     "square": null,
     "r2": 0,
@@ -68,22 +68,7 @@
   "runner": "UNATTENDED_HOLD",
   "draft_pr_created": false,
   "owner_pending": [
-    "tax",
-    "sales_period",
-    "cleaning",
-    "NAP",
-    "legal_copy",
-    "media_rights",
-    "Salomon_material",
-    "real_inventory",
-    "real_device",
-    "domain",
-    "production_deploy",
-    "Search_Console",
-    "GBP",
-    "ZAO_listing",
-    "production store-to-Square-location mapping",
-    "R7 result; separate S2 authority only after S1_PASS"
+    "Review the authentication-output incident and decide whether to accept the already-recorded read-only S1 identity evidence for a separate metadata/S2-gate authorization; never repeat R7 S1."
   ],
   "verification": {
     "local": [
@@ -122,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Correct only Preview SQUARE_API_VERSION to 2026-08-19, restore R6 routes, validate locally, create one protected Preview, preflight then at most one S1 POST/two Sandbox GETs, save evidence, cleanup, PASS-only merchant metadata/S2 gate.",
+  "next": "Save result to GitHub, remove two temporary routes, validate, delete exact R7 Preview; retain R3 and all one-shot guards.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T13:00:04.000051+00:00",
+  "updated_at": "2026-09-14T13:06:19.387525+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -730,14 +715,14 @@
     "started_at_utc": "2026-09-14T12:50:28.372130+00:00",
     "api_version_correction": "COMPLETE_PREVIEW_SENSITIVE_2026-08-19",
     "preview_limit": 1,
-    "preview_attempts": 0,
+    "preview_attempts": 1,
     "s1_post_limit": 1,
-    "s1_posts": 0,
+    "s1_posts": 1,
     "square_get_limit": 2,
-    "square_requests": 0,
+    "square_requests": 2,
     "retry_authority": 0,
-    "runtime_preflight": "NOT_RUN",
-    "s1_result": "NOT_RUN",
+    "runtime_preflight": "PASS_ALL_FLAGS",
+    "s1_result": "S1_PASS",
     "new_claude_starts": 0,
     "spark_starts": 0,
     "historical_r4_r6_unchanged": true,
@@ -745,6 +730,15 @@
     "env_mutations": 1,
     "other_env_mutations": 0,
     "local_validation": "69_PASS_SECRET_SCAN_LINT_TYPECHECK_BUILD_PASS",
-    "security_observation": "Incidental authentication callback information appeared in tool output during ordinary Owner login; no values copied to evidence. Total secret-exposure=0 cannot be asserted. See r7-evidence/security-observation.json."
+    "security_observation": "Incidental authentication callback information appeared in tool output during ordinary Owner login; no values copied to evidence. Total secret-exposure=0 cannot be asserted. See r7-evidence/security-observation.json.",
+    "execution_commit": "f9468c81144ba6c1db3bade87c6e72d55b8c07a8",
+    "preview_id": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+    "origin": "https://zao-rental-p7g3j78c0-zao-food-map.vercel.app",
+    "acceptance_result": "FAIL_SECURITY_BOUNDARY",
+    "acceptance_reason": "AUTH_CALLBACK_INFORMATION_IN_TOOL_OUTPUT",
+    "merchant_metadata_registered": false,
+    "s2_gate_created": false,
+    "cleanup": "PENDING_AFTER_RESULT_PUSH",
+    "durable_guard_retained": true
   }
 }

@@ -1,6 +1,6 @@
 # Vercel direct — 実deploy前の受入計画
 
-状態: NOT_RUN。実Vercel project/Preview/deploy/credentialは作成しない。
+状態: 実hosting受入NOT_RUN。専用Project/linkは作成済み、5件のPreview envはOwner直接入力済み。deployは未承認。現在のmetadata証拠と最初の限定Preview案は[承認前チェック](PREVIEW_APPROVAL_CHECKPOINT.md)を参照。
 提案する試験環境はproduction domainを持たない、ZAO専用の保護されたPreviewと合成DB。Previewも実deployなのでOwnerの明示承認が必要。
 
 現コード: Next16.3.4 / Node24.15.x / npm11.12.x / pg8.23.0 / @node-rs/argon2 2.2.1 / sharp0.35.4。package-lockを正本とし、実platformのNode patchが違えば差異と互換試験を記録する。Edgeへ移植しない。[Vercel Node runtime](https://vercel.com/docs/functions/runtimes/node-js)。

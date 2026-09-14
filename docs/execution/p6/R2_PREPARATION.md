@@ -9,7 +9,7 @@
 |---|---|
 | Developer account / application | Owner確認済み。ZAO Rental、Accept payments / A company、Sandbox |
 | Application ID | 発行済み。値は取得・転記していない |
-| Access Token | 発行済み／未登録。値はCodexへ渡さない |
+| Access Token | OwnerがPreviewへ登録済み。key/target/Secret種別だけ確認、値は未取得・未検証 |
 | Test account | Default Test Account、Owner確認済み |
 | Location | Default Test Account (Main)、IDはOwner確認済み |
 | 対応店舗 | 1件のSandbox acceptance locationだけ。内部2店舗の統合・本番mapping確定はしない |
@@ -38,9 +38,9 @@ OwnerのCLI再ログイン後、Team `ZAO FOOD MAP` (`zao-food-map`) に `zao-fo
 確認済みVercel API応答の `projectId / orgId / projectName` だけを `.vercel/project.json` へ保存するmetadata linkを作成・読み戻し確認した。secret取得API・env pull・OIDC発行は行わない。`.vercel`はGit対象外、既存linkがあれば一致を確認し不一致は上書きしない。PR3ブランチの製品コードは変更しない。
 参考: [link](https://vercel.com/docs/cli/link)、[project](https://vercel.com/docs/cli/project)、[teams](https://vercel.com/docs/cli/teams)。実装根拠は導入済みCLIの`dist/commands/link/index.js`および`linkFolderToProject`。CLI自体は改造しない。
 
-## OwnerのSecret入力地点（ここで停止）
+## Secret入力済み — 次はPreview開始承認待ち
 
-[zao-rental Environment Variables](https://vercel.com/zao-food-map/zao-rental/settings/environment-variables) をOwnerが開く。Project作成・所属・設定・linkのreadbackは完了した。
+Ownerが5件のPreview設定を登録し、key/target/typeを確認した。[現在の承認前チェック](PREVIEW_APPROVAL_CHECKPOINT.md)を参照。以下は完了済みの入力手順の履歴であり、再入力を要求しない。
 
 - 対象は専用 **zao-rental** Project → Settings → Environment Variables。
 - 名称 **`SQUARE_SANDBOX_ACCESS_TOKEN`**、種類Secret／Sensitive、対象 **Previewのみ**。

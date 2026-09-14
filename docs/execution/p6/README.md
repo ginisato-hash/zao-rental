@@ -1,6 +1,8 @@
+現在の停止地点: [Preview設定metadata確認・deploy承認待ち](PREVIEW_APPROVAL_CHECKPOINT.md)。5件Preview限定Secretあり、値は未確認、実Square/deploy0。
+
 # P6 External Acceptance — 接続前の判断と受入手順
 
-2026-09-14 R2更新。[現在の接続前準備](R2_PREPARATION.md) と [設定名・Webhook監査](SQUARE_CONFIG_AND_RECEIVER_AUDIT.md) が現行。Square application/1件locationはOwner確認済み。Vercel Project作成・link後、Preview secret直接入力とdeploy承認の手前で止める。
+2026-09-14 R2更新。[現在の接続前準備](R2_PREPARATION.md) と [設定名・Webhook監査](SQUARE_CONFIG_AND_RECEIVER_AUDIT.md) が現行。Square application/1件locationはOwner確認済み。Vercel Project作成・link後、Preview secret入力は完了し、deploy承認の手前で止める。
 実外部受入は全件NOT_RUN。P5のfixture/実ローカルDB成功を外部成功へ読み替えない。
 
 R1のSquare Step1はOwner完了済み。旧手順は履歴として保存し、再作成を要求しない。

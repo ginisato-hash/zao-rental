@@ -1,13 +1,22 @@
+## P6 current checkpoint — Preview env metadata verified; deploy not authorized
+
+Owner directly installed five Square keys as Preview-only Sensitive/Secret. Read
+p6/PREVIEW_APPROVAL_CHECKPOINT.md under docs/execution and PRODUCTION_P6_STATUS.json.
+Only key/target/type metadata was checked; values, token validity and actual Sandbox
+were not inspected. Do not request those values or the three intentionally unset keys.
+Continue only safe preflight/documentation; stop for bounded Preview deploy approval.
+No deploy, actual Square request, production activation or new Claude start is authorized.
+
 ## Current P6 R2 — Sandbox preparation, project creation/link only
 
 Read docs/execution/PRODUCTION_P6_R2_ORIGINAL.md, PRODUCTION_P6_STATUS.json and
 p6/R2_PREPARATION.md. Owner confirms the Square application/test account/single
-Sandbox location and issued token; none are independently API-verified or installed.
+Sandbox location and issued token; five Preview keys are now Owner-installed; actual API/value verification is not done.
 Identify TASTE OF ZAŌ's Vercel Team read-only; create only its separate zao-rental
 project if absent; configure root ./, Next.js, npm run build, default output, Node24.
 Link without fetching/generating secrets. No deployment until separate Owner approval.
 Define missing Sandbox env names/config metadata, audit receiver and preserve all gates.
-Stop for Owner's direct Preview secret entry and Preview approval. Never request values.
+Stop for Owner's Preview deployment approval. Secret entry is completed; never request values.
 No new Claude starts here; preserve historical budgets. Actual Square requests remain0
 until approved deployment/configuration/read-only S1. No production, other-project
 changes, real data, billing/rights expansion, Ruleset changes or PR3/Runner activation.

@@ -1,5 +1,5 @@
 {
-  "phase": "R2_PROJECT_LINKED_WAITING_OWNER_PREVIEW_SECRET",
+  "phase": "PREVIEW_ENV_METADATA_VERIFIED_WAITING_DEPLOY_APPROVAL",
   "authority": "PRODUCTION_P6_R2_ORIGINAL.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,12 +38,12 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Owner directly enters Sandbox Access Token as SQUARE_SANDBOX_ACCESS_TOKEN, Secret/Sensitive, Preview only, in verified zao-rental Vercel Project. Never send value here.",
+  "first_owner_action": "Approve only first protected Preview deployment for build/startup/liveness/fail-closed checks. Do not send values; no Square request, payment, webhook or DB activation included.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
-    "secret_store": "VERCEL_PROJECT_PREVIEW_NAMES_READY_NO_VALUES_INSTALLED",
+    "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
     "https_receiver": "NOT_CREATED_ROUTE_UNCONNECTED",
-    "vercel": "PROJECT_CREATED_LINKED_SETTINGS_READBACK_NO_DEPLOY",
+    "vercel": "PROJECT_LINK_SETTINGS_VERIFIED_DEPLOY_APPROVAL_PENDING",
     "recovery_delivery": "PROVIDER_UNSELECTED",
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
@@ -78,7 +78,6 @@
     "Search_Console",
     "GBP",
     "ZAO_listing",
-    "Sandbox Preview Secret direct entry",
     "Preview deploy approval",
     "production store-to-Square-location mapping"
   ],
@@ -95,7 +94,21 @@
     "real_square": "NOT_RUN",
     "ci_for_r2": "NOT_RUN_BRANCH_CHECKPOINT_NO_NEW_PR",
     "independent_review_for_r2": "NOT_RUN_NO_NEW_CLAUDE_START",
-    "p5_review_not_reused_for_r2": true
+    "p5_review_not_reused_for_r2": true,
+    "preview_environment_followup": {
+      "product_head": "f5e6c2ef7efd413fd9e3e1248bb785eebb142344",
+      "code_changes": false,
+      "metadata": "PASS_KEY_TARGET_TYPE_ONLY",
+      "focused_unit_tests": 9,
+      "unit_exit_code": 0,
+      "production_preflight_exit_code": 2,
+      "production_ready": false,
+      "main_protection": "PASS",
+      "foundation_ci": "NOT_RUN",
+      "evidence": "p6/env-check-evidence/",
+      "full_suite_repeated": false,
+      "new_review_starts": 0
+    }
   },
   "historical_unresolved": [
     "CI34749426170 staff-create HTTP500",
@@ -105,7 +118,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "After Owner secret-entry confirmation, prepare scoped Preview acceptance and request deployment approval; no deploy or Square calls now. Existing receiver/runtime/S1 gaps remain.",
+  "next": "Stop before deployment. See p6/PREVIEW_APPROVAL_CHECKPOINT.md for bounded acceptance and remaining CI/review/runtime/receiver gates.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -133,7 +146,7 @@
     "test_account": "Default Test Account",
     "location": "Default Test Account (Main)",
     "location_id": "OWNER_CONFIRMED_NOT_COPIED",
-    "access_token": "ISSUED_NOT_YET_INSTALLED",
+    "access_token": "OWNER_INSTALLED_PREVIEW_SENSITIVE_METADATA_VERIFIED_VALUE_UNREAD",
     "production_store_location_mapping": "OWNER_PENDING",
     "acceptance_location_count": 1
   },
@@ -179,6 +192,20 @@
       "outputDirectory": null,
       "nodeVersion": "24.x",
       "git_linked": false
+    },
+    "current_team_display_name": "Yuge",
+    "team_id_slug_unchanged": true,
+    "current_project_metadata": {
+      "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "name": "zao-rental",
+      "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+      "framework": "nextjs",
+      "rootDirectory": null,
+      "buildCommand": "npm run build",
+      "outputDirectory": null,
+      "nodeVersion": "24.x",
+      "git_connected": false,
+      "ssoProtectionDeploymentType": "all_except_custom_domains"
     }
   },
   "r2_updated_at": "2026-09-14T01:25:04.631309+00:00",
@@ -189,5 +216,91 @@
     "verified HTTPS receiver with durable acknowledgment/retry policy",
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
-  ]
+  ],
+  "updated_at": "2026-09-14T01:51:54.322225+00:00",
+  "owner_preview_environment_confirmation": {
+    "source": "direct Owner message after R2 checkpoint",
+    "scope": "read-only key/target/type verification, docs/status and preflight only",
+    "deploy_authorized": false,
+    "square_requests_authorized_now": false,
+    "value_inspection_authorized": false
+  },
+  "preview_environment_metadata": {
+    "checked_at": "2026-09-14T01:44:17.234370+00:00",
+    "project_id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "team_id": "team_PVka5z4T6OMKBmUcqrK09yJz",
+    "source": "Vercel GET /v10/projects/{id}/env?decrypt=false; metadata whitelist only",
+    "read_only": true,
+    "decryption_requested": false,
+    "value_inspection": false,
+    "values_displayed_or_persisted": false,
+    "entries": [
+      {
+        "key": "SQUARE_ENVIRONMENT",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "visibility": "secret",
+        "gitBranch": null,
+        "customEnvironmentIds": []
+      },
+      {
+        "key": "SQUARE_API_VERSION",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "visibility": "secret",
+        "gitBranch": null,
+        "customEnvironmentIds": []
+      },
+      {
+        "key": "SQUARE_SANDBOX_APPLICATION_ID",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "visibility": "secret",
+        "gitBranch": null,
+        "customEnvironmentIds": []
+      },
+      {
+        "key": "SQUARE_SANDBOX_LOCATION_ID",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "visibility": "secret",
+        "gitBranch": null,
+        "customEnvironmentIds": []
+      },
+      {
+        "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "visibility": "secret",
+        "gitBranch": null,
+        "customEnvironmentIds": []
+      }
+    ],
+    "expected_unset": [
+      "SQUARE_SANDBOX_MERCHANT_ID",
+      "SQUARE_SANDBOX_NOTIFICATION_URL",
+      "SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY"
+    ],
+    "production_square_entries": [],
+    "status": "PASS_METADATA_ONLY",
+    "issues": [],
+    "exit_code": 0
+  },
+  "this_followup_owned_resources": {
+    "db": 0,
+    "web": 0,
+    "browser": 0,
+    "claude": 0,
+    "cli_and_tests": "finite calls completed"
+  }
 }

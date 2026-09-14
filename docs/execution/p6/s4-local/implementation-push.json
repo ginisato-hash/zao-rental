@@ -1,0 +1,10 @@
+{
+  "head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+  "expectedRemote": "57a2ac366be2e881314d387d04a4adb0618e89ac",
+  "startedAt": "2026-09-14T17:17:38.704099+00:00",
+  "remoteBefore": "57a2ac366be2e881314d387d04a4adb0618e89ac",
+  "pushExitCode": 0,
+  "result": "PUSHED_READBACK_MATCH",
+  "remoteAfter": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+  "finishedAt": "2026-09-14T17:17:42.202504+00:00"
+}

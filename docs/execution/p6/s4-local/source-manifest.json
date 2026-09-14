@@ -1,0 +1,74 @@
+{
+  "source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+  "source_tree": "bc404527b1425ed29eb55a84221612142a1157dc",
+  "starting_head": "72cee5817da22cd474773c978f9ae95396edea29",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "authority_head": "57a2ac366be2e881314d387d04a4adb0618e89ac",
+  "authority_sha256": "7656f7fed259dbac6bf85b4db08d88120d9aec882411727a720425c4d8598f7b",
+  "files": [
+    {
+      "path": "apps/web/src/app/api/webhooks/square/route.ts",
+      "sha256": "df26a5890877172831b84c5614e5c5b8fcbef78fb526692d21d19a69ffc259b2"
+    },
+    {
+      "path": "apps/web/src/lib/square-webhook-config.ts",
+      "sha256": "b597a1430d507137995950fc5462e217b3d0cc38dd620be39e21afe698228cfe"
+    },
+    {
+      "path": "apps/web/src/lib/square-webhook-runtime.ts",
+      "sha256": "1d97569a1427451517c211ec45af2f73e83e5342975a7818644fc7b290e58e5b"
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-inbox.ts",
+      "sha256": "344ca520371a5f937a0fcf54eaad928bfe4010a5297f0fe666fb54c96422bf4a"
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-receiver.ts",
+      "sha256": "44369ed107c2e98051b64e6ae4560d48536b065e4f600729b32f669ea21948aa"
+    },
+    {
+      "path": "packages/db/migrations/0025_square_webhook_inbox.sql",
+      "sha256": "8ffa1c78e9f10338987a1846741cc05cdc523d99ec8949d1bf6757fe48a8268d"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "sha256": "ceb7cc3dee84178522ffe20b4cb59d324ff9d9cf2e9e10f9827bf334a99b7942"
+    },
+    {
+      "path": "packages/db/src/square-webhook-inbox.ts",
+      "sha256": "ee463d57e7116c356e02d1d6beb5be0faef39e8485e2f9694579e97958579550"
+    },
+    {
+      "path": "scripts/integration.ts",
+      "sha256": "c13ac0b66b1c4695c339ca5a7df5f81da6eb313f4be1d08e20aad39b77bf3618"
+    },
+    {
+      "path": "scripts/ledger-integration.ts",
+      "sha256": "0f058d906a1e1aac2d69b48a47e4fd1e371608a908f9193271ee18108a73bf71"
+    },
+    {
+      "path": "tests/unit/square-webhook-inbox.test.ts",
+      "sha256": "c3945b2ae9d1ad72ccfa96726be0592b4d5ae1b9ee4d55f3f728a00eb240824e"
+    },
+    {
+      "path": "tests/unit/square-webhook-receiver.test.ts",
+      "sha256": "93b4a3cffdae4e1b5c5cd2d7505f6e8f2ee98beb6532d2abeffc061c4161f91b"
+    }
+  ],
+  "evidence": "LOCAL_FIXTURE_STATIC_ONLY",
+  "external_actual_counts": {
+    "vercel_authenticated_calls": 0,
+    "preview_deploy": 0,
+    "square_provider_requests": 0,
+    "refund_calls": 0,
+    "webhook_subscriptions": 0,
+    "real_webhook_deliveries": 0,
+    "postgres_connections": 0,
+    "production": 0,
+    "browser": 0,
+    "playwright": 0,
+    "claude_starts": 0,
+    "spark_starts": 0,
+    "booking_inventory_custody_mutations": 0
+  }
+}

@@ -1,3 +1,16 @@
+## Current R11/S4 final — local implementation complete; activation pending
+
+Read docs/execution/PRODUCTION_P6_STATUS.json, p6/s4-local/RESULT.md and
+PRODUCTION_P6_S4_ACTIVATION_GATE.md under docs/execution. Validated source
+0aac863e909ec243d9842cff74d2d077dbeb9f82: receiver/inbox local only,304 tests,
+secrets/lint/typecheck/build passed; actual DB/Preview/Square/model calls0.
+R10 refund remains LAST_OBSERVED_PENDING / NONTERMINAL_DO_NOT_RETRY; never retry.
+No further action until separate live Sandbox webhook activation authority.
+No Vercel/Square auth, browser, DB, deploy, subscription, grant, Production,
+Runner, model, new PR or main merge. Preserve historical evidence below.
+
+## Historical R11 implementation instructions
+
 ## Current R11/S4 — LOCAL webhook receiver and durable inbox only
 
 Read docs/execution/PRODUCTION_P6_S4_LOCAL_AUTHORITY.md and PRODUCTION_P6_STATUS.json.

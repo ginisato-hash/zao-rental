@@ -1,5 +1,5 @@
 {
-  "phase": "R11_S4_LOCAL_IMPLEMENTATION",
+  "phase": "R11_S4_LOCAL_WEBHOOK_IMPLEMENTED_ACTIVATION_PENDING",
   "authority": "PRODUCTION_P6_S4_LOCAL_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -955,7 +955,7 @@
     "authority_sha256": "7656f7fed259dbac6bf85b4db08d88120d9aec882411727a720425c4d8598f7b",
     "refund_finalization": "DEFERRED_NON_GATING_FOR_LOCAL_IMPLEMENTATION",
     "provider_refund_state": "LAST_OBSERVED_PENDING",
-    "phase": "IMPLEMENTING_LOCAL",
+    "phase": "IMPLEMENTED_LOCAL_ACTIVATION_PENDING",
     "vercel_authenticated_calls": 0,
     "preview": 0,
     "square_requests": 0,
@@ -967,6 +967,35 @@
     "browser": 0,
     "playwright": 0,
     "claude_starts": 0,
-    "spark_starts": 0
+    "spark_starts": 0,
+    "authority_commit": "57a2ac366be2e881314d387d04a4adb0618e89ac",
+    "implementation_commit": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+    "implementation_tree": "bc404527b1425ed29eb55a84221612142a1157dc",
+    "source_manifest": "p6/s4-local/source-manifest.json",
+    "validation": "p6/s4-local/validation.json",
+    "result": "p6/s4-local/RESULT.md",
+    "activation_gate": "PRODUCTION_P6_S4_ACTIVATION_GATE.md",
+    "webhook_receiver": "IMPLEMENTED_LOCAL",
+    "durable_inbox": "IMPLEMENTED_LOCAL_NOT_APPLIED",
+    "live_webhook_subscription": "NOT_CREATED",
+    "live_webhook_delivery": "NOT_RUN",
+    "activation": "ACTIVATION_PENDING_OWNER_LOGIN",
+    "tests": {
+      "passed": 304,
+      "new_r11": 51,
+      "failed": 0,
+      "skipped": 0
+    },
+    "secret_scan": "PASS_PATTERN_SCAN_NOT_COMPREHENSIVE",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "actual_db_validation": "NOT_RUN",
+    "independent_review": "NOT_RUN_PROHIBITED_R11",
+    "remote_ci": "NOT_TRIGGERED",
+    "implementation_push": "PUSHED_READBACK_MATCH",
+    "owned_processes": "FINITE_VALIDATION_CHILDREN_EXITED_NO_DB_WEB_BROWSER_CLAUDE_STARTED",
+    "finished_at": "2026-09-14T17:19:23.447389+00:00",
+    "secretless_build": "PASS_ISOLATED_OS_ENV_ONLY_NO_ACTUAL_DOTENV"
   }
 }

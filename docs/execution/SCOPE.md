@@ -1,3 +1,19 @@
+## Current R9/S2 — authorized exactly one synthetic Sandbox payment
+
+Read docs/execution/PRODUCTION_P6_S2_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Save/push/read back authority before implementation. Immutable manifest before
+provider dispatch. 100JPY, fixed official Sandbox test source, fixed identity/key.
+One protected Preview max; one operator POST; CreatePayment max1; conditional
+GetPayment max1 only if safe ID exists and result is nonterminal/uncertain.
+No retry/S1/refund/webhook/DB/R2/Production/main/Runner/model. Local exclusive
+fsync guard plus fixed provider idempotency is this Owner-approved Sandbox-only
+exception, not a distributed HTTP-once guarantee. Preserve all R4/R6/R7/R8 history.
+Observe browser only after Owner finishes login and leaves callbacks. No auth
+URL/title/snapshot/secret extraction. Save result remotely before exact cleanup;
+keep accepted R3. S2_PASS permits S3 gate documentation only, not S3 execution.
+
+## Historical R8 instructions below (only R9 scope is superseded)
+
 ## Current R8 checkpoint — R8_S1_EVIDENCE_ADOPTED_S2_GATE_READY
 
 Read docs/execution/PRODUCTION_P6_R8_AUTHORITY.md, PRODUCTION_P6_STATUS.json,

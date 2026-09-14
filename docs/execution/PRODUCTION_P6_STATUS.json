@@ -1,6 +1,6 @@
 {
-  "phase": "R8_S1_EVIDENCE_ADOPTED_S2_GATE_READY",
-  "authority": "PRODUCTION_P6_R8_AUTHORITY.md",
+  "phase": "R9_S2_AUTHORIZED_IMPLEMENTATION",
+  "authority": "PRODUCTION_P6_S2_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
   "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "S2 synthetic payment exactly1 authority approval; see PRODUCTION_P6_S2_GATE.md. S2 NOT_EXECUTED.",
+  "first_owner_action": "None except required normal login; execute bounded R9 then stop",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "S2 synthetic payment exactly1 authority approval; see PRODUCTION_P6_S2_GATE.md. S2 NOT_EXECUTED.",
+  "next": "Fixed manifest, narrow S2 implementation/tests, at most one protected Preview, one controlled invocation, evidence then cleanup",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -122,7 +122,7 @@
     "first_owner_action": "Square Developer Console Applications: ZAO Rental application exists / absent / unclear only; no secret or ID requested",
     "next": "Stop and request only Square Step1. Provider facts and explicit activation/deploy/credential approval are required before actual acceptance."
   },
-  "authority_sha256": "5c5e987a0feee95bf52eb719bb20d5e34f5f9d827dd3785e9355efd21e0f14ec",
+  "authority_sha256": "1e95ae6889371cd0b92a9be2d65529a9f4314a7432077199e819e07f1ab601b9",
   "r2_started_at_utc": "2026-09-14T01:04:11Z",
   "r2_started_at_jst": "2026-09-14T10:04:11+09:00",
   "square_owner_report": {
@@ -820,5 +820,28 @@
     "metadata_readback_at_utc": "2026-09-14T14:59:51.217227+00:00",
     "resume_budget_reset": false,
     "resume_remote_head": "b3b061cdec556451b1e6b0408926a47d5e8ab23e"
+  },
+  "r9": {
+    "started_at_utc": "2026-09-14T15:25:08Z",
+    "started_at_jst": "2026-09-15T00:25:08+09:00",
+    "starting_head": "0331fb623613e5fb4dce2d0766e70d58d1b90f0b",
+    "authority": "PRODUCTION_P6_S2_AUTHORITY.md",
+    "authority_sha256": "1e95ae6889371cd0b92a9be2d65529a9f4314a7432077199e819e07f1ab601b9",
+    "classification": "NOT_EXECUTED",
+    "s1_rerun": "FORBIDDEN",
+    "preview_limit": 1,
+    "preview_attempts": 0,
+    "operator_post_limit": 1,
+    "operator_posts": 0,
+    "create_payment_limit": 1,
+    "create_payment_dispatches": 0,
+    "conditional_lookup_limit": 1,
+    "conditional_lookup_dispatches": 0,
+    "retry": 0,
+    "claude_starts": 0,
+    "spark_starts": 0,
+    "r4_r6_r7_r8_history": "PRESERVED",
+    "production_journal_requirement": "UNCHANGED",
+    "sandbox_exception": "Owner-controlled local exclusive fsync guard + fixed provider idempotency; instance latch defense in depth only"
   }
 }

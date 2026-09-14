@@ -1,5 +1,5 @@
 {
-  "phase": "R9_S2_PASS_RESULT_SAVED_CLEANUP_PENDING",
+  "phase": "R9_S2_PASS_CLEANUP_COMPLETE_WAIT_S3_AUTHORITY",
   "authority": "PRODUCTION_P6_S2_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "After cleanup: S3 authority only; never automatically retry S2",
+  "first_owner_action": "Select/approve separate bounded S3 scope in PRODUCTION_P6_S3_GATE.md; S2 requires no repeated login or rerun.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Read back result commit, delete two temporary routes, validate, delete exact S2 Preview; retain R3, manifest, guard and any created Sandbox payment.",
+  "next": "S2 terminal; wait for explicitly bounded S3 authority. No new POST, lookup, refund, webhook, DB, deploy, S1 or model start.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T15:47:11.961174+00:00",
+  "updated_at": "2026-09-14T15:51:56.709451+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -854,7 +854,7 @@
     "origin": "https://zao-rental-evr0jvhcj-zao-food-map.vercel.app",
     "preflight": "PASS",
     "result": "p6/s2-evidence/safe-result.json",
-    "cleanup": "PENDING_RESULT_REMOTE_READBACK",
+    "cleanup": "COMPLETE_ROUTES_REMOVED_S2_PREVIEW_DELETED_R3_RETAINED",
     "security": {
       "square_secret_exposure": 0,
       "auth_callback_observation": 0,
@@ -872,6 +872,16 @@
       "sms": 0,
       "main_merge": 0,
       "runner": 0
-    }
+    },
+    "result_commit": "5feffda000c8bb2ec9bb85f8190f23a338f5d73c",
+    "cleanup_validation": "99_PASS_FAIL0_SKIP0_SECRET_LINT_TYPECHECK_BUILD_EXIT0",
+    "cleanup_evidence": "p6/s2-evidence/preview-cleanup-verification.json",
+    "cleanup_source_hashes": "p6/s2-evidence/cleanup-source-hashes.json",
+    "lifecycle": "p6/s2-evidence/owned-resource-closure.json",
+    "s3_gate": "PRODUCTION_P6_S3_GATE.md",
+    "finished_at": "2026-09-14T15:51:56.709451+00:00",
+    "provider_payment_id": "pezzekG1LQRt4MVKF0X4sgRCx1FZY",
+    "request_fingerprint": "19ad7d88b5c1f0bce8e209195e1ee4c84b76e89bf6e14ac306dfc9cc2a84a9d2",
+    "idempotency_key": "1fc46b8b-ce24-49f6-b809-c1594c2788b5"
   }
 }

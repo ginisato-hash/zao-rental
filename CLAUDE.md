@@ -1,3 +1,16 @@
+## Current R9 final — S2_PASS; cleanup complete; S3 requires new authority
+
+Read docs/execution/PRODUCTION_P6_STATUS.json and PRODUCTION_P6_S3_GATE.md.
+One controlled POST/CreatePayment returned COMPLETED100JPY; GetPayment0/retry0.
+Result commit5feffda000c8bb2ec9bb85f8190f23a338f5d73c was pushed/read back before
+both temporary routes and exact S2 Preview were deleted. Accepted R3, immutable
+manifest, local guard and created Sandbox payment remain.99tests/secrets/lint/
+typecheck/build pass after cleanup. Owned browser and finite children exited.
+No S1/refund/webhook/DB/Production/main/Runner/model/S3 action is authorized.
+R4/R6/R7/R8 history remains unchanged, including R7's separate security incident.
+
+## Historical R9 result checkpoint
+
 ## Current R9 result — S2_PASS; cleanup pending
 
 Read PRODUCTION_P6_STATUS.json and p6/s2-evidence/safe-result.json under docs/execution.

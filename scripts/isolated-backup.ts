@@ -1,3 +1,4 @@
+import {createClusterOwner,diskPreflight} from './test-hygiene';
 import {createHash} from 'node:crypto';
 import {cp,mkdir,mkdtemp,readdir,lstat,readFile,access,realpath} from 'node:fs/promises';
 import {resolve,relative,join} from 'node:path';
@@ -19,17 +20,17 @@ export async function backupOwnedCluster(db:Awaited<ReturnType<typeof startIsola
  const actual=(await db.pool.query('SHOW data_directory')).rows[0].data_directory;if(await realpath(actual)!==source)throw new Error('BACKUP_NOT_OWNED');
  const auth={user:db.pool.options.user!,password:String(db.pool.options.password),database:db.pool.options.database!};
  const stoppedAt=new Date();await db.stop();onStopped();await noPid(source);
- const backupRoot=resolve('.local/backup-drill');await mkdir(backupRoot,{recursive:true,mode:0o700});const directory=(await mkdtemp(backupRoot+'/backup-'))+'/cluster';
- const manifest=await files(source);await cp(source,directory,{recursive:true,errorOnExist:true,force:false});const copied=await files(directory);if(canonical(copied)!==canonical(manifest))throw new Error('BACKUP_VERIFY_FAILED');
+ diskPreflight(identity.root);const backupRoot=resolve('.local/backup-drill');await mkdir(backupRoot,{recursive:true,mode:0o700});const container=await mkdtemp(backupRoot+'/backup-'),ownership=createClusterOwner(container,identity.namespace,'BACKUP'),directory=container+'/cluster';
+ const manifest=await files(source);await cp(source,directory,{recursive:true,errorOnExist:true,force:false});const copied=await files(directory);if(canonical(copied)!==canonical(manifest))throw new Error('BACKUP_VERIFY_FAILED');ownership.update('STOPPED');
  return {directory,manifest,sha256:digest(canonical(manifest)),source,stoppedAt,identity,auth};
 }
 export async function restoreOwnedCluster(backup:Awaited<ReturnType<typeof backupOwnedCluster>>){
  rejectAmbientDatabase();const identity=worktreeIdentity(),directory=await realpath(backup.directory),root=await realpath(resolve('.local/backup-drill'));
  if(identity.namespace!==backup.identity.namespace||!directory.startsWith(root+'/backup-')||backup.auth.database!==identity.database||backup.auth.user!==identity.user)throw new Error('RESTORE_NOT_OWNED');
  await noPid(directory);if(digest(canonical(backup.manifest))!==backup.sha256||canonical(await files(directory))!==canonical(backup.manifest))throw new Error('RESTORE_DIGEST_MISMATCH');
- await assertPortFree(identity.dbPort);const restored=(await mkdtemp(resolve('.local/postgres')+'/restored-'))+'/cluster';await cp(directory,restored,{recursive:true,errorOnExist:true,force:false});
+ diskPreflight(identity.root);await assertPortFree(identity.dbPort);const container=await mkdtemp(resolve('.local/postgres')+'/restored-'),ownership=createClusterOwner(container,identity.namespace,'RESTORE'),restored=container+'/cluster';await cp(directory,restored,{recursive:true,errorOnExist:true,force:false});
  if(canonical(await files(restored))!==canonical(backup.manifest))throw new Error('RESTORE_COPY_FAILED');
  // Start the copied initialized cluster with its original credential; no rotation.
  const cluster=new EmbeddedPostgres({databaseDir:restored,user:identity.user,password:backup.auth.password,port:identity.dbPort,persistent:true,createPostgresUser:false,postgresFlags:['-h','127.0.0.1','-c','unix_socket_directories=','-c','log_statement=none'],onLog:()=>{},onError:()=>{}});
- let pool:Pool|undefined;try{await cluster.start();pool=new Pool({host:'127.0.0.1',port:identity.dbPort,...backup.auth});const close=trackPoolLifecycle(pool);await pool.query('SELECT 1');return {pool,directory:restored,async stop(){try{await close();}finally{await cluster.stop();}}};}catch(e){await pool?.end();await cluster.stop();throw e;}
+ let pool:Pool|undefined;try{await cluster.start();ownership.update('RUNNING');pool=new Pool({host:'127.0.0.1',port:identity.dbPort,...backup.auth});const close=trackPoolLifecycle(pool);await pool.query('SELECT 1');return {pool,directory:restored,async stop(){try{await close();}finally{await cluster.stop();ownership.update('STOPPED');}}};}catch(e){await pool?.end();await cluster.stop();ownership.update('FAILED');throw e;}
 }

@@ -9,7 +9,7 @@ export async function provisionBookingAccessRole(owner:Pool,identity:{namespace:
  await owner.query(`CREATE ROLE ${user} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
  await owner.query(`GRANT CONNECT ON DATABASE ${identity.database} TO ${user}`);
  await owner.query(`GRANT USAGE ON SCHEMA booking_access TO ${user}`);
- await owner.query(`GRANT EXECUTE ON FUNCTION booking_access.issue(uuid,text,text,uuid,uuid,text,text),booking_access.read(text),booking_access.revoke(text) TO ${user}`);
+ await owner.query(`GRANT EXECUTE ON FUNCTION booking_access.issue(uuid,text,text,uuid,uuid,text,text),booking_access.read(text),booking_access.revoke(text),booking_access.prepare_recovery(uuid,text,text,uuid,uuid,text,text),booking_access.recovery_delivered(text),booking_access.exchange_recovery(text,uuid,text,text),booking_access.revoke_recovery(text) TO ${user}`);
  const accessDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};
  const accessPool=new Pool({...accessDb,max:4,connectionTimeoutMillis:2000});
  return {accessDb,accessPool,close:trackPoolLifecycle(accessPool)};

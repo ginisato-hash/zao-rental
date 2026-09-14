@@ -1,3 +1,4 @@
+import {createClusterOwner,diskPreflight} from './test-hygiene';
 import { randomBytes } from 'node:crypto';
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -10,10 +11,12 @@ export async function startIsolatedPostgres(options: { statementTimeoutMs?: numb
   if (options.statementTimeoutMs !== undefined && (!Number.isSafeInteger(options.statementTimeoutMs) || options.statementTimeoutMs <= 0)) throw new Error('Statement timeout must be a positive integer');
   rejectAmbientDatabase();
   const identity = worktreeIdentity();
+  diskPreflight(identity.root);
   await assertPortFree(identity.dbPort);
   const parent = resolve('.local/postgres');
   await mkdir(parent, { recursive: true, mode: 0o700 });
   const databaseDir = await mkdtemp(`${parent}/run-`);
+  const ownership=createClusterOwner(databaseDir,identity.namespace);
   const password = randomBytes(24).toString('hex');
   const cluster = new EmbeddedPostgres({
     databaseDir, user: identity.user, password, port: identity.dbPort,
@@ -27,10 +30,10 @@ export async function startIsolatedPostgres(options: { statementTimeoutMs?: numb
     // The launcher briefly creates an initdb password file; force owner-only permissions.
     const previousUmask = process.umask(0o077);
     try { await cluster.initialise(); } finally { process.umask(previousUmask); }
-    await cluster.start(); started = true;
+    await cluster.start(); started = true;ownership.update('RUNNING');
     await cluster.createDatabase(identity.database);
     const pool = new Pool({ host: '127.0.0.1', port: identity.dbPort, user: identity.user, password, database: identity.database, max: 6, statement_timeout: options.statementTimeoutMs });
     const closePool = trackPoolLifecycle(pool);
-    return { identity, pool, databaseDir, async stop() { try { await closePool(); } finally { await cluster.stop(); } } };
-  } catch (error) { if (started) await cluster.stop(); throw error; }
+    return { identity, pool, databaseDir, async stop() { try { await closePool(); } finally { await cluster.stop();ownership.update('STOPPED'); } } };
+  } catch (error) { if (started) await cluster.stop();ownership.update('FAILED'); throw error; }
 }

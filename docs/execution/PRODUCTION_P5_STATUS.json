@@ -1,0 +1,73 @@
+{
+  "authority": "OWNER_NIGHT_R1_ORIGINAL.md",
+  "authority_sha256": "a6d405446214115eb4a436dd3fd4c8ad6bdca6c9b1e20309a6ec21b1998bb1a0",
+  "night_started_utc": "2026-09-13T16:30:58.891296+00:00",
+  "night_started_jst": "2026-09-14T01:30:58.891296+09:00",
+  "deadline_utc": "2026-09-13T23:00:00+00:00",
+  "deadline_jst": "2026-09-14T08:00:00+09:00",
+  "p5_started_utc": "2026-09-13T17:03:51.815162+00:00",
+  "base": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+  "branch": "codex/production-preflight-p5",
+  "state": "IMPLEMENTING",
+  "pr15_merge": "6dfde8d8ab3d797ebbd081da7a563a82ab40182f",
+  "claude_starts": 0,
+  "claude_start_limit": 2,
+  "prior_p4_starts": 3,
+  "external_counts": {
+    "square_requests": 0,
+    "payments": 0,
+    "refunds": 0,
+    "r2_requests": 0,
+    "email": 0,
+    "deployments": 0
+  },
+  "productionActivation": false,
+  "runner": "UNATTENDED_HOLD",
+  "tasks": {
+    "A": {
+      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
+    },
+    "B": {
+      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
+    },
+    "C": {
+      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
+    },
+    "D": {
+      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
+    },
+    "E": {
+      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
+    },
+    "F": {
+      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
+    },
+    "G": {
+      "state": "IMPLEMENTED_PENDING_FULL_VERIFY_REVIEW",
+      "evidence": "PRODUCTION_P5_ACCEPTANCE.md"
+    },
+    "H": {
+      "state": "HISTORICAL_UNRESOLVED",
+      "observations": [
+        "CI34749426170 staff-create HTTP500",
+        "CI34756544102 wear mixed transport"
+      ]
+    }
+  },
+  "next": "P5 recovery, local rehearsal/preflight, ingress/Square/storage fixtures and disk hygiene; final Draft CI/static review, never merge P5",
+  "owner_pending": [
+    "Sandbox application/secret store/HTTPS receiver",
+    "email delivery/support proof",
+    "verified Vercel direct ingress",
+    "R2 provider/credentials/purge",
+    "off-host encrypted PITR backup acceptance",
+    "tax/sales/cleaning/NAP/legal/media rights",
+    "real catalog/inventory/device/domain/deploy/external listing"
+  ]
+}

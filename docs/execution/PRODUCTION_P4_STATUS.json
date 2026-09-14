@@ -30,12 +30,12 @@
     "Vercel trusted ingress",
     "Owner commercial/device/deploy gates"
   ],
-  "stage": "CORRECTIVE_PUSH_CI_REVIEW",
+  "stage": "NIGHT_R1_P4_MERGE_GATE",
   "pr14_merge_commit": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
-  "state": "BA01_RES_LOCALLY_CORRECTED_PENDING_EXACT_CI_REVIEW",
-  "claude_starts": 2,
+  "state": "REVIEWED_CONDITIONAL_MERGE_GATE",
+  "claude_starts": 3,
   "production_activation": false,
-  "p4_merge_authorized": false,
+  "p4_merge_authorized": "CONDITIONAL_NIGHT_R1",
   "realSandbox": "BLOCKED_PREREQUISITES",
   "external_counts": {
     "square_payments": 0,
@@ -69,14 +69,18 @@
     ],
     "failure_reason_latest": "React lint rejected synchronous effect state; corrected without lint suppression"
   },
-  "next": "Full verify, normal corrective push, exact-head CI, necessary residual-finding static confirmation",
+  "next": "Night R1: reverify Ruleset/head/CI/conversations, Ready transition and resulting CI, conditional exact squash then new P5 branch. Actual Square/R2/email/deploy remain prohibited; external prerequisites remain pending.",
   "external_prerequisites_reconfirmed_by_owner": true,
   "review": {
-    "head": "d1ab841c918830e8bcd7c1a37096f678586f883b",
-    "verdict": "CHANGES_REQUIRED",
-    "findings": 1,
-    "id": "BA-01-RES",
-    "comment": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654400139"
+    "verdict": "REVIEW_PASS",
+    "findings": 0,
+    "head": "71a58316cb7f552337e569bf8d039f9557da7a59",
+    "snapshot_sha256": "7b68932b962184e988e35aa3f6fbfeb1ef091508d327c890b23f8af9dc4c5098",
+    "snapshot_bytes": 244005,
+    "file_count": 33,
+    "manifest": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654614176",
+    "original_result": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654640359",
+    "tests_executed": false
   },
   "review_history": [
     {
@@ -95,5 +99,136 @@
       "id": "BA-01-RES",
       "comment": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654400139"
     }
-  ]
+  ],
+  "prior_review": {
+    "head": "d1ab841c918830e8bcd7c1a37096f678586f883b",
+    "verdict": "CHANGES_REQUIRED",
+    "findings": 1,
+    "id": "BA-01-RES",
+    "comment": "https://github.com/ginisato-hash/zao-rental/pull/15#issuecomment-5654400139"
+  },
+  "head": "71a58316cb7f552337e569bf8d039f9557da7a59",
+  "pr": "https://github.com/ginisato-hash/zao-rental/pull/15",
+  "main": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+  "internal_api_request_count": "NOT_MEASURED; CLI starts and provider usage recorded separately",
+  "ci": {
+    "repository_id": 1364387206,
+    "repository": "ginisato-hash/zao-rental",
+    "workflow_id": 355028197,
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_state": "active",
+    "run_attempt": 1,
+    "run_id": 34768506147,
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/34768506147",
+    "event": "pull_request",
+    "head_sha": "71a58316cb7f552337e569bf8d039f9557da7a59",
+    "base_sha": "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+    "conclusion": "success",
+    "checked_out_sha": "d0123e1ff485b466e6de604bd27ddca2d0f48271",
+    "checked_out_kind": "PR_MERGE",
+    "integration_candidate_sha": "d0123e1ff485b466e6de604bd27ddca2d0f48271",
+    "integration_parents": [
+      "370de54fb12fcb3b036f886acfb60747b55d9bd7",
+      "71a58316cb7f552337e569bf8d039f9557da7a59"
+    ],
+    "merge_tree_sha": "ca1277f6aea9a7b835cbf6e47248f9b579cfb480",
+    "head_tree_sha": "ca1277f6aea9a7b835cbf6e47248f9b579cfb480",
+    "jobs": [
+      {
+        "name": "foundation",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reproducible setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Browser system libraries (ephemeral runner only)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify implemented foundation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runner simulation only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve command logs and browser diagnostics",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "artifact_name": "foundation-d0123e1ff485b466e6de604bd27ddca2d0f48271",
+    "artifact_digest": "sha256:d23206e5f0fafc45242a2e2cddf79ba5500852fad4eb2a572d9f5afb3a91e32d",
+    "artifact_exclusion_check": {
+      "file_count": 95,
+      "path_list_sha256": "d16e17c4572baf40459424e761e1c4068020e7f547d9bdd4ecc57151b6a823c0",
+      "physical_cluster_or_backup_paths_present": false,
+      "checked_actual_download": true
+    }
+  },
+  "BA01": "BA01_AND_RESIDUAL_RESOLVED_BY_CORRECTIONS_AND_INDEPENDENT_FOLLOWUPS",
+  "cleanup": {
+    "checked_at": "2026-09-13T16:48:42.371246+00:00",
+    "owned_ports": {
+      "25533": "NO_LISTENER",
+      "35533": "NO_LISTENER"
+    },
+    "owned_postmaster_pid_files": 0,
+    "review_processes": [
+      {
+        "round": 1,
+        "recorded_pid": 68047,
+        "recorded_exit_code": 0,
+        "original_claude_not_running": true
+      },
+      {
+        "round": 2,
+        "recorded_pid": 76986,
+        "recorded_exit_code": 0,
+        "original_claude_not_running": true
+      },
+      {
+        "round": 3,
+        "recorded_pid": 97906,
+        "recorded_exit_code": 0,
+        "original_claude_not_running": true
+      }
+    ],
+    "test_Web_browser_DB": "finally stopped; local verify exited0",
+    "billing_browser_tab19": "closed by successful CUA close; no other user tab was closed",
+    "other_projects_services_stopped": false
+  },
+  "final_progress_record": "This metadata-only file is preserved locally and in the final PR comment without changing the reviewed product head. Do not discard or blindly commit before a future exact-head merge."
 }

@@ -6,6 +6,7 @@ import {guestPeerKey} from './security';
  * Request has no trusted peer field. No fallback to Forwarded/XFF/X-Real-IP is allowed. */
 export interface TrustedIngressAdapter{readonly id:string;peer(request:Request):{adapterId:string;address:string}|undefined;}
 export function canonicalPeer(address:string){
+ if(address.includes('%'))throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);
  if(isIP(address)===4)return address;
  if(isIP(address)!==6)throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);
  const ip=new URL('http://['+address+']/').hostname.slice(1,-1);

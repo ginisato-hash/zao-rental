@@ -1,0 +1,17 @@
+{
+  "operationId": "f2c8d208-e472-4f86-b581-81a4953962dc",
+  "refundIdempotencyKey": "98e94ea9-a081-480d-86f4-5aa491df1d6f",
+  "paymentId": "pezzekG1LQRt4MVKF0X4sgRCx1FZY",
+  "refundAmountJpy": 100,
+  "currency": "JPY",
+  "merchantId": "MLKDVEDH1ME21",
+  "apiVersion": "2026-08-19",
+  "providerOrigin": "https://connect.squareupsandbox.com",
+  "locationBinding": "SQUARE_SANDBOX_LOCATION_ID",
+  "reason": "SYNTHETIC_R10_S3_SANDBOX_ACCEPTANCE_FULL_REFUND",
+  "maxPaymentLookup": 1,
+  "maxRefundPost": 1,
+  "maxRefundLookup": 1,
+  "retry": 0,
+  "production": false
+}

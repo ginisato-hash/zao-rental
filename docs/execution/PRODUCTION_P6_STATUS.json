@@ -905,6 +905,10 @@
     "claude_starts": 0,
     "spark_starts": 0,
     "create_payment": 0,
-    "s1_rerun": 0
+    "s1_rerun": 0,
+    "authority_commit": "527a5a7ba0a8725862e34db8fbb79e6468d8d934",
+    "operation_manifest": "p6/s3-evidence/operation-manifest.json",
+    "manifest_fingerprint": "a010521d418619c2a9b29910eb8b9ac98c001104ddeb6bd6ffa664a06b94d83b",
+    "local_validation": "144_PASS_FAIL0_SKIP0_SECRET_LINT_TYPECHECK_BUILD_EXIT0"
   }
 }

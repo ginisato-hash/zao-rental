@@ -1,3 +1,13 @@
+## Current R10 result — S3_NONTERMINAL_DO_NOT_RETRY; cleanup pending
+
+R10 is terminal. Read PRODUCTION_P6_STATUS.json and p6/s3-evidence/safe-result.json.
+Push/read back result first; remove both temporary S3 routes, validate, delete exact
+S3 Preview dpl_2K5o4MK53GBc4mz5qobLfRNswSPU. Retain R3, manifests, guards and provider objects.
+No new lookup/refund/POST, key, Preview, S1/CreatePayment/webhook/DB/Production/model.
+S3_PASS permits S4 gate documentation only. R4–R9 and security histories stay intact.
+
+## Historical R10 implementation instructions
+
 ## Current formal R10/S3 — fixed payment lookup and exact Sandbox refund
 
 Read docs/execution/PRODUCTION_P6_S3_AUTHORITY.md and PRODUCTION_P6_STATUS.json.

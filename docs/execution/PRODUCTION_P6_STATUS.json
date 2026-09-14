@@ -1,5 +1,5 @@
 {
-  "phase": "R10_S3_AUTHORIZED_IMPLEMENTATION",
+  "phase": "R10_S3_NONTERMINAL_DO_NOT_RETRY_RESULT_SAVED_CLEANUP_PENDING",
   "authority": "PRODUCTION_P6_S3_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Normal Preview login only if required; next provider scope needs separate S4 authority",
+  "first_owner_action": "After cleanup: bounded S4 authority only after S3_PASS; otherwise decision on recorded terminal/nonterminal result, never automatic retry",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Authority remote readback, fixed lookup/refund implementation, validation, one Preview, guarded execution, evidence and cleanup",
+  "next": "Read back result remotely, remove exactly two S3 routes, validate and delete exact S3 Preview; keep R3, manifests, local guards and provider objects. Never repeat R10.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T16:16:33.537118+00:00",
+  "updated_at": "2026-09-14T16:44:07.136729+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -891,16 +891,16 @@
     "authority_sha256": "844306030e8cc3143ddd74e5ab1be2d201535decfc4a0d92a0a5452b13499380",
     "prior_authority_adoption_rejections": 3,
     "owner_plaintext_adoption": "添付の正式Owner Authority R10/S3を採用し、記載範囲の実装・Sandbox照合・100円全額返金・cleanupを承認する",
-    "classification": "NOT_EXECUTED",
+    "classification": "S3_NONTERMINAL_DO_NOT_RETRY",
     "preview_limit": 1,
-    "preview_attempts": 0,
+    "preview_attempts": 1,
     "payment_lookup_limit": 1,
-    "payment_lookup_dispatches": 0,
+    "payment_lookup_dispatches": 1,
     "refund_post_limit": 1,
-    "refund_post_dispatches": 0,
+    "refund_post_dispatches": 1,
     "refund_lookup_limit": 1,
-    "refund_lookup_dispatches": 0,
-    "operator_posts": 0,
+    "refund_lookup_dispatches": 1,
+    "operator_posts": 1,
     "retry": 0,
     "claude_starts": 0,
     "spark_starts": 0,
@@ -909,6 +909,34 @@
     "authority_commit": "527a5a7ba0a8725862e34db8fbb79e6468d8d934",
     "operation_manifest": "p6/s3-evidence/operation-manifest.json",
     "manifest_fingerprint": "a010521d418619c2a9b29910eb8b9ac98c001104ddeb6bd6ffa664a06b94d83b",
-    "local_validation": "144_PASS_FAIL0_SKIP0_SECRET_LINT_TYPECHECK_BUILD_EXIT0"
+    "local_validation": "144_PASS_FAIL0_SKIP0_SECRET_LINT_TYPECHECK_BUILD_EXIT0",
+    "execution_commit": "bd9aea3b151896ed434f41df9b83b06c729c3f4b",
+    "operation_manifest_commit": "bd9aea3b151896ed434f41df9b83b06c729c3f4b",
+    "preview_id": "dpl_2K5o4MK53GBc4mz5qobLfRNswSPU",
+    "origin": "https://zao-rental-imut3w2pk-zao-food-map.vercel.app",
+    "preflight": "PASS",
+    "result": "p6/s3-evidence/safe-result.json",
+    "cleanup": "PENDING_RESULT_REMOTE_READBACK",
+    "security": {
+      "square_secret_exposure": 0,
+      "auth_callback_observation": 0,
+      "auth_state_export": 0,
+      "basis": "controlled source and allowlisted output; no raw provider/auth logs collected"
+    },
+    "other_actions": {
+      "create_payment": 0,
+      "s1_rerun": 0,
+      "webhook": 0,
+      "production": 0,
+      "external_db": 0,
+      "booking_mutation": 0,
+      "inventory_mutation": 0,
+      "custody_mutation": 0,
+      "r2": 0,
+      "email": 0,
+      "sms": 0,
+      "main_merge": 0,
+      "runner": 0
+    }
   }
 }

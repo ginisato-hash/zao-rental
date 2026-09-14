@@ -1,4 +1,20 @@
-## Current R4 — Self-XSS stop; Owner confirms no S1 dispatch
+## Current R4 — Owner-approved Playwright invocation amendment
+
+Read docs/execution/PRODUCTION_P6_R4_INVOCATION_AMENDMENT.md and the P6 status.
+Owner approves one same-origin POST from a normal Playwright browser against only
+existing protected S1 deployment dpl_3UXKvrNyRp1KpRfpPt7jxAYSF5Bo. Save amendment to
+GitHub first, verify exact remote/deployment/origin/state/protection, durably reserve
+the local one-shot guard before dispatch. Ordinary Owner browser login is allowed;
+no credential/cookie/token extraction or persistence, bypass secret, CLI curl,
+Console paste or protection change. Any uncertain outcome: UNKNOWN_DO_NOT_RETRY.
+S1 still NOT_RUN at amendment; POST0/Square0. Preview1/1 consumed; original GET2
+unspent, not reset. Only PASS permits Preview merchant metadata; no redeploy or
+location change. Save evidence, remove temporary route, recheck, remove exact S1
+Preview; retain R3. No S2/payment/refund/webhook/DB/R2/Claude/Spark/main/Runner.
+
+## Historical confirmed Self-XSS stop (method amended above; evidence preserved)
+
+## Historical R4 — Self-XSS stop; Owner confirms no S1 dispatch
 
 Read docs/execution/p6/R4_S1_CHECKPOINT.md and PRODUCTION_P6_STATUS.json.
 Owner confirms script/POST not executed, no `allow pasting`, no alternative retry.

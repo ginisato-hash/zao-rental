@@ -1,4 +1,22 @@
-# Current R4 stop: Owner confirms S1 was not executed
+# Current R4: Playwright method approved; invocation not yet dispatched
+
+The Owner's [invocation amendment](../PRODUCTION_P6_R4_INVOCATION_AMENDMENT.md)
+replaces only the superseded Console-paste method. It authorizes one same-origin
+POST in a normal Playwright browser after this amendment is saved to GitHub,
+exact Preview/protection preflight and durable local one-shot reservation.
+S1 NOT_RUN; POST0; Square0. Original Preview1/1 consumed and maximum2 GET remain;
+no budget reset. No new deployment/env change during preflight. Ordinary Owner
+login may be required; no credential extraction or protection bypass.
+
+The Codex parent executes once, saves only safe metadata and never retries any
+result. UNKNOWN_DO_NOT_RETRY stops. PASS alone permits Preview merchant metadata
+without redeploy. Evidence then temporary route cleanup, narrow tests/secret scan/
+lint/typecheck, exact S1 deployment removal; accepted R3 retained. No S2, payment,
+refund, webhook, DB, R2, Claude, Spark or main merge.
+
+---
+
+# Historical R4 stop: Owner confirms S1 was not executed
 
 Recorded 2026-09-14 09:49:15 UTC / 18:49:15 JST. Chrome DevTools Self-XSS protection refused Console paste. Owner did not enter `allow pasting`, did not execute the handoff script or dispatch the POST, and did not retry in another tab/browser/method.
 

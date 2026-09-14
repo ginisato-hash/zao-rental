@@ -1,11 +1,10 @@
-## Current R8 checkpoint — R8_S1_EVIDENCE_ADOPTED_BLOCKED_VERCEL_LOGIN
+## Current R8 checkpoint — R8_S1_EVIDENCE_ADOPTED_S2_GATE_READY
 
 Read docs/execution/PRODUCTION_P6_R8_AUTHORITY.md, PRODUCTION_P6_STATUS.json,
 PRODUCTION_P6_S2_GATE.md and p6/R8_RESULT.json. R7 identity evidence is adopted;
 R7 overall FAIL_SECURITY_BOUNDARY remains unchanged. S1 never reruns.
-Merchant metadata: BLOCKED_AUTH_NOT_REGISTERED. S2 remains NOT_EXECUTED.
-Wait only for normal Owner Vercel login, then continue the already-authorized
-Preview merchant metadata registration/readback. No token/cookie extraction.
+Merchant metadata: REGISTERED_PREVIEW_ONLY. S2 remains NOT_EXECUTED.
+Stop at separate S2 Owner authority. No further env mutation or redeploy.
 No Square/deploy/DB/R2/model/new PR/main/Runner action in R8. No budget reset.
 
 ## Earlier R8 adoption instructions (retained as history)

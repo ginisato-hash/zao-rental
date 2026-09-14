@@ -1,12 +1,12 @@
 {
-  "recorded_at_utc": "2026-09-14T13:48:06.552053+00:00",
+  "recorded_at_utc": "2026-09-14T15:00:31.828066+00:00",
   "starting_remote_head": "fb237f7f1698a718c5430da130ddd3530816744d",
   "authority_commit": "788ca2fd81e893f36f79dfa794da26d483de3e3e",
   "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
-  "phase": "R8_S1_EVIDENCE_ADOPTED_BLOCKED_VERCEL_LOGIN",
+  "phase": "R8_S1_EVIDENCE_ADOPTED_S2_GATE_READY",
   "s1_provider_acceptance": "OWNER_ACCEPTED_FROM_R7_PASS",
   "merchant_id": "MLKDVEDH1ME21",
-  "merchant_metadata": "BLOCKED_AUTH_NOT_REGISTERED",
+  "merchant_metadata": "REGISTERED_PREVIEW_ONLY",
   "r7_security_incident": "PRESERVED_SEPARATELY_FAIL_SECURITY_BOUNDARY_NOT_REWRITTEN",
   "s1_rerun": "FORBIDDEN",
   "r8_counts": {
@@ -30,19 +30,111 @@
     "main_merge": 0,
     "runner": 0,
     "production_square": 0,
-    "merchant_env_mutation": 0,
+    "merchant_env_mutation": 1,
     "other_env_mutations": 0
   },
   "metadata_evidence": {
-    "at": "2026-09-14T13:43:59.622957+00:00",
-    "phase": "GET",
-    "exit_code": 1,
-    "classification": "AUTH_REQUIRED",
-    "recognized_error_terms": [
-      "login",
-      "no existing credentials"
+    "at": "2026-09-14T14:59:51.217227+00:00",
+    "result": "REGISTERED_PREVIEW_ONLY",
+    "project": {
+      "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "name": "zao-rental",
+      "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+      "protection": "all_except_custom_domains",
+      "git_connected": false
+    },
+    "merchant_metadata": {
+      "id": "MLXINORh4uYMi0Hx",
+      "key": "SQUARE_SANDBOX_MERCHANT_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "plain",
+      "gitBranch": null,
+      "customEnvironmentIds": null,
+      "updatedAt": 1789397972195
+    },
+    "entries": [
+      {
+        "id": "7pHGWP9xGk6P4fbK",
+        "key": "SQUARE_API_VERSION",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "gitBranch": null,
+        "customEnvironmentIds": [],
+        "updatedAt": 1789390699668
+      },
+      {
+        "id": "7vC4S5B3fGQOLKup",
+        "key": "SQUARE_ENVIRONMENT",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "gitBranch": null,
+        "customEnvironmentIds": null,
+        "updatedAt": 1789349955537
+      },
+      {
+        "id": "YYpHSUJeXj4vOdno",
+        "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "gitBranch": null,
+        "customEnvironmentIds": null,
+        "updatedAt": 1789349955537
+      },
+      {
+        "id": "XiD5v04DY8uPinTm",
+        "key": "SQUARE_SANDBOX_APPLICATION_ID",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "gitBranch": null,
+        "customEnvironmentIds": null,
+        "updatedAt": 1789349955537
+      },
+      {
+        "id": "zBgj8wc3YFh4BOvo",
+        "key": "SQUARE_SANDBOX_LOCATION_ID",
+        "target": [
+          "preview"
+        ],
+        "type": "sensitive",
+        "gitBranch": null,
+        "customEnvironmentIds": null,
+        "updatedAt": 1789349955537
+      },
+      {
+        "id": "MLXINORh4uYMi0Hx",
+        "key": "SQUARE_SANDBOX_MERCHANT_ID",
+        "target": [
+          "preview"
+        ],
+        "type": "plain",
+        "gitBranch": null,
+        "customEnvironmentIds": null,
+        "updatedAt": 1789397972195
+      }
     ],
-    "raw_output_withheld": true
+    "other_env_metadata_unchanged": true,
+    "production_square_entries": 0,
+    "values_inspected_or_saved": false,
+    "decryption_requested": false,
+    "r3": {
+      "id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "readyState": "READY",
+      "target": null
+    },
+    "square_requests": 0,
+    "deployments": 0,
+    "other_env_mutations_by_r8": 0
   },
   "local_cli_auth_observation": {
     "first_read_exit": 1,
@@ -52,7 +144,8 @@
     "raw_output_withheld": true,
     "automatic_login_suppressed_by_child_CI": true,
     "global_config_manually_changed": false,
-    "browser_automation_observations": 0
+    "browser_automation_observations": 0,
+    "resolved_by": "OWNER_NORMAL_LOGIN"
   },
   "historical_evidence_sha256": {
     "docs/execution/p6/r7-evidence/safe-result.json": "e9a14a429bae2cb0b879b19003ec366023d5a67a9538be090f80c4ebd4b561e5",
@@ -60,9 +153,9 @@
   },
   "r7_cleanup": "Already committed at starting remote: R7 Preview/routes deleted. R3 preserved. R8 no cleanup/deploy.",
   "s2_gate": "../PRODUCTION_P6_S2_GATE.md",
-  "s2_readiness": "DRAFTED_BLOCKED_METADATA_AUTH",
+  "s2_readiness": "READY_FOR_OWNER_AUTHORITY",
   "s2_execution": "NOT_EXECUTED",
-  "next_owner_action": "Owner normal Vercel CLI browser login on this Mac; report completion only, never token/callback/MFA values. Then resume metadata-only registration and readback; no S1/deploy.",
+  "next_owner_action": "S2 synthetic payment exactly1 authority approval; see PRODUCTION_P6_S2_GATE.md. S2 NOT_EXECUTED.",
   "validation": {
     "scope": "docs/status only",
     "no_product_runtime_changes": true,
@@ -71,11 +164,42 @@
     "json_parse_exit": 0,
     "diff_check_exit": 0,
     "historical_preservation": "PASS",
-    "authority_exact_copy": "PASS"
+    "authority_exact_copy": "PASS",
+    "budget_invariants": "PASS",
+    "metadata_preflight_exit": 0,
+    "metadata_registration_exit": 0,
+    "metadata_readback_exit": 0
   },
   "sources": [
     "https://vercel.com/docs/rest-api/projects/create-one-or-more-environment-variables",
     "https://vercel.com/docs/rest-api/projects/retrieve-the-environment-variables-of-a-project-by-id-or-name"
   ],
-  "source_access": "Official public documentation only; no Square business API request"
+  "source_access": "Official public documentation only; no Square business API request",
+  "owner_login_resume_at_utc": "2026-09-14T14:58:18Z",
+  "metadata_registration_receipt": {
+    "at": "2026-09-14T14:59:32.354009+00:00",
+    "result": "CREATED",
+    "metadata": {
+      "id": "MLXINORh4uYMi0Hx",
+      "key": "SQUARE_SANDBOX_MERCHANT_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "plain",
+      "gitBranch": null
+    },
+    "known_non_secret_value_submitted": "MLKDVEDH1ME21"
+  },
+  "resume_budget_reset": false,
+  "resume_remote_head": "b3b061cdec556451b1e6b0408926a47d5e8ab23e",
+  "owned_resources": {
+    "db": 0,
+    "web": 0,
+    "browser_automation": 0,
+    "claude": 0,
+    "spark": 0,
+    "finite_cli": "COMPLETED",
+    "accepted_r3_preview": "RETAINED_READY_PROTECTED",
+    "new_deployment": 0
+  }
 }

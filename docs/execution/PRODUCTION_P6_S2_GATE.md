@@ -1,7 +1,7 @@
 # P6 S2 — 合成Sandbox payment 1件のOwner承認ゲート
 
-状態: **BLOCKED_METADATA_AUTH。S2はNOT_EXECUTED。実行authorityではない。**
-R8のmerchant metadata登録結果は [P6 status](PRODUCTION_P6_STATUS.json) の `r8` を正本とする。登録完了前は本ゲートも `BLOCKED_METADATA_AUTH`、完了後に `READY_FOR_OWNER_AUTHORITY`。後者もdeploy・provider呼出しの許可ではない。
+状態: **READY_FOR_OWNER_AUTHORITY。S2はNOT_EXECUTED。実行authorityではない。**
+R8でmerchant metadataをPreview限定に登録し、2026-09-14T14:59:51Zにkey/target/typeを読み戻し確認済み。他env metadata・R3 Ready/protectionは不変、Production entry0、再deploy0。[R8結果](p6/R8_RESULT.json) と [P6 status](PRODUCTION_P6_STATUS.json) の `r8` を正本とする。`READY_FOR_OWNER_AUTHORITY` はdeploy・provider呼出しの許可ではない。
 
 ## 1. 採用済みidentityと保持する事故記録
 

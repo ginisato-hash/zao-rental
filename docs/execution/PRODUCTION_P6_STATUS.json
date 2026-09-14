@@ -1,5 +1,5 @@
 {
-  "phase": "R8_S1_EVIDENCE_ADOPTED_BLOCKED_VERCEL_LOGIN",
+  "phase": "R8_S1_EVIDENCE_ADOPTED_S2_GATE_READY",
   "authority": "PRODUCTION_P6_R8_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,10 +38,10 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Owner normal Vercel CLI browser login on this Mac; report completion only, never token/callback/MFA values. Then resume metadata-only registration and readback; no S1/deploy.",
+  "first_owner_action": "S2 synthetic payment exactly1 authority approval; see PRODUCTION_P6_S2_GATE.md. S2 NOT_EXECUTED.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
-    "secret_store": "PREVIEW_EXISTING_SETTINGS_PRESERVED_LOCAL_CLI_AUTH_REQUIRED",
+    "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
     "https_receiver": "NOT_CREATED_ROUTE_UNCONNECTED",
     "vercel": "PROTECTED_ACTUAL_PREVIEW_BUILD_START_HEALTH_FAIL_CLOSED_VERIFIED",
     "recovery_delivery": "PROVIDER_UNSELECTED",
@@ -68,7 +68,7 @@
   "runner": "UNATTENDED_HOLD",
   "draft_pr_created": false,
   "owner_pending": [
-    "Owner normal Vercel CLI browser login on this Mac; report completion only, never token/callback/MFA values. Then resume metadata-only registration and readback; no S1/deploy."
+    "S2 synthetic payment exactly1 authority approval; see PRODUCTION_P6_S2_GATE.md. S2 NOT_EXECUTED."
   ],
   "verification": {
     "local": [
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Owner normal Vercel CLI browser login on this Mac; report completion only, never token/callback/MFA values. Then resume metadata-only registration and readback; no S1/deploy.",
+  "next": "S2 synthetic payment exactly1 authority approval; see PRODUCTION_P6_S2_GATE.md. S2 NOT_EXECUTED.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T13:48:06.552053+00:00",
+  "updated_at": "2026-09-14T15:00:31.828066+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -764,9 +764,9 @@
       "docs/execution/p6/r7-evidence/safe-result.json": "e9a14a429bae2cb0b879b19003ec366023d5a67a9538be090f80c4ebd4b561e5",
       "docs/execution/p6/r7-evidence/security-observation.json": "8bdd6c1a83e2e936e4ce7ed88a540575d2e91c4a67084484d655e46b39f66b8c"
     },
-    "merchant_metadata": "BLOCKED_AUTH_NOT_REGISTERED",
+    "merchant_metadata": "REGISTERED_PREVIEW_ONLY",
     "merchant_id": "MLKDVEDH1ME21",
-    "s2": "GATE_DRAFTED_METADATA_AUTH_PENDING_NOT_EXECUTED",
+    "s2": "READY_FOR_OWNER_AUTHORITY_NOT_EXECUTED",
     "new_actions": {
       "square_get": 0,
       "square_post": 0,
@@ -788,7 +788,7 @@
       "main_merge": 0,
       "runner": 0,
       "production_square": 0,
-      "merchant_env_mutation": 0,
+      "merchant_env_mutation": 1,
       "other_env_mutations": 0
     },
     "budget_continuity": "R4/R6/R7 counts unchanged; no replay/reset on machine transfer",
@@ -811,8 +811,14 @@
       "raw_output_withheld": true,
       "automatic_login_suppressed_by_child_CI": true,
       "global_config_manually_changed": false,
-      "browser_automation_observations": 0
+      "browser_automation_observations": 0,
+      "resolved_by": "OWNER_NORMAL_LOGIN"
     },
-    "validation": "docs-only: secret pattern scan, JSON parse, diff whitespace and historical preservation checks; no product tests/build/model"
+    "validation": "docs-only: secret pattern scan, JSON parse, diff whitespace and historical preservation checks; no product tests/build/model",
+    "resumed_after_owner_login_at_utc": "2026-09-14T14:58:18Z",
+    "metadata_registered_at_utc": "2026-09-14T14:59:32.354009+00:00",
+    "metadata_readback_at_utc": "2026-09-14T14:59:51.217227+00:00",
+    "resume_budget_reset": false,
+    "resume_remote_head": "b3b061cdec556451b1e6b0408926a47d5e8ab23e"
   }
 }

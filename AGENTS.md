@@ -1,4 +1,21 @@
-## Current R4 — one Playwright POST returned UNKNOWN; never retry
+## Current R6 — independent preflighted S1 acceptance v2
+
+Read docs/execution/PRODUCTION_P6_R6_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Owner authorizes local implementation/validation, one new protected Preview,
+zero-provider runtime preflight, then only on PASS one same-origin S1 POST and
+at most two Sandbox identity GETs with no retry. Save authority to GitHub first.
+Parent owns implementation, normal authenticated browser invocation, evidence,
+cleanup and branch push. No secret/cookie/token extraction, bypass, payment,
+refund, webhook, DB, R2, S2, production, Claude, main merge or Runner.
+R5 was terminated by Owner as non-gating investigation. R4 UNKNOWN/POST1,
+its deleted Preview, immutable guard and zero retry authority remain history.
+Retain accepted R3. Save R6 result before removing both temporary routes and the
+exact R6 Preview. Only PASS permits Preview merchant metadata without redeploy
+and preparation of the S2 Owner gate. Continue within scope without approvals.
+
+## Historical R4 completed invocation and cleanup
+
+## Historical R4 — one Playwright POST returned UNKNOWN; never retry
 
 The Owner-approved amendment was saved on GitHub before execution. Exact protected
 S1 Preview was verified Ready; normal Owner Team login completed. Durable local guard

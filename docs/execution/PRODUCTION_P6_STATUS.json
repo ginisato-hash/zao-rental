@@ -1,9 +1,9 @@
 {
-  "phase": "UNKNOWN_DO_NOT_RETRY",
-  "authority": "PRODUCTION_P6_R4_AUTHORITY.md",
+  "phase": "R6_AUTHORIZED_IMPLEMENTATION_PENDING",
+  "authority": "PRODUCTION_P6_R6_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
-  "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+  "worktree": "/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/zao-rental",
   "pr16_merge": {
     "merge_commit": "3061dbbbe00294e5baebba2405028c907d6e6e85",
     "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Review UNKNOWN HTTP503 outcome and explicitly define any future scope; this S1 cannot be retried and its deployment was deleted.",
+  "first_owner_action": "None while R6 can proceed within scope; ordinary login/MFA or secret re-entry only if required.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -48,7 +48,7 @@
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
   },
-  "external_acceptance": "VERCEL_PREVIEW_BOUNDED_PASS_SQUARE_DB_R2_NOT_RUN",
+  "external_acceptance": "R3_PREVIEW_BOUNDED_PASS_R4_S1_UNKNOWN_R6_S1_V2_AUTHORIZED_NOT_RUN",
   "external_activation_requests": {
     "square": null,
     "r2": 0,
@@ -83,7 +83,7 @@
     "GBP",
     "ZAO_listing",
     "production store-to-Square-location mapping",
-    "Square Sandbox S1 separate read-only acceptance approval"
+    "R6 result; only S1_PASS releases preparation of separate S2 Owner authority"
   ],
   "verification": {
     "local": [
@@ -122,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "STOP. UNKNOWN_DO_NOT_RETRY. Evidence saved; temporary route and exact S1 deployment removed; R3 retained. No retry, configuration repair, redeploy, S2 or main merge authorized.",
+  "next": "R6 local implementation and validation, one protected Preview, runtime preflight, at most one S1 POST / two Sandbox GETs, result evidence, cleanup, PASS-only merchant metadata and S2 gate; STOP before S2.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T11:24:15.793045+00:00",
+  "updated_at": "2026-09-14T12:12:38.254223+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -678,5 +678,24 @@
       "cleanup_evidence": "p6/r4-evidence/playwright-cleanup.json"
     },
     "temporary_route_removed": true
+  },
+  "r6": {
+    "authority": "PRODUCTION_P6_R6_AUTHORITY.md",
+    "authority_sha256": "9f933717d2c86f9f47e0db68094b4c8ffeef1f6339a0ee509ddfef3ecee3b287",
+    "starting_head": "70cc14921c07ca0513c0b6e17624f69899803517",
+    "started_at_utc": "2026-09-14T12:12:38.254080+00:00",
+    "r5": "TERMINATED_BY_OWNER_NON_GATING",
+    "preview_limit": 1,
+    "preview_attempts": 0,
+    "s1_post_limit": 1,
+    "s1_posts": 0,
+    "square_get_limit": 2,
+    "square_requests": 0,
+    "runtime_preflight": "NOT_RUN",
+    "s1_result": "NOT_RUN",
+    "retry_authority": 0,
+    "new_claude_starts": 0,
+    "spark_starts": 0,
+    "historical_r4_unchanged": true
   }
 }

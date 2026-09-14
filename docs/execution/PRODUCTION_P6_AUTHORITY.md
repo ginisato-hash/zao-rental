@@ -1,3 +1,9 @@
+# Current amendment
+
+The unchanged Owner R2 instruction is preserved in [PRODUCTION_P6_R2_ORIGINAL.md](PRODUCTION_P6_R2_ORIGINAL.md), SHA-256 `611b6fde7bd135ea66b1a13a91dfb1eb48a1fbedc0b1783ccfbbae62b85e70e3`. It supersedes the application-unconfirmed / no-project-creation R1 checkpoint below. It does not authorize Preview deployment yet, Production, additional billing, secret extraction or Ruleset changes.
+
+# Historical R1 authority
+
 # P6 current Owner authority — scope record
 
 Source: direct Owner message 「ZAO Rental｜P5 merge → External Acceptance P6」 received in this Codex session, 2026-09-14 JST. This is a faithful scope summary, not a new delegation budget.

@@ -1,3 +1,12 @@
+# R2現在地（以下のR1初期手順を上書き）
+
+Square ZAO Rental application / Default Test Account / Default Test Account (Main) はOwner確認済み。API照合はNOT_RUN。1件locationをSandbox acceptanceに使い、2店舗分を新規作成・同一IDへmapしない。
+現在の次操作は [R2_PREPARATION.md](R2_PREPARATION.md)。秘密値はVercel PreviewへOwner直接入力。実APIはS1 merchant/location read-only → 成功後synthetic payment1件 → Webhook/再送/lookup → 成功後refund1件の順。
+provider IDが分かるUNKNOWNはGetPayment、分からなければSTOP/manual investigation。同一キーは保存照合用であり、GetPaymentの検索キーではない。
+採用版2026-08-19は [公式changelog](https://developer.squareup.com/docs/changelog/connect-logs/2026-08-19) で確認。コードをupgradeしていない。実Console/API互換性は未検証。
+
+# Historical R1 steps — not current application/location instructions
+
 # Square Sandbox — 1画面ずつ進める
 
 初期状態: application UNCONFIRMED / secret store UNSELECTED・UNCONFIGURED / HTTPS receiver NOT_CREATED。

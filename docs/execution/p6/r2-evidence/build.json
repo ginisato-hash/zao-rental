@@ -1,0 +1,13 @@
+{
+  "check": "build",
+  "command": [
+    "npm",
+    "run",
+    "build"
+  ],
+  "exit_code": 0,
+  "log": "build.log",
+  "raw_log_sha256": "86e175ac962f913915377eb004c7df28784cd54362ca0634f7d004709c644ea4",
+  "sha256": "fc1e02299c680bb79567a6c4302cd232d8d786dd160da37007d28b88f86f4dfc",
+  "format": "Repo copy removes terminal CR/trailing whitespace only; original retained in local outputs/production-p6/r2."
+}

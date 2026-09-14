@@ -1,0 +1,13 @@
+{
+  "check": "lint",
+  "command": [
+    "npm",
+    "run",
+    "lint"
+  ],
+  "exit_code": 0,
+  "log": "lint.log",
+  "raw_log_sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+  "sha256": "1d73f31982945633bb8a491209f73fa014e10c64c770caa9d642b1f5d67a676b",
+  "format": "Repo copy removes terminal CR/trailing whitespace only; original retained in local outputs/production-p6/r2."
+}

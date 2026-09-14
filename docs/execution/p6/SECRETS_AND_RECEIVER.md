@@ -1,3 +1,10 @@
+# R2更新
+
+最初のSandboxは専用zao-rental ProjectのPreview Environment Variableを使用する方向とOwnerが指示。Project/link/設定名は確定・readback済み。次にOwner自身がPreviewだけへ直接Secretを登録する。値をCodexへ渡さない。
+実receiverは未作成。[監査結果](SQUARE_CONFIG_AND_RECEIVER_AUDIT.md) の不足を閉じずにWebhook成功とはしない。Vercel59.9.1 linkにはOIDC自動取得があるため、承認済みlocal linkは確認済みIDだけのmetadata方式で完了。
+
+# Historical R1 comparison — external manager remains an alternative, not selected
+
 # Secret storeとSandbox receiver — Owner選択前
 
 Vercel directを初期hosting候補にする。次の比較は設計判断であり、サービス選択・契約・認証変更は未実行。

@@ -1,6 +1,6 @@
 {
-  "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
-  "authority": "PRODUCTION_P6_AUTHORITY.md",
+  "phase": "R2_PROJECT_LINKED_WAITING_OWNER_PREVIEW_SECRET",
+  "authority": "PRODUCTION_P6_R2_ORIGINAL.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
   "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
@@ -38,12 +38,12 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Square Developer Console Applications: ZAO Rental application exists / absent / unclear only; no secret or ID requested",
+  "first_owner_action": "Owner directly enters Sandbox Access Token as SQUARE_SANDBOX_ACCESS_TOKEN, Secret/Sensitive, Preview only, in verified zao-rental Vercel Project. Never send value here.",
   "steps": {
-    "square_application": "UNCONFIRMED",
-    "secret_store": "UNSELECTED_UNCONFIGURED",
-    "https_receiver": "NOT_CREATED",
-    "vercel": "PLAN_ONLY_DEPLOY_REQUIRES_OWNER",
+    "square_application": "OWNER_CONFIRMED",
+    "secret_store": "VERCEL_PROJECT_PREVIEW_NAMES_READY_NO_VALUES_INSTALLED",
+    "https_receiver": "NOT_CREATED_ROUTE_UNCONNECTED",
+    "vercel": "PROJECT_CREATED_LINKED_SETTINGS_READBACK_NO_DEPLOY",
     "recovery_delivery": "PROVIDER_UNSELECTED",
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
@@ -77,13 +77,117 @@
     "production_deploy",
     "Search_Console",
     "GBP",
-    "ZAO_listing"
+    "ZAO_listing",
+    "Sandbox Preview Secret direct entry",
+    "Preview deploy approval",
+    "production store-to-Square-location mapping"
   ],
-  "verification": "P5 Ready CI and review cover unchanged product tree. P6 docs: local link/secret scan/diff checks only; no new full suite, DB, Web or model started.",
+  "verification": {
+    "local": [
+      "unit177 pass/fail0/skip0",
+      "lint exit0",
+      "typecheck exit0",
+      "build exit0"
+    ],
+    "new_unit_cases": 4,
+    "logs": "p6/r2-evidence/",
+    "real_db_this_turn": "NOT_RUN_NO_DB_CHANGE",
+    "real_square": "NOT_RUN",
+    "ci_for_r2": "NOT_RUN_BRANCH_CHECKPOINT_NO_NEW_PR",
+    "independent_review_for_r2": "NOT_RUN_NO_NEW_CLAUDE_START",
+    "p5_review_not_reused_for_r2": true
+  },
   "historical_unresolved": [
     "CI34749426170 staff-create HTTP500",
     "CI34756544102 wear mixed transport"
   ],
-  "owned_resources_started": [],
-  "next": "Stop and request only Square Step1. Provider facts and explicit activation/deploy/credential approval are required before actual acceptance."
+  "owned_resources_started": [
+    "finite npm/unit/build CLI children all completed",
+    "read-only browser tab20 login screen; kept available for Owner UI handoff"
+  ],
+  "next": "After Owner secret-entry confirmation, prepare scoped Preview acceptance and request deployment approval; no deploy or Square calls now. Existing receiver/runtime/S1 gaps remain.",
+  "r1_checkpoint": {
+    "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
+    "steps": {
+      "square_application": "UNCONFIRMED",
+      "secret_store": "UNSELECTED_UNCONFIGURED",
+      "https_receiver": "NOT_CREATED",
+      "vercel": "PLAN_ONLY_DEPLOY_REQUIRES_OWNER",
+      "recovery_delivery": "PROVIDER_UNSELECTED",
+      "r2": "PLAN_ONLY_NO_REQUEST",
+      "backup_pitr": "PROVIDER_UNSELECTED"
+    },
+    "first_owner_action": "Square Developer Console Applications: ZAO Rental application exists / absent / unclear only; no secret or ID requested",
+    "next": "Stop and request only Square Step1. Provider facts and explicit activation/deploy/credential approval are required before actual acceptance."
+  },
+  "authority_sha256": "611b6fde7bd135ea66b1a13a91dfb1eb48a1fbedc0b1783ccfbbae62b85e70e3",
+  "r2_started_at_utc": "2026-09-14T01:04:11Z",
+  "r2_started_at_jst": "2026-09-14T10:04:11+09:00",
+  "square_owner_report": {
+    "source": "OWNER_R2_NOT_API_VERIFIED",
+    "developer_account": "CONFIRMED",
+    "application": "ZAO Rental",
+    "environment": "SANDBOX",
+    "application_state": "CONFIRMED_CREATED",
+    "application_id": "ISSUED_NOT_COPIED",
+    "test_account": "Default Test Account",
+    "location": "Default Test Account (Main)",
+    "location_id": "OWNER_CONFIRMED_NOT_COPIED",
+    "access_token": "ISSUED_NOT_YET_INSTALLED",
+    "production_store_location_mapping": "OWNER_PENDING",
+    "acceptance_location_count": 1
+  },
+  "vercel_r2": {
+    "cli_version": "59.9.1",
+    "node_version": "24.15.0",
+    "team_list_observed": {
+      "slug": "zao-food-map",
+      "name": "ZAO FOOD MAP",
+      "id": "team_PVka5z4T6OMKBmUcqrK09yJz"
+    },
+    "taste_project_team_confirmed": true,
+    "project_list_result": "SUCCESS_NO_DUPLICATE",
+    "project_created": true,
+    "local_linked": true,
+    "deployment_count": 0,
+    "unexpected_cli_login_wait": "CANCELLED_EXIT130",
+    "browser_login_required": false,
+    "link_cli_note": "59.9.1 unconditionally refreshes local OIDC token after link; do not use token-pulling path. Metadata-only project.json link is the planned alternative after verified project ownership.",
+    "initial_auth_failure": {
+      "project_list_result": "AUTH_FAILURE_THEN_NO_EXISTING_CREDENTIALS",
+      "unexpected_cli_login_wait": "CANCELLED_EXIT130",
+      "browser_login_required": true
+    },
+    "auth_restored_by": "OWNER_BROWSER_LOGIN",
+    "project_id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "project_name": "zao-rental",
+    "project_url": "https://vercel.com/zao-food-map/zao-rental",
+    "preview_secret_settings_url": "https://vercel.com/zao-food-map/zao-rental/settings/environment-variables",
+    "linked_paths": [
+      "/Users/gini/Projects/zao-rental",
+      "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6"
+    ],
+    "link_method": "metadata-only projectId/orgId/projectName; no secret/OIDC pull",
+    "git_connected": false,
+    "settings": {
+      "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "name": "zao-rental",
+      "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+      "framework": "nextjs",
+      "rootDirectory": null,
+      "buildCommand": "npm run build",
+      "outputDirectory": null,
+      "nodeVersion": "24.x",
+      "git_linked": false
+    }
+  },
+  "r2_updated_at": "2026-09-14T01:25:04.631309+00:00",
+  "db_web_claude_started": false,
+  "remaining_implementation_gates": [
+    "S1 merchant/location read-only transport composition",
+    "Sandbox-only Preview runtime and dedicated DB credentials/roles",
+    "verified HTTPS receiver with durable acknowledgment/retry policy",
+    "deployment protection and trusted ingress real acceptance",
+    "Web Payments tokenization; no normal production charge activation"
+  ]
 }

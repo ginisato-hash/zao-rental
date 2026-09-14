@@ -1,0 +1,13 @@
+{
+  "check": "unit",
+  "command": [
+    "npm",
+    "run",
+    "test:unit"
+  ],
+  "exit_code": 0,
+  "log": "unit.log",
+  "raw_log_sha256": "d501d7380145f2a02055e365eee88c5f4bcd0f9a8d586cd6a9a1ec607e9f26b4",
+  "sha256": "d501d7380145f2a02055e365eee88c5f4bcd0f9a8d586cd6a9a1ec607e9f26b4",
+  "format": "Repo copy removes terminal CR/trailing whitespace only; original retained in local outputs/production-p6/r2."
+}

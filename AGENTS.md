@@ -1,3 +1,19 @@
+## Current P6 R2 — Sandbox preparation, project creation/link only
+
+Read docs/execution/PRODUCTION_P6_R2_ORIGINAL.md, PRODUCTION_P6_STATUS.json and
+p6/R2_PREPARATION.md. Owner confirms the Square application/test account/single
+Sandbox location and issued token; none are independently API-verified or installed.
+Identify TASTE OF ZAŌ's Vercel Team read-only; create only its separate zao-rental
+project if absent; configure root ./, Next.js, npm run build, default output, Node24.
+Link without fetching/generating secrets. No deployment until separate Owner approval.
+Define missing Sandbox env names/config metadata, audit receiver and preserve all gates.
+Stop for Owner's direct Preview secret entry and Preview approval. Never request values.
+No new Claude starts here; preserve historical budgets. Actual Square requests remain0
+until approved deployment/configuration/read-only S1. No production, other-project
+changes, real data, billing/rights expansion, Ruleset changes or PR3/Runner activation.
+
+## Historical P6 R1 checkpoint (superseded only as stated in R2)
+
 ## Current P6 External Acceptance — preconnection preparation
 
 Read docs/execution/PRODUCTION_P6_AUTHORITY.md, PRODUCTION_P6_STATUS.json and p6/README.md.

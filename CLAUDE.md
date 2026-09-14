@@ -1,3 +1,20 @@
+## Current R7 — exact Preview API version correction and S1 continuation
+
+Read docs/execution/PRODUCTION_P6_R7_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Save authority to GitHub first. Owner authorizes overwriting only Preview
+SQUARE_API_VERSION with the known literal 2026-08-19, retaining Sensitive type,
+without reading its current value. Restore only R6 temporary routes; validate
+at least69 tests plus secret scan/lint/typecheck/build; create one protected
+R7 Preview. Zero-provider preflight must PASS before one same-origin S1 POST,
+maximum two Sandbox identity GETs, no retry. Keep separate R7 durable guards.
+Save result before route/deployment cleanup and repeat checks; retain R3.
+Only S1_PASS permits Preview merchant metadata and preparation of the S2 gate.
+Parent continues autonomously; ordinary login/password/MFA only if needed.
+R4/R6 evidence and guards remain unchanged. No payment/refund/webhook/DB/R2/S2,
+production, Claude, main merge, Runner, billing or permission expansion.
+
+## Historical R6 completed preflight block and cleanup
+
 ## Current R6 — runtime preflight BLOCKED; no S1 dispatch
 
 Read docs/execution/PRODUCTION_P6_R6_AUTHORITY.md and p6/R6_S1_V2_RESULT.md.

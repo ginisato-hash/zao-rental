@@ -1,6 +1,6 @@
 {
-  "phase": "R6_BLOCKED_API_VERSION_MISMATCH_CLEANUP_COMPLETE",
-  "authority": "PRODUCTION_P6_R6_AUTHORITY.md",
+  "phase": "R7_AUTHORIZED_EXACT_API_VERSION_CORRECTION",
+  "authority": "PRODUCTION_P6_R7_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
   "worktree": "/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/zao-rental",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Owner UI must set Preview SQUARE_API_VERSION to exactly 2026-08-19; a separately authorized new Preview/acceptance scope is required to apply it. No secret value is requested in chat.",
+  "first_owner_action": "None while R7 can proceed; ordinary login/password/MFA only if required.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -48,7 +48,7 @@
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
   },
-  "external_acceptance": "R3_PREVIEW_BOUNDED_PASS_R4_S1_UNKNOWN_R6_PREFLIGHT_BLOCKED_S1_NOT_RUN",
+  "external_acceptance": "R3_PREVIEW_BOUNDED_PASS_R4_UNKNOWN_R6_BLOCKED_R7_AUTHORIZED_NOT_RUN",
   "external_activation_requests": {
     "square": null,
     "r2": 0,
@@ -83,7 +83,7 @@
     "GBP",
     "ZAO_listing",
     "production store-to-Square-location mapping",
-    "Correct Preview SQUARE_API_VERSION via Owner UI and authorize a separate new Preview/S1 scope; S2 remains gated"
+    "R7 result; separate S2 authority only after S1_PASS"
   ],
   "verification": {
     "local": [
@@ -122,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "STOP. R6 preflight BLOCKED; S1 POST0/Square0. Both temporary routes and exact R6 Preview removed; R3 retained Ready. Owner UI correction of Preview SQUARE_API_VERSION and separately approved new Preview/acceptance scope required; no S2 authority.",
+  "next": "Correct only Preview SQUARE_API_VERSION to 2026-08-19, restore R6 routes, validate locally, create one protected Preview, preflight then at most one S1 POST/two Sandbox GETs, save evidence, cleanup, PASS-only merchant metadata/S2 gate.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T12:38:34.539874+00:00",
+  "updated_at": "2026-09-14T12:50:28.372130+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -722,5 +722,24 @@
       "typecheck": 0,
       "build": 0
     }
+  },
+  "r7": {
+    "starting_head": "69a2716eda1953fcd147b90f135e4fdd963ef974",
+    "authority": "PRODUCTION_P6_R7_AUTHORITY.md",
+    "authority_sha256": "dacb816a1518d911ccf0347337d19ee9dab78b80ed375531f5558d92b96bec92",
+    "started_at_utc": "2026-09-14T12:50:28.372130+00:00",
+    "api_version_correction": "AUTHORIZED_NOT_EXECUTED",
+    "preview_limit": 1,
+    "preview_attempts": 0,
+    "s1_post_limit": 1,
+    "s1_posts": 0,
+    "square_get_limit": 2,
+    "square_requests": 0,
+    "retry_authority": 0,
+    "runtime_preflight": "NOT_RUN",
+    "s1_result": "NOT_RUN",
+    "new_claude_starts": 0,
+    "spark_starts": 0,
+    "historical_r4_r6_unchanged": true
   }
 }

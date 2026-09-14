@@ -1,6 +1,6 @@
 {
-  "phase": "R3_LOCAL_GREEN_PREVIEW_DRY_GATE",
-  "authority": "PRODUCTION_P6_R2_ORIGINAL.md",
+  "phase": "R3_PREVIEW_ACCEPTANCE_COMPLETE_STOP_BEFORE_S1",
+  "authority": "PRODUCTION_P6_R3_ALIAS_UPDATE.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
   "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
@@ -38,17 +38,17 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Owner decision on retaining de-aliased protected bootstrap before local integration and remaining actual Preview. No Square S1.",
+  "first_owner_action": "Separate approval for Square Sandbox S1 merchant/location read-only acceptance. Do not send secrets.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
     "https_receiver": "NOT_CREATED_ROUTE_UNCONNECTED",
-    "vercel": "R3_BOOTSTRAP_STATIC_READY_ALIAS_GATE_FAILED_QUARANTINED",
+    "vercel": "PROTECTED_ACTUAL_PREVIEW_BUILD_START_HEALTH_FAIL_CLOSED_VERIFIED",
     "recovery_delivery": "PROVIDER_UNSELECTED",
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
   },
-  "external_acceptance": "NOT_RUN",
+  "external_acceptance": "VERCEL_PREVIEW_BOUNDED_PASS_SQUARE_DB_R2_NOT_RUN",
   "external_activation_requests": {
     "square": 0,
     "r2": 0,
@@ -58,7 +58,8 @@
     "refund": 0,
     "unexpected_production_target": 1,
     "removed": 1,
-    "r3_static_bootstrap": 1
+    "r3_static_bootstrap": 1,
+    "r3_actual_preview": 1
   },
   "claude_starts_this_turn": 0,
   "prior_p5_claude_starts_preserved": 2,
@@ -82,7 +83,7 @@
     "GBP",
     "ZAO_listing",
     "production store-to-Square-location mapping",
-    "R3 automatic bootstrap alias gate: continue after scoped alias removal?"
+    "Square Sandbox S1 separate read-only acceptance approval"
   ],
   "verification": {
     "local": [
@@ -121,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Dry-run exact tracked app inputs; spend remaining one protected actual Preview then stop before Square S1.",
+  "next": "STOP. Square Sandbox S1 merchant/location read-only acceptance requires separate Owner authorization; no further deploy allowance.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -220,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T02:46:52.624229+00:00",
+  "updated_at": "2026-09-14T03:08:52.469615+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -360,7 +361,7 @@
     "bootstrap_limit": 1,
     "app_preview_limit": 1,
     "bootstrap_attempts": 1,
-    "app_preview_attempts": 0,
+    "app_preview_attempts": 1,
     "new_claude_starts": 0,
     "spark_tasks": [
       "P6-SPARK-RUNTIME-01",
@@ -369,9 +370,9 @@
     "business_changes": false,
     "external_square_requests": 0,
     "external_db_connections": 0,
-    "status": "LOCAL_GREEN",
+    "status": "PREVIEW_ACCEPTANCE_COMPLETE",
     "bootstrap_id": "dpl_C44zbkSu1uu4WbPNj9uCLA8zDJWP",
-    "bootstrap_retained": true,
+    "bootstrap_retained": false,
     "unexpected_alias_removed": true,
     "live_aliases": 0,
     "spark_test_corrections": 1,
@@ -397,15 +398,111 @@
       "previous_stop_waived_for_current_bootstrap": true,
       "generated_protected_preview_alias_allowed": true,
       "production_alias_still_forbidden": true
-    }
+    },
+    "bootstrap_removed": true,
+    "actual_preview": {
+      "recorded_at": "2026-09-14T03:08:52.469615+00:00",
+      "result": "PASS_BOUNDED_PREVIEW_ACCEPTANCE_WITH_OBSERVABILITY_LIMITS",
+      "deployment_id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "url": "https://zao-rental-cfswundgr-zao-food-map.vercel.app",
+      "deployed_commit": "d0bfe551dd6f7fa63ccf0bba97da03292e89cc4e",
+      "deployed_tree": "a8788ecd2c799003b287faa0eb1817c15d2c6b43",
+      "validated_product_commit": "de1d530ec65d0a73d23938b4b4fd9f88e178b74f",
+      "product_diff_between_validated_and_deployed": "EMPTY_DOCS_EVIDENCE_ONLY",
+      "target": "preview",
+      "raw_api_target": null,
+      "target_basis": "CLI inspect target preview AND actual request-log environment preview",
+      "build": "SUCCESS",
+      "cloud_node": "24.19.0",
+      "cloud_npm": "11.12.1",
+      "next": "STOP. Square Sandbox S1 merchant/location read-only acceptance requires separate Owner authorization; no further deploy allowance.",
+      "startup": "PASS_ROOT_AND_STAFF_HTML_RENDERED_AND_SERVERLESS_GETS",
+      "protection": "all_except_custom_domains",
+      "unauthenticated_get": 302,
+      "owner_browser_login": "COMPLETED",
+      "health": {
+        "path": "/api/health",
+        "status": 200,
+        "meaning": "LIVENESS_ONLY"
+      },
+      "dependency_readiness": {
+        "ready": false,
+        "dedicated_readiness_route": false,
+        "probes": {
+          "/api/guest": 503,
+          "/api/booking-access": 503,
+          "/api/staff": 401
+        },
+        "verdict": "EXPECTED_FAIL_CLOSED"
+      },
+      "json_body_observation": "NOT_RENDERED_IN_APP_BROWSER_ERR_BLOCKED_BY_CLIENT; server request logs prove exact HTTP statuses; error body semantics verified against deployed code, not claimed observed",
+      "runtime_logs": {
+        "cli_exit_code": 1,
+        "valid_exact_deployment_rows_received": true,
+        "stderr_permission_error": true,
+        "raw_logs_saved": false,
+        "limits": "Selected request metadata only; not full application or provider telemetry. CLI emitted rows then exit1 with permission error. No global permission/config changes made."
+      },
+      "observations": [
+        "favicon.ico 404; cosmetic, unrelated to runtime acceptance"
+      ],
+      "bootstrap_cleanup": {
+        "at": "2026-09-14T02:55:22.504825+00:00",
+        "bootstrap_removed": "dpl_C44zbkSu1uu4WbPNj9uCLA8zDJWP",
+        "remove_exit_code": 0,
+        "remaining": [
+          {
+            "uid": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+            "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+            "target": null,
+            "state": "READY"
+          }
+        ],
+        "live_aliases": [],
+        "production_aliases": 0,
+        "custom_domains": [],
+        "protection": "all_except_custom_domains",
+        "project_settings_unchanged": true,
+        "app_preview_created": 1
+      },
+      "productionActivation": false,
+      "square_activation": "DISABLED_UNCONNECTED_NO_TRANSPORT_IN_PROBED_ROUTES",
+      "counts": {
+        "actual_preview_deployments_this_continuation": 1,
+        "production_deployments_this_continuation": 0,
+        "square_requests": 0,
+        "payments": 0,
+        "refunds": 0,
+        "webhook_deliveries": 0,
+        "external_db": 0,
+        "r2": 0,
+        "email": 0,
+        "sms": 0,
+        "secret_exposure": 0,
+        "production_square_env_entries": 0,
+        "new_claude_starts": 0,
+        "additional_spark_starts": 0
+      },
+      "counts_basis": "Owned dispatch/request journal + uploaded source and metadata-only env audit; no business provider telemetry queried. Historical unexpected production Attempt1 and authorized static production-metadata bootstrap remain in prior records.",
+      "owned_resources": {
+        "db": 0,
+        "local_web": 0,
+        "claude": 0,
+        "finite_cli_tests": "COMPLETED",
+        "remote_preview": "RETAINED_AUTHORIZED",
+        "bootstrap": "REMOVED",
+        "browser": "Preview tab21 retained for Owner. API navigation tabs22-25 remained blank; staff tab26 also retained. Native Codex UI cleanup tool denied access; no bypass used."
+      }
+    },
+    "remaining_app_preview_allowance": 0
   },
   "r3_owned_resources": {
     "db": 0,
-    "web": 0,
-    "browser": 0,
+    "local_web": 0,
     "claude": 0,
-    "spark": "2tasks completed;1correction",
-    "cli": "finite commands completed",
-    "remote": "protected static bootstrap retained; live aliases0"
+    "finite_cli_tests": "COMPLETED",
+    "remote_preview": "RETAINED_AUTHORIZED",
+    "bootstrap": "REMOVED",
+    "browser": "Preview tab21 retained for Owner. API navigation tabs22-25 remained blank; staff tab26 also retained. Native Codex UI cleanup tool denied access; no bypass used."
   }
 }

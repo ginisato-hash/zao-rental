@@ -1,3 +1,15 @@
+## Current R3 Preview acceptance complete — stop before Square S1
+
+Read docs/execution/p6/R3_PREVIEW_ACCEPTANCE.md and PRODUCTION_P6_STATUS.json.
+Actual Preview dpl_2tskZombWNMhwEKB6NG96FxkzmhL is Ready and protected; bootstrap
+removed after verified target/build/protection. The single app Preview allowance is
+consumed. Owner browser login completed. Health200, unconnected guest/access503,
+staff401 match deployed contracts. Keep Preview; no further deploy or Square S1
+without separate Owner authorization. No secrets, DB/R2 activation or production.
+Prior failed attempts/alias gate and existing review budgets remain historical.
+
+## Historical predeployment alias clarification (allowance now consumed)
+
 ## Current R3 alias clarification — local green; one application Preview allowed
 
 Read docs/execution/PRODUCTION_P6_R3_ALIAS_UPDATE.md and PRODUCTION_P6_STATUS.json.

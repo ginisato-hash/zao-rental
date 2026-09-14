@@ -1,0 +1,36 @@
+{
+  "id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+  "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+  "target": null,
+  "environment": null,
+  "readyState": "BUILDING",
+  "alias": [],
+  "customEnvironment": null,
+  "createdAt": 1789354182224,
+  "buildingAt": 1789354183152,
+  "ready": 1789354183152,
+  "errorCode": null,
+  "errorMessage": null,
+  "meta": {
+    "zaoCommitSha": "d0bfe551dd6f7fa63ccf0bba97da03292e89cc4e",
+    "zaoSourceTree": "a8788ecd2c799003b287faa0eb1817c15d2c6b43",
+    "zaoAcceptance": "r3-preview-02-no-square-no-db"
+  },
+  "project_protection": "all_except_custom_domains",
+  "deployment_public_fields": [
+    "alias",
+    "aliasAssigned",
+    "automaticAliases",
+    "target",
+    "aliasAssignedAt"
+  ],
+  "project_settings": {
+    "framework": "nextjs",
+    "rootDirectory": null,
+    "buildCommand": "node --version && npx --yes --package=npm@11.12.1 -- npm --version && npx --yes --package=npm@11.12.1 -- npm run build",
+    "installCommand": "npx --yes --package=npm@11.12.1 -- npm ci --no-audit --no-fund",
+    "outputDirectory": "apps/web/.next",
+    "nodeVersion": "24.x"
+  },
+  "live_aliases": []
+}

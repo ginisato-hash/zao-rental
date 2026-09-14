@@ -1,0 +1,22 @@
+{
+  "id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+  "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+  "target": null,
+  "readyState": "READY",
+  "alias": [],
+  "createdAt": 1789354182224,
+  "buildingAt": 1789354183152,
+  "ready": 1789354254098,
+  "errorCode": null,
+  "errorMessage": null,
+  "semantic_environment": "preview",
+  "classification_evidence": "Vercel CLI inspect displayed target preview; raw API null preserved, not rewritten",
+  "project_protection": "all_except_custom_domains",
+  "meta": {
+    "zaoCommitSha": "d0bfe551dd6f7fa63ccf0bba97da03292e89cc4e",
+    "zaoSourceTree": "a8788ecd2c799003b287faa0eb1817c15d2c6b43",
+    "zaoAcceptance": "r3-preview-02-no-square-no-db"
+  },
+  "live_aliases": [],
+  "custom_domains": []
+}

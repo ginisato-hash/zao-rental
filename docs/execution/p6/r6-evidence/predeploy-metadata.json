@@ -1,0 +1,62 @@
+{
+  "checked_at_utc": "2026-09-14T12:24:45.144158+00:00",
+  "environment_metadata": [
+    {
+      "key": "SQUARE_ENVIRONMENT",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "gitBranch": null
+    },
+    {
+      "key": "SQUARE_API_VERSION",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "gitBranch": null
+    },
+    {
+      "key": "SQUARE_SANDBOX_APPLICATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "gitBranch": null
+    },
+    {
+      "key": "SQUARE_SANDBOX_LOCATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "gitBranch": null
+    },
+    {
+      "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "gitBranch": null
+    }
+  ],
+  "values_read_or_saved": false,
+  "domains": [
+    {
+      "name": "zao-rental.vercel.app",
+      "redirect": null,
+      "gitBranch": null
+    }
+  ],
+  "deployments": [
+    {
+      "uid": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+      "state": "READY",
+      "target": null
+    }
+  ],
+  "production_square_entries": []
+}

@@ -1,5 +1,5 @@
 {
-  "phase": "R6_LOCAL_GREEN_VERCEL_LOGIN_REQUIRED",
+  "phase": "R6_PREFLIGHT_BLOCKED_API_VERSION_MISMATCH",
   "authority": "PRODUCTION_P6_R6_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Complete ordinary Vercel login when prompted; no secret value is requested.",
+  "first_owner_action": "Owner UI must set Preview SQUARE_API_VERSION to exactly 2026-08-19; a separately authorized new Preview/acceptance scope is required to apply it. No secret value is requested in chat.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -48,7 +48,7 @@
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
   },
-  "external_acceptance": "R3_PREVIEW_BOUNDED_PASS_R4_S1_UNKNOWN_R6_S1_V2_AUTHORIZED_NOT_RUN",
+  "external_acceptance": "R3_PREVIEW_BOUNDED_PASS_R4_S1_UNKNOWN_R6_PREFLIGHT_BLOCKED_S1_NOT_RUN",
   "external_activation_requests": {
     "square": null,
     "r2": 0,
@@ -83,7 +83,7 @@
     "GBP",
     "ZAO_listing",
     "production store-to-Square-location mapping",
-    "R6 result; only S1_PASS releases preparation of separate S2 Owner authority"
+    "Correct Preview SQUARE_API_VERSION via Owner UI and authorize a separate new Preview/S1 scope; S2 remains gated"
   ],
   "verification": {
     "local": [
@@ -122,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "After ordinary Vercel login, inspect project protection/target metadata, create the single R6 Preview, then zero-provider runtime preflight before the one-shot S1 POST.",
+  "next": "Save R6 BLOCKED evidence to GitHub, remove temporary routes, rerun narrow tests/secret scan/lint/typecheck/build, delete exact R6 Preview and retain R3; stop before any new acceptance scope.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T12:12:38.254223+00:00",
+  "updated_at": "2026-09-14T12:33:37.201018+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -686,13 +686,13 @@
     "started_at_utc": "2026-09-14T12:12:38.254080+00:00",
     "r5": "TERMINATED_BY_OWNER_NON_GATING",
     "preview_limit": 1,
-    "preview_attempts": 0,
+    "preview_attempts": 1,
     "s1_post_limit": 1,
     "s1_posts": 0,
     "square_get_limit": 2,
     "square_requests": 0,
-    "runtime_preflight": "NOT_RUN",
-    "s1_result": "NOT_RUN",
+    "runtime_preflight": "BLOCKED",
+    "s1_result": "S1_BLOCKED",
     "retry_authority": 0,
     "new_claude_starts": 0,
     "spark_starts": 0,
@@ -700,6 +700,17 @@
     "authority_commit": "78d809b42edc346715b77dbee37e85753bce142f",
     "local_validation": "p6/r6-evidence/local-validation.json",
     "local_tests_pass": 69,
-    "deployment_state": "NOT_CREATED"
+    "deployment_state": "READY_PENDING_CLEANUP",
+    "implementation_commit": "2bcd35e7b81f8d5313fb8fff9098639bd8b610de",
+    "preview_remaining": 0,
+    "deployment": "dpl_CRdTexvvKm7NRtkas5ewSW6AFQdG",
+    "origin": "https://zao-rental-j2s8mfp77-zao-food-map.vercel.app",
+    "runtime_preflight_reason": "API_VERSION_MISMATCH",
+    "s1_execution": "NOT_RUN",
+    "evidence": "p6/r6-evidence/result.json",
+    "terminal_guard_retained": true,
+    "cleanup": "PENDING",
+    "merchant_metadata_registered": false,
+    "s2_gate_created": false
   }
 }

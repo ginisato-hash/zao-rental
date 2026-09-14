@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-14T12:27:39.987895+00:00",
+  "source_commit": "2bcd35e7b81f8d5313fb8fff9098639bd8b610de",
+  "source_tree": "965bfb1793234f5db9e55f8380ccee1d54cb292a",
+  "dry_file_count": 1027,
+  "dry_total_size": 9164652,
+  "all_runtime_files_match_commit": true,
+  "extra_upload_file": ".vercelignore",
+  "excluded_local_auth_metadata": true,
+  "require_login_ui": true,
+  "standard_protection_ui": true,
+  "protection_exceptions_ui": 0,
+  "custom_domains": 0,
+  "production_square_entries": 0,
+  "r3_retained_ready": true,
+  "local_green": true,
+  "square_requests": 0,
+  "s1_posts": 0,
+  "preview_created": 0
+}

@@ -1,17 +1,15 @@
-## Current R6 — independent preflighted S1 acceptance v2
+## Current R6 — runtime preflight BLOCKED; no S1 dispatch
 
-Read docs/execution/PRODUCTION_P6_R6_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
-Owner authorizes local implementation/validation, one new protected Preview,
-zero-provider runtime preflight, then only on PASS one same-origin S1 POST and
-at most two Sandbox identity GETs with no retry. Save authority to GitHub first.
-Parent owns implementation, normal authenticated browser invocation, evidence,
-cleanup and branch push. No secret/cookie/token extraction, bypass, payment,
-refund, webhook, DB, R2, S2, production, Claude, main merge or Runner.
-R5 was terminated by Owner as non-gating investigation. R4 UNKNOWN/POST1,
-its deleted Preview, immutable guard and zero retry authority remain history.
-Retain accepted R3. Save R6 result before removing both temporary routes and the
-exact R6 Preview. Only PASS permits Preview merchant metadata without redeploy
-and preparation of the S2 Owner gate. Continue within scope without approvals.
+Read docs/execution/PRODUCTION_P6_R6_AUTHORITY.md and p6/R6_S1_V2_RESULT.md.
+Exact R6 Preview is protected/Ready, but runtime preflight returned
+API_VERSION_MISMATCH. R6 S1 POST0, Square0; S1_BLOCKED / NOT_RUN.
+Preview1/1 consumed. No second deployment or provider invocation is authorized.
+Save result to GitHub before approved cleanup of both temporary routes and the
+exact R6 Preview; rerun narrow tests/secret scan/lint/typecheck/build and retain R3.
+A new scope and Owner UI correction of Preview SQUARE_API_VERSION are needed;
+never read the existing value. No merchant metadata/S2 gate without S1_PASS.
+R4 UNKNOWN/POST1, its guard/budget/evidence stay unchanged. R5 was terminated by
+Owner as non-gating. No payment/refund/webhook/DB/R2/S2/production/Claude/main/Runner.
 
 ## Historical R4 completed invocation and cleanup
 

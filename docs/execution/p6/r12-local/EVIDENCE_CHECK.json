@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-14T18:04:21.831079+00:00",
+  "command": [
+    "node",
+    "scripts/check-secrets.mjs"
+  ],
+  "exitCode": 0,
+  "log": "evidence-secrets.log",
+  "allPreviousStatusExceptPhasePreserved": true,
+  "sourceManifestStillMatches": true,
+  "remoteMain": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "openBranchPRs": [],
+  "branchCIRuns": [],
+  "newPRCreated": false,
+  "remoteCIManuallyTriggered": false
+}

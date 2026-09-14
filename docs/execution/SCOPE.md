@@ -1,3 +1,16 @@
+## Current R12 final — local implemented; activation pending
+
+Read docs/execution/PRODUCTION_P6_STATUS.json and p6/r12-local/RESULT.md.
+Validated source d1465c8d14acf08ad339e3dd2fb0546f1e85e1b9: durable jobs/lease/truth worker,
+382 fixture/static tests; secrets/lint/typecheck/build passed. No actual DB/provider/Vercel/
+browser/model/Runner action. Existing business apply remains NOT_ACTIVATED/chargeReady=false.
+R10 LAST_OBSERVED_PENDING / S3_NONTERMINAL_DO_NOT_RETRY is unchanged; never retry.
+Next action needs separate live webhook + reconciliation activation authority; read the
+PRODUCTION_P6_RECONCILIATION_ACTIVATION_GATE.md. Preserve prior evidence and held Runner.
+No new PR, main merge, Production, real credentials or automatic worker activation.
+
+## Historical R12 implementation authority
+
 ## Current R12 — local durable reconciliation only
 
 Read docs/execution/PRODUCTION_P6_R12_LOCAL_AUTHORITY.md and PRODUCTION_P6_STATUS.json.

@@ -1,5 +1,5 @@
 {
-  "phase": "R12_LOCAL_RECONCILIATION_IMPLEMENTATION",
+  "phase": "PRODUCTION_P6_R12_LOCAL_IMPLEMENTED_ACTIVATION_PENDING",
   "authority": "PRODUCTION_P6_S4_LOCAL_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -1004,7 +1004,7 @@
     "starting_head": "78c99d7c2d8d22fedde0cbf884a609dbedfc414f",
     "authority": "PRODUCTION_P6_R12_LOCAL_AUTHORITY.md",
     "authority_sha256": "d2ed36a06be5435e373f1ed8ce97ca17b151b0c9c9d9408e2d4f7dd68541bbbc",
-    "phase": "IMPLEMENTING_LOCAL",
+    "phase": "LOCAL_IMPLEMENTED_ACTIVATION_PENDING",
     "external_counts": {
       "vercel": 0,
       "square": 0,
@@ -1018,6 +1018,38 @@
       "claude": 0,
       "spark": 0,
       "runner": 0
-    }
+    },
+    "authority_commit": "d91a4e6573c211898bbb392867d012a224e1171f",
+    "implementation_commits": [
+      "713287e1b47ec43881c5788ee45c495d26bf121b",
+      "d1465c8d14acf08ad339e3dd2fb0546f1e85e1b9"
+    ],
+    "validated_source": "d1465c8d14acf08ad339e3dd2fb0546f1e85e1b9",
+    "validated_tree": "b7e2300d8fd89ddb27577f94e56ea93f01a41067",
+    "migration": "0026_payment_reconciliation.sql",
+    "migration_applied": false,
+    "tests": {
+      "passed": 382,
+      "new_r12": 78,
+      "failed": 0,
+      "skipped": 0,
+      "kind": "FIXTURE_STATIC_SCRIPTED_SQL"
+    },
+    "secret_scan": "PASS_PATTERN_SCAN_NOT_COMPREHENSIVE",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS_SECRETLESS",
+    "remote_ci": "NOT_TRIGGERED_NO_OPEN_PR",
+    "independent_review": "NOT_RUN_PROHIBITED_R12",
+    "business_apply": "NOT_ACTIVATED",
+    "source_manifest": "p6/r12-local/source-manifest.json",
+    "validation": "p6/r12-local/validation.json",
+    "result": "p6/r12-local/RESULT.md",
+    "architecture": "PAYMENT_RECONCILIATION_ARCHITECTURE.md",
+    "activation_gate": "PRODUCTION_P6_RECONCILIATION_ACTIVATION_GATE.md",
+    "implementation_push": "PUSHED_READBACK_MATCH",
+    "owned_processes": "FINITE_VALIDATION_CHILDREN_EXITED_NO_DB_WEB_BROWSER_CLAUDE_STARTED",
+    "finished_at": "2026-09-14T18:02:42.590778+00:00",
+    "next": "OWNER_LIVE_WEBHOOK_AND_RECONCILIATION_ACTIVATION_AUTHORITY_ONLY"
   }
 }

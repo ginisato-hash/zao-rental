@@ -1,5 +1,5 @@
 {
-  "phase": "R6_PREFLIGHT_BLOCKED_API_VERSION_MISMATCH",
+  "phase": "R6_BLOCKED_API_VERSION_MISMATCH_CLEANUP_COMPLETE",
   "authority": "PRODUCTION_P6_R6_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -122,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Save R6 BLOCKED evidence to GitHub, remove temporary routes, rerun narrow tests/secret scan/lint/typecheck/build, delete exact R6 Preview and retain R3; stop before any new acceptance scope.",
+  "next": "STOP. R6 preflight BLOCKED; S1 POST0/Square0. Both temporary routes and exact R6 Preview removed; R3 retained Ready. Owner UI correction of Preview SQUARE_API_VERSION and separately approved new Preview/acceptance scope required; no S2 authority.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T12:33:37.201018+00:00",
+  "updated_at": "2026-09-14T12:38:34.539874+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -700,7 +700,7 @@
     "authority_commit": "78d809b42edc346715b77dbee37e85753bce142f",
     "local_validation": "p6/r6-evidence/local-validation.json",
     "local_tests_pass": 69,
-    "deployment_state": "READY_PENDING_CLEANUP",
+    "deployment_state": "DELETED",
     "implementation_commit": "2bcd35e7b81f8d5313fb8fff9098639bd8b610de",
     "preview_remaining": 0,
     "deployment": "dpl_CRdTexvvKm7NRtkas5ewSW6AFQdG",
@@ -709,8 +709,18 @@
     "s1_execution": "NOT_RUN",
     "evidence": "p6/r6-evidence/result.json",
     "terminal_guard_retained": true,
-    "cleanup": "PENDING",
+    "cleanup": "COMPLETE",
     "merchant_metadata_registered": false,
-    "s2_gate_created": false
+    "s2_gate_created": false,
+    "cleanup_evidence": "p6/r6-evidence/cleanup.json",
+    "final_validation": {
+      "tests_pass": 69,
+      "failed": 0,
+      "skipped": 0,
+      "secret_scan": 0,
+      "lint": 0,
+      "typecheck": 0,
+      "build": 0
+    }
   }
 }

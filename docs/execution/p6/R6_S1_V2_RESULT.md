@@ -64,10 +64,14 @@ Square-related cases. Four additional local synthetic operator checks confirmed
 safe preflight PASS/BLOCKED, structured503 preservation and rejection of extra
 response fields. Those checks made no external request.
 
-Result evidence is committed/pushed **before** cleanup. At this evidence
-checkpoint cleanup is pending: remove both temporary routes, repeat all required
-checks including build, then delete only the exact R6 deployment. Keep accepted
-R3 `dpl_2tskZombWNMhwEKB6NG96FxkzmhL`. Final cleanup evidence will be appended.
+Result evidence was committed/pushed as
+`d4a02fa04bcff2f4463de384d44397df5dcc1eee` **before** cleanup. Both temporary
+routes were removed. Post-cleanup **69 tests passed**, fail0/skip0; secret scan,
+lint, typecheck and build all exit0. The exact R6 deployment was deleted by ID;
+readback lists only accepted R3 `dpl_2tskZombWNMhwEKB6NG96FxkzmhL`, still Ready.
+The R6 browser and owned upload staging were closed/removed. R6 terminal guard
+is retained and R4's guard matches its original evidence. See
+`r6-evidence/cleanup.json` for command times, deletion and readback.
 
 Secret exposure0; Production Square0; payment0; refund0; webhook0; external DB0;
 R2 requests0; email/SMS0; S2 execution0; env mutation0; merchant registration0;

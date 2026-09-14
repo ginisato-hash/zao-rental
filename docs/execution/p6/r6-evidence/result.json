@@ -88,7 +88,7 @@
   "r5": "TERMINATED_BY_OWNER_NON_GATING",
   "merchant_metadata_registered": false,
   "s2_gate_created": false,
-  "cleanup": "PENDING_AFTER_RESULT_GITHUB_COMMIT",
+  "cleanup": "COMPLETE",
   "guard": {
     "state": "CLOSED_PREFLIGHT_BLOCKED_NO_POST",
     "scope": "R6_S1_V2",
@@ -105,5 +105,6 @@
   "guard_note": "Terminal closure guard was durably created after BLOCKED preflight. No S1 dispatch occurred and no dispatch-reservation guard was needed. R4 guard was not changed.",
   "count_basis": "Owned operator made one zero-provider GET preflight and no S1 POST; pure preflight has no network port and no service/transport invocation. No historical R4 count is inferred.",
   "next_gate": "Owner UI must set Preview SQUARE_API_VERSION to exactly 2026-08-19; a separately authorized new Preview/acceptance scope is required to apply it. No secret value is requested in chat.",
-  "platform_constraint_source": "https://vercel.com/docs/environment-variables/managing-environment-variables"
+  "platform_constraint_source": "https://vercel.com/docs/environment-variables/managing-environment-variables",
+  "cleanup_evidence": "cleanup.json"
 }

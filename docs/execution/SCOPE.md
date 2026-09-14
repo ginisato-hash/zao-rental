@@ -1,11 +1,11 @@
 ## Current R6 — runtime preflight BLOCKED; no S1 dispatch
 
 Read docs/execution/PRODUCTION_P6_R6_AUTHORITY.md and p6/R6_S1_V2_RESULT.md.
-Exact R6 Preview is protected/Ready, but runtime preflight returned
+Exact R6 Preview was verified protected/Ready; runtime preflight returned
 API_VERSION_MISMATCH. R6 S1 POST0, Square0; S1_BLOCKED / NOT_RUN.
 Preview1/1 consumed. No second deployment or provider invocation is authorized.
-Save result to GitHub before approved cleanup of both temporary routes and the
-exact R6 Preview; rerun narrow tests/secret scan/lint/typecheck/build and retain R3.
+Result was saved to GitHub before cleanup. Both temporary routes and exact R6
+Preview are removed;69 tests/secret scan/lint/typecheck/build pass;R3 retained Ready.
 A new scope and Owner UI correction of Preview SQUARE_API_VERSION are needed;
 never read the existing value. No merchant metadata/S2 gate without S1_PASS.
 R4 UNKNOWN/POST1, its guard/budget/evidence stay unchanged. R5 was terminated by

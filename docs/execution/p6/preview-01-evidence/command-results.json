@@ -1,0 +1,42 @@
+{
+  "commands": [
+    {
+      "operation": "Git local/remote reconciliation",
+      "exit_code": 0
+    },
+    {
+      "operation": "Vercel project/deployment metadata GET",
+      "exit_code": 0
+    },
+    {
+      "operation": "deploy --help / remove --help",
+      "exit_code": 2,
+      "meaning": "CLI help normal exit, no deploy"
+    },
+    {
+      "operation": "deploy --dry --json --target preview",
+      "exit_code": 0,
+      "creates_deployment": false
+    },
+    {
+      "operation": "deploy --target preview --no-wait --json",
+      "exit_code": 0,
+      "meaning": "creation accepted; actual target production and subsequent build ERROR"
+    },
+    {
+      "operation": "cloud npm install",
+      "exit_code": 1,
+      "classification": "EBADENGINE invalid_engines_value"
+    },
+    {
+      "operation": "remove exact owned deployment ID",
+      "exit_code": 0
+    },
+    {
+      "operation": "project/deployments/aliases cleanup readback GET",
+      "exit_code": 0
+    }
+  ],
+  "product_tests_repeated": false,
+  "reason": "No product code changed; cloud installation failed before Next build. Prior tests are retained, not claimed as cloud verification."
+}

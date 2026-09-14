@@ -1,3 +1,14 @@
+## P6 current checkpoint — first Preview attempt exhausted; stopped
+
+Read docs/execution/p6/PREVIEW_01_RESULT.md and PRODUCTION_P6_STATUS.json.
+Owner allowed one Preview, but CLI explicit preview produced an unexpected production
+target; install failed, exact owned deployment removed, remaining deployments/aliases0.
+Do not repeat deploy, loosen settings, fetch secrets, or proceed to Square S1/DB.
+No production fallback. Preserve all evidence and prior budgets. Next attempt needs
+explicit scope after a guaranteed Preview route and runtime compatibility are resolved.
+
+## Historical pre-deploy checkpoint (one-attempt approval consumed)
+
 ## P6 current checkpoint — Preview env metadata verified; deploy not authorized
 
 Owner directly installed five Square keys as Preview-only Sensitive/Secret. Read

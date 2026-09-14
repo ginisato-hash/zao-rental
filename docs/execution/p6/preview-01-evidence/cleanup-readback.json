@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-14T02:08:41.051887+00:00",
+  "deployment_id_removed": "dpl_93LKqdiYs68WSWjfDPCG5YdpyiBs",
+  "remove_exit_code": 0,
+  "remaining_deployments": [],
+  "project_exists": true,
+  "protection": "all_except_custom_domains",
+  "git_connected": false,
+  "values_read": false,
+  "remaining_aliases": []
+}

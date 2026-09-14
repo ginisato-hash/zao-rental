@@ -1,0 +1,29 @@
+{
+  "at": "2026-09-14T02:05:35.487284+00:00",
+  "status": "DISPATCHED_DO_NOT_RETRY",
+  "maximum_deployments": 1,
+  "args": [
+    "node",
+    "/Users/gini/.npm/_npx/67eb4586ca667318/node_modules/vercel/dist/vc.js",
+    "deploy",
+    "--target",
+    "preview",
+    "--scope",
+    "zao-food-map",
+    "--non-interactive",
+    "--no-wait",
+    "--json",
+    "--meta",
+    "zaoCommitSha=763caec75f3257abad6ad6d691637ae138c84cdb",
+    "--meta",
+    "zaoSourceTree=a929d1e3012e16a611557c0364c1b90708c54b7b",
+    "--meta",
+    "zaoAcceptance=preview-01-no-provider-no-db"
+  ],
+  "cwd": "/Users/gini/Documents/Codex/2026-09-10/mac-codex-zao-rental-project-zmi/work/p6-preview-01/source",
+  "head": "763caec75f3257abad6ad6d691637ae138c84cdb",
+  "tree": "a929d1e3012e16a611557c0364c1b90708c54b7b",
+  "real_square_authorized": false,
+  "db_authorized": false,
+  "production_authorized": false
+}

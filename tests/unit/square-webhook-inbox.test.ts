@@ -35,7 +35,7 @@ test('empty queue and successful terminal mark; all transaction paths release',a
 });
 const sql=readFileSync('packages/db/migrations/0025_square_webhook_inbox.sql','utf8');
 test('static additive migration: environment-scoped durable dedupe, bounded audit/retries, no business/raw payload storage',()=>{
- assert.deepEqual(migrationPlan.at(-1),{id:'0025',file:'0025_square_webhook_inbox.sql'});assert.equal(new Set(migrationPlan.map(m=>m.id)).size,migrationPlan.length);
+ assert.deepEqual(migrationPlan.find(m=>m.id==='0025'),{id:'0025',file:'0025_square_webhook_inbox.sql'});assert.equal(new Set(migrationPlan.map(m=>m.id)).size,migrationPlan.length);
  assert.match(sql,/PRIMARY KEY\(environment,event_id\)/);assert.match(sql,/ON CONFLICT\(environment,event_id\) DO NOTHING/);
  assert.match(sql,/attempt BETWEEN 0 AND 5/);assert.match(sql,/conflict_count BETWEEN 0 AND 65535/);
  assert.doesNotMatch(sql,/ALTER TABLE|DROP TABLE|CREATE ROLE|GRANT |raw_body|access_token|signature_key|REFERENCES|UPDATE (?:public\.)?(?:inventory|rental|custody)/);

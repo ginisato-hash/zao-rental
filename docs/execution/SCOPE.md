@@ -1,3 +1,19 @@
+## Current R8 — adopt R7 identity evidence; metadata and S2 gate only
+
+Read docs/execution/PRODUCTION_P6_R8_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+GitHub is canonical; this Mac is the single writer. R7 provider S1_PASS is
+OWNER_ACCEPTED_FROM_R7_PASS. R7 overall FAIL_SECURITY_BOUNDARY and all R4/R6/R7
+evidence/counters are historical and immutable; never repeat S1 or resume R5.
+First commit/push/read back this authority. Then register only non-secret
+SQUARE_SANDBOX_MERCHANT_ID=MLKDVEDH1ME21 for Preview, with metadata-only readback.
+No other env mutation, secret retrieval, deploy, Square call, DB/R2, model start,
+new PR/main merge/Runner. Prepare PRODUCTION_P6_S2_GATE.md; S2 is NOT_EXECUTED
+and requires separate Owner authority. Do not inspect auth callback values.
+No browser observations during login/callback; begin allowlisted observations
+only after Owner reaches the target application page. Preserve accepted R3.
+
+## Historical instructions below — superseded only within explicit R8 scope
+
 ## Current R7 — provider S1_PASS; acceptance security condition failed
 
 Read docs/execution/PRODUCTION_P6_R7_AUTHORITY.md and p6/R7_S1_RESULT.md.

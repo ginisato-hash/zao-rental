@@ -1,9 +1,9 @@
 {
-  "phase": "R7_COMPLETE_PROVIDER_PASS_SECURITY_ACCEPTANCE_FAILED",
-  "authority": "PRODUCTION_P6_R7_AUTHORITY.md",
+  "phase": "R8_S1_EVIDENCE_ADOPTED_METADATA_PENDING",
+  "authority": "PRODUCTION_P6_R8_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
-  "worktree": "/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/zao-rental",
+  "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
   "pr16_merge": {
     "merge_commit": "3061dbbbe00294e5baebba2405028c907d6e6e85",
     "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "Review the authentication-output incident and decide whether to accept the already-recorded read-only S1 identity evidence for a separate metadata/S2-gate authorization; never repeat R7 S1.",
+  "first_owner_action": "None during authorized R8. After completion: approve S2 synthetic payment exactly1 with a complete bounded execution authority.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -48,7 +48,7 @@
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
   },
-  "external_acceptance": "R3_BOUNDED_PASS_R4_UNKNOWN_R6_BLOCKED_R7_PROVIDER_PASS_SECURITY_FAILED",
+  "external_acceptance": "R7_PROVIDER_IDENTITY_OWNER_ACCEPTED_SECURITY_INCIDENT_PRESERVED; R4_UNKNOWN_AND_R6_BLOCKED_REMAIN_HISTORICAL",
   "external_activation_requests": {
     "square": null,
     "r2": 0,
@@ -68,7 +68,7 @@
   "runner": "UNATTENDED_HOLD",
   "draft_pr_created": false,
   "owner_pending": [
-    "Review the authentication-output incident and decide whether to accept the already-recorded read-only S1 identity evidence for a separate metadata/S2-gate authorization; never repeat R7 S1."
+    "S2 synthetic payment exactly1 authority; not execution in R8"
   ],
   "verification": {
     "local": [
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Review the authentication-output incident and decide whether to accept the already-recorded read-only S1 identity evidence for a separate metadata/S2-gate authorization; never repeat R7 S1.",
+  "next": "Commit/push/read back R8 authority, register only Preview merchant metadata, then prepare S2 gate without provider calls or redeploy.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -122,7 +122,7 @@
     "first_owner_action": "Square Developer Console Applications: ZAO Rental application exists / absent / unclear only; no secret or ID requested",
     "next": "Stop and request only Square Step1. Provider facts and explicit activation/deploy/credential approval are required before actual acceptance."
   },
-  "authority_sha256": "611b6fde7bd135ea66b1a13a91dfb1eb48a1fbedc0b1783ccfbbae62b85e70e3",
+  "authority_sha256": "5c5e987a0feee95bf52eb719bb20d5e34f5f9d827dd3785e9355efd21e0f14ec",
   "r2_started_at_utc": "2026-09-14T01:04:11Z",
   "r2_started_at_jst": "2026-09-14T10:04:11+09:00",
   "square_owner_report": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T13:22:31.679745+00:00",
+  "updated_at": "2026-09-14T13:39:03.016167+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -748,5 +748,56 @@
     "square_secret_exposure_count": 0,
     "remaining_r7_retry_authority": 0,
     "remaining_r7_preview_authority": 0
+  },
+  "r8": {
+    "started_at_utc": "2026-09-14T13:36:37Z",
+    "started_at_jst": "2026-09-14T22:36:37+09:00",
+    "starting_remote_head": "fb237f7f1698a718c5430da130ddd3530816744d",
+    "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+    "authority": "PRODUCTION_P6_R8_AUTHORITY.md",
+    "authority_sha256": "5c5e987a0feee95bf52eb719bb20d5e34f5f9d827dd3785e9355efd21e0f14ec",
+    "single_writer": "MAIN_MAC_OWNER_CONFIRMED_OTHER_MAC_WRITES_STOPPED",
+    "s1_provider_acceptance": "OWNER_ACCEPTED_FROM_R7_PASS",
+    "r7_security_incident": "PRESERVED_SEPARATELY",
+    "s1_rerun": "FORBIDDEN",
+    "historical_evidence_sha256": {
+      "docs/execution/p6/r7-evidence/safe-result.json": "e9a14a429bae2cb0b879b19003ec366023d5a67a9538be090f80c4ebd4b561e5",
+      "docs/execution/p6/r7-evidence/security-observation.json": "8bdd6c1a83e2e936e4ce7ed88a540575d2e91c4a67084484d655e46b39f66b8c"
+    },
+    "merchant_metadata": "PENDING_PREVIEW_ONLY",
+    "merchant_id": "MLKDVEDH1ME21",
+    "s2": "NOT_EXECUTED_GATE_PENDING",
+    "new_actions": {
+      "square_get": 0,
+      "square_post": 0,
+      "s1": 0,
+      "create_payment": 0,
+      "get_payment": 0,
+      "refund": 0,
+      "webhook": 0,
+      "deploy": 0,
+      "new_preview": 0,
+      "external_db": 0,
+      "r2": 0,
+      "email": 0,
+      "sms": 0,
+      "s2_execution": 0,
+      "claude": 0,
+      "spark": 0,
+      "new_pr": 0,
+      "main_merge": 0,
+      "runner": 0,
+      "production_square": 0,
+      "merchant_env_mutation": 0,
+      "other_env_mutations": 0
+    },
+    "budget_continuity": "R4/R6/R7 counts unchanged; no replay/reset on machine transfer",
+    "owned_resources_started": {
+      "db": 0,
+      "web": 0,
+      "browser": 0,
+      "claude": 0,
+      "spark": 0
+    }
   }
 }

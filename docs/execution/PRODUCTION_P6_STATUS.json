@@ -1,5 +1,5 @@
 {
-  "phase": "R7_AUTHORIZED_EXACT_API_VERSION_CORRECTION",
+  "phase": "R7_LOCAL_GREEN_API_VERSION_CORRECTED",
   "authority": "PRODUCTION_P6_R7_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T12:50:28.372130+00:00",
+  "updated_at": "2026-09-14T13:00:04.000051+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -728,7 +728,7 @@
     "authority": "PRODUCTION_P6_R7_AUTHORITY.md",
     "authority_sha256": "dacb816a1518d911ccf0347337d19ee9dab78b80ed375531f5558d92b96bec92",
     "started_at_utc": "2026-09-14T12:50:28.372130+00:00",
-    "api_version_correction": "AUTHORIZED_NOT_EXECUTED",
+    "api_version_correction": "COMPLETE_PREVIEW_SENSITIVE_2026-08-19",
     "preview_limit": 1,
     "preview_attempts": 0,
     "s1_post_limit": 1,
@@ -740,6 +740,11 @@
     "s1_result": "NOT_RUN",
     "new_claude_starts": 0,
     "spark_starts": 0,
-    "historical_r4_r6_unchanged": true
+    "historical_r4_r6_unchanged": true,
+    "authority_commit": "f4c6dc7c27d11bc4db635ba6eef1bab0686db431",
+    "env_mutations": 1,
+    "other_env_mutations": 0,
+    "local_validation": "69_PASS_SECRET_SCAN_LINT_TYPECHECK_BUILD_PASS",
+    "security_observation": "Incidental authentication callback information appeared in tool output during ordinary Owner login; no values copied to evidence. Total secret-exposure=0 cannot be asserted. See r7-evidence/security-observation.json."
   }
 }

@@ -30,7 +30,7 @@
   "merchant_metadata_registration": "NOT_RUN_R7_ZERO_EXPOSURE_CONDITION_NOT_MET",
   "s2_gate_created": false,
   "predeploy_validation": "69 tests passed; secret scan/lint/typecheck/build exit0",
-  "cleanup": "PENDING_AFTER_RESULT_PUSH",
+  "cleanup": "COMPLETE",
   "retry_count": 0,
   "preview_attempts": 1,
   "prohibited": {
@@ -57,5 +57,7 @@
     "new_pr": 0
   },
   "next_owner_action": "Review the authentication-output incident and decide whether to accept the already-recorded read-only S1 identity evidence for a separate metadata/S2-gate authorization; never repeat R7 S1.",
-  "recorded_at": "2026-09-14T13:06:19.387525+00:00"
+  "recorded_at": "2026-09-14T13:06:19.387525+00:00",
+  "result_commit_before_cleanup": "ea2031ec6e5e1002716ffb38bd028da491181f95",
+  "final_validation": "69 tests pass; secret scan/lint/typecheck/build exit0"
 }

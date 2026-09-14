@@ -7,8 +7,9 @@ identity matches and CREDIT_CARD_PROCESSING true. Never repeat this S1.
 Overall zero-secret-exposure condition failed: ordinary-login authentication
 callback information appeared in tool output. Values are not in Git evidence.
 No merchant metadata or S2 gate is authorized by this failed acceptance decision.
-Save result first, then remove both temporary routes and exact R7 Preview,
-repeat69 tests/secret scan/lint/typecheck/build. Retain R3 and R4/R6/R7 guards.
+Result was saved to GitHub before cleanup. Both routes and exact R7 Preview
+are removed;69 tests/secret scan/lint/typecheck/build pass. R3 is retained Ready;
+R4/R6/R7 guards and historical evidence remain unchanged. R7 is terminal.
 Next Owner gate: decide whether the already-recorded identity evidence can be
 accepted with the disclosed incident for separate metadata/S2-gate authority.
 No S2/payment/refund/webhook/DB/R2/production/Claude/main/Runner.

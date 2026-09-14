@@ -49,7 +49,7 @@ check; it does not erase the separate operator authentication-output incident.
 ## One S1 invocation
 
 The R7 guard was fsynced at `2026-09-14T13:04:17.824Z`, before observed POST
- dispatch at `2026-09-14T13:04:17.832Z`. Result at `2026-09-14T13:04:18.663Z`.
+dispatch at `2026-09-14T13:04:17.832Z`. Result at `2026-09-14T13:04:18.663Z`.
 The immutable reservation intentionally remains closed against any retry.
 
 | Result field | Observed |
@@ -96,9 +96,17 @@ Predeployment: Node24.15.0/npm11.12.1, **69 tests pass**, fail0/skip0;
 secret scan/lint/typecheck/build all pass. Only the two R6 temporary routes were
 restored; reusable pure logic/service/transport/tests are unchanged.
 
-Result and evidence are saved to GitHub before cleanup. Route deletion,
-post-cleanup validation and exact deployment removal are recorded in a following
-cleanup commit. Accepted R3 and historical R4/R6 records/guards are retained.
+Result/evidence commit `ea2031ec6e5e1002716ffb38bd028da491181f95` was pushed and
+read back **before** both routes were removed. Post-cleanup **69 tests pass**,
+fail0/skip0; secret scan/lint/typecheck/build all exit0. The exact R7 deployment
+was deleted successfully at `2026-09-14T13:08:46.063123+00:00`. Readback lists
+only accepted R3 `dpl_2tskZombWNMhwEKB6NG96FxkzmhL`, still Ready. Preview env
+metadata remains unchanged after the single version correction; merchant unset.
+The browser is closed and owned upload staging removed. Local status output no
+longer includes page titles. The R7 guard, R4/R6 guards/evidence and reusable
+logic/service/transport/tests are retained unchanged. See `r7-evidence/cleanup.json`.
+The cleanup commit is the commit containing this completed checkpoint; its exact
+SHA is available from GitHub history and the final report.
 
 The next Owner action is one decision: review the authentication-output incident
 and decide whether the already-recorded identity evidence can be accepted under

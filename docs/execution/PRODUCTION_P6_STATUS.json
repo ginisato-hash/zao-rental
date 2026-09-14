@@ -1,5 +1,5 @@
 {
-  "phase": "R7_PROVIDER_PASS_SECURITY_ACCEPTANCE_FAILED_CLEANUP_PENDING",
+  "phase": "R7_COMPLETE_PROVIDER_PASS_SECURITY_ACCEPTANCE_FAILED",
   "authority": "PRODUCTION_P6_R7_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Save result to GitHub, remove two temporary routes, validate, delete exact R7 Preview; retain R3 and all one-shot guards.",
+  "next": "Review the authentication-output incident and decide whether to accept the already-recorded read-only S1 identity evidence for a separate metadata/S2-gate authorization; never repeat R7 S1.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T13:06:19.387525+00:00",
+  "updated_at": "2026-09-14T13:22:31.679745+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -738,7 +738,15 @@
     "acceptance_reason": "AUTH_CALLBACK_INFORMATION_IN_TOOL_OUTPUT",
     "merchant_metadata_registered": false,
     "s2_gate_created": false,
-    "cleanup": "PENDING_AFTER_RESULT_PUSH",
-    "durable_guard_retained": true
+    "cleanup": "COMPLETE_ROUTES_REMOVED_VALIDATION_GREEN_PREVIEW_DELETED",
+    "durable_guard_retained": true,
+    "result_commit": "ea2031ec6e5e1002716ffb38bd028da491181f95",
+    "r3_retained_ready": true,
+    "final_validation": "69 tests pass; secret scan/lint/typecheck/build exit0",
+    "secret_exposure_zero": false,
+    "security_incident_count": 1,
+    "square_secret_exposure_count": 0,
+    "remaining_r7_retry_authority": 0,
+    "remaining_r7_preview_authority": 0
   }
 }

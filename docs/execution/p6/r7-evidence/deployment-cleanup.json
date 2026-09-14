@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-14T13:08:46.063123+00:00",
+  "deployment": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+  "command": "vercel remove exact R7 deployment --yes --safe --scope zao-food-map --non-interactive",
+  "exitCode": 0,
+  "result_commit_before_cleanup": "ea2031ec6e5e1002716ffb38bd028da491181f95"
+}

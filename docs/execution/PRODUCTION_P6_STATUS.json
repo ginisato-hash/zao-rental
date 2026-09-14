@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "After evidence and authorized cleanup, review UNKNOWN HTTP503 outcome and explicitly define any future scope; no S1 retry authority.",
+  "first_owner_action": "Review UNKNOWN HTTP503 outcome and explicitly define any future scope; this S1 cannot be retried and its deployment was deleted.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_5_KEYS_METADATA_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
@@ -122,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Save UNKNOWN evidence, remove temporary S1 route, run narrow tests/secret scan/lint/typecheck, remove exact S1 deployment, retain R3, then stop. No invocation, environment change or S2.",
+  "next": "STOP. UNKNOWN_DO_NOT_RETRY. Evidence saved; temporary route and exact S1 deployment removed; R3 retained. No retry, configuration repair, redeploy, S2 or main merge authorized.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T11:20:24.835974+00:00",
+  "updated_at": "2026-09-14T11:24:15.793045+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -540,7 +540,7 @@
       "raw_target": null,
       "environment": "preview",
       "classification": "CLI inspect target preview; raw null preserved",
-      "state": "READY",
+      "state": "DELETED",
       "source": {
         "zaoCommitSha": "dbfbb4a220abb757a0f3bd1f92708e8112fb6067",
         "zaoSourceTree": "e78e28a259214d9555d497c15cc93c86fdd95fd0",
@@ -552,7 +552,9 @@
       "production_aliases": 0,
       "inspect_exit_code": 0,
       "square_requests": 0,
-      "error_code": null
+      "error_code": null,
+      "state_at_initial_acceptance": "READY",
+      "deleted_at": "2026-09-14T11:24:15.793045+00:00"
     },
     "S1_result": "UNKNOWN_DO_NOT_RETRY",
     "handoff": {
@@ -672,7 +674,9 @@
       "guard_retained": true,
       "retry_authorized": false,
       "safe_summary_received": false,
-      "cleanup": "PENDING_EVIDENCE_COMMIT"
-    }
+      "cleanup": "COMPLETED",
+      "cleanup_evidence": "p6/r4-evidence/playwright-cleanup.json"
+    },
+    "temporary_route_removed": true
   }
 }

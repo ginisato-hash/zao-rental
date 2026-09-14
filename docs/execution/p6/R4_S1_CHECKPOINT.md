@@ -12,8 +12,10 @@ been consumed. Country/currency, identities and capability remain unverified.
 No merchant metadata registration, env change or redeploy. No retry.
 
 [Safe evidence](r4-evidence/playwright-invocation-result.json) is saved before
-cleanup. Only the Owner-approved route cleanup, local validations and exact S1
-Preview removal remain. Accepted R3 is retained. No payment/refund/webhook/DB/R2/
+cleanup. [Cleanup evidence](r4-evidence/playwright-cleanup.json) confirms the
+temporary route is removed, narrow tests47/47/skip0 and secret scan/lint/typecheck
+pass, exact S1 Preview deleted and accepted R3 retained Ready. The browser/operator
+is closed; durable guard remains. Stop without retry. No payment/refund/webhook/DB/R2/
 email/SMS/Production Square/S2/Claude/Spark/main operation. The historical POST0/
 Square0 records below apply only before this invocation.
 

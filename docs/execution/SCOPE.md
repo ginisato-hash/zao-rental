@@ -1,3 +1,14 @@
+## Current R9 result — S2_PASS; cleanup pending
+
+Read PRODUCTION_P6_STATUS.json and p6/s2-evidence/safe-result.json under docs/execution.
+R9/S2 is terminal. Never repeat its POST, change key or restart S1. First push/read
+back result, then remove exactly both temporary S2 routes, validate and delete only
+S2 Preview dpl_29v9tPtTicL5GDhY9YZmy7YRDX61. Preserve accepted R3, manifest, local guard and any
+created Sandbox payment. No refund/webhook/DB/Production/main/Runner/S3 execution.
+S2_PASS allows S3 gate documentation only. All R4/R6/R7/R8 history is immutable.
+
+## Historical R9 implementation instructions
+
 ## Current R9/S2 — authorized exactly one synthetic Sandbox payment
 
 Read docs/execution/PRODUCTION_P6_S2_AUTHORITY.md and PRODUCTION_P6_STATUS.json.

@@ -1,5 +1,5 @@
 {
-  "phase": "R9_S2_AUTHORIZED_IMPLEMENTATION",
+  "phase": "R9_S2_PASS_RESULT_SAVED_CLEANUP_PENDING",
   "authority": "PRODUCTION_P6_S2_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "None except required normal login; execute bounded R9 then stop",
+  "first_owner_action": "After cleanup: S3 authority only; never automatically retry S2",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Fixed manifest, narrow S2 implementation/tests, at most one protected Preview, one controlled invocation, evidence then cleanup",
+  "next": "Read back result commit, delete two temporary routes, validate, delete exact S2 Preview; retain R3, manifest, guard and any created Sandbox payment.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -206,7 +206,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T15:00:31.828066+00:00",
+  "updated_at": "2026-09-14T15:47:11.961174+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -827,14 +827,14 @@
     "starting_head": "0331fb623613e5fb4dce2d0766e70d58d1b90f0b",
     "authority": "PRODUCTION_P6_S2_AUTHORITY.md",
     "authority_sha256": "1e95ae6889371cd0b92a9be2d65529a9f4314a7432077199e819e07f1ab601b9",
-    "classification": "NOT_EXECUTED",
+    "classification": "S2_PASS",
     "s1_rerun": "FORBIDDEN",
     "preview_limit": 1,
-    "preview_attempts": 0,
+    "preview_attempts": 1,
     "operator_post_limit": 1,
-    "operator_posts": 0,
+    "operator_posts": 1,
     "create_payment_limit": 1,
-    "create_payment_dispatches": 0,
+    "create_payment_dispatches": 1,
     "conditional_lookup_limit": 1,
     "conditional_lookup_dispatches": 0,
     "retry": 0,
@@ -847,6 +847,31 @@
     "local_validation": "99_PASS_FAIL0_SKIP0_SECRET_LINT_TYPECHECK_BUILD_EXIT0",
     "operation_manifest": "p6/s2-evidence/operation-manifest.json",
     "manifest_file_sha256": "4fa694c818cdbe332523119e117c9d14de0c1b689322489eeeb3c4bc66f49e41",
-    "manifest_fingerprint": "8d0e345cc3f51a0293b146f5afe16673ff38c49db4dcb6ad71c50d775b2306f8"
+    "manifest_fingerprint": "8d0e345cc3f51a0293b146f5afe16673ff38c49db4dcb6ad71c50d775b2306f8",
+    "execution_commit": "8ec42146401a4469b55f453ff28867ba5035bbc1",
+    "operation_manifest_commit": "8ec42146401a4469b55f453ff28867ba5035bbc1",
+    "preview_id": "dpl_29v9tPtTicL5GDhY9YZmy7YRDX61",
+    "origin": "https://zao-rental-evr0jvhcj-zao-food-map.vercel.app",
+    "preflight": "PASS",
+    "result": "p6/s2-evidence/safe-result.json",
+    "cleanup": "PENDING_RESULT_REMOTE_READBACK",
+    "security": {
+      "square_secret_exposure": 0,
+      "auth_callback_observation": 0,
+      "auth_state_export": 0,
+      "basis": "controlled source/output projection; no raw provider/auth logs collected"
+    },
+    "other_actions": {
+      "refund": 0,
+      "webhook": 0,
+      "production": 0,
+      "external_db": 0,
+      "r2": 0,
+      "s1_rerun": 0,
+      "email": 0,
+      "sms": 0,
+      "main_merge": 0,
+      "runner": 0
+    }
   }
 }

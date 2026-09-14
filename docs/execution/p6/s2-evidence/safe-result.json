@@ -1,0 +1,29 @@
+{
+  "at": "2026-09-14T15:44:18.378Z",
+  "httpStatus": 200,
+  "classification": "S2_PASS",
+  "operationId": "0b1c85f0-db9f-4bfd-8bef-af8b39b36642",
+  "requestFingerprint": "19ad7d88b5c1f0bce8e209195e1ee4c84b76e89bf6e14ac306dfc9cc2a84a9d2",
+  "manifestFingerprint": "8d0e345cc3f51a0293b146f5afe16673ff38c49db4dcb6ad71c50d775b2306f8",
+  "providerPaymentId": "pezzekG1LQRt4MVKF0X4sgRCx1FZY",
+  "createPaymentCount": 1,
+  "conditionalGetPaymentCount": 0,
+  "automaticRetry": 0,
+  "manualRetry": 0,
+  "amountJpy": 100,
+  "referenceMatch": true,
+  "locationMatch": true,
+  "currency": "JPY",
+  "paymentStatus": "COMPLETED",
+  "updatedAt": "2026-09-14T15:44:18.269Z",
+  "completedAt": "2026-09-14T15:44:18.269Z",
+  "httpResults": {
+    "create": 200,
+    "lookup": null
+  },
+  "operatorPostCount": 1,
+  "deploymentId": "dpl_29v9tPtTicL5GDhY9YZmy7YRDX61",
+  "sourceHead": "8ec42146401a4469b55f453ff28867ba5035bbc1",
+  "sourceTree": "4f103d9d35d9dc5699d1531cd1e8309d0b8e6b9e",
+  "guardRetained": true
+}

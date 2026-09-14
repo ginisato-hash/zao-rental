@@ -1,0 +1,59 @@
+{
+  "at": "2026-09-14T04:04:22.750700+00:00",
+  "project": {
+    "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+    "framework": "nextjs",
+    "rootDirectory": null,
+    "buildCommand": "npm run build",
+    "installCommand": null,
+    "outputDirectory": null,
+    "nodeVersion": "24.x",
+    "protection": "all_except_custom_domains",
+    "git_connected": false
+  },
+  "accepted_preview_retained": true,
+  "existing_preview_id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+  "live_aliases": 0,
+  "custom_domains": 0,
+  "production_env_entries": 0,
+  "env_metadata": [
+    {
+      "key": "SQUARE_ENVIRONMENT",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_API_VERSION",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_SANDBOX_APPLICATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_SANDBOX_LOCATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    }
+  ],
+  "value_inspection": false,
+  "square_actual_requests": 0
+}

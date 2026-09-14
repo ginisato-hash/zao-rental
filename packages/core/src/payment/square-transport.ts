@@ -27,15 +27,47 @@ export class FetchSquareSandboxTransport implements SquareSandboxTransport{
    call.signal.throwIfAborted();
    response=await abortable(this.fetch(call.url,{method:call.method,headers:{Authorization:'Bearer '+secret.accessToken,'Square-Version':SQUARE_VERSION,Accept:'application/json','Content-Type':'application/json'},...(call.body?{body:JSON.stringify(call.body)}:{}),signal:call.signal,redirect:'error',cache:'no-store',credentials:'omit'}),call.signal);
    if(response.status<200||response.status>=300){await response.body?.cancel();return {status:response.status,body:null};}
-   if(!response.headers.get('content-type')?.toLowerCase().startsWith('application/json'))throw new Error();
-   const reader=response.body?.getReader();if(!reader)throw new Error();let total=0;const chunks:Uint8Array[]=[];
-   try{while(true){const r=await abortable(reader.read(),call.signal);if(r.done)break;total+=r.value.byteLength;if(total>1024*1024)throw new Error();chunks.push(r.value);}}
-   finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
-   call.signal.throwIfAborted();return {status:response.status,body:JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)))};
+   return {status:response.status,body:await readSquareJson(response,call.signal)};
   }catch(e){await response?.body?.cancel().catch(()=>{});if(e instanceof FlowError&&e.code==='SQUARE_AUTH_STOP')throw e;throw new FlowError(unknown,503);}
  }
 }
 async function abortable<T>(operation:Promise<T>,signal:AbortSignal):Promise<T>{
  let rejectAbort:()=>void=()=>{};const aborted=new Promise<never>((_,reject)=>{rejectAbort=()=>reject(new Error('ABORTED'));signal.addEventListener('abort',rejectAbort,{once:true});if(signal.aborted)rejectAbort();});
  try{return await Promise.race([operation,aborted]);}finally{signal.removeEventListener('abort',rejectAbort);}
+}
+
+
+/** S1 capability: exactly two read-only identity endpoints. Separate from payment
+ * transport so an unbound merchant identity cannot invoke payment/refund lookup. */
+export class SquareS1TransportError extends FlowError {
+ constructor(code:string,readonly httpStatus:number|null){super(code,503);}
+}
+export class FetchSquareS1Transport {
+ constructor(private credential:()=>string|undefined,private fetch:SquareFetch){}
+ async send(call:SquareCall):Promise<{status:number;body:unknown}>{
+  if(call.method!=='GET'||call.body!==undefined||call.version!==SQUARE_VERSION||
+    ![SQUARE_SANDBOX_ORIGIN+'/v2/merchants/me',SQUARE_SANDBOX_ORIGIN+'/v2/locations'].includes(call.url))
+   throw new FlowError('SQUARE_REQUEST_REJECTED',503);
+  let response:Response|undefined;
+  try{
+   call.signal.throwIfAborted();
+   const token=this.credential();
+   if(!token||!/^[-A-Za-z0-9._~+/=]{1,4096}$/.test(token))throw new FlowError('SQUARE_AUTH_STOP',503);
+   response=await abortable(this.fetch(call.url,{method:'GET',headers:{Authorization:'Bearer '+token,'Square-Version':SQUARE_VERSION,Accept:'application/json','Content-Type':'application/json'},signal:call.signal,redirect:'error',cache:'no-store',credentials:'omit'}),call.signal);
+   if(response.status<200||response.status>=300){await response.body?.cancel();return {status:response.status,body:null};}
+   return {status:response.status,body:await readSquareJson(response,call.signal)};
+  }catch(e){
+   await response?.body?.cancel().catch(()=>{});
+   if(e instanceof FlowError&&e.code==='SQUARE_AUTH_STOP')throw e;
+   throw new SquareS1TransportError(call.signal.aborted?'S1_NETWORK_FAILURE':response?'S1_SCHEMA_MISMATCH':'S1_NETWORK_FAILURE',response?.status??null);
+  }
+ }
+}
+
+async function readSquareJson(response:Response,signal:AbortSignal):Promise<unknown>{
+ if(!response.headers.get('content-type')?.toLowerCase().startsWith('application/json'))throw new Error();
+ const reader=response.body?.getReader();if(!reader)throw new Error();let total=0;const chunks:Uint8Array[]=[];
+ try{while(true){const r=await abortable(reader.read(),signal);if(r.done)break;total+=r.value.byteLength;if(total>1024*1024)throw new Error();chunks.push(r.value);}}
+ finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
+ signal.throwIfAborted();return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));
 }

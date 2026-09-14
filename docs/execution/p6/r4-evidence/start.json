@@ -1,0 +1,13 @@
+{
+  "started_at_utc": "2026-09-14T03:50:47Z",
+  "started_at_jst": "2026-09-14T12:50:47+09:00",
+  "start_head": "f5a2eed3bd6e6da7b940f25e56b581ee22a30888",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "preview_limit": 1,
+  "square_get_limit": 2,
+  "square_invocation_limit": 1,
+  "square_actual_requests": 0,
+  "preview_attempts": 0,
+  "new_claude_starts": 0,
+  "spark_starts": 0
+}

@@ -1,3 +1,15 @@
+## Current R4 — bounded Square Sandbox S1 only
+
+Read docs/execution/PRODUCTION_P6_R4_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Owner authorizes one additional protected Preview and one explicit S1 invocation:
+GET merchants/me then GET locations only on Sandbox, maximum2 GET, no retry.
+Parent owns transport/credential/Preview/acceptance. Never retrieve/display local
+secret values. No payment/refund/webhook/DB/R2/S2/production/Runner changes.
+Keep the accepted R3 Preview. The temporary S1 route is removed after evidence.
+Only S1_PASS permits Preview merchant identity metadata registration, no redeploy.
+
+## Historical R3 acceptance stop (S1 now limited by R4)
+
 ## Current R3 Preview acceptance complete — stop before Square S1
 
 Read docs/execution/p6/R3_PREVIEW_ACCEPTANCE.md and PRODUCTION_P6_STATUS.json.

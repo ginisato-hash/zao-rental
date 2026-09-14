@@ -1,0 +1,11 @@
+{
+  "build.log": "7c9723a8bf1412b5ef56e3c343c5db0e4052d0a53da2b8311ca4019f057dfdcc",
+  "lint.log": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+  "precheck.json": "b03104864d4d1d64f75329ab82962a55b8d6dcbd5416adcd45e43f5066669465",
+  "secret-scan.log": "25af88dd69251fb870afb531cea13c8bea9c7c1694a6ee71d034fd94b25c7b42",
+  "square-tests.log": "4bcbdd78e72969a889bc92560f006e37ac90068b97d6674833fdfce1e7fbad5c",
+  "start.json": "c2004cbf53cae031eb0ebd823af4f1415edc5dc30f5054d51f17f580badfad2f",
+  "typecheck.log": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+  "validated-files.json": "66fa2615c403c414fb0b7a940e831ac6cb45daadc62b615dfa17d8798b3b556e",
+  "validation.json": "8289b1098cf91446eb91557949747e52e2fdc9cb516e79e672ba1f9ab828dc64"
+}

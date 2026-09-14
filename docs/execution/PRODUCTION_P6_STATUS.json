@@ -1,6 +1,6 @@
 {
-  "phase": "R3_PREVIEW_ACCEPTANCE_COMPLETE_STOP_BEFORE_S1",
-  "authority": "PRODUCTION_P6_R3_ALIAS_UPDATE.md",
+  "phase": "R4_LOCAL_GREEN_PREVIEW_READY_TO_DISPATCH",
+  "authority": "PRODUCTION_P6_R4_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
   "worktree": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
@@ -122,7 +122,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "STOP. Square Sandbox S1 merchant/location read-only acceptance requires separate Owner authorization; no further deploy allowance.",
+  "next": "Local fixtures and guards, one protected Preview, one explicit authenticated S1 POST. Stop after S1.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -221,7 +221,7 @@
     "deployment protection and trusted ingress real acceptance",
     "Web Payments tokenization; no normal production charge activation"
   ],
-  "updated_at": "2026-09-14T03:08:52.469615+00:00",
+  "updated_at": "2026-09-14T04:06:19.638052+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -504,5 +504,33 @@
     "remote_preview": "RETAINED_AUTHORIZED",
     "bootstrap": "REMOVED",
     "browser": "Preview tab21 retained for Owner. API navigation tabs22-25 remained blank; staff tab26 also retained. Native Codex UI cleanup tool denied access; no bypass used."
+  },
+  "r4": {
+    "start_head": "f5a2eed3bd6e6da7b940f25e56b581ee22a30888",
+    "started_at_utc": "2026-09-14T03:50:47Z",
+    "started_at_jst": "2026-09-14T12:50:47+09:00",
+    "authority_sha256": "576d2db2f170091946a4d3fa4b9dba682728229d2c4a3a616943551451699e3e",
+    "preview_limit": 1,
+    "preview_attempts": 0,
+    "square_get_limit": 2,
+    "square_actual_requests": 0,
+    "invocation_limit": 1,
+    "invocations": 0,
+    "new_claude_starts": 0,
+    "spark_starts": 1,
+    "local_tests": {
+      "s1": 15,
+      "related_total": 47,
+      "failed": 0,
+      "skipped": 0,
+      "lint": 0,
+      "typecheck": 0,
+      "build": 0,
+      "secret_scan": 0
+    },
+    "spark_task": "P6-SPARK-SQUARE-S1-TEST-01",
+    "spark_corrections": 1,
+    "invocation_method": "OWNER_TEAM_BROWSER_EXPLICIT_POST_REQUIRED; CLI secret-argument path rejected",
+    "evidence": "p6/r4-evidence/"
   }
 }

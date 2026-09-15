@@ -1,3 +1,14 @@
+## R15 checkpoint — local validated; external Project creation blocked by approval review
+
+Source 6d7d5bf86138ca2724478b012739277938471700: 509 fixture/static + 31 real local DB
+checks pass; secrets/lint/typecheck/main build pass. Ordinary Vercel login succeeded
+and main Standard Protection was verified unchanged. Automatic approval review then
+rejected dedicated Project creation before execution twice, requesting explicit chat
+adoption of R15. No provider resource/deploy/Square request was dispatched. Read
+p6/r15-evidence/approval-gate.json and R15_DEVELOPMENT_ACTIVATION.md under docs/execution.
+Do not retry or route around the denial until that specific Owner adoption arrives.
+Existing external budgets are all unused; prior R14/R10 histories remain unchanged.
+
 ## Current R15 — dedicated Sandbox ingress and hosted development acceptance
 
 Read docs/execution/PRODUCTION_P6_R15_AUTHORITY.md and PRODUCTION_P6_STATUS.json.

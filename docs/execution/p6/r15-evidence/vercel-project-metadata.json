@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-15T03:35:03.800107+00:00",
+  "operation": "GET project metadata",
+  "exitCode": 0,
+  "envValuesRequested": false,
+  "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+  "name": "zao-rental",
+  "protection": "all_except_custom_domains",
+  "gitConnected": false,
+  "passwordProtectionConfigured": false,
+  "protectionBypassConfigured": false,
+  "classification": "METADATA_READ_OK"
+}

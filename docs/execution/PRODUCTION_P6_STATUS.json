@@ -1193,7 +1193,7 @@
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
-    "state": "IMPLEMENTING",
+    "state": "BLOCKED_INGRESS_DEPLOY",
     "authorityPath": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
     "budgets": {
       "hostedDbResource": 1,
@@ -1224,6 +1224,55 @@
       "refund": 0,
       "model": 0
     },
-    "next": "Existing auth metadata; free Neon and isolated receiver app."
+    "next": "Owner explicit chat adoption of R15; then create dedicated Project/free Neon through existing authenticated CLI; never retry a dispatched unknown mutation",
+    "blocker": "AUTO_REVIEW_DENIED_EXPLICIT_CHAT_ADOPTION_REQUIRED",
+    "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
+    "implementationCommit": "6d7d5bf86138ca2724478b012739277938471700",
+    "localValidation": {
+      "unitFixtureStaticPassed": 509,
+      "realPostgresPassed": 31,
+      "secrets": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "mainBuild": "PASS",
+      "ingressTypecheck": "PASS",
+      "hostedOrLiveAcceptance": false
+    },
+    "authentication": {
+      "ownerRequestedReissue": true,
+      "normalLoginExitCode": 0,
+      "mainMetadataReadback": "SUCCESS",
+      "mainProtection": "all_except_custom_domains",
+      "mainProtectionMutation": 0
+    },
+    "externalCounts": {
+      "hostedDbResources": 0,
+      "dedicatedProjectsCreated": 0,
+      "ingressDeployments": 0,
+      "mainPreviewDeployments": 0,
+      "mainProductionDeployments": 0,
+      "mainProtectionMutations": 0,
+      "mainProductionEnvMutations": 0,
+      "subscriptionCreate": 0,
+      "subscriptionUpdate": 0,
+      "subscriptionDelete": 0,
+      "officialTestWebhook": 0,
+      "liveWebhookDeliveries": 0,
+      "createPayment": 0,
+      "getPayment": 0,
+      "refund": 0,
+      "getRefund": 0,
+      "productionSquare": 0,
+      "realCustomer": 0,
+      "realInventory": 0,
+      "realCustody": 0,
+      "models": 0,
+      "newPR": 0,
+      "mainMerge": 0
+    },
+    "gateEvidence": "docs/execution/p6/r15-evidence/approval-gate.json",
+    "ownedLocalDatabasesStopped": true,
+    "modelsStarted": 0,
+    "newPR": 0
   }
 }

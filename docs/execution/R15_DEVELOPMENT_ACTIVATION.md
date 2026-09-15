@@ -2,7 +2,7 @@
 
 Authority: `PRODUCTION_P6_R15_AUTHORITY.md`, starting source `dffa78c10825fdb44bd7cb123c2b8b2b4e2113c9`.
 R14_PARTIAL and R10 LAST_OBSERVED_PENDING / S3_NONTERMINAL_DO_NOT_RETRY remain historical.
-This record does not claim live external acceptance. Current gate is Vercel CLI login.
+This record does not claim live external acceptance. The initial Vercel login gate was resolved; the current gate is automatic approval review requiring explicit chat adoption of R15 before dedicated Project creation.
 
 ## Implemented independently of external credentials
 
@@ -47,3 +47,9 @@ Primary references checked 2026-09-15:
 ## Remaining work, not hidden as completed
 
 Vercel authentication; free Neon resource/terms eligibility; hosted migrations and negative privileges; dedicated project identity/protection/build; secret handoff; temporary main acceptance routes; exact live payment manifest and operator guard; real subscription/delivery/provider/projection; external cleanup. None of these operations has been performed in the current local checkpoint. All external budgets remain unused. No new model/review has been started.
+
+## Latest external checkpoint
+
+Owner requested another authorize request; ordinary Vercel login exited 0 without auth output collection. Metadata readback verified existing main Standard Protection and no bypass, no Git autodeploy. Dedicated Project duplicates: 0. Existing integrations: 0. Native Neon catalog exposes `free_v3` (Free), with optional auth disabled in the proposed setup; no installation/provisioning was attempted.
+
+Dedicated Project creation was rejected **before execution** by automatic approval review. First reason: separate Project and region not authorized. After proving source adoption against the pasted original and removing the region field, the second review required explicit Owner chat adoption of the attached R15 authority. No alternate route or further retry followed. No Project, DB, subscription, payment or deployment was created. See `p6/r15-evidence/approval-gate.json`. Existing main protection is unchanged. The next human action is limited to that explicit adoption; new technical choices are not being requested.

@@ -1,0 +1,9 @@
+{
+  "operation": "OWNER_REQUESTED_ORDINARY_VERCEL_LOGIN",
+  "startedAt": "2026-09-15T03:33:39.898662+00:00",
+  "finishedAt": "2026-09-15T03:33:53.799461+00:00",
+  "exitCode": 0,
+  "authOutputCollected": false,
+  "browserStateRead": false,
+  "newOwnerInstruction": "2026-09-15 request authorize again"
+}

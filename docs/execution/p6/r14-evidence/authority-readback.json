@@ -1,0 +1,9 @@
+{
+  "authorityCommit": "e3895960fb6a3dc887dfea10cdc7ffcfacbf98bc",
+  "authoritySha256": "1c14291841dc7cb7c31a51b003b0c4dd324756d4b8a7298cfcbd1b5c54a4d6ca",
+  "attachmentExactBytes": true,
+  "remoteReadbackHeadBeforeImplementation": "e3895960fb6a3dc887dfea10cdc7ffcfacbf98bc",
+  "remoteMain": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "repo": "ginisato-hash/zao-rental",
+  "branch": "codex/external-acceptance-p6"
+}

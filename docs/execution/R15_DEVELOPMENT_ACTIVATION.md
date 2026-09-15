@@ -53,3 +53,19 @@ Vercel authentication; free Neon resource/terms eligibility; hosted migrations a
 Owner requested another authorize request; ordinary Vercel login exited 0 without auth output collection. Metadata readback verified existing main Standard Protection and no bypass, no Git autodeploy. Dedicated Project duplicates: 0. Existing integrations: 0. Native Neon catalog exposes `free_v3` (Free), with optional auth disabled in the proposed setup; no installation/provisioning was attempted.
 
 Dedicated Project creation was rejected **before execution** by automatic approval review. First reason: separate Project and region not authorized. After proving source adoption against the pasted original and removing the region field, the second review required explicit Owner chat adoption of the attached R15 authority. No alternate route or further retry followed. No Project, DB, subscription, payment or deployment was created. See `p6/r15-evidence/approval-gate.json`. Existing main protection is unchanged. The next human action is limited to that explicit adoption; new technical choices are not being requested.
+
+## Explicit adoption and provisioning update
+
+The Owner directly adopted the full R15 in chat, resolving the prior automatic
+approval gate. Dedicated Project creation is now verified, ID
+`prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA`, team `zao-food-map`, Standard Protection, no Git
+autodeploy. The first CLI command exited 1; raw error was not retained. Read-only
+list reconciliation proved no Project existed before a second bounded command
+with documented creation fields succeeded. Node 24 and outside-root source support
+were returned as enabled defaults. Do not claim a proved cause for the first error.
+
+Neon free_v3 / sin1 / auth=false / no-connect / no-env-pull stopped before resource
+creation with `integration_terms_acceptance_required`. R15 §34 reserves new provider
+contracts to Owner; only that terms operation was requested. No terms, billing,
+credential, DB or Square action has occurred. Independent ingress verification may
+continue. Original start and all existing budgets remain unchanged.

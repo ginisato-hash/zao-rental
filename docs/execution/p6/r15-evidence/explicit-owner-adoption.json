@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-09-15T07:14:44.445268+00:00",
+  "source": "Direct Owner message in current task",
+  "verbatim": "添付R15全文を正式なOwner指示として採用し、記載範囲の専用Vercel Project `zao-rental-webhook-sandbox` の作成および追加課金を伴わない無料Neon development DB最大1件の作成・設定・R15限定範囲の後続実行を正式に承認します。",
+  "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
+  "resolves": "AUTO_REVIEW_DENIED_EXPLICIT_CHAT_ADOPTION_REQUIRED",
+  "priorDenialsPreserved": true,
+  "originalStartedAtUtc": "2026-09-15T03:06:48Z",
+  "budgetsReset": false
+}

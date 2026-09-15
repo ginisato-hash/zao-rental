@@ -1,3 +1,16 @@
+## R15 resumed — explicit Owner adoption received; dedicated Project created
+
+The direct Owner message formally adopts all of R15 and authorizes the dedicated
+Project plus at most one free Neon dev resource. See explicit-owner-adoption.json in
+docs/execution/p6/r15-evidence. Prior auto-review denials are retained as history.
+Dedicated Project prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA is created with Standard Protection;
+main protection unchanged. Neon creation is blocked only by new provider terms
+(R15 §34), not billing approval or authentication. Agent has not accepted terms.
+Continue independent R15 work; no budget/start reset, models, main deploy or Square
+request without its prerequisite gates. Read current PRODUCTION_P6_STATUS.json.
+
+## Historical pre-adoption checkpoint
+
 ## R15 checkpoint — local validated; external Project creation blocked by approval review
 
 Source 6d7d5bf86138ca2724478b012739277938471700: 509 fixture/static + 31 real local DB

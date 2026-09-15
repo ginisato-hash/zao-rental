@@ -1189,11 +1189,11 @@
     "startingHead": "dffa78c10825fdb44bd7cb123c2b8b2b4e2113c9",
     "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
     "branch": "codex/external-acceptance-p6",
-    "workingTreeClean": true,
+    "workingTreeClean": false,
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
-    "state": "BLOCKED_INGRESS_DEPLOY",
+    "state": "IN_PROGRESS_NEON_TERMS_GATE",
     "authorityPath": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
     "budgets": {
       "hostedDbResource": 1,
@@ -1224,8 +1224,8 @@
       "refund": 0,
       "model": 0
     },
-    "next": "Owner explicit chat adoption of R15; then create dedicated Project/free Neon through existing authenticated CLI; never retry a dispatched unknown mutation",
-    "blocker": "AUTO_REVIEW_DENIED_EXPLICIT_CHAT_ADOPTION_REQUIRED",
+    "next": "Owner Neon terms only; independently verify dedicated ingress deployment without DB or Square. Then resume exact R15 budgets.",
+    "blocker": "BLOCKED_NEON_PROVIDER_TERMS",
     "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
     "implementationCommit": "6d7d5bf86138ca2724478b012739277938471700",
     "localValidation": {
@@ -1247,7 +1247,7 @@
     },
     "externalCounts": {
       "hostedDbResources": 0,
-      "dedicatedProjectsCreated": 0,
+      "dedicatedProjectsCreated": 1,
       "ingressDeployments": 0,
       "mainPreviewDeployments": 0,
       "mainProductionDeployments": 0,
@@ -1273,6 +1273,28 @@
     "gateEvidence": "docs/execution/p6/r15-evidence/approval-gate.json",
     "ownedLocalDatabasesStopped": true,
     "modelsStarted": 0,
-    "newPR": 0
+    "newPR": 0,
+    "dedicatedProject": {
+      "id": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+      "name": "zao-rental-webhook-sandbox",
+      "protection": "all_except_custom_domains"
+    },
+    "latestOwnerAdoption": "docs/execution/p6/r15-evidence/explicit-owner-adoption.json",
+    "provisioning": {
+      "projectCreateCommands": 2,
+      "firstCommandExit": 1,
+      "firstCommandNoObjectVerified": true,
+      "firstCommandRawErrorNotRetained": true,
+      "secondCommandExit": 0,
+      "neonCreateCommandExit": 1,
+      "neonResourceCreated": false,
+      "neonReason": "integration_terms_acceptance_required",
+      "providerTermsAcceptedByAgent": false,
+      "plan": "free_v3",
+      "region": "sin1",
+      "auth": false,
+      "noConnect": true,
+      "noEnvPull": true
+    }
   }
 }

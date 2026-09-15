@@ -1,3 +1,15 @@
+## Current R13 — local transactional payment projection
+
+Read docs/execution/PRODUCTION_P6_R13_LOCAL_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Owner authorizes parent-only local projection decision/transaction/dedupe, fixtures/static SQL,
+regression and GitHub same-branch commits. R11/R12 are retained; no external runtime activation.
+No actual DB, Square/provider/webhook, Vercel, browser/Playwright, model/subagent, Runner/cron,
+Production, real booking/inventory/custody, notification, new PR or main merge. No privilege change.
+Preserve R10 LAST_OBSERVED_PENDING / S3_NONTERMINAL_DO_NOT_RETRY and all prior evidence.
+Existing GitHub auth only; finish local commits and PUSH_PENDING_AUTH if unavailable. No login.
+
+## Historical R12 (local implementation completed)
+
 ## Current R12 final — local implemented; activation pending
 
 Read docs/execution/PRODUCTION_P6_STATUS.json and p6/r12-local/RESULT.md.

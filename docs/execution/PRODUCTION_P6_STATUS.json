@@ -1,5 +1,5 @@
 {
-  "phase": "PRODUCTION_P6_R12_LOCAL_IMPLEMENTED_ACTIVATION_PENDING",
+  "phase": "PRODUCTION_P6_R13_LOCAL_IMPLEMENTATION",
   "authority": "PRODUCTION_P6_S4_LOCAL_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -1051,5 +1051,29 @@
     "owned_processes": "FINITE_VALIDATION_CHILDREN_EXITED_NO_DB_WEB_BROWSER_CLAUDE_STARTED",
     "finished_at": "2026-09-14T18:02:42.590778+00:00",
     "next": "OWNER_LIVE_WEBHOOK_AND_RECONCILIATION_ACTIVATION_AUTHORITY_ONLY"
+  },
+  "r13": {
+    "started_at": "2026-09-15T01:15:54Z",
+    "started_at_jst": "2026-09-15T10:15:54+09:00",
+    "starting_head": "49f0a50e79b7b53d9a13fd66c334bc168b5beea7",
+    "remote_main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+    "authority": "PRODUCTION_P6_R13_LOCAL_AUTHORITY.md",
+    "authority_sha256": "3a131b36a56cdd13aa5f2a27a1b42224f39d09aefc561f8480727094816447ed",
+    "phase": "IMPLEMENTING_LOCAL",
+    "external_counts": {
+      "square": 0,
+      "provider": 0,
+      "refund": 0,
+      "webhook": 0,
+      "postgres": 0,
+      "vercel": 0,
+      "browser": 0,
+      "playwright": 0,
+      "production": 0,
+      "claude": 0,
+      "spark": 0,
+      "runner": 0,
+      "notifications": 0
+    }
   }
 }

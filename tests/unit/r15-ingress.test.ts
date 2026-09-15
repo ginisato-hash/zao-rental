@@ -40,7 +40,9 @@ test('R15 ACK awaits durable receipt; safe signal only; duplicate/hash conflict/
  const broken=ingressHandler(ingressConfiguration(environment()),()=>{throw Error('UNSAFE_DRIVER_DETAIL');});const r=await broken(request());assert.equal(r.status,503);assert.equal((await r.text()).includes('UNSAFE_DRIVER_DETAIL'),false);
 });
 test('R15 deploy surface exposes only two receiver routes, no main app/provider/worker imports',()=>{
- const configuration=JSON.parse(readFileSync('apps/webhook-ingress/vercel.json','utf8'));assert.deepEqual(configuration.routes,[{src:'^/health$',dest:'/api/health'},{src:'^/api/webhooks/square$',dest:'/api/webhooks/square'},{src:'/.*',status:404}]);
+ const configuration=JSON.parse(readFileSync('apps/webhook-ingress/vercel.json','utf8'));
+ const rootPackage=JSON.parse(readFileSync('package.json','utf8'));assert.ok(configuration.installCommand.includes('--package='+rootPackage.packageManager));assert.ok(configuration.installCommand.includes('--ignore-scripts'));
+ assert.deepEqual(configuration.routes,[{src:'^/health$',dest:'/api/health'},{src:'^/api/webhooks/square$',dest:'/api/webhooks/square'},{src:'/.*',status:404}]);
  assert.deepEqual(readdirSync('apps/webhook-ingress/api').sort(),['health.ts','webhooks']);assert.deepEqual(readdirSync('apps/webhook-ingress/api/webhooks'),['square.ts']);
  const code=readFileSync('apps/webhook-ingress/src/handler.ts','utf8');assert.doesNotMatch(code,/payment-reconciliation|payment-projection|apps\/web\/|fetch\(|console\./);
  assert.equal(JSON.parse(readFileSync('apps/webhook-ingress/package.json','utf8')).dependencies.pg,'8.23.0');

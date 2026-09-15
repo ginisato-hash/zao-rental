@@ -69,3 +69,8 @@ creation with `integration_terms_acceptance_required`. R15 §34 reserves new pro
 contracts to Owner; only that terms operation was requested. No terms, billing,
 credential, DB or Square action has occurred. Independent ingress verification may
 continue. Original start and all existing budgets remain unchanged.
+
+Dedicated install now pins npm 11.12.1, matching the existing root package manager
+and engine-strict contract, while keeping dependency scripts disabled. The existing
+surface test checks this linkage. 509 related tests, secrets, lint, both typechecks
+and main build pass again; remote dedicated packaging remains to be measured.

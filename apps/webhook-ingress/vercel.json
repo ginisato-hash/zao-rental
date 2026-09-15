@@ -2,11 +2,24 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "",
-  "installCommand": "npm ci --prefix ../.. --ignore-scripts",
-  "functions": {"api/**/*.ts": {"maxDuration": 15}},
+  "installCommand": "npx --yes --package=npm@11.12.1 -- npm ci --prefix ../.. --ignore-scripts --no-audit --no-fund",
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 15
+    }
+  },
   "routes": [
-    {"src": "^/health$", "dest": "/api/health"},
-    {"src": "^/api/webhooks/square$", "dest": "/api/webhooks/square"},
-    {"src": "/.*", "status": 404}
+    {
+      "src": "^/health$",
+      "dest": "/api/health"
+    },
+    {
+      "src": "^/api/webhooks/square$",
+      "dest": "/api/webhooks/square"
+    },
+    {
+      "src": "/.*",
+      "status": 404
+    }
   ]
 }

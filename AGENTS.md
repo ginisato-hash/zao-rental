@@ -1,3 +1,24 @@
+## Current R15 — dedicated Sandbox ingress and hosted development acceptance
+
+Read docs/execution/PRODUCTION_P6_R15_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Parent only; preserve R14_PARTIAL and all prior evidence. Normal push to the existing
+codex/external-acceptance-p6 branch is authorized; no new PR or main merge.
+Owner permits one free Neon synthetic development resource, migrations 0001–0029
+unchanged and narrow separated runtime roles. New zao-rental-webhook-sandbox alone:
+Standard Protection, stable production domain, at most two deployments, receiver-only
+DB credential and signature key; no Square access token/UI/worker/projection.
+Main zao-rental protection unchanged, Preview <=1, Production deploy/env changes 0.
+Sandbox subscription create<=1/update<=1/delete<=1, official test delivery<=1.
+Conditional fixed-manifest 100 JPY CreatePayment<=1, GetPayment<=1, all retries 0.
+Before dispatch: manifest commit/push/readback and exclusive fsynced one-shot guard.
+No R10 lookup/refund, real data/custody, Production Square, billing or org permission
+expansion, models/subagents/Runner. Never expose secrets or login-page URL/state.
+Use existing noninteractive auth first; only if necessary request ordinary login once.
+Stop a blocked gate while continuing independent work; evidence push/readback before
+owned-resource cleanup. A Vercel production target here is SANDBOX_WEBHOOK_INGRESS_ONLY.
+
+## Historical R14 (PARTIAL; unchanged)
+
 ## Current R14 — bounded development acceptance
 
 Read docs/execution/PRODUCTION_P6_R14_ACTIVATION_AUTHORITY.md and PRODUCTION_P6_STATUS.json.

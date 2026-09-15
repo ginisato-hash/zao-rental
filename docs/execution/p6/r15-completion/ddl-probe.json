@@ -1,0 +1,11 @@
+{
+  "atUtc": "2026-09-15T12:31:47.404Z",
+  "invocations": 1,
+  "status": "PASS",
+  "operationClass": "CREATE_TABLE",
+  "sqlstate": null,
+  "rollbackConfirmed": true,
+  "probeAbsent": true,
+  "persistentProbeTables": 0,
+  "publicCreateBefore": true
+}

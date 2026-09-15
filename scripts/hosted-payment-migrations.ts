@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import type {Pool} from 'pg';
+import {administrativeMigrationPool} from './hosted-migration-setup';
 import {migrate,migrationPlan} from '../packages/db/src/index';
 import {validateHostedIdentity,type HostedDevelopmentIdentity} from './hosted-payment-activation';
 export async function verifyR15MigrationSources(root=process.cwd()){
@@ -23,5 +24,5 @@ export async function migrateHostedDevelopment(owner:Pool,identity:HostedDevelop
  validateHostedIdentity(identity);if(process.env.NODE_ENV==='production'||owner.options.host!==identity.hostname||owner.options.database!==identity.namespace||typeof owner.options.ssl!=='object'||owner.options.ssl.rejectUnauthorized!==true)throw new Error('R15_MIGRATION_OWNER_REQUIRED');
  const sources=await verifyR15MigrationSources();
  const actual=(await owner.query('SELECT current_database() AS name')).rows[0]?.name;if(actual!==identity.namespace)throw new Error('R15_MIGRATION_DATABASE_MISMATCH');
- await migrate(owner);return {classification:'HOSTED_SYNTHETIC_DEVELOPMENT',database:identity.namespace,sources};
+ await migrate(administrativeMigrationPool(owner,identity.namespace,sources));return {classification:'HOSTED_SYNTHETIC_DEVELOPMENT',database:identity.namespace,sources};
 }

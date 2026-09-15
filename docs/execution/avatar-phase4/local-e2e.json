@@ -1,0 +1,258 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "kind": "BROWSER",
+      "name": "anonymous preview and image cannot expose payload/bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "all31 migration hashes unchanged and no migration added",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "current release returns only valid alpha WebP derivatives for all layers",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "unknown UUID returns empty404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "wrong digest returns empty404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "private original returns empty404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "malformed UUID returns empty404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "malformed digest returns empty404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "client release claims returns empty404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "encoded traversal returns empty404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "POST rejected405 without business write",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "rights revoked after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "rights expired after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "internal-only after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "unprocessed after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "stale release after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "purpose grant removed after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "immutable revision differs after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "media digest retarget after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "mediaId binding changed after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "release entries removed after metadata load denies next GET",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "inactive visual rejects404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "visual digest retarget rejects404 even with existing private bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "duplicate current workspace metadata fails closed",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "rights change during byte read is denied by second current DB check",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "existing public media route does not accept Avatar grants",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "content reader cannot write Avatar/business/workspace",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "staff without required read permission is denied for preview and bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "foreign/unowned preview id and invalid query are not exposed",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "320px 短め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "320px おすすめ measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "320px 長め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px 短め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px おすすめ measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px 長め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "768px 短め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "768px おすすめ measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "768px 長め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px 短め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px おすすめ measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px 長め measured physical ratio and bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "appearance switch uses same component and preloaded payload without business POST",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "English measurements disclaimer and controls",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "missing optional layers omit only the affected images",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "rights revoked after metadata: media404 and refresh removes artwork without fake fallback",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "displayed layer requests only; no hidden-direction image preload or optimizer cache",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "existing GuestBooking remains separate and no general navigation exposes Avatar",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "renderer/media interactions leave all saved business rows unchanged",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "no fatal console/hydration errors or external attempts/business POSTs",
+      "status": "PASS"
+    }
+  ],
+  "pgChecks": 27,
+  "browserChecks": 22,
+  "migrationChanges": 0,
+  "businessWritesFromRenderer": 0,
+  "externalProviderOperations": 0,
+  "externalBrowserAttempts": 0,
+  "businessPosts": 0,
+  "cleanup": "Owned browser/Next/PostgreSQL closed"
+}

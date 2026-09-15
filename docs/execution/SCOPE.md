@@ -1,5 +1,22 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
+## Current — Avatar Phase4 customer renderer
+
+Read docs/execution/AVATAR_PHASE4_AUTHORITY.md and AVATAR_PHASE4_STATUS.json.
+Base96a34aee8dccb66dca11199af29c33aaf1127546; branch codex/avatar-phase4-customer-renderer.
+Parent single writer. Implement reusable HTML/CSS/image renderer, dedicated rights-safe
+GET media delivery, staff-only preview and local PostgreSQL/Playwright proof.
+0001–0031 bytes/schema unchanged; no migration/writer/editor API. Preserve GuestBooking,
+recommendation/HOLD/quote/payment authority. Visual switches cause business POST0.
+Synthetic raster fixtures only; no provider/browser external operations, hosted DB,
+Vercel/R2/upload/Production/new PR/main merge. Customer-visible false, general links0.
+Existing LOW AV-1/2/3 remain recorded; zero artwork means no renderer/fake image.
+After self-validation: one tools/MCP/hooks/browser-disabled Claude static review;
+correction review max1 only for corrected BLOCKER/HIGH/MEDIUM. Existing Team/extra OFF.
+Stop after PASS before AVATAR PHASE5, never auto-activate GuestBooking or real artwork.
+
+## Historical — completed Avatar A2/A3
+
 ## Current — Post-R15 Avatar A2/A3 foundation
 
 Read docs/execution/POST_R15_AVATAR_A2_A3_AUTHORITY.md and

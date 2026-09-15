@@ -1,5 +1,41 @@
 # ADR 0033 — Optional 2D/2.5D Avatar foundation, without business authority
 
+## Phase4 continuation
+
+Current authority: [AVATAR_PHASE4_AUTHORITY](../execution/AVATAR_PHASE4_AUTHORITY.md),
+based on completed A2/A3 receipt96a34ae. The A2/A3 section below is preserved as its
+historical milestone design. Current renderer/media details are specified in
+[AVATAR_ARTWORK_SPEC](../architecture/AVATAR_ARTWORK_SPEC.md).
+
+Phase4 adds HTML/CSS/alpha-WebP composition and a staff-only customer-style preview.
+The renderer accepts an optional visualization, active Direction and locale only; it
+has no business callback/fetch. The preview reads an existing owned saved recommendation,
+enforces BOOKING_VIEW plus the existing HOLD_VIEW/QUOTE_VIEW and store permissions,
+then resolves both appearances once for local presentation switches. No recommendation
+service recalculation/selection/resume or business writes occur. GuestBooking is unchanged.
+
+Dedicated `/avatar-media/<visualUuid>/<sha256>` does not broaden existing `/media`.
+Current DB eligibility is rechecked before and after derivative byte read/decode, and
+staff session/BOOKING_VIEW is checked before and after delivery preparation. All denied
+GETs return empty404 with private,no-store; method support is GET only. Bounded WebP
+validation enforces format, alpha, canonical aspect and body/ski physical crop. No SVG,
+original bytes, workspace JSON, object key, signed URL or client-supplied grant can escape.
+Next images use unoptimized direct same-origin requests, avoiding an optimizer cache.
+
+Physical box ratio equals the A3 ratio without CSS size correction; common floor and
+uniform scaling include longer-than-body skis and nondefault garment offsets in stage
+bounds. Missing images are omitted, never replaced with invented products/silhouettes.
+AV-2 now has this explicit product decision; its historical LOW is not independently
+closed. AV-1/AV-3 remain OPEN. No writer/editor, migration or new runtime role is added.
+Local test fixtures add read grants to an existing synthetic content_read role only;
+they do not expand normal provisioning or activate Production. All0001–0031 bytes remain.
+
+Customer-visible=false, no public navigation or GuestBooking insertion. The component
+is reusable but only synthetic local staff preview is exercised. Stop after Phase4 PASS
+before **AVATAR PHASE 5 — GUEST BOOKING INTEGRATION + REAL ARTWORK ACTIVATION**.
+
+## Historical A2/A3 milestone
+
 Status: **Design adopted; A2/A3 implemented, local validation/review recorded separately.**
 Base: R15 terminal `efb73933a6d3816958882205cfa3623447194625`.
 Authority: [Post-R15 A2/A3](../execution/POST_R15_AVATAR_A2_A3_AUTHORITY.md).

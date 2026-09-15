@@ -1,0 +1,42 @@
+[
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/390-150-full-layers.png",
+    "sha256": "90de7d6ed28249afe96b47c3b85c93da201915161b0bed5732953230d900beb1",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/390-153-full-layers.png",
+    "sha256": "4dc9104a5c7f09e8c36477f731ff7dff2bb5730f9b59c3993564d87cbcdcb69b",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/390-187-full-layers.png",
+    "sha256": "3fe2047571ac27582bc5e984dad89e518ebf9c42a4cffa56b556c84828203c77",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/1440-150-full-layers.png",
+    "sha256": "adf874c1cb46b0a531a5351a99546855c1ec112ccacdcbcf852e410b936634b0",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/1440-153-full-layers.png",
+    "sha256": "3babb8ef3d7b2058241f909a81fa1118932df47c399e46da58fde677a15fde63",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/1440-187-full-layers.png",
+    "sha256": "8049754f4c149fdbd99a17c3033cdf206da87bebb5cfb9f7452aa742baa99a17",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/desktop-appearance2.png",
+    "sha256": "adbd2b02db92eb17e7e23eca694008d961e484cf965d643e6aa7435d0dd27ea8",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase4/screenshots/mobile-missing-optional-layers.png",
+    "sha256": "82c229a835ea0649f7e25e96abf1f9483bad9c71237fe0d329f9d6f32e25cdca",
+    "syntheticOnly": true
+  }
+]

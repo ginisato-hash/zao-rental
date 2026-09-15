@@ -1,0 +1,51 @@
+PASS BROWSER anonymous preview and image cannot expose payload/bytes
+PASS PG all31 migration hashes unchanged and no migration added
+PASS PG current release returns only valid alpha WebP derivatives for all layers
+PASS PG unknown UUID returns empty404
+PASS PG wrong digest returns empty404
+PASS PG private original returns empty404
+PASS PG malformed UUID returns empty404
+PASS PG malformed digest returns empty404
+PASS PG client release claims returns empty404
+PASS PG encoded traversal returns empty404
+PASS PG POST rejected405 without business write
+PASS PG rights revoked after metadata load denies next GET
+PASS PG rights expired after metadata load denies next GET
+PASS PG internal-only after metadata load denies next GET
+PASS PG unprocessed after metadata load denies next GET
+PASS PG stale release after metadata load denies next GET
+PASS PG purpose grant removed after metadata load denies next GET
+PASS PG immutable revision differs after metadata load denies next GET
+PASS PG media digest retarget after metadata load denies next GET
+PASS PG mediaId binding changed after metadata load denies next GET
+PASS PG release entries removed after metadata load denies next GET
+PASS PG inactive visual rejects404
+PASS PG visual digest retarget rejects404 even with existing private bytes
+PASS PG duplicate current workspace metadata fails closed
+PASS PG rights change during byte read is denied by second current DB check
+PASS PG existing public media route does not accept Avatar grants
+PASS PG content reader cannot write Avatar/business/workspace
+PASS BROWSER staff without required read permission is denied for preview and bytes
+PASS BROWSER foreign/unowned preview id and invalid query are not exposed
+PASS BROWSER 320px 短め measured physical ratio and bounds
+PASS BROWSER 320px おすすめ measured physical ratio and bounds
+PASS BROWSER 320px 長め measured physical ratio and bounds
+PASS BROWSER 390px 短め measured physical ratio and bounds
+PASS BROWSER 390px おすすめ measured physical ratio and bounds
+PASS BROWSER 390px 長め measured physical ratio and bounds
+PASS BROWSER 768px 短め measured physical ratio and bounds
+PASS BROWSER 768px おすすめ measured physical ratio and bounds
+PASS BROWSER 768px 長め measured physical ratio and bounds
+PASS BROWSER 1440px 短め measured physical ratio and bounds
+PASS BROWSER 1440px おすすめ measured physical ratio and bounds
+PASS BROWSER 1440px 長め measured physical ratio and bounds
+PASS BROWSER appearance switch uses same component and preloaded payload without business POST
+PASS BROWSER English measurements disclaimer and controls
+PASS BROWSER missing optional layers omit only the affected images
+PASS BROWSER rights revoked after metadata: media404 and refresh removes artwork without fake fallback
+PASS BROWSER displayed layer requests only; no hidden-direction image preload or optimizer cache
+PASS BROWSER existing GuestBooking remains separate and no general navigation exposes Avatar
+PASS PG renderer/media interactions leave all saved business rows unchanged
+PASS BROWSER no fatal console/hydration errors or external attempts/business POSTs
+Owned Avatar browser/Next/PostgreSQL closed.
+PASS 49 Phase4 PG/browser checks

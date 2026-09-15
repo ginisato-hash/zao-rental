@@ -81,7 +81,17 @@ New checkpoints distinguish `implementation_validation` (SELF_VERIFIED/FAILED/NO
 build/secret-scan/UI/provider checks are Codex self-validation. Historical status is not
 rewritten to claim reviews or external acceptance that did not occur.
 
-## Current post-R15 Avatar A2/A3 milestone
+## Current Avatar Phase4 milestone
+
+Direct Owner AVATAR_PHASE4_AUTHORITY.md authorizes a new local renderer/media milestone
+from A2/A3 receipt96a34ae. Previous branches and migrations0001–0031 remain frozen.
+Single writer; synthetic local PG/browser only; no general customer activation or provider
+operations. Final static initial review max1, plus at most1 correction review only after
+BLOCKER/HIGH/MEDIUM correction; no unnecessary LOW/PASS re-review. Existing permanent
+roles, Team extra usage OFF, tools/MCP/hooks/browser/provider disabled remain binding.
+Stop after Phase4 PASS; separate Phase5 authority is required for guest/real-artwork work.
+
+## Historical post-R15 Avatar A2/A3 milestone
 
 The direct [Avatar A2/A3 authority](POST_R15_AVATAR_A2_A3_AUTHORITY.md) starts a new
 local-only product milestone from R15 terminal PASS. Keep R15 and historical Avatar

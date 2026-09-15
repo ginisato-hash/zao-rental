@@ -1,0 +1,29 @@
+{
+  "team": "zao-food-map",
+  "readOnly": true,
+  "createAttemptsThisContinuation": 0,
+  "secretsRetrieved": false,
+  "records": [
+    {
+      "operation": "installations",
+      "exitCode": 0,
+      "at": "2026-09-15T08:16:43.756488+00:00",
+      "count": 0,
+      "items": []
+    },
+    {
+      "operation": "resources",
+      "exitCode": 0,
+      "at": "2026-09-15T08:16:45.515260+00:00",
+      "count": 0,
+      "items": []
+    },
+    {
+      "operation": "plans",
+      "exitCode": 0,
+      "at": "2026-09-15T08:16:47.676852+00:00",
+      "publicHelpExcerpt": "  -p,  --plan <PLAN_ID>        Billing plan ID to use for the resource          \n    $ vercel integration add neon -m region=cle1 -m auth=true\n  - Install with a specific billing plan\n    $ vercel integration add neon --plan pro\n    region\n      Choose your database region\n      Options: cle1, iad1, pdx1, fra1, lhr1, syd1, sin1, gru1\n      Example: -m region=cle1\n    auth (true/false)\n      Provide built-in authentication for app users, with profiles synced to Postgres.\n      Example: -m auth=true\n  Available billing plans for \"Neon\":\n    free_v3    Free (Free)\n    --plan free_v3",
+      "freeV3Listed": true
+    }
+  ]
+}

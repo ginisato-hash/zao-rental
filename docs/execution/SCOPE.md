@@ -1,3 +1,21 @@
+## Current authority — R15 continuation terminal; Avatar A0/A1 only next
+
+Read docs/execution/PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md,
+PRODUCTION_P6_STATUS.json and p6/r15-continuation/RESULT.md under docs/execution.
+Fresh Team metadata still shows Neon installations/resources/configurations 0.
+R15 remains PARTIAL / BLOCKED_NEON_TERMS_PROPAGATION; do not retry add or deploy.
+Owner's reported terms completion is preserved, not treated as provisioning evidence.
+The original R15 start and consumption persist. Dedicated deploy budget alone is
+amended to total3: historical1 consumed/deleted, at most2 conditional remaining.
+After R15 terminal commit/push/readback and clean tree, the parent may create/reuse
+codex/avatar-2d-foundation from that final REMOTE R15 HEAD for A0 inspection and A1
+ADR ONLY. No Avatar migration/API/UI/local DB activation while R15 is human-blocked.
+Single writer, no models/subagents/Runner, new PR, main merge, main Production,
+real data, R10 lookup/refund or secret extraction. Preserve all earlier evidence.
+Instructions below are historical where this exact authority supersedes them.
+
+## Historical R15 checkpoint before continuation
+
 ## Current R15 checkpoint — Project created, dedicated runtime fix validated, Neon pending
 
 Read docs/execution/p6/r15-evidence/RESUME_RESULT.md and PRODUCTION_P6_STATUS.json.

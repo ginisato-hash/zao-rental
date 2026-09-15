@@ -1,3 +1,16 @@
+# Current continuation checkpoint (2026-09-15)
+
+Read `PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md` and `p6/r15-continuation/RESULT.md`.
+R15 is PARTIAL / BLOCKED_NEON_TERMS_PROPAGATION. Team installation/resource/configuration
+counts remain0. No new add/create retry or deployment was made. Dedicated Project exists;
+failed historical deploy1 is deleted; main R3 and protection are unchanged. The ONLY
+budget amendment is ingress total3 (used1/deleted; remaining2 conditional on DB readiness).
+Original source/start/counters remain. Operator wiring and non-disclosing key handoff are
+still incomplete, not a ready live integration. Avatar may proceed to A0+A1 docs only
+after remote terminal readback. No A2/A3 while human-blocked.
+
+## Historical implementation and earlier checkpoint records (preserved below)
+
 # R15 dedicated Sandbox ingress — implementation and resume contract
 
 Authority: `PRODUCTION_P6_R15_AUTHORITY.md`, starting source `dffa78c10825fdb44bd7cb123c2b8b2b4e2113c9`.

@@ -1193,11 +1193,11 @@
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
-    "state": "BLOCKED_NEON_PROVISIONING",
+    "state": "BLOCKED_NEON_TERMS_PROPAGATION",
     "authorityPath": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
     "budgets": {
       "hostedDbResource": 1,
-      "ingressDeploy": 2,
+      "ingressDeploy": 3,
       "mainPreview": 1,
       "subscriptionCreate": 1,
       "subscriptionUpdate": 1,
@@ -1224,8 +1224,8 @@
       "refund": 0,
       "model": 0
     },
-    "next": "Reconcile Owner Neon installation in team zao-food-map; no repeated add until provider state changes. Provision one free DB, hosted roles/migrations/negative tests, finish protected operator/key handoff. Reserve final dedicated deploy for fixed artifact plus signature. See RESUME_RESULT.md.",
-    "blocker": "NEON_MARKETPLACE_INSTALLATION_ABSENT_AFTER_OWNER_REPORTED_TERMS_ACCEPTANCE",
+    "next": "R15 terminal checkpoint: no resource add or deploy retry without provider state change. After this checkpoint is pushed/read back clean, use its final remote HEAD for codex/avatar-2d-foundation A0 inspection and A1 ADR ONLY. A2/A3 remain blocked by R15 human-only gate.",
+    "blocker": "OWNER_REPORTED_TERMS_NOT_CONFIRMED_AS_TEAM_PROVISIONING_READY",
     "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
     "implementationCommit": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
     "localValidation": {
@@ -1271,7 +1271,7 @@
       "mainMerge": 0,
       "ingressDeploymentsDeleted": 1
     },
-    "gateEvidence": "docs/execution/p6/r15-evidence/neon-installations-after-owner.json",
+    "gateEvidence": "docs/execution/p6/r15-continuation/neon-readback.json",
     "ownedLocalDatabasesStopped": true,
     "modelsStarted": 0,
     "newPR": 0,
@@ -1312,7 +1312,7 @@
       "mainAndDeploymentProtection": "PASS_302_NO_REDIRECT_FOLLOW",
       "configurationSecrets": 0,
       "correctedArtifact": "PLAIN_NODE_PASS_NOT_REDEPLOYED",
-      "remainingDedicatedDeployments": 1,
+      "remainingDedicatedDeployments": 2,
       "failedDeploymentDeleted": true,
       "activeDeployments": 0,
       "afterCleanupHttpStatus": 404
@@ -1341,6 +1341,36 @@
       "dryRunPassed": true,
       "deployed": false,
       "manifest": "docs/execution/p6/r15-evidence/ingress-fixed-upload-manifest.json"
+    },
+    "continuation": {
+      "authorityPath": "docs/execution/PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md",
+      "authoritySha256": "de4da980e2d55a0540c2bee688c800577ec350f311c529019d2bddcb93514811",
+      "startedAtUtc": "2026-09-15T08:12:02Z",
+      "startedAtJst": "2026-09-15T17:12:02+09:00",
+      "startingHead": "2a41c96b220f7a9c68f5982d6cb104f880f6616b",
+      "state": "TERMINAL_PARTIAL",
+      "neonReadOnlyResult": "installations0/resources0/configurations0; free_v3 listed; accepted terms not positively observable as provisioning-ready",
+      "addRetry": 0,
+      "allExternalMutations": 0,
+      "budgetAmendment": "Original2 -> total3; historical1 consumed/deleted; additional<=2 conditional",
+      "avatarAllowedNow": [
+        "A0",
+        "A1"
+      ],
+      "avatarNotAllowedNow": [
+        "A2",
+        "A3",
+        "UI"
+      ],
+      "remainingWorkNotImplemented": [
+        "protected main operator wiring",
+        "non-disclosing subscription signature-key handoff",
+        "hosted synthetic target manifest/guard",
+        "hosted/live E2E"
+      ],
+      "noRepeatedOwnerQuestion": true,
+      "validation": "Prior exact source results reused; current docs/reference/secrets/diff checks recorded separately",
+      "cleanup": "No owned DB/Web/browser/Claude started; finite metadata children exited; dedicated project retained empty; prior failed deploy deletion verified; main R3 unchanged"
     }
   }
 }

@@ -81,7 +81,18 @@ New checkpoints distinguish `implementation_validation` (SELF_VERIFIED/FAILED/NO
 build/secret-scan/UI/provider checks are Codex self-validation. Historical status is not
 rewritten to claim reviews or external acceptance that did not occur.
 
-## Current R15 completion sequencing amendment
+## Current post-R15 Avatar A2/A3 milestone
+
+The direct [Avatar A2/A3 authority](POST_R15_AVATAR_A2_A3_AUTHORITY.md) starts a new
+local-only product milestone from R15 terminal PASS. Keep R15 and historical Avatar
+branches frozen. Codex remains sole writer; no intermediate Claude review. After local
+self-validation, at most one independent static review covers the complete A2/A3 change,
+using existing Team, extra usage OFF and tools/MCP/browser/provider/edit/push disabled.
+Fix local safety findings without resuming R15 operations or inventing another review
+slot. Review and self-validation remain distinct. Stop before the Phase4 renderer gate.
+The completed R15 review budget and all historical findings below are not reset.
+
+## Historical R15 completion sequencing amendment
 
 The direct Owner [completion authority](PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md)
 supersedes the intermediate F3-only review gate. Its dedicated slot is retired unused

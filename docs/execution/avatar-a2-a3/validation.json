@@ -1,0 +1,95 @@
+{
+  "status": "SELF_VERIFIED_PASS",
+  "recordedAt": "2026-09-15T15:07:48.243060+00:00",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "dependencySetup": "Existing lockfile-identical node_modules copied locally with APFS clone; no package or dependency changes/downloads",
+  "unitTests": {
+    "total": 197,
+    "avatar": 28,
+    "existingRecommendationStaffHoldPayment": 169,
+    "failed": 0,
+    "skipped": 0
+  },
+  "realLocalPostgres": {
+    "avatarFreshAndUpgradeChecks": 15,
+    "recommendationAndStaffChecks": 17,
+    "guestChecks": 7,
+    "totalChecks": 39,
+    "failed": 0,
+    "skipped": 0,
+    "cleanup": "All owned pools/clusters stopped"
+  },
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS_NEXT_WEBPACK_LOCAL_ONLY",
+  "secretScan": {
+    "status": "PASS",
+    "candidateFiles": 1652,
+    "limitation": "Pattern scan is not comprehensive; final evidence will be scanned again"
+  },
+  "gitDiffCheck": "PASS",
+  "oldMigrationHashesUnchanged": 30,
+  "newMigration": "0031_avatar_visuals.sql",
+  "feature": "OFF",
+  "customerVisible": false,
+  "businessMutationsFromVisualPath": 0,
+  "visualQueriesPerRecommendation": 1,
+  "recommendationPreviewRerunFromVisualPath": 0,
+  "externalOperations": {
+    "square": 0,
+    "hostedNeon": 0,
+    "vercel": 0,
+    "r2": 0,
+    "externalBrowser": 0,
+    "production": 0
+  },
+  "historicalR15AcceptanceRerun": false,
+  "localPreparationCorrections": [
+    "A proposed season-update fixture was correctly rejected by existing immutable catalog constraint; final fixture inserts season at model creation and explicitly verifies drift denial. No business constraint was relaxed.",
+    "Test fixture helper renamed visualGrant to avoid React use-hook lint classification.",
+    "R15 exact30 range check remains fail closed; Number() avoids the new tuple literal31 vs30 TypeScript diagnostic."
+  ],
+  "logs": {
+    "unit": {
+      "file": "docs/execution/avatar-a2-a3/unit.log",
+      "sha256": "33b491767981edbb98bc777fc01e58b7dc7e05376b41d11d98de2ddd4e3644bc",
+      "exitCode": 0
+    },
+    "local-db": {
+      "file": "docs/execution/avatar-a2-a3/local-db.log",
+      "sha256": "ab37129b51982d3fd12f6169ad23b7b9fed7877dff8d30b5cbab3cabe501ff9e",
+      "exitCode": 0
+    },
+    "recommendation": {
+      "file": "docs/execution/avatar-a2-a3/recommendation.log",
+      "sha256": "d7cbbbbeee240641be077e5d51852ddf846add2b1232a6f91327dc2461f41fcb",
+      "exitCode": 0
+    },
+    "guest": {
+      "file": "docs/execution/avatar-a2-a3/guest.log",
+      "sha256": "0e51418af75c0a012dc2336396b2da1000f81369122583fb3527b9eb4eedf087",
+      "exitCode": 0
+    },
+    "lint": {
+      "file": "docs/execution/avatar-a2-a3/lint.log",
+      "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "file": "docs/execution/avatar-a2-a3/typecheck.log",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "exitCode": 0
+    },
+    "build": {
+      "file": "docs/execution/avatar-a2-a3/build.log",
+      "sha256": "5ff60d14041c14fc226b15a31ffc971a327137e934f6e0d9c57d6b3df64db6f8",
+      "exitCode": 0
+    },
+    "secrets": {
+      "file": "docs/execution/avatar-a2-a3/secrets.log",
+      "sha256": "34ae38db0c13ccc2b02a666155d2547067227a13e7ecc0ff38a7ad9fd59a19fd",
+      "exitCode": 0
+    }
+  }
+}

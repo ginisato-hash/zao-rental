@@ -1,5 +1,22 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
+## Current — Post-R15 Avatar A2/A3 foundation
+
+Read docs/execution/POST_R15_AVATAR_A2_A3_AUTHORITY.md and
+AVATAR_FOUNDATION_STATUS.json. R15 terminal PASS/Sandbox E2E validated at
+efb73933a6d3816958882205cfa3623447194625 is the frozen base. New branch:
+codex/post-r15-avatar-a2-a3. Historical Avatar A0/A1 is design input only.
+Implement additive visual metadata migration, optional v1 contract, read-only
+resolver and pure mapper. No renderer/UI/routes, feature OFF/customer-visible false.
+No recommendation recalculation or visual-to-business authority. Preserve candidate
+lengths, PREMIUM promise, REGULAR non-guarantee, rights and normal auth boundaries.
+Local PostgreSQL and synthetic tests only; Square/hosted Neon/Vercel/R2/external
+browser/Production operations0. One final static tools-disabled Claude review max1
+after self-validation, no intermediate reviews. Existing Team/extra usage OFF.
+Single writer; no new PR/main merge. Stop before AVATAR PHASE 4 — CUSTOMER VISUAL RENDERER.
+
+## Historical — completed R15 checkpoint (unchanged evidence)
+
 ## Current — R15 terminal / final review PASS
 
 Read docs/execution/PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md and

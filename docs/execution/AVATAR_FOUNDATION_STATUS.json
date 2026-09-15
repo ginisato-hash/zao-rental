@@ -1,0 +1,49 @@
+{
+  "authority": "POST_R15_AVATAR_A2_A3",
+  "authorityPath": "docs/execution/POST_R15_AVATAR_A2_A3_AUTHORITY.md",
+  "authoritySha256": "6fdd26ddc6d7c75419dccd1f427c51d36c8820f0b583d856ce5f985d59cfc9d2",
+  "startingR15Head": "efb73933a6d3816958882205cfa3623447194625",
+  "historicalAvatarHead": "9783373612440acef4c077b0ae23925aa467743d",
+  "mainHead": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "branch": "codex/post-r15-avatar-a2-a3",
+  "state": "A2_A3_SELF_VERIFIED_PASS_REVIEW_PENDING",
+  "r15": "R15_PASS_SANDBOX_E2E_VALIDATED",
+  "singleWriter": true,
+  "feature": "OFF",
+  "customerVisible": false,
+  "latestBaseMigration": "0030",
+  "migrationAdded": "0031_avatar_visuals.sql",
+  "phases": {
+    "A0": "RECONCILED",
+    "A1": "DESIGN_ADOPTED",
+    "A2": "SELF_VERIFIED_PASS",
+    "A3": "SELF_VERIFIED_PASS",
+    "Phase4": "NOT_AUTHORIZED"
+  },
+  "externalOperations": {
+    "square": 0,
+    "hostedNeon": 0,
+    "vercel": 0,
+    "r2": 0,
+    "externalBrowser": 0,
+    "production": 0,
+    "imageUpload": 0,
+    "newStorageProvider": 0,
+    "newCMS": 0
+  },
+  "review": {
+    "starts": 0,
+    "limit": 1,
+    "verdict": "NOT_RUN"
+  },
+  "businessMutationsFromVisualPath": 0,
+  "nextExactGate": "AVATAR PHASE 4 \u2014 CUSTOMER VISUAL RENDERER",
+  "localValidation": "avatar-a2-a3/validation.json",
+  "referencePackage": {
+    "kind": "REFERENCE_NOT_EXECUTION_AUTHORITY",
+    "file": "ZAO_Rental_2D_Avatar_Implementation_Package_v1(1).pdf",
+    "sha256": "1cd44ff91c8d6a25ec7d94f31fb810eef379595e4ddefa1e69991ae63e89532c",
+    "pages": 16,
+    "reconciliation": "docs/architecture/avatar-2d-repo-inspection.md"
+  }
+}

@@ -8,7 +8,7 @@ import {validateHostedIdentity,type HostedDevelopmentIdentity} from './hosted-pa
 export async function verifyR15MigrationSources(root=process.cwd()){
  const expected=JSON.parse(await readFile(resolve(root,'docs/execution/p6/r14-evidence/migration-hashes.json'),'utf8')) as {id:string;file:string;sha256:string}[];
  const additions=JSON.parse(await readFile(resolve(root,'docs/execution/p6/r15-governance/migration-additions.json'),'utf8')) as typeof expected;
- if(expected.length!==29||additions.length!==1||migrationPlan.length!==30)throw new Error('R15_MIGRATION_RANGE_MISMATCH');
+ if(expected.length!==29||additions.length!==1||Number(migrationPlan.length)!==30)throw new Error('R15_MIGRATION_RANGE_MISMATCH');
  expected.push(...additions);
  const result=[];
  for(let index=0;index<30;index++){

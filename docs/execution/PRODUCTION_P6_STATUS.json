@@ -1439,7 +1439,7 @@
       "external_acceptance": "NEON_FREE_RESOURCE_METADATA_VERIFIED; HOSTED_DB_AND_SQUARE_NOT_EXECUTED",
       "owner_gate": "BLOCKED_HOSTED_ACCEPTANCE_REVIEW_SEQUENCE",
       "reviewBudget": {
-        "maximum": 3,
+        "maximum": 4,
         "initial": {
           "limit": 1,
           "used": 1
@@ -1448,6 +1448,10 @@
           "limit": 1,
           "used": 1
         },
+        "F3_HOSTED_PROOF_REVIEW": {
+          "limit": 1,
+          "used": 0
+        },
         "finalEvidence": {
           "limit": 1,
           "used": 0
@@ -1455,7 +1459,7 @@
       },
       "newExternalOperationsAfterReset": 0,
       "credentialRead": "403; no bypass or secret exposure",
-      "next": "Owner/architecture decision on hosted DB-only acceptance gate and subsequent independent-review budget. No external write/Avatar; do not repeat terms/login.",
+      "next": "ChatGPT Technical Director assessment of CASE C migration SQLSTATE 42501 and unchanged hosted migration path; subsequent explicit bounded Owner authority must reconcile retained empty zr_852b20c4d4b0 and any credential reacquisition before another DB attempt. No retry, permission expansion, Claude, ingress, Square, webhook or live sequence under this exhausted attempt.",
       "governanceCommit": "902622767cb255685d80ea34da90bb21fc5fce73",
       "governanceRemoteReadback": true,
       "governanceChecks": {
@@ -1475,12 +1479,93 @@
       "terminalEvidence": "p6/r15-governance/FINAL_RESULT.md",
       "postReviewValidationCorrection": true,
       "remoteCI": "NOT_RUN",
-      "closedAtUtc": "2026-09-15T10:28:00.718899+00:00"
+      "closedAtUtc": "2026-09-15T10:28:00.718899+00:00",
+      "reviewBudgetBeforeF3Amendment": {
+        "maximum": 3,
+        "initial": {
+          "limit": 1,
+          "used": 1
+        },
+        "correction": {
+          "limit": 1,
+          "used": 1
+        },
+        "finalEvidence": {
+          "limit": 1,
+          "used": 0
+        }
+      }
     },
     "preGovernanceExecutionPointer": {
       "state": "NEON_PROVISIONED_HOSTED_SETUP_PENDING",
       "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001–0029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged."
+    },
+    "f3HostedDbProof": {
+      "authority": "p6/r15-hosted-db-proof/authority.md",
+      "authoritySha256": "71e1c11c33a14a1488b83e759adec9ab27d08892757e634b93c9b463ed33fede",
+      "startingRemoteHead": "de78cafeedb3181c476f2a70dab08169748ae8da",
+      "startedAtUtc": "2026-09-15T10:56:07.101Z",
+      "closedAtUtc": "2026-09-15T11:14:05.959090+00:00",
+      "state": "HOSTED_DB_PROOF_FAIL",
+      "implementation_validation": "FAILED_HOSTED_MIGRATION_42501",
+      "independent_review": "NOT_RUN",
+      "reviewed_head": null,
+      "historicalIndependentReview": "CHANGES_REQUIRED; F3 HIGH remains open",
+      "review_findings": {
+        "BLOCKER": 0,
+        "HIGH": 1,
+        "MEDIUM": 0,
+        "LOW": 2
+      },
+      "external_acceptance": "Credential handoff and hosted pre-write metadata PASS; migrations FAIL/rolled back; roles and tests NOT_RUN",
+      "owner_gate": "STOP_CASE_C",
+      "resourceId": "store_i5vh0ZEKo2ikcVo9",
+      "newResources": 0,
+      "retainedDevelopmentDatabase": "zr_852b20c4d4b0",
+      "credentialAcquisition": {
+        "status": "PASS",
+        "used": 1,
+        "maximum": 1,
+        "retry": 0,
+        "httpStatus": 200,
+        "cleared": true
+      },
+      "migration": {
+        "method": "migrateHostedDevelopment",
+        "invocations": 1,
+        "sqlstate": "42501",
+        "rollbackConfirmed": true,
+        "applied": 0
+      },
+      "rolesProvisioned": 0,
+      "testsExecuted": 0,
+      "reviewBudget": {
+        "maximum": 4,
+        "initial": {
+          "limit": 1,
+          "used": 1
+        },
+        "correction": {
+          "limit": 1,
+          "used": 1
+        },
+        "F3_HOSTED_PROOF_REVIEW": {
+          "limit": 1,
+          "used": 0
+        },
+        "finalEvidence": {
+          "limit": 1,
+          "used": 0
+        }
+      },
+      "secretExposure": 0,
+      "liveActions": 0,
+      "cleanup": "COMPLETE; pools/browser/process closed, credential staging NONE, runtime credentials NONE",
+      "evidence": "p6/r15-hosted-db-proof/FINAL_RESULT.md",
+      "next": "ChatGPT Technical Director assessment of CASE C migration SQLSTATE 42501 and unchanged hosted migration path; subsequent explicit bounded Owner authority must reconcile retained empty zr_852b20c4d4b0 and any credential reacquisition before another DB attempt. No retry, permission expansion, Claude, ingress, Square, webhook or live sequence under this exhausted attempt."
     }
   },
-  "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model"
+  "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
+  "currentGate": "R15_F3_HOSTED_DB_PROOF_FAIL",
+  "currentStatusPointer": "r15.f3HostedDbProof"
 }

@@ -1,0 +1,17 @@
+{
+  "atUtc": "2026-09-15T10:55:18.452921+00:00",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "name": "zao-rental-sandbox-development",
+  "status": "available",
+  "plan": {
+    "id": "free_v3",
+    "name": "Free",
+    "paymentMethodRequired": false
+  },
+  "installationId": "icfg_RDBXEWIHtuzcYNE8TZkFpmFX",
+  "connectedProjects": 0,
+  "valuesRead": false,
+  "rawPersisted": false,
+  "requestMethod": "GET",
+  "endpoint": "/v1/storage/stores/store_i5vh0ZEKo2ikcVo9"
+}

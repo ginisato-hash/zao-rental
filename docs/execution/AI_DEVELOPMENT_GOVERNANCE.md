@@ -81,7 +81,19 @@ New checkpoints distinguish `implementation_validation` (SELF_VERIFIED/FAILED/NO
 build/secret-scan/UI/provider checks are Codex self-validation. Historical status is not
 rewritten to claim reviews or external acceptance that did not occur.
 
-## Current R15 review gate (phase-specific)
+## R15 F3 hosted proof amendment (current phase-specific exception)
+
+The direct Owner [F3 authority](p6/r15-hosted-db-proof/authority.md) adds one
+DB-only proof exception and one dedicated review slot. Total maximum4 starts:
+initial1/1, correction1/1, F3 hosted proof0/1, post-live final0/1 reserved.
+This is an added slot, not a budget reset. Hosted proof PASS plus commit/push/readback
+is required before the F3 review. The DB-only attempt failed at canonical migration
+with SQLSTATE42501 and rolled back; CASE C stops execution, so Claude was not started.
+F3 remains HIGH/open. Review PASS would still require stopping for ChatGPT cross-system
+assessment and the applicable Owner/live gate. See [result](p6/r15-hosted-db-proof/FINAL_RESULT.md).
+All permanent roles and historical reviews below are preserved.
+
+## Historical R15 governance-reset review gate (phase-specific)
 
 Before further external operations, commit/push/read back this governance and perform one
 independent static review of R11 receiver/inbox, R12 jobs/leases/provider truth, R13

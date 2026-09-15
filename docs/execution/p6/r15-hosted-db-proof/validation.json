@@ -1,0 +1,23 @@
+{
+  "atUtc": "2026-09-15T11:15:23.808605+00:00",
+  "scope": "AUTHORITY_STATUS_AND_SAFE_FAILURE_EVIDENCE_ONLY",
+  "secretScan": {
+    "status": "PASS",
+    "exitCode": 0,
+    "checkedFiles": 1530,
+    "limitation": "Pattern scan is not comprehensive"
+  },
+  "referenceCheck": {
+    "status": "PASS",
+    "preservedFiles": 32
+  },
+  "diffCheck": "PASS",
+  "jsonParsing": "PASS",
+  "authoritySourceByteHash": "PASS",
+  "productMigrationRoleSourcesUnchanged": true,
+  "priorReviewEvidenceUnchanged": true,
+  "hostedMigration": "FAIL_42501_ROLLBACK_CONFIRMED",
+  "hostedPositiveNegativeGuardTests": "NOT_RUN",
+  "lintTypecheckBuild": "NOT_RERUN_DOCS_ONLY_CHANGES",
+  "independentReview": "NOT_RUN_PROOF_PASS_PREREQUISITE_UNMET"
+}

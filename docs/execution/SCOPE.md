@@ -1,5 +1,22 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
+## Current — R15 F3 hosted DB proof failed; CASE C stop
+
+Read docs/execution/p6/r15-hosted-db-proof/authority.md and FINAL_RESULT.md;
+current status is PRODUCTION_P6_STATUS.json / r15.f3HostedDbProof.
+The Owner authorized one DB-only gate on existing Neon store_i5vh0ZEKo2ikcVo9.
+Credential handoff and hosted metadata passed. The one canonical migration invocation
+failed with SQLSTATE 42501 and rolled back: applied migrations0, runtime roles0, tests0.
+Empty development database zr_852b20c4d4b0 is retained; do not recreate or overwrite it.
+Credentials/pools/browser are closed. No migration retry, permission expansion, product
+fix, new resource, deployment, env mutation, Square, webhook, live work or Claude start.
+F3 remains OPEN/HIGH. Review budget now maximum4: initial1/1, correction1/1,
+F3 hosted proof0/1 (PASS prerequisite unmet), post-live final0/1 reserved.
+Next: ChatGPT Technical Director assessment and a new bounded Owner continuation.
+Keep one writer, all historical evidence, main and Avatar unchanged.
+
+## Historical — previous governance checkpoint
+
 ## Current — Owner Governance Reset / R15 before-live review required
 
 Single writer: Codex parent on codex/external-acceptance-p6. Runner remains disabled;

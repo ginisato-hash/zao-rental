@@ -1,3 +1,4 @@
+import {r15ProjectionTarget,type R15ProjectionPermit} from './r15-projection-authority';
 import {flowHash,flowId,matchPayment,type PaymentObservation,type PaymentRequest} from '../../../contracts/src/rental-flow';
 import {parseConditions,normalizePeriod,variantMatches,isWear,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
 import {advanceQualification,timestamp} from '../../../contracts/src/pricing';
@@ -103,9 +104,9 @@ export interface PaymentProjectionRepository{transaction<T>(reference:Projection
 export interface PaymentProjectionPort{project(reference:ProjectionReference):Promise<ProjectionResult>}
 /** Unconnected internal port: no request body, credential, gateway, schedule or business runtime import. */
 export class TransactionalPaymentProjection implements PaymentProjectionPort{
- constructor(private repository:PaymentProjectionRepository){if(process.env.NODE_ENV==='production')throw new ProjectionError('PROJECTION_NOT_ACTIVATED');}
+ constructor(private repository:PaymentProjectionRepository,private permit?:R15ProjectionPermit){if(process.env.NODE_ENV==='production'&&!r15ProjectionTarget(permit))throw new ProjectionError('PROJECTION_NOT_ACTIVATED');}
  async project(ref:ProjectionReference){
-  if(process.env.NODE_ENV==='production')throw new ProjectionError('PROJECTION_NOT_ACTIVATED');validateProjectionReference(ref);
+  if((process.env.NODE_ENV==='production'||this.permit)&&!r15ProjectionTarget(this.permit,ref))throw new ProjectionError('PROJECTION_NOT_ACTIVATED');validateProjectionReference(ref);
   return this.repository.transaction(ref,async tx=>{
    const state=await tx.load();
    if(state.booking.id!==ref.bookingId||state.attempt.expected.attemptId!==ref.attemptId||state.attempt.expected.bookingId!==ref.bookingId)throw new ProjectionError('PROJECTION_TARGET_MISMATCH');

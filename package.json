@@ -66,7 +66,9 @@
     "test:booking-recovery-ui": "node --import tsx tests/readiness/booking-recovery-ui.ts",
     "production:preflight": "node --import tsx scripts/production-preflight.ts",
     "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts",
-    "test:payment-activation": "node --import tsx scripts/test-payment-activation.ts"
+    "test:payment-activation": "node --import tsx scripts/test-payment-activation.ts",
+    "test:r15": "node --import tsx scripts/test-r15-ingress.ts",
+    "typecheck:ingress": "tsc --noEmit --project apps/webhook-ingress/tsconfig.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

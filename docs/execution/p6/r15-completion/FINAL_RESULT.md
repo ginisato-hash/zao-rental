@@ -1,10 +1,12 @@
 # R15 Completion — execution checkpoint for final independent review
 
 Implementation/external acceptance: **SELF_VERIFIED PASS**. Cleanup: **PASS**.
-Independent final review: **NOT_RUN**, existing Claude Team authentication confirmed;
-exactly one tools-disabled review remains. This checkpoint does not declare R15_PASS.
-No further live invocation, retry, deployment, payment/refund, main merge or Production GO.
-After the final review, return to ChatGPT Technical Director even if its verdict is PASS.
+Independent final review: **PASS**, used1/1, retries0.
+R15 terminal classification: **R15_PASS**.
+No further live invocation, deployment, payment/refund, Claude retry, main merge or
+Production GO. Next: **ChatGPT Technical Director terminal cross-system assessment**.
+The preserved [review](final-review/review.json) is the independent verdict; self-tests
+are not substituted for it. Severity counts: `{"BLOCKER": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 2}`.
 
 ## Binding and history
 
@@ -18,9 +20,10 @@ After the final review, return to ChatGPT Technical Director even if its verdict
 - R7 incident, R10 nonterminal refund, R14 PARTIAL, initial/correction reviews,
   original F3 HIGH, historical 42501 and credential handoff failures remain unchanged.
   F3 dedicated review retired unused. Final review alone may assess the new F3 proof.
-- The containing commit will be the frozen review code/evidence HEAD. Its full SHA,
-  file manifest and snapshot hash will be recorded in final-review receipts afterward.
-  Receipt-only descendants must be distinguished from the reviewed source HEAD.
+- Frozen reviewed code/evidence HEAD: `ba90acf0b1bff9f937474ff85cf033d12a9c70a3`.
+  Snapshot SHA-256: `2b6abf6348cec9cb95d9c6aaae4ef39aaa7f4439f2e74b9a2a0ec43aa16fb1df`.
+  This terminal receipt commit changes documentation/evidence only, not reviewed code/tests.
+  The file manifest and compressed sanitized static input are retained under final-review/.
 
 ## Hosted infrastructure
 
@@ -105,11 +108,18 @@ real customer/card/booking/inventory/custody0, refund/GetRefund0, R2/email/SMS0,
 main Production deployment0, main merge0. Secret exposure observed0; pattern scans
 and safe evidence support this claim but are not mathematical proof of all external systems.
 
-## Validation and independent disposition still required
+## Validation and final independent disposition
 
 Local real PostgreSQL + stub provider E2E PASS, not substituted for hosted proof.
 Final source targeted tests26, lint, typecheck, secret scan and local operator bundle
 build are recorded in final-validation.json. No remote CI pass is claimed for this HEAD.
-Historical F3 HIGH and NEW1 LOW have new implementation/hosted evidence for independent
-assessment; original severity/history remains. F4 LOW root install dependency surface
-remains disclosed; ingress is cleaned up, not accepted as a long-lived service.
+The final reviewer closed current F3 and NEW1 against the new implementation/hosted
+evidence; their original HIGH/LOW history remains. Open LOWs are R15F1 (corrected
+DELETE classification not live-reverified / authoritative citation absent from input)
+and R15F2/F4 (root install dependency surface). No new live check is authorized.
+Ingress is cleaned up, not accepted as a long-lived service.
+
+Final review findings/dispositions are preserved verbatim in final-review/review.json.
+Original F3 HIGH, NEW1 LOW and F4 LOW historical records are not rewritten. The final
+review may assess their present disposition; its exact result governs this checkpoint.
+No remote CI result or independent test execution is claimed.

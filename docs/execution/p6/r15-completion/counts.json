@@ -41,6 +41,8 @@
   "emailSms": 0,
   "mainMerge": 0,
   "secretExposure": 0,
-  "finalClaudeReviewStarts": 0,
-  "f3DedicatedReview": "RETIRED_UNUSED"
+  "finalClaudeReviewStarts": 1,
+  "f3DedicatedReview": "RETIRED_UNUSED",
+  "finalClaudeReviewLimit": 1,
+  "finalClaudeReviewVerdict": "PASS"
 }

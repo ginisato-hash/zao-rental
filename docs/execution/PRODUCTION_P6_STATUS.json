@@ -1,5 +1,5 @@
 {
-  "phase": "R15_COMPLETION_FINAL_REVIEW_PENDING",
+  "phase": "R15_PASS",
   "authority": "PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -38,7 +38,7 @@
     "snapshot_sha256": "0f448e2350c03b300d30c1f0076eb6446159267825e00c6a4d8db1e311a2ab50",
     "production_activation": false
   },
-  "first_owner_action": "None; Codex performs the one authorized final static review, then returns to ChatGPT Technical Director.",
+  "first_owner_action": "Review terminal checkpoint with ChatGPT Technical Director; no further live action or model retry authorized.",
   "steps": {
     "square_application": "OWNER_CONFIRMED",
     "secret_store": "PREVIEW_6_KEYS_METADATA_VERIFIED_MERCHANT_REGISTERED",
@@ -48,7 +48,7 @@
     "r2": "PLAN_ONLY_NO_REQUEST",
     "backup_pitr": "PROVIDER_UNSELECTED"
   },
-  "external_acceptance": "R15_E2E_SELF_VERIFIED_PASS; independent final review pending; all historical phases retained",
+  "external_acceptance": "R15_SANDBOX_E2E_PASS; final independent review PASS; all historical results preserved",
   "external_activation_requests": {
     "square": null,
     "r2": 0,
@@ -61,13 +61,15 @@
     "r3_static_bootstrap": 1,
     "r3_actual_preview": 1
   },
-  "claude_starts_this_turn": 0,
+  "claude_starts_this_turn": 1,
   "prior_p5_claude_starts_preserved": 2,
   "business_rules_changed": false,
   "productionActivation": false,
   "runner": "UNATTENDED_HOLD",
   "draft_pr_created": false,
-  "owner_pending": [],
+  "owner_pending": [
+    "ChatGPT Technical Director terminal assessment"
+  ],
   "verification": {
     "local": [
       "unit177 pass/fail0/skip0",
@@ -102,7 +104,7 @@
     "CI34756544102 wear mixed transport"
   ],
   "owned_resources_started": [],
-  "next": "One final exact-code/evidence Claude review; no further live execution. Then Technical Director terminal assessment.",
+  "next": "ChatGPT Technical Director terminal cross-system assessment; Owner main merge/Production GO remain ungranted.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -195,10 +197,9 @@
   "r2_updated_at": "2026-09-14T01:25:04.631309+00:00",
   "db_web_claude_started": false,
   "remaining_implementation_gates": [
-    "Final independent exact-HEAD review",
     "ChatGPT Technical Director terminal assessment"
   ],
-  "updated_at": "2026-09-15T14:15:39.841290+00:00",
+  "updated_at": "2026-09-15T14:27:57.525083+00:00",
   "owner_preview_environment_confirmation": {
     "source": "direct Owner message after R2 checkpoint",
     "scope": "read-only key/target/type verification, docs/status and preflight only",
@@ -1719,10 +1720,10 @@
       "requestedStartingHead": "2544261efafdc98741dd55cab278b859bc4c7f2b",
       "remoteAdvanceReconciled": "Owner-authorized authority89addfe and validated V2 implementation6145a03; no external attempt",
       "recordedAtUtc": "2026-09-15T12:11:13.395021+00:00",
-      "state": "E2E_PASS_CLEANUP_PASS_FINAL_REVIEW_PENDING",
+      "state": "R15_PASS",
       "resourceId": "store_i5vh0ZEKo2ikcVo9",
       "database": "zr_852b20c4d4b0",
-      "F3": "HOSTED_IMPLEMENTATION_PROVEN_PENDING_FINAL_R15_REVIEW",
+      "F3": "CLOSED_BY_FINAL_INDEPENDENT_REVIEW_ORIGINAL_HIGH_HISTORY_PRESERVED",
       "reviewBudget": {
         "initial": {
           "used": 1,
@@ -1737,7 +1738,7 @@
           "status": "RETIRED_UNUSED"
         },
         "finalEvidence": {
-          "used": 0,
+          "used": 1,
           "limit": 1
         }
       },
@@ -1790,7 +1791,7 @@
         "rollbackConfirmed": true
       },
       "setupCompatibility": "LOCAL_NON_SUPERUSER_REGRESSION_PASS",
-      "next": "One final exact-code/evidence Claude review; no further live execution. Then Technical Director terminal assessment.",
+      "next": "ChatGPT Technical Director terminal cross-system assessment; Owner main merge/Production GO remain ungranted.",
       "migration": "PASS_0001_0030_CHECKSUMS_30",
       "roles": "PASS",
       "positiveTests": 6,
@@ -1832,15 +1833,30 @@
       "temporarySecretFileDeleted": true,
       "runtimePoolsBrowserProcessClosed": true,
       "freshRuntimeCredentialsInvalidated": 5,
-      "finalClaudeReviewStarts": 0,
-      "finalClaudeReview": "READY_TEAM_AUTHENTICATED_NOT_RUN",
+      "finalClaudeReviewStarts": 1,
+      "finalClaudeReview": "PASS",
       "finalIngressState": "DELETED",
       "addedEnvKeysDeleted": 10,
-      "remainingRuntimeCredentials": 0
+      "remainingRuntimeCredentials": 0,
+      "reviewedHead": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "independentReviewSeverityCounts": {
+        "BLOCKER": 0,
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 2
+      },
+      "independentReviewEvidence": "p6/r15-completion/final-review/review.json",
+      "implementationValidation": "SELF_VERIFIED_PASS",
+      "externalAcceptance": "SANDBOX_E2E_PASS",
+      "NEW1": "CLOSED_BY_FINAL_INDEPENDENT_REVIEW_ORIGINAL_LOW_HISTORY_PRESERVED",
+      "remainingLowFindings": [
+        "R15F1: corrected DELETE classification not live-reverified; no new dispatch authority",
+        "R15F2 / F4: root dependency installation surface retained residual"
+      ]
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_COMPLETION_FINAL_CLAUDE_REVIEW_READY",
+  "currentGate": "R15_TERMINAL_CHATGPT_TECHNICAL_DIRECTOR_ASSESSMENT",
   "currentStatusPointer": "r15.completion",
   "preCompletionTopLevelCheckpoint": {
     "phase": "R14_PARTIAL",

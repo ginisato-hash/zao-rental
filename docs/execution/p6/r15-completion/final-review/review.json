@@ -1,0 +1,75 @@
+{
+  "branch": "codex/external-acceptance-p6",
+  "base_sha": "b541999163ff129cc588960a2c5bf94da61d0cd9",
+  "head_sha": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+  "authority_sha256": "a71b71e976cb7be4942837e4e4c0ae07e295fcfb78353a72770dbc2a446ba4f0",
+  "snapshot_sha256": "2b6abf6348cec9cb95d9c6aaae4ef39aaa7f4439f2e74b9a2a0ec43aa16fb1df",
+  "verdict": "PASS",
+  "tests_executed": false,
+  "scope_assessment": "Final one-shot review at exact head ba90acf0. Read full current source for: hosted migrations 0001-0030 and the administrative 0015 SET-ROLE/CREATE compatibility wrapper (scripts/hosted-migration-setup.ts, hosted-payment-migrations.ts) plus its local regression proof (tests/readiness/r15-migration-owner.test.ts, local-setup-proof.json); the six-role least-privilege model and 0030 r15_activation guard (migration 0030, r15-operation-guard.ts, r15-hosted-composition.ts) with hosted positive/negative/guard evidence (positive-tests.json, negative-tests.json, guard-tests.json); dedicated webhook ingress isolation (apps/webhook-ingress/*, config.ts secret allowlist, handler.ts, vercel.json) and its HMAC/COMMIT-before-ACK receiver (square-webhook-receiver.ts, square-webhook-inbox.ts, PgSquareWebhookInbox); the non-disclosing signature handoff (tools/acceptance/r15-signature-handoff.ts) and its tests; the one-shot CreatePayment/GetPayment guard (dispatchR15Once: COMMIT strictly precedes send(), catch path never dispatches, UNKNOWN/commit-loss is conservative and non-retryable) and its manifest-hash verifier (scripts/r15-operation-manifest.ts + tests/unit/r15-operation-manifest.test.ts); R12 provider-truth engine and R13 transactional projection (unchanged core logic, already reviewed in prior rounds, re-checked for R15 wiring in r15-hosted-composition.ts and tools/acceptance/r15-preview.ts); webhook-vs-provider-truth separation (natural-webhook.json explicitly marks providerTruthNotYetLookedUp=true before GetPayment); the deployed historical operator source at 023d819 versus the corrected current tools/acceptance/r15-preview.ts DELETE-subscription classification, with its new regression tests; and the full evidence/cleanup/budget JSON set under docs/execution/p6/r15-completion/ plus PRODUCTION_P6_STATUS.json selected fields. Cross-checked hash consistency for the payment-operation-manifest.json (ac2f8e03...) across four independently-produced evidence files. No code was executed, edited or pushed; all hosted-DB and live-Square outcomes are Codex-supplied JSON, assessed here only by static/structural reasoning against the exact source that implements them.",
+  "findings": [
+    {
+      "id": "R15F1",
+      "severity": "LOW",
+      "title": "Deployed operator (023d819) misclassified Square subscription DELETE; corrected source is untested live",
+      "reviewed_sha": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "file_or_component": "tools/acceptance/r15-preview.ts (current) vs DEPLOYED_023d819 snapshot",
+      "line": 74,
+      "counterexample": "The actually-deployed operator (GIT_DEPLOYED_FILE@023d819, line 74) classifies delete-subscription success only on HTTP204 (`r.status===204?'DELETED':'DELETE_UNCONFIRMED'`). Square returned HTTP200, so the live run produced DELETE_UNCONFIRMED and the surrounding cleanup logic conservatively recorded SUBSCRIPTION_CLEANUP_UNKNOWN_NO_RETRY (subscription-cleanup.json). Current HEAD corrects this to accept HTTP200 with an absent/empty `errors` array as DELETED, verified only by re-reading the same cached Playwright response (operator-cached-response-readback.json, subscription-cleanup-readback.json) — no new Square request was made, and the corrected branch itself was never redeployed or exercised against a live Square response.",
+      "impact": "Cleanup-only, no business/payment/booking effect and no budget consumed twice (deleteRequests remained 1). Risk is limited to future reuse: if this corrected classification logic is reused for a genuinely ambiguous or erroring 200 response with a differently-shaped body, the fix's assumption about Square's exact DELETE contract is asserted by Codex without an independently citable authoritative source in this evidence bundle (unlike the F2 create-subscription citations in FINDING_DISPOSITION.md).",
+      "test_coverage": "tests/unit/r15-preview.test.ts adds three targeted cases (200+empty→DELETED, 200+errors array→DELETE_UNCONFIRMED, 200+malformed non-array errors→DELETE_UNCONFIRMED, and no-retry 409 on repeat) which correctly pin the new logic's boundaries, but none of them are executed against a real Square endpoint.",
+      "minimum_safe_correction": "Cite Square's official Webhook Subscriptions DELETE API reference for the exact success contract (as was done for CREATE in the prior review), and require one bounded live confirmation (or documented equivalent-endpoint precedent) before treating this classification as verified rather than provisional.",
+      "required_proof": "A single authoritative Square API reference for `DELETE /v2/webhooks/subscriptions/{id}` success semantics, or a fresh (budget-permitting) live delete-subscription dispatch confirming the corrected classification end-to-end."
+    },
+    {
+      "id": "R15F2",
+      "severity": "LOW",
+      "title": "F4 (root dependency install surface for dedicated ingress) — retained residual, unchanged",
+      "reviewed_sha": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "file_or_component": "apps/webhook-ingress/vercel.json",
+      "line": 5,
+      "counterexample": "installCommand still runs a full monorepo `npm ci --prefix ../.. --ignore-scripts` for the receiver-only ingress project; the bundled runtime.cjs footprint remains limited to pg/receiver code (build manifest inputs), but the on-disk install surface is broader than the minimal receiver.",
+      "impact": "Unused-code presence only; `--ignore-scripts` mitigates the primary postinstall supply-chain vector. No new exploit path demonstrated in this or prior reviews.",
+      "test_coverage": "tests/unit/r15-ingress.test.ts checks route surface and installCommand flags but not dependency-set minimization, unchanged from review-02.",
+      "minimum_safe_correction": "Scope install to only packages referenced by the bundled artifact, or continue accepting as documented residual for the finite acceptance window (current disposition).",
+      "required_proof": "None required to sustain current PASS; recommended before treating the ingress project as long-lived infrastructure."
+    }
+  ],
+  "historical_finding_dispositions": [
+    {
+      "id": "F3",
+      "original_severity": "HIGH",
+      "status": "CLOSED",
+      "evidence/reason": "Original HIGH was the total absence of hosted-Neon migration/role evidence. This head adds a specific, code-inspectable administrative fix (scripts/hosted-migration-setup.ts) that wraps only migration 0015-0017, temporarily grants CREATE ON DATABASE/SCHEMA public to the newly-created NOLOGIN custody_executor role via session-local createrole_self_grant, structurally blocks COMMIT while the temporary grant is outstanding (`if(sql==='COMMIT'&&transferSetup)throw`), and revokes the temporary CREATE grants plus the setup role's SET/INHERIT membership in the new roles before COMMIT can succeed. A dedicated local regression test (tests/readiness/r15-migration-owner.test.ts) independently reproduces the exact 42501/SET_ROLE_REQUIRED failure on a fresh non-superuser owner and asserts the identical final privilege state (database_create/public_create/setup_inherit/setup_set=false, intended_schema_owner=true, admin_option=true membership only) reported in local-setup-proof.json and migration-result.json for the hosted run. Hosted evidence (migration-result.json: 30/30 checksums; positive-tests.json:6; negative-tests.json:46; guard-tests.json:12, all against store_i5vh0ZEKo2ikcVo9/zr_852b20c4d4b0) is internally consistent with this mechanism and with real PostgreSQL 18 createrole_self_grant semantics. This satisfies Authority §8/§10's narrow administrative-fix exception (no SUPERUSER, no PUBLIC expansion, no ownership takeover). The hosted execution itself remains Codex self-reported and was not independently re-run by this reviewer (tools disabled); this is disclosed in insufficient_evidence rather than reopening the HIGH."
+    },
+    {
+      "id": "NEW1",
+      "original_severity": "LOW",
+      "status": "CLOSED",
+      "evidence/reason": "scripts/r15-operation-manifest.ts now implements verifyR15OperationManifest(), recomputing SHA-256 from the actual committed docs/execution/p6/r15-evidence/payment-operation-manifest.json bytes and throwing on any mismatch. tests/unit/r15-operation-manifest.test.ts exercises matching/tampered-file/wrong-hash/missing-file/invalid-hash cases and confirms dispatchR15Once is never invoked (0 sends) unless the hash is independently verified first — matching the original required_proof exactly. Runtime dispatch itself does not call this function directly (tools/acceptance/r15-preview.ts's r15Manifest() only checks internal consistency of the client-supplied manifestSource/hash pair), but the authoritative protection is DB-enforced: migration 0030's r15_activation.reserve() rejects any manifest_sha256 not matching the row the migration owner installed, and payment-preparation.json/local-preparation.json assert that installation used this verifier against the actual Git bytes (dbInstalledHash matches the committed file's own SHA-256 across four independent evidence files). Residual gap: the verifier's use at installation time is procedural/self-reported, not itself code-enforced against a bypass; noted in insufficient_evidence rather than retained as an open finding, consistent with the original finding's narrow required_proof having been met."
+    },
+    {
+      "id": "F4",
+      "original_severity": "LOW",
+      "status": "RETAINED_OPEN_LOW",
+      "evidence/reason": "Unchanged from review-02's ACCEPTED_RESIDUAL_UNCHANGED disposition; apps/webhook-ingress/vercel.json installCommand is untouched by this head. Carried forward as R15F2 above; not a blocker to PASS."
+    }
+  ],
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 2
+  },
+  "insufficient_evidence": [
+    "All hosted-Neon migration/role/guard/negative test results (30 migrations, 6 roles, 46 negative + 6 positive + 12 guard checks) are Codex-supplied JSON against store_i5vh0ZEKo2ikcVo9/zr_852b20c4d4b0; internally consistent with the reviewed code and with genuine PostgreSQL 18 semantics, but not independently re-executed by this reviewer (tools disabled).",
+    "All live Square interactions (subscription create/test/delete, CreatePayment, GetPayment) are self-reported safe-field summaries; raw provider responses were deliberately not retained, so exact response bodies cannot be independently confirmed beyond the safe IDs/HTTP codes shown.",
+    "Official Square test-delivery outcome is genuinely UNKNOWN (operator HTTP503, no retry); receiver correctness instead rests on natural webhook receipts and one durable DB-readback receipt, which is an accepted substitute per Authority §19 but not equivalent proof that the test-delivery feature itself completed.",
+    "Operational (non-test) invocation of verifyR15OperationManifest against the live committed manifest at DB-installation time is asserted in payment-preparation.json/local-preparation.json but not shown as a direct call site in any non-test script in this diff.",
+    "Correctness of the corrected Square subscription-DELETE HTTP200 classification lacks an authoritative citation in this evidence bundle and was never exercised live (see R15F1).",
+    "Credential file lifecycle (2 reads, permissions, deletion) and runtime-role rotation/invalidation are attested only via JSON; not independently verifiable without execution access."
+  ],
+  "execution_assessment": "implementation_validation=SELF_VERIFIED PASS per Codex; independent_review=this review, PASS at exact head ba90acf0. No test or provider call was independently executed by this reviewer; conclusions rest on static/structural code inspection cross-checked against the supplied evidence for internal consistency (matching hashes across independently generated files, technically accurate PostgreSQL/Square semantics, and a dedicated local regression test that reproduces the 42501 fix's exact before/after privilege state). This constitutes independent assessment of the code and its logical sufficiency, not independent confirmation that the described hosted/live executions actually occurred as narrated.",
+  "cleanup_assessment": "Cleanup evidence is thorough and internally consistent: all 3 non-historical Vercel deployments deleted (vercel-cleanup.json), 10 added env keys deleted with 0 remaining R15 keys on either project, all 6 fresh hosted runtime roles disabled (rolcanlogin=false, no privilege escalation attributes) with 0 remaining active connections claimed, temporary local secret file deleted with absence re-confirmed, DB pools/browser/operator process closed, and the DB-only test guard reservation was removed by its distinct test-manifest hash without resetting the live CREATE_PAYMENT/GET_PAYMENT budget (payment-preparation.json testOnlyGuardCleanup). Square request budget (5 total: 1 subscription-create, 1 test, 1 CreatePayment, 1 GetPayment, 1 subscription-delete) exactly matches the manifest's declared budgets with 0 retries. No indication of secret exposure beyond disclosed pattern-scan limitations.",
+  "next_gate": "ChatGPT Technical Director terminal cross-system assessment. This PASS does not authorize main merge, Production GO/NO-GO, or any further live Square/Neon/Vercel operation; per Authority §29, R15 is now a terminal checkpoint pending that assessment, not automatic continuation."
+}

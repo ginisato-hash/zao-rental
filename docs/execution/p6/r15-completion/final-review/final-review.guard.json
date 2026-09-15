@@ -1,0 +1,9 @@
+{
+  "kind": "P6_R15_FINAL_REVIEW_ONE_SHOT",
+  "head_sha": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+  "snapshot_sha256": "2b6abf6348cec9cb95d9c6aaae4ef39aaa7f4439f2e74b9a2a0ec43aa16fb1df",
+  "startedAtUtc": "2026-09-15T14:22:13.479Z",
+  "startsConsumed": 1,
+  "maximumStarts": 1,
+  "state": "RESERVED_POSSIBLY_STARTED_NO_RETRY"
+}

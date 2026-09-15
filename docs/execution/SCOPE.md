@@ -1,23 +1,23 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
-## Current — R15 Completion E2E PASS / final independent review pending
+## Current — R15 terminal / final review PASS
 
 Read docs/execution/PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md and
 p6/r15-completion/FINAL_RESULT.md under docs/execution. Current status is
-PRODUCTION_P6_STATUS.json / r15.completion. Hosted0001–0030, least-privilege tests,
-signed webhook, one100JPY Sandbox CreatePayment, one GetPayment, R12 and R13 PASS.
-Projection1; retry0. Actual payment hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY is COMPLETED.
-Official test operator503 remains historical; receipt+ingress200 proved by read-only
-reconciliation. Subscription delete HTTP200 was initially misclassified as unknown;
-existing response readback confirmed it, with no resend. Preserve these limitations.
-Acceptance Preview and both new dedicated deployments deleted; added env10 deleted;
-accepted R3 retained. Runtime credentials disabled, secret file removed, pools and
-browser/process closed. Existing Neon resource/DB retained. No more provider calls,
-deployments, payment/refund, main merge or Production work in this completed attempt.
-One final tools/MCP-disabled Claude review remains; existing Team authentication is
-confirmed on this Mac. No review model invocation has occurred. F3 dedicated slot retired
-unused; historical initial/correction reviews and their findings remain unchanged.
-Parent single writer. Then stop for ChatGPT Technical Director terminal assessment.
+PRODUCTION_P6_STATUS.json / r15.completion; classification R15_PASS.
+Hosted0001–0030, role/guard proof, signed webhook, one100JPY Sandbox payment,
+one GetPayment, R12 and exactly-one R13 projection completed; cleanup PASS.
+Final Claude review1/1 returned PASS; reviewed code/evidence HEAD
+ba90acf0b1bff9f937474ff85cf033d12a9c70a3. Review receipts are documentation-only descendants.
+See final-review/review.json for original findings and severity; do not replace
+this independent verdict with self-validation. F3 dedicated review retired unused.
+Official test operator503 UNKNOWN and subscription delete initial misclassification
+remain preserved with read-only reconciliation; no retry occurred.
+Acceptance deployments3 and added env10 deleted; accepted R3 retained. Runtime
+credentials disabled, temporary secret file deleted, pools/browser/process closed.
+No more provider calls, deployments, payment/refund, Claude retry, main merge or
+Production GO in this attempt. All historical phases/reviews remain unchanged.
+Parent single writer. Stop for ChatGPT Technical Director terminal assessment.
 
 ## Historical — superseded V2 intermediate gate
 

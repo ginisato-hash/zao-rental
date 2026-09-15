@@ -1193,7 +1193,7 @@
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
-    "state": "BLOCKED_NEON_TERMS_PROPAGATION",
+    "state": "NEON_ONE_PROVISION_ATTEMPT_AUTHORIZED",
     "authorityPath": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
     "budgets": {
       "hostedDbResource": 1,
@@ -1224,8 +1224,8 @@
       "refund": 0,
       "model": 0
     },
-    "next": "R15 terminal checkpoint: no resource add or deploy retry without provider state change. After this checkpoint is pushed/read back clean, use its final remote HEAD for codex/avatar-2d-foundation A0 inspection and A1 ADR ONLY. A2/A3 remain blocked by R15 human-only gate.",
-    "blocker": "OWNER_REPORTED_TERMS_NOT_CONFIRMED_AS_TEAM_PROVISIONING_READY",
+    "next": "Dispatch at most one guarded free_v3 Neon development provision under Owner resume notice. No consent/login retry. On terms-required save terminal PARTIAL and stop; on success continue existing R15 scope. Avatar remains unchanged.",
+    "blocker": null,
     "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
     "implementationCommit": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
     "localValidation": {
@@ -1371,6 +1371,28 @@
       "noRepeatedOwnerQuestion": true,
       "validation": "Prior exact source results reused; current docs/reference/secrets/diff checks recorded separately",
       "cleanup": "No owned DB/Web/browser/Claude started; finite metadata children exited; dedicated project retained empty; prior failed deploy deletion verified; main R3 unchanged"
+    },
+    "neonOwnerResume": {
+      "startedAtUtc": "2026-09-15T09:18:39Z",
+      "startedAtJst": "2026-09-15T18:18:39+09:00",
+      "startingHead": "543d4fc6a5f7ebb102fdb1faffee6be5f9cb6d8b",
+      "avatarHeadUnchanged": "9783373612440acef4c077b0ae23925aa467743d",
+      "authority": "docs/execution/p6/r15-neon-resume/OWNER_NOTICE.md",
+      "humanAcceptance": "SUCCESS_REPORTED_AND_FORMALLY_ACCEPTED_BY_OWNER",
+      "reportedOutput": "Success! Terms accepted. Integration neon is installed for this team.",
+      "installationReadbackInconsistencyAccepted": true,
+      "agentAcceptTerms": 0,
+      "newLogin": 0,
+      "teamSwitch": 0,
+      "provisionAttemptBudgetThisNotice": 1,
+      "provisionAttemptsThisNotice": 0,
+      "cliVersion": "59.17.0",
+      "freePlan": "free_v3",
+      "retry": 0,
+      "onTermsRequired": "BLOCKED_NEON_INSTALLATION_STATE_INCONSISTENT",
+      "onUnknown": "DO_NOT_RETRY; reconcile resource listing",
+      "artifactEvidence": "docs/execution/p6/r15-neon-resume",
+      "originalStartAndAllConsumedCountersUnchanged": true
     }
   }
 }

@@ -1,3 +1,18 @@
+## Current R15 Owner resume — accepted human consent, one provision attempt
+
+Read docs/execution/p6/r15-neon-resume/OWNER_NOTICE.md and PRODUCTION_P6_STATUS.json.
+Owner explicitly accepts the success of their interactive accept-terms operation,
+including the immediately empty installation readback. Do not repeat consent,
+Team switching, login or ask Owner to accept again. One new logical free Neon
+provision attempt is authorized after current CLI/help/free-plan checks. On repeated
+terms-required, stop as BLOCKED_NEON_INSTALLATION_STATE_INCONSISTENT; no add/name/plan
+retry. UNKNOWN requires read-only resource reconciliation, never another create.
+Original R15 start/consumption and total3 ingress budget remain. R15 branch only;
+Avatar9783373 and main are unchanged. Parent only; no models/subagents/Runner/new PR.
+All previous R15 live gates, secret limits and cleanup rules remain binding.
+
+## Historical pre-resume checkpoint
+
 ## Current authority — R15 continuation terminal; Avatar A0/A1 only next
 
 Read docs/execution/PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md,

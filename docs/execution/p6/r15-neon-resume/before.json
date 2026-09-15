@@ -1,0 +1,24 @@
+{
+  "cliVersion": "59.17.0",
+  "team": "zao-food-map",
+  "ownerHumanAcceptance": "ACCEPTED_FROM_OWNER_DIRECT_NOTICE",
+  "emptyReadbackDoesNotInvalidateOwnerAcceptance": true,
+  "before": [
+    {
+      "kind": "installations",
+      "atUtc": "2026-09-15T09:22:13.875346+00:00",
+      "exitCode": 0,
+      "count": 0,
+      "items": []
+    },
+    {
+      "kind": "resources",
+      "atUtc": "2026-09-15T09:22:15.543279+00:00",
+      "exitCode": 0,
+      "count": 0,
+      "items": []
+    }
+  ],
+  "secretsRetrieved": false,
+  "providerMutation": 0
+}

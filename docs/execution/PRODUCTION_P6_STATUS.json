@@ -1563,9 +1563,64 @@
       "cleanup": "COMPLETE; pools/browser/process closed, credential staging NONE, runtime credentials NONE",
       "evidence": "p6/r15-hosted-db-proof/FINAL_RESULT.md",
       "next": "ChatGPT Technical Director assessment of CASE C migration SQLSTATE 42501 and unchanged hosted migration path; subsequent explicit bounded Owner authority must reconcile retained empty zr_852b20c4d4b0 and any credential reacquisition before another DB attempt. No retry, permission expansion, Claude, ingress, Square, webhook or live sequence under this exhausted attempt."
+    },
+    "f3HostedDbProof42501Resume": {
+      "authority": "PRODUCTION_P6_R15_F3_42501_AUTHORITY.md",
+      "authoritySha256": "0865bc751aa140c8f60b87f460a10e68c4767071d7987168e26377cb0c5b183f",
+      "startingHead": "be1520b7acd7ad58e64d47022e3a82842af02b29",
+      "recordedAtUtc": "2026-09-15T11:30:32.667849+00:00",
+      "state": "AUTHORITY_RECORDED_PENDING_PUSH_READBACK",
+      "resourceId": "store_i5vh0ZEKo2ikcVo9",
+      "database": "zr_852b20c4d4b0",
+      "historicalMigrationInvocations": 1,
+      "historicalMigrationResult": "FAIL_42501_ROLLED_BACK",
+      "newCredentialAcquisition": {
+        "limit": 1,
+        "used": 0
+      },
+      "ddlProbe": {
+        "limit": 1,
+        "used": 0
+      },
+      "conditionalPublicCreateRepair": {
+        "limit": 1,
+        "used": 0
+      },
+      "migrationReattempt": {
+        "limit": 1,
+        "used": 0
+      },
+      "roleProvision": {
+        "limit": 1,
+        "used": 0
+      },
+      "reviewBudget": {
+        "maximum": 4,
+        "initial": {
+          "limit": 1,
+          "used": 1
+        },
+        "correction": {
+          "limit": 1,
+          "used": 1
+        },
+        "F3_HOSTED_PROOF_REVIEW": {
+          "limit": 1,
+          "used": 0
+        },
+        "finalEvidence": {
+          "limit": 1,
+          "used": 0
+        }
+      },
+      "F3": "OPEN_HIGH",
+      "newResources": 0,
+      "newDatabases": 0,
+      "liveActions": 0,
+      "next": "Push/readback this authority before DB access; diagnose retained DB ownership, then one rollback CREATE probe. Repair only exact setup-owner public CREATE if both catalog/probe demonstrate its absence; otherwise rollback-only migration diagnosis and stop for other cause."
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_F3_HOSTED_DB_PROOF_FAIL",
-  "currentStatusPointer": "r15.f3HostedDbProof"
+  "currentGate": "R15_F3_42501_AUTHORITY_RECORDED_PENDING_PUSH_READBACK",
+  "currentStatusPointer": "r15.f3HostedDbProof42501Resume"
 }

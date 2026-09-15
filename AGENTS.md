@@ -1,5 +1,21 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
+## Current — R15 F3 42501 diagnosis and conditional DB-only resume
+
+Read docs/execution/PRODUCTION_P6_R15_F3_42501_AUTHORITY.md; status pointer is
+PRODUCTION_P6_STATUS.json / r15.f3HostedDbProof42501Resume. Commit/push/readback this
+new authority before DB access. Use only retained zr_852b20c4d4b0 in existing Neon
+store_i5vh0ZEKo2ikcVo9. Credential reacquisition1; read-only owner diagnosis; rollback
+DDL probe1. Grant only CREATE ON SCHEMA public to the exact trusted setup owner if
+catalog and probe both prove it is missing. Only then canonical migration reattempt1;
+otherwise rollback-only migration diagnosis and stop for any other privilege cause.
+No other privilege repair, membership/owner change, new DB/resource, product/migration
+edit, Vercel/env/deploy, Square, webhook, payment, main or Avatar change. Historical
+migration failure1 remains. Existing F3 review0/1 is usable only after all hosted proof
+and cleanup PASS. No extra review slot. Parent is the single writer; Runner stays off.
+
+## Historical — prior F3 failure checkpoint
+
 ## Current — R15 F3 hosted DB proof failed; CASE C stop
 
 Read docs/execution/p6/r15-hosted-db-proof/authority.md and FINAL_RESULT.md;

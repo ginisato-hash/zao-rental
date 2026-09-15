@@ -1,0 +1,12 @@
+{
+  "id": "dpl_AVUzH2qBPkmr3V15YefkogYvWKdM",
+  "origin": "https://zao-rental-onu3i3rit-zao-food-map.vercel.app",
+  "state": "READY",
+  "target": "preview",
+  "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+  "protection": {
+    "deploymentType": "all_except_custom_domains"
+  },
+  "customerRoutes": 0,
+  "sourceHead": "023d819ef0ed5b427a2d80a34c68825ca6002f64"
+}

@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "checks": [
+    "CREATE commits durable reservation before synthetic provider callback",
+    "signed synthetic webhook commits inbox with receiver role",
+    "R12 targeted GetPayment and R13 exactly-once projection with runtime roles",
+    "confirmed synthetic booking/hold and one projection event"
+  ],
+  "actualSquareRequests": 0,
+  "localProviderCallbacks": 2,
+  "kind": "LOCAL_REAL_POSTGRES_WITH_SYNTHETIC_PROVIDER",
+  "closed": true,
+  "preparationCorrection": "Initial local cluster name differed from fixed R15 manifest database; test now creates that exact name only inside an isolated loopback cluster. No Hosted DB or Square request."
+}

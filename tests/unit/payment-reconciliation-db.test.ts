@@ -23,7 +23,7 @@ test('claim JSON dates/metadata and finalize fencing revision bind safely; diagn
 });
 const sql=readFileSync('packages/db/migrations/0026_payment_reconciliation.sql','utf8');
 test('static migration26 is additive, grants no runtime, no existing payment/booking/inventory changes',()=>{
- assert.deepEqual(migrationPlan.at(-1),{id:'0026',file:'0026_payment_reconciliation.sql'});assert.match(sql,/ALTER TABLE square_webhook.inbox ADD COLUMN job_dispatched_at/);
+ assert.deepEqual(migrationPlan.find(m=>m.id==='0026'),{id:'0026',file:'0026_payment_reconciliation.sql'});assert.match(sql,/ALTER TABLE square_webhook.inbox ADD COLUMN job_dispatched_at/);
  assert.doesNotMatch(sql,/DROP TABLE|DROP COLUMN|GRANT |CREATE ROLE|UPDATE (?:public\.)?(?:rental_|inventory_|wear_|custody_)/);
  assert.match(sql,/REVOKE ALL ON ALL TABLES IN SCHEMA payment_reconciliation FROM PUBLIC/);assert.match(sql,/REVOKE ALL ON ALL FUNCTIONS IN SCHEMA payment_reconciliation FROM PUBLIC/);
  assert.match(sql,/v-ARRAY\[/);assert.doesNotMatch(sql,/raw_body|raw_response|access_token|signature_key|auth_header/);

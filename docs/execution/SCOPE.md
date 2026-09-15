@@ -6,7 +6,7 @@ regression and GitHub same-branch commits. R11/R12 are retained; no external run
 No actual DB, Square/provider/webhook, Vercel, browser/Playwright, model/subagent, Runner/cron,
 Production, real booking/inventory/custody, notification, new PR or main merge. No privilege change.
 Preserve R10 LAST_OBSERVED_PENDING / S3_NONTERMINAL_DO_NOT_RETRY and all prior evidence.
-Existing GitHub auth only; finish local commits and PUSH_PENDING_AUTH if unavailable. No login.
+Existing GitHub auth only. R13 push was rejected before execution by automatic review: PUSH_PENDING_APPROVAL / AUTO_REVIEW_DENIED, not an auth error. Finish local work; do not retry or use an alternate route. Read p6/R13_PUSH_PENDING.md under docs/execution. No login.
 
 ## Historical R12 (local implementation completed)
 

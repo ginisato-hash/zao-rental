@@ -1,0 +1,10 @@
+{
+  "status": "TEMPORARY_ADMINISTRATIVE_TRANSFER_SUPPORT_COMPLETED",
+  "ownerPublicCreateGrant": 0,
+  "setupBundleInvocations": 1,
+  "temporaryCreateRevoked": true,
+  "temporarySetInheritRevoked": true,
+  "providerRoleChanges": 0,
+  "publicExpansion": 0,
+  "ownershipTakeover": 0
+}

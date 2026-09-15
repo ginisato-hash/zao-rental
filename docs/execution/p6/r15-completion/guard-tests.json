@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "kind": "HOSTED_DB_ONLY_SYNTHETIC_NO_PROVIDER",
+  "results": [
+    {
+      "name": "wrong manifest denied before callback",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong booking denied before callback",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong attempt denied before callback",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong idempotency denied before callback",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong location denied before callback",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong merchant denied by fixed manifest constraint",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong amount denied by fixed manifest constraint",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong currency denied by fixed manifest constraint",
+      "status": "PASS"
+    },
+    {
+      "name": "CREATE concurrent reservations: one committed winner and one synthetic callback",
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate CREATE denied",
+      "status": "PASS"
+    },
+    {
+      "name": "new connection retains CREATE reservation",
+      "status": "PASS"
+    },
+    {
+      "name": "new process retains CREATE reservation without provider dispatch",
+      "status": "PASS"
+    }
+  ],
+  "syntheticCallbacks": 1,
+  "actualCreatePayment": 0,
+  "actualGetPayment": 0,
+  "testManifestSha256": "32375778c94eae2c3492aba0ac6d3f5161ec42f48429dcdc01da0879c4ba6843",
+  "testReservation": "COMMITTED_DB_ONLY; retained until explicit pre-live test-fixture cleanup, never a live budget reset"
+}

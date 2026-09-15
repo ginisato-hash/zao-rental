@@ -1,0 +1,70 @@
+{
+  "status": "PASS",
+  "canonical": "provisionHostedPaymentRoles",
+  "invocations": 1,
+  "model": "setup owner + five runtime roles; separate PUBLIC negative-probe login",
+  "attributes": [
+    {
+      "rolname": "zr_852b20c4d4b0_pay_diagnostic",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolinherit": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_dispatch",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolinherit": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_projection",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolinherit": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_public",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolinherit": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_receipt",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolinherit": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_truth",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolinherit": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true
+    }
+  ],
+  "credentials": "RAM_ONLY_TEST_CREDENTIALS_NOT_FOR_LIVE",
+  "providerRequests": 0
+}

@@ -1727,10 +1727,10 @@
       "requestedStartingHead": "2544261efafdc98741dd55cab278b859bc4c7f2b",
       "remoteAdvanceReconciled": "Owner-authorized authority89addfe and validated V2 implementation6145a03; no external attempt",
       "recordedAtUtc": "2026-09-15T12:11:13.395021+00:00",
-      "state": "HOSTED_MIGRATION_REPAIR_LOCAL_VALIDATED",
+      "state": "HOSTED_DB_PASS_INGRESS_BOOTSTRAP_READY",
       "resourceId": "store_i5vh0ZEKo2ikcVo9",
       "database": "zr_852b20c4d4b0",
-      "F3": "OPEN_HIGH_PENDING_HOSTED_COMPLETION_AND_FINAL_REVIEW",
+      "F3": "HOSTED_IMPLEMENTATION_PROVEN_PENDING_FINAL_R15_REVIEW",
       "reviewBudget": {
         "initial": {
           "used": 1,
@@ -1754,7 +1754,7 @@
       "newCredentialAcquisitions": 1,
       "historicalMigrationInvocations": 1,
       "historicalMigrationResult": "FAIL_42501_ROLLED_BACK",
-      "newMigrationInvocations": 0,
+      "newMigrationInvocations": 1,
       "additionalIngressDeployments": {
         "used": 0,
         "limit": 2
@@ -1800,10 +1800,19 @@
         "rollbackConfirmed": true
       },
       "setupCompatibility": "LOCAL_NON_SUPERUSER_REGRESSION_PASS",
-      "next": "Apply validated temporary administrative transfer support through canonical migration once; then roles/tests and R15 E2E."
+      "next": "Dedicated ingress bootstrap deploy, signed Sandbox webhook and fixed-manifest E2E; no intermediate review.",
+      "migration": "PASS_0001_0030_CHECKSUMS_30",
+      "roles": "PASS",
+      "positiveTests": 6,
+      "negativeTests": 46,
+      "guardTests": 12,
+      "allHostedTests": "PASS",
+      "testCredentialsInvalidated": 6,
+      "freshRuntimeRoles": 5,
+      "dedicatedIngressEnvKeys": 4
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_COMPLETION_HOSTED_MIGRATION_REPAIR_READY",
+  "currentGate": "R15_COMPLETION_INGRESS_BOOTSTRAP_READY",
   "currentStatusPointer": "r15.completion"
 }

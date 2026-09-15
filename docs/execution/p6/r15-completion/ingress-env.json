@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+  "env": [
+    {
+      "id": "Xa1456w1MWV7klb7",
+      "key": "R15_RECEIVER_DATABASE_URL",
+      "type": "sensitive",
+      "target": [
+        "production"
+      ]
+    },
+    {
+      "id": "mLoIhjIOLRDR09W7",
+      "key": "R15_INGRESS_CLASSIFICATION",
+      "type": "plain",
+      "target": [
+        "production"
+      ]
+    },
+    {
+      "id": "aVJzBtlku0Dkp6Vn",
+      "key": "SQUARE_SANDBOX_NOTIFICATION_URL",
+      "type": "plain",
+      "target": [
+        "production"
+      ]
+    },
+    {
+      "id": "mh9ttAQHotEZ71Jv",
+      "key": "SQUARE_SANDBOX_MERCHANT_ID",
+      "type": "plain",
+      "target": [
+        "production"
+      ]
+    }
+  ],
+  "failedArrayBatch": 1,
+  "failedArrayReconciledEmpty": true,
+  "individualObjectCreates": 4,
+  "squareAccessToken": false,
+  "setupCredential": false,
+  "signatureKeyPresent": false
+}

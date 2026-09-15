@@ -1,0 +1,56 @@
+{
+  "status": "PASS",
+  "booking": {
+    "booking_id": "15000000-0000-4000-8000-000000000001",
+    "booking_state": "CONFIRMED_DEV",
+    "booking_version": 3,
+    "mode": "SQUARE_SANDBOX",
+    "attempt_id": "15000000-0000-4000-8000-000000000004",
+    "attempt_state": "COMPLETED",
+    "provider_id": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+    "provider_state": "COMPLETED",
+    "merchant_id": "MLKDVEDH1ME21",
+    "location_id": "LYCHY1VT97DQ3",
+    "amount_jpy": "100",
+    "currency": "JPY",
+    "hold_state": "ACTIVE",
+    "hold_payment": "SUCCESS",
+    "hold_confirmed": true,
+    "projection_events": 1,
+    "notifications": 0
+  },
+  "reservations": [
+    {
+      "action": "CREATE_PAYMENT",
+      "manifest_sha256": "ac2f8e03dc0398d6e875d14e30903a84de66bdfcb01a73cde86f2d2576ec2de9",
+      "state": "RESERVED_POSSIBLY_DISPATCHED_NO_RETRY",
+      "reserved_at": "2026-09-15T13:55:43.579Z"
+    },
+    {
+      "action": "GET_PAYMENT",
+      "manifest_sha256": "ac2f8e03dc0398d6e875d14e30903a84de66bdfcb01a73cde86f2d2576ec2de9",
+      "state": "RESERVED_POSSIBLY_DISPATCHED_NO_RETRY",
+      "reserved_at": "2026-09-15T13:57:58.620Z"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "ce73eb32-c372-4d0a-af23-907712b336c0",
+      "state": "RECONCILED",
+      "decision": "ACCEPT_COMPLETED",
+      "attempt": 1,
+      "merchant_id": "MLKDVEDH1ME21",
+      "payment_id": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+      "security_blocked": false
+    }
+  ],
+  "createPayment": 1,
+  "getPayment": 1,
+  "projection": 1,
+  "retry": 0,
+  "realCustomer": 0,
+  "realCard": 0,
+  "realInventoryCustody": 0,
+  "production": 0,
+  "secretExposure": 0
+}

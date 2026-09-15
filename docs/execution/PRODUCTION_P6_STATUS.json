@@ -1727,7 +1727,7 @@
       "requestedStartingHead": "2544261efafdc98741dd55cab278b859bc4c7f2b",
       "remoteAdvanceReconciled": "Owner-authorized authority89addfe and validated V2 implementation6145a03; no external attempt",
       "recordedAtUtc": "2026-09-15T12:11:13.395021+00:00",
-      "state": "PAYMENT_PREPARATION_PASS",
+      "state": "R15_E2E_PASS_CLEANUP_REQUIRED",
       "resourceId": "store_i5vh0ZEKo2ikcVo9",
       "database": "zr_852b20c4d4b0",
       "F3": "HOSTED_IMPLEMENTATION_PROVEN_PENDING_FINAL_R15_REVIEW",
@@ -1775,8 +1775,8 @@
         "used": 0,
         "limit": 1
       },
-      "createPayment": 0,
-      "getPayment": 0,
+      "createPayment": 1,
+      "getPayment": 1,
       "secretExposure": 0,
       "evidence": "p6/r15-completion/",
       "credentialFileReads": 2,
@@ -1797,7 +1797,7 @@
         "rollbackConfirmed": true
       },
       "setupCompatibility": "LOCAL_NON_SUPERUSER_REGRESSION_PASS",
-      "next": "One guarded 100 JPY CreatePayment, natural webhook, one targeted GetPayment/R12/R13; then cleanup and final review.",
+      "next": "Push/read back E2E evidence, then exact acceptance cleanup and final independent Claude review.",
       "migration": "PASS_0001_0030_CHECKSUMS_30",
       "roles": "PASS",
       "positiveTests": 6,
@@ -1825,10 +1825,17 @@
       "finalIngressDeployment": "dpl_2NcfhWfbzMrMiXLMm9HF7orj4mTQ",
       "manifestCommit": "95344423a08c7ac2150ed7da75966d313078c4e0",
       "manifestSha256": "ac2f8e03dc0398d6e875d14e30903a84de66bdfcb01a73cde86f2d2576ec2de9",
-      "syntheticFixture": 1
+      "syntheticFixture": 1,
+      "paymentId": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+      "paymentStatus": "COMPLETED",
+      "r12": "ACCEPT_COMPLETED",
+      "r13": "APPLY_COMPLETED",
+      "projectionCount": 1,
+      "retry": 0,
+      "naturalWebhookReceipts": 2
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_COMPLETION_PAYMENT_PREPARATION_PASS",
+  "currentGate": "R15_COMPLETION_E2E_PASS_CLEANUP_REQUIRED",
   "currentStatusPointer": "r15.completion"
 }

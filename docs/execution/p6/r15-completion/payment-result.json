@@ -1,0 +1,23 @@
+{
+  "status": "CREATE_COMPLETED",
+  "operatorHttp": 200,
+  "squareHttp": 200,
+  "createPaymentCount": 1,
+  "retry": 0,
+  "payment": {
+    "id": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+    "status": "COMPLETED",
+    "referenceId": "15000000-0000-4000-8000-000000000001",
+    "merchantId": "MLKDVEDH1ME21",
+    "locationId": "LYCHY1VT97DQ3",
+    "amountJpy": 100,
+    "currency": "JPY",
+    "updatedAt": "2026-09-15T13:55:44.475Z",
+    "completedAt": "2026-09-15T13:55:44.475Z"
+  },
+  "manifestSha256": "ac2f8e03dc0398d6e875d14e30903a84de66bdfcb01a73cde86f2d2576ec2de9",
+  "realCustomer": 0,
+  "realCard": 0,
+  "production": 0,
+  "secretExposure": 0
+}

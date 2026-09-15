@@ -1,0 +1,32 @@
+{
+  "status": "NATURAL_WEBHOOK_RECEIVED",
+  "acceptedPaymentId": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+  "receipts": [
+    {
+      "environment": "SANDBOX",
+      "event_id": "4e8283e6-0c69-384b-871a-47ca2f9d0713",
+      "event_type": "payment.created",
+      "merchant_id": "MLKDVEDH1ME21",
+      "payment_id": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+      "body_sha256": "5a4986d0c3b58f2fe503912a2f15d5007af10a4fe66c7c70734062d9c0026831",
+      "received_at": "2026-09-15T13:55:49.696Z",
+      "state": "RECEIVED",
+      "conflict_count": 0
+    },
+    {
+      "environment": "SANDBOX",
+      "event_id": "ca143e91-7e5c-3fa6-8f02-721e8b0fc5cf",
+      "event_type": "payment.updated",
+      "merchant_id": "MLKDVEDH1ME21",
+      "payment_id": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+      "body_sha256": "daac416393e2daba1ab85b76d25b4f78499007cfeefb9e59b2ce58ae1c86b4e4",
+      "received_at": "2026-09-15T13:55:50.181Z",
+      "state": "RECEIVED",
+      "conflict_count": 0
+    }
+  ],
+  "providerTruthNotYetLookedUp": true,
+  "bookingBusinessStateUnchanged": true,
+  "createPaymentCount": 1,
+  "getPaymentCount": 0
+}

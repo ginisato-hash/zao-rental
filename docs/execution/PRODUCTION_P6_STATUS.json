@@ -1411,6 +1411,50 @@
       "hostedRoleTests": "NOT_STARTED",
       "cliGeneratedSkills": "QUARANTINED_OUTSIDE_REPO_NOT_ADOPTED",
       "lastUpdatedAtUtc": "2026-09-15T09:31:08.857832+00:00"
+    },
+    "governanceReset": {
+      "startedAtUtc": "2026-09-15T09:38:00Z",
+      "timestampBasis": "First explicit UTC clock read after adopting this notice; no phase budget reset",
+      "authoritySha256": "fccdea3af3d5909200fad3760cc56e5112c045feb309572c38a3f5e6f32ffe11",
+      "startingHead": "3ee370a54d15e5aaeb19d845a4e63d5247799ff5",
+      "expectedHead": "543d4fc6a5f7ebb102fdb1faffee6be5f9cb6d8b",
+      "knownAdditionalCommits": [
+        "507bf17dbd83d3704c4befb6bc78f713c4369a93",
+        "3ee370a54d15e5aaeb19d845a4e63d5247799ff5"
+      ],
+      "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+      "avatarHead": "9783373612440acef4c077b0ae23925aa467743d",
+      "singleWriter": true,
+      "implementation_validation": "NOT_RUN",
+      "independent_review": "NOT_RUN",
+      "reviewed_head": null,
+      "review_findings": {
+        "BLOCKER": 0,
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 0
+      },
+      "countsMeaning": "not reviewed yet; zero is not assurance",
+      "external_acceptance": "NEON_FREE_RESOURCE_METADATA_VERIFIED; HOSTED_DB_AND_SQUARE_NOT_EXECUTED",
+      "owner_gate": "BEFORE_LIVE_INDEPENDENT_REVIEW_REQUIRED",
+      "reviewBudget": {
+        "maximum": 3,
+        "initial": {
+          "limit": 1,
+          "used": 0
+        },
+        "correction": {
+          "limit": 1,
+          "used": 0
+        },
+        "finalEvidence": {
+          "limit": 1,
+          "used": 0
+        }
+      },
+      "newExternalOperationsAfterReset": 0,
+      "credentialRead": "403; no bypass or secret exposure",
+      "next": "Commit governance only, check secrets/diff/reference, push/readback, prepare one sanitized R11-R15 static review."
     }
   }
 }

@@ -1,3 +1,21 @@
+Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
+
+## Current — Owner Governance Reset / R15 before-live review required
+
+Single writer: Codex parent on codex/external-acceptance-p6. Runner remains disabled;
+arbitrary subagents remain prohibited. Claude independent static review is permitted and
+required by the current review gate, using sanitized material only and existing Team
+with extra credits OFF. Credential-bearing provider writes remain Codex-parent only.
+No further provider activation before governance push/readback and the R15 initial review.
+Neon resource1 was created before this reset under the preceding one-shot approval; adopt
+it, never create another. Hosted DB activation is pending; credential read403 is recorded.
+Current status: PRODUCTION_P6_STATUS.json / r15.governanceReset. This reset grants review
+starts initial1 + necessary correction1 + final post-live1; external budgets do not reset.
+Main and Avatar remain unchanged. Historical no-model phase restrictions below are not
+a permanent prohibition of Claude independent review. Preserve all historical evidence.
+
+## Historical checkpoint before Governance Reset
+
 ## Current R15 Owner resume — accepted human consent, one provision attempt
 
 Read docs/execution/p6/r15-neon-resume/OWNER_NOTICE.md and PRODUCTION_P6_STATUS.json.

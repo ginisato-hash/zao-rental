@@ -1193,7 +1193,7 @@
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
-    "state": "NEON_ONE_PROVISION_ATTEMPT_AUTHORIZED",
+    "state": "NEON_PROVISIONED_HOSTED_SETUP_PENDING",
     "authorityPath": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
     "budgets": {
       "hostedDbResource": 1,
@@ -1224,7 +1224,7 @@
       "refund": 0,
       "model": 0
     },
-    "next": "Dispatch at most one guarded free_v3 Neon development provision under Owner resume notice. No consent/login retry. On terms-required save terminal PARTIAL and stop; on success continue existing R15 scope. Avatar remains unchanged.",
+    "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001–0029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged.",
     "blocker": null,
     "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
     "implementationCommit": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
@@ -1385,14 +1385,32 @@
       "newLogin": 0,
       "teamSwitch": 0,
       "provisionAttemptBudgetThisNotice": 1,
-      "provisionAttemptsThisNotice": 0,
+      "provisionAttemptsThisNotice": 1,
       "cliVersion": "59.17.0",
       "freePlan": "free_v3",
       "retry": 0,
       "onTermsRequired": "BLOCKED_NEON_INSTALLATION_STATE_INCONSISTENT",
       "onUnknown": "DO_NOT_RETRY; reconcile resource listing",
       "artifactEvidence": "docs/execution/p6/r15-neon-resume",
-      "originalStartAndAllConsumedCountersUnchanged": true
+      "originalStartAndAllConsumedCountersUnchanged": true,
+      "state": "PROVISIONED_FREE_METADATA_VERIFIED",
+      "resourceId": "store_i5vh0ZEKo2ikcVo9",
+      "installationId": "icfg_RDBXEWIHtuzcYNE8TZkFpmFX",
+      "resourceName": "zao-rental-sandbox-development",
+      "resourceCount": 1,
+      "planVerified": {
+        "id": "free_v3",
+        "name": "Free",
+        "cost": "Free",
+        "paymentMethodRequired": false
+      },
+      "connectedProjects": 0,
+      "credentialValuesRetrieved": false,
+      "agentTermsAcceptance": 0,
+      "hostedDbMigrations": "NOT_STARTED",
+      "hostedRoleTests": "NOT_STARTED",
+      "cliGeneratedSkills": "QUARANTINED_OUTSIDE_REPO_NOT_ADOPTED",
+      "lastUpdatedAtUtc": "2026-09-15T09:31:08.857832+00:00"
     }
   }
 }

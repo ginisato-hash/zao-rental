@@ -1,0 +1,66 @@
+{
+  "authority": "P6_R15_CONTINUATION_POST_R15_AVATAR_FOUNDATION",
+  "authorityPath": "docs/execution/PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md",
+  "authoritySha256": "de4da980e2d55a0540c2bee688c800577ec350f311c529019d2bddcb93514811",
+  "baseR15Head": "543d4fc6a5f7ebb102fdb1faffee6be5f9cb6d8b",
+  "branch": "codex/avatar-2d-foundation",
+  "createdAtUtc": "2026-09-15T08:27:09.274332+00:00",
+  "singleWriter": true,
+  "r15Classification": "PARTIAL / BLOCKED_NEON_TERMS_PROPAGATION",
+  "state": "A0_A1_DOCUMENTED_A2_A3_BLOCKED",
+  "phases": {
+    "A0": {
+      "state": "DOCUMENTED",
+      "evidence": "docs/architecture/avatar-2d-repo-inspection.md"
+    },
+    "A1": {
+      "state": "DESIGN_ADOPTED_NOT_IMPLEMENTED",
+      "evidence": "docs/adr/0033-avatar-2d-foundation.md"
+    },
+    "A2": {
+      "state": "NOT_STARTED",
+      "reason": "R15 human-only gate; no migration/local DB work"
+    },
+    "A3": {
+      "state": "NOT_STARTED",
+      "reason": "R15 human-only gate; no API/mapper work"
+    },
+    "Phase4Plus": {
+      "state": "NOT_AUTHORIZED"
+    }
+  },
+  "sourcePackageV1Available": false,
+  "scopeBasis": "Product decisions explicitly included in adopted authority plus measured repository; unseen package/DDL not used",
+  "externalCounts": {
+    "vercelDeploy": 0,
+    "hostedMigration": 0,
+    "square": 0,
+    "storageProvider": 0,
+    "production": 0,
+    "browserLogin": 0,
+    "newExternalService": 0,
+    "models": 0,
+    "newPR": 0,
+    "mainMerge": 0
+  },
+  "localDbStarts": 0,
+  "migrationAdded": 0,
+  "apiCodeChanges": 0,
+  "uiCodeChanges": 0,
+  "productCodeChanges": 0,
+  "feature": "OFF_RENDERER_ABSENT",
+  "validationRecord": "docs/execution/avatar-foundation/validation.json",
+  "newBusinessTestsRun": 0,
+  "newBusinessRegressionClaimed": false,
+  "remaining": [
+    "R15 Neon team terms/installation gate",
+    "A2/A3 conditional implementation and local DB/regression tests",
+    "Separate Owner gate for Phase4-7 UI"
+  ],
+  "next": "Resolve R15 gate in the existing R15 branch, reconcile known source advances and saved Avatar docs without overwriting work, then evaluate conditional A2/A3 scope. Do not implement UI automatically.",
+  "cleanup": {
+    "dbWebBrowserClaudeStarted": false,
+    "ownerProcessesTouched": false,
+    "finiteChecksExitRequired": true
+  }
+}

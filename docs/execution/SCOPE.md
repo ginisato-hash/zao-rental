@@ -1,3 +1,17 @@
+## Current writer — Avatar A0/A1 docs only; R15 terminal remains unchanged
+
+This branch is codex/avatar-2d-foundation, based on remotely verified R15 checkpoint
+543d4fc6a5f7ebb102fdb1faffee6be5f9cb6d8b. Read docs/execution/AVATAR_FOUNDATION_STATUS.json,
+docs/architecture/avatar-2d-repo-inspection.md and docs/adr/0033-avatar-2d-foundation.md.
+The adopted PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md §§23/29 limits this phase to
+A0 inspection and A1 ADR while Neon remains human-blocked. No schema/API/UI changes,
+local/hosted DB activation, Vercel/Square/provider calls, model/subagent or new PR.
+Normal docs-only commits/push to this branch are authorized. No concurrent R15 writer.
+Preserve prior status/counters and rules; stop after clean remote A0/A1 readback.
+A2/A3 require R15 gate resolution; Phase4 UI requires separate Owner authority.
+
+## Historical R15 writer checkpoint (inherited, not an instruction to resume here)
+
 ## Current authority — R15 continuation terminal; Avatar A0/A1 only next
 
 Read docs/execution/PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md,

@@ -1,0 +1,43 @@
+{
+  "atUtc": "2026-09-15T08:28:41.282654+00:00",
+  "baseR15Head": "543d4fc6a5f7ebb102fdb1faffee6be5f9cb6d8b",
+  "scope": "A0_A1_DOCUMENTS_ONLY",
+  "commands": [
+    {
+      "command": "npm run check:secrets",
+      "exitCode": 0,
+      "output": "> zao-rental@0.1.0 check:secrets\n> node scripts/check-secrets.mjs\n\nPASS 1429 tracked/candidate files checked for private keys, provider tokens and credential-bearing DB URLs. Pattern scan is not comprehensive."
+    },
+    {
+      "command": "npm run check:reference",
+      "exitCode": 0,
+      "output": "> zao-rental@0.1.0 check:reference\n> node scripts/check-reference.mjs\n\nPASS 32 bootstrap specification/config/test files byte-identical; entrypoints intentionally integrated."
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "output": ""
+    }
+  ],
+  "sourceHashMatches": 22,
+  "migrationHashMatches": 29,
+  "orderedMigrationPlanMatches": true,
+  "allNewMarkdownLinksExist": 35,
+  "dependencyPinsMatchLock": true,
+  "onlyDocsAndEntryInstructionsChanged": true,
+  "r15StatusAuthorityUnchanged": true,
+  "productCodeUnchanged": true,
+  "fullVerifyLintTypecheckBuild": "NOT_RERUN_DOCUMENT_ONLY; no new Avatar implementation validated",
+  "businessRegressionTestsRun": 0,
+  "localOrHostedDbTestsRun": 0,
+  "mapperApiUiTests": "NOT_IMPLEMENTED_NOT_RUN",
+  "ci": "NOT_STARTED",
+  "independentReviewModels": 0,
+  "secrets": "Pattern scan + manual metadata/authority/doc review; no values read or saved",
+  "cleanup": "No DB/Web/browser/Claude/service started; all bounded inspection/check processes exited",
+  "discoveryNotes": [
+    "No drizzle.config.ts; explicit SQL migrationPlan used.",
+    "Feature/Avatar-name search returned no matches in app/packages/scripts; no general registry inferred.",
+    "Package v1.0 not supplied as a separate inspected artifact."
+  ]
+}

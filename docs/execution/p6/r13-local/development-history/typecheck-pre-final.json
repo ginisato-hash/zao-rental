@@ -1,0 +1,14 @@
+{
+  "name": "typecheck",
+  "command": [
+    "npm",
+    "run",
+    "typecheck"
+  ],
+  "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+  "startedAt": "2026-09-15T01:37:42.764494+00:00",
+  "finishedAt": "2026-09-15T01:37:47.260507+00:00",
+  "exitCode": 2,
+  "log": "typecheck.log",
+  "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+}

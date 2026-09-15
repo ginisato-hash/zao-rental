@@ -1,0 +1,172 @@
+✔ static27 additive journal, unique observation/revision, append-only evidence and PUBLIC revoked (0.794083ms)
+✔ SQL uses fixed queries/bound values; context/receipt lookups are indexed or bounded (0.20675ms)
+✔ recorded lock order agrees with legacy inventory global lock before booking/attempt/hold and R12 stream/job (10.439333ms)
+✔ new projection code is not imported by any existing HTTP/runtime or R12 worker (1.327125ms)
+✔ projection PENDING existing business semantics (21.18375ms)
+✔ projection COMPLETED existing business semantics (0.618458ms)
+✔ projection FAILED existing business semantics (0.307292ms)
+✔ projection CANCELED existing business semantics (0.238583ms)
+✔ identity or provider contract mismatch providerId (0.178625ms)
+✔ identity or provider contract mismatch referenceId (0.152041ms)
+✔ identity or provider contract mismatch idempotencyKey (1.217458ms)
+✔ identity or provider contract mismatch merchantId (0.102125ms)
+✔ identity or provider contract mismatch locationId (0.1145ms)
+✔ identity or provider contract mismatch amountJpy (0.140166ms)
+✔ identity or provider contract mismatch currency (0.091375ms)
+✔ identity or provider contract mismatch status (0.078ms)
+✔ identity or provider contract mismatch updatedAt (0.113292ms)
+✔ identity or provider contract mismatch completedAt (0.087125ms)
+✔ bounded JPY amount 0 (0.111541ms)
+✔ bounded JPY amount -1 (0.086833ms)
+✔ bounded JPY amount 1.1 (0.072833ms)
+✔ bounded JPY amount 100000001 (0.076542ms)
+✔ bounded JPY amount 9007199254740992 (0.096834ms)
+✔ expired hold does not force confirmation/reacquire/refund (1.09975ms)
+✔ missing gear does not force confirmation/reacquire/refund (0.309167ms)
+✔ missing wear does not force confirmation/reacquire/refund (0.2475ms)
+✔ transfer attention does not force confirmation/reacquire/refund (0.255209ms)
+✔ canceled transfer does not force confirmation/reacquire/refund (0.2595ms)
+✔ overdue unready transfer does not force confirmation/reacquire/refund (0.32275ms)
+✔ snapshot hash does not force confirmation/reacquire/refund (0.245875ms)
+✔ quote relation does not force confirmation/reacquire/refund (0.192625ms)
+✔ quote hash does not force confirmation/reacquire/refund (0.222833ms)
+✔ coupon redemption does not force confirmation/reacquire/refund (0.23725ms)
+✔ missing quote does not force confirmation/reacquire/refund (0.193083ms)
+✔ fixed allocation does not force confirmation/reacquire/refund (0.212166ms)
+✔ released hold does not force confirmation/reacquire/refund (0.207041ms)
+✔ successful hold does not force confirmation/reacquire/refund (0.240958ms)
+✔ wrong reservation does not force confirmation/reacquire/refund (0.146292ms)
+✔ wrong actor does not force confirmation/reacquire/refund (0.138667ms)
+✔ production mode does not force confirmation/reacquire/refund (0.139583ms)
+✔ return due exact boundary is closed even with remaining hold time (0.972209ms)
+✔ early-discount qualification remains tied to provider completed time (0.267ms)
+✔ chargeReady and snapshot conditions cannot be tampered even with a recomputed hash (0.514417ms)
+✔ same timestamp changed payload is BLOCK_CONFLICT, overriding only the new projection path (0.2855ms)
+✔ terminal completed and duplicate/stale observations never downgrade (0.413167ms)
+✔ FAILED cannot be silently upgraded or retried (0.164458ms)
+✔ CANCELED cannot be silently upgraded or retried (0.121917ms)
+✔ completed truth in REVIEW requires an operator even if conditions later look repaired (0.133292ms)
+✔ invalid projection reference truthFingerprint (0.240334ms)
+✔ invalid projection reference observationFingerprint (0.07825ms)
+✔ invalid projection reference expectedRevision (0.066792ms)
+✔ invalid projection reference truthRevision (0.065375ms)
+✔ invalid projection reference bookingId (0.121792ms)
+✔ invalid projection reference attemptId (0.071625ms)
+✔ invalid projection reference jobId (0.083292ms)
+✔ untrusted persisted source fails environment (0.239875ms)
+✔ untrusted persisted source fails state (0.080833ms)
+✔ untrusted persisted source fails securityBlocked (0.074458ms)
+✔ untrusted persisted source fails truthRevision (0.067ms)
+✔ untrusted persisted source fails decision (0.071167ms)
+✔ untrusted persisted source fails decisionFingerprint (0.058667ms)
+✔ untrusted persisted source fails contextFingerprint (0.085083ms)
+✔ untrusted persisted source fails paymentId (0.066667ms)
+✔ untrusted persisted source fails merchantId (0.070417ms)
+✔ untrusted persisted source fails observation (0.07025ms)
+✔ only ten normalized provider fields cross the source boundary (0.149166ms)
+✔ claim contract checks gear, wear, exact quantity and variant/model promise without inferred substitution (0.411625ms)
+✔ Premium exact model/season/length stays in claim validation (0.240625ms)
+✖ actual repository + scripted SQL: completion is one transaction, frozen commercial contract, safe audit (3.445416ms)
+✖ two simultaneous projects commit once; replay checks precede old revision and changed source (1.216417ms)
+✖ COMMIT response loss replays stored result without second projection/notification/history (1.071875ms)
+✔ crash at BEGIN rolls back all business/history/journal changes (0.318709ms)
+✔ crash at SET LOCAL rolls back all business/history/journal changes (0.280875ms)
+✔ crash at SELECT pg_advisory_xact_lock(71820600) rolls back all business/history/journal changes (0.257584ms)
+✔ crash at UPDATE rental_payment_attempts rolls back all business/history/journal changes (1.179333ms)
+✔ crash at UPDATE rental_bookings rolls back all business/history/journal changes (0.605458ms)
+✔ crash at UPDATE inventory_holds rolls back all business/history/journal changes (0.554834ms)
+✔ crash at INSERT INTO payment_projection.heads rolls back all business/history/journal changes (0.584916ms)
+✔ crash at INSERT INTO payment_projection.events rolls back all business/history/journal changes (0.799084ms)
+✔ crash at INSERT INTO payment_projection.job_receipts rolls back all business/history/journal changes (0.820208ms)
+✔ crash at COMMIT rolls back all business/history/journal changes (0.884709ms)
+✔ stale transaction revision rejects even after proposed writes and rolls back (2.275375ms)
+✔ expired HOLD persists completed provider truth but not reservation or stock resurrection (0.979458ms)
+✔ missing GEAR witness blocks completed projection in actual repository path (0.641542ms)
+✔ missing WEAR witness blocks completed projection in actual repository path (0.578959ms)
+✔ DB time is sampled after locks and before first business write (0.660458ms)
+✔ transfer deadline crossing during source lock wait blocks at final decision (0.657ms)
+✔ PENDING repository transition keeps hold witness and TTL (0.630458ms)
+✔ FAILED repository transition keeps hold witness and TTL (0.554125ms)
+✔ CANCELED repository transition keeps hold witness and TTL (0.583791ms)
+✔ normal or production database name is blocked before business lock (0.211875ms)
+✔ source mutation blocks and performs no updates; attempt/version mismatch does not acquire source locks (0.515791ms)
+✔ production constructor/method gate and no ambient HTTP (1.25925ms)
+✔ same observation proof does not cross from Square Sandbox to a simulation booking (0.269667ms)
+✖ expiry after first write is fenced by SQL and rolls back; same key later records blocked truth (0.586834ms)
+ℹ tests 95
+ℹ suites 0
+ℹ pass 91
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 485.65325
+
+✖ failing tests:
+
+test at tests/unit/payment-projection.test.ts:1:8368
+✖ actual repository + scripted SQL: completion is one transaction, frozen commercial contract, safe audit (3.445416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'PENDING'
+  - 'SUCCESS'
+  
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/unit/payment-projection.test.ts:43:383)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PENDING',
+    expected: 'SUCCESS',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/payment-projection.test.ts:1:9233
+✖ two simultaneous projects commit once; replay checks precede old revision and changed source (1.216417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 3
+  
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/unit/payment-projection.test.ts:44:347)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 3,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/payment-projection.test.ts:1:9781
+✖ COMMIT response loss replays stored result without second projection/notification/history (1.071875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 3
+  
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/unit/payment-projection.test.ts:45:377)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 3,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/payment-projection.test.ts:1:15327
+✖ expiry after first write is fenced by SQL and rolls back; same key later records blocked truth (0.586834ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/unit/payment-projection.test.ts:58:285)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { code: 'PROJECTION_TIME_BOUNDARY_CHANGED' },
+    operator: 'rejects',
+    diff: 'simple'
+  }

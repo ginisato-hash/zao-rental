@@ -1,0 +1,124 @@
+✔ static27 additive journal, unique observation/revision, append-only evidence and PUBLIC revoked (0.788875ms)
+✔ SQL uses fixed queries/bound values; context/receipt lookups are indexed or bounded (0.209959ms)
+✔ recorded lock order agrees with legacy inventory global lock before booking/attempt/hold and R12 stream/job (10.854917ms)
+✔ new projection code is not imported by any existing HTTP/runtime or R12 worker (1.355709ms)
+✔ projection PENDING existing business semantics (17.452208ms)
+✔ projection COMPLETED existing business semantics (0.510375ms)
+✔ projection FAILED existing business semantics (0.266375ms)
+✔ projection CANCELED existing business semantics (0.22925ms)
+✔ identity or provider contract mismatch providerId (0.169041ms)
+✔ identity or provider contract mismatch referenceId (0.141167ms)
+✔ identity or provider contract mismatch idempotencyKey (0.111958ms)
+✔ identity or provider contract mismatch merchantId (0.9815ms)
+✔ identity or provider contract mismatch locationId (0.155417ms)
+✔ identity or provider contract mismatch amountJpy (0.16175ms)
+✔ identity or provider contract mismatch currency (0.107292ms)
+✔ identity or provider contract mismatch status (0.098875ms)
+✔ identity or provider contract mismatch updatedAt (0.131208ms)
+✔ identity or provider contract mismatch completedAt (0.09025ms)
+✔ bounded JPY amount 0 (0.123ms)
+✔ bounded JPY amount -1 (0.093208ms)
+✔ bounded JPY amount 1.1 (0.081375ms)
+✔ bounded JPY amount 100000001 (0.0775ms)
+✔ bounded JPY amount 9007199254740992 (0.095375ms)
+✔ expired hold does not force confirmation/reacquire/refund (0.73225ms)
+✔ missing gear does not force confirmation/reacquire/refund (0.267083ms)
+✔ missing wear does not force confirmation/reacquire/refund (0.248959ms)
+✔ transfer attention does not force confirmation/reacquire/refund (0.277291ms)
+✔ canceled transfer does not force confirmation/reacquire/refund (0.252459ms)
+✔ overdue unready transfer does not force confirmation/reacquire/refund (0.282042ms)
+✔ snapshot hash does not force confirmation/reacquire/refund (0.24975ms)
+✔ quote relation does not force confirmation/reacquire/refund (0.198459ms)
+✔ quote hash does not force confirmation/reacquire/refund (0.236167ms)
+✔ coupon redemption does not force confirmation/reacquire/refund (0.209667ms)
+✔ missing quote does not force confirmation/reacquire/refund (0.181541ms)
+✔ fixed allocation does not force confirmation/reacquire/refund (0.225791ms)
+✔ released hold does not force confirmation/reacquire/refund (0.212167ms)
+✔ successful hold does not force confirmation/reacquire/refund (0.218209ms)
+✔ wrong reservation does not force confirmation/reacquire/refund (0.13625ms)
+✔ wrong actor does not force confirmation/reacquire/refund (0.129333ms)
+✔ production mode does not force confirmation/reacquire/refund (0.138667ms)
+✔ return due exact boundary is closed even with remaining hold time (0.91175ms)
+✔ early-discount qualification remains tied to provider completed time (0.323042ms)
+✔ chargeReady and snapshot conditions cannot be tampered even with a recomputed hash (0.4625ms)
+✔ same timestamp changed payload is BLOCK_CONFLICT, overriding only the new projection path (0.203375ms)
+✔ terminal completed and duplicate/stale observations never downgrade (0.287416ms)
+✔ FAILED cannot be silently upgraded or retried (0.124916ms)
+✔ CANCELED cannot be silently upgraded or retried (0.111ms)
+✔ completed truth in REVIEW requires an operator even if conditions later look repaired (0.122583ms)
+✔ invalid projection reference truthFingerprint (0.226625ms)
+✔ invalid projection reference observationFingerprint (0.0735ms)
+✔ invalid projection reference expectedRevision (0.06425ms)
+✔ invalid projection reference truthRevision (0.068709ms)
+✔ invalid projection reference bookingId (0.0975ms)
+✔ invalid projection reference attemptId (0.071084ms)
+✔ invalid projection reference jobId (0.321625ms)
+✔ untrusted persisted source fails environment (0.315042ms)
+✔ untrusted persisted source fails state (0.107834ms)
+✔ untrusted persisted source fails securityBlocked (0.098709ms)
+✔ untrusted persisted source fails truthRevision (0.09125ms)
+✔ untrusted persisted source fails decision (0.097417ms)
+✔ untrusted persisted source fails decisionFingerprint (0.091625ms)
+✔ untrusted persisted source fails contextFingerprint (0.113042ms)
+✔ untrusted persisted source fails paymentId (0.08875ms)
+✔ untrusted persisted source fails merchantId (0.090042ms)
+✔ untrusted persisted source fails observation (0.082834ms)
+✔ only ten normalized provider fields cross the source boundary (0.203625ms)
+✔ claim contract checks gear, wear, exact quantity and variant/model promise without inferred substitution (0.530667ms)
+✖ Premium exact model/season/length stays in claim validation (3.784041ms)
+✔ actual repository + scripted SQL: completion is one transaction, frozen commercial contract, safe audit (1.963583ms)
+✔ two simultaneous projects commit once; replay checks precede old revision and changed source (1.109375ms)
+✔ COMMIT response loss replays stored result without second projection/notification/history (0.804042ms)
+✔ crash at BEGIN rolls back all business/history/journal changes (0.298333ms)
+✔ crash at SET LOCAL rolls back all business/history/journal changes (0.273958ms)
+✔ crash at SELECT pg_advisory_xact_lock(71820600) rolls back all business/history/journal changes (0.272667ms)
+✔ crash at UPDATE rental_payment_attempts rolls back all business/history/journal changes (0.538667ms)
+✔ crash at UPDATE rental_bookings rolls back all business/history/journal changes (0.567ms)
+✔ crash at UPDATE inventory_holds rolls back all business/history/journal changes (0.597208ms)
+✔ crash at INSERT INTO payment_projection.heads rolls back all business/history/journal changes (0.573417ms)
+✔ crash at INSERT INTO payment_projection.events rolls back all business/history/journal changes (0.49675ms)
+✔ crash at INSERT INTO payment_projection.job_receipts rolls back all business/history/journal changes (0.49825ms)
+✔ crash at COMMIT rolls back all business/history/journal changes (0.541542ms)
+✔ stale transaction revision rejects even after proposed writes and rolls back (1.051667ms)
+✔ expired HOLD persists completed provider truth but not reservation or stock resurrection (0.698666ms)
+✔ missing GEAR witness blocks completed projection in actual repository path (0.479292ms)
+✔ missing WEAR witness blocks completed projection in actual repository path (0.404417ms)
+✔ DB time is sampled after locks and before first business write (0.480125ms)
+✔ transfer deadline crossing during source lock wait blocks at final decision (0.486ms)
+✔ PENDING repository transition keeps hold witness and TTL (0.548625ms)
+✔ FAILED repository transition keeps hold witness and TTL (0.492834ms)
+✔ CANCELED repository transition keeps hold witness and TTL (0.638667ms)
+✔ normal or production database name is blocked before business lock (0.209583ms)
+✔ source mutation blocks and performs no updates; attempt/version mismatch does not acquire source locks (0.555042ms)
+✔ production constructor/method gate and no ambient HTTP (0.649666ms)
+ℹ tests 93
+ℹ suites 0
+ℹ pass 92
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 603.432084
+
+✖ failing tests:
+
+test at tests/unit/payment-projection.test.ts:1:7961
+✖ Premium exact model/season/length stays in claim validation (3.784041ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/unit/payment-projection.test.ts:41:256)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

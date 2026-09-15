@@ -1,0 +1,99 @@
+{
+  "startingHead": "49f0a50e79b7b53d9a13fd66c334bc168b5beea7",
+  "authorityCommit": "dcc4b3440c2fb5cba49dc7e7eb3507d7e3b97508",
+  "implementationCommits": [
+    "f4d43bf8ae0934a6b0072355839fcf6b0840177e"
+  ],
+  "validatedSourceCommit": "f4d43bf8ae0934a6b0072355839fcf6b0840177e",
+  "tree": "5479e94a01b3a1f104432a9aa1614c9d72b74b48",
+  "files": [
+    {
+      "path": "packages/core/src/payment/payment-projection.ts",
+      "sha256": "0b5deeee7eb0a27c15dd907d0a20d0a85d436b29569ee3d590cf4128ad228bd7",
+      "bytes": 15108
+    },
+    {
+      "path": "packages/db/migrations/0027_payment_projection.sql",
+      "sha256": "6b0b9eda78d634e10417e83b8268096b7b46f3778dd4ceea2fa8915413733062",
+      "bytes": 4254
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "sha256": "218b9705c02af8fab573322d8dfd15466a5f96e9b044ac0fd897323c699c8300",
+      "bytes": 3422
+    },
+    {
+      "path": "packages/db/src/payment-projection.ts",
+      "sha256": "b51712bc6092b0465add5d06098d8dd2570a9f4c64a8b2db5f9f0db0097e080a",
+      "bytes": 11617
+    },
+    {
+      "path": "scripts/integration.ts",
+      "sha256": "cd1253da630dd057a8335aaad03a76b3f54fd88db75bc2f67a7b0243b363b805",
+      "bytes": 7390
+    },
+    {
+      "path": "scripts/ledger-integration.ts",
+      "sha256": "167f0c8f35e616415a7d93890c63b7ef41acf3eef110fd2c3cc82afa5998a277",
+      "bytes": 24355
+    },
+    {
+      "path": "tests/fixtures/payment-projection.ts",
+      "sha256": "a7ae4b85059c82343ea17e1ac0a5105486cb8862ce8c8e113838d7de331689e0",
+      "bytes": 12687
+    },
+    {
+      "path": "tests/unit/payment-projection-booking.test.ts",
+      "sha256": "27f8c83fb4185084d884063ea259ffd36bd1866bc3e3e06a5bcb9d205ff23ada",
+      "bytes": 5102
+    },
+    {
+      "path": "tests/unit/payment-projection-db.test.ts",
+      "sha256": "e435f5dfba7166ac50a629ad20e29e219de31d5625d1582c78f6d2eaa32c0fc1",
+      "bytes": 2858
+    },
+    {
+      "path": "tests/unit/payment-projection-recovery.test.ts",
+      "sha256": "e006f5d15b79d61c63b8df08c7a593d68abc0e89fcfddb96f3aca704543344a1",
+      "bytes": 5014
+    },
+    {
+      "path": "tests/unit/payment-projection.test.ts",
+      "sha256": "3004ba554ab19e88cf9f360830ca0bbfe16f72fa190b7722e1362084f8f78332",
+      "bytes": 17767
+    },
+    {
+      "path": "tests/unit/payment-reconciliation-db.test.ts",
+      "sha256": "5edb3c0ae6da6fd4cfe3e177934bdb5f30dde0aef84ff4694dcd4370c7753861",
+      "bytes": 7703
+    }
+  ],
+  "supportingFiles": [
+    {
+      "path": "docs/execution/PRODUCTION_P6_R13_LOCAL_AUTHORITY.md",
+      "sha256": "3a131b36a56cdd13aa5f2a27a1b42224f39d09aefc561f8480727094816447ed",
+      "bytes": 18032
+    },
+    {
+      "path": "docs/execution/PAYMENT_PROJECTION_ARCHITECTURE.md",
+      "sha256": "f61fb3beff146dd1f7df32dee8597499898cbadf30de302e3a0a904fcc581ddb",
+      "bytes": 9512
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_BUSINESS_PROJECTION_ACTIVATION_GATE.md",
+      "sha256": "1f502c0b7fd9c8f456f107d5055584fa5073b29cf23985c4756a55b6cf481bd4",
+      "bytes": 3242
+    },
+    {
+      "path": "docs/execution/p6/R13_PUSH_PENDING.md",
+      "sha256": "4f2b36f1c6f4549e9a73ff42d6e89f89ae06dda8d25c62f5148a882adffec75f",
+      "bytes": 2042
+    }
+  ],
+  "scope": "LOCAL_FIXTURE_STATIC_SCRIPTED_SQL; supporting docs do not claim actual DB or independent review",
+  "mutableEvidenceExcluded": [
+    "PRODUCTION_P6_STATUS.json",
+    "r13-local evidence and its enclosing final commit"
+  ],
+  "migrationApplied": false
+}

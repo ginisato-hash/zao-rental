@@ -1,5 +1,5 @@
 {
-  "phase": "PRODUCTION_P6_R13_LOCAL_IMPLEMENTATION",
+  "phase": "R13_LOCAL_IMPLEMENTED_ACTIVATION_PENDING",
   "authority": "PRODUCTION_P6_S4_LOCAL_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -1059,7 +1059,7 @@
     "remote_main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
     "authority": "PRODUCTION_P6_R13_LOCAL_AUTHORITY.md",
     "authority_sha256": "3a131b36a56cdd13aa5f2a27a1b42224f39d09aefc561f8480727094816447ed",
-    "phase": "IMPLEMENTING_LOCAL",
+    "phase": "LOCAL_IMPLEMENTED_ACTIVATION_PENDING",
     "external_counts": {
       "square": 0,
       "provider": 0,
@@ -1073,7 +1073,51 @@
       "claude": 0,
       "spark": 0,
       "runner": 0,
-      "notifications": 0
-    }
+      "notifications": 0,
+      "credentialChanges": 0,
+      "privilegeChanges": 0,
+      "billingChanges": 0,
+      "newPR": 0,
+      "mainMerge": 0,
+      "githubWritesExecuted": 0
+    },
+    "authority_commit": "dcc4b3440c2fb5cba49dc7e7eb3507d7e3b97508",
+    "implementation_commits": [
+      "f4d43bf8ae0934a6b0072355839fcf6b0840177e"
+    ],
+    "validated_source": "f4d43bf8ae0934a6b0072355839fcf6b0840177e",
+    "validated_tree": "5479e94a01b3a1f104432a9aa1614c9d72b74b48",
+    "migration": "0027_payment_projection.sql",
+    "migration_applied": false,
+    "tests": {
+      "passed": 491,
+      "new_r13": 109,
+      "failed": 0,
+      "skipped": 0,
+      "kind": "FIXTURE_STATIC_SCRIPTED_SQL"
+    },
+    "secret_scan": "PASS_PATTERN_SCAN_NOT_COMPREHENSIVE",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS_SECRETLESS",
+    "projection": "LOCAL_IMPLEMENTED",
+    "idempotency": "FIXTURE_VERIFIED",
+    "expired_hold": "FIXTURE_VERIFIED",
+    "inventory_drift": "FIXTURE_VERIFIED",
+    "crash_recovery": "FIXTURE_VERIFIED",
+    "business_apply_live_wiring": "NOT_ACTIVATED",
+    "actual_db_validation": "NOT_RUN",
+    "remote_ci": "NOT_TRIGGERED",
+    "independent_review": "NOT_RUN_PROHIBITED_R13",
+    "implementation_push": "PUSH_PENDING_APPROVAL",
+    "push_error_class": "AUTO_REVIEW_DENIED_NOT_AUTH_FAILURE",
+    "source_manifest": "p6/r13-local/source-manifest.json",
+    "validation": "p6/r13-local/validation.json",
+    "result": "p6/r13-local/RESULT.md",
+    "architecture": "PAYMENT_PROJECTION_ARCHITECTURE.md",
+    "activation_gate": "PRODUCTION_P6_BUSINESS_PROJECTION_ACTIVATION_GATE.md",
+    "owned_processes": "FINITE_CHILDREN_EXITED_NO_DB_WEB_BROWSER_MODELS_STARTED",
+    "finished_at": "2026-09-15T01:50:19.528717+00:00",
+    "next": "EXPLICIT_CONCRETE_GITHUB_SEND_APPROVAL; LIVE_WEBHOOK_RECONCILIATION_PROJECTION_REQUIRES_SEPARATE_AUTHORITY"
   }
 }

@@ -1,5 +1,9 @@
 ## Current R13 — local transactional payment projection
 
+Final: LOCAL_IMPLEMENTED at source f4d43bf8ae0934a6b0072355839fcf6b0840177e; 491 fixture/static tests pass.
+Read docs/execution/p6/r13-local/RESULT.md and the business projection activation gate.
+No live wiring/DB/model activation. GitHub save remains PUSH_PENDING_APPROVAL; no retry without its concrete approval.
+
 Read docs/execution/PRODUCTION_P6_R13_LOCAL_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
 Owner authorizes parent-only local projection decision/transaction/dedupe, fixtures/static SQL,
 regression and GitHub same-branch commits. R11/R12 are retained; no external runtime activation.

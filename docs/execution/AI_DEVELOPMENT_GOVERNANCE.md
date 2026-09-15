@@ -81,6 +81,18 @@ New checkpoints distinguish `implementation_validation` (SELF_VERIFIED/FAILED/NO
 build/secret-scan/UI/provider checks are Codex self-validation. Historical status is not
 rewritten to claim reviews or external acceptance that did not occur.
 
+## Current R15 completion sequencing amendment
+
+The direct Owner [completion authority](PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md)
+supersedes the intermediate F3-only review gate. Its dedicated slot is retired unused
+(0 starts). Initial1 and correction1 remain historical; exactly one final R15 review
+slot remains after execution/cleanup. No intermediate Claude review is allowed.
+Hosted F3 evidence goes into that final exact-HEAD review; historical HIGH remains
+open until proved and independently assessed. This changes sequencing, not permanent
+roles, secret isolation, one writer, or the need for independent final review.
+
+## Historical phase-specific F3 sequencing (superseded by completion authority)
+
 ## R15 F3 hosted proof amendment (current phase-specific exception)
 
 The direct Owner [F3 authority](p6/r15-hosted-db-proof/authority.md) adds one

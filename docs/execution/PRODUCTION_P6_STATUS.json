@@ -1720,9 +1720,71 @@
       "reviewed_head": null,
       "next": "Commit/push/read back validated V2 implementation; then one new bounded credential acquisition under current authority.",
       "evidence": "p6/r15-hosted-db-proof-handoff-v2/"
+    },
+    "completion": {
+      "authority": "PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md",
+      "startingHead": "6145a03c76d42967239c21841e5917543fb61b95",
+      "requestedStartingHead": "2544261efafdc98741dd55cab278b859bc4c7f2b",
+      "remoteAdvanceReconciled": "Owner-authorized authority89addfe and validated V2 implementation6145a03; no external attempt",
+      "recordedAtUtc": "2026-09-15T12:11:13.395021+00:00",
+      "state": "WAITING_OWNER_DIRECT_URI_HANDOFF",
+      "resourceId": "store_i5vh0ZEKo2ikcVo9",
+      "database": "zr_852b20c4d4b0",
+      "F3": "OPEN_HIGH_PENDING_HOSTED_COMPLETION_AND_FINAL_REVIEW",
+      "reviewBudget": {
+        "initial": {
+          "used": 1,
+          "limit": 1
+        },
+        "correction": {
+          "used": 1,
+          "limit": 1
+        },
+        "F3_HOSTED_PROOF_REVIEW": {
+          "used": 0,
+          "status": "RETIRED_UNUSED"
+        },
+        "finalEvidence": {
+          "used": 0,
+          "limit": 1
+        }
+      },
+      "newResources": 0,
+      "newDatabases": 0,
+      "newCredentialAcquisitions": 0,
+      "historicalMigrationInvocations": 1,
+      "historicalMigrationResult": "FAIL_42501_ROLLED_BACK",
+      "newMigrationInvocations": 0,
+      "additionalIngressDeployments": {
+        "used": 0,
+        "limit": 2
+      },
+      "mainPreview": {
+        "used": 0,
+        "limit": 1
+      },
+      "subscriptionCreate": {
+        "used": 0,
+        "limit": 1
+      },
+      "officialTestDelivery": {
+        "used": 0,
+        "limit": 1
+      },
+      "createPayment": {
+        "used": 0,
+        "limit": 1,
+        "retry": 0
+      },
+      "getPayment": {
+        "used": 0,
+        "limit": 1
+      },
+      "secretExposure": 0,
+      "evidence": "p6/r15-completion/"
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_F3_HANDOFF_V2_LOCAL_VALIDATED_PENDING_IMPLEMENTATION_READBACK",
-  "currentStatusPointer": "r15.f3HostedDbProofHandoffV2"
+  "currentGate": "R15_COMPLETION_OWNER_DIRECT_URI_HANDOFF",
+  "currentStatusPointer": "r15.completion"
 }

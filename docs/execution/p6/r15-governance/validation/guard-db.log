@@ -1,0 +1,7 @@
+PASS unregistered manifest stops before dispatch
+PASS wrong manifest or target and public role are refused before dispatch
+PASS two concurrent CREATE reservations allow exactly one synthetic dispatch; lost result never resets
+PASS runtime cannot read or rewrite manifest/operations and cannot grant itself reset
+PASS GET uncertain COMMIT blocks send and a new connection cannot repeat
+PASS test-only reset then child crash after durable reservation blocks reconstructed process
+PASS guard SECURITY DEFINER has fixed search path and PUBLIC no execution grant

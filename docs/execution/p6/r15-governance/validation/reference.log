@@ -1,0 +1,5 @@
+
+> zao-rental@0.1.0 check:reference
+> node scripts/check-reference.mjs
+
+PASS 32 bootstrap specification/config/test files byte-identical; entrypoints intentionally integrated.

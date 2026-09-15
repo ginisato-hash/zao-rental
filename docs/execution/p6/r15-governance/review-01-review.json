@@ -1,0 +1,84 @@
+{
+  "branch": "codex/external-acceptance-p6",
+  "base_sha": "72cee5817da22cd474773c978f9ae95396edea29",
+  "head_sha": "902622767cb255685d80ea34da90bb21fc5fce73",
+  "authority_sha256": "fccdea3af3d5909200fad3760cc56e5112c045feb309572c38a3f5e6f32ffe11",
+  "snapshot_sha256": "70052d58e8133e9855a37f77e70ed9b71be25a188965ab80f81e173941c59cf8",
+  "verdict": "CHANGES_REQUIRED",
+  "tests_executed": false,
+  "scope_assessment": "Reviewed at exact head 9026227: R11 webhook receiver/inbox (square-webhook-receiver.ts, square-boundary.ts, 0025), R12 dispatch/claim/finalize and provider-truth engine (0026, payment-reconciliation.ts/.sql, payment-truth.ts, square-payment-truth.ts), R13 transactional projection (0027, payment-projection.ts/.sql, r15-projection-authority.ts), R14 role/migration additions (0028/0029, payment-activation-grants.ts, payment-activation-roles.ts), R15 dedicated ingress packaging/activation (apps/webhook-ingress/*, scripts/build-ingress.mjs, hosted-payment-activation.ts, hosted-payment-migrations.ts, r15-hosted-composition.ts) and their unit/fixture/scripted-SQL tests. Cross-checked the exact modified diff (.gitignore, package.json, packages/db/src/index.ts, tsconfig.json) and the byte-identical integration-script migration-list delta; both match the stated additive-only change. Findings A–D (signature/raw-body/COMMIT-before-ACK, R11→R12 lease/ordering/stale-finalize, webhook-not-authority separation, COMPLETED-with-invalid-state non-confirmation) are supported by static code inspection of the actual pure-decision engines and lock ordering, independent of the Codex self-reported real-DB counts. Findings E–J concern items that are either genuinely absent from the source tree (R15-specific one-shot guard/manifest, signature-key handoff implementation) or are proven only against a local embedded-superuser PostgreSQL cluster, never the created Neon hosted resource (store_i5vh0ZEKo2ikcVo9, 0 migrations/roles/connected projects). Old custody/content/guest migrations (0001–0024 except cited excerpts) were not re-derived from source; their unchanged status is accepted on the supplied hash/preservation claims only. No code was executed, edited, or pushed; this is a document/source read only.",
+  "findings": [
+    {
+      "id": "F1",
+      "title": "R15 CreatePayment dispatch has no durable cross-restart one-shot guard or committed payment manifest",
+      "file_or_component": "packages/db/src/r15-hosted-composition.ts",
+      "line": 19,
+      "counterexample": "providerInvoked/workerInvoked are plain in-memory booleans (`let providerInvoked=false,workerInvoked=false;`). A serverless instance crash or redeploy between CreatePayment dispatch and receipt of/durable recording of the provider response resets these flags. A subsequent runOnce() call (manual retry, redeploy, or a second protected-Preview invocation) would issue a second live Square Sandbox CreatePayment for the same booking, because no docs/execution/p6/r15-evidence/payment-operation-manifest.json exists for R15 and no R15-specific exclusive/fsynced guard (the only such guard in the tree, tools/acceptance/s2-operator-guard.mjs, is bound to the old R9 S2 manifest hash and is explicitly documented as historical, not deployed R15 proof).",
+      "impact": "Real duplicate 100 JPY Sandbox charge and violation of Authority §22 (CreatePayment max 1, retry 0, UNKNOWN=DO_NOT_RETRY).",
+      "test_coverage": "tests/unit/r15-composition.test.ts only proves the in-memory latch rejects a second call within the SAME object instance (`assert.rejects(app.runOnce(),/R15_WORKER_ALREADY_INVOKED_DO_NOT_RETRY/)`); no test simulates process restart/new instance, so the cross-restart gap is structurally untestable with current code.",
+      "minimum_safe_correction": "Add an exclusive, fsynced, filesystem-or-DB-backed guard (analogous to dispatchS2Once) keyed to a newly committed R15 payment-operation-manifest.json, and require it to be acquired before r15HostedComposition.runOnce() invokes the provider; the in-memory flags may remain as a secondary same-process check only.",
+      "required_proof": "A test that reconstructs the composition object (simulating restart) after a completed dispatch and shows the external guard — not the in-memory flag — blocks the second attempt, plus evidence the guard file survives an injected crash before fsync completes.",
+      "severity": "HIGH",
+      "reviewed_sha": "902622767cb255685d80ea34da90bb21fc5fce73"
+    },
+    {
+      "id": "F2",
+      "title": "Non-disclosing Square webhook signature-key handoff is documented intent only, not implemented",
+      "file_or_component": "docs/execution/R15_DEVELOPMENT_ACTIVATION.md",
+      "line": 45,
+      "counterexample": "Authority §16 requires the Sandbox subscription-create response's signature key be consumed in-process into dedicated Vercel secret storage 'without showing/persisting it.' No script or module implementing this handoff exists anywhere in the supplied source tree; docs/execution/R15_DEVELOPMENT_ACTIVATION.md step 7 and CURRENT_SAFE_OPERATION_NOTE.missingLiveImplementation both list it as 'not implemented.' If Codex parent proceeds ad hoc when the time comes, there is no reviewed guarantee the value cannot transit a shell variable, stdout capture, or an evidence JSON file.",
+      "impact": "Potential exposure of a live Square webhook signature key, a Security Absolute explicitly forbidden by Authority §33 and Governance §5 (never Square tokens/keys to chat/log/repo).",
+      "test_coverage": "No test exists or can exist for an unimplemented mechanism; existing tests (square-webhook-receiver.test.ts, r15-ingress.test.ts) only validate parsing of an already-populated env var, not the acquisition/handoff path.",
+      "minimum_safe_correction": "Implement and statically review a bounded in-process handoff function whose only side effect is writing to the target secret store, whose return value/thrown errors never include the key, before Authority §16 is executed.",
+      "required_proof": "Source of the handoff function plus a redacted-output test proving no return path, log call, or exception message can contain the raw key.",
+      "severity": "HIGH",
+      "reviewed_sha": "902622767cb255685d80ea34da90bb21fc5fce73"
+    },
+    {
+      "id": "F3",
+      "title": "Hosted Neon least-privilege design is unverified on the actual hosted resource; only local superuser-owned proof exists",
+      "file_or_component": "docs/execution/p6/r15-neon-resume/PROVISION_RESULT.md",
+      "line": 3,
+      "counterexample": "All 21+ role/negative-privilege real-DB checks (tests/readiness/r14-postgres.ts, r14-additional.ts, r14-boundaries.ts) connect only to an embedded, test-runner-owned PostgreSQL cluster created via EmbeddedPostgres in scripts/postgres.ts (127.0.0.1, superuser-created roles). The created Neon resource store_i5vh0ZEKo2ikcVo9 has 0 connected projects, 0 migrations applied, 0 roles provisioned (per docs/execution/p6/r15-neon-resume/PROVISION_RESULT.md and the current-status JSON's hostedDbMigrations/hostedRoleTests: NOT_STARTED). Neon's own connection-pooling/proxy layer, default database grants, and role-management constraints have never been exercised.",
+      "impact": "Questions E and G ('does hosted execution actually match role design?' / 'local superuser proof is not hosted proof') cannot be answered PASS; an undetected Neon-specific difference (e.g., pooled SET LOCAL behavior, default PUBLIC grants on a freshly created database, or role creation limits under a managed Postgres) could silently weaken guarantees that were validated only locally.",
+      "test_coverage": "None of the reported 495-510 passing tests touch the hosted resource; JSON evidence labeled 'REAL_POSTGRESQL' refers exclusively to the local embedded cluster and could be misread as hosted proof if not read carefully.",
+      "minimum_safe_correction": "Apply migrations 0001-0029 to the actual Neon namespace via migrateHostedDevelopment, provision the 6 roles via provisionHostedPaymentRoles, and rerun the equivalent role-negative-test suite directly against the hosted connection string before any ingress/webhook wiring references it.",
+      "required_proof": "Sanitized real-DB evidence JSON (matching the shape of db-final-metadata.json / real-db-tests.json) captured with the connection host verified as the Neon ep-*.neon.tech endpoint, not 127.0.0.1.",
+      "severity": "HIGH",
+      "reviewed_sha": "902622767cb255685d80ea34da90bb21fc5fce73"
+    },
+    {
+      "id": "F4",
+      "title": "Dedicated ingress install pulls the entire monorepo dependency graph, contrary to the stated minimization goal",
+      "file_or_component": "apps/webhook-ingress/vercel.json",
+      "line": 5,
+      "counterexample": "installCommand runs `npm ci --prefix ../.. --ignore-scripts --no-audit --no-fund`, installing every root dependency (better-auth, sharp, @aws-sdk/*, playwright, drizzle-orm, etc.) into the minimal-surface ingress deployment, though the bundled runtime.cjs (per scripts/build-ingress.mjs's metafile) only ever references the receiver/pg code path.",
+      "impact": "Larger on-disk dependency surface for an internet-facing 'receiver-only' project than Authority §3's '極小化' (minimize) goal intends; --ignore-scripts mitigates the primary postinstall-script supply-chain vector, so no direct exploit path is demonstrated — impact is unused code presence, not a proven route to code execution beyond the fixed 404/health/webhook routes already tested.",
+      "test_coverage": "tests/unit/r15-ingress.test.ts checks route surface, installCommand package-manager pin, and --ignore-scripts presence, but does not assert dependency-set minimization.",
+      "minimum_safe_correction": "Scope the install to only the packages actually referenced by the bundled artifact (already enumerated by esbuild's metafile.inputs), or explicitly accept this as a documented residual risk given --ignore-scripts.",
+      "required_proof": "None required to unblock activation; recommended hardening before treating the ingress project as long-lived infrastructure beyond the current acceptance window.",
+      "severity": "LOW",
+      "reviewed_sha": "902622767cb255685d80ea34da90bb21fc5fce73"
+    }
+  ],
+  "insufficient_evidence": [
+    "Hosted Neon DB (store_i5vh0ZEKo2ikcVo9): 0 migrations applied, 0 roles provisioned, 0 connected projects — all claimed real-DB role/negative-privilege evidence is from a local embedded PostgreSQL cluster, not this resource.",
+    "Dedicated ingress redeploy 2 (corrected bundled runtime with a real signature key) has not occurred; the only completed deployment failed at runtime and was deleted, so the live stable domain currently returns 404 with no configured receiver.",
+    "Square Sandbox webhook subscription: 0 created; live signed webhook delivery, HMAC validation against a real Square-issued signature, and merchant validation against a real subscription have never occurred.",
+    "CreatePayment/GetPayment against Square Sandbox for R15: 0/0. The only prior 100 JPY manifest (docs/execution/p6/s2-evidence/operation-manifest.json) is the historical R9/S2 operation and is explicitly not reusable for R15 (Authority §20: 'R9 paymentを再利用しない').",
+    "No R13 business projection has ever run against real (non-local-fixture) provider truth or a hosted synthetic booking.",
+    "No independent remote CI run of R11-R15 and no prior independent model review of this exact head have occurred; '510 tests / 31 real local PG checks' are Codex self-validation (implementation_validation), not independent_review.",
+    "Signature-key non-disclosing handoff implementation: absent from source; cannot be verified because it does not exist yet.",
+    "R15-specific exclusive/fsynced CreatePayment one-shot guard and its committed payment-operation-manifest.json: absent from source."
+  ],
+  "activation_prerequisites": [
+    "Implement and test (including a simulated crash/restart) a durable, fsynced, cross-restart one-shot guard specific to the R15 CreatePayment dispatch, bound to a newly created and git-committed docs/execution/p6/r15-evidence/payment-operation-manifest.json, before any CreatePayment call (resolves F1).",
+    "Implement, statically review, and add a redacted-output test for the non-disclosing Square subscription-response signature-key handoff before creating the Sandbox subscription (resolves F2).",
+    "Redeploy the corrected ingress bundle (deploy 2 of the authorized max 2) with the real signature key configured, and verify /health==200 and POST /api/webhooks/square==503 (unconfigured-but-fail-closed state observed only when signature key is intentionally withheld) on the live stable domain before subscription creation.",
+    "Provision the Neon hosted DB: apply migrations 0001-0029 via migrateHostedDevelopment, provision the six roles via provisionHostedPaymentRoles, and rerun the full role-negative-test suite directly against the hosted connection string, producing sanitized evidence with a verified ep-*.neon.tech host (resolves F3).",
+    "Wire the protected main-project Preview operator routes referenced in docs/execution/R15_DEVELOPMENT_ACTIVATION.md step 7 (currently unimplemented) needed to invoke the finite R12 worker and R13 projection against the hosted synthetic booking.",
+    "Create the one synthetic hosted booking/attempt/quote/HOLD/claims fixture (Authority §19) at the exact 100 JPY amount, commit/push/readback per Authority §21 sequencing, before any CreatePayment dispatch.",
+    "Only after the above, proceed to Square Sandbox subscription (max 1), optional test delivery (max 1), CreatePayment (max 1 logical, retry 0), GetPayment (max 1), hosted R13 synthetic projection, hosted negative-case verification (Authority §29), and cleanup (Authority §31) — each gated by the one-shot guard from prerequisite 1.",
+    "Obtain a correction re-review (budget 1 of 3 remaining) covering only F1-F3 fixes before any of the external steps above are executed, per this governance reset's review-budget rule."
+  ]
+}

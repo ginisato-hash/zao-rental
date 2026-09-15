@@ -1,0 +1,247 @@
+{
+  "classification": "LOCAL_IMPLEMENTATION_VALIDATION_ONLY",
+  "commands": [
+    {
+      "name": "target",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/unit/r15-composition.test.ts",
+        "tests/unit/r15-signature-handoff.test.ts",
+        "tests/unit/r15-migrations.test.ts"
+      ],
+      "startedAtUtc": "2026-09-15T10:06:24.722016+00:00",
+      "finishedAtUtc": "2026-09-15T10:06:25.533206+00:00",
+      "exitCode": 0,
+      "log": "target.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "guard-db",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "tests/readiness/r15-guard-postgres.ts"
+      ],
+      "startedAtUtc": "2026-09-15T10:06:25.533928+00:00",
+      "finishedAtUtc": "2026-09-15T10:06:27.776074+00:00",
+      "exitCode": 0,
+      "log": "guard-db.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "suite",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/unit/asset-qr.test.ts",
+        "tests/unit/booking-access-keys.test.ts",
+        "tests/unit/booking-reconciliation-compatibility.test.ts",
+        "tests/unit/catalog-source.test.ts",
+        "tests/unit/content-bulk.test.ts",
+        "tests/unit/content-release.test.ts",
+        "tests/unit/content-workflow.test.ts",
+        "tests/unit/foundation.test.ts",
+        "tests/unit/group-body.test.ts",
+        "tests/unit/hold-continuation.test.ts",
+        "tests/unit/hold-contracts.test.ts",
+        "tests/unit/hold-pool-errors.test.ts",
+        "tests/unit/intake-window.test.ts",
+        "tests/unit/ledger-write-configuration.test.ts",
+        "tests/unit/media-backup.test.ts",
+        "tests/unit/media-plan.test.ts",
+        "tests/unit/p4-decisions.test.ts",
+        "tests/unit/p5-ingress.test.ts",
+        "tests/unit/payment-activation.test.ts",
+        "tests/unit/payment-projection-booking.test.ts",
+        "tests/unit/payment-projection-db.test.ts",
+        "tests/unit/payment-projection-recovery.test.ts",
+        "tests/unit/payment-projection.test.ts",
+        "tests/unit/payment-reconciliation-db.test.ts",
+        "tests/unit/payment-reconciliation.test.ts",
+        "tests/unit/period-scope.test.ts",
+        "tests/unit/photo-input.test.ts",
+        "tests/unit/photo-job.test.ts",
+        "tests/unit/pool-lifecycle.test.ts",
+        "tests/unit/pricing.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-preflight.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/r15-artifact.test.ts",
+        "tests/unit/r15-composition.test.ts",
+        "tests/unit/r15-hosted.test.ts",
+        "tests/unit/r15-ingress.test.ts",
+        "tests/unit/r15-migrations.test.ts",
+        "tests/unit/r15-operation-guard.test.ts",
+        "tests/unit/r15-projection-authority.test.ts",
+        "tests/unit/r15-signature-handoff.test.ts",
+        "tests/unit/r2-media.test.ts",
+        "tests/unit/r2-rotation.test.ts",
+        "tests/unit/recommendation.test.ts",
+        "tests/unit/return-cycle.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts",
+        "tests/unit/square-webhook-inbox.test.ts",
+        "tests/unit/square-webhook-receiver.test.ts",
+        "tests/unit/staff-operation-diagnostic.test.ts",
+        "tests/unit/staff-security.test.ts",
+        "tests/unit/test-hygiene.test.ts",
+        "tests/unit/transfer.test.ts",
+        "tests/unit/wear-contract.test.ts",
+        "tests/unit/wear-price-order.test.ts",
+        "tests/unit/web-diagnostics.test.ts",
+        "tests/readiness/square-s1-v2.test.ts",
+        "tests/readiness/square-s1.test.ts",
+        "tests/readiness/square-s2.test.ts",
+        "tests/readiness/square-s3.test.ts",
+        "tests/readiness/s2-operator-guard.test.mjs",
+        "tests/readiness/s3-operator-guard.test.mjs"
+      ],
+      "startedAtUtc": "2026-09-15T10:09:54.815828+00:00",
+      "finishedAtUtc": "2026-09-15T10:09:57.806817+00:00",
+      "exitCode": 0,
+      "log": "suite.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "lint",
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "startedAtUtc": "2026-09-15T10:09:57.807538+00:00",
+      "finishedAtUtc": "2026-09-15T10:10:05.196174+00:00",
+      "exitCode": 0,
+      "log": "lint.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "startedAtUtc": "2026-09-15T10:10:05.199410+00:00",
+      "finishedAtUtc": "2026-09-15T10:10:10.369927+00:00",
+      "exitCode": 0,
+      "log": "typecheck.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "ingress-typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck:ingress"
+      ],
+      "startedAtUtc": "2026-09-15T10:10:10.370603+00:00",
+      "finishedAtUtc": "2026-09-15T10:10:11.116181+00:00",
+      "exitCode": 0,
+      "log": "ingress-typecheck.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "ingress-build",
+      "command": [
+        "npm",
+        "run",
+        "build:ingress"
+      ],
+      "startedAtUtc": "2026-09-15T10:10:11.116574+00:00",
+      "finishedAtUtc": "2026-09-15T10:10:11.309504+00:00",
+      "exitCode": 0,
+      "log": "ingress-build.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "r15-db",
+      "command": [
+        "npm",
+        "run",
+        "test:r15"
+      ],
+      "startedAtUtc": "2026-09-15T10:10:11.309876+00:00",
+      "finishedAtUtc": "2026-09-15T10:10:13.195434+00:00",
+      "exitCode": 0,
+      "log": "r15-db.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "integration",
+      "command": [
+        "npm",
+        "run",
+        "test:integration"
+      ],
+      "startedAtUtc": "2026-09-15T10:10:13.195989+00:00",
+      "finishedAtUtc": "2026-09-15T10:10:23.302608+00:00",
+      "exitCode": 0,
+      "log": "integration.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    },
+    {
+      "name": "build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "startedAtUtc": "2026-09-15T10:10:23.303374+00:00",
+      "finishedAtUtc": "2026-09-15T10:10:35.394440+00:00",
+      "exitCode": 0,
+      "log": "build.log",
+      "classification": "LOCAL_ONLY_NOT_HOSTED",
+      "actualExternalRequests": 0
+    }
+  ],
+  "sourceHashes": {
+    "packages/db/migrations/0030_r15_operation_guard.sql": "194f19dd724544706f55252f09cf0583c89bb9d64c08499132f2d2ce753f03bc",
+    "packages/db/src/r15-operation-guard.ts": "9ffa52fb5679a4275fc770aaa15429cda5c0f7bb25ff971f14099dd293127471",
+    "tests/readiness/r15-guard-child.ts": "c5732228487142ca8b5ae338a67e7591ec7a323da1bac95490f87ae8fb03557e",
+    "tests/readiness/r15-guard-postgres.ts": "cb20886829acc85ace6086babe203581d34a5a3248965a06b5d5db5e198376b6",
+    "tests/unit/r15-operation-guard.test.ts": "b4cab72f7f2673ac32865ae6da9f678489330fadf3f51c9b1da0757a8817e5a7",
+    "tests/unit/r15-signature-handoff.test.ts": "110230f639ea6eca2642086a1ad847cb468db04e98e6bb2c4883a44b7f6c166c",
+    "tools/acceptance/r15-signature-handoff.ts": "5a198b51ab643f0b576e98cfa96bffa45bde5083cf0df20ac3715f5fe3791ffd",
+    "packages/db/src/index.ts": "acf4f217fa532e7cee6ac5cc9823cc8b7939e5bf660336cc8c2ebe3b2b519caa",
+    "packages/db/src/r15-hosted-composition.ts": "1ea45437612ff2a91ab2fb2e7a8c49f485f73ebce44918695d988f5ca6b30473",
+    "scripts/hosted-payment-migrations.ts": "addf8c0f141f262d4a80a40c566bd4a7c3ed3881246b0da29805a2f868dea67f",
+    "scripts/integration.ts": "ef7372212cbfd70b678b6058f89bee9bcb38e1b0f574848ed3a7c191e301a26a",
+    "scripts/ledger-integration.ts": "429009b1a83e44722c2602cccfbd645f8cad3cd2203eaa975b098374b8eebc99",
+    "scripts/payment-activation-grants.ts": "ce2af7a02e18649a52a21d953d2ef16fff77ebb900c7681d0f10cc69ac4c0648",
+    "tests/readiness/r14-evidence.ts": "db0647fae5f02bcf67a00b57b13b70bd9f90b3f4907e51f3d133b7a8e730ee9c",
+    "tests/readiness/r14-postgres.ts": "6aa18545d4de01db3434adb0de6425f41c5e9bb69c564084b697cbbd902bdfd8",
+    "tests/unit/payment-activation.test.ts": "1a56d9fdc665af25e161a57641294b2213d9bb3b53a9099afac6e435c9c8c83f",
+    "tests/unit/r15-composition.test.ts": "75acc007353ae0518f25fbfd92e97dac1fe8df5008bd3b7d101fecf38db7f909",
+    "tests/unit/r15-migrations.test.ts": "c661aeef0e0fc147e72ca1f78ca5d2d24dd7e26ca61296e1d1be8087914a75a0"
+  },
+  "unitFixtureTests": 523,
+  "skipped": 0,
+  "r15GuardLocalPostgresCases": 7,
+  "existingR14R15LocalPostgresCases": 31,
+  "ledgerIntegrationCases": 21,
+  "hostedNeonTests": "NOT_RUN",
+  "newExternalOperationsAfterGovernanceReset": 0,
+  "initialFaults": [
+    "F1 counterexample 2 GetPayment calls not1 at9026227",
+    "Expected migration count29 needed30; corrected test only",
+    "CLI child env TS required NODE_ENV; fixed explicit production child env",
+    "First handoff test invocation from outer cwd failed resolving tsx; reissued from repo before tests ran"
+  ],
+  "remoteCI": "NOT_RUN; branch has no new PR; no old CI claimed for this head"
+}

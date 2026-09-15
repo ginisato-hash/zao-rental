@@ -5,6 +5,8 @@ export function paymentActivationRoleNames(n:string){
 export function paymentActivationGrants(n:string,scope:'R14_LOCAL'|'R15_TARGETED'){
  const names=paymentActivationRoleNames(n);
  return [
+  `GRANT USAGE ON SCHEMA r15_activation TO ${names.worker}`,
+  `GRANT EXECUTE ON FUNCTION r15_activation.reserve(text,text,uuid,uuid,text,text,text) TO ${names.worker}`,
   `REVOKE ALL ON DATABASE ${n} FROM PUBLIC`,
   'REVOKE CREATE ON SCHEMA public FROM PUBLIC',
   `GRANT USAGE ON SCHEMA square_webhook TO ${names.receiver}`,

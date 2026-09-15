@@ -1,0 +1,8 @@
+
+> zao-rental@0.1.0 test:r15
+> node --import tsx scripts/test-r15-ingress.ts
+
+R15_LOCAL_ACCEPTANCE_FAILED {
+  code: 'ERR_ASSERTION',
+  at: '    at <anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/readiness/r14-postgres.ts:86:79)'
+}

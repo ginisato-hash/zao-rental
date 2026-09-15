@@ -1425,23 +1425,23 @@
       "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
       "avatarHead": "9783373612440acef4c077b0ae23925aa467743d",
       "singleWriter": true,
-      "implementation_validation": "NOT_RUN",
-      "independent_review": "NOT_RUN",
-      "reviewed_head": null,
+      "implementation_validation": "SELF_VERIFIED",
+      "independent_review": "FINDINGS",
+      "reviewed_head": "902622767cb255685d80ea34da90bb21fc5fce73",
       "review_findings": {
         "BLOCKER": 0,
-        "HIGH": 0,
+        "HIGH": 3,
         "MEDIUM": 0,
-        "LOW": 0
+        "LOW": 1
       },
-      "countsMeaning": "not reviewed yet; zero is not assurance",
+      "countsMeaning": "Original initial reviewer findings, not silently downgraded",
       "external_acceptance": "NEON_FREE_RESOURCE_METADATA_VERIFIED; HOSTED_DB_AND_SQUARE_NOT_EXECUTED",
-      "owner_gate": "BEFORE_LIVE_INDEPENDENT_REVIEW_REQUIRED",
+      "owner_gate": "UNRESOLVED_HIGH_NO_EXTERNAL_WRITE",
       "reviewBudget": {
         "maximum": 3,
         "initial": {
           "limit": 1,
-          "used": 0
+          "used": 1
         },
         "correction": {
           "limit": 1,
@@ -1454,7 +1454,20 @@
       },
       "newExternalOperationsAfterReset": 0,
       "credentialRead": "403; no bypass or secret exposure",
-      "next": "Commit governance only, check secrets/diff/reference, push/readback, prepare one sanitized R11-R15 static review."
+      "next": "Complete local F1/F2 corrections and validation; one correction re-review; F3 hosted proof remains unexecuted and sequence unresolved.",
+      "governanceCommit": "902622767cb255685d80ea34da90bb21fc5fce73",
+      "governanceRemoteReadback": true,
+      "governanceChecks": {
+        "secretScan": 0,
+        "referenceCheck": 0,
+        "diffCheck": 0
+      },
+      "reviewExecutionState": "INITIAL_COMPLETED_CHANGES_REQUIRED",
+      "reviewTargetHead": "902622767cb255685d80ea34da90bb21fc5fce73",
+      "snapshotSha256": "70052d58e8133e9855a37f77e70ed9b71be25a188965ab80f81e173941c59cf8",
+      "validationMeaning": "existing unchanged product evidence plus new governance-only checks; not hosted acceptance",
+      "initialReview": "p6/r15-governance/review-01-review.json",
+      "correctionDisposition": "p6/r15-governance/FINDING_DISPOSITION.md"
     }
   }
 }

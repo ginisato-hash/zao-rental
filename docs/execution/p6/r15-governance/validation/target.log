@@ -1,0 +1,21 @@
+✔ R15 finite worker never repeats provider AUTH_BLOCKED (1.768333ms)
+✔ R15 finite worker never repeats provider RATE_LIMITED (0.3045ms)
+✔ R15 finite worker never repeats provider NETWORK_RETRYABLE (0.259041ms)
+✔ R15 amount mismatch stops before provider and does not project (0.194959ms)
+✔ R15 a reconstructed composition cannot repeat the same GetPayment after response loss (0.29575ms)
+✔ R15 migrations 0001–0029 equal the preserved R14 evidence (15.011625ms)
+✔ R15 key flows in stdin only to exact ingress Sensitive target; reflected response never escapes (1.512583ms)
+✔ R15 throw cannot expose reflected key and is not retried (1.473166ms)
+✔ R15 invalid-json cannot expose reflected key and is not retried (0.113292ms)
+✔ R15 api-error cannot expose reflected key and is not retried (0.085875ms)
+✔ R15 wrong-target cannot expose reflected key and is not retried (0.084833ms)
+✔ R15 missing-receipt cannot expose reflected key and is not retried (0.087125ms)
+✔ R15 subscription context mismatch fails before secret persistence (0.172333ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 572.212125

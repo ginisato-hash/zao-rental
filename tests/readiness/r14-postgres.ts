@@ -30,7 +30,7 @@ export function scoped(c:PoolClient,role:string):InboxPool{
 }
 const source=async(c:InboxConnection,ref:ProjectionReference)=>(await c.query<{source:ProjectionSource}>('SELECT payment_projection.lock_source($1) AS source',[ref.jobId])).rows[0]?.source??null;
 const projector=(pool:InboxPool)=>new TransactionalPaymentProjection(new PgPaymentProjection(pool,source));
-async function seed(p:Pool){
+export async function seed(p:Pool,merchantId='fixture-merchant',providerId:string|null='fixture-payment'){
  if((await p.query('SELECT 1 FROM rental_bookings WHERE id=$1',[id(1)])).rowCount)return;
  const c=await p.connect(),s=stateFixture(),period=normalizePeriod(s.booking.conditions.period);try{await c.query('BEGIN');
  await c.query("SELECT set_config('zao.actor','synthetic-actor',true),set_config('zao.reason','R14 SYNTHETIC 100 JPY test fixture',true)");
@@ -50,7 +50,7 @@ async function seed(p:Pool){
  await c.query("INSERT INTO price_activations(id,book_id,effective_at) VALUES($1,$2,'2025-01-01')",[id(61),id(60)]);
  await c.query(`INSERT INTO price_quotes(id,actor,request_key,request_fingerprint,book_id,activation_id,hold_id,hold_version,conditions,snapshot,snapshot_sha256,expires_at) VALUES($1,'synthetic-actor',$2,$3,$4,$5,$6,1,$7,$8,$9,$10)`,[id(3),id(62),flowHash('R14 quote'),id(60),id(61),id(2),s.booking.conditions,s.booking.priceSnapshot,s.booking.priceHash,s.hold!.expiresAt]);
  await c.query(`INSERT INTO rental_bookings(id,owner_id,request_key,fingerprint,hold_id,quote_id,conditions,price_snapshot,price_sha256,contact,mode,state,version) VALUES($1,'synthetic-actor',$2,$3,$4,$5,$6,$7,$8,$9,'SQUARE_SANDBOX','PAYMENT_PENDING',2)`,[id(1),id(63),flowHash('R14 booking'),id(2),id(3),s.booking.conditions,s.booking.priceSnapshot,s.booking.priceHash,{displayName:'SYNTHETIC R14',email:'synthetic-r14@example.invalid',termsAccepted:true}]);
- await c.query(`INSERT INTO rental_payment_attempts(id,booking_id,actor,idempotency_key,merchant_id,location_id,amount_jpy,currency,state,provider_id) VALUES($1,$2,'synthetic-actor',$3,'fixture-merchant','fixture-location',100,'JPY','PENDING','fixture-payment')`,[id(4),id(1),id(5)]);
+ await c.query(`INSERT INTO rental_payment_attempts(id,booking_id,actor,idempotency_key,merchant_id,location_id,amount_jpy,currency,state,provider_id) VALUES($1,$2,'synthetic-actor',$3,$4,'fixture-location',100,'JPY',$5,$6)`,[id(4),id(1),id(5),merchantId,providerId===null?'SUBMITTING':'PENDING',providerId]);
  await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
 }
 export async function run(db:DB,out:string){

@@ -1,3 +1,21 @@
+# Current governance and correction checkpoint (2026-09-15)
+
+Read [AI_DEVELOPMENT_GOVERNANCE.md](AI_DEVELOPMENT_GOVERNANCE.md) first.
+The initial before-live review is CHANGES_REQUIRED (HIGH3 / LOW1), exact head9026227.
+See [original and correction disposition](p6/r15-governance/FINDING_DISPOSITION.md).
+Governance review budget: initial used1, correction max1, final post-live max1.
+New external operations remain stopped while HIGH findings are unresolved.
+
+Owner Neon consent is resolved. Resource store_i5vh0ZEKo2ikcVo9 was created once BEFORE
+Governance reset, Free/free_v3, no connected projects. Never create again or repeat terms.
+Hosted credential read403 remains unreconciled; no hosted migrations/roles/requests done.
+Local correction adds durable R15 reservations (0030; original29 unchanged) and a bounded
+non-disclosing signature-key sink. Actual hosted application, key handoff, operator wiring,
+real manifest and live acceptance remain unexecuted. See disposition for exact gates.
+Avatar stays untouched during R15. Historical checkpoints below are preserved, not current.
+
+## Historical continuation and implementation records
+
 # Current continuation checkpoint (2026-09-15)
 
 Read `PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md` and `p6/r15-continuation/RESULT.md`.

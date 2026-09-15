@@ -1,3 +1,14 @@
+# Terminal after governance correction review (2026-09-15)
+
+R15_PARTIAL / CHANGES_REQUIRED. F1/F2 demonstrated corrections independently accepted;
+F3 HIGH hosted acceptance sequencing remains open. F4/NEW1 LOW remain.
+See [exact review, validation correction, gates and closure](p6/r15-governance/FINAL_RESULT.md).
+No new external operation after Governance reset; no additional pre-live review slot.
+The post-review test-driver evidence correction is explicitly not independently re-reviewed.
+Main/Avatar unchanged. No new terms/login request or second resource creation.
+
+## Preserved earlier governance checkpoint
+
 # Current governance and correction checkpoint (2026-09-15)
 
 Read [AI_DEVELOPMENT_GOVERNANCE.md](AI_DEVELOPMENT_GOVERNANCE.md) first.

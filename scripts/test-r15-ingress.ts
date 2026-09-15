@@ -18,6 +18,7 @@ const output=resolve('.local/r15-acceptance');await mkdir(output,{recursive:true
 const db:Awaited<ReturnType<typeof startIsolatedPostgres>>&DB=await startIsolatedPostgres();
 const results:{name:string;result:string}[]=[];
 async function check(name:string,fn:()=>Promise<void>){try{await fn();results.push({name,result:'PASS'});console.log('PASS '+name);}catch(e){results.push({name,result:'FAIL'});throw e;}finally{await writeFile(resolve(output,'r15-real-db.json'),JSON.stringify({kind:'LOCAL_REAL_POSTGRESQL_SYNTHETIC_WEBHOOK',results,hostedDb:false,actualSquareRequests:0},null,2));}}
+let validationFailed=false;
 try{
  await migrate(db.pool);await run(db,output);
  const {names,pools:p}=db.r14!.roles;
@@ -53,5 +54,9 @@ try{
   assert.equal((await p.dispatcher.query("SELECT payment_reconciliation.dispatch_target('SANDBOX',1,'no-fixture-merchant','no-fixture-payment') n")).rows[0].n,0);
   assert.equal((await p.worker.query("SELECT * FROM payment_reconciliation.claim_target('SANDBOX','r15-fixture',1,'no-fixture-merchant','no-fixture-payment')")).rowCount,0);
  });
-}catch(error){console.error('R15_LOCAL_ACCEPTANCE_FAILED',{code:(error as {code?:string}).code??'TEST_FAILURE',at:(error as Error).stack?.split('\n').find(s=>s.includes('/tests/readiness/')||s.includes('/scripts/test-r15-ingress'))});process.exitCode=1;}
+}catch(error){console.error('R15_LOCAL_ACCEPTANCE_FAILED',{code:(error as {code?:string}).code??'TEST_FAILURE',at:(error as Error).stack?.split('\n').find(s=>s.includes('/tests/readiness/')||s.includes('/scripts/test-r15-ingress'))});validationFailed=true;}
 finally{try{await db.r14?.roles.close();}finally{await db.stop();}await writeFile(resolve(output,'closure.json'),JSON.stringify({stoppedAt:new Date().toISOString(),ownedDatabaseStopped:true,actualProviderRequests:0,hostedDbCreated:0}));}
+
+// All owned resources are already closed. async-exit-hook beforeExit forces 0,
+// so a failed finite test must exit explicitly after cleanup.
+if(validationFailed)process.exit(1);

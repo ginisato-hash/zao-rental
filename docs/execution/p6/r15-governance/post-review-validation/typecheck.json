@@ -1,0 +1,14 @@
+{
+  "name": "typecheck",
+  "command": [
+    "npm",
+    "run",
+    "typecheck"
+  ],
+  "startedAtUtc": "2026-09-15T10:25:56.825549+00:00",
+  "finishedAtUtc": "2026-09-15T10:26:01.558700+00:00",
+  "exitCode": 0,
+  "log": "typecheck.log",
+  "classification": "LOCAL_ONLY_NOT_HOSTED",
+  "actualExternalRequests": 0
+}

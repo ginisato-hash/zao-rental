@@ -1,0 +1,64 @@
+{
+  "flags": [
+    "--safe-mode",
+    "-p",
+    "--tools",
+    "",
+    "--strict-mcp-config",
+    "--mcp-config",
+    "{\"mcpServers\":{}}",
+    "--setting-sources",
+    "",
+    "--disable-slash-commands",
+    "--no-session-persistence",
+    "--no-chrome",
+    "--permission-mode",
+    "dontAsk",
+    "--max-turns",
+    "3",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--include-hook-events"
+  ],
+  "launchContractSha256": "f32456b0cb00c80cd2ae9d48afa5d32837cfcf9447b03517723172536cdb55e0",
+  "cwd": "fresh empty directory",
+  "environmentNames": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "LOGNAME",
+    "PATH",
+    "SHELL",
+    "TERM",
+    "TMPDIR",
+    "USER"
+  ],
+  "authOverrides": false,
+  "safeModeNotBare": true,
+  "managedPolicyChanged": false,
+  "billingEvidence": {
+    "checked_at": "2026-09-13T14:43:42.648228+00:00",
+    "source": "read-only Team admin and personal usage UI",
+    "extra_usage_enabled": false,
+    "automatic_recharge": false,
+    "confirmed_within_approved_billing_scope": true,
+    "settings_changed": false,
+    "session_used_percent": 20,
+    "weekly_used_percent": 55,
+    "owned_browser_tab_closed": true,
+    "no_model_probe": true
+  },
+  "priorServerOverage": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789482000,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "currentOwnerRequiresExtraOff": true,
+  "noAdditionalConnectivityProbe": true
+}

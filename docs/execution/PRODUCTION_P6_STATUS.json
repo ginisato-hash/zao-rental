@@ -107,7 +107,7 @@
     "finite npm/unit/build CLI children all completed",
     "read-only browser tab20 login screen; kept available for Owner UI handoff"
   ],
-  "next": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
+  "next": "Read r15.governanceReset and docs/execution/p6/r15-governance/FINAL_RESULT.md; R15 remains blocked.",
   "r1_checkpoint": {
     "phase": "PRECONNECTION_PREPARED_WAITING_OWNER",
     "steps": {
@@ -1193,7 +1193,7 @@
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
-    "state": "NEON_PROVISIONED_HOSTED_SETUP_PENDING",
+    "state": "R15_PARTIAL_BLOCKED_HOSTED_ACCEPTANCE_REVIEW_SEQUENCE",
     "authorityPath": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
     "budgets": {
       "hostedDbResource": 1,
@@ -1209,7 +1209,8 @@
       "refund": 0,
       "productionSquare": 0,
       "mainProductionDeploy": 0,
-      "model": 0
+      "model": 0,
+      "modelHistoricalScope": "model0 was credential-bearing execution restriction; sanitized review budget is governanceReset.reviewBudget; no external budget reset"
     },
     "used": {
       "hostedDbResource": 0,
@@ -1224,7 +1225,7 @@
       "refund": 0,
       "model": 0
     },
-    "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001–0029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged.",
+    "next": "Owner/architecture decision on hosted DB-only acceptance gate and subsequent independent-review budget. No external write/Avatar; do not repeat terms/login.",
     "blocker": null,
     "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
     "implementationCommit": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
@@ -1427,16 +1428,16 @@
       "singleWriter": true,
       "implementation_validation": "SELF_VERIFIED",
       "independent_review": "FINDINGS",
-      "reviewed_head": "902622767cb255685d80ea34da90bb21fc5fce73",
+      "reviewed_head": "b541999163ff129cc588960a2c5bf94da61d0cd9",
       "review_findings": {
         "BLOCKER": 0,
-        "HIGH": 3,
+        "HIGH": 1,
         "MEDIUM": 0,
-        "LOW": 1
+        "LOW": 2
       },
-      "countsMeaning": "Original initial reviewer findings, not silently downgraded",
+      "countsMeaning": "Preserved F3HIGH + F4LOW + NEW1LOW; corrected F1/F2 scoped acceptance only. Validation evidence correction after review is unreviewed.",
       "external_acceptance": "NEON_FREE_RESOURCE_METADATA_VERIFIED; HOSTED_DB_AND_SQUARE_NOT_EXECUTED",
-      "owner_gate": "UNRESOLVED_HIGH_NO_EXTERNAL_WRITE",
+      "owner_gate": "BLOCKED_HOSTED_ACCEPTANCE_REVIEW_SEQUENCE",
       "reviewBudget": {
         "maximum": 3,
         "initial": {
@@ -1445,7 +1446,7 @@
         },
         "correction": {
           "limit": 1,
-          "used": 0
+          "used": 1
         },
         "finalEvidence": {
           "limit": 1,
@@ -1454,7 +1455,7 @@
       },
       "newExternalOperationsAfterReset": 0,
       "credentialRead": "403; no bypass or secret exposure",
-      "next": "Complete local F1/F2 corrections and validation; one correction re-review; F3 hosted proof remains unexecuted and sequence unresolved.",
+      "next": "Owner/architecture decision on hosted DB-only acceptance gate and subsequent independent-review budget. No external write/Avatar; do not repeat terms/login.",
       "governanceCommit": "902622767cb255685d80ea34da90bb21fc5fce73",
       "governanceRemoteReadback": true,
       "governanceChecks": {
@@ -1462,12 +1463,24 @@
         "referenceCheck": 0,
         "diffCheck": 0
       },
-      "reviewExecutionState": "INITIAL_COMPLETED_CHANGES_REQUIRED",
+      "reviewExecutionState": "CORRECTION_COMPLETED_CHANGES_REQUIRED",
       "reviewTargetHead": "902622767cb255685d80ea34da90bb21fc5fce73",
       "snapshotSha256": "70052d58e8133e9855a37f77e70ed9b71be25a188965ab80f81e173941c59cf8",
       "validationMeaning": "existing unchanged product evidence plus new governance-only checks; not hosted acceptance",
       "initialReview": "p6/r15-governance/review-01-review.json",
-      "correctionDisposition": "p6/r15-governance/FINDING_DISPOSITION.md"
+      "correctionDisposition": "p6/r15-governance/FINDING_DISPOSITION.md",
+      "correctionReviewedHead": "b541999163ff129cc588960a2c5bf94da61d0cd9",
+      "correctionSnapshotSha256": "a1d9e4f82cedb4f96dec16f14c235820c1bd5c684a517a6cfbaa33f0c7824917",
+      "reviewResult": "p6/r15-governance/review-02/review.json",
+      "terminalEvidence": "p6/r15-governance/FINAL_RESULT.md",
+      "postReviewValidationCorrection": true,
+      "remoteCI": "NOT_RUN",
+      "closedAtUtc": "2026-09-15T10:28:00.718899+00:00"
+    },
+    "preGovernanceExecutionPointer": {
+      "state": "NEON_PROVISIONED_HOSTED_SETUP_PENDING",
+      "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001–0029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged."
     }
-  }
+  },
+  "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model"
 }

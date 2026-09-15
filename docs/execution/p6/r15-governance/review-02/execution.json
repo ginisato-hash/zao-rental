@@ -1,0 +1,74 @@
+{
+  "phase": "R15_GOVERNANCE_RESET",
+  "kind": "CORRECTION_BEFORE_LIVE",
+  "start": 2,
+  "maximum_total": 3,
+  "head_sha": "b541999163ff129cc588960a2c5bf94da61d0cd9",
+  "authority_sha256": "fccdea3af3d5909200fad3760cc56e5112c045feb309572c38a3f5e6f32ffe11",
+  "snapshot_sha256": "a1d9e4f82cedb4f96dec16f14c235820c1bd5c684a517a6cfbaa33f0c7824917",
+  "startedAtUtc": "2026-09-15T10:15:18.715609+00:00",
+  "timeoutSeconds": 1200,
+  "state": "RETURNED",
+  "pid": 14852,
+  "instructionsSha256": "e4d99cf63590da8b36e8565c63dfd61c4005181220585b51392cded9a0d8767e",
+  "exitCode": 0,
+  "finishedAtUtc": "2026-09-15T10:20:56.176856+00:00",
+  "capabilities": {
+    "tools": [
+      "StructuredOutput"
+    ],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.220",
+    "fast_mode_state": "off"
+  },
+  "hook_events": [],
+  "rate_limit_events": [
+    {
+      "status": "allowed_warning",
+      "resetsAt": 1789498800,
+      "rateLimitType": "seven_day",
+      "utilization": 0.76,
+      "isUsingOverage": false,
+      "surpassedThreshold": 0.75
+    }
+  ],
+  "is_error": false,
+  "result_subtype": "success",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 228960,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 31969,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 228960,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 31969,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 228960,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 228960
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "reported_cost_usd": 2.015719,
+  "permission_denials": []
+}

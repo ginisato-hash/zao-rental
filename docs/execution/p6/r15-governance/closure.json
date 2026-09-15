@@ -1,0 +1,105 @@
+{
+  "checkedAtUtc": "2026-09-15T10:28:00.718899+00:00",
+  "ownedClusters": [
+    {
+      "clusterId": "7606e484-02d1-4e3d-8389-b18e20bb222f",
+      "createdAt": "2026-09-15T10:24:52.614Z",
+      "updatedAt": "2026-09-15T10:24:53.795Z",
+      "state": "STOPPED",
+      "postgresPid": 15373,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "5cab92dc-b2f8-4571-82c6-08d91eeabab9",
+      "createdAt": "2026-09-15T10:10:11.826Z",
+      "updatedAt": "2026-09-15T10:10:13.177Z",
+      "state": "STOPPED",
+      "postgresPid": 14195,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "4a2dd34b-1180-46ab-bdc8-8929e2baa154",
+      "createdAt": "2026-09-15T10:10:21.201Z",
+      "updatedAt": "2026-09-15T10:10:22.398Z",
+      "state": "STOPPED",
+      "postgresPid": 14308,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "855ceca9-890c-49fb-b8a9-eda20c73ec96",
+      "createdAt": "2026-09-15T10:06:26.027Z",
+      "updatedAt": "2026-09-15T10:06:27.721Z",
+      "state": "STOPPED",
+      "postgresPid": 13263,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "538d418e-6cbe-4082-80eb-57102901dc2b",
+      "createdAt": "2026-09-15T10:10:13.746Z",
+      "updatedAt": "2026-09-15T10:10:14.666Z",
+      "state": "STOPPED",
+      "postgresPid": 14238,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "a42e8561-fc30-4311-92e7-2beb023024cb",
+      "createdAt": "2026-09-15T10:22:46.553Z",
+      "updatedAt": "2026-09-15T10:22:47.831Z",
+      "state": "STOPPED",
+      "postgresPid": 15116,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "0742ef2d-9329-4981-935b-c3588da037cb",
+      "createdAt": "2026-09-15T10:23:32.744Z",
+      "updatedAt": "2026-09-15T10:23:33.741Z",
+      "state": "STOPPED",
+      "postgresPid": 15202,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "3c9f14db-cc66-4d55-bec2-b0670b9a7c2f",
+      "createdAt": "2026-09-15T10:10:22.399Z",
+      "updatedAt": "2026-09-15T10:10:23.274Z",
+      "state": "STOPPED",
+      "postgresPid": 14338,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "a932c4b4-a200-41a5-b7d6-c799164d4318",
+      "createdAt": "2026-09-15T10:24:50.879Z",
+      "updatedAt": "2026-09-15T10:24:52.205Z",
+      "state": "STOPPED",
+      "postgresPid": 15311,
+      "pidAlive": false
+    },
+    {
+      "clusterId": "bbb297f5-275a-4009-9f3c-207262ecb8c9",
+      "createdAt": "2026-09-15T10:10:14.667Z",
+      "updatedAt": "2026-09-15T10:10:20.644Z",
+      "state": "STOPPED",
+      "postgresPid": 14270,
+      "pidAlive": false
+    }
+  ],
+  "models": [
+    {
+      "review": "review-01",
+      "pid": 11319,
+      "alive": false,
+      "exitCode": 0,
+      "state": "RETURNED"
+    },
+    {
+      "review": "review-02",
+      "pid": 14852,
+      "alive": false,
+      "exitCode": 0,
+      "state": "RETURNED"
+    }
+  ],
+  "webStarted": 0,
+  "browserStarted": 0,
+  "providerOperationsAfterGovernance": 0,
+  "allOwnedProcessesStopped": true
+}

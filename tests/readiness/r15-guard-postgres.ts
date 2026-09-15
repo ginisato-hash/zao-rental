@@ -15,6 +15,7 @@ const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provi
 const results:{name:string;result:string}[]=[];
 const op:R15Operation={manifestSha256:'a'.repeat(64),action:'CREATE_PAYMENT',bookingId:id(1),attemptId:id(4),idempotencyKey:id(5),locationId:'fixture-location',paymentId:null};
 async function check(name:string,f:()=>Promise<void>){try{await f();results.push({name,result:'PASS'});console.log('PASS '+name);}catch(e){results.push({name,result:'FAIL'});throw e;}}
+let validationFailed=false;
 try{
  await migrate(db.pool);await seed(db.pool,'MLKDVEDH1ME21',null);roles=await provisionPaymentActivationRoles(db.pool,db.identity);const p=roles.pools.worker;
  await check('unregistered manifest stops before dispatch',async()=>{let calls=0;await assert.rejects(dispatchR15Once(p,op,async()=>calls++));assert.equal(calls,0);});
@@ -50,5 +51,9 @@ try{
  await check('guard SECURITY DEFINER has fixed search path and PUBLIC no execution grant',async()=>{
   const row=(await db.pool.query("SELECT p.prosecdef,p.proconfig,has_function_privilege($1,p.oid,'EXECUTE') allowed FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='r15_activation' AND p.proname='reserve'",[roles!.names.publicProbe])).rows[0];assert.equal(row.prosecdef,true);assert.ok(row.proconfig.includes('search_path=pg_catalog, pg_temp'));assert.equal(row.allowed,false);
  });
-}catch(e){console.error('R15_GUARD_LOCAL_TEST_FAILED',{code:(e as {code?:string}).code??'TEST_FAILURE',line:(e as Error).stack?.split('\n').find(s=>s.includes('r15-guard-postgres'))});process.exitCode=1;}
+}catch(e){console.error('R15_GUARD_LOCAL_TEST_FAILED',{code:(e as {code?:string}).code??'TEST_FAILURE',line:(e as Error).stack?.split('\n').find(s=>s.includes('r15-guard-postgres'))});validationFailed=true;}
 finally{await roles?.close();await db.stop();await writeFile(out+'/results.json',JSON.stringify({kind:'LOCAL_REAL_POSTGRESQL_NOT_HOSTED',actualExternalRequests:0,results,ownedDatabaseStopped:true},null,2));}
+
+// All owned resources are already closed. async-exit-hook beforeExit forces 0,
+// so a failed finite test must exit explicitly after cleanup.
+if(validationFailed)process.exit(1);

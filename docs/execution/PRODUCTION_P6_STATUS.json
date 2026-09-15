@@ -1,5 +1,5 @@
 {
-  "phase": "R13_LOCAL_IMPLEMENTED_ACTIVATION_PENDING",
+  "phase": "R14_DEVELOPMENT_ACCEPTANCE_IN_PROGRESS",
   "authority": "PRODUCTION_P6_S4_LOCAL_AUTHORITY.md",
   "base": "3061dbbbe00294e5baebba2405028c907d6e6e85",
   "branch": "codex/external-acceptance-p6",
@@ -1119,5 +1119,43 @@
     "owned_processes": "FINITE_CHILDREN_EXITED_NO_DB_WEB_BROWSER_MODELS_STARTED",
     "finished_at": "2026-09-15T01:50:19.528717+00:00",
     "next": "EXPLICIT_CONCRETE_GITHUB_SEND_APPROVAL; LIVE_WEBHOOK_RECONCILIATION_PROJECTION_REQUIRES_SEPARATE_AUTHORITY"
+  },
+  "r14": {
+    "startedAt": "2026-09-15T02:10:24.366252+00:00",
+    "startedAtJST": "2026-09-15T11:10:24.366252+09:00",
+    "startingHead": "d0a1f66b8cfa97ad1b5e5bd06f409e056604cf0a",
+    "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+    "worktree": "CLEAN",
+    "authority": "PRODUCTION_P6_R14_ACTIVATION_AUTHORITY.md",
+    "authority_sha256": "1c14291841dc7cb7c31a51b003b0c4dd324756d4b8a7298cfcbd1b5c54a4d6ca",
+    "phase": "REAL_DB_ACCEPTANCE",
+    "budgets": {
+      "preview": 2,
+      "subscriptionCreate": 1,
+      "subscriptionUpdate": 1,
+      "liveDeliveries": 2,
+      "createPayment": 1,
+      "getPayment": 2,
+      "refund": 0,
+      "retryPayment": 0
+    },
+    "counts": {
+      "preview": 0,
+      "subscriptionCreate": 0,
+      "subscriptionUpdate": 0,
+      "liveDeliveries": 0,
+      "createPayment": 0,
+      "getPayment": 0,
+      "refund": 0,
+      "r10Lookup": 0,
+      "production": 0,
+      "realData": 0,
+      "vercelMetadata": 0,
+      "cloudDb": 0,
+      "claude": 0,
+      "spark": 0
+    },
+    "local_db": "PENDING",
+    "prior_r13_push": "PUSHED_READBACK_MATCH_d0a1f66b8cfa97ad1b5e5bd06f409e056604cf0a"
   }
 }

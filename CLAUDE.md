@@ -1,3 +1,20 @@
+## Current R14 — bounded development acceptance
+
+Read docs/execution/PRODUCTION_P6_R14_ACTIVATION_AUTHORITY.md and PRODUCTION_P6_STATUS.json.
+Parent executes real isolated synthetic PostgreSQL 0001–0027 acceptance, least-privilege roles,
+development-only R11→R12→R13 composition and local regressions. Preserve all R4–R13 history.
+Conditional external gates: safe machine ingress/protection and verified isolated cloud DB first;
+Preview <=2, Sandbox subscription create<=1/update<=1, deliveries<=2, conditional new 100 JPY
+CreatePayment<=1/no retry, GetPayment<=2. No R10 lookup/refund, Production, real data/custody,
+main merge, new PR, permanent worker/Runner, billing/org permission expansion, secret logging.
+Use existing Vercel CLI metadata auth only; never start login in advance. No models/subagents.
+GitHub normal push to existing codex/external-acceptance-p6 is expressly authorized in R14.
+Prior R13 push completed with exact d0a1f66b8cfa97ad1b5e5bd06f409e056604cf0a readback;
+its former pending record below is historical. No old external action budget may be reused.
+Stop only blocked sub-gates, continue independent local/DB work. End all owned processes.
+
+## Historical R13 (completed and pushed)
+
 ## Current R13 — local transactional payment projection
 
 Final: LOCAL_IMPLEMENTED at source f4d43bf8ae0934a6b0072355839fcf6b0840177e; 491 fixture/static tests pass.

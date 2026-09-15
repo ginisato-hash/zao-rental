@@ -1,0 +1,197 @@
+{
+  "at": "2026-09-15T07:40:08.186106+00:00",
+  "records": [
+    {
+      "name": "suite",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/unit/asset-qr.test.ts",
+        "tests/unit/booking-access-keys.test.ts",
+        "tests/unit/booking-reconciliation-compatibility.test.ts",
+        "tests/unit/catalog-source.test.ts",
+        "tests/unit/content-bulk.test.ts",
+        "tests/unit/content-release.test.ts",
+        "tests/unit/content-workflow.test.ts",
+        "tests/unit/foundation.test.ts",
+        "tests/unit/group-body.test.ts",
+        "tests/unit/hold-continuation.test.ts",
+        "tests/unit/hold-contracts.test.ts",
+        "tests/unit/hold-pool-errors.test.ts",
+        "tests/unit/intake-window.test.ts",
+        "tests/unit/ledger-write-configuration.test.ts",
+        "tests/unit/media-backup.test.ts",
+        "tests/unit/media-plan.test.ts",
+        "tests/unit/p4-decisions.test.ts",
+        "tests/unit/p5-ingress.test.ts",
+        "tests/unit/payment-activation.test.ts",
+        "tests/unit/payment-projection-booking.test.ts",
+        "tests/unit/payment-projection-db.test.ts",
+        "tests/unit/payment-projection-recovery.test.ts",
+        "tests/unit/payment-projection.test.ts",
+        "tests/unit/payment-reconciliation-db.test.ts",
+        "tests/unit/payment-reconciliation.test.ts",
+        "tests/unit/period-scope.test.ts",
+        "tests/unit/photo-input.test.ts",
+        "tests/unit/photo-job.test.ts",
+        "tests/unit/pool-lifecycle.test.ts",
+        "tests/unit/pricing.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-preflight.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/r15-artifact.test.ts",
+        "tests/unit/r15-composition.test.ts",
+        "tests/unit/r15-hosted.test.ts",
+        "tests/unit/r15-ingress.test.ts",
+        "tests/unit/r15-migrations.test.ts",
+        "tests/unit/r15-projection-authority.test.ts",
+        "tests/unit/r2-media.test.ts",
+        "tests/unit/r2-rotation.test.ts",
+        "tests/unit/recommendation.test.ts",
+        "tests/unit/return-cycle.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts",
+        "tests/unit/square-webhook-inbox.test.ts",
+        "tests/unit/square-webhook-receiver.test.ts",
+        "tests/unit/staff-operation-diagnostic.test.ts",
+        "tests/unit/staff-security.test.ts",
+        "tests/unit/test-hygiene.test.ts",
+        "tests/unit/transfer.test.ts",
+        "tests/unit/wear-contract.test.ts",
+        "tests/unit/wear-price-order.test.ts",
+        "tests/unit/web-diagnostics.test.ts",
+        "tests/readiness/square-s1-v2.test.ts",
+        "tests/readiness/square-s1.test.ts",
+        "tests/readiness/square-s2.test.ts",
+        "tests/readiness/square-s3.test.ts",
+        "tests/readiness/s2-operator-guard.test.mjs",
+        "tests/readiness/s3-operator-guard.test.mjs"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-15T07:36:56.121912+00:00",
+      "finishedAt": "2026-09-15T07:36:58.679679+00:00",
+      "exitCode": 0,
+      "log": "bundle-suite.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+    },
+    {
+      "name": "secrets",
+      "command": [
+        "npm",
+        "run",
+        "check:secrets"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-15T07:36:58.680842+00:00",
+      "finishedAt": "2026-09-15T07:36:59.245687+00:00",
+      "exitCode": 0,
+      "log": "bundle-secrets.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+    },
+    {
+      "name": "lint",
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-15T07:36:59.246112+00:00",
+      "finishedAt": "2026-09-15T07:37:05.768261+00:00",
+      "exitCode": 0,
+      "log": "bundle-lint.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-15T07:37:05.769206+00:00",
+      "finishedAt": "2026-09-15T07:37:10.360300+00:00",
+      "exitCode": 0,
+      "log": "bundle-typecheck.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+    },
+    {
+      "name": "ingress-typecheck",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--project",
+        "apps/webhook-ingress/tsconfig.json"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-15T07:37:10.360719+00:00",
+      "finishedAt": "2026-09-15T07:37:10.928472+00:00",
+      "exitCode": 0,
+      "log": "bundle-ingress-typecheck.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+    },
+    {
+      "name": "build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-15T07:37:10.928935+00:00",
+      "finishedAt": "2026-09-15T07:37:21.611354+00:00",
+      "exitCode": 0,
+      "log": "bundle-build.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+    }
+  ],
+  "changedSource": [
+    {
+      "path": ".gitignore",
+      "sha256": "d7dc53cd1f49975b6dccf7db1804bafb6397ea8e82b312d5ea9cca06b14f3d46"
+    },
+    {
+      "path": "package.json",
+      "sha256": "ff4eb5f99844156aab89c949688847a87b5a05a387f579295bec8e6619a0b88c"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "8e971550d44ec36ece189f16310df36d0728dc6806e5d0e06bb3f693a3aac2fc"
+    },
+    {
+      "path": "apps/webhook-ingress/api/health.ts",
+      "sha256": "5e656717a04441d35320a1f51f6e1b6623d65452df7427d98b55166dc7cf8999"
+    },
+    {
+      "path": "apps/webhook-ingress/api/webhooks/square.ts",
+      "sha256": "8fb121983eafb5ea619c7a457fc54ed66221014e044c4817517b2891ec6a471d"
+    },
+    {
+      "path": "apps/webhook-ingress/runtime.d.cts",
+      "sha256": "4692060a90b4edbf39801d5aa4823ffcb275d23c70498268b936e8b6688a91a1"
+    },
+    {
+      "path": "scripts/build-ingress.mjs",
+      "sha256": "ade32282d8e825bcfb6fc81f9a93f3b9d0b14894dc45580151f75b3f7a665a3e"
+    },
+    {
+      "path": "scripts/build-ingress.d.mts",
+      "sha256": "a6e257d86d594f0e20d05be2d23d9ee6f766f94fa4768ccb0ab6530bab1309cc"
+    },
+    {
+      "path": "tests/unit/r15-artifact.test.ts",
+      "sha256": "ab7dbe4f2aa181bef56c79b848f5e9853a079e0f6ad7855d2e41c7407149a71d"
+    }
+  ],
+  "passedTests": 510,
+  "realDbReused": 31,
+  "realDbCodeUnchangedFrom": "6d7d5bf86138ca2724478b012739277938471700",
+  "counterexample": "plain Node emitted ESM entry -> ERR_MODULE_NOT_FOUND before; same artifact test passes after",
+  "candidateFullSuiteFailure": "Candidate lacked Git metadata; P5 offline preflight failed. Canonical all 510 pass; no test was skipped or weakened.",
+  "remoteFixedDeployment": "NOT_EXECUTED",
+  "hostedDb": "NOT_PROVISIONED"
+}

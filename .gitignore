@@ -11,3 +11,6 @@ test-results/
 
 /tests/ui-app/.next/
 /tests/ui-app/tsconfig.tsbuildinfo
+
+# Dedicated ingress deploy artifact; rebuilt from locked source and hashed in upload manifest.
+/apps/webhook-ingress/runtime.cjs

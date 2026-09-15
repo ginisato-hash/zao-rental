@@ -1,3 +1,18 @@
+## Current R15 checkpoint — Project created, dedicated runtime fix validated, Neon pending
+
+Read docs/execution/p6/r15-evidence/RESUME_RESULT.md and PRODUCTION_P6_STATUS.json.
+Owner explicitly adopted R15 and reported Neon terms acceptance. Dedicated Project
+exists with Standard Protection; ingress deployment 1 built READY but runtime failed
+500 (extensionless ESM import). Bundled-runtime correction passes plain Node and all
+510 canonical tests; it is not yet redeployed. Keep the remaining ingress deploy for
+DB/signature-ready acceptance. Main protection/settings remain unchanged.
+Neon CLI still reports terms required and team marketplace installations/resources
+are both 0. Do not repeatedly create or accept terms for Owner. Prior approval-system
+capacity refusals are historical, not authentication failures. R15 start/budgets,
+R14_PARTIAL and R10 nonterminal history are unchanged; Square/DB/model calls still 0.
+
+## Historical earlier R15 checkpoints
+
 ## R15 resumed — explicit Owner adoption received; dedicated Project created
 
 The direct Owner message formally adopts all of R15 and authorizes the dedicated

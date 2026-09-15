@@ -74,3 +74,17 @@ Dedicated install now pins npm 11.12.1, matching the existing root package manag
 and engine-strict contract, while keeping dependency scripts disabled. The existing
 surface test checks this linkage. 509 related tests, secrets, lint, both typechecks
 and main build pass again; remote dedicated packaging remains to be measured.
+
+## Dedicated runtime failure and correction
+
+Deploy1 built successfully but actual Node startup failed with extensionless ESM
+imports. See p6/r15-evidence/RESUME_RESULT.md. The correction uses the build:ingress
+locked CommonJS bundle behind explicit .cjs imports and a real emitted-JS/plain-Node
+regression. Before the next upload, generate runtime.cjs from the exact committed
+source, include its hash and build input manifest, and confirm it is included in the
+dry-run. No ordinary main-app imports or business rules were altered.
+
+Neon Owner terms acceptance was reported, but account-scoped installations remain0
+and CLI still returns terms-required. Agent acceptance or blind resource retries are
+not a remedy. Dedicated deploy2 remains available and is reserved for DB/signature-ready
+acceptance; current deployed runtime has not been repaired by the local fix alone.

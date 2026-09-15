@@ -1193,7 +1193,7 @@
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
-    "state": "IN_PROGRESS_NEON_TERMS_GATE",
+    "state": "BLOCKED_NEON_PROVISIONING",
     "authorityPath": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
     "budgets": {
       "hostedDbResource": 1,
@@ -1213,7 +1213,7 @@
     },
     "used": {
       "hostedDbResource": 0,
-      "ingressDeploy": 0,
+      "ingressDeploy": 1,
       "mainPreview": 0,
       "subscriptionCreate": 0,
       "subscriptionUpdate": 0,
@@ -1224,12 +1224,12 @@
       "refund": 0,
       "model": 0
     },
-    "next": "Owner Neon terms only; independently verify dedicated ingress deployment without DB or Square. Then resume exact R15 budgets.",
-    "blocker": "BLOCKED_NEON_PROVIDER_TERMS",
+    "next": "Reconcile Owner Neon installation in team zao-food-map; no repeated add until provider state changes. Provision one free DB, hosted roles/migrations/negative tests, finish protected operator/key handoff. Reserve final dedicated deploy for fixed artifact plus signature. See RESUME_RESULT.md.",
+    "blocker": "NEON_MARKETPLACE_INSTALLATION_ABSENT_AFTER_OWNER_REPORTED_TERMS_ACCEPTANCE",
     "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
     "implementationCommit": "6d7d5bf86138ca2724478b012739277938471700",
     "localValidation": {
-      "unitFixtureStaticPassed": 509,
+      "unitFixtureStaticPassed": 510,
       "realPostgresPassed": 31,
       "secrets": "PASS",
       "lint": "PASS",
@@ -1248,7 +1248,7 @@
     "externalCounts": {
       "hostedDbResources": 0,
       "dedicatedProjectsCreated": 1,
-      "ingressDeployments": 0,
+      "ingressDeployments": 1,
       "mainPreviewDeployments": 0,
       "mainProductionDeployments": 0,
       "mainProtectionMutations": 0,
@@ -1270,7 +1270,7 @@
       "newPR": 0,
       "mainMerge": 0
     },
-    "gateEvidence": "docs/execution/p6/r15-evidence/approval-gate.json",
+    "gateEvidence": "docs/execution/p6/r15-evidence/neon-installations-after-owner.json",
     "ownedLocalDatabasesStopped": true,
     "modelsStarted": 0,
     "newPR": 0,
@@ -1294,7 +1294,31 @@
       "region": "sin1",
       "auth": false,
       "noConnect": true,
-      "noEnvPull": true
+      "noEnvPull": true,
+      "ownerReportedTermsAccepted": true,
+      "neonCommandsCompleted": 2,
+      "lastNeonCommandExit": 1,
+      "neonResourcesAfterOwner": 0,
+      "neonInstallationsAfterOwner": 0
+    },
+    "ingressAcceptance": {
+      "deployment": "dpl_G7dFJ6e6bNk9i3VKeGBpfskvA26V",
+      "deployedHead": "982b96e5916ec55ff0ca8a6c63e93c383801574d",
+      "tree": "0c2a18c986a12f28d421d98cffd799f3f1dff07e",
+      "stableOrigin": "https://zao-rental-webhook-sandbox.vercel.app",
+      "build": "READY",
+      "runtime": "FAILED_500_ERR_MODULE_NOT_FOUND",
+      "mainAndDeploymentProtection": "PASS_302_NO_REDIRECT_FOLLOW",
+      "configurationSecrets": 0,
+      "correctedArtifact": "PLAIN_NODE_PASS_NOT_REDEPLOYED",
+      "remainingDedicatedDeployments": 1
+    },
+    "approvalReviewHistory": {
+      "previousExplicitAdoptionGate": "RESOLVED",
+      "neonPlatformCapacityRefusal": "HISTORICAL_PRE_EXECUTION",
+      "neonDuplicateConcern": "NO_RESOURCE_OR_INTENT_FOUND_READ_ONLY; later normal review allowed command; CLI terms gate remains",
+      "codeWriteCapacityRefusal": "RESOLVED_NORMAL_REVIEW_AFTER_WRITABLE_CANDIDATE_VERIFICATION",
+      "noAlternateProvisioningRoute": true
     }
   }
 }

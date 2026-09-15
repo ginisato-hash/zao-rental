@@ -68,7 +68,8 @@
     "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts",
     "test:payment-activation": "node --import tsx scripts/test-payment-activation.ts",
     "test:r15": "node --import tsx scripts/test-r15-ingress.ts",
-    "typecheck:ingress": "tsc --noEmit --project apps/webhook-ingress/tsconfig.json"
+    "typecheck:ingress": "tsc --noEmit --project apps/webhook-ingress/tsconfig.json",
+    "build:ingress": "node scripts/build-ingress.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",
@@ -96,6 +97,7 @@
     "eslint": "9.39.3",
     "eslint-config-next": "16.3.4",
     "tsx": "4.23.13",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "esbuild": "0.28.2"
   }
 }

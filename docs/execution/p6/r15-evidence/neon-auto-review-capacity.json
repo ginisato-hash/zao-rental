@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-15T07:23:40.706945+00:00",
+  "operation": "free Neon development provisioning after Owner terms acceptance",
+  "classification": "AUTO_REVIEW_PLATFORM_CAPACITY_PRE_EXECUTION",
+  "reason": "Automatic approval review failed: selected model at capacity",
+  "childProcessStarted": false,
+  "intentFileExists": false,
+  "alternateRouteUsed": false,
+  "ownerTermsAccepted": true,
+  "ownerReapprovalRequired": false
+}

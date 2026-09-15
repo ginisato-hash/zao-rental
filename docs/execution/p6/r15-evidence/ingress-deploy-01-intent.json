@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-15T07:20:25.017088+00:00",
+  "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+  "head": "982b96e5916ec55ff0ca8a6c63e93c383801574d",
+  "tree": "0c2a18c986a12f28d421d98cffd799f3f1dff07e",
+  "args": [
+    "deploy",
+    "--target=production",
+    "--no-wait",
+    "--format=json",
+    "--meta",
+    "zaoCommitSha=982b96e5916ec55ff0ca8a6c63e93c383801574d",
+    "--meta",
+    "zaoSourceTree=0c2a18c986a12f28d421d98cffd799f3f1dff07e",
+    "--meta",
+    "zaoAcceptance=R15_INGRESS_ONLY_NO_DB_NO_SQUARE"
+  ],
+  "maxTotalIngressDeployments": 2,
+  "reservedOrdinal": 1,
+  "noDatabaseOrSquareCredential": true
+}

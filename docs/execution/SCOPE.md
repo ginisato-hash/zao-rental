@@ -1,26 +1,23 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
-## Current — R15 Completion / simplified one-pass authority
+## Current — R15 Completion E2E PASS / final independent review pending
 
 Read docs/execution/PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md and
-p6/r15-completion/AUTHORITY.md under docs/execution.
-Current status: PRODUCTION_P6_STATUS.json / r15.completion.
-Starting remote6145a03 includes the validated V2 implementation; no V2 live attempt
-was made. Owner supersedes intermediate parser/F3-only gates. F3 dedicated review
-is retired unused; one final tools-disabled Claude review remains after completion.
-Parent single writer completes existing hosted Neon DB, dedicated ingress, signed
-Sandbox webhook, one100JPY synthetic payment, provider truth/R12/R13 and cleanup.
-Use existing store_i5vh0ZEKo2ikcVo9 / zr_852b20c4d4b0; new resource/DB0. Manual Direct
-URI handoff via Owner-designated0600 file; never show it; remove at cleanup. No new
-browser/snippet parser. Diagnose42501 with exact migration ID and safe category;
-0001–0030 bytes unchanged. Minimal setup compatibility correction allowed; no
-SUPERUSER, provider system-role change, ownership takeover or PUBLIC expansion.
-Dedicated deploy additional<=2; conditional protected main Preview<=1; subscription
-create<=1; official test<=1; CreatePayment<=1/GetPayment<=1; retry0/UNKNOWN stop.
-Manifest commit/push/readback and durable reservation COMMIT precede payment.
-No real customer/card/booking/inventory, Production, main merge, Avatar, Runner,
-new PR or intermediate Claude. Preserve all historical evidence and counts.
-Stop at final R15 checkpoint for ChatGPT Technical Director assessment.
+p6/r15-completion/FINAL_RESULT.md under docs/execution. Current status is
+PRODUCTION_P6_STATUS.json / r15.completion. Hosted0001–0030, least-privilege tests,
+signed webhook, one100JPY Sandbox CreatePayment, one GetPayment, R12 and R13 PASS.
+Projection1; retry0. Actual payment hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY is COMPLETED.
+Official test operator503 remains historical; receipt+ingress200 proved by read-only
+reconciliation. Subscription delete HTTP200 was initially misclassified as unknown;
+existing response readback confirmed it, with no resend. Preserve these limitations.
+Acceptance Preview and both new dedicated deployments deleted; added env10 deleted;
+accepted R3 retained. Runtime credentials disabled, secret file removed, pools and
+browser/process closed. Existing Neon resource/DB retained. No more provider calls,
+deployments, payment/refund, main merge or Production work in this completed attempt.
+One final tools/MCP-disabled Claude review remains; existing Team authentication is
+confirmed on this Mac. No review model invocation has occurred. F3 dedicated slot retired
+unused; historical initial/correction reviews and their findings remain unchanged.
+Parent single writer. Then stop for ChatGPT Technical Director terminal assessment.
 
 ## Historical — superseded V2 intermediate gate
 

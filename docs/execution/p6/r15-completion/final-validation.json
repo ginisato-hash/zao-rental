@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "recordedAt": "2026-09-15T14:17:23.368566+00:00",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "relatedTests": 26,
+  "testFiles": [
+    "tests/unit/r15-preview.test.ts",
+    "tests/unit/r15-composition.test.ts",
+    "tests/unit/r15-operation-manifest.test.ts",
+    "tests/unit/r15-signature-handoff.test.ts"
+  ],
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "secretScan": {
+    "status": "PASS",
+    "candidateFiles": 1625,
+    "limitation": "Pattern scan is not comprehensive; final new evidence is scanned again before commit."
+  },
+  "build": {
+    "kind": "LOCAL_OPERATOR_BUNDLE_ONLY_NOT_DEPLOYED",
+    "status": "PASS",
+    "sha256": "b2be2ec6a749f1779aaaa330f23bfb770c8cb429429aaeab5ed16f13b06abe1a",
+    "bytes": 529618
+  },
+  "localRealPostgresE2E": "See local-e2e-proof.json; PASS before live operations",
+  "actualProviderRequestsInValidation": 0
+}

@@ -71,7 +71,7 @@ export function r15Preview(env:Env,send:typeof fetch,pools:()=>Pools){
    if(action==='test'||action==='delete-subscription'){
     if(!ident(body.subscriptionId))throw Error();used.add(action);
     const r=await provider(action==='test'?'POST':'DELETE','/v2/webhooks/subscriptions/'+body.subscriptionId+(action==='test'?'/test':''),action==='test'?{event_type:'payment.created'}:undefined);
-    if(action==='delete-subscription')return reply({http:r.status,classification:r.status===204?'DELETED':'DELETE_UNCONFIRMED'});
+    if(action==='delete-subscription')return reply({http:r.status,classification:r.status===200&&(r.body.errors===undefined||(Array.isArray(r.body.errors)&&r.body.errors.length===0))?'DELETED':'DELETE_UNCONFIRMED'});
     const s=object(r.body.subscription_test_result);
     if(r.status!==200||!ident(s.id)||!Number.isInteger(s.status_code))throw Error();
     return reply({http:r.status,testId:s.id,deliveryStatus:s.status_code});

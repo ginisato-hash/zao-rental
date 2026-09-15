@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "deploymentsDeleted": [
+    {
+      "kind": "deployment",
+      "id": "dpl_AVUzH2qBPkmr3V15YefkogYvWKdM",
+      "status": "DELETED"
+    },
+    {
+      "kind": "deployment",
+      "id": "dpl_2NcfhWfbzMrMiXLMm9HF7orj4mTQ",
+      "status": "DELETED"
+    },
+    {
+      "kind": "deployment",
+      "id": "dpl_4PSnSR7i36FX2KYvGTxtvvDUnUJ4",
+      "status": "DELETED"
+    }
+  ],
+  "envKeysDeleted": 10,
+  "remainingMainR15EnvKeys": 0,
+  "remainingIngressEnvKeys": 0,
+  "retainedR3": {
+    "id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+    "state": "READY"
+  },
+  "projectsDeleted": 0,
+  "mainProductionDeployments": 0,
+  "cleanupPolicy": "Acceptance-only ingress deployments and credentials removed; projects retained"
+}

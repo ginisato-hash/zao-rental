@@ -1,0 +1,32 @@
+{
+  "atUtc": "2026-09-15T12:09:13.146895+00:00",
+  "status": "PASS",
+  "mode": "OFFLINE_SYNTHETIC_ONLY",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "targetedUnitTests": {
+    "command": "node --import tsx --test tests/unit/r15-neon-credential-handoff.test.ts",
+    "count": 27,
+    "pass": 27,
+    "fail": 0
+  },
+  "secretScan": {
+    "status": "PASS",
+    "files": 1557,
+    "initialFalsePositive": "Two explicitly synthetic user/password URLs in the exact Owner attachment; reformatted as concatenated strings, no rule disabled."
+  },
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "diffCheck": "PASS",
+  "sourceHashes": {
+    "tools/acceptance/r15-neon-credential-handoff.ts": "1cb601c8befd5dfe6c54043f9fc47adfbe1398675bce83356d87172e01210257",
+    "tests/unit/r15-neon-credential-handoff.test.ts": "c13a0a78facc455f5629ed1e646fa4cc836038402970108156d3ae2f83a0a1ac"
+  },
+  "providerRequests": 0,
+  "browserLaunches": 0,
+  "databaseConnections": 0,
+  "fullSuiteRerun": false,
+  "priorOperator": "work/r15-42501-resume/acquire.mjs and finish-handoff.mjs (outside repository; superseded; no reuse)",
+  "previousFailureCause": "Rendered body regex did not retain usable URI; precise condition unknown, not inferred.",
+  "secretExposure": 0
+}

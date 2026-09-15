@@ -1,5 +1,25 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
+## Current — R15 F3 Credential Handoff V2 local validation passed
+
+Read docs/execution/PRODUCTION_P6_R15_F3_HANDOFF_V2_AUTHORITY.md and
+p6/r15-hosted-db-proof-handoff-v2/AUTHORITY.md under docs/execution.
+Current status: PRODUCTION_P6_STATUS.json / r15.f3HostedDbProofHandoffV2.
+Authority89addfe was pushed/read back. V2 raw-input/standard-URL handoff has
+27 synthetic tests PASS; implementation commit/push/readback is required before
+provider/browser/DB access. Then one new credential acquisition/HTTP request max1,
+retry0, existing Neon store_i5vh0ZEKo2ikcVo9 and retained DB zr_852b20c4d4b0 only.
+Same-process secret handling; no rendered snippets, secret output or staging.
+Diagnose owner/public CREATE first; one rollback-only DDL probe. Only proven missing
+CREATE permits one exact-role CREATE grant and one canonical migration reattempt.
+If CREATE works, use one rollback-only migration diagnostic and stop on other42501.
+All historical attempts/failures remain; F3 is OPEN/HIGH. Claude F3 slot0/1 requires
+all hosted proof/cleanup PASS plus evidence push/readback. No new resource/DB,
+Vercel mutation, Square, payment, webhook, main/Avatar/Runner or live continuation.
+Single writer Codex parent. Stop for ChatGPT assessment at the terminal gate.
+
+## Historical — previous credential-handoff stop
+
 ## Current — R15 F3 42501 resume stopped at local credential handoff
 
 Read docs/execution/PRODUCTION_P6_R15_F3_42501_AUTHORITY.md and

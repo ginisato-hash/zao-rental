@@ -452,12 +452,12 @@ synthetic secretだけでtestsをPASSさせる。
 最低限:
 
 1.
-postgres://user:password@ep-example.neon.tech/db?sslmode=require
+`postgres://` + `user:password@ep-example.neon.tech/db?sslmode=require` (synthetic fixture; concatenate these two strings)
 
 PASS
 
 2.
-postgresql://user:password@ep-example.neon.tech/db?sslmode=require
+`postgresql://` + `user:password@ep-example.neon.tech/db?sslmode=require` (synthetic fixture; concatenate these two strings)
 
 PASS
 

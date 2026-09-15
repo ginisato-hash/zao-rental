@@ -890,7 +890,7 @@
     "authority": "PRODUCTION_P6_S3_AUTHORITY.md",
     "authority_sha256": "844306030e8cc3143ddd74e5ab1be2d201535decfc4a0d92a0a5452b13499380",
     "prior_authority_adoption_rejections": 3,
-    "owner_plaintext_adoption": "添付の正式Owner Authority R10/S3を採用し、記載範囲の実装・Sandbox照合・100円全額返金・cleanupを承認する",
+    "owner_plaintext_adoption": "\u6dfb\u4ed8\u306e\u6b63\u5f0fOwner Authority R10/S3\u3092\u63a1\u7528\u3057\u3001\u8a18\u8f09\u7bc4\u56f2\u306e\u5b9f\u88c5\u30fbSandbox\u7167\u5408\u30fb100\u5186\u5168\u984d\u8fd4\u91d1\u30fbcleanup\u3092\u627f\u8a8d\u3059\u308b",
     "classification": "S3_NONTERMINAL_DO_NOT_RETRY",
     "preview_limit": 1,
     "preview_attempts": 1,
@@ -1498,7 +1498,7 @@
     },
     "preGovernanceExecutionPointer": {
       "state": "NEON_PROVISIONED_HOSTED_SETUP_PENDING",
-      "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001–0029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged."
+      "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001\u20130029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged."
     },
     "f3HostedDbProof": {
       "authority": "p6/r15-hosted-db-proof/authority.md",
@@ -1646,9 +1646,83 @@
       "secretExposure": 0,
       "cleanup": "COMPLETE; browser/process closed; no DB client, staging file or runtime credential",
       "evidence": "p6/r15-hosted-db-proof-42501-resume/FINAL_RESULT.md"
+    },
+    "f3HostedDbProofHandoffV2": {
+      "authority": "PRODUCTION_P6_R15_F3_HANDOFF_V2_AUTHORITY.md",
+      "authorityCommit": "89addfef7dd13eabab0b885d41168f92fb8a81f9",
+      "authorityRemoteReadback": true,
+      "startingHead": "2544261efafdc98741dd55cab278b859bc4c7f2b",
+      "recordedAtUtc": "2026-09-15T12:09:13.146895+00:00",
+      "state": "LOCAL_HANDOFF_V2_PASS",
+      "resourceId": "store_i5vh0ZEKo2ikcVo9",
+      "database": "zr_852b20c4d4b0",
+      "implementation_validation": "SELF_VERIFIED",
+      "offlineTests": {
+        "count": 27,
+        "pass": 27,
+        "fail": 0
+      },
+      "historicalMigrationInvocations": 1,
+      "historicalMigrationResult": "FAIL_42501_ROLLED_BACK",
+      "newCredentialAcquisition": {
+        "limit": 1,
+        "used": 0,
+        "credentialHttpLimit": 1,
+        "credentialHttpUsed": 0,
+        "retry": 0
+      },
+      "databaseConnections": 0,
+      "ddlProbe": {
+        "limit": 1,
+        "used": 0
+      },
+      "conditionalPublicCreateRepair": {
+        "limit": 1,
+        "used": 0
+      },
+      "migrationReattempt": {
+        "limit": 1,
+        "used": 0
+      },
+      "rollbackMigrationDiagnostic": {
+        "limit": 1,
+        "used": 0
+      },
+      "roleProvision": {
+        "limit": 1,
+        "used": 0
+      },
+      "reviewBudget": {
+        "maximum": 4,
+        "initial": {
+          "limit": 1,
+          "used": 1
+        },
+        "correction": {
+          "limit": 1,
+          "used": 1
+        },
+        "F3_HOSTED_PROOF_REVIEW": {
+          "limit": 1,
+          "used": 0
+        },
+        "finalEvidence": {
+          "limit": 1,
+          "used": 0
+        }
+      },
+      "F3": "OPEN_HIGH",
+      "newResources": 0,
+      "newDatabases": 0,
+      "liveActions": 0,
+      "secretExposure": 0,
+      "independent_review": "NOT_RUN",
+      "reviewed_head": null,
+      "next": "Commit/push/read back validated V2 implementation; then one new bounded credential acquisition under current authority.",
+      "evidence": "p6/r15-hosted-db-proof-handoff-v2/"
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_F3_42501_BLOCKED_LOCAL_CREDENTIAL_HANDOFF",
-  "currentStatusPointer": "r15.f3HostedDbProof42501Resume"
+  "currentGate": "R15_F3_HANDOFF_V2_LOCAL_VALIDATED_PENDING_IMPLEMENTATION_READBACK",
+  "currentStatusPointer": "r15.f3HostedDbProofHandoffV2"
 }

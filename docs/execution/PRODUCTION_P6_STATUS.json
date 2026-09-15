@@ -890,7 +890,7 @@
     "authority": "PRODUCTION_P6_S3_AUTHORITY.md",
     "authority_sha256": "844306030e8cc3143ddd74e5ab1be2d201535decfc4a0d92a0a5452b13499380",
     "prior_authority_adoption_rejections": 3,
-    "owner_plaintext_adoption": "\u6dfb\u4ed8\u306e\u6b63\u5f0fOwner Authority R10/S3\u3092\u63a1\u7528\u3057\u3001\u8a18\u8f09\u7bc4\u56f2\u306e\u5b9f\u88c5\u30fbSandbox\u7167\u5408\u30fb100\u5186\u5168\u984d\u8fd4\u91d1\u30fbcleanup\u3092\u627f\u8a8d\u3059\u308b",
+    "owner_plaintext_adoption": "添付の正式Owner Authority R10/S3を採用し、記載範囲の実装・Sandbox照合・100円全額返金・cleanupを承認する",
     "classification": "S3_NONTERMINAL_DO_NOT_RETRY",
     "preview_limit": 1,
     "preview_attempts": 1,
@@ -1498,7 +1498,7 @@
     },
     "preGovernanceExecutionPointer": {
       "state": "NEON_PROVISIONED_HOSTED_SETUP_PENDING",
-      "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001\u20130029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged."
+      "next": "Consume only this new resource setup credential without display; verify owned namespace, migrate unchanged 0001–0029, provision narrow separated roles and test before ingress deployment. No second provision. Avatar unchanged."
     },
     "f3HostedDbProof": {
       "authority": "p6/r15-hosted-db-proof/authority.md",
@@ -1727,7 +1727,7 @@
       "requestedStartingHead": "2544261efafdc98741dd55cab278b859bc4c7f2b",
       "remoteAdvanceReconciled": "Owner-authorized authority89addfe and validated V2 implementation6145a03; no external attempt",
       "recordedAtUtc": "2026-09-15T12:11:13.395021+00:00",
-      "state": "HOSTED_DB_PASS_INGRESS_BOOTSTRAP_READY",
+      "state": "INGRESS_BOOTSTRAP_PASS_OPERATOR_LOCAL_VALIDATION_PASS",
       "resourceId": "store_i5vh0ZEKo2ikcVo9",
       "database": "zr_852b20c4d4b0",
       "F3": "HOSTED_IMPLEMENTATION_PROVEN_PENDING_FINAL_R15_REVIEW",
@@ -1800,7 +1800,7 @@
         "rollbackConfirmed": true
       },
       "setupCompatibility": "LOCAL_NON_SUPERUSER_REGRESSION_PASS",
-      "next": "Dedicated ingress bootstrap deploy, signed Sandbox webhook and fixed-manifest E2E; no intermediate review.",
+      "next": "Deploy protected operator-only main Preview (maximum one), then subscription/signature handoff and final ingress deployment.",
       "migration": "PASS_0001_0030_CHECKSUMS_30",
       "roles": "PASS",
       "positiveTests": 6,
@@ -1809,10 +1809,19 @@
       "allHostedTests": "PASS",
       "testCredentialsInvalidated": 6,
       "freshRuntimeRoles": 5,
-      "dedicatedIngressEnvKeys": 4
+      "dedicatedIngressEnvKeys": 4,
+      "dedicatedDeploymentsAdditional": 1,
+      "ingressBootstrap": {
+        "deploymentId": "dpl_4PSnSR7i36FX2KYvGTxtvvDUnUJ4",
+        "state": "READY",
+        "health": 200,
+        "unsignedWithoutKey": 503
+      },
+      "previewEnvKeys": 5,
+      "squareRequests": 0
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_COMPLETION_INGRESS_BOOTSTRAP_READY",
+  "currentGate": "R15_COMPLETION_PROTECTED_OPERATOR_PREVIEW_READY",
   "currentStatusPointer": "r15.completion"
 }

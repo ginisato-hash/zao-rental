@@ -1,0 +1,50 @@
+{
+  "status": "PREVIEW_ENV_READY",
+  "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+  "env": [
+    {
+      "id": "AoBN9DYzEB51MYHf",
+      "key": "R15_WORKER_DATABASE_URL",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    },
+    {
+      "id": "oN1xz5rdi41rcO60",
+      "key": "R15_DISPATCHER_DATABASE_URL",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    },
+    {
+      "id": "1ZKW8ZsDUFP1g3mh",
+      "key": "R15_PROJECTOR_DATABASE_URL",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    },
+    {
+      "id": "bP0nDHcadsCmY4qL",
+      "key": "R15_DIAGNOSTIC_DATABASE_URL",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    },
+    {
+      "id": "Eftu2wBFMi2VtVQB",
+      "key": "R15_ACTIVATION_AUTHORITY",
+      "type": "plain",
+      "target": [
+        "preview"
+      ]
+    }
+  ],
+  "requests": 5,
+  "productionChanges": 0,
+  "setupCredential": false,
+  "squareTokenExtracted": false
+}

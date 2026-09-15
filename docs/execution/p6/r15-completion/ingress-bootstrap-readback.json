@@ -1,0 +1,18 @@
+{
+  "id": "dpl_4PSnSR7i36FX2KYvGTxtvvDUnUJ4",
+  "url": "zao-rental-webhook-sandbox-39im8zpya-zao-food-map.vercel.app",
+  "projectId": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+  "readyState": "READY",
+  "target": "production",
+  "alias": [
+    "zao-rental-webhook-sandbox.vercel.app",
+    "zao-rental-webhook-sandbox-zao-food-map.vercel.app"
+  ],
+  "createdAt": 1789477369298,
+  "errorCode": null,
+  "errorMessage": null,
+  "meta": {
+    "zaoCommitSha": "6a2d83f3569e87ea3847bd7e52580feca71ac051",
+    "zaoAcceptance": "P6_R15_COMPLETION_BOOTSTRAP"
+  }
+}

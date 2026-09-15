@@ -1,0 +1,964 @@
+{
+  "framework": {
+    "name": "Other",
+    "slug": null
+  },
+  "basePath": "/Users/gini/Documents/Codex/2026-09-10/mac-codex-zao-rental-project-zmi/work/p6-r15/ingress-fixed-source",
+  "fileCount": 140,
+  "totalSize": 1496221,
+  "ignoredCount": 1,
+  "ignored": [
+    ".vercel"
+  ],
+  "directories": [
+    {
+      "path": "packages",
+      "fileCount": 124,
+      "size": 706819
+    },
+    {
+      "path": "apps",
+      "fileCount": 9,
+      "size": 479528
+    },
+    {
+      "path": "package-lock.json",
+      "fileCount": 1,
+      "size": 301770
+    },
+    {
+      "path": "package.json",
+      "fileCount": 1,
+      "size": 5915
+    },
+    {
+      "path": "scripts",
+      "fileCount": 1,
+      "size": 1064
+    },
+    {
+      "path": "tsconfig.json",
+      "fileCount": 1,
+      "size": 1009
+    },
+    {
+      "path": ".npmrc",
+      "fileCount": 1,
+      "size": 69
+    },
+    {
+      "path": ".vercelignore",
+      "fileCount": 1,
+      "size": 39
+    },
+    {
+      "path": ".nvmrc",
+      "fileCount": 1,
+      "size": 8
+    }
+  ],
+  "largestFiles": [
+    {
+      "path": "apps/webhook-ingress/runtime.cjs",
+      "size": 474302,
+      "mode": 33188,
+      "sha": "a082c688e13a13d10b46998476a7ce52358c665a"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 301770,
+      "mode": 33188,
+      "sha": "7f41be8937f9f94a111b4f5541483ff51b7efe3a"
+    },
+    {
+      "path": "packages/db/migrations/0015_custody_boundary.sql",
+      "size": 31418,
+      "mode": 33188,
+      "sha": "11eae31ceacf3a3451b56a78bbd205a727d501c6"
+    },
+    {
+      "path": "packages/core/src/wear/service.ts",
+      "size": 27836,
+      "mode": 33188,
+      "sha": "8acd2b609e73b1c1bc2a97c64c9b4b2e40050cd3"
+    },
+    {
+      "path": "packages/db/migrations/0026_payment_reconciliation.sql",
+      "size": 22053,
+      "mode": 33188,
+      "sha": "c953edc6d3c1db8e2795cb677fad6baffbfda11a"
+    },
+    {
+      "path": "packages/core/src/pricing/quote-service.ts",
+      "size": 20603,
+      "mode": 33188,
+      "sha": "60dc80fec21179414c269abdccbf625f2c501abb"
+    },
+    {
+      "path": "packages/core/src/payment/booking-service.ts",
+      "size": 19786,
+      "mode": 33188,
+      "sha": "a2bd4f8c92274648a7d9edecca8d53a07679c76d"
+    },
+    {
+      "path": "packages/core/src/transfer/transfer-service.ts",
+      "size": 19354,
+      "mode": 33188,
+      "sha": "b3ac3131a8a79cb0b439b1ced442343ca7c33d1a"
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "size": 17126,
+      "mode": 33188,
+      "sha": "9da4e46441a290609bb669caffc9de18811c7c6d"
+    },
+    {
+      "path": "packages/core/src/recommendation/recommendation-service.ts",
+      "size": 15610,
+      "mode": 33188,
+      "sha": "61b4f38a9eb92b2f22f22459b48c7774aab70c52"
+    }
+  ],
+  "files": [
+    {
+      "path": ".npmrc",
+      "size": 69,
+      "mode": 33188,
+      "sha": "f30e9c69000bace94865509a07f056b13c5134c5"
+    },
+    {
+      "path": ".nvmrc",
+      "size": 8,
+      "mode": 33188,
+      "sha": "eaa07ef5c667c310b2a6cfbcd2b34839fc9a0af5"
+    },
+    {
+      "path": ".vercelignore",
+      "size": 39,
+      "mode": 33188,
+      "sha": "5aceedfd95d3fbf4652c6fd4baeef186d45fe8a6"
+    },
+    {
+      "path": "apps/webhook-ingress/api/health.ts",
+      "size": 102,
+      "mode": 33188,
+      "sha": "f4bf30e78539dd733c21a0544a006fb9918dcf05"
+    },
+    {
+      "path": "apps/webhook-ingress/api/webhooks/square.ts",
+      "size": 105,
+      "mode": 33188,
+      "sha": "96c106930cb418ca91da3d3dd31d4a659c0c1753"
+    },
+    {
+      "path": "apps/webhook-ingress/package.json",
+      "size": 149,
+      "mode": 33188,
+      "sha": "63da13801b49c785188c3b9aa9d5845664235db9"
+    },
+    {
+      "path": "apps/webhook-ingress/runtime.cjs",
+      "size": 474302,
+      "mode": 33188,
+      "sha": "a082c688e13a13d10b46998476a7ce52358c665a"
+    },
+    {
+      "path": "apps/webhook-ingress/runtime.d.cts",
+      "size": 181,
+      "mode": 33188,
+      "sha": "53d21241c9c5e5fb2999298721c3f2a585edcd4b"
+    },
+    {
+      "path": "apps/webhook-ingress/src/config.ts",
+      "size": 2377,
+      "mode": 33188,
+      "sha": "38158e95fb00312b1fd19a7df1f1c7e50648fc58"
+    },
+    {
+      "path": "apps/webhook-ingress/src/handler.ts",
+      "size": 1670,
+      "mode": 33188,
+      "sha": "24a5a0b106029e6efab50d66a9bf137423c6efe6"
+    },
+    {
+      "path": "apps/webhook-ingress/tsconfig.json",
+      "size": 124,
+      "mode": 33188,
+      "sha": "19a3efe6a1154a993eca17e80dd319880de447d5"
+    },
+    {
+      "path": "apps/webhook-ingress/vercel.json",
+      "size": 518,
+      "mode": 33188,
+      "sha": "f19051064803ba57aa6536de1ff92bcd90d40e68"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 301770,
+      "mode": 33188,
+      "sha": "7f41be8937f9f94a111b4f5541483ff51b7efe3a"
+    },
+    {
+      "path": "package.json",
+      "size": 5915,
+      "mode": 33188,
+      "sha": "01eacab41c500deddb29464ceb7754a9135f2f9b"
+    },
+    {
+      "path": "packages/auth/src/accounts.ts",
+      "size": 5786,
+      "mode": 33188,
+      "sha": "d89b5cd00e86045a3423a272d29c7b6dd36e250b"
+    },
+    {
+      "path": "packages/auth/src/booking-actor.ts",
+      "size": 1745,
+      "mode": 33188,
+      "sha": "ef2ed0678f4a1eed87ea69d24f794579c5e5e857"
+    },
+    {
+      "path": "packages/auth/src/config.ts",
+      "size": 1471,
+      "mode": 33188,
+      "sha": "fcf6027a63e713dee840416e73c591c0de6623cb"
+    },
+    {
+      "path": "packages/auth/src/ledger-write-authority.ts",
+      "size": 1283,
+      "mode": 33188,
+      "sha": "6021ae815488d258702f2ae9731eafcfa1979f94"
+    },
+    {
+      "path": "packages/auth/src/password.ts",
+      "size": 885,
+      "mode": 33188,
+      "sha": "d55c34ed56afd0a2d98b7782276ac3916e5e76ee"
+    },
+    {
+      "path": "packages/auth/src/staff-auth.ts",
+      "size": 4651,
+      "mode": 33188,
+      "sha": "8af271ce39001e0f6bc5055d6044f410119bc218"
+    },
+    {
+      "path": "packages/auth/src/staff-input.schema.json",
+      "size": 4664,
+      "mode": 33188,
+      "sha": "56a3c2d760e125b08e59ec20848afe864722d761"
+    },
+    {
+      "path": "packages/contracts/src/asset-qr.ts",
+      "size": 309,
+      "mode": 33188,
+      "sha": "3dc0c7a8a9b1db748fba6935b63eb6e3399f62fc"
+    },
+    {
+      "path": "packages/contracts/src/guest-security.ts",
+      "size": 1331,
+      "mode": 33188,
+      "sha": "c0a887311f294681efdf3107be841201300521a4"
+    },
+    {
+      "path": "packages/contracts/src/hold-input.schema.json",
+      "size": 4159,
+      "mode": 33188,
+      "sha": "c4013bc765abeb38e223dba00d61964a5149f5b7"
+    },
+    {
+      "path": "packages/contracts/src/hold-intake.ts",
+      "size": 4614,
+      "mode": 33188,
+      "sha": "5c07c4834de9e8e42c4b9bdb19d98dafa00b8893"
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "size": 8013,
+      "mode": 33188,
+      "sha": "436668f26ac57c451f299b7396e4dac6eaeea65d"
+    },
+    {
+      "path": "packages/contracts/src/http-body-limits.ts",
+      "size": 360,
+      "mode": 33188,
+      "sha": "52d9397d7005030f2a3a3bac357116bfeb654369"
+    },
+    {
+      "path": "packages/contracts/src/index.ts",
+      "size": 322,
+      "mode": 33188,
+      "sha": "a528f5c437b17e30f424c848b79e37c98c5fd49b"
+    },
+    {
+      "path": "packages/contracts/src/ledger-input.schema.json",
+      "size": 12798,
+      "mode": 33188,
+      "sha": "62683f7040920fd4a6aeed34d91a1fd95cb60d06"
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "size": 4618,
+      "mode": 33188,
+      "sha": "19bde4d56a1560c616f1277d68d59f94c8ffc8be"
+    },
+    {
+      "path": "packages/contracts/src/pickup.ts",
+      "size": 994,
+      "mode": 33188,
+      "sha": "b709041395abdfcb9ddfb31b45de6cc018614721"
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "size": 9951,
+      "mode": 33188,
+      "sha": "14cbcfa1e5d2cb3dab2f0c7d440b934a3ee8387c"
+    },
+    {
+      "path": "packages/contracts/src/production-guest.ts",
+      "size": 2067,
+      "mode": 33188,
+      "sha": "0201b6ad2c9daa3039d13286ba4fc0f9afa25c57"
+    },
+    {
+      "path": "packages/contracts/src/production-operations.ts",
+      "size": 5450,
+      "mode": 33188,
+      "sha": "0241a5b26ca6cbebced091302356fa4ca34557c1"
+    },
+    {
+      "path": "packages/contracts/src/production-preflight.ts",
+      "size": 3788,
+      "mode": 33188,
+      "sha": "039caf24188acac5f2ac0e3057f035361a094b42"
+    },
+    {
+      "path": "packages/contracts/src/production-readiness.ts",
+      "size": 2735,
+      "mode": 33188,
+      "sha": "44f5ce6ff3ecdd40028b880a755d80b51f84451a"
+    },
+    {
+      "path": "packages/contracts/src/public-analytics.ts",
+      "size": 1215,
+      "mode": 33188,
+      "sha": "b872a43fdb33dc6330c004c337596a9a12c37fce"
+    },
+    {
+      "path": "packages/contracts/src/recommendation-input.schema.json",
+      "size": 4971,
+      "mode": 33188,
+      "sha": "bb17a8a95bb3fce6d7eefc25945af9b7551b0f0d"
+    },
+    {
+      "path": "packages/contracts/src/recommendation.ts",
+      "size": 7007,
+      "mode": 33188,
+      "sha": "182478c2a12ce763537428dbac4fcabf74e93514"
+    },
+    {
+      "path": "packages/contracts/src/rental-flow.ts",
+      "size": 3796,
+      "mode": 33188,
+      "sha": "eb902fe226fcacb074b1ff7d23644267716b463c"
+    },
+    {
+      "path": "packages/contracts/src/return-cycle.ts",
+      "size": 1928,
+      "mode": 33188,
+      "sha": "5b2d92d842987570d40e473613b0032ef072081d"
+    },
+    {
+      "path": "packages/contracts/src/transfer.ts",
+      "size": 2844,
+      "mode": 33188,
+      "sha": "0d6a653ca0d3025fa90848c14090c7116260ca65"
+    },
+    {
+      "path": "packages/core/src/catalog/ledger-service.ts",
+      "size": 8868,
+      "mode": 33188,
+      "sha": "cad0a391b74c0da73aeb4c232f4afe8fe98fde22"
+    },
+    {
+      "path": "packages/core/src/catalog/reconcile-protection.ts",
+      "size": 3229,
+      "mode": 33188,
+      "sha": "512ed6647119bb15c0c9bbee7784b3d53c9fdbc1"
+    },
+    {
+      "path": "packages/core/src/content/bulk-plan.ts",
+      "size": 5807,
+      "mode": 33188,
+      "sha": "eb7690cf36a08ce1f033761bac7ce21381a32ee8"
+    },
+    {
+      "path": "packages/core/src/content/catalog-source.ts",
+      "size": 3140,
+      "mode": 33188,
+      "sha": "676b07e0987cf20da62c2e2e543bed262454808c"
+    },
+    {
+      "path": "packages/core/src/content/import-staging.ts",
+      "size": 4296,
+      "mode": 33188,
+      "sha": "b51b53f2aa08d30b8db2337b397d01f962b59850"
+    },
+    {
+      "path": "packages/core/src/content/media-backup.ts",
+      "size": 2494,
+      "mode": 33188,
+      "sha": "d047cdbd635696054c24ac01371b15947b22a987"
+    },
+    {
+      "path": "packages/core/src/content/media-plan.ts",
+      "size": 4248,
+      "mode": 33188,
+      "sha": "391abfe719170ded670ed4fce97d2443e5b6e553"
+    },
+    {
+      "path": "packages/core/src/content/photo-input.ts",
+      "size": 806,
+      "mode": 33188,
+      "sha": "5e4fb1225bf3a5618c452206bb1cf5fe83f83567"
+    },
+    {
+      "path": "packages/core/src/content/photo-job.ts",
+      "size": 5577,
+      "mode": 33188,
+      "sha": "d0ff5bf714c1e336213c9cf4dc503c92bb5f8ce3"
+    },
+    {
+      "path": "packages/core/src/content/postgres.ts",
+      "size": 5376,
+      "mode": 33188,
+      "sha": "7f9179f0fa51e3833ecc3f481a69ad25d80d2d96"
+    },
+    {
+      "path": "packages/core/src/content/provider-media.ts",
+      "size": 5917,
+      "mode": 33188,
+      "sha": "18e1b14f629820be96d44257283beb4ce0a6c882"
+    },
+    {
+      "path": "packages/core/src/content/public-catalog.ts",
+      "size": 4313,
+      "mode": 33188,
+      "sha": "0721fd26a8e1deba22dd549183feeb1cc2bb6de8"
+    },
+    {
+      "path": "packages/core/src/content/public-pages.ts",
+      "size": 2151,
+      "mode": 33188,
+      "sha": "f6c4974b00cd83c460782432958bc1594ceb673a"
+    },
+    {
+      "path": "packages/core/src/content/r2-media.ts",
+      "size": 5838,
+      "mode": 33188,
+      "sha": "89a406d5daf07ce52bc1f350ee7b92643624fc71"
+    },
+    {
+      "path": "packages/core/src/content/release-plan.ts",
+      "size": 5311,
+      "mode": 33188,
+      "sha": "4b3397400ceb59635845b0ccce1470b48805ac29"
+    },
+    {
+      "path": "packages/core/src/content/stock-import-plan.ts",
+      "size": 3726,
+      "mode": 33188,
+      "sha": "2331a5eb8b07b81a77fb0cdd6de6894e249abbf2"
+    },
+    {
+      "path": "packages/core/src/content/storage-port.ts",
+      "size": 1435,
+      "mode": 33188,
+      "sha": "f98aadcf5884b9d8af20055a8185f310435e5958"
+    },
+    {
+      "path": "packages/core/src/content/workflow.ts",
+      "size": 7436,
+      "mode": 33188,
+      "sha": "97ba3145a2f734b42c9505077c2b8df47d12e133"
+    },
+    {
+      "path": "packages/core/src/guest/booking-access-keys.ts",
+      "size": 645,
+      "mode": 33188,
+      "sha": "dbd94d303ed73c5966088684b3e2210716bd49f8"
+    },
+    {
+      "path": "packages/core/src/guest/booking-access.ts",
+      "size": 3241,
+      "mode": 33188,
+      "sha": "2d556345eacd34a84df24fb4967fb8829b123089"
+    },
+    {
+      "path": "packages/core/src/guest/booking-recovery.ts",
+      "size": 4261,
+      "mode": 33188,
+      "sha": "86c7821a048884f6fb7f5ffac3735603877d9e80"
+    },
+    {
+      "path": "packages/core/src/guest/context.ts",
+      "size": 3947,
+      "mode": 33188,
+      "sha": "336b3cdce0f7a648a37ee107be062a3f80e22057"
+    },
+    {
+      "path": "packages/core/src/guest/production-composition.ts",
+      "size": 1618,
+      "mode": 33188,
+      "sha": "6242830e4ecd9b3c586273e7bdc1f1183988981e"
+    },
+    {
+      "path": "packages/core/src/guest/request-peer-boundary.ts",
+      "size": 1234,
+      "mode": 33188,
+      "sha": "4579efd431d5afd2f7436cdc937b099d04f0aaec"
+    },
+    {
+      "path": "packages/core/src/guest/security.ts",
+      "size": 8498,
+      "mode": 33188,
+      "sha": "eaba57552521473d23d9aef1132deb67c9aa10ef"
+    },
+    {
+      "path": "packages/core/src/guest/service.ts",
+      "size": 11613,
+      "mode": 33188,
+      "sha": "727fc64abdea55e556085b9b8ed97fce6f2d1175"
+    },
+    {
+      "path": "packages/core/src/guest/trusted-ingress.ts",
+      "size": 1472,
+      "mode": 33188,
+      "sha": "62e68c92327c6b1148ff2821130d397f825b09f5"
+    },
+    {
+      "path": "packages/core/src/index.ts",
+      "size": 751,
+      "mode": 33188,
+      "sha": "9c13ac25e74f0d941bd8a7235957d53ea3dd3a7d"
+    },
+    {
+      "path": "packages/core/src/inventory/allocation.ts",
+      "size": 13306,
+      "mode": 33188,
+      "sha": "34816d91a33ab1cf0acf5569299327f9b6ebd5c3"
+    },
+    {
+      "path": "packages/core/src/inventory/dependency-scope.ts",
+      "size": 1117,
+      "mode": 33188,
+      "sha": "20794add70b8d2132b08afadf7bfd41de7f72df5"
+    },
+    {
+      "path": "packages/core/src/inventory/expiry.ts",
+      "size": 563,
+      "mode": 33188,
+      "sha": "1824a58c7458dbcf256cc7cb880e9ab41c7b848d"
+    },
+    {
+      "path": "packages/core/src/inventory/hold-service.ts",
+      "size": 15077,
+      "mode": 33188,
+      "sha": "a9f7775670bd2b76253935b53f3f8c21e6ee0c7e"
+    },
+    {
+      "path": "packages/core/src/inventory/intake-context.ts",
+      "size": 971,
+      "mode": 33188,
+      "sha": "0d638c429af96357cb58b8f5e54dd4d1b6074833"
+    },
+    {
+      "path": "packages/core/src/inventory/period-matching.ts",
+      "size": 3028,
+      "mode": 33188,
+      "sha": "c5b4583b204391a88a49186465f98dbc00cbfbcd"
+    },
+    {
+      "path": "packages/core/src/inventory/wear-capacity.ts",
+      "size": 2679,
+      "mode": 33188,
+      "sha": "0dc8cd221af10e31b1a2b478f54e0cbc13bf9388"
+    },
+    {
+      "path": "packages/core/src/payment/booking-service.ts",
+      "size": 19786,
+      "mode": 33188,
+      "sha": "a2bd4f8c92274648a7d9edecca8d53a07679c76d"
+    },
+    {
+      "path": "packages/core/src/payment/payment-projection.ts",
+      "size": 15317,
+      "mode": 33188,
+      "sha": "9891228cc62a83c8482c4b9206e5a6cb7a51f1a9"
+    },
+    {
+      "path": "packages/core/src/payment/payment-reconciliation.ts",
+      "size": 6859,
+      "mode": 33188,
+      "sha": "5cc694eb932b93265059e6f63e9d40f41d24f36b"
+    },
+    {
+      "path": "packages/core/src/payment/payment-truth.ts",
+      "size": 5281,
+      "mode": 33188,
+      "sha": "094a4925135356cfbaefa3b5f0adba931d00e193"
+    },
+    {
+      "path": "packages/core/src/payment/r15-projection-authority.ts",
+      "size": 1302,
+      "mode": 33188,
+      "sha": "4775aae88c6e6354e613079d01a32b5c1720fdd2"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-activation.ts",
+      "size": 9371,
+      "mode": 33188,
+      "sha": "d2683718adafaa9fa20d78c24cf02dc88e5e4a4c"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-environment.ts",
+      "size": 3266,
+      "mode": 33188,
+      "sha": "4496002b184637a2f124a0684a80bd72c070c57b"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-preflight.ts",
+      "size": 5010,
+      "mode": 33188,
+      "sha": "0c3c3a32a4867c51a16027897bfa7c50dfd6506e"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-refund.ts",
+      "size": 2893,
+      "mode": 33188,
+      "sha": "8dfba9e921a53c07ba67c8c999366200280a327c"
+    },
+    {
+      "path": "packages/core/src/payment/square-boundary.ts",
+      "size": 3508,
+      "mode": 33188,
+      "sha": "d21c6fb5310f24806db66dd1fb226342c663f41f"
+    },
+    {
+      "path": "packages/core/src/payment/square-payment-truth.ts",
+      "size": 2132,
+      "mode": 33188,
+      "sha": "9d68a974849c25d37582e34cb1feae0e215e9bf0"
+    },
+    {
+      "path": "packages/core/src/payment/square-s1.ts",
+      "size": 6150,
+      "mode": 33188,
+      "sha": "fd5f3432f6eb3920281aa1ccd78272ad7b89b4f2"
+    },
+    {
+      "path": "packages/core/src/payment/square-s2.ts",
+      "size": 9052,
+      "mode": 33188,
+      "sha": "49a67986cacf5a73824772050158820dd9bd3007"
+    },
+    {
+      "path": "packages/core/src/payment/square-s3.ts",
+      "size": 11225,
+      "mode": 33188,
+      "sha": "bdbedec6e6acc779e80207d9f463081b517f65ae"
+    },
+    {
+      "path": "packages/core/src/payment/square-sandbox.ts",
+      "size": 4424,
+      "mode": 33188,
+      "sha": "5f3f5c2cc21dedbd0180efa7a5c71e8ec9003f4a"
+    },
+    {
+      "path": "packages/core/src/payment/square-transport.ts",
+      "size": 6203,
+      "mode": 33188,
+      "sha": "5821f6a27561dac2d8c87434534082809d1f3bbc"
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-inbox.ts",
+      "size": 1089,
+      "mode": 33188,
+      "sha": "2daba4788b57a7f71d0efa3f562bd1db85dffaa4"
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-receiver.ts",
+      "size": 3988,
+      "mode": 33188,
+      "sha": "66e5a177d2a128f4e4bc41dedbd98f7f299c8991"
+    },
+    {
+      "path": "packages/core/src/pricing/quote-service.ts",
+      "size": 20603,
+      "mode": 33188,
+      "sha": "60dc80fec21179414c269abdccbf625f2c501abb"
+    },
+    {
+      "path": "packages/core/src/recommendation/recommendation-service.ts",
+      "size": 15610,
+      "mode": 33188,
+      "sha": "61b4f38a9eb92b2f22f22459b48c7774aab70c52"
+    },
+    {
+      "path": "packages/core/src/rental/custody-service.ts",
+      "size": 15471,
+      "mode": 33188,
+      "sha": "f8d2bcb584438a2adf177a03de64be112294bb72"
+    },
+    {
+      "path": "packages/core/src/transfer/completion.ts",
+      "size": 873,
+      "mode": 33188,
+      "sha": "da9fdbbbc9a364618760f655892b7d795173e18e"
+    },
+    {
+      "path": "packages/core/src/transfer/projection.ts",
+      "size": 2056,
+      "mode": 33188,
+      "sha": "04446578c8646452d92544ae2245d2d9d4855679"
+    },
+    {
+      "path": "packages/core/src/transfer/transfer-service.ts",
+      "size": 19354,
+      "mode": 33188,
+      "sha": "b3ac3131a8a79cb0b439b1ced442343ca7c33d1a"
+    },
+    {
+      "path": "packages/core/src/wear/service.ts",
+      "size": 27836,
+      "mode": 33188,
+      "sha": "8acd2b609e73b1c1bc2a97c64c9b4b2e40050cd3"
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "size": 530,
+      "mode": 33188,
+      "sha": "1b9ea1a6f92503aac9d825f304c2a6ac841d3492"
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "size": 14076,
+      "mode": 33188,
+      "sha": "71b311aeb65bea0be74fe5505c9cf3567817b6c3"
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "size": 7226,
+      "mode": 33188,
+      "sha": "57deef076be9cfd17be93f3d35dbb7e851ae51f2"
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "size": 8294,
+      "mode": 33188,
+      "sha": "b139c4277268d8329e4ed0623e8119af44d010d8"
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "size": 17126,
+      "mode": 33188,
+      "sha": "9da4e46441a290609bb669caffc9de18811c7c6d"
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "size": 7743,
+      "mode": 33188,
+      "sha": "6e97670a7090418d2b42f5b2c1142d3b06543a1d"
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "size": 3459,
+      "mode": 33188,
+      "sha": "a8ebfb28f9809494dad900ebdb9f598f8a731202"
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "size": 1309,
+      "mode": 33188,
+      "sha": "71a0523279b5a7da85962e5d680363a6567990f5"
+    },
+    {
+      "path": "packages/db/migrations/0009_development_booking.sql",
+      "size": 5827,
+      "mode": 33188,
+      "sha": "85a6e76209bc220ccb8baa0392f8d8448eb4b73c"
+    },
+    {
+      "path": "packages/db/migrations/0010_rental_custody.sql",
+      "size": 8045,
+      "mode": 33188,
+      "sha": "223b71e7044e4b87609a6e95f2995cb4f89a97b8"
+    },
+    {
+      "path": "packages/db/migrations/0011_receipt_timeline.sql",
+      "size": 313,
+      "mode": 33188,
+      "sha": "6afb4b3ec03bc64d1fc4e7ac41b258d2e3017ab3"
+    },
+    {
+      "path": "packages/db/migrations/0012_integrated_wear_catalog.sql",
+      "size": 5596,
+      "mode": 33188,
+      "sha": "8178008d2d3fe869bece067b1eaf0f33922b8989"
+    },
+    {
+      "path": "packages/db/migrations/0013_wear_quantity.sql",
+      "size": 12391,
+      "mode": 33188,
+      "sha": "8c71874c638a656f38cfc85a09e8c90370d4d725"
+    },
+    {
+      "path": "packages/db/migrations/0014_wear_return_batch.sql",
+      "size": 1875,
+      "mode": 33188,
+      "sha": "3f699db4a93be4838212b947d8ce47c4474f2d9c"
+    },
+    {
+      "path": "packages/db/migrations/0015_custody_boundary.sql",
+      "size": 31418,
+      "mode": 33188,
+      "sha": "11eae31ceacf3a3451b56a78bbd205a727d501c6"
+    },
+    {
+      "path": "packages/db/migrations/0016_delayed_pickup.sql",
+      "size": 5255,
+      "mode": 33188,
+      "sha": "18e677e6addf8caf38ee7f2f41035dd19d0f24ab"
+    },
+    {
+      "path": "packages/db/migrations/0017_no_pickup_completion.sql",
+      "size": 3335,
+      "mode": 33188,
+      "sha": "1a17121b13a3165a50af7c4377a5c5409fde3ec5"
+    },
+    {
+      "path": "packages/db/migrations/0018_guest_actor.sql",
+      "size": 4550,
+      "mode": 33188,
+      "sha": "3d2897c9afd5b11f02699a24651bc6797decf677"
+    },
+    {
+      "path": "packages/db/migrations/0019_content_workspace.sql",
+      "size": 2475,
+      "mode": 33188,
+      "sha": "568fcf988a4b0bc8ef1d12903d15df11ec49f405"
+    },
+    {
+      "path": "packages/db/migrations/0020_content_media.sql",
+      "size": 940,
+      "mode": 33188,
+      "sha": "1a1a72f3367eb614359f6d96ba7528d192761174"
+    },
+    {
+      "path": "packages/db/migrations/0021_guest_security.sql",
+      "size": 1428,
+      "mode": 33188,
+      "sha": "52b3f0811a476aed463954f133a5abee84f676a6"
+    },
+    {
+      "path": "packages/db/migrations/0022_booking_access.sql",
+      "size": 5464,
+      "mode": 33188,
+      "sha": "4dd6d7839152d04c54dffec04b4b47c2cfd86412"
+    },
+    {
+      "path": "packages/db/migrations/0023_sandbox_activation.sql",
+      "size": 2159,
+      "mode": 33188,
+      "sha": "b998ce2d5399e0b4a6db9a2b5efcb7daf8d6b53b"
+    },
+    {
+      "path": "packages/db/migrations/0024_booking_recovery.sql",
+      "size": 9475,
+      "mode": 33188,
+      "sha": "74fd346d25b8a7ca133b370e7ab81b1192bb7513"
+    },
+    {
+      "path": "packages/db/migrations/0025_square_webhook_inbox.sql",
+      "size": 7069,
+      "mode": 33188,
+      "sha": "10145ffc7c0172048b95f1cbb8ba55079c69f4a0"
+    },
+    {
+      "path": "packages/db/migrations/0026_payment_reconciliation.sql",
+      "size": 22053,
+      "mode": 33188,
+      "sha": "c953edc6d3c1db8e2795cb677fad6baffbfda11a"
+    },
+    {
+      "path": "packages/db/migrations/0027_payment_projection.sql",
+      "size": 4254,
+      "mode": 33188,
+      "sha": "9d1ae49470f78e543676d9cc4029e2f95eafee09"
+    },
+    {
+      "path": "packages/db/migrations/0028_development_projection_source.sql",
+      "size": 1446,
+      "mode": 33188,
+      "sha": "de6df17a58d251cedae1353148c17389c26287fa"
+    },
+    {
+      "path": "packages/db/migrations/0029_development_payment_scope.sql",
+      "size": 6829,
+      "mode": 33188,
+      "sha": "d8a34666fe53945adefe1104cacacdcbd35c1970"
+    },
+    {
+      "path": "packages/db/src/development-payment-composition.ts",
+      "size": 2897,
+      "mode": 33188,
+      "sha": "6d1839f0e43b2fd6fd712bbc89ef82ab6875b219"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "size": 3537,
+      "mode": 33188,
+      "sha": "3c14264e6a96b46ccf886a738e9e5fff6b926bc3"
+    },
+    {
+      "path": "packages/db/src/payment-projection.ts",
+      "size": 12366,
+      "mode": 33188,
+      "sha": "5df851ef32684ebd5ff9c162cae31a1718949bb1"
+    },
+    {
+      "path": "packages/db/src/payment-reconciliation.ts",
+      "size": 3624,
+      "mode": 33188,
+      "sha": "8dc9f1e0a920c3ff7765ce4ce51fbbafdf8c5d36"
+    },
+    {
+      "path": "packages/db/src/r15-hosted-composition.ts",
+      "size": 2862,
+      "mode": 33188,
+      "sha": "630fa5658aa568a000804b61b4566de70e4f8f12"
+    },
+    {
+      "path": "packages/db/src/schema.ts",
+      "size": 542,
+      "mode": 33188,
+      "sha": "e3a16d0193b7770dcc951f9f84b2201445db32e1"
+    },
+    {
+      "path": "packages/db/src/square-webhook-inbox.ts",
+      "size": 2628,
+      "mode": 33188,
+      "sha": "3911f3db312d0acc174cf1fea9905a3eaf9ff2aa"
+    },
+    {
+      "path": "scripts/build-ingress.mjs",
+      "size": 1064,
+      "mode": 33188,
+      "sha": "15425fce125a08f9ddc8c19e60443eefc273a934"
+    },
+    {
+      "path": "tsconfig.json",
+      "size": 1009,
+      "mode": 33188,
+      "sha": "cd0c41c34b73b8c5dcba9129a1fe547f607113db"
+    }
+  ]
+}

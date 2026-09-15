@@ -1189,7 +1189,7 @@
     "startingHead": "dffa78c10825fdb44bd7cb123c2b8b2b4e2113c9",
     "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
     "branch": "codex/external-acceptance-p6",
-    "workingTreeClean": false,
+    "workingTreeClean": true,
     "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
     "priorR14": "R14_PARTIAL",
     "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY",
@@ -1227,7 +1227,7 @@
     "next": "Reconcile Owner Neon installation in team zao-food-map; no repeated add until provider state changes. Provision one free DB, hosted roles/migrations/negative tests, finish protected operator/key handoff. Reserve final dedicated deploy for fixed artifact plus signature. See RESUME_RESULT.md.",
     "blocker": "NEON_MARKETPLACE_INSTALLATION_ABSENT_AFTER_OWNER_REPORTED_TERMS_ACCEPTANCE",
     "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
-    "implementationCommit": "6d7d5bf86138ca2724478b012739277938471700",
+    "implementationCommit": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
     "localValidation": {
       "unitFixtureStaticPassed": 510,
       "realPostgresPassed": 31,
@@ -1268,7 +1268,8 @@
       "realCustody": 0,
       "models": 0,
       "newPR": 0,
-      "mainMerge": 0
+      "mainMerge": 0,
+      "ingressDeploymentsDeleted": 1
     },
     "gateEvidence": "docs/execution/p6/r15-evidence/neon-installations-after-owner.json",
     "ownedLocalDatabasesStopped": true,
@@ -1311,7 +1312,10 @@
       "mainAndDeploymentProtection": "PASS_302_NO_REDIRECT_FOLLOW",
       "configurationSecrets": 0,
       "correctedArtifact": "PLAIN_NODE_PASS_NOT_REDEPLOYED",
-      "remainingDedicatedDeployments": 1
+      "remainingDedicatedDeployments": 1,
+      "failedDeploymentDeleted": true,
+      "activeDeployments": 0,
+      "afterCleanupHttpStatus": 404
     },
     "approvalReviewHistory": {
       "previousExplicitAdoptionGate": "RESOLVED",
@@ -1319,6 +1323,24 @@
       "neonDuplicateConcern": "NO_RESOURCE_OR_INTENT_FOUND_READ_ONLY; later normal review allowed command; CLI terms gate remains",
       "codeWriteCapacityRefusal": "RESOLVED_NORMAL_REVIEW_AFTER_WRITABLE_CANDIDATE_VERIFICATION",
       "noAlternateProvisioningRoute": true
+    },
+    "cleanup": {
+      "evidenceReadbackBeforeDelete": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
+      "exactOwnedIngressDeleted": true,
+      "dedicatedProjectRetained": true,
+      "mainR3Preserved": true,
+      "mainProtectionUnchanged": true,
+      "secretStagingFiles": 0,
+      "newDbWebBrowserClaude": 0,
+      "finiteValidationChildrenExited": true
+    },
+    "preparedArtifact": {
+      "sourceHead": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
+      "sourceTree": "23c86566d0970b3f6533058839683efff5ab4690",
+      "files": 140,
+      "dryRunPassed": true,
+      "deployed": false,
+      "manifest": "docs/execution/p6/r15-evidence/ingress-fixed-upload-manifest.json"
     }
   }
 }

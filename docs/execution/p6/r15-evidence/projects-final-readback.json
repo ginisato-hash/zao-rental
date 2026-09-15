@@ -1,0 +1,98 @@
+{
+  "at": "2026-09-15T07:45:55.693058+00:00",
+  "main": {
+    "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "name": "zao-rental",
+    "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+    "rootDirectory": null,
+    "framework": "nextjs",
+    "nodeVersion": "24.x",
+    "sourceFilesOutsideRootDirectory": true,
+    "buildCommand": "npm run build",
+    "installCommand": null,
+    "outputDirectory": null,
+    "protection": "all_except_custom_domains",
+    "gitConnected": false,
+    "bypassConfigured": false,
+    "passwordProtectionConfigured": false,
+    "environmentMetadata": [
+      {
+        "key": "SQUARE_SANDBOX_MERCHANT_ID",
+        "type": "plain",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      },
+      {
+        "key": "SQUARE_ENVIRONMENT",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      },
+      {
+        "key": "SQUARE_API_VERSION",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      },
+      {
+        "key": "SQUARE_SANDBOX_APPLICATION_ID",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      },
+      {
+        "key": "SQUARE_SANDBOX_LOCATION_ID",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      },
+      {
+        "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      }
+    ],
+    "deployments": [
+      {
+        "uid": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+        "name": "zao-rental",
+        "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+        "state": "READY",
+        "target": null
+      }
+    ]
+  },
+  "ingress": {
+    "id": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+    "name": "zao-rental-webhook-sandbox",
+    "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+    "rootDirectory": "apps/webhook-ingress",
+    "framework": null,
+    "nodeVersion": "24.x",
+    "sourceFilesOutsideRootDirectory": true,
+    "buildCommand": null,
+    "installCommand": "npm ci --prefix ../.. --ignore-scripts",
+    "outputDirectory": null,
+    "protection": "all_except_custom_domains",
+    "gitConnected": false,
+    "bypassConfigured": false,
+    "passwordProtectionConfigured": false,
+    "environmentMetadata": [],
+    "deployments": []
+  },
+  "secretsRetrieved": false,
+  "decryptRequested": false
+}

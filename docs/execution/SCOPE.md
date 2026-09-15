@@ -4,7 +4,8 @@ Read docs/execution/p6/r15-evidence/RESUME_RESULT.md and PRODUCTION_P6_STATUS.js
 Owner explicitly adopted R15 and reported Neon terms acceptance. Dedicated Project
 exists with Standard Protection; ingress deployment 1 built READY but runtime failed
 500 (extensionless ESM import). Bundled-runtime correction passes plain Node and all
-510 canonical tests; it is not yet redeployed. Keep the remaining ingress deploy for
+510 canonical tests; failed deploy1 was deleted after evidence push/readback. Dedicated
+Project retained; fixed 140-file artifact dry-run passed, not redeployed. Keep deploy2 for
 DB/signature-ready acceptance. Main protection/settings remain unchanged.
 Neon CLI still reports terms required and team marketplace installations/resources
 are both 0. Do not repeatedly create or accept terms for Owner. Prior approval-system

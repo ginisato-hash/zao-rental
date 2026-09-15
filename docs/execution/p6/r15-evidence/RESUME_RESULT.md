@@ -61,3 +61,29 @@ The dedicated deployment is retained for bounded recovery (no secrets/DB). Any c
 must follow safe evidence push/readback. Owner's browser was not read or modified;
 no local DB/Web/browser/Claude was started in this resume, and finite test/CLI children
 have exited. No claim is made about provider-wide traffic outside this task.
+
+## Final bounded cleanup / restart record
++
++Correction source: 7a9b4e7836a12de202bf6a91ee6fb404e555c25f, tree
++23c86566d0970b3f6533058839683efff5ab4690. Safe result, failure and validation evidence
++were pushed and read back byte-for-byte before cleanup. Generated fixed runtime and
++140-file upload passed dry-run at that source; no second deployment was submitted.
++
++Deleted only failed owned deployment dpl_G7dFJ6e6bNk9i3VKeGBpfskvA26V. Dedicated
++Project remains; active deployments0 and stable /health now404. Existing main R3,
++Standard Protection and six Preview-only env metadata entries are unchanged.
++No env value was read, copied or staged. All finite owned validation/CLI work ended;
++no DB, Web, browser or Claude process was started in this resume. Source/candidate
++artifacts remain as files, not background processes. Source main is unchanged.
++
++Current gate remains Neon marketplace installation: Owner says terms accepted, but
++CLI's team-scoped readback says installations0/resources0 and add returns terms-required.
++An exact Team/source=cli completion check was requested; no third completed add was run.
++Do not interpret platform approval-review capacity errors as Vercel authentication
++failure, and do not create another login or change authentication. Resume from provider
++metadata reconciliation once Owner's team installation is visible. All R15 budgets and
++the original start persist; ingress deploy used1 of2, all Square/hosted DB budgets unused.
++
++No new remote CI or independent model review was started in R15. Local green and
++fixed artifact dry-run are not hosted/live E2E evidence. R15 remains partial.
++

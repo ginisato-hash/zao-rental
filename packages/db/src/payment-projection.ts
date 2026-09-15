@@ -4,7 +4,7 @@ const iso=(v:unknown):string|null=>v==null?null:new Date(v as string).toISOStrin
 const safeStates=(s:ProjectionState)=>({booking:s.booking.state,attempt:s.attempt.state,hold:s.hold?.state??null,holdPayment:s.hold?.paymentState??null});
 /** No instantiated Pool, credential, HTTP or runtime. Only an explicitly injected local test repository. */
 export class PgPaymentProjection implements PaymentProjectionRepository{
- constructor(private pool:InboxPool){}
+ constructor(private pool:InboxPool,private sourceReader?:(c:InboxConnection,ref:ProjectionReference)=>Promise<ProjectionSource|null>){}
  async transaction<T>(ref:ProjectionReference,run:(tx:PaymentProjectionTransaction)=>Promise<T>):Promise<T>{
   if(process.env.NODE_ENV==='production')throw new ProjectionError('PROJECTION_NOT_ACTIVATED');
   const c=await this.pool.connect().catch(()=>{throw new ProjectionError('PROJECTION_STORAGE_UNAVAILABLE');});let broken=false;
@@ -14,13 +14,13 @@ export class PgPaymentProjection implements PaymentProjectionRepository{
    if(!db||!/^zr_[a-f0-9]{12}$/.test(db))throw new ProjectionError('PROJECTION_DEVELOPMENT_DB_ONLY');
    // Existing BookingService + stock writers acquire this BEFORE row locks. Not a new global lock.
    await c.query('SELECT pg_advisory_xact_lock(71820600)');
-   const result=await run(new PgProjectionTransaction(c,ref));await c.query('COMMIT');return result;
+   const result=await run(new PgProjectionTransaction(c,ref,this.sourceReader));await c.query('COMMIT');return result;
   }catch(error){broken=true;await c.query('ROLLBACK').catch(()=>{});if(error instanceof ProjectionError)throw error;throw new ProjectionError('PROJECTION_STORAGE_UNAVAILABLE');}
   finally{c.release(broken);}
  }
 }
 class PgProjectionTransaction implements PaymentProjectionTransaction{
- constructor(private c:InboxConnection,private ref:ProjectionReference){}
+ constructor(private c:InboxConnection,private ref:ProjectionReference,private sourceReader?:(c:InboxConnection,ref:ProjectionReference)=>Promise<ProjectionSource|null>){}
  private sourceValue:ProjectionSource|null=null;
  async time(){return (await this.c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;}
  async load():Promise<ProjectionState>{
@@ -51,6 +51,7 @@ class PgProjectionTransaction implements PaymentProjectionTransaction{
   await this.c.query('INSERT INTO payment_projection.job_receipts(job_id,attempt_id,observation_fingerprint) VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[ref.jobId,ref.attemptId,ref.observationFingerprint]);
  }
  async source(){
+  if(this.sourceReader){this.sourceValue=await this.sourceReader(this.c,this.ref);return this.sourceValue;}
   // Read routing metadata, then take stream->job locks in the same order as R12 finalize/dispatch.
   const meta=(await this.c.query('SELECT environment,merchant_id,payment_id FROM payment_reconciliation.jobs WHERE id=$1',[this.ref.jobId])).rows[0];if(!meta)return null;
   const stream=(await this.c.query('SELECT * FROM payment_reconciliation.streams WHERE environment=$1 AND merchant_id=$2 AND payment_id=$3 FOR UPDATE',[meta.environment,meta.merchant_id,meta.payment_id])).rows[0];

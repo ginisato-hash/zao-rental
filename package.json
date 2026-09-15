@@ -65,7 +65,8 @@
     "test:booking-recovery": "node --import tsx tests/readiness/booking-recovery.ts",
     "test:booking-recovery-ui": "node --import tsx tests/readiness/booking-recovery-ui.ts",
     "production:preflight": "node --import tsx scripts/production-preflight.ts",
-    "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts"
+    "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts",
+    "test:payment-activation": "node --import tsx scripts/test-payment-activation.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

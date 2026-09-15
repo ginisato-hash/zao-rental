@@ -1,0 +1,12 @@
+{
+  "atUtc": "2026-09-15T11:48:35.903430+00:00",
+  "status": "NOT_RUN",
+  "historicalMigrationInvocations": 1,
+  "historicalResult": "FAIL_42501_ROLLBACK_CONFIRMED",
+  "newMigrationInvocations": 0,
+  "cumulativeCanonicalMigrationInvocations": 1,
+  "rollbackDiagnosticInvocations": 0,
+  "newAppliedMigrations": 0,
+  "appliedRange": null,
+  "reason": "Stopped under authority section17: provider credential request HTTP200, but local UI-to-RAM handoff did not produce an accepted connection URI. No DB client/config was created; no credential retry."
+}

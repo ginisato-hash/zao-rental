@@ -1,18 +1,21 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
-## Current — R15 F3 42501 diagnosis and conditional DB-only resume
+## Current — R15 F3 42501 resume stopped at local credential handoff
 
-Read docs/execution/PRODUCTION_P6_R15_F3_42501_AUTHORITY.md; status pointer is
-PRODUCTION_P6_STATUS.json / r15.f3HostedDbProof42501Resume. Commit/push/readback this
-new authority before DB access. Use only retained zr_852b20c4d4b0 in existing Neon
-store_i5vh0ZEKo2ikcVo9. Credential reacquisition1; read-only owner diagnosis; rollback
-DDL probe1. Grant only CREATE ON SCHEMA public to the exact trusted setup owner if
-catalog and probe both prove it is missing. Only then canonical migration reattempt1;
-otherwise rollback-only migration diagnosis and stop for any other privilege cause.
-No other privilege repair, membership/owner change, new DB/resource, product/migration
-edit, Vercel/env/deploy, Square, webhook, payment, main or Avatar change. Historical
-migration failure1 remains. Existing F3 review0/1 is usable only after all hosted proof
-and cleanup PASS. No extra review slot. Parent is the single writer; Runner stays off.
+Read docs/execution/PRODUCTION_P6_R15_F3_42501_AUTHORITY.md and
+p6/r15-hosted-db-proof-42501-resume/FINAL_RESULT.md under docs/execution.
+Current status: PRODUCTION_P6_STATUS.json / r15.f3HostedDbProof42501Resume.
+Authority03f557b was pushed/read back before access. Credential attempt1/1 returned
+HTTP200, but the local UI parser did not retain a usable connection URI. No DB client
+or connection was created. Owner section17 stop applies; no credential retry.
+Ownership diagnosis, DDL probe, privilege repair, migration reattempt and hosted tests
+are NOT_RUN. Historical canonical migration invocation1/FAIL42501 remains unchanged.
+Existing empty DB zr_852b20c4d4b0 and Neon store_i5vh0ZEKo2ikcVo9 were not changed.
+Browser/process closed; secret staging/runtime credentials0. F3 remains OPEN/HIGH;
+review budget initial1/1, correction1/1, F3 hosted0/1, post-live final0/1 is unchanged.
+Next: ChatGPT assessment and validated local handoff, then explicit new bounded
+credential authority. No live/DB/Claude continuation, new resource/DB, Vercel, Square,
+webhook, payment, main or Avatar change. Parent remains the single writer.
 
 ## Historical — prior F3 failure checkpoint
 

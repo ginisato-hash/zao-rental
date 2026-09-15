@@ -1569,30 +1569,37 @@
       "authoritySha256": "0865bc751aa140c8f60b87f460a10e68c4767071d7987168e26377cb0c5b183f",
       "startingHead": "be1520b7acd7ad58e64d47022e3a82842af02b29",
       "recordedAtUtc": "2026-09-15T11:30:32.667849+00:00",
-      "state": "AUTHORITY_RECORDED_PENDING_PUSH_READBACK",
+      "state": "BLOCKED_LOCAL_CREDENTIAL_HANDOFF",
       "resourceId": "store_i5vh0ZEKo2ikcVo9",
       "database": "zr_852b20c4d4b0",
       "historicalMigrationInvocations": 1,
       "historicalMigrationResult": "FAIL_42501_ROLLED_BACK",
       "newCredentialAcquisition": {
         "limit": 1,
-        "used": 0
+        "used": 1,
+        "status": "BLOCKED_LOCAL_HANDOFF",
+        "httpStatus": 200,
+        "retry": 0
       },
       "ddlProbe": {
         "limit": 1,
-        "used": 0
+        "used": 0,
+        "status": "NOT_RUN"
       },
       "conditionalPublicCreateRepair": {
         "limit": 1,
-        "used": 0
+        "used": 0,
+        "status": "NOT_RUN"
       },
       "migrationReattempt": {
         "limit": 1,
-        "used": 0
+        "used": 0,
+        "status": "NOT_RUN"
       },
       "roleProvision": {
         "limit": 1,
-        "used": 0
+        "used": 0,
+        "status": "NOT_RUN"
       },
       "reviewBudget": {
         "maximum": 4,
@@ -1617,10 +1624,31 @@
       "newResources": 0,
       "newDatabases": 0,
       "liveActions": 0,
-      "next": "Push/readback this authority before DB access; diagnose retained DB ownership, then one rollback CREATE probe. Repair only exact setup-owner public CREATE if both catalog/probe demonstrate its absence; otherwise rollback-only migration diagnosis and stop for other cause."
+      "next": "ChatGPT Technical Director assessment of the local credential-handoff failure. Correct and validate the local secret-free acquisition operator before any future attempt; a new explicit bounded credential acquisition authority is required. Current attempt is exhausted. 42501 ownership diagnosis/probe/repair remain unexecuted; no DB, Vercel, Square, webhook, payment or Claude continuation.",
+      "authorityCommit": "03f557bb2cd4e1b39711f04c23414d0b13e66895",
+      "authorityRemoteReadback": true,
+      "closedAtUtc": "2026-09-15T11:48:35.903430+00:00",
+      "databaseConnections": 0,
+      "ownershipDiagnosis": "NOT_RUN",
+      "publicCreateBefore": null,
+      "rollbackMigrationDiagnostic": 0,
+      "cumulativeCanonicalMigrationInvocations": 1,
+      "hostedTests": 0,
+      "independent_review": "NOT_RUN",
+      "reviewed_head": null,
+      "review_findings": {
+        "BLOCKER": 0,
+        "HIGH": 1,
+        "MEDIUM": 0,
+        "LOW": 2
+      },
+      "owner_gate": "STOP_CREDENTIAL_REACQUISITION_FAILURE_SECTION17",
+      "secretExposure": 0,
+      "cleanup": "COMPLETE; browser/process closed; no DB client, staging file or runtime credential",
+      "evidence": "p6/r15-hosted-db-proof-42501-resume/FINAL_RESULT.md"
     }
   },
   "preGovernanceTopLevelNext": "Local-only receiver, additive inbox migration, repository claim boundary, fixture/static tests and activation gate; no live provider/DB/browser/model",
-  "currentGate": "R15_F3_42501_AUTHORITY_RECORDED_PENDING_PUSH_READBACK",
+  "currentGate": "R15_F3_42501_BLOCKED_LOCAL_CREDENTIAL_HANDOFF",
   "currentStatusPointer": "r15.f3HostedDbProof42501Resume"
 }

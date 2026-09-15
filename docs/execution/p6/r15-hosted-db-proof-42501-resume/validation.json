@@ -1,0 +1,23 @@
+{
+  "atUtc": "2026-09-15T11:49:47.554140+00:00",
+  "secretScan": {
+    "status": "PASS",
+    "exitCode": 0,
+    "filesAtCheck": 1551,
+    "limitation": "Pattern scan is not comprehensive"
+  },
+  "referenceCheck": {
+    "status": "PASS",
+    "unchangedFiles": 32
+  },
+  "jsonParsing": "PASS",
+  "authorityHash": "PASS",
+  "migrationSourceHashes": "PASS_0001_THROUGH_0030",
+  "productMigrationRoleSourcePreservation": "PASS",
+  "historicalFailureAndReviewPreservation": "PASS",
+  "diffCheck": "PASS",
+  "localRepairRefusalCases": 4,
+  "hostedTests": "NOT_RUN",
+  "lintTypecheckBuild": "NOT_RERUN_AUTHORITY_STATUS_EVIDENCE_ONLY",
+  "independentReview": "NOT_RUN"
+}

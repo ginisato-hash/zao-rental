@@ -1,0 +1,32 @@
+{
+  "status": "NOT_RUN",
+  "reason": "Hosted proof prerequisites unmet; no Claude start",
+  "F3": "OPEN_HIGH",
+  "lastIndependentVerdict": "CHANGES_REQUIRED",
+  "currentSeverityCounts": {
+    "BLOCKER": 0,
+    "HIGH": 1,
+    "MEDIUM": 0,
+    "LOW": 2
+  },
+  "budget": {
+    "maximum": 4,
+    "initial": {
+      "used": 1,
+      "limit": 1
+    },
+    "correction": {
+      "used": 1,
+      "limit": 1
+    },
+    "F3_HOSTED_PROOF_REVIEW": {
+      "used": 0,
+      "limit": 1
+    },
+    "finalEvidence": {
+      "used": 0,
+      "limit": 1
+    }
+  },
+  "budgetAdded": 0
+}

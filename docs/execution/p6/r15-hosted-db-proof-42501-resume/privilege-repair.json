@@ -1,0 +1,11 @@
+{
+  "atUtc": "2026-09-15T11:48:35.903430+00:00",
+  "status": "NOT_RUN",
+  "reason": "Catalog and DDL prerequisites were not reached; NOT_NEEDED cannot be concluded.",
+  "invocations": 0,
+  "otherPrivilegeMutation": 0,
+  "publicGrant": 0,
+  "runtimeGrant": 0,
+  "roleMembershipMutation": 0,
+  "databaseOrSchemaOwnershipMutation": 0
+}

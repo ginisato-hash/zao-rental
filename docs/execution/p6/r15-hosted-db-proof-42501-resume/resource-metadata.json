@@ -1,0 +1,13 @@
+{
+  "atUtc": "2026-09-15T11:32:08.026645+00:00",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "status": "available",
+  "plan": {
+    "id": "free_v3",
+    "name": "Free",
+    "paymentMethodRequired": false
+  },
+  "connectedProjects": 0,
+  "valuesRead": false,
+  "rawPersisted": false
+}

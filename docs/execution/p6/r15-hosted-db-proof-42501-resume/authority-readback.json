@@ -1,0 +1,7 @@
+{
+  "authorityCommit": "03f557bb2cd4e1b39711f04c23414d0b13e66895",
+  "remoteReadback": "03f557bb2cd4e1b39711f04c23414d0b13e66895",
+  "matches": true,
+  "workingTreeAfterAuthorityPush": "CLEAN",
+  "dbAccessBeforeAuthorityReadback": 0
+}

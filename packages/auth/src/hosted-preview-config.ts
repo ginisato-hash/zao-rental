@@ -3,9 +3,8 @@ import {phase6NeonHostname} from '../../db/src/neon-tls';
 export const phase6Resource='store_i5vh0ZEKo2ikcVo9';
 export const phase6Database='zr_852b20c4d4b0';
 export const phase6Branch='codex/avatar-phase6-hosted-preview';
-// Replace only with the returned dedicated project's ID before any deployment.
-// This value cannot match a Vercel-issued project ID while provisioning is pending.
-export const phase6Project='UNPROVISIONED_PHASE6_PROJECT';
+// Dedicated Phase6 project; the historical zao-rental project remains forbidden.
+export const phase6Project='prj_EonVxKra8p9txdZ7O2Ko6t1A8biW';
 // Exact existing compute is verified through the resource's ordinary Neon console.
 export const phase6Endpoint='ep-winter-lake-b3fd2qtp';
 export const phase6R2Account='dce72332f2b04366335908cc383996d6';

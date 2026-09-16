@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUME_V2_VERCEL_DIRECT_APPROVAL_RECORDED",
+  "phase": "RESUME_V2_VERCEL_SECRET_HANDOFF_APPROVAL_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -30,7 +30,7 @@
       "max": 1
     },
     "dedicatedVercelProjects": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "resumeV2NeonOAuth": {
@@ -61,7 +61,7 @@
     "typecheck": "PASS",
     "build": "PASS",
     "repositorySecretPatternScan": "PASS_1870_FILES_NOT_COMPREHENSIVE",
-    "migrationHashes": "0001–0032_UNCHANGED",
+    "migrationHashes": "0001\u20130032_UNCHANGED",
     "hostedNeon": "NOT_RUN",
     "hostedR2": "NOT_RUN",
     "hostedBrowser": "NOT_RUN",
@@ -80,7 +80,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Create dedicated protected project, Preview-only env, protected deployment, hosted E2E, final review; no further Owner confirmation inside direct authority.",
+  "nextGate": "Automatic approval review requires direct approval naming six Phase6 Neon runtime credentials, R2 read-only credential and guest signing key for the dedicated Vercel Preview sensitive env. Prepared operation only; no alternate transmission.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -132,14 +132,17 @@
     "r2Objects": 3,
     "r2WriteCredential": "REVOKED_LOCAL_FILE_REMOVED",
     "r2ReadCredential": "PASS_READ3_PUT403_DELETE403",
-    "dedicatedVercelProject": "NOT_CREATED",
+    "dedicatedVercelProject": "CREATED_AUTHENTICATION_ON",
     "hostedE2E": "NOT_RUN",
     "claude": "NOT_RUN",
     "setupOAuth": "LIVE_PENDING_COMPLETION_REVOKE",
     "cleanup": "PENDING_ACTIVE_TASK",
-    "newTaskSecretExposureAfterThisResume": 0
+    "newTaskSecretExposureAfterThisResume": 0,
+    "vercelEnvironment": "ZERO_ENTRIES_LAST_READ; branch-scoped env rejected; Preview-only secret transfer blocked before execution",
+    "deployArtifactPreflight": "PASS_LOCAL_DRY_RUN_ONLY"
   },
   "continuationStartingHead": "e77715d10341a7e12b4a47d584030b8da869ea9d",
   "continuationAuthoritySha256": "1026587ec4eff33c0ff8cee4fdc42112965dea0714f8ad0839fbf6f5cb3554e2",
-  "vercelDirectOwnerApprovalSha256": "76e3dd93bb62165c374f376d90acee90a077227cb213ea4e14e13458b87bd130"
+  "vercelDirectOwnerApprovalSha256": "76e3dd93bb62165c374f376d90acee90a077227cb213ea4e14e13458b87bd130",
+  "dedicatedVercelProjectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW"
 }

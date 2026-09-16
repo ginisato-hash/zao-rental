@@ -1,3 +1,20 @@
+## Current — Avatar Phase6 protected hosted Preview
+
+Owner adopts docs/execution/AVATAR_PHASE6_AUTHORITY.md. Read avatar-phase6/PLAN.md.
+Base ec420cbd166af0749caecfa654c0a1e362628891; codex/avatar-phase6-hosted-preview.
+Parent single writer. Existing Neon store_i5vh0ZEKo2ikcVo9 / zr_852b20c4d4b0 only;
+add exact0031/0032 in one guarded migration run, retain frozen R15 verifier/history.
+Fix importer timeouts and Avatar rate limiting; add explicit least-privilege hosted
+Preview composition without weakening local gates. Exact3 approved derivative WebPs
+may use protected-preview rights; private R2 max1 bucket / max3 objects, no public access.
+Vercel existing project protected Preview max2, Preview-only env, runtime read-only R2.
+Synthetic hosted GuestBooking/browser/security acceptance, then final static Claude
+initial1; correction1 only for BLOCKER/HIGH/MEDIUM. Preserve LOW history.
+Square/payment/refund/webhook/real customer/Production/main merge0. No Phase7 execution.
+Proceed autonomously through technical defects; human login/terms/billing/legal gates only.
+
+## Historical — completed Phase5 artwork activation
+
 ## Current — Phase5 source-derived local artwork activation
 
 Read docs/execution/AVATAR_PHASE5_ARTWORK_AUTHORITY.md and avatar-artwork-activation/PLAN.md.

@@ -1,5 +1,17 @@
 # Dedicated Preview configuration checkpoint
 
+## Resolution after the pending checkpoint
+
+The Owner explicitly authorized the exact secret payload in chat; the authority
+was committed/pushed/read back at 28d388620a6dd7e1f6b1310553c7fd25a76316cb.
+The first Preview batch request returned INVALID_BODY and metadata confirmed zero
+entries. Single-entry correction succeeded for both keys. Both entries use
+sensitive type and Preview target only, including the nonsecret mode marker.
+See vercel-settings.json. No values were captured in evidence or tool output.
+The checkpoint below is preserved history; its approval wait is resolved.
+
+## Historical pending checkpoint
+
 Owner direct approval is committed at 161174a0a1cb16e93ea2eae9dadb8bdec2b25c2a.
 One dedicated project was created: zao-rental-avatar-preview /
 prj_EonVxKra8p9txdZ7O2Ko6t1A8biW. Vercel Authentication is ON;

@@ -39,11 +39,12 @@ REVOKE ALL ON booking_notification_outbox FROM PUBLIC;
 -- These functions own only delivery/recovery bookkeeping, never booking state.
 ALTER TABLE booking_access.recoveries ADD COLUMN notification_derivation text NOT NULL DEFAULT 'GUEST_V1' CHECK(notification_derivation IN ('GUEST_V1','EMAIL_V1'));
 
-CREATE FUNCTION notification_enqueue_confirmed(p_booking uuid,p_locale text DEFAULT 'ja') RETURNS uuid
+ALTER TABLE rental_bookings ADD COLUMN notification_locale text NOT NULL DEFAULT 'ja' CHECK(notification_locale IN ('ja','en'));
+
+CREATE FUNCTION notification_enqueue_confirmed(p_booking uuid) RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp SET lock_timeout='1s' AS $$DECLARE result uuid;BEGIN
- IF p_locale NOT IN ('ja','en') THEN RAISE EXCEPTION 'INVALID_LOCALE' USING ERRCODE='23514';END IF;
  INSERT INTO booking_notification_outbox(event_type,booking_id,recipient_reference,dedupe_key,locale,template_version,next_attempt_at)
- SELECT 'BOOKING_CONFIRMED',b.id,b.id,'booking-confirmed:'||b.id||':1',p_locale,'BOOKING_NOTIFICATION_V1',inventory_clock()
+ SELECT 'BOOKING_CONFIRMED',b.id,b.id,'booking-confirmed:'||b.id||':1',b.notification_locale,'BOOKING_NOTIFICATION_V1',inventory_clock()
  FROM rental_bookings b JOIN rental_notifications n ON n.booking_id=b.id WHERE b.id=p_booking AND b.confirmed_at IS NOT NULL AND b.state IN ('CONFIRMED_DEV','COMPLETED_DEV')
  ON CONFLICT(dedupe_key) DO NOTHING;
  SELECT id INTO result FROM booking_notification_outbox WHERE dedupe_key='booking-confirmed:'||p_booking||':1';RETURN result;
@@ -51,13 +52,12 @@ END$$;
 CREATE FUNCTION notification_sync_confirmed() RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE r record;n integer:=0;BEGIN
  FOR r IN SELECT b.id FROM rental_bookings b JOIN rental_notifications e ON e.booking_id=b.id WHERE b.confirmed_at IS NOT NULL AND b.state IN ('CONFIRMED_DEV','COMPLETED_DEV') AND NOT EXISTS(SELECT 1 FROM booking_notification_outbox o WHERE o.dedupe_key='booking-confirmed:'||b.id||':1') ORDER BY b.id LIMIT 100 LOOP
-  PERFORM notification_enqueue_confirmed(r.id,'ja');n:=n+1;
+  PERFORM notification_enqueue_confirmed(r.id);n:=n+1;
  END LOOP;RETURN n;
 END$$;
 
 CREATE FUNCTION booking_access.queue_recovery(p_context uuid,p_actor text,p_guest_hash text,p_booking uuid,p_request uuid,p_code_hash text,p_key_version text,p_locale text)
 RETURNS TABLE(expires_at timestamptz,replayed boolean) LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE r record;t timestamptz;BEGIN
- IF p_locale NOT IN ('ja','en') THEN RAISE EXCEPTION 'INVALID_LOCALE' USING ERRCODE='23514';END IF;
  -- The original locked ownership/expiry/rotation checks remain authoritative.
  SELECT * INTO r FROM booking_access.prepare_recovery(p_context,p_actor,p_guest_hash,p_booking,p_request,p_code_hash,p_key_version);
  t:=inventory_clock();
@@ -113,23 +113,23 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $
  ELSIF p_result='REJECTED' AND p_failure='PERMANENT_REJECT' THEN new_status:='PERMANENT_FAILURE';
  ELSIF p_result='SUPPRESSED' AND p_failure IN ('RECOVERY_EXPIRED_OR_REVOKED','TEMPLATE_UNAVAILABLE','RECIPIENT_UNAVAILABLE') THEN new_status:='SUPPRESSED';
  ELSE new_status:='UNKNOWN';p_failure:='ACCEPTANCE_UNKNOWN';END IF;
- UPDATE booking_notification_outbox SET status=new_status,claim_id=NULL,claim_until=NULL,provider_message_id=CASE WHEN new_status='SENT' THEN p_provider ELSE NULL END,sent_at=CASE WHEN new_status='SENT' THEN t ELSE NULL END,next_attempt_at=CASE WHEN new_status='RETRYABLE_FAILURE' THEN t+(power(2,o.attempt_count)*interval '1 minute') ELSE NULL END,last_safe_failure_code=p_failure WHERE id=o.id;
+ UPDATE booking_notification_outbox SET status=new_status,claim_id=NULL,claim_until=NULL,provider_message_id=CASE WHEN new_status='SENT' THEN p_provider ELSE NULL END,sent_at=CASE WHEN new_status='SENT' THEN t ELSE NULL END,next_attempt_at=CASE WHEN new_status='RETRYABLE_FAILURE' THEN t+(power(2,o.attempt_count)*interval '1 minute') WHEN new_status='UNKNOWN' THEN t+interval '1 minute' ELSE NULL END,last_safe_failure_code=p_failure WHERE id=o.id;
  IF new_status='SENT' AND o.event_type='BOOKING_RECOVERY' THEN PERFORM booking_access.recovery_delivered((SELECT code_sha256 FROM booking_access.recoveries WHERE booking_id=o.booking_id AND request_id=o.recovery_request_id));END IF;RETURN true;
 END$$;
 CREATE FUNCTION notification_unknown(p_id uuid) RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE o booking_notification_outbox;BEGIN
  SELECT * INTO o FROM booking_notification_outbox WHERE id=p_id FOR UPDATE;IF NOT FOUND THEN RETURN NULL;END IF;
  IF o.status='SENDING' AND o.claim_until<=inventory_clock() THEN UPDATE booking_notification_outbox SET status='UNKNOWN',claim_id=NULL,claim_until=NULL,last_safe_failure_code='ACCEPTANCE_UNKNOWN' WHERE id=o.id;o.status:='UNKNOWN';END IF;
- IF o.status='UNKNOWN' THEN RETURN o.dedupe_key;END IF;RETURN NULL;
+ IF o.status='UNKNOWN' AND (o.next_attempt_at IS NULL OR o.next_attempt_at<=inventory_clock()) THEN UPDATE booking_notification_outbox SET next_attempt_at=inventory_clock()+interval '10 minutes' WHERE id=o.id;RETURN o.dedupe_key;END IF;RETURN NULL;
 END$$;
 CREATE FUNCTION notification_reconciled(p_id uuid,p_provider text) RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE o booking_notification_outbox;BEGIN
  IF p_provider IS NULL OR p_provider !~ '^[-A-Za-z0-9_]{1,128}$' THEN RETURN false;END IF;
- UPDATE booking_notification_outbox SET status='SENT',sent_at=inventory_clock(),provider_message_id=p_provider,last_safe_failure_code='NONE' WHERE id=p_id AND status='UNKNOWN' RETURNING * INTO o;IF NOT FOUND THEN RETURN false;END IF;
+ UPDATE booking_notification_outbox SET status='SENT',sent_at=inventory_clock(),provider_message_id=p_provider,next_attempt_at=NULL,last_safe_failure_code='NONE' WHERE id=p_id AND status='UNKNOWN' RETURNING * INTO o;IF NOT FOUND THEN RETURN false;END IF;
  IF o.event_type='BOOKING_RECOVERY' THEN PERFORM booking_access.recovery_delivered((SELECT code_sha256 FROM booking_access.recoveries WHERE booking_id=o.booking_id AND request_id=o.recovery_request_id));END IF;RETURN true;
 END$$;
-CREATE FUNCTION notification_due() RETURNS TABLE(id uuid) LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
- SELECT id FROM booking_notification_outbox WHERE status IN ('PENDING','RETRYABLE_FAILURE') AND next_attempt_at<=inventory_clock() OR status='SENDING' AND claim_until<=inventory_clock() ORDER BY created_at,id LIMIT 100
+CREATE FUNCTION notification_due() RETURNS TABLE(id uuid,action text) LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+ SELECT id,CASE WHEN status IN ('UNKNOWN','SENDING') THEN 'LOOKUP' ELSE 'SEND' END FROM booking_notification_outbox WHERE status IN ('PENDING','RETRYABLE_FAILURE') AND next_attempt_at<=inventory_clock() OR status='UNKNOWN' AND (next_attempt_at IS NULL OR next_attempt_at<=inventory_clock()) OR status='SENDING' AND claim_until<=inventory_clock() ORDER BY coalesce(next_attempt_at,claim_until,created_at),id LIMIT 100
 $$;
 CREATE FUNCTION notification_status(p_store text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE result jsonb;BEGIN
  PERFORM ops_assert_actor('BOOKING_VIEW',ARRAY[p_store],current_setting('zao.actor',true));
@@ -155,5 +155,5 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $
  VALUES(o.event_type,o.booking_id,o.booking_id,'manual:'||p_id||':'||p_request,o.recovery_request_id,o.id,o.locale,o.template_version,t) RETURNING id INTO result;
  INSERT INTO ops_history(resource,entity_id,actor,event,after_data) VALUES('booking_notification_outbox',result,current_setting('zao.actor'),'MANUAL_RESEND_REQUESTED',jsonb_build_object('bookingId',o.booking_id,'parentDeliveryId',o.id,'reason',p_reason,'store',p_store));RETURN result;
 END$$;
-REVOKE ALL ON FUNCTION notification_enqueue_confirmed(uuid,text),notification_sync_confirmed(),notification_claim(uuid),notification_material(uuid,uuid),notification_settle(uuid,uuid,text,text,text),notification_unknown(uuid),notification_reconciled(uuid,text),notification_due(),notification_status(text),notification_resend(uuid,uuid,text,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION notification_enqueue_confirmed(uuid),notification_sync_confirmed(),notification_claim(uuid),notification_material(uuid,uuid),notification_settle(uuid,uuid,text,text,text),notification_unknown(uuid),notification_reconciled(uuid,text),notification_due(),notification_status(text),notification_resend(uuid,uuid,text,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION booking_access.queue_recovery(uuid,text,text,uuid,uuid,text,text,text),booking_access.request_recovery(uuid,text,uuid,text,text,text) FROM PUBLIC;

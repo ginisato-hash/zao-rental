@@ -346,5 +346,85 @@
   "notificationBrowserCases": 3,
   "e2eTests": 18,
   "review": "PENDING",
-  "ci": "PENDING"
+  "ci": "PENDING",
+  "reviewCorrection": {
+    "status": "PASS",
+    "findings": [
+      "M1",
+      "M2"
+    ],
+    "checks": [
+      {
+        "command": "npm run test:notification",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-test-notification.log",
+        "sha256": "82e881b0061f50b01e6af9600607a8215b3b5de898245a3611b26cadc7655ea7"
+      },
+      {
+        "command": "npm run test:public-guest",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-test-public-guest.log",
+        "sha256": "af53ef49060fe03b9816ff64db68dbf7239ff87026decf9eb519f4421d2503f5"
+      },
+      {
+        "command": "npm run test:public-ui",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-test-public-ui.log",
+        "sha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be"
+      },
+      {
+        "command": "npm run test:notification-ui",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-test-notification-ui.log",
+        "sha256": "ba6b4fa01a612e62ba219e3bb3e56c34f3649ce876eb7af09f94cbb963230b48"
+      },
+      {
+        "command": "npm run test:flow-payment",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-test-flow-payment.log",
+        "sha256": "b5222ce3161f14002c2f65a4294a53a2c23273b45438bcc7c00d93fc60ad1c99"
+      },
+      {
+        "command": "npm run test:booking-recovery",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-test-booking-recovery.log",
+        "sha256": "1c51a1cb006c90c7230304ae4c3af6c2b35d230f0000def2dae7840ae7546770"
+      },
+      {
+        "command": "npm run test:unit",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-test-unit.log",
+        "sha256": "63f40f0eb7e06f83dac99802b50652eb8f4a427649e5c18b404ee9d889690cd7"
+      },
+      {
+        "command": "npm run lint",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-lint.log",
+        "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e"
+      },
+      {
+        "command": "npm run typecheck",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-typecheck.log",
+        "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+      },
+      {
+        "command": "npm run build",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-build.log",
+        "sha256": "32722c56b00400ae5ca7a17cac405a4b98f83ce396863fbed1ca62fd4bf52f76"
+      },
+      {
+        "command": "npm run check:secrets",
+        "exitCode": 0,
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/correction-secrets.log",
+        "sha256": "a151d7314e008a862489f819898c07e5f30c1c0da5dc116fccfe9e82fee27cab"
+      }
+    ],
+    "fullRegressionPriorToCorrection": true,
+    "notes": [
+      "Initial wrapper rejected lint/typecheck/build before execution; supported npm scripts then ran successfully.",
+      "Rebuilt browser tests rerun after build; test-only concurrency/immutability assertions then passed targeted PG."
+    ]
+  }
 }

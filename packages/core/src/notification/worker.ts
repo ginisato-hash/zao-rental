@@ -10,7 +10,7 @@ type Material={eventType:NotificationEvent;locale:NotificationLocale;bookingId:s
 export class BookingNotificationWorker{
  constructor(private pool:Pool,private origin:string,private recovery:BookingRecovery,private adapter?:BookingNotificationDelivery,private timeoutMs=5000){if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>30000)throw new FlowError('NOTIFICATION_CONFIGURATION_INVALID',503);}
  status(){return this.adapter?'CONFIGURED':'BOOKING_RECOVERY_DELIVERY_UNCONNECTED';}
- async enqueueConfirmed(bookingId:string,locale:NotificationLocale='ja'){flowId(bookingId);return (await this.pool.query('SELECT notification_enqueue_confirmed($1,$2) id',[bookingId,locale])).rows[0].id as string|null;}
+ async enqueueConfirmed(bookingId:string){flowId(bookingId);return (await this.pool.query('SELECT notification_enqueue_confirmed($1) id',[bookingId])).rows[0].id as string|null;}
  async synchronize(){return Number((await this.pool.query('SELECT notification_sync_confirmed() n')).rows[0].n);}
  private async bounded(call:(signal:AbortSignal)=>Promise<DeliveryResult>){const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined;try{return safeDeliveryResult(await Promise.race([call(controller.signal),new Promise<never>((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error());},this.timeoutMs);})]));}catch{return {state:'UNKNOWN'} as const;}finally{clearTimeout(timer);}}
  async dispatch(id:string){flowId(id);if(!this.adapter)return {state:'UNCONNECTED' as const};
@@ -35,5 +35,5 @@ export class BookingNotificationWorker{
   // No missing-result lookup or operator action can silently authorize another send.
   if(result.state==='ACCEPTED')await this.pool.query('SELECT notification_reconciled($1,$2)',[id,result.providerMessageId]);return {state:result.state==='ACCEPTED'?'SENT':'UNKNOWN'};
  }
- async runBatch(){await this.synchronize();if(!this.adapter)return {state:'UNCONNECTED',processed:0};const rows=(await this.pool.query('SELECT id FROM notification_due()')).rows;for(const row of rows)await this.dispatch(row.id);return {state:'PROCESSED',processed:rows.length};}
+ async runBatch(){await this.synchronize();if(!this.adapter)return {state:'UNCONNECTED',processed:0};const rows=(await this.pool.query('SELECT id,action FROM notification_due()')).rows;for(const row of rows)if(row.action==='LOOKUP')await this.reconcile(row.id);else await this.dispatch(row.id);return {state:'PROCESSED',processed:rows.length};}
 }

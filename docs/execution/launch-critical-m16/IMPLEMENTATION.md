@@ -11,3 +11,5 @@ Staff status is restricted by maintained session, BOOKING_VIEW and store scope. 
 Normal Production composition exposes the queue but keeps notification provider UNCONNECTED. A separate server integration port validates a later Owner-selected provider binding/credentials; no provider SDK, network transport, scheduler,contract or real credential is supplied. The test-only Loopback adapter stays outside product imports. A queued message is never described as sent. JA/EN templates point to the existing non-bearer reservation/QR page; the recovery proof is entered by POST, never in URLs.
 
 Current commercial checkout gates remain unchanged. Synthetic confirmed bookings are used for all proofs; this is not Production booking or delivery acceptance.
+
+Review corrections: booking notification locale is frozen with the canonical booking and checkout intent. runBatch performs grace-period UNKNOWN lookups only, with a ten-minute durable probe reservation; missing lookup never becomes resend authority. Production provider remains unconnected.

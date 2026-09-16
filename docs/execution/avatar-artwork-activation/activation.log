@@ -1,0 +1,52 @@
+PASS ARTWORK three Owner-approved local derivatives: manifest, format, alpha, dimensions and physical bounds
+PASS PG all0001–0032 historical hashes preserved and migrated
+PASS PG atomic core import creates three distinct media/visuals, purpose grant and immutable current release
+PASS PG second import refuses populated content and leaves every row unchanged
+PASS PG AV-1 actual imported binding immutable: id
+PASS PG AV-1 actual imported binding immutable: layer
+PASS PG AV-1 actual imported binding immutable: avatar_type
+PASS PG AV-1 actual imported binding immutable: match_kind
+PASS PG AV-1 actual imported binding immutable: model_id
+PASS PG AV-1 actual imported binding immutable: variant_id
+PASS PG AV-1 actual imported binding immutable: season
+PASS PG AV-1 actual imported binding immutable: ski_length_cm
+PASS PG AV-1 actual imported binding immutable: media_id
+PASS PG AV-1 actual imported binding immutable: derivative_sha256
+PASS PG AV-1 actual imported binding immutable: revision_id
+PASS PG AV-1 actual imported binding immutable: release_id
+PASS PG AV-1 actual imported binding immutable: created_at
+PASS PG AV-3 narrow Avatar role cannot SELECT content_workspace
+PASS PG AV-3 narrow Avatar role cannot SELECT content_media_objects
+PASS PG AV-3 narrow Avatar role cannot SELECT content_revision_records
+PASS PG AV-3 narrow Avatar role cannot SELECT avatar_visuals
+PASS PG AV-3 narrow Avatar role cannot SELECT guest_contexts
+PASS PG AV-3 narrow Avatar role cannot SELECT recommendation_previews
+PASS PG AV-3 cannot mutate visual or business data or create permanent tables
+PASS PG narrow function has pinned path, PUBLIC execution denied, role has no elevated flags/memberships
+PASS BROWSER normal GuestBooking creates two synthetic member candidates before artwork interactions
+PASS PG current owner/member metadata includes approved body/ski and optional layers null
+PASS PG authenticated guest receives exact approved WebP bytes without public cache
+PASS PG anonymous denial for owner metadata and bytes
+PASS PG cross-guest denial for owner metadata and bytes
+PASS PG stale revision and foreign member deny media
+PASS BROWSER 390px appearance1 RECOMMENDED both members physical ratio/floor
+PASS BROWSER 390px appearance1 SHORTER both members physical ratio/floor
+PASS BROWSER 390px appearance1 LONGER both members physical ratio/floor
+PASS BROWSER 390px appearance2 RECOMMENDED both members physical ratio/floor
+PASS BROWSER 390px appearance2 SHORTER both members physical ratio/floor
+PASS BROWSER 390px appearance2 LONGER both members physical ratio/floor
+PASS BROWSER 1440px appearance1 RECOMMENDED both members physical ratio/floor
+PASS BROWSER 1440px appearance1 SHORTER both members physical ratio/floor
+PASS BROWSER 1440px appearance1 LONGER both members physical ratio/floor
+PASS BROWSER 1440px appearance2 RECOMMENDED both members physical ratio/floor
+PASS BROWSER 1440px appearance2 SHORTER both members physical ratio/floor
+PASS BROWSER 1440px appearance2 LONGER both members physical ratio/floor
+PASS BROWSER visual controls make no metadata reload, business POST or image optimizer request
+PASS PG all guest/business rows unchanged after both appearances/directions/viewports/members
+PASS PG rights revocation denies previously valid derivative URL immediately
+PASS BROWSER AV-2 no eligible artwork means no fabricated renderer; ordinary candidates remain
+PASS BROWSER normal local staff login for PHASE4-1 permission proof
+PASS PG PHASE4-1 all three permissions allow bytes; BOOKING_VIEW-only denies bytes and page
+PASS BROWSER normal logout revokes owner media/metadata while other guest remains valid
+PASS BROWSER no fatal/hydration errors or external attempts
+Owned artwork acceptance browser/Next/PostgreSQL closed.

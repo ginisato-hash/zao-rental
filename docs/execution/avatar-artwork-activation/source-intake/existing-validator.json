@@ -1,0 +1,31 @@
+{
+  "mode": "LOCAL_EXISTING_PURE_RASTER_VALIDATOR",
+  "sourceChanges": 0,
+  "derivativesCreated": 0,
+  "results": [
+    {
+      "file": "1.png",
+      "layer": "AVATAR",
+      "validAvatarRaster": false
+    },
+    {
+      "file": "2.png",
+      "layer": "AVATAR",
+      "validAvatarRaster": false
+    },
+    {
+      "file": "3.png",
+      "layer": "SKI",
+      "validAvatarRaster": false
+    },
+    {
+      "file": "4.png",
+      "layer": "SKI",
+      "validAvatarRaster": false
+    }
+  ],
+  "deferred": [
+    "5.png",
+    "6.png"
+  ]
+}

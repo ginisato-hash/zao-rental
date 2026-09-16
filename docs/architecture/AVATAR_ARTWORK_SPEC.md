@@ -121,3 +121,26 @@ Code-level guest integration is available only through the existing local develo
 runtime. Production fails closed. Public artwork activation remains false; the old
 AVATAR_VISUALIZATION_FEATURE=false rollout marker is retained and is not an independent
 runtime permission. Normal no-art completion: PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED.
+
+
+## Resumed Phase5: Owner-authorized local derivative package
+
+The direct AVATAR_PHASE5_ARTWORK_AUTHORITY.md supersedes only the earlier no-artwork
+input stop for this milestone. The Owner authorizes original local full-body illustrations
+from source1/2 clothing references and a generic ski from source3/4 references. This is
+explicit derivative creation, not promotion of the old synthetic test fixture or approval
+of the opaque120px sources. All raster/physical bounds/rights/authorization rules above
+remain. The completed files live outside public/static asset routes under
+execution/avatar-artwork-activation/artwork, with authority/hash-bound manifest.
+
+Rights classification: OWNER_SUPPLIED_SOURCE_DERIVATIVE_LOCAL_USE_ONLY. qualified
+finished derivatives are conditionally approved for local development/acceptance by the
+Owner authority; productionApproved=false. Both appearances share exactly the same alpha
+silhouette/body landmarks and differ only in clothing palette; all3 use GENERIC_REFERENCE
+with no exact model/variant/season/length claim. Optional garment/boot layers are null.
+
+A bounded local helper imports only the approved manifest/hash set into a fresh owned
+loopback database, refuses nonempty content and uses insert-only immutable bindings.
+Local delivery's existing internalOnly=false permits the local guest renderer; it is not
+a license or Production flag. The isolated local import grants a finite24-hour rights
+window. The Production runtime still fails closed. No hosted import or asset upload occurs.

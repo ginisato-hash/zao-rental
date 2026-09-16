@@ -1,0 +1,26 @@
+[
+  {
+    "file": "docs/execution/avatar-artwork-activation/screenshots/390-appearance1.png",
+    "sha256": "7a5a7fd325f24efb52a6445484c5300f0ee95daaa585ce53f53e4d339fd34281",
+    "ownerApprovedLocalArtwork": true,
+    "syntheticBusinessData": true
+  },
+  {
+    "file": "docs/execution/avatar-artwork-activation/screenshots/390-appearance2.png",
+    "sha256": "4c5fed74160dfb0a7bd130b4fbcb52112d4dc322e2c77b3b31bbe34487dffcaf",
+    "ownerApprovedLocalArtwork": true,
+    "syntheticBusinessData": true
+  },
+  {
+    "file": "docs/execution/avatar-artwork-activation/screenshots/1440-appearance1.png",
+    "sha256": "2cce0dfba019d7431ad802b4dc2e8de57b7053289583fd5b9d3a9b9233b10cb0",
+    "ownerApprovedLocalArtwork": true,
+    "syntheticBusinessData": true
+  },
+  {
+    "file": "docs/execution/avatar-artwork-activation/screenshots/1440-appearance2.png",
+    "sha256": "0da85b48578f3ae0eb9cc5a86e62ca16b5905cdd55104c7a28114a8eece66173",
+    "ownerApprovedLocalArtwork": true,
+    "syntheticBusinessData": true
+  }
+]

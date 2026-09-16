@@ -81,7 +81,18 @@ New checkpoints distinguish `implementation_validation` (SELF_VERIFIED/FAILED/NO
 build/secret-scan/UI/provider checks are Codex self-validation. Historical status is not
 rewritten to claim reviews or external acceptance that did not occur.
 
-## Current Avatar Phase5 milestone
+## Current Phase5 artwork activation milestone
+
+AVATAR_PHASE5_ARTWORK_AUTHORITY.md authorizes source-derived local artwork completion,
+conditional Owner approval on spec/manifest validation, new branch from01c225e, fresh local
+import and real-art GuestBooking E2E. Parent single writer; external imagery/provider/hosted
+operations0. One initial static Claude review; correction max1 only for MEDIUM+ findings.
+Approved local illustrations are distinct from historical unapproved test fixtures and from
+Production rights. Preserve all0001–0032 hashes and existing reviewed code/history. Stop at
+PHASE5_LOCAL_PASS_REAL_ARTWORK_ACTIVE, ARTWORK_DERIVATIVE_TOOLING_REQUIRED, or
+PHASE5_CHANGES_REQUIRED; no Phase6 authority is implied.
+
+## Historical completed Avatar Phase5 code milestone
 
 Direct Owner adoption AVATAR_PHASE5_AUTHORITY.md authorizes GuestBooking integration,
 guest media auth, additive0032, LOW responses, local PG/browser proof and fresh static

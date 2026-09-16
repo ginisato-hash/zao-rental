@@ -1,3 +1,17 @@
+## Current — Phase5 source-derived local artwork activation
+
+Read docs/execution/AVATAR_PHASE5_ARTWORK_AUTHORITY.md and avatar-artwork-activation/PLAN.md.
+Base01c225eaed80eb5ee95e22d1ece9eef666aa22e3; branch codex/avatar-phase5-artwork-activation.
+Parent single writer. Local original illustration from Owner source references is authorized;
+qualified derivatives are Owner-approved for LOCAL use under this authority, not Production.
+Create two800x2000 appearances and one160x2000 generic ski, alphaWebP; preserve0001–0032.
+Validate, fresh owned local DB import, GuestBooking E2E, then one tools-disabled Claude review.
+Only unresolved BLOCKER/HIGH/MEDIUM permits one correction review. Existing LOW history retained.
+No external imagery/provider/hosted DB/Vercel/R2/Square/Production/main merge or Phase6.
+GitHub push authorized. Stop at final CASE A/B/C; no intermediate approval loop.
+
+## Historical — completed Phase5 code milestone
+
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
 ## Current — Avatar Phase5 guest integration

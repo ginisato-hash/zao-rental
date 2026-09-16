@@ -1,0 +1,26 @@
+{
+  "authority": "AVATAR_PHASE5_ARTWORK_AUTHORITY.md",
+  "authoritySha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
+  "startingHead": "01c225eaed80eb5ee95e22d1ece9eef666aa22e3",
+  "branch": "codex/avatar-phase5-artwork-activation",
+  "state": "LOCAL_ARTWORK_VALIDATED_REVIEW_REQUIRED",
+  "sourcePackageAccepted": true,
+  "review": {
+    "initialStarts": 0,
+    "correctionStarts": 0,
+    "retry": 0
+  },
+  "productionApproved": false,
+  "externalProviderOperations": 0,
+  "implementationValidation": "SELF_VERIFIED_PASS",
+  "independentReview": "NOT_RUN",
+  "localArtworkApproved": true,
+  "approvedLocalDerivatives": 3,
+  "publicActivation": false,
+  "artworkManifest": "avatar-artwork-activation/artwork/manifest.json",
+  "validation": "avatar-artwork-activation/validation.json",
+  "unitTests": 261,
+  "localPgChecks": 32,
+  "browserChecks": 18,
+  "localResources": "STOPPED_AFTER_ACCEPTANCE"
+}

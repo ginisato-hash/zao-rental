@@ -8,3 +8,5 @@ Initial review of 40f6be236d883083d5ae64aa5294a4a693d0593e: BLOCKER0/HIGH1/MEDIU
 - F4 LOW: recorded, grant retained for a concrete current use. The same operations role supplies normal CustodyService.prepare/checkout, which updates allocation_stage at custody-service.ts lines48/62. Existing guarded stage transitions and the normal browser/custody regression require this column grant; AmendmentService is not its only caller.
 
 Migration0033 is the new, unmerged, local-only migration in this PR; its correction remains in that proposed migration. Historical migrations0001–0032 stay byte-identical. No hosted migration has been applied.
+
+Correction review PASS at57bb77b01c4046e62e8a41cdacbc1704b22bbfee: BLOCKER0/HIGH0/MEDIUM0/LOW3. It independently confirms F1 is fixed, F2 was already protected by shared store scope and SQL guards, and F4 is a used grant. F2-NOTE records that the added regression proves the property rather than isolating the defensive line. All LOW items are recorded without another review. Initial1 + correction1 consumed; tools/provider actions0.

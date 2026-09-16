@@ -472,5 +472,13 @@
     ],
     "initialFixtureAdjustment": "Refresh synthetic principal after granting permission",
     "browserLauncherAdjustment": "Use existing task-owned PLAYWRIGHT_BROWSERS_PATH; no download or external browser"
+  },
+  "ciTransportCorrection": {
+    "localPublicBrowserCases": 10,
+    "status": "PASS",
+    "retries": 0,
+    "productTreeChange": false,
+    "initialFailedRunId": 35149355808,
+    "safeErrorDiagnostics": true
   }
 }

@@ -1,0 +1,20 @@
+{
+  "phase": "M1",
+  "implementation": "PASS",
+  "localValidation": "PASS",
+  "review": {
+    "initial": 1,
+    "correction": 1,
+    "reviewedHead": "57bb77b01c4046e62e8a41cdacbc1704b22bbfee",
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 3
+  },
+  "ci": "PENDING_EXACT_HEAD",
+  "draftPr": 18,
+  "mainMerged": false,
+  "stackedBase": "codex/avatar-phase7-rc",
+  "next": "Exact-head CI, then M1.5 stacked continuation",
+  "externalProviderOperations": 0
+}

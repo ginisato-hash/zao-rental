@@ -1,0 +1,56 @@
+{
+  "branch": "codex/launch-critical-ops-m1",
+  "reviewed_head": "57bb77b01c4046e62e8a41cdacbc1704b22bbfee",
+  "base_sha": "40f6be236d883083d5ae64aa5294a4a693d0593e",
+  "source_tree_sha256": "b58c98804181c19beacf78ef7a1b3c6f6a24a07870c8a9fa66dbb1231665bb14",
+  "authority_sha256": "1d35cf5034ce0498ef55d7cc3d3d7e504a34c6a145510eb4ddb3fd34f9c1cbda",
+  "snapshot_sha256": "08906a673ec19b5f67efab1c77ba7e73ae1e235330a34d847f5b06f3f6442e84",
+  "verdict": "PASS",
+  "tests_executed": false,
+  "findings": [
+    {
+      "id": "F2-NOTE",
+      "severity": "LOW",
+      "title": "New charge store-scope regression test does not isolate the corrected line",
+      "file_or_component": "packages/core/src/operations/financial.ts row(); tests/operations/amendment.ts new check",
+      "line": "financial.ts:45; amendment.ts new check block",
+      "counterexample": "row() unconditionally calls booking(c,r.booking_id,r.acting_store) before the authorize(...) line that was changed. For kind='charge', acting_store is always undefined, so booking() already runs authorize('BOOKING_VIEW',[pickupStore,returnStore]) using the identical staff storeIds list the new RENTAL_AMEND call would use. Since OperationsContext.authorize()'s store check (stores.some(s=>!p.storeIds.includes(s))) does not vary by permission name, an actor lacking access to the booking's stores is already rejected by the unmodified booking() call, before the new pickupStore/returnStore argument is ever evaluated. The added test (staff scoped to ONSEN_BASE only, booking at a different store) would reject identically with the pre-correction code, so it does not empirically distinguish fixed from unfixed behavior.",
+      "impact": "No security impact: independent analysis confirms the underlying property this test targets (charge dispatch/reconcile denied to a staff member outside the booking's store scope, financial row unchanged, gateway not called) holds under both the corrected and prior code, because per-staff store scoping is shared across all permissions in this codebase's authorize() implementation. The disposition's factual claim that no real bypass existed is independently verified as correct.",
+      "minimum_safe_correction": "None required for PASS. If stronger proof of the specific code path is wanted in a future changeset, a role/permission fixture without RENTAL_AMEND but with BOOKING_VIEW at both stores would exercise the added line distinctly, but the current shared-storeIds design makes such a split state unreachable today.",
+      "required_proof": "None; informational only."
+    },
+    {
+      "id": "F3",
+      "severity": "LOW",
+      "title": "Boot QR label sheet pairing default remains inconsistent with skis (carried, unchanged)",
+      "file_or_component": "apps/web/src/components/AssetLabelSheet.tsx",
+      "line": "6",
+      "counterexample": "Unchanged from initial review: SKI always prints 2 copies; *_BOOT defaults to 1 unless the operator checks the pairing box.",
+      "impact": "Minor operational inconsistency only; no security or data-integrity effect.",
+      "minimum_safe_correction": "Optional product follow-up; not in scope for this correction.",
+      "required_proof": "None required."
+    },
+    {
+      "id": "F4",
+      "severity": "LOW",
+      "title": "inventory_holds.allocation_stage column grant on the operations role, now confirmed in active use",
+      "file_or_component": "scripts/operations-roles.ts:15",
+      "line": "15",
+      "counterexample": "tests/operations/inventory.ts instantiates CustodyService with role!.operationsPool and drives prepare()/checkout(), which execute UPDATE inventory_holds SET allocation_stage='PREPARATION_FIXED'/'RENTAL_FIXED' (custody-service.ts:48,62) under that same operations role connection.",
+      "impact": "No longer an unused over-grant in the reviewed test path; retaining the grant matches the disposition's stated justification and observed usage.",
+      "minimum_safe_correction": "None required; record only.",
+      "required_proof": "None required."
+    }
+  ],
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 3
+  },
+  "scope_assessment": "Diff is confined to F1 (inventory-service.ts POLES branch + new migration0033 ops_reconcile_poles/stocktake_effects/inventory_stock_guard additions + operations-roles.ts grant), F2 (financial.ts row() store-array fix), and their tests. No unrelated refactor, no hosted/provider/payment/customer/production changes, no edits to migrations0001-0032 or to the 0015 custody-boundary logic beyond the additive, isolated inventory_stock_guard block. Historical guard branches (ledger_assets custody protection, owner-controlled transfer path, protected-quantity/transfer-quantity checks) were diffed line-for-line against the 0015 baseline and are byte-identical aside from the new early-exit block for the custody_executor/ledger_poles case.",
+  "security_boundary_assessment": "F1: the new ops_reconcile_poles is SECURITY DEFINER, owned by the existing narrow custody_executor role, independently re-verifies session liveness, both INVENTORY_EDIT/INVENTORY_RECONCILE permissions and store scope via ops_assert_actor, re-derives the counted value only from server-persisted stocktake.observations (never a client-supplied count parameter), and re-validates stocktake state/revision/baseline version/protected_count/physical against live rows rather than trusting the JS-side snapshot alone. The private stocktake_effects table is REVOKE ALL FROM PUBLIC and owned by custody_executor; the operations role's direct INSERT attempt is denied with 42501, confirming the effect cannot be forged. The inventory_stock_guard exemption is scoped to an exact (tx,pid,pole_id,old_version,new_quantity,unchanged status/store/variant) match, so only the validated in-progress reconciliation of that exact pole passes; the protected-stock, owner-controlled, and asset branches are unmodified and still active for every other caller/table. Reduction below any active OUT loan slot, active claim slot, or open transfer for the pole is rejected both in the JS pre-check and independently inside the SECURITY DEFINER function, and the test suite exercises a raw-SQL bypass attempt against a live promise and against a stale/completed stocktake, both correctly rejected. F2: independent tracing of OperationsContext.authorize() confirms staff store scoping is a single per-staff storeIds list applied identically regardless of the permission argument; booking() therefore already gated wrong-store actors identically before and after the fix, and the SQL-level ops_financial_guard trigger already enforced RENTAL_AMEND at both booking stores for every charge INSERT/UPDATE. The disposition's rebuttal that no exploitable empty-store bypass existed is verified correct; the JS-level change is a harmless, symmetry-restoring no-op that introduces no regression to the refund path (unaffected ternary branch) or to any store-scoped enforcement.",
+  "validation_assessment": "Not independently executed (tests_executed:false); supplied logs treated as parent evidence only per instructions. Static trace of tests/operations/inventory.ts's new stocktake case confirms it exercises: baseline capture with OUT protected_count, successful 10->9 reconciliation preserving the OUT loan row byte-for-byte, replay idempotency via the existing ops_requests fingerprint cache, JS-level and direct-SQL rejection of a reduction that would violate a future 9-pair claim, rejection of a stale/RECONCILED stocktake reused via direct SQL, and 42501 on direct stocktake_effects forgery — collectively satisfying the initial review's required_proof for F1. The new amendment.ts charge-scope test correctly proves the externally observable security property (denial + unchanged financial row + zero gateway calls) but, per the security_boundary_assessment above, does not by itself discriminate the corrected line from the prior code, because the property was already enforced by unmodified booking()/SQL-trigger logic; this is recorded as an informational LOW, not a gap in the actual security guarantee.",
+  "insufficient_evidence": "None. All modified files relevant to F1/F2 and their immediate guard/grant interactions were supplied in full; no referenced function bodies needed for this assessment were missing from the snapshot.",
+  "next_gate": "PASS. This is the single authorized correction review; per instructions no further correction or retry gate applies. Recorded LOW items (F2-NOTE, F3, F4) require no action to proceed. M1.5-M1.7 and any acting_store schema addition remain out of scope as future/optional work, not blocking conditions."
+}

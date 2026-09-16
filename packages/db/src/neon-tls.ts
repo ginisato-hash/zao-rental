@@ -13,7 +13,7 @@ export function proveNeonClientTls(client:unknown,config:Pick<PoolConfig,'host'|
   const options=Reflect.get(stream,'_tlsOptions') as {rejectUnauthorized?:unknown}|undefined;
   if(options?.rejectUnauthorized!==true||Reflect.get(stream,'servername')!==config.host)throw 0;
   const protocol=stream.getProtocol(),cert=stream.getPeerCertificate();
-  if(!['TLSv1.2','TLSv1.3'].includes(protocol??'')||!cert.raw?.length||checkServerIdentity(config.host,cert)!==undefined)throw 0;
+  if(!['TLSv1.2','TLSv1.3'].includes(protocol??'')||!cert.raw?.length||!cert.subject||!cert.issuer||JSON.stringify(cert.subject)===JSON.stringify(cert.issuer)||checkServerIdentity(config.host,cert)!==undefined)throw 0;
   return {hostClass:'EXPECTED_NEON_ENDPOINT',serverNameClass:'EXACT_EXPECTED_SNI',encrypted:true,authorized:true,rejectUnauthorized:true,peerCertificatePresent:true,hostnameVerified:true,protocol};
  }catch{throw Error('PHASE6_CLIENT_TLS_PROOF_FAILED');}
 }

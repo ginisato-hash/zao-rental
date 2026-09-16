@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUME_V2_IMPLEMENTING",
+  "phase": "RESUME_V2_R2_CREDENTIAL_HANDOFF_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -10,7 +10,7 @@
       "max": 1
     },
     "r2NewBuckets": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "r2NewObjects": {
@@ -50,11 +50,7 @@
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "NOT_RUN",
   "externalAcceptance": "NOT_RUN",
-  "implementation": "PARTIAL_CHECKPOINT_ONLY",
-  "secretExposure": "UNKNOWN_NEW_EXTERNAL_SEARCH_TOOL_METADATA",
-  "providerCredentialAcquisitions": 3,
-  "providerMutations": 0,
-  "ownedBrowserTabsClosed": 3,
+  "implementation": "PARTIAL_HOSTED_PREVIEW_NOT_DEPLOYED",
   "checkpointValidation": {
     "targetedTests": {
       "passed": 61,
@@ -83,27 +79,8 @@
   "knownReplay": 0,
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
-  "newSecretExposureObservedAfterResume": "SUSPECTED_NOT_ZERO_CLAIMED",
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "hostedDatabaseWrites": 0,
-  "neonOAuthSessionsCreated": 1,
-  "neonOAuthSessionsRevoked": 1,
-  "ownedBrowserTabsClosedAfterResume": "NOT_CONFIRMED_NO_OPAQUE_HANDLE",
-  "nextGate": "Client-side TLS then exact hosted preflight/migration/roles, R2 and dedicated protected Preview acceptance, final Claude",
-  "resumeValidation": {
-    "migrationLocalPostgres": "PASS_7_CASES",
-    "hostedDatabaseIdentity": "MATCH",
-    "hostedOwnerIdentity": "MATCH",
-    "tlsClientConfiguration": "rejectUnauthorized=true",
-    "postgresReportedSsl": false,
-    "tlsVerificationGate": "NOT_RESOLVED",
-    "hostedHistoricalMigrationPreflight": "NOT_REACHED",
-    "hosted0031": "NOT_RUN",
-    "hosted0032": "NOT_RUN",
-    "dbPools": "CLOSED",
-    "neonOAuthProfile": "REVOKED_AND_REMOVED",
-    "globalBrowserInventoryCalls": 0
-  },
+  "nextGate": "Complete secret-safe handoff of the already-created bucket-only R2 upload credential, exact3 upload and write-key revocation, read-only key, dedicated protected Preview, hosted E2E, final review.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -118,5 +95,48 @@
   "resumeV2AuthorityCommit": "7c5f3b23450cbeae3be19af19e2bef094b5d8083",
   "clientTlsPreflight": "PASS_TLS1.3_AUTHORIZED_EXACT_TARGET",
   "hostedPreflight": "PASS_EXACT30_AVATAR_ABSENT",
-  "hostedMigration": "PASS_EXACT0031_0032"
+  "hostedMigration": "PASS_EXACT0031_0032",
+  "historicalPreV2Fields": {
+    "secretExposure": "UNKNOWN_NEW_EXTERNAL_SEARCH_TOOL_METADATA",
+    "providerCredentialAcquisitions": 3,
+    "providerMutations": 0,
+    "ownedBrowserTabsClosed": 3,
+    "hostedDatabaseWrites": 0,
+    "neonOAuthSessionsCreated": 1,
+    "neonOAuthSessionsRevoked": 1,
+    "ownedBrowserTabsClosedAfterResume": "NOT_CONFIRMED_NO_OPAQUE_HANDLE",
+    "newSecretExposureObservedAfterResume": "SUSPECTED_NOT_ZERO_CLAIMED",
+    "resumeValidation": {
+      "migrationLocalPostgres": "PASS_7_CASES",
+      "hostedDatabaseIdentity": "MATCH",
+      "hostedOwnerIdentity": "MATCH",
+      "tlsClientConfiguration": "rejectUnauthorized=true",
+      "postgresReportedSsl": false,
+      "tlsVerificationGate": "NOT_RESOLVED",
+      "hostedHistoricalMigrationPreflight": "NOT_REACHED",
+      "hosted0031": "NOT_RUN",
+      "hosted0032": "NOT_RUN",
+      "dbPools": "CLOSED",
+      "neonOAuthProfile": "REVOKED_AND_REMOVED",
+      "globalBrowserInventoryCalls": 0
+    }
+  },
+  "resumeV2Progress": {
+    "hostedRoles": "PASS_6_ROLES",
+    "AV3": "PASS_11_DENIALS",
+    "rateLimiterDatabase": "PASS_ISOLATED_POLICY",
+    "hostedRouteRateProof": "NOT_RUN",
+    "artworkMetadataImport": "PASS_EXACT3",
+    "syntheticFixture": "PASS_EXISTING_ROWS_UNCHANGED",
+    "r2Bucket": "PRIVATE_CREATED",
+    "r2Objects": 0,
+    "r2WriteCredential": "CREATE_DISPATCHED_UI_COMPLETION_REACHED_HANDOFF_PENDING",
+    "r2ReadCredential": "NOT_CREATED",
+    "dedicatedVercelProject": "NOT_CREATED",
+    "hostedE2E": "NOT_RUN",
+    "claude": "NOT_RUN",
+    "setupOAuth": "LIVE_PENDING_COMPLETION_REVOKE",
+    "cleanup": "PENDING_ACTIVE_TASK",
+    "newTaskSecretExposureAfterThisResume": 0
+  }
 }

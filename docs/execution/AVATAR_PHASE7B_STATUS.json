@@ -1,0 +1,411 @@
+{
+  "phase": "PHASE7B_LOCAL_PASS_INTEGRATION_REVIEW_PENDING",
+  "authoritySha256": "eb8aa563dcbb4705b50f493c78f6351d93bdb0c7c3f4db7d49cae727cc5f1303",
+  "branch": "codex/avatar-phase7-rc",
+  "startingHead": "2b0e4c23e7ec013bc358340e31bcda7522f663a8",
+  "frozenPhase6Head": "49d0fbc36d81025f675242a0ffd1bee0f68ce21e",
+  "mainHead": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "phase7AHistory": "FROZEN_NETWORK_DEBT_CLOSED_RESOURCES_RETIRED",
+  "budgets": {
+    "previewDeployments": {
+      "max": 1,
+      "used": 0
+    },
+    "r2ReadCredentials": {
+      "max": 1,
+      "used": 0
+    },
+    "claudeInitial": {
+      "max": 1,
+      "used": 0
+    },
+    "claudeCorrection": {
+      "max": 1,
+      "used": 0
+    }
+  },
+  "runtimeChange": "Narrow existing Hosted Preview branch veto to exact codex/avatar-phase7-rc; old Phase6 and unrelated refs remain denied. No new feature.",
+  "localValidation": {
+    "status": "PASS",
+    "resolvedSetupIssues": [
+      {
+        "issue": "Isolated node_modules symlink was rejected by existing candidate-file scan",
+        "resolution": "Replaced task-owned symlink with local APFS clone; scanner unchanged"
+      },
+      {
+        "issue": "Isolated browser path lacked Chromium1243",
+        "resolution": "Used existing task browser cache; no browser download required"
+      }
+    ],
+    "integrationCorrections": [
+      {
+        "files": [
+          "scripts/integration.ts",
+          "scripts/ledger-integration.ts",
+          "tests/readiness/r14-postgres.ts",
+          "tests/readiness/r14-evidence.ts"
+        ],
+        "issue": "Historical 30-migration count assertions did not include existing Avatar0031/0032",
+        "correction": "Expect canonical32; no migration or production code changes"
+      },
+      {
+        "files": [
+          "package.json",
+          "scripts/verify.mjs"
+        ],
+        "correction": "Existing verification workflow also runs current Avatar real-PG/browser and R15 local synthetic regression"
+      },
+      {
+        "files": [
+          "apps/web/src/lib/guest-avatar-http.ts",
+          "apps/web/src/lib/guest-avatar-runtime.ts",
+          "tests/unit/guest-avatar.test.ts"
+        ],
+        "issue": "Next rewrites loopback Request URL hostname to localhost, causing valid local Avatar metadata to return404",
+        "evidence": "Local real-browser failure plus installed Next next-url.js parseURL normalization",
+        "correction": "Require exact configured127.0.0.1 Host and port; accept only127.0.0.1 or framework-normalized localhost URL with http scheme in existing development-only composition",
+        "hostedIngressChanged": false,
+        "forwardedHeadersTrusted": false
+      }
+    ],
+    "node": "24.15.0",
+    "npm": "11.12.1",
+    "fullUnit": {
+      "passed": 680,
+      "failed": 0,
+      "skipped": 0
+    },
+    "verifyCommandCount": 52,
+    "commands": {
+      "check:reference": {
+        "exitCode": 0,
+        "logSha256": "d5585857a54ece08cc81e7241049e8de7d0b31a14fef682edf095d4ad1621096",
+        "disposedOwnedClusters": 0
+      },
+      "check:secrets": {
+        "exitCode": 0,
+        "logSha256": "c51f91d488fdf81586390bf84bb4e4cb70dca63c9d9bc799566fdbd2ecfdadf0",
+        "disposedOwnedClusters": 0
+      },
+      "test:reference": {
+        "exitCode": 0,
+        "logSha256": "58c16be89af231f8ca5158a01c120509f4bb7382e2672459fa3ad337c967e576",
+        "disposedOwnedClusters": 0
+      },
+      "lint": {
+        "exitCode": 0,
+        "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+        "disposedOwnedClusters": 0
+      },
+      "typecheck": {
+        "exitCode": 0,
+        "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+        "disposedOwnedClusters": 0
+      },
+      "test:unit": {
+        "exitCode": 0,
+        "logSha256": "85d8f6ceefe3bb27c938f34349f33b9fd841819f88747bbe048261d3cf4a846a",
+        "disposedOwnedClusters": 0
+      },
+      "test:controller:macos": {
+        "exitCode": 0,
+        "logSha256": "9415d60ba48546fac474d7f8aca3e6139354049c25e3dd13f06de3e79a1be394",
+        "disposedOwnedClusters": 0
+      },
+      "test:integration": {
+        "exitCode": 0,
+        "logSha256": "0fb60f3210c7825e000c80f121608b5f06e3d6f31673dd09726e5b9588b9f4b7",
+        "disposedOwnedClusters": 4
+      },
+      "test:inventory": {
+        "exitCode": 0,
+        "logSha256": "cd6c7c6f8d29cc73be6798a0458c5bd6b5faa3f87e4f33cce32798c39123a17a",
+        "disposedOwnedClusters": 1
+      },
+      "test:transfer": {
+        "exitCode": 0,
+        "logSha256": "6151b6bed307c54b8542daab2fa3f27038487ea1876752f7a65801c5b8166a90",
+        "disposedOwnedClusters": 1
+      },
+      "test:pricing": {
+        "exitCode": 0,
+        "logSha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendation": {
+        "exitCode": 0,
+        "logSha256": "5148553421bee416fa3f95cbccc7db3095533db894f1cd0d4be70c9253eb6384",
+        "disposedOwnedClusters": 1
+      },
+      "build": {
+        "exitCode": 0,
+        "logSha256": "068e6f44e4c36767804e3ca05cadba321c8c1cad58ac3aa7ef06efe43eea2185",
+        "disposedOwnedClusters": 0
+      },
+      "test:auth": {
+        "exitCode": 0,
+        "logSha256": "f33f15ee630c32e3020a298c9d40a341be18c7eb22f0a166d192dcba5f126d6f",
+        "disposedOwnedClusters": 1
+      },
+      "test:holds-ui": {
+        "exitCode": 0,
+        "logSha256": "1e99ac019109f32c721861e2239c70042774d564a970de3a93503270dbb527cc",
+        "disposedOwnedClusters": 1
+      },
+      "test:transfers-ui": {
+        "exitCode": 0,
+        "logSha256": "6da379b58546c18d6a91032e6c8076c1c6099c7dee95d8d0dd851b6a994b9483",
+        "disposedOwnedClusters": 1
+      },
+      "test:quotes-ui": {
+        "exitCode": 0,
+        "logSha256": "f04042a28650471e5f38fb7f50e8176bf146c96ff01c3a1449fa487f44bd8136",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendations-ui": {
+        "exitCode": 0,
+        "logSha256": "b97e3c0df81264413732f1bf2faf029f3948f0d7049fb014e9ea163b7d85f1b5",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendation-audit": {
+        "exitCode": 0,
+        "logSha256": "631f0cdbe9d0e4e579ea45897a35674c7f232f2a50a4b951dd36f1ab0684253e",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendation-continuation": {
+        "exitCode": 0,
+        "logSha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-s01": {
+        "exitCode": 0,
+        "logSha256": "449153570b79949986f2fa3691ae751ec765fb7dd29c69de88dabe81cdd21a53",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-upgrade": {
+        "exitCode": 0,
+        "logSha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-cd": {
+        "exitCode": 0,
+        "logSha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-eg": {
+        "exitCode": 0,
+        "logSha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-mixed": {
+        "exitCode": 0,
+        "logSha256": "5ecadc441b501ce9e5a91d4e8362e045a5ba1edc2e73eec1ac68cba9884c3ab5",
+        "disposedOwnedClusters": 1
+      },
+      "test:square-activation": {
+        "exitCode": 0,
+        "logSha256": "268f595264b532ddadd98f4731ff2abd4e3923a899903200d85e97486d0df9dd",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-payment": {
+        "exitCode": 0,
+        "logSha256": "b5222ce3161f14002c2f65a4294a53a2c23273b45438bcc7c00d93fc60ad1c99",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-ui": {
+        "exitCode": 0,
+        "logSha256": "d3fdf03e74b05a62ebd43b9f8796e9465e5f01a8b137324b01ebabfb34c731bf",
+        "disposedOwnedClusters": 1
+      },
+      "test:asset-reader": {
+        "exitCode": 0,
+        "logSha256": "34632c6704a19573b3a241baebb5be778ea7913ace7ae42c8fc2ece3102b123a",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-restart": {
+        "exitCode": 0,
+        "logSha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-scope-race": {
+        "exitCode": 0,
+        "logSha256": "5620dd6666952fc952b8390977d742ef0570f548b32da531a7acadc4f3423644",
+        "disposedOwnedClusters": 1
+      },
+      "test:custody": {
+        "exitCode": 0,
+        "logSha256": "1da8f8672e46c54fd92312416c2488b17fe3257a3d80f9ed0025617aeaf5b2ee",
+        "disposedOwnedClusters": 3
+      },
+      "test:custody-ui": {
+        "exitCode": 0,
+        "logSha256": "8183d637b97599962cbf24c2c541a24977c7fe5eef02689bb5e36d0c627a17f6",
+        "disposedOwnedClusters": 1
+      },
+      "test:late-pickup": {
+        "exitCode": 0,
+        "logSha256": "1a8db5396302c008ee0b686afcd5eb1387a24ebbf5e871a9b078be92f51a42ec",
+        "disposedOwnedClusters": 1
+      },
+      "test:wear": {
+        "exitCode": 0,
+        "logSha256": "03b4945c933fecb83ac18c781b814f13f490492ef7d0ca72e6f8f576f2844b58",
+        "disposedOwnedClusters": 2
+      },
+      "test:wear-ui": {
+        "exitCode": 0,
+        "logSha256": "102ab4f5e1204e497360b395a81cb0f218d226c42eb7a0f4080e8fab9884f650",
+        "disposedOwnedClusters": 1
+      },
+      "test:wear-mixed": {
+        "exitCode": 0,
+        "logSha256": "27616e019027bb4435f820531a88163029509d0274f3ffa0470d43102128ebfe",
+        "disposedOwnedClusters": 2
+      },
+      "test:content-fixture": {
+        "exitCode": 0,
+        "logSha256": "2434698e9641257a6d986ae419ef7f240a866ee54d42ac2cad6be0858f72fcd7",
+        "disposedOwnedClusters": 1
+      },
+      "test:public-guest": {
+        "exitCode": 0,
+        "logSha256": "af53ef49060fe03b9816ff64db68dbf7239ff87026decf9eb519f4421d2503f5",
+        "disposedOwnedClusters": 2
+      },
+      "test:public-content": {
+        "exitCode": 0,
+        "logSha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e",
+        "disposedOwnedClusters": 1
+      },
+      "test:public-ui": {
+        "exitCode": 0,
+        "logSha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be",
+        "disposedOwnedClusters": 2
+      },
+      "test:staff-diagnostic": {
+        "exitCode": 0,
+        "logSha256": "6a09f8a5b4ec28c3c40ef990d9e7f2a0a43d2042c798f501745115cc8e04c695",
+        "disposedOwnedClusters": 1
+      },
+      "test:readiness-guest": {
+        "exitCode": 0,
+        "logSha256": "6af4274e7aa39863cff57a094fd861208d8e5fd34f92f1e729b6c191dbf7fa88",
+        "disposedOwnedClusters": 1
+      },
+      "test:readiness-ui": {
+        "exitCode": 0,
+        "logSha256": "6ef1b6c27b715cb7408700c5f82ebb3f46166d505d8179414c93d2a30dbdd25c",
+        "disposedOwnedClusters": 1
+      },
+      "test:integration-p2": {
+        "exitCode": 0,
+        "logSha256": "e1ae83f8c19c374bd9acaf4b8dca43b70f8918b10ae04e3839e3a9de8c2a126c",
+        "disposedOwnedClusters": 4
+      },
+      "test:activation-p4": {
+        "exitCode": 0,
+        "logSha256": "8ee3fbae3e8e42f6cba6aff0f4a923f24483497add99b817865f8953fb464a0e",
+        "disposedOwnedClusters": 6
+      },
+      "test:booking-recovery": {
+        "exitCode": 0,
+        "logSha256": "1c51a1cb006c90c7230304ae4c3af6c2b35d230f0000def2dae7840ae7546770",
+        "disposedOwnedClusters": 1
+      },
+      "test:booking-recovery-ui": {
+        "exitCode": 0,
+        "logSha256": "fc09961c82396a49e58c2651c0f2e38c0d477ec7b2b47a9d5c9404e9ac774964",
+        "disposedOwnedClusters": 1
+      },
+      "test:production-rehearsal": {
+        "exitCode": 0,
+        "logSha256": "661a066c24561af9e4be2917451e45b289ca98fc58ae0316616d81f46f60a436",
+        "disposedOwnedClusters": 3
+      },
+      "test:r15-regression": {
+        "exitCode": 0,
+        "logSha256": "a89fd0be100eb5792b98da5b5a71b2391c5be6f342cc522759109e93eba2773e",
+        "disposedOwnedClusters": 3
+      },
+      "test:avatar": {
+        "exitCode": 0,
+        "logSha256": "c5e093406bbde37a189236d2953057f8a0d2bb54cb5689ac16f84e26d3589c1f",
+        "disposedOwnedClusters": 8
+      },
+      "test:e2e": {
+        "exitCode": 0,
+        "logSha256": "159b7c431263111eb6097b30cf7373c29a891ab6a660ca8cc568c308817311ee",
+        "disposedOwnedClusters": 0
+      }
+    },
+    "paymentRealPgChecks": 23,
+    "R15RealPg": "PASS_SYNTHETIC_PROVIDER_ONLY",
+    "AvatarRealPgAndBrowser": "PASS_PHASE5_UPGRADE_GUEST_ARTWORK_PHASE6_MIGRATIONS_ROLES_GUEST_IMPORT_LOCK",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "secretScan": "PASS_1981_FILES_PATTERN_SCAN_NOT_COMPREHENSIVE",
+    "gitDiffCheck": "PASS",
+    "migration0001Through0032": "UNCHANGED_EXACT32",
+    "phase6AndPhase7ARecords": "UNCHANGED",
+    "frozenR15Verifier": "UNCHANGED",
+    "isolatedValidationCodeMatchesCurrent": true,
+    "providerMutations": 0,
+    "squareExternalRequests": 0
+  },
+  "claude": {
+    "status": "NOT_RUN"
+  },
+  "hosted": {
+    "status": "NOT_RUN"
+  },
+  "remoteCI": {
+    "status": "NOT_RUN"
+  },
+  "draftPR": null,
+  "cleanup": {
+    "status": "NOT_STARTED"
+  },
+  "forbiddenOperations": {
+    "productionDeploy": 0,
+    "productionEnv": 0,
+    "mainMerge": 0,
+    "square": 0,
+    "realPayment": 0,
+    "realCustomer": 0,
+    "newProject": 0,
+    "newDatabase": 0,
+    "newRole": 0,
+    "newR2Object": 0
+  },
+  "nextGate": "One static Claude integration review; deploy budget0/1, no hosted credentials created.",
+  "precheck": {
+    "ancestry": "PASS_ALL_EXPECTED_ANCESTORS",
+    "migrations": {
+      "count": 32,
+      "duplicates": 0,
+      "historicalHashChanges": 0
+    },
+    "mainDiffCategories": {
+      "auth/security": 15,
+      "inventory": 1,
+      "pricing": 0,
+      "payment": 65,
+      "guest": 3,
+      "avatar": 52,
+      "DB/migrations": 17,
+      "UI": 2,
+      "docs/evidence": 925,
+      "other": 21
+    },
+    "snapshotExcludesHistoricalEvidenceTranscripts": true,
+    "initialWorkingTree": "CLEAN",
+    "initialLocalRemoteHeadMatch": true
+  },
+  "productionReadiness": {
+    "productionApproved": false,
+    "publicApproved": false,
+    "productionActivation": "BLOCKED_SEPARATE_OWNER_GATE",
+    "avatarOnlyRollback": "Requires separate Production composition proof; current combined Preview capability removal is not business-continuity proof"
+  }
+}

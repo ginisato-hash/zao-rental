@@ -6,6 +6,12 @@ import type {AvatarPreviewPayloads} from '../../../../packages/core/src/avatar/p
 const privateHeaders={'Cache-Control':'private, no-store','Vary':'Cookie','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow'};
 type Loaded={payloads:AvatarPreviewPayloads;previewId:string};
 export type GuestAvatarBoundary={guard:(request:Request)=>Promise<void>;load:(headers:Headers,scope:GuestAvatarScope)=>Promise<Loaded>;reader:(id:string)=>AvatarMediaReader};
+/** Next normalizes loopback Request URLs to localhost; bind the actual Host and
+ * port to the validated local runtime without trusting forwarding headers. */
+export function assertLocalAvatarOrigin(request:Request,origin:string){
+ const url=new URL(request.url),expected=new URL(origin);
+ if(expected.protocol!=='http:'||expected.hostname!=='127.0.0.1'||url.protocol!==expected.protocol||url.port!==expected.port||!['127.0.0.1','localhost'].includes(url.hostname)||request.headers.get('host')!==expected.host)throw Error('LOCAL_ORIGIN_REQUIRED');
+}
 export function guestAvatarHandler(boundary:()=>GuestAvatarBoundary|null|Promise<GuestAvatarBoundary|null>,media:boolean){return async(req:Request)=>{
  const empty=()=>new Response(null,{status:404,headers:privateHeaders});
  if(req.method!=='GET')return new Response(null,{status:405,headers:{...privateHeaders,Allow:'GET'}});

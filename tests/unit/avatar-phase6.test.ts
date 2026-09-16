@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseHostedPreview,assertNoHostedPlatformContradiction,hostedPreviewRequestOrigin,phase6Requested,HostedPreviewBoundaryError,phase6Services,phase6Role,phase6Database,phase6Resource,phase6Branch,phase6Project} from '../../packages/auth/src/hosted-preview-config';
+import {parseHostedPreview,assertNoHostedPlatformContradiction,hostedPreviewRequestOrigin,phase6Requested,HostedPreviewBoundaryError,phase6Services,phase6Role,phase6Database,phase6Resource,hostedPreviewBranch,phase6Project} from '../../packages/auth/src/hosted-preview-config';
 import {vercelPreviewPeer} from '../../packages/core/src/guest/vercel-preview-peer';
 import {avatarGuestPolicy} from '../../packages/core/src/avatar/guest-rate';
 import guestPolicy from '../../config/production/guest.p4-approved-policy.json';
 import {phase6NeonHostname} from '../../packages/db/src/neon-tls';
 import {phase6R2Account,phase6R2Bucket} from '../../packages/auth/src/hosted-preview-config';
-const env={VERCEL:'1',VERCEL_ENV:'preview',VERCEL_TARGET_ENV:'preview',ZAO_AVATAR_PHASE6:'PROTECTED_PREVIEW_V1',VERCEL_PROJECT_ID:phase6Project,VERCEL_GIT_COMMIT_REF:phase6Branch,VERCEL_URL:'zao-rental-avatar-preview-123456789-zao-food-map.vercel.app'};
+const env={VERCEL:'1',VERCEL_ENV:'preview',VERCEL_TARGET_ENV:'preview',ZAO_AVATAR_PHASE6:'PROTECTED_PREVIEW_V1',VERCEL_PROJECT_ID:phase6Project,VERCEL_GIT_COMMIT_REF:hostedPreviewBranch,VERCEL_URL:'zao-rental-avatar-preview-123456789-zao-food-map.vercel.app'};
 const host=phase6NeonHostname;
 const config=()=>({resourceId:phase6Resource,hostname:host,database:phase6Database,guestKey:'synthetic-key-'.repeat(4),connections:Object.fromEntries(phase6Services.map(s=>[s,{host,port:5432,user:phase6Role(s),database:phase6Database,password:'synthetic-password-'.repeat(3),ssl:{rejectUnauthorized:true}}])),r2:{accountId:phase6R2Account,bucket:phase6R2Bucket,accessKeyId:'synthetic-key',secretAccessKey:'synthetic-secret',expiresAt:'2099-01-01T00:00:00Z',permission:'OBJECT_READ_ONLY'}});
 test('capability parses and startup guard accepts with every platform binding absent',()=>{
@@ -20,8 +20,8 @@ for(const [key,value]of Object.entries({VERCEL:'0',VERCEL_ENV:'production',VERCE
 });
 for(const key of Object.keys(env))test('absent platform binding '+key+' is not authorization failure',()=>{assertNoHostedPlatformContradiction({...env,[key]:undefined});});
 test('empty git ref is allowed but whitespace and other branches are contradictions',()=>{
- for(const ref of [undefined,'',phase6Branch])assertNoHostedPlatformContradiction({...env,VERCEL_GIT_COMMIT_REF:ref});
- for(const ref of ['main',' ',phase6Branch+'-other'])assert.throws(()=>assertNoHostedPlatformContradiction({...env,VERCEL_GIT_COMMIT_REF:ref}));
+ for(const ref of [undefined,'',hostedPreviewBranch])assertNoHostedPlatformContradiction({...env,VERCEL_GIT_COMMIT_REF:ref});
+ for(const ref of ['main',' ','codex/avatar-phase6-hosted-preview',hostedPreviewBranch+'-other'])assert.throws(()=>assertNoHostedPlatformContradiction({...env,VERCEL_GIT_COMMIT_REF:ref}));
  for(const key of ['VERCEL','VERCEL_ENV','VERCEL_TARGET_ENV','VERCEL_PROJECT_ID'])assert.throws(()=>assertNoHostedPlatformContradiction({...env,[key]:''}));
 });
 test('legacy marker and platform URL neither authorize nor veto startup',()=>{

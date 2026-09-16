@@ -4,7 +4,7 @@ import type {DB} from './r14-postgres';
 export async function captureDbEvidence(db:DB,out:string){
  if(db.r14!.completed.has('closed-roles'))return;
  const names=Object.values(db.r14!.roles.names),schemas=['square_webhook','payment_reconciliation','payment_projection'];
- const migrations=(await db.pool.query('SELECT id,checksum FROM foundation_migrations ORDER BY id')).rows;assert.equal(migrations.length,30);
+ const migrations=(await db.pool.query('SELECT id,checksum FROM foundation_migrations ORDER BY id')).rows;assert.equal(migrations.length,32);
  const version=(await db.pool.query('SHOW server_version')).rows[0].server_version;
  const functions=(await db.pool.query('SELECT n.nspname AS schema,p.proname AS name,pg_get_userbyid(p.proowner) AS owner,p.prosecdef AS security_definer,p.proconfig AS settings FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname=ANY($1::text[]) ORDER BY 1,2',[schemas])).rows;
  const tables=(await db.pool.query('SELECT table_schema,table_name FROM information_schema.tables WHERE table_schema=ANY($1::text[]) ORDER BY 1,2',[schemas])).rows;

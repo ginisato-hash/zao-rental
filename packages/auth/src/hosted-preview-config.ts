@@ -2,8 +2,8 @@ import type {PoolConfig} from 'pg';
 import {phase6NeonHostname} from '../../db/src/neon-tls';
 export const phase6Resource='store_i5vh0ZEKo2ikcVo9';
 export const phase6Database='zr_852b20c4d4b0';
-export const phase6Branch='codex/avatar-phase6-hosted-preview';
-// Dedicated Phase6 project; the historical zao-rental project remains forbidden.
+export const hostedPreviewBranch='codex/avatar-phase7-rc';
+// Dedicated Avatar Preview project; the historical zao-rental project remains forbidden.
 export const phase6Project='prj_EonVxKra8p9txdZ7O2Ko6t1A8biW';
 // Exact existing compute is verified through the resource's ordinary Neon console.
 export const phase6Endpoint='ep-winter-lake-b3fd2qtp';
@@ -27,7 +27,7 @@ export function assertNoHostedPlatformContradiction(env:Readonly<Record<string,s
  for(const [key,expected]of Object.entries({VERCEL:'1',VERCEL_ENV:'preview',VERCEL_TARGET_ENV:'preview',VERCEL_PROJECT_ID:phase6Project})){
   if(env[key]!==undefined&&env[key]!==expected)throw new HostedPreviewBoundaryError('PLATFORM_CONTRADICTION');
  }
- if(env.VERCEL_GIT_COMMIT_REF&&env.VERCEL_GIT_COMMIT_REF!==phase6Branch)throw new HostedPreviewBoundaryError('PLATFORM_CONTRADICTION');
+ if(env.VERCEL_GIT_COMMIT_REF&&env.VERCEL_GIT_COMMIT_REF!==hostedPreviewBranch)throw new HostedPreviewBoundaryError('PLATFORM_CONTRADICTION');
  if(Object.keys(env).some(k=>(/^(SQUARE_|PAYMENT_|REFUND_|WEBHOOK_|DATABASE_URL$|POSTGRES_URL$|PGPASSWORD$)/.test(k)||k.startsWith('ZAO_')&&!['ZAO_AVATAR_PHASE6','ZAO_HOSTED_PREVIEW_RUNTIME'].includes(k))))throw new HostedPreviewBoundaryError('CONFIG_FORBIDDEN');
 }
 /** Direct Vercel ingress only: no aliases, generic forwarded headers, or env URL. */

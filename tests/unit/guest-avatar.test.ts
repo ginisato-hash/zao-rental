@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {HoldError} from '../../packages/contracts/src/hold';
 import {createHash} from 'node:crypto';
 import {guestAvatarScope,guestAvatarPath} from '../../packages/contracts/src/guest-avatar';
-import {guestAvatarHandler,type GuestAvatarBoundary} from '../../apps/web/src/lib/guest-avatar-http';
+import {guestAvatarHandler,assertLocalAvatarOrigin,type GuestAvatarBoundary} from '../../apps/web/src/lib/guest-avatar-http';
 import {avatarMediaHandler} from '../../apps/web/src/lib/avatar-media-http';
 import {mapAvatarVisualization} from '../../packages/core/src/avatar/visualization';
 import {syntheticAvatarRaster} from '../avatar/phase4-fixture';
@@ -27,3 +27,10 @@ test('cross-site and failed authentication produce empty private404',async()=>{c
 for(const missing of ['HOLD_VIEW','QUOTE_VIEW'])test('staff BOOKING_VIEW with missing '+missing+' rejects before bytes',async()=>{let reads=0;const state={status:'authorized',stamp:'synthetic',principal:{permissions:['BOOKING_VIEW',missing==='HOLD_VIEW'?'QUOTE_VIEW':'HOLD_VIEW']}};const handler=avatarMediaHandler(async()=>state as never,()=>{reads++;return {findForDelivery:async()=>metadata,readBytes:async()=>art.bytes};});assert.equal((await handler(request('/avatar-media/'+metadata.id+'/'+digest))).status,404);assert.equal(reads,0);});
 
 for(const media of [false,true])test('Avatar throttle precedes metadata/bytes; private429 '+media,async()=>{const f=fixture();f.b.guard=async()=>{throw new HoldError('GUEST_RATE_LIMITED',429);};const r=await guestAvatarHandler(()=>f.b,media)(request(media?imagePath:'/api/guest/avatar/'+path));assert.equal(r.status,429);assert.equal(await r.text(),'');assert.equal(r.headers.get('Retry-After'),'60');assert.deepEqual(f.counts(),{loads:0,reads:0});});
+
+test('local Avatar accepts Next loopback normalization only with the exact configured Host/port',()=>{
+ const origin='http://127.0.0.1:32111',host='127.0.0.1:32111';
+ for(const name of ['127.0.0.1','localhost'])assertLocalAvatarOrigin(new Request('http://'+name+':32111/api/guest/avatar',{headers:{host}}),origin);
+ for(const [url,actualHost]of [['http://localhost:32112/x',host],['https://localhost:32111/x',host],['http://other.invalid:32111/x',host],['http://127.0.0.2:32111/x',host],['http://localhost:32111/x','localhost:32111'],['http://localhost:32111/x','']] as const)assert.throws(()=>assertLocalAvatarOrigin(new Request(url,{headers:{host:actualHost,'x-forwarded-host':host}}),origin),/LOCAL_ORIGIN_REQUIRED/);
+ assert.throws(()=>assertLocalAvatarOrigin(new Request('https://example.invalid/x',{headers:{host:'example.invalid'}}),'https://example.invalid'),/LOCAL_ORIGIN_REQUIRED/);
+});

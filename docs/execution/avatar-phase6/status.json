@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUME_V2_R2_CREDENTIAL_HANDOFF_PENDING",
+  "phase": "RESUME_V2_R2_UPLOAD_READY",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -130,7 +130,7 @@
     "syntheticFixture": "PASS_EXISTING_ROWS_UNCHANGED",
     "r2Bucket": "PRIVATE_CREATED",
     "r2Objects": 0,
-    "r2WriteCredential": "CREATE_DISPATCHED_UI_COMPLETION_REACHED_HANDOFF_PENDING",
+    "r2WriteCredential": "HANDOFF_PASS_LOCAL_0600",
     "r2ReadCredential": "NOT_CREATED",
     "dedicatedVercelProject": "NOT_CREATED",
     "hostedE2E": "NOT_RUN",
@@ -138,5 +138,7 @@
     "setupOAuth": "LIVE_PENDING_COMPLETION_REVOKE",
     "cleanup": "PENDING_ACTIVE_TASK",
     "newTaskSecretExposureAfterThisResume": 0
-  }
+  },
+  "continuationStartingHead": "e77715d10341a7e12b4a47d584030b8da869ea9d",
+  "continuationAuthoritySha256": "1026587ec4eff33c0ff8cee4fdc42112965dea0714f8ad0839fbf6f5cb3554e2"
 }

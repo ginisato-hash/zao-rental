@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "PROTECTED_PREVIEW_READY_HOSTED_E2E_AUTH_PENDING",
+  "phase": "STOPPED_EXISTING_PREVIEW_RUNTIME_503",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -60,8 +60,8 @@
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "NOT_RUN",
-  "externalAcceptance": "NOT_RUN_HUMAN_LOGIN_PENDING",
-  "implementation": "HOSTED_PREVIEW_ACCEPTANCE_INCOMPLETE",
+  "externalAcceptance": "FAIL_READINESS_HTTP503_HOSTED_MATRIX_NOT_RUN",
+  "implementation": "HOSTED_ACCEPTANCE_BLOCKED_NO_DEPLOYMENT_BUDGET",
   "checkpointValidation": {
     "targetedTests": {
       "passed": 61,
@@ -91,7 +91,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Normal Vercel/Neon human authentication, hosted acceptance, exact bootstrap+alias cleanup, then final Claude. Attempts3/3 consumed; no further deployment.",
+  "nextGate": "Owner/Technical Director assessment of unusable existing Preview (Guest HTTP503). No redeploy: attempts3/3 exhausted. Bootstrap+alias retained because hosted PASS cleanup prerequisite is unmet. No Claude/Phase7/main continuation.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -144,10 +144,10 @@
     "r2WriteCredential": "REVOKED_LOCAL_FILE_REMOVED",
     "r2ReadCredential": "PASS_READ3_PUT403_DELETE403",
     "dedicatedVercelProject": "CREATED_AUTHENTICATION_ON",
-    "hostedE2E": "NOT_RUN_HUMAN_LOGIN_PENDING",
+    "hostedE2E": "FAIL_READINESS_HTTP503",
     "claude": "NOT_RUN",
     "setupOAuth": "REVOKED_AND_REMOVED",
-    "cleanup": "PASS_DEPLOYMENT404_ALIAS404_LOCAL_SECRETS_REMOVED",
+    "cleanup": "OWNED_BROWSER_CLOSED_LOCAL_SECRETS_ABSENT_BOOTSTRAP_RETAINED_PER_PASS_PREREQUISITE",
     "newTaskSecretExposureAfterThisResume": 0,
     "vercelEnvironment": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY_FORBIDDEN_KEYS0",
     "deployArtifactPreflight": "PASS_LOCAL_DRY_RUN_ONLY"
@@ -197,5 +197,27 @@
     "rawTarget": null,
     "providerPreviewFilteredListingContainsExactId": true,
     "authentication": "ON"
+  },
+  "humanAuthResumeAuthorityCommit": "ae15dacaa94383dc4d4c387a50187f19945ed035",
+  "hostedReadiness": {
+    "httpStatus": 503,
+    "safeErrorCategory": "GUEST_PREVIEW_UNAVAILABLE",
+    "route": "/api/guest/draft",
+    "explicitProbeRequests": 1,
+    "rawResponseSaved": false,
+    "rootCause": "NOT_ESTABLISHED",
+    "runtimeDatabaseRequestCount": "UNKNOWN_NO_ZERO_CLAIM",
+    "hostedMatrix": "NOT_RUN"
+  },
+  "resumedAcceptance": {
+    "additionalDeployments": 0,
+    "additionalProjects": 0,
+    "additionalAliases": 0,
+    "newNeonOAuthSessions": 0,
+    "operatorDatabaseConnections": 0,
+    "claudeStarts": 0,
+    "ownedBrowser": "CLOSED",
+    "temporaryOAuthDirectory": "EMPTY",
+    "localSecretFiles": "ABSENT"
   }
 }

@@ -1,0 +1,8 @@
+{
+  "status": "FAIL",
+  "httpStatus": 503,
+  "safeErrorCategory": "GUEST_PREVIEW_UNAVAILABLE",
+  "origin": "https://zao-rental-avatar-preview-q1c57fxk3-zao-food-map.vercel.app",
+  "route": "/api/guest/draft",
+  "rawResponseSaved": false
+}

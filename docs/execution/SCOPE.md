@@ -1,3 +1,17 @@
+## Current — Phase6 existing Preview unusable; STOP
+
+Read docs/execution/avatar-phase6/HOSTED_RUNTIME_503_STOP.md and status.json.
+Owner Vercel login was verified in the existing task browser. Exact existing READY
+Preview Guest draft GET returned503 GUEST_PREVIEW_UNAVAILABLE. Hosted acceptance
+matrix and Claude NOT_RUN; root cause not established. No PASS is claimed.
+Deployment attempts3/3 exhausted. No redeploy, new project, alias or alternate Preview.
+Historical Production deployments2/aliases2 retained. Current1/1 is the harmless
+static bootstrap; Owner requires Hosted PASS before its deletion, so keep it now.
+Production env0; Preview Authentication ON. Task browser closed; local secrets absent;
+no new Neon OAuth or operator DB connection. No main/Phase7. Stop for Owner assessment.
+
+## Historical — preceding controlled bootstrap continuation
+
 ## Current — Phase6 Limited Resume Authority V2
 
 Read docs/execution/AVATAR_PHASE6_RESUME_V2_AUTHORITY.md and avatar-phase6/RESUME_V2_PLAN.md.

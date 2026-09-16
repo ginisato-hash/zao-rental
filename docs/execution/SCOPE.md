@@ -1,3 +1,7 @@
+## Current — M1.5 normal production composition (local code only)
+
+Follow docs/execution/launch-critical-m15/OWNER_AUTHORITY.md and PLAN.md. Parent sole writer; no hosted/provider/Production operations. M1 code/review complete, PR18 exact CI verification retained; current stacked branch codex/launch-critical-prod-composition. Complete M1.5, then authorized M1.6/M1.7. Historical records below remain unchanged.
+
 ## Current — Launch-critical stacked local implementation
 
 Latest Owner authority: launch-critical-m1/M15_OWNER_AUTHORITY.md and the direct M1.6/M1.7 request. Follow launch-critical-m1/STACKED_PLAN.md. Complete the M1 prerequisite, then production composition, notification/recovery and operations/restore on separate stacked branches and Draft PRs. Parent sole writer; bounded static Claude initial1 per phase, correction1 only for B/H/M. Preserve all historical records below. No main merge, hosted/provider/Production changes, real mail/payment/customer/inventory. Local synthetic PG/browser and GitHub CI only. Do not claim PR17 merged or Production acceptance. Stop after M1.7.

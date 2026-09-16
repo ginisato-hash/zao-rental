@@ -1,6 +1,9 @@
-import {releasedDerivative} from '../../../../../../../packages/core/src/content/storage-port';
-import {publicModels} from '../../../../lib/public-content';
-import {publicRuntime} from '../../../../lib/public-runtime';
+import {productionRequested,getProductionRuntime} from '../../../../lib/production-runtime';
+import {publicContentPool} from '../../../../lib/public-runtime';
+import {publicMediaHandler} from '../../../../lib/public-media-http';
 export const dynamic='force-dynamic';
-export async function GET(req:Request,p:{params:Promise<{hash:string;file:string}>}){const {hash,file}=await p.params,empty=()=>new Response(null,{status:404,headers:{'Cache-Control':'no-store'}});if(new URL(req.url).search||!/^[a-f0-9]{64}$/.test(hash)||!/^\d+\.(webp|jpg)$/.test(file))return empty();const path='/media/'+hash+'/'+file,r=publicRuntime();if(!r)return empty();
- const result=await releasedDerivative(path,{async readPrivateObject(digest){return (await r.readPool.query('SELECT bytes FROM content_media_objects WHERE sha256=$1',[digest])).rows[0]?.bytes??null;}},async()=>{const m=(await publicModels()).find(m=>m.media.variants.some(v=>v.src===path)),v=m?.media.variants.find(v=>v.src===path);return m&&v?{path,sha256:hash,type:v.type as 'image/webp'|'image/jpeg',revision:JSON.stringify(m)}:null;});if(!result)return empty();return new Response(new Uint8Array(result.bytes),{headers:{...result.headers,'Content-Type':result.type,'Content-Length':String(result.bytes.length)}});}
+export async function GET(req:Request){
+ const p=publicContentPool(),r=productionRequested()?getProductionRuntime():null;
+ const boundary=p&&(!productionRequested()||r?.configuration.flags.media)?{pool:p,readBytes:async(digest:string)=>r?r.readDerivative(digest):(await p.query('SELECT bytes FROM content_media_objects WHERE sha256=$1',[digest])).rows[0]?.bytes??null}:null;
+ return publicMediaHandler(boundary)(req);
+}

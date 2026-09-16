@@ -1,0 +1,11 @@
+
+> zao-rental@0.1.0 test:production-runtime-ui
+> node --import tsx tests/readiness/normal-production-ui.ts
+
+✓ Running next.config.ts took 147ms
+PASS built normal GuestBooking shows canonical confirmed booking, quote and payment state with Avatar/media OFF
+PASS normal protected access/QR, anonymous readiness and disabled Avatar/media routes
+PASS 390/1440px normal booking survives Avatar HTTP failure and business rows remain immutable
+PASS fresh guest still saves and recommends with Production mode and no Avatar capability
+M15 normal built Next Production fixture browser 4 PASS; local TLS/PG only; provider0.
+Owned M15 browser/HTTPS/TLS files/DB closed.

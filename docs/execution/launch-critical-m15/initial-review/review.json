@@ -1,0 +1,70 @@
+{
+  "branch": "codex/launch-critical-prod-composition",
+  "reviewed_head": "15cf6c2ba9d9152f639a5eb6ae62acbc5ef02f3d",
+  "base_sha": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
+  "source_tree_sha256": "e286c5e18efa97b5828c4b718585ae88b3161d2dbc76051d2813d9b43c096174",
+  "authority_sha256": "0731fba313176071fbc5cb5a44dc54cbb93cd5d48aa13154205e54f7cf3dc8f1",
+  "snapshot_sha256": "fb9177e72b31b3609f3cc855b9be5e522ff75aa2dac2e6b61cd5a623b3562b6c",
+  "verdict": "CHANGES_REQUIRED",
+  "tests_executed": false,
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "HIGH",
+      "title": "Payment gateway exposed on ProductionRuntime.payment regardless of flags.payment, bypassing required credential/provenance validation",
+      "file_or_component": "packages/core/src/guest/production-runtime.ts (composeProductionRuntime return object)",
+      "line": "final Object.freeze({...}) return, field `payment:input.payment?.gateway??null`",
+      "counterexample": "Call composeProductionRuntime with c.flags.payment=false while still supplying input.payment={provider:'SQUARE',environment:'PRODUCTION',gateway:{kind:'SQUARE_SANDBOX',...}} (or any malformed/unvalidated binding). The `stage='PAYMENT'` block is entirely skipped because it is guarded by `if(c.flags.payment){...}`, so none of the merchantId/credential/kind checks run; yet the final return still does `payment:input.payment?.gateway??null`, unconditionally attaching the unvalidated gateway to the runtime object. The existing unit test only exercises flags.payment=true paired with a payment binding; the mismatched (flag off + binding supplied) case is untested and unguarded.",
+      "impact": "Breaks the stated fail-closed invariant for the payment port ('credential absent: fail closed', 'Sandbox credential: rejected'). Any future consumer (M1.6+) that treats presence of `runtime.payment` as proof of a flags.payment-gated, provenance-checked SQUARE_PRODUCTION gateway would be wrong — a SANDBOX kind or unrevoked-check-bypassed gateway could reach that surface silently. Currently unreachable via any route in this diff (BookingService is constructed without a gateway), so no live exploitation path exists yet, but it is a concrete, demonstrable composition defect exactly in the boundary this review is asked to check.",
+      "minimum_safe_correction": "Gate the exposed field on the validated flag path, e.g. capture the validated binding inside the `if(c.flags.payment){...}` block into a local `const validatedPayment=p.gateway;` and return `payment:c.flags.payment?validatedPayment:null`. Never read `input.payment` outside the flag-guarded branch.",
+      "required_proof": "A new unit/integration case: composeProductionRuntime({...validConfig,flags:{...,payment:false},payment:sandboxOrUnvalidatedBinding}) must yield runtime.payment===null (or reject), not the supplied gateway."
+    },
+    {
+      "id": "F2",
+      "severity": "MEDIUM",
+      "title": "Media feature flag is not actually independent of the booking flag, contradicting claimed feature isolation",
+      "file_or_component": "apps/web/src/app/media/[hash]/[file]/route.ts; packages/core/src/guest/production-runtime.ts (`public:guest?{...}:null`)",
+      "line": "media route.ts `const path=...,r=publicRuntime();if(!r)return empty();` (executed before the media-flag check); production-runtime.ts `public:guest?{...}:null`",
+      "counterexample": "productionConfiguration() accepts booking:false, media:true (no cross-flag rejection exists for this combination, only avatar/guestRecovery/payment depend on booking). But `public` on the composed runtime is only built `if(guest)`, and `guest` requires `c.flags.booking`. `publicRuntime()` therefore returns null whenever booking is off, and the media route's very first runtime check (`if(!r)return empty()`) makes every media request 404 regardless of the (validated, connected) media/R2 configuration.",
+      "impact": "An operator who intentionally enables media without booking (e.g., a content-only rollout) gets a silently non-functional media surface despite passing startup validation for R2/media credentials — the feature-isolation guarantee in the authority ('feature isolation' minimum item, independently toggleable flags) is not actually met for this combination. Fails safe (404, no leak) but is a functional/architectural correctness gap, not merely cosmetic.",
+      "minimum_safe_correction": "Either (a) add a config-level dependency requiring booking when media is requested (mirroring the existing avatar dependency), explicitly documenting media as booking-coupled, or (b) decouple the media route's runtime lookup from `publicRuntime()`/guest composition so media can be served purely from the R2 binding when flags.media is true independent of flags.booking.",
+      "required_proof": "A configuration/composition test with flags={booking:false,media:true,...} that exercises the media route and confirms either an explicit config-time rejection or successful media delivery, rather than the current silent 404."
+    },
+    {
+      "id": "F3",
+      "severity": "LOW",
+      "title": "Unused/misleading `config.authSecret` field populated with guestKey instead of staffKey",
+      "file_or_component": "packages/core/src/guest/production-runtime.ts (`base` object literal)",
+      "line": "`config:{origin:c.deployment.origin,namespace:c.database.name,authSecret:secrets.guestKey,authDb:{port:5432}}`",
+      "counterexample": "createStaffAuth is constructed with `secret:secrets.staffKey` right below, so `base.config.authSecret` (=guestKey) is never the actual staff-auth secret. It is currently unread in the production path, but the legacy dev fallback in booking-access-runtime.ts derives BookingAccess keys from this same shaped field (`p.r.config.authSecret`) — a naming collision that could mislead a future maintainer into wiring booking-access keys from `r.config.authSecret` in the Production path (which would silently reuse the guest key instead of the independent accessKey).",
+      "impact": "No current exploitation; latent maintainability/naming hazard adjacent to the key-separation invariant this review must check.",
+      "minimum_safe_correction": "Remove the unused `authSecret` field from the production `base.config` object, or rename/document it distinctly from any key used for BookingAccess/Recovery derivation.",
+      "required_proof": "Confirm no production code path reads `r.config.authSecret` to derive booking-access or recovery keys; a grep-based regression check would suffice."
+    },
+    {
+      "id": "F4",
+      "severity": "LOW",
+      "title": "TLS peer verification relies on undocumented internal Node.js properties",
+      "file_or_component": "packages/db/src/production-connection.ts (connectProductionDatabase)",
+      "line": "`Reflect.get(client,'connection')`, `Reflect.get(stream,'servername')`, `Reflect.get(stream,'_tlsOptions')`",
+      "counterexample": "These are private/internal `pg`/`node:tls` implementation details, not part of any stable public API; a Node.js or `pg` version bump could rename/remove them.",
+      "impact": "If the properties disappear, the checks currently fail closed (comparisons against `undefined` are truthy-mismatches that throw), so the practical direction of failure is safe rather than silently permissive. Still worth tracking as a fragility risk for a security-critical gate.",
+      "minimum_safe_correction": "Prefer documented tls.TLSSocket APIs (`getProtocol()`, `authorized`, `getPeerCertificate()`, and pass `servername` explicitly in Pool ssl options) over reflection into private fields where a public equivalent exists; keep a regression test pinned to the Node version in CI.",
+      "required_proof": "None required for this pass; monitor on Node/pg upgrades."
+    }
+  ],
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 1,
+    "MEDIUM": 1,
+    "LOW": 2
+  },
+  "scope_assessment": "The diff matches the M1.5 authority's stated scope: one server-owned ProductionRuntime composition reusing existing guest/booking-access/recovery/staff/payment/R2 boundaries, gated by explicit config+secrets+verified-peer injection rather than NODE_ENV, with zero migrations added and zero external provider calls. Payment/media/avatar/staffOperations feature isolation, DB role separation, safe readiness enums, and independent BookingAccess/Recovery key roots are implemented essentially as specified, with the two gaps noted above (F1 payment-flag bypass, F2 media/booking coupling). External ingress verification, real Neon/Square/R2/mail connectivity and commercial activation remain correctly out of scope and are not claimed as executed.",
+  "security_boundary_assessment": "Trusted-ingress peer resolution never reads spoofable headers (x-forwarded-for/x-real-ip/host) and is bound to exact provider/environment/projectId/releaseId/origin equality via an injected verifiedPeer callback; DB identity is checked against actual authenticated role/ownership/privilege bits via SQL, not caller-supplied labels; role/service separation and uniqueness are enforced; BookingAccess/BookingRecovery use four distinct 32-byte root keys validated for uniqueness; readiness/admin-readiness responses are constrained to a fixed safe enum set and require STAFF_MANAGE for detail; unknown top-level config/secret keys are rejected before any DB connection is attempted (proven for the failure paths tested). The one confirmed gap (F1) is a fail-open exposure of an unvalidated payment gateway object when the payment feature flag is off, which is currently inert (unconsumed) but violates the same fail-closed pattern correctly applied to every other feature toggle (avatar/media/staffOperations/access/recovery).",
+  "validation_assessment": "validation.json and the referenced logs are supplied as parent evidence only; this review did not execute any test, lint, typecheck, or build command and treats all pass claims (56-command matrix, migration hash preservation, browser cases) as unverified assertions from the parent process. The reviewed diff is internally consistent with those claims (e.g., new production-runtime/production-configuration unit tests and normal-production(-ui) fixtures do exist in-tree and appear to cover most described scenarios), but the specific gap in F1 is not covered by any test in the diff, which is consistent with it being an actual, un-caught defect rather than a documentation/test omission only.",
+  "insufficient_evidence": [
+    "No visibility into the actual (out-of-scope) trusted hosting/dispatcher implementation that would call installProductionBootstrap with a real verifiedPeer/config/secrets; its correctness cannot be assessed from this repository alone.",
+    "Whether any M1.6+ code intends to consume ProductionRuntime.payment directly is unknown; F1's real-world severity depends on that future usage."
+  ],
+  "next_gate": "CORRECTION_PASS_1_REQUIRED_FOR_F1_AND_F2_THEN_RE_REVIEW_BEFORE_M1_6"
+}

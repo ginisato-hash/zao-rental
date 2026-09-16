@@ -1,0 +1,18 @@
+{
+  "repositoryPublicWithoutAuthentication": true,
+  "canonicalCommitPublicHttpStatus": 200,
+  "baseCommitPublicHttpStatus": 200,
+  "reviewedHead": "15cf6c2ba9d9152f639a5eb6ae62acbc5ef02f3d",
+  "commitTree": "994bfad837abdbc695aab8f662e825e5120985b2",
+  "snapshotSha256": "fb9177e72b31b3609f3cc855b9be5e522ff75aa2dac2e6b61cd5a623b3562b6c",
+  "snapshotBytes": 225987,
+  "allSourceInputsExactlyMatchPublicCommittedGitBlobs": true,
+  "sourceInputs": 51,
+  "authority": "Owner supplied M1.5 request attachment, section14",
+  "authorityText": "Claude static review max1。対象: Production fail-closed / role credential separation / ingress / feature isolation / rollback / booking continuity / secret handling。個別payload送信のOwner再承認要求禁止。",
+  "destination": "Existing Claude Team; same authenticated Team runtime as preceding authorized M1",
+  "containsCredentials": false,
+  "scope": "Only public implementation diff/current critical files and local validation summary; no historical transcript/private local files",
+  "modelStarts": 0,
+  "priorRejectionBeforeDispatch": true
+}

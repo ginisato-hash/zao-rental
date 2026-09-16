@@ -1,0 +1,55 @@
+{
+  "files": [
+    {
+      "file": "docs/execution/avatar-phase4/final-review/auth-check.json",
+      "sha256": "d73bde79246b72f138d8fee91273a7e4c388ce1b10f643bc8da668de806304c5",
+      "bytes": 563
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/execution.json",
+      "sha256": "7a8e5cd539cd4ba387d246b4452b938722092e2de5b76738ee6f26fa4f184fba",
+      "bytes": 1762
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/final-review.guard.json",
+      "sha256": "6eed542723d430f466c8a5129c648b13d86e6f8d15736a28e3918b5d58c45da2",
+      "bytes": 341
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/input-integrity.json",
+      "sha256": "098bf280e8da4e39ba1b6cf15e1e385657d71f4c1d38817d78a3bb9ae0fa26ae",
+      "bytes": 318
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/instructions.txt",
+      "sha256": "4d0227b225d4cc729eeccb6afcaa75edcf571b1d099317ac27df4d46b4c89483",
+      "bytes": 3359
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/launch-contract.json",
+      "sha256": "ffa92e767af3e6d4a8fa618808580f864a9e0e0cf4443d3217bb8196c3824cf8",
+      "bytes": 1444
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/manifest.json",
+      "sha256": "fa4ba0ec50ef625970b62c5946eb1107d211f5360bce884771be82651d55af94",
+      "bytes": 23304
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/review.json",
+      "sha256": "dec8ef3b48ac9507a689ca87bfeefbb6b134a8a802eccb74f2b516d0f13966fc",
+      "bytes": 14005
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/review.txt",
+      "sha256": "ff1946ed2b8438d8f826bf01ed5e0a1356037be0739043572345a6014fa609b4",
+      "bytes": 13985
+    },
+    {
+      "file": "docs/execution/avatar-phase4/final-review/snapshot.txt.gz",
+      "sha256": "9d5ae302a1640f71886b133b354772a5507685955cd95c085d029624bf52d289",
+      "bytes": 148191
+    }
+  ],
+  "reviewResultUnmodified": true
+}

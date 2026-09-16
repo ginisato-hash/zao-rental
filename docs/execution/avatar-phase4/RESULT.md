@@ -1,8 +1,20 @@
-# Avatar Phase4 implementation checkpoint
+# Avatar Phase4 final result
 
-Codex self-validation **PASS**. Independent review **NOT_RUN**; initial0/1,
-conditional correction0/1 (only after a corrected BLOCKER/HIGH/MEDIUM). No intermediate
-review was run. Current code/evidence will be committed, pushed and read back before review.
+**PHASE4 PASS.** Codex local self-validation PASS and independent Claude static review PASS.
+BLOCKER0 / HIGH0 / MEDIUM0 / LOW4. Initial1/1, correction0/1, retry0; no intermediate
+review or correction review. Stop before Phase5; customer-visible remains **false**.
+
+Reviewed implementation/evidence HEAD: `790b809a8d8a8989594e0982e264b3a220527936`,
+committed, pushed and read back clean before review. This final receipt is a documentation/
+evidence-only descendant; the exact receipt SHA is supplied in the final delivery report.
+It is not mislabeled as independently reviewed code. No product/test source changed after review.
+
+Review snapshot SHA256: `9282642d664e4d02a813f1642a9ca3aa3575ef82dbd0c4997f9b35548c3e3153`.
+Original result, input manifest/compressed snapshot, execution, one-shot guard and integrity
+records are in final-review/. Claude Sonnet5 used the existing Team account with server-confirmed
+org-level overage disabled / isUsingOverage=false. Tools/MCP/hooks/browser/provider0;
+the reviewer executed no tests. The reviewer process exited0 and is closed.
+Final receipt integrity/secret/diff checks are recorded separately in final-validation.json.
 
 Starting remote HEAD: `96a34aee8dccb66dca11199af29c33aaf1127546`.
 New branch: `codex/avatar-phase4-customer-renderer`. A2/A3, R15, historical Avatar and main
@@ -57,12 +69,16 @@ their existing local writes separately. Square/hosted Neon/Vercel/R2/external me
 Production/real payment/real customer/email/SMS/new service0. GitHub branch synchronization
 and authorized static Claude review are separate control-plane actions. R15 live replay0.
 
-## Prior LOWs and boundary
+## Retained LOWs and boundary
 
 AV-1 LOW remains OPEN: no writer/editor introduced; read-time purpose binding fails closed.
 AV-2 LOW remains recorded: Owner now explicitly selects zero-art/no-renderer/no-fake behavior.
 This product decision is not an independent closure claim. AV-3 LOW remains OPEN: no new
 hosted/runtime role, no workspace JSON response; production privilege minimization is pending.
+New PHASE4-1 LOW remains OPEN: image bytes require BOOKING_VIEW while the saved-recommendation
+page also requires HOLD_VIEW/QUOTE_VIEW; an isolated BOOKING_VIEW-only principal was not tested.
+All original severities/counterexamples and remaining proof are in FINDING_DISPOSITION.md.
+No LOW is independently closed and no source correction was made after PASS.
 
 Next exact gate after Phase4 PASS: **AVATAR PHASE 5 — GUEST BOOKING INTEGRATION + REAL ARTWORK
 ACTIVATION**. No automatic continuation, real artwork, public activation or deployment.

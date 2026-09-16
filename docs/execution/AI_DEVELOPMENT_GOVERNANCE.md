@@ -91,6 +91,13 @@ BLOCKER/HIGH/MEDIUM correction; no unnecessary LOW/PASS re-review. Existing perm
 roles, Team extra usage OFF, tools/MCP/hooks/browser/provider disabled remain binding.
 Stop after Phase4 PASS; separate Phase5 authority is required for guest/real-artwork work.
 
+Phase4 independent review completed PASS at implementation/evidence HEAD
+`790b809a8d8a8989594e0982e264b3a220527936`. Initial1/1, correction0/1, retry0;
+BLOCKER0/HIGH0/MEDIUM0/LOW4. AV-1/2/3 retain their historical severity and disposition;
+PHASE4-1 records the narrower preview-page permissions versus BOOKING_VIEW-only bytes.
+All four LOWs are retained in avatar-phase4/FINDING_DISPOSITION.md. Receipt descendants
+are documentation/evidence only. No additional review start or Phase5 work follows PASS.
+
 ## Historical post-R15 Avatar A2/A3 milestone
 
 The direct [Avatar A2/A3 authority](POST_R15_AVATAR_A2_A3_AUTHORITY.md) starts a new

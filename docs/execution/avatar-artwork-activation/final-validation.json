@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "recordedAtUtc": "2026-09-16T04:23:15.069881+00:00",
+  "terminal": "PHASE5_LOCAL_PASS_REAL_ARTWORK_ACTIVE",
+  "reviewedHead": "e6b97d66598a81c0e26f329e2fd773b954dc746c",
+  "verdict": "PASS",
+  "severityCounts": {
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 4
+  },
+  "sourceAndArtworkChangesAfterReview": 0,
+  "receiptScope": "Documentation/evidence only",
+  "reviewOriginalFilesVerified": 12,
+  "binaryHashesVerified": 7,
+  "snapshotIntegrity": "PASS",
+  "textAndMigrationProof": "final-review/pre-receipt-integrity.json;115text records,32historical migrations",
+  "finalSecretScan": {
+    "file": "docs/execution/avatar-artwork-activation/final-secrets.log",
+    "sha256": "d3731e370e34a65d0a062a15ec9aa4a6f70bdd9fc2b7964fab1a631d4d184c75",
+    "rawSha256": "5e87f9bbd90de28614c47469acfe8a15fec3a4784d047475a0cf94977e1d0cf8",
+    "result": "PASS_PATTERN_LIMITED",
+    "exitCode": 0
+  },
+  "diffCheck": "PASS",
+  "reviewProcessExitCode": 0,
+  "initialReviews": 1,
+  "correctionReviews": 0,
+  "modelRetries": 0,
+  "toolUse": 0,
+  "extraUsage": false,
+  "automaticApprovalRejectedAttempts": 2,
+  "modelStartsDuringRejections": 0,
+  "explicitUserSnapshotEgressApproval": true,
+  "newCodeTestsAfterReview": 0,
+  "reason": "No source or artwork change after PASS",
+  "finalReceiptSha": "Reported after commit and remote readback; no self-hash claim"
+}

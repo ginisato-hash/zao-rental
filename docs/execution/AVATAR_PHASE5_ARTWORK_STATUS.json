@@ -3,17 +3,37 @@
   "authoritySha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
   "startingHead": "01c225eaed80eb5ee95e22d1ece9eef666aa22e3",
   "branch": "codex/avatar-phase5-artwork-activation",
-  "state": "LOCAL_ARTWORK_VALIDATED_REVIEW_REQUIRED",
+  "state": "PHASE5_LOCAL_PASS_REAL_ARTWORK_ACTIVE",
   "sourcePackageAccepted": true,
   "review": {
-    "initialStarts": 0,
+    "initialStarts": 1,
     "correctionStarts": 0,
-    "retry": 0
+    "retry": 0,
+    "verdict": "PASS",
+    "reviewedHead": "e6b97d66598a81c0e26f329e2fd773b954dc746c",
+    "authoritySha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
+    "snapshotSha256": "78ba2f40d0eecb706b7330f3d5d454f44cd3426d39684ebf18c8f3a7661613fb",
+    "model": "claude-sonnet-5",
+    "severityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 4
+    },
+    "testsExecutedByReviewer": false,
+    "tools": 0,
+    "mcp": 0,
+    "hooks": 0,
+    "browser": 0,
+    "extraUsage": false,
+    "record": "avatar-artwork-activation/final-review/review.json",
+    "egressApproval": "Direct Owner reply after2 automatic approval rejections; rejected attempts started no model",
+    "receiptDescendants": "Documentation/evidence only; artwork and implementation unchanged"
   },
   "productionApproved": false,
   "externalProviderOperations": 0,
   "implementationValidation": "SELF_VERIFIED_PASS",
-  "independentReview": "NOT_RUN",
+  "independentReview": "PASS",
   "localArtworkApproved": true,
   "approvedLocalDerivatives": 3,
   "publicActivation": false,
@@ -22,5 +42,42 @@
   "unitTests": 261,
   "localPgChecks": 32,
   "browserChecks": 18,
-  "localResources": "STOPPED_AFTER_ACCEPTANCE"
+  "localResources": "STOPPED_AFTER_ACCEPTANCE",
+  "implementationHead": "e6b97d66598a81c0e26f329e2fd773b954dc746c",
+  "reviewedHead": "e6b97d66598a81c0e26f329e2fd773b954dc746c",
+  "result": "avatar-artwork-activation/RESULT.md",
+  "findingDisposition": "avatar-artwork-activation/FINDING_DISPOSITION.md",
+  "nextGate": "STOP; Phase6, hosted activation, Production and main merge require separate authority",
+  "findingDispositions": [
+    {
+      "id": "AV-1",
+      "original_severity": "LOW",
+      "status": "CLOSED",
+      "reason": "Already independently closed at the avatar-phase5 gate (0032's avatar_visual_guard rejects UPDATE of all 13 binding/identity fields). This milestone re-proves the same closed guard against the real imported binding with 13 field-by-field real-PG assertions (tests/avatar/artwork-activation.ts, activation.log lines 5-17), all reviewed in source and consistent with the migration text in 0032_avatar_delivery_boundary.sql. No new binding-mutation surface was introduced; disposition is reaffirmed, not re-decided."
+    },
+    {
+      "id": "AV-2",
+      "original_severity": "LOW",
+      "status": "RECORDED_PRODUCT_DECISION_NOT_INDEPENDENTLY_CLOSED",
+      "reason": "The scoped product choice (zero/ineligible artwork never invents a renderer or fake image) is unchanged in mapAvatarVisualization/avatarLayout and is now demonstrated on both sides of the same milestone: with real approved artwork present (24 ratio measurements, both appearances) and with it temporarily revoked ('AV-2 no eligible artwork means no fabricated renderer; ordinary candidates remain', activation.log). This is a design decision, not a defect, so there is nothing for an independent reviewer to 'close'; it remains recorded as before and is not silently dropped."
+    },
+    {
+      "id": "AV-3",
+      "original_severity": "LOW",
+      "status": "PARTIALLY_ADDRESSED_LOCAL_SCOPE_ONLY",
+      "reason": "The dedicated avatar_read role (unchanged since avatar-phase5) is re-verified against the actual imported real-artwork rows in this milestone: SELECT denied on content_workspace/content_media_objects/content_revision_records/avatar_visuals/guest_contexts/recommendation_previews, no mutation, no DDL, pinned SECURITY DEFINER function with PUBLIC execute revoked and no elevated role flags/memberships (activation.log lines 18-25, 37-42). This remains local-scope proof only; no hosted/Production Avatar role exists or is created by this branch, so the original production-privilege-minimization concern stays open by construction."
+    },
+    {
+      "id": "PHASE4-1",
+      "original_severity": "LOW",
+      "status": "CLOSED",
+      "reason": "Already independently closed at avatar-phase5 (avatar-media-http.ts requires BOOKING_VIEW+HOLD_VIEW+QUOTE_VIEW, matching the staff preview page). Re-confirmed unchanged in this snapshot and re-tested against real imported artwork: all three permissions allow bytes/page, BOOKING_VIEW-only denies both (activation.log; avatar-media-http.ts:4 unchanged)."
+    },
+    {
+      "id": "PHASE5-1",
+      "original_severity": "LOW",
+      "status": "OPEN_LOCAL_UNTHROTTLED_NO_PUBLIC_ACTIVATION",
+      "reason": "guest-avatar-http.ts / the guest avatar routes remain byte-identical to avatar-phase5 and still bypass GuestSecurity.guard(); no rate-limit test was added in this milestone. Remains local-development-only (Production still fails closed via avatarRuntime()/publicRuntime() NODE_ENV checks, unchanged). Not addressed, not silently closed."
+    }
+  ]
 }

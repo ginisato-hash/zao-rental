@@ -1,7 +1,15 @@
 # Phase5 artwork activation — implementation result
 
-Implementation/local acceptance PASS; independent review is pending. This is not yet a
-final CASE A claim. Base01c225eaed80eb5ee95e22d1ece9eef666aa22e3; new branch
+**PHASE5_LOCAL_PASS_REAL_ARTWORK_ACTIVE** (CASE A). Implementation/local acceptance PASS and
+independent Claude static review PASS, BLOCKER0/HIGH0/MEDIUM0/LOW4.
+Implementation/reviewed HEAD: `e6b97d66598a81c0e26f329e2fd773b954dc746c`. Final receipt is documentation/evidence only;
+its exact SHA is reported after commit/readback. Approved artwork and code are unchanged.
+Review initial1, correction0, retry0; existing Team, org-level extra usage OFF,
+tools/MCP/hooks/browser/provider/edit/push0. Source snapshot SHA256 `78ba2f40d0eecb706b7330f3d5d454f44cd3426d39684ebf18c8f3a7661613fb`.
+Two automatic approval rejections started no process/model; the Owner then explicitly
+approved this exact static snapshot egress in chat, after which the sole review ran.
+Original verdict/findings/guard/execution and approval are preserved under final-review/.
+Final dispositions are in FINDING_DISPOSITION.md. Base01c225eaed80eb5ee95e22d1ece9eef666aa22e3; new branch
 codex/avatar-phase5-artwork-activation. Direct Owner authority is saved verbatim and
 SHA256-bound. Existing Phase5 code PASS/history and all0001–0032 bytes are preserved.
 
@@ -57,11 +65,11 @@ bytes and the ordinary protected preview entry; BOOKING_VIEW-only denies both. A
 actual dedicated Avatar role denied underlying content/workspace/business/credential reads,
 mutations and DDL; pinned function, no PUBLIC execution or elevated role privileges. Its
 historical general content_read and future Production scope are unchanged. AV-2 retains
-no-art/no-fake behavior and approved core art now exists; independent disposition pending.
+no-art/no-fake behavior and approved core art now exists; see the independent disposition.
 PHASE5-1 rate-limiter absence remains LOW/local-only, no nonlocal activation authority.
 
 Hosted Neon/Vercel/R2/Square/Production/public deployment/real payment/real booking/main
 merge/external browser/image search0. GitHub and the authorized static Claude review are
 separate control-plane operations. No Phase6 work. All owned PG/Next/Chromium resources
-close after tests. Final independent verdict, reviewed SHA and documentation-only receipt
-will be recorded before the CASE A/B/C stop.
+close after tests. Final independent verdict is PASS. CASE A is complete. STOP before Phase6; no additional
+review, hosted activation, Production operation or main merge.

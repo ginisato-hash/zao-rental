@@ -1,0 +1,9 @@
+{
+  "kind": "AVATAR_ARTWORK_ACTIVATION_INITIAL_REVIEW_ONE_SHOT",
+  "head_sha": "e6b97d66598a81c0e26f329e2fd773b954dc746c",
+  "snapshot_sha256": "78ba2f40d0eecb706b7330f3d5d454f44cd3426d39684ebf18c8f3a7661613fb",
+  "startedAtUtc": "2026-09-16T04:17:06.956Z",
+  "startsConsumed": 1,
+  "maximumStarts": 1,
+  "state": "RESERVED_POSSIBLY_STARTED_NO_RETRY"
+}

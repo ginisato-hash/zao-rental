@@ -1,0 +1,62 @@
+{
+  "status": "STOPPED_CORRECTIVE_PREVIEW_READINESS_503_PREVIEW_IDENTITY",
+  "previewId": "dpl_2HAREDuFGBcRNXyKNbiaU4qkMuZZ",
+  "canonicalTarget": "preview",
+  "providerState": "READY",
+  "bootstrapId": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
+  "bootstrapRetained": "Hosted PASS prerequisite unmet",
+  "deploymentAttempts": {
+    "used": 4,
+    "max": 4
+  },
+  "historicalProductionDeployments": 2,
+  "historicalProductionAliases": 2,
+  "currentProductionDeployments": 1,
+  "currentProductionAliases": 1,
+  "productionEnvCount": 0,
+  "envMetadata": [
+    {
+      "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    },
+    {
+      "key": "ZAO_AVATAR_PHASE6",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    }
+  ],
+  "authentication": "ON",
+  "correctiveReadiness": {
+    "dispatchCount": 1,
+    "retry": 0,
+    "httpStatus": 503,
+    "stage": "PREVIEW_IDENTITY"
+  },
+  "newNeonOAuthCreated": 0,
+  "operatorDatabaseConnections": 0,
+  "temporaryOAuthDirectoryEmpty": true,
+  "localSecretFiles": [
+    {
+      "file": "runtime-config.json",
+      "present": false
+    },
+    {
+      "file": "runtime-roles.json",
+      "present": false
+    },
+    {
+      "file": "r2-read.json",
+      "present": false
+    },
+    {
+      "file": "r2-write.json",
+      "present": false
+    }
+  ],
+  "rawProviderResponseSaved": false
+}

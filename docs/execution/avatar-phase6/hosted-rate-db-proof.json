@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "hosted": true,
+  "concurrentInstances": 2,
+  "peerLimit": 3,
+  "peerAccepted": 3,
+  "peerDenied": 5,
+  "globalLimit": 5,
+  "globalDenied": true,
+  "proofPolicySeparate": true,
+  "actualRouteProof": "PENDING",
+  "businessPolicyUnchanged": true
+}

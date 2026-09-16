@@ -1,0 +1,18 @@
+{
+  "kind": "REAL_POSTGRESQL_ROLLED_BACK_SYNTHETIC_TRANSACTIONS",
+  "results": [
+    {
+      "name": "DUE_ONLY",
+      "result": "PASS"
+    },
+    {
+      "name": "CANCELLED_TRANSFER",
+      "result": "PASS"
+    },
+    {
+      "name": "IDENTITY_MISMATCH",
+      "result": "PASS"
+    }
+  ],
+  "providerRequests": 0
+}

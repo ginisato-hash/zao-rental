@@ -1,0 +1,21 @@
+{
+  "classification": "NEW_POTENTIAL_EXTERNAL_SEARCH_TOOL_METADATA_EXPOSURE",
+  "authorityStopSection": 16,
+  "sourceCategory": "PUBLIC_WEB_SEARCH_RESULT_METADATA",
+  "suspectedMaterial": "UNRELATED_SIGNED_URL_AUTHENTICATION_PARAMETERS",
+  "valuesPreservedInEvidence": false,
+  "toolHistoryRetracted": false,
+  "validityInvestigated": false,
+  "ownerProviderCredentialCompromise": "NOT_ESTABLISHED",
+  "incidentReplay": 0,
+  "incidentCredentialUse": 0,
+  "newSecretExposureObservedAfterResume": "SUSPECTED_NOT_ZERO_CLAIMED",
+  "historicalIncidentUnchanged": true,
+  "globalBrowserInventoryAfterResume": 0,
+  "operationAtStop": "READ_ONLY_NEON_IDENTITY_DIAGNOSIS",
+  "hostedDatabaseWrites": 0,
+  "migrationDispatches": 0,
+  "r2Writes": 0,
+  "vercelWrites": 0,
+  "claudeStarts": 0
+}

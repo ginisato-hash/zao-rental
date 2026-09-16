@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-15T02:48:49.943762+00:00",
+  "runtimeRoleConnections": 0,
+  "postgres": "STOPPED",
+  "parentPid": 90346,
+  "parentPidObservedAbsent": true,
+  "port": 25353,
+  "portListenerObservedAbsent": true,
+  "psExit": 1,
+  "lsofExit": 1,
+  "finiteChild": "EXITED",
+  "ownedWeb": 0,
+  "ownedBrowser": 0,
+  "ownedModels": 0,
+  "previewCreated": 0,
+  "subscriptionCreated": 0,
+  "clusterRetention": "STOPPED_SYNTHETIC_EVIDENCE; no reusable plaintext credential retained; restart not verified",
+  "clusterDirectory": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/.local/postgres/run-zwNr8d",
+  "otherProjectsTouched": false
+}

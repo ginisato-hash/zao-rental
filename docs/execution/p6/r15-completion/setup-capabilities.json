@@ -1,0 +1,9 @@
+{
+  "server_version": "18.6 (2078fcb)",
+  "createrole_self_grant": "",
+  "active_role": "none",
+  "setup_role": "neondb_owner",
+  "pooledEquivalentMatchesHistoricalHost": true,
+  "readOnly": true,
+  "privilegeChanges": 0
+}

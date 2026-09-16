@@ -1,0 +1,16 @@
+PASS all 30 historical migration hashes unchanged; new 0031 checksum tracked
+PASS fresh empty PostgreSQL -> canonical 0001–0031
+PASS populated R15 0030 -> additive 0031 preserves business rows exactly
+PASS zero visuals is a normal empty read and preserves business object
+PASS nullable model/variant and explicit existing content purpose grant resolve in stable order
+PASS ambiguous active generic/default rejected; disabled alternatives allowed
+PASS invalid media/revision/release foreign keys and appearance/position rejected
+PASS revoked/expired/internal-only/unprocessed/missing rights excluded including generic fallback
+PASS stale release, absent purpose grant and mutated immutable revision excluded
+PASS general model photo rights do not authorize Avatar; digest retargeting denied
+PASS all inactive leaves recommendation unchanged; soft-disable timestamps and stable identity
+PASS exact PREMIUM model/variant/season/length relation rejects invalid references and mismatch
+PASS new immutable release grants exact promise; business schema rejects model season drift
+PASS read-only role resolves all directions/layers in one SELECT and cannot mutate business or visuals/read private bytes
+PASS no PUBLIC grants, no image bytes/URL/credential columns, no security-definer escalation
+PASS 15 Avatar local PostgreSQL checks; external0; owned pools/clusters closed.

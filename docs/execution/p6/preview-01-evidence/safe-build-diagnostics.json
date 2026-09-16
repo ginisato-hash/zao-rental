@@ -1,0 +1,38 @@
+{
+  "deployment": "dpl_93LKqdiYs68WSWjfDPCG5YdpyiBs",
+  "selected": [
+    {
+      "created": 1789351543349,
+      "text": "Running build in Cleveland, USA (East) \u2013 cle1"
+    },
+    {
+      "created": 1789351543349,
+      "text": "Build machine configuration: 4 cores, 8 GB"
+    },
+    {
+      "created": 1789351548409,
+      "text": "Installing dependencies..."
+    },
+    {
+      "created": 1789351551453,
+      "text": "npm error code EBADENGINE"
+    },
+    {
+      "created": 1789351551454,
+      "text": "npm error engine Unsupported engine"
+    },
+    {
+      "created": 1789351551455,
+      "text": "npm error notsup Required: {\"node\":\"24.15.x\",\"npm\":\"11.12.x\"}"
+    },
+    {
+      "created": 1789351551455,
+      "text": "npm error notsup Actual:   {\"node\":\"v24.19.0\",\"npm\":\"11.17.0\"}"
+    },
+    {
+      "created": 1789351551496,
+      "text": "Error: Command \"npm install\" exited with 1"
+    }
+  ],
+  "raw_log_saved": false
+}

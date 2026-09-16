@@ -1,0 +1,7 @@
+{
+  "status": "PASS_PATTERN_AND_PATH_SCAN",
+  "files": 219,
+  "values_fetched": false,
+  "env_files_uploaded": false,
+  "limitation": "Pattern scanning is not exhaustive; tracked source reviewed, no local runtime files."
+}

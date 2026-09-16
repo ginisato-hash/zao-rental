@@ -1,0 +1,12 @@
+PASS PG fresh canonical0001–0032 with dedicated Avatar role
+PASS BROWSER ordinary GuestBooking without approved artwork still previews candidates
+PASS PG zero-art metadata is null and normal business candidate lengths remain present
+PASS PG guest metadata uses own current saved recommendation and strips business/private data
+PASS PG anonymous cannot load victim metadata or bytes
+PASS PG other guest cannot load victim metadata or bytes
+PHASE5_E2E_FAILED own image GET returns private valid WebP only ERR_ASSERTION
+{"actual":"rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie","expected":"Cookie"}
+    at <anonymous> (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-e2e.ts:42:270)
+    at async check (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-e2e.ts:15:78)
+    at async <anonymous> (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-e2e.ts:42:2)
+Owned Phase5 browser/Next/PostgreSQL closed.

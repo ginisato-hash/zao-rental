@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "bindingChecks": "branch/base/head/authority/snapshot match",
+  "staticInputIntegrity": "PASS",
+  "modelProcessStarts": 1,
+  "reviewLimit": 1,
+  "reviewProcessExited": true,
+  "exitCode": 0,
+  "toolsMcpPluginsSkills": 0,
+  "hooks": 0,
+  "toolUses": 0,
+  "providerRequestsByReviewer": 0,
+  "browserByReviewer": 0,
+  "testExecutionByReviewer": false,
+  "overageEnabled": false,
+  "serverOverageDisabledReason": "org_level_disabled",
+  "automaticRetry": 0,
+  "secretScanAfterReceipts": {
+    "status": "PASS",
+    "files": 1638,
+    "limitation": "Pattern scan is not comprehensive; compressed input separately verified from scanned source."
+  },
+  "postReviewProductSourceChanges": 0,
+  "historicalFindingRecordsRewritten": false,
+  "countsClarification": "Five fresh runtime credentials plus disabled PUBLIC probe; setup owner is separate, not a sixth fresh runtime credential.",
+  "nextGate": "ChatGPT Technical Director terminal assessment; no further review/live execution."
+}

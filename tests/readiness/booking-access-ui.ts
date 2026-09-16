@@ -18,15 +18,30 @@ try{
  stage='response loss';let ack!:()=>void;const lost=new Promise<void>(r=>ack=r);await page.route('**/api/booking-access/issue',async route=>{const response=await route.fetch();if(response.status()!==200)throw new Error('ACCESS_ISSUE_FAILED');await route.abort('failed');ack();});await page.getByRole('button',{name:'予約閲覧をこの端末へ保存'}).click();await lost;await expect(page.getByRole('region',{name:'予約閲覧の保存'}).getByRole('status')).toContainText('未確認');await context.clearCookies({name:'zao_booking_access'});await page.unroute('**/api/booking-access/issue');await page.reload();await expect(page.getByRole('button',{name:'予約閲覧をこの端末へ保存'})).toBeVisible();await page.getByRole('button',{name:'予約閲覧をこの端末へ保存'}).click();await page.getByRole('link',{name:'保存した予約とQRを開く'}).click();await expect(page.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();assert.equal((await app.db.pool.query('SELECT count(*)::int n FROM booking_access.capabilities')).rows[0].n,1);assert.equal((await app.db.pool.query('SELECT count(*)::int n FROM rental_bookings')).rows[0].n,1);const cookie=(await context.cookies()).find(c=>c.name==='zao_booking_access')!;assert.ok(cookie.httpOnly);assert.equal(cookie.sameSite,'Strict');assert.equal(cookie.path,'/api/booking-access');assert.equal(page.url(),app.origin+'/ja/reservation');assert.equal((await page.content()).includes(cookie.value),false);
  console.log('PASS lost issuance response + reload replays one saved capability; raw token absent JSON/DOM/URL');
  stage='BA-01-RES initial/read reload has no unbound revoke';
+ // Gate delivery to the component after the real authenticated GET completes.
+ // A delayed Playwright Route can be disposed by dev navigation/interception
+ // changes. This gate owns no Route and keeps the original response unchanged.
+ let readGate:{entered:()=>void;blocked:Promise<void>}|null=null;
+ await page.exposeFunction('waitForBookingReadTestGate',async()=>{const gate=readGate;if(gate){gate.entered();await gate.blocked;}});
+ const installReadGate=()=>{
+  const originalFetch=window.fetch;
+  window.fetch=async(...args:Parameters<typeof fetch>)=>{
+   const response=await originalFetch(...args),input=args[0];
+   const url=new URL(input instanceof Request?input.url:String(input),location.href);
+   if(url.origin===location.origin&&url.pathname==='/api/booking-access'&&(args[1]?.method??(input instanceof Request?input.method:'GET'))==='GET')await (window as unknown as {waitForBookingReadTestGate:()=>Promise<void>}).waitForBookingReadTestGate();
+   return response;
+  };
+ };
+ await page.addInitScript(installReadGate);await page.evaluate(installReadGate);
  for(const kind of ['reload-button','initial-load']){
   let entered!:()=>void,release!:()=>void;const observed=new Promise<void>(r=>entered=r),blocked=new Promise<void>(r=>release=r);
-  await page.route('**/api/booking-access',async route=>{const response=await route.fetch();entered();await blocked;await route.fulfill({response});});
+  readGate={entered,blocked};
   try{
    if(kind==='reload-button')await page.getByRole('button',{name:'予約を再読込',exact:true}).click();else await page.reload({waitUntil:'domcontentloaded'});
    await observed;await expect(page.getByRole('img',{name:'保存済み予約QR'})).toHaveCount(0);
    await expect(page.getByRole('button',{name:'この端末の予約閲覧権を失効'})).toBeDisabled();
    assert.equal((await app.db.pool.query('SELECT count(*)::int n FROM booking_access.capabilities WHERE revoked_at IS NULL')).rows[0].n,1);
-  }finally{release();await page.unrouteAll({behavior:'wait'});}
+  }finally{readGate=null;release();}
   await expect(page.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();await expect(page.getByRole('button',{name:'この端末の予約閲覧権を失効'})).toBeEnabled();
  }
  console.log('PASS initial/reload pending read disables unbound revoke; settled binding enables deliberate revocation');

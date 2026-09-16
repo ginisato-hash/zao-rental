@@ -1,0 +1,71 @@
+{
+  "checked_at": "2026-09-13T23:52:58.309453+00:00",
+  "documents": 7,
+  "local_links_valid": true,
+  "secret_pattern_matches": 0,
+  "official_links": [
+    "https://aws.amazon.com/secrets-manager/pricing/",
+    "https://developer.squareup.com/apps",
+    "https://developer.squareup.com/docs/devtools/developer-dashboard",
+    "https://developer.squareup.com/docs/devtools/sandbox/overview",
+    "https://developer.squareup.com/docs/get-started/create-account-and-application",
+    "https://developer.squareup.com/docs/webhooks/step2subscribe",
+    "https://developer.squareup.com/docs/webhooks/step3validate",
+    "https://developers.cloudflare.com/r2/get-started/",
+    "https://developers.cloudflare.com/r2/pricing/",
+    "https://developers.cloudflare.com/r2/reference/data-location/",
+    "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html",
+    "https://docs.aws.amazon.com/AmazonRDS/latest/gettingstartedguide/managing-backup-restore.html",
+    "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html",
+    "https://docs.aws.amazon.com/secretsmanager/latest/userguide/monitoring-cloudtrail.html",
+    "https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html",
+    "https://neon.com/pricing",
+    "https://resend.com/docs/dashboard/emails/idempotency-keys",
+    "https://vercel.com/docs/deployment-protection",
+    "https://vercel.com/docs/environment-variables/rotating-secrets",
+    "https://vercel.com/docs/environment-variables/sensitive-environment-variables",
+    "https://vercel.com/docs/functions/runtimes/node-js",
+    "https://vercel.com/docs/headers/request-headers",
+    "https://vercel.com/docs/oidc/reference",
+    "https://vercel.com/kb/guide/connection-pooling-with-functions",
+    "https://www.postgresql.org/docs/18/continuous-archiving.html"
+  ],
+  "scope": "documentation consistency only; no product/external runtime test",
+  "files": [
+    {
+      "path": "BACKUP_PITR.md",
+      "bytes": 3986,
+      "sha256": "08db4baac5c0051f7a2a8c2511d45890d507c1f00034f2357e560eb27290bb61"
+    },
+    {
+      "path": "R2_ACCEPTANCE.md",
+      "bytes": 3018,
+      "sha256": "c97aaf39ea05e838db98500a2907f734675d1b98f981b0bf0b9038959ce248cc"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2806,
+      "sha256": "432ca0cad9e9f172422e725fbeb92e0006f04d07b693f2681dd58c3b39903a14"
+    },
+    {
+      "path": "RECOVERY_OPERATIONS.md",
+      "bytes": 4438,
+      "sha256": "62132ca72eac663e83470a771e9ace82856bd8ec8ce0a9900166e21a6e7f9e42"
+    },
+    {
+      "path": "SECRETS_AND_RECEIVER.md",
+      "bytes": 4432,
+      "sha256": "ed105bd8c8b41afd1e2ae44c12fc7569159bd3f816409a85d19350bdc39c2398"
+    },
+    {
+      "path": "SQUARE_STEPS.md",
+      "bytes": 6194,
+      "sha256": "67e115718b9aa67995697648b478789f41ae9f93109c2b512f87d42b70865bd5"
+    },
+    {
+      "path": "VERCEL_ACCEPTANCE.md",
+      "bytes": 4475,
+      "sha256": "af9e82ef767f1337938b1a2a89efc57d686f3159a2d77405a8aefa4c083a7958"
+    }
+  ]
+}

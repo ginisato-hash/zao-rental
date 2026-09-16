@@ -1,0 +1,7 @@
+{
+  "packages/core/src/payment/square-transport.ts": "dcd059eb00e7e6dd9c923afda3bedbbfe19992c177b442560844f466b392fa9a",
+  "packages/core/src/payment/square-s1.ts": "f6be7fab44209224fe6a2af3a52c2221e7c575dafad8525cebae2e5d33cdaa6a",
+  "apps/web/src/lib/square-s1-acceptance.ts": "e285467fee75118ebe58e15e04bc19b7a66826f3d0de53215d91fdb08717a6cf",
+  "apps/web/src/app/api/internal/acceptance/square-s1/route.ts": "999294a903316b6616ecb0a735d6bbc5f34e62d7118fce783d8e42ca626bb25c",
+  "tests/readiness/square-s1.test.ts": "681ecb18d16aaaab4643356973b67361143a9d46cda9ac27abb39417fe18783a"
+}

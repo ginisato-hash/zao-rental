@@ -1,0 +1,109 @@
+{
+  "status": "SELF_VERIFIED_PASS",
+  "recordedAtUtc": "2026-09-16T04:10:05.157650+00:00",
+  "base": "01c225eaed80eb5ee95e22d1ece9eef666aa22e3",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "unitTests": 261,
+  "newUnitTests": 8,
+  "unitFail": 0,
+  "unitSkip": 0,
+  "localPgChecks": 32,
+  "browserChecks": 18,
+  "artworkChecks": 1,
+  "measurements": 24,
+  "maxSkiHeightErrorPx": 0.005974264705884025,
+  "maxFloorDifferencePx": 0.015625,
+  "tolerancePx": 1,
+  "viewports": [
+    390,
+    1440
+  ],
+  "members": 2,
+  "heightsCm": [
+    170,
+    180
+  ],
+  "browserEngine": "Chromium desktop/mobile viewports; not physical Safari",
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS_LOCAL_NEXT_WEBPACK",
+  "logs": {
+    "unit": {
+      "file": "docs/execution/avatar-artwork-activation/unit.log",
+      "sha256": "fca1147471eafa20c946cba86f965a9fb5e78da8777496e87c1b56e97563f3b1",
+      "rawSha256": "fca1147471eafa20c946cba86f965a9fb5e78da8777496e87c1b56e97563f3b1",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace/terminal blank lines only"
+    },
+    "activation": {
+      "file": "docs/execution/avatar-artwork-activation/activation.log",
+      "sha256": "54795adfc821d8bd229de21766189554720f68cf79a3b0ac61fbba0053476928",
+      "rawSha256": "54795adfc821d8bd229de21766189554720f68cf79a3b0ac61fbba0053476928",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace/terminal blank lines only"
+    },
+    "lint": {
+      "file": "docs/execution/avatar-artwork-activation/lint.log",
+      "sha256": "1d73f31982945633bb8a491209f73fa014e10c64c770caa9d642b1f5d67a676b",
+      "rawSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace/terminal blank lines only"
+    },
+    "typecheck": {
+      "file": "docs/execution/avatar-artwork-activation/typecheck.log",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "rawSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace/terminal blank lines only"
+    },
+    "build": {
+      "file": "docs/execution/avatar-artwork-activation/build.log",
+      "sha256": "d413d2c2b560a3eef2835fb95c2722ac7d57c33d1b11f8dceffecc4de02f7114",
+      "rawSha256": "afaca24a1de5764944c93967b107c2a8281dc9dc58b3cb68dc7704b4140d2e34",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace/terminal blank lines only"
+    },
+    "secrets": {
+      "file": "docs/execution/avatar-artwork-activation/secrets.log",
+      "sha256": "fc8f35d57e94b219a6dfc61d36d0f6cf52ec620d0c4b3d660df4875d7331f254",
+      "rawSha256": "fc8f35d57e94b219a6dfc61d36d0f6cf52ec620d0c4b3d660df4875d7331f254",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace/terminal blank lines only"
+    }
+  },
+  "migrationHashesUnchanged": 32,
+  "migrationAdded": 0,
+  "existingAppCoreDbSourceChanges": 0,
+  "dependenciesChanged": 0,
+  "approvedLocalDerivatives": 3,
+  "productionApproved": false,
+  "publicActivation": false,
+  "rendererBusinessPosts": 0,
+  "rendererBusinessWrites": 0,
+  "extraRecommendationCalls": 0,
+  "extraHOLD": 0,
+  "extraQuote": 0,
+  "extraPayment": 0,
+  "externalBrowserAttempts": 0,
+  "externalProviderOperations": {
+    "hostedNeon": 0,
+    "vercel": 0,
+    "r2": 0,
+    "square": 0,
+    "production": 0,
+    "publicDeploy": 0,
+    "realPayment": 0,
+    "realBooking": 0,
+    "externalImageSearch": 0
+  },
+  "mainMerge": 0,
+  "newPR": 0,
+  "localAcceptanceAttempts": 2,
+  "bothAttemptsPassed": true,
+  "finalRunOnlyCounts": true,
+  "parentVisualInspection": "All three derivatives plus390/mobile and1440/desktop GuestBooking screenshots; body alpha masks identical",
+  "cleanup": "Owned browser/Next/PostgreSQL closed",
+  "secretScan": "PASS_PATTERN_LIMITED",
+  "gitDiffCheck": "PASS"
+}

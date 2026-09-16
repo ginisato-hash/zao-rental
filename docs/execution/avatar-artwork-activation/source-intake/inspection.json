@@ -1,0 +1,485 @@
+{
+  "inspectionMode": "LOCAL_READ_ONLY_ORIGINAL_BYTES",
+  "imageProcessing": "Decode/statistics only; no edited images or derivative files written",
+  "toolchain": {
+    "node": "v24.15.0",
+    "sharp": "0.35.4",
+    "libvips": "8.18.6"
+  },
+  "spec": {
+    "repository": "ginisato-hash/zao-rental",
+    "head": "01c225eaed80eb5ee95e22d1ece9eef666aa22e3",
+    "path": "docs/architecture/AVATAR_ARTWORK_SPEC.md",
+    "sha256": "33ddeedc134e4536a04b2e01e4b57d6b33afdf7ecbeed8dbe850892854a784d4"
+  },
+  "files": [
+    {
+      "file": "1.png",
+      "bytes": 30306,
+      "sha256": "ea7b76e53d920f7443c88ae7cd1e55acf272ef89527aaf233091a87e54044ca9",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "aspectRatio": 1,
+      "colourSpace": "srgb",
+      "channels": 3,
+      "bitsPerSample": 8,
+      "pages": 1,
+      "alphaChannelPresent": false,
+      "transparentPixels": 0,
+      "partiallyTransparentPixels": 0,
+      "opaquePixels": 14400,
+      "nonTransparentBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 120
+      },
+      "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+      "subjectBoundsNormalized": false,
+      "subjectBoundsNumeric": null,
+      "metadata": {
+        "exifPresent": false,
+        "iccPresent": false,
+        "xmpPresent": true,
+        "iptcPresent": false,
+        "xmpBytes": 1207,
+        "xmpPropertyNames": [
+          "x:xmpmeta",
+          "rdf:RDF",
+          "rdf:Description",
+          "Attrib:Ads",
+          "rdf:Seq",
+          "rdf:li",
+          "Attrib:Created",
+          "Attrib:ExtId",
+          "Attrib:FbId",
+          "Attrib:TouchType",
+          "dc:title",
+          "rdf:Alt",
+          "pdf:Author",
+          "xmp:CreatorTool"
+        ],
+        "rawMetadataValuesIncluded": false,
+        "metadataIsRightsEvidence": false
+      },
+      "pngChunks": [
+        {
+          "type": "IHDR",
+          "length": 13
+        },
+        {
+          "type": "pHYs",
+          "length": 9
+        },
+        {
+          "type": "iTXt",
+          "length": 1229
+        },
+        {
+          "type": "IDAT",
+          "length": 28987
+        },
+        {
+          "type": "IEND",
+          "length": 0
+        }
+      ],
+      "animatedPng": false,
+      "withinByteAndPixelLimits": true,
+      "authoredTargetLayer": "AVATAR",
+      "acceptedDerivativeDimensionsMatch": false,
+      "sourceBytesMutated": false
+    },
+    {
+      "file": "2.png",
+      "bytes": 31142,
+      "sha256": "4c03ae11fc76eac3164d0754bbf45c0aeacf2eac03fb6dc2ab85df5fb84e407d",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "aspectRatio": 1,
+      "colourSpace": "srgb",
+      "channels": 3,
+      "bitsPerSample": 8,
+      "pages": 1,
+      "alphaChannelPresent": false,
+      "transparentPixels": 0,
+      "partiallyTransparentPixels": 0,
+      "opaquePixels": 14400,
+      "nonTransparentBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 120
+      },
+      "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+      "subjectBoundsNormalized": false,
+      "subjectBoundsNumeric": null,
+      "metadata": {
+        "exifPresent": false,
+        "iccPresent": false,
+        "xmpPresent": true,
+        "iptcPresent": false,
+        "xmpBytes": 1207,
+        "xmpPropertyNames": [
+          "x:xmpmeta",
+          "rdf:RDF",
+          "rdf:Description",
+          "Attrib:Ads",
+          "rdf:Seq",
+          "rdf:li",
+          "Attrib:Created",
+          "Attrib:ExtId",
+          "Attrib:FbId",
+          "Attrib:TouchType",
+          "dc:title",
+          "rdf:Alt",
+          "pdf:Author",
+          "xmp:CreatorTool"
+        ],
+        "rawMetadataValuesIncluded": false,
+        "metadataIsRightsEvidence": false
+      },
+      "pngChunks": [
+        {
+          "type": "IHDR",
+          "length": 13
+        },
+        {
+          "type": "pHYs",
+          "length": 9
+        },
+        {
+          "type": "iTXt",
+          "length": 1229
+        },
+        {
+          "type": "IDAT",
+          "length": 29823
+        },
+        {
+          "type": "IEND",
+          "length": 0
+        }
+      ],
+      "animatedPng": false,
+      "withinByteAndPixelLimits": true,
+      "authoredTargetLayer": "AVATAR",
+      "acceptedDerivativeDimensionsMatch": false,
+      "sourceBytesMutated": false
+    },
+    {
+      "file": "3.png",
+      "bytes": 29869,
+      "sha256": "5a9ccc7893c91deebea917281783b5ddb7f794581fa5016325edc5f33b0fb120",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "aspectRatio": 1,
+      "colourSpace": "srgb",
+      "channels": 3,
+      "bitsPerSample": 8,
+      "pages": 1,
+      "alphaChannelPresent": false,
+      "transparentPixels": 0,
+      "partiallyTransparentPixels": 0,
+      "opaquePixels": 14400,
+      "nonTransparentBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 120
+      },
+      "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+      "subjectBoundsNormalized": false,
+      "subjectBoundsNumeric": null,
+      "metadata": {
+        "exifPresent": false,
+        "iccPresent": false,
+        "xmpPresent": true,
+        "iptcPresent": false,
+        "xmpBytes": 1207,
+        "xmpPropertyNames": [
+          "x:xmpmeta",
+          "rdf:RDF",
+          "rdf:Description",
+          "Attrib:Ads",
+          "rdf:Seq",
+          "rdf:li",
+          "Attrib:Created",
+          "Attrib:ExtId",
+          "Attrib:FbId",
+          "Attrib:TouchType",
+          "dc:title",
+          "rdf:Alt",
+          "pdf:Author",
+          "xmp:CreatorTool"
+        ],
+        "rawMetadataValuesIncluded": false,
+        "metadataIsRightsEvidence": false
+      },
+      "pngChunks": [
+        {
+          "type": "IHDR",
+          "length": 13
+        },
+        {
+          "type": "pHYs",
+          "length": 9
+        },
+        {
+          "type": "iTXt",
+          "length": 1229
+        },
+        {
+          "type": "IDAT",
+          "length": 28550
+        },
+        {
+          "type": "IEND",
+          "length": 0
+        }
+      ],
+      "animatedPng": false,
+      "withinByteAndPixelLimits": true,
+      "authoredTargetLayer": "SKI",
+      "acceptedDerivativeDimensionsMatch": false,
+      "sourceBytesMutated": false
+    },
+    {
+      "file": "4.png",
+      "bytes": 29205,
+      "sha256": "0fb84d84af77013c71c0e71ac4e1010dc94690faede7447e7815193a3afdc04a",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "aspectRatio": 1,
+      "colourSpace": "srgb",
+      "channels": 3,
+      "bitsPerSample": 8,
+      "pages": 1,
+      "alphaChannelPresent": false,
+      "transparentPixels": 0,
+      "partiallyTransparentPixels": 0,
+      "opaquePixels": 14400,
+      "nonTransparentBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 120
+      },
+      "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+      "subjectBoundsNormalized": false,
+      "subjectBoundsNumeric": null,
+      "metadata": {
+        "exifPresent": false,
+        "iccPresent": false,
+        "xmpPresent": true,
+        "iptcPresent": false,
+        "xmpBytes": 1207,
+        "xmpPropertyNames": [
+          "x:xmpmeta",
+          "rdf:RDF",
+          "rdf:Description",
+          "Attrib:Ads",
+          "rdf:Seq",
+          "rdf:li",
+          "Attrib:Created",
+          "Attrib:ExtId",
+          "Attrib:FbId",
+          "Attrib:TouchType",
+          "dc:title",
+          "rdf:Alt",
+          "pdf:Author",
+          "xmp:CreatorTool"
+        ],
+        "rawMetadataValuesIncluded": false,
+        "metadataIsRightsEvidence": false
+      },
+      "pngChunks": [
+        {
+          "type": "IHDR",
+          "length": 13
+        },
+        {
+          "type": "pHYs",
+          "length": 9
+        },
+        {
+          "type": "iTXt",
+          "length": 1229
+        },
+        {
+          "type": "IDAT",
+          "length": 27886
+        },
+        {
+          "type": "IEND",
+          "length": 0
+        }
+      ],
+      "animatedPng": false,
+      "withinByteAndPixelLimits": true,
+      "authoredTargetLayer": "SKI",
+      "acceptedDerivativeDimensionsMatch": false,
+      "sourceBytesMutated": false
+    },
+    {
+      "file": "5.png",
+      "bytes": 30869,
+      "sha256": "5c4485861c80d88bcd8a37dd4394f7cdea63218f163699442c8edd48fe265dca",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "aspectRatio": 1,
+      "colourSpace": "srgb",
+      "channels": 3,
+      "bitsPerSample": 8,
+      "pages": 1,
+      "alphaChannelPresent": false,
+      "transparentPixels": 0,
+      "partiallyTransparentPixels": 0,
+      "opaquePixels": 14400,
+      "nonTransparentBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 120
+      },
+      "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+      "subjectBoundsNormalized": false,
+      "subjectBoundsNumeric": null,
+      "metadata": {
+        "exifPresent": false,
+        "iccPresent": false,
+        "xmpPresent": true,
+        "iptcPresent": false,
+        "xmpBytes": 1207,
+        "xmpPropertyNames": [
+          "x:xmpmeta",
+          "rdf:RDF",
+          "rdf:Description",
+          "Attrib:Ads",
+          "rdf:Seq",
+          "rdf:li",
+          "Attrib:Created",
+          "Attrib:ExtId",
+          "Attrib:FbId",
+          "Attrib:TouchType",
+          "dc:title",
+          "rdf:Alt",
+          "pdf:Author",
+          "xmp:CreatorTool"
+        ],
+        "rawMetadataValuesIncluded": false,
+        "metadataIsRightsEvidence": false
+      },
+      "pngChunks": [
+        {
+          "type": "IHDR",
+          "length": 13
+        },
+        {
+          "type": "pHYs",
+          "length": 9
+        },
+        {
+          "type": "iTXt",
+          "length": 1229
+        },
+        {
+          "type": "IDAT",
+          "length": 29550
+        },
+        {
+          "type": "IEND",
+          "length": 0
+        }
+      ],
+      "animatedPng": false,
+      "withinByteAndPixelLimits": true,
+      "authoredTargetLayer": null,
+      "acceptedDerivativeDimensionsMatch": null,
+      "sourceBytesMutated": false
+    },
+    {
+      "file": "6.png",
+      "bytes": 30343,
+      "sha256": "6e13ca996ce652d81b82105568d6ca6ef4d5ad0ad8b26dc0a1789e0a81953c84",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "aspectRatio": 1,
+      "colourSpace": "srgb",
+      "channels": 3,
+      "bitsPerSample": 8,
+      "pages": 1,
+      "alphaChannelPresent": false,
+      "transparentPixels": 0,
+      "partiallyTransparentPixels": 0,
+      "opaquePixels": 14400,
+      "nonTransparentBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 120
+      },
+      "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+      "subjectBoundsNormalized": false,
+      "subjectBoundsNumeric": null,
+      "metadata": {
+        "exifPresent": false,
+        "iccPresent": false,
+        "xmpPresent": true,
+        "iptcPresent": false,
+        "xmpBytes": 1207,
+        "xmpPropertyNames": [
+          "x:xmpmeta",
+          "rdf:RDF",
+          "rdf:Description",
+          "Attrib:Ads",
+          "rdf:Seq",
+          "rdf:li",
+          "Attrib:Created",
+          "Attrib:ExtId",
+          "Attrib:FbId",
+          "Attrib:TouchType",
+          "dc:title",
+          "rdf:Alt",
+          "pdf:Author",
+          "xmp:CreatorTool"
+        ],
+        "rawMetadataValuesIncluded": false,
+        "metadataIsRightsEvidence": false
+      },
+      "pngChunks": [
+        {
+          "type": "IHDR",
+          "length": 13
+        },
+        {
+          "type": "pHYs",
+          "length": 9
+        },
+        {
+          "type": "iTXt",
+          "length": 1229
+        },
+        {
+          "type": "IDAT",
+          "length": 29024
+        },
+        {
+          "type": "IEND",
+          "length": 0
+        }
+      ],
+      "animatedPng": false,
+      "withinByteAndPixelLimits": true,
+      "authoredTargetLayer": null,
+      "acceptedDerivativeDimensionsMatch": null,
+      "sourceBytesMutated": false
+    }
+  ]
+}

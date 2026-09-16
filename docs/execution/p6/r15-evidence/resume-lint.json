@@ -1,0 +1,14 @@
+{
+  "name": "lint",
+  "command": [
+    "npm",
+    "run",
+    "lint"
+  ],
+  "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+  "startedAt": "2026-09-15T07:16:54.119316+00:00",
+  "finishedAt": "2026-09-15T07:17:00.580901+00:00",
+  "exitCode": 0,
+  "log": "resume-lint.log",
+  "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+}

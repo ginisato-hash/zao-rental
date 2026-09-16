@@ -1,0 +1,13 @@
+{
+  "command": [
+    "node",
+    "--import",
+    "tsx",
+    "--test",
+    "tests/unit/sandbox-environment.test.ts",
+    "tests/unit/sandbox-preflight.test.ts",
+    "tests/unit/production-preflight.test.ts"
+  ],
+  "exit_code": 0,
+  "data": "synthetic fixture only; no Vercel env pull; no provider request"
+}

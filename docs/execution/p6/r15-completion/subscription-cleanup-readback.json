@@ -1,0 +1,12 @@
+{
+  "status": "PASS_HTTP200",
+  "subscriptionId": "wbhk_3a75e3b3e2cc4fe4a7406807114a5ce5",
+  "deleteRequests": 1,
+  "originalClassification": "SUBSCRIPTION_CLEANUP_UNKNOWN_NO_RETRY",
+  "cause": "Local operator expected204; Square delete uses HTTP200 with JSON response",
+  "cachedResponseReadOnly": true,
+  "operatorHttp": 200,
+  "squareHttp": 200,
+  "newRequestsForReadback": 0,
+  "retry": 0
+}

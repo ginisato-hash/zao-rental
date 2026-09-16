@@ -1,0 +1,18 @@
+{
+  "id": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+  "url": "zao-rental-p7g3j78c0-zao-food-map.vercel.app",
+  "readyState": "READY",
+  "target": null,
+  "alias": [],
+  "aliasAssigned": true,
+  "aliasError": null,
+  "createdAt": 1789390902525,
+  "ready": 1789390954737,
+  "inspectorUrl": "https://vercel.com/zao-food-map/zao-rental/J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+  "meta": {
+    "zaoCommitSha": "f9468c81144ba6c1db3bade87c6e72d55b8c07a8",
+    "zaoSourceTree": "39b9f85c972cdc01e64c3a4d72ac6f4aa2243025",
+    "zaoAcceptance": "r7-square-s1-v2-no-payments-no-db"
+  },
+  "at": "2026-09-14T13:03:11.591656+00:00"
+}

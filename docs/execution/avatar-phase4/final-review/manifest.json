@@ -1,0 +1,655 @@
+{
+  "branch": "codex/avatar-phase4-customer-renderer",
+  "base_sha": "96a34aee8dccb66dca11199af29c33aaf1127546",
+  "head_sha": "790b809a8d8a8989594e0982e264b3a220527936",
+  "authority_sha256": "3ee51a2775abf98fd5943fc441639997e5f6c69e0e98a04d6cbbf16c986715e1",
+  "snapshot_sha256": "9282642d664e4d02a813f1642a9ca3aa3575ef82dbd0c4997f9b35548c3e3153",
+  "snapshot_bytes": 465224,
+  "files": [
+    {
+      "path": "apps/web/src/app/avatar-media/[visualId]/[hash]/route.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "fdd984ddccd20552eee6666f537859cbfba1026bbe14ba6ab538dc2c205812c9",
+      "bytes": 725,
+      "lines": 10
+    },
+    {
+      "path": "apps/web/src/app/media/[hash]/[file]/route.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "3f50b51d2a23e286bbac987594e306076161ae501bbf24ff8beb37be1d39b84c",
+      "bytes": 1253,
+      "lines": 6
+    },
+    {
+      "path": "apps/web/src/app/preview/avatar/page.tsx",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "4a656655d16727dea0c8742b7f2914900f47dda23c27838f3fc52e80aee3d41b",
+      "bytes": 2615,
+      "lines": 24
+    },
+    {
+      "path": "apps/web/src/app/preview/integrated/page.tsx",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "367fc7ade0dec4bbd22cfa48aeda175fe3d3492e1ca154ec0dbf27e1b5ffba20",
+      "bytes": 768,
+      "lines": 5
+    },
+    {
+      "path": "apps/web/src/app/preview/rental/page.tsx",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "ea4cce3a776120b2652b23fe659991a4b8cb457e47c43e5d10420f601e079835",
+      "bytes": 848,
+      "lines": 5
+    },
+    {
+      "path": "apps/web/src/components/AvatarCustomerPreview.tsx",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "213dc6529b7b8ff9317d9e73b01046e1b0ab066c06b406c366455bf0ee3ae14b",
+      "bytes": 2692,
+      "lines": 14
+    },
+    {
+      "path": "apps/web/src/components/AvatarFitPreview.tsx",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "346c73953119e309b227bc39f463f98de5e23544854e1c03fb904e735d9d16be",
+      "bytes": 3328,
+      "lines": 28
+    },
+    {
+      "path": "apps/web/src/components/GuestBooking.tsx",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "69048e51b5997df9bbf5917ba3ee8417704372beea36b7dd7259e974e9db36e8",
+      "bytes": 20361,
+      "lines": 50
+    },
+    {
+      "path": "apps/web/src/components/avatar.css",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "b36d866ad49604856cfe2cb598f31ed2bdfa2fb1d7b84acf2da24a1341a65bd3",
+      "bytes": 3565,
+      "lines": 1
+    },
+    {
+      "path": "apps/web/src/lib/avatar-media-http.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "f8a4d2431a791d529e4902c6eb6295992f37051e2954f9443f9ce671b6ed4716",
+      "bytes": 1620,
+      "lines": 19
+    },
+    {
+      "path": "apps/web/src/lib/public-content.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "9678b51c3858eff9051964f49cbdc6153433d91cc7e94dc06511fb2351e4a8c2",
+      "bytes": 1543,
+      "lines": 9
+    },
+    {
+      "path": "apps/web/src/lib/public-runtime.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "d1c2820f8b4f85b475b40172ced84bede23741a4bb51e321a763bf4f82f8cace",
+      "bytes": 2532,
+      "lines": 18
+    },
+    {
+      "path": "apps/web/src/lib/staff-runtime.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "018e3b68529e948f7aa0089021851dc93e602c07345fa045c638c94e60f973a3",
+      "bytes": 1913,
+      "lines": 26
+    },
+    {
+      "path": "apps/web/src/proxy.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "2261a2cb3af4c0cc6993b934770d7ea56f4469936bea3decc157fb807e05c9f4",
+      "bytes": 1014,
+      "lines": 3
+    },
+    {
+      "path": "docs/adr/0033-avatar-2d-foundation.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "3c7d515811639fa3eaa8fb6549b11caee8d3da4a62018d9b0d19a6d29de5f581",
+      "bytes": 8372,
+      "lines": 123
+    },
+    {
+      "path": "docs/architecture/AVATAR_ARTWORK_SPEC.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "f1b3bd49fb768ffeecbd71f4539360493542de446946536af14b683caa5d766b",
+      "bytes": 6469,
+      "lines": 94
+    },
+    {
+      "path": "docs/execution/AVATAR_PHASE4_AUTHORITY.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "3ee51a2775abf98fd5943fc441639997e5f6c69e0e98a04d6cbbf16c986715e1",
+      "bytes": 24990,
+      "lines": 1581
+    },
+    {
+      "path": "docs/execution/AVATAR_PHASE4_STATUS.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "4008c238bae88b7a58e6bcfeaef84107d033be1b59f137b1de57509ef301d86a",
+      "bytes": 983,
+      "lines": 29
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/FINDING_DISPOSITION.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "05eb38f3dc4d61a578996020e3d93d2253847c791728fd4d0d1c8435ca9fc92d",
+      "bytes": 1953,
+      "lines": 18
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/final-review/review.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "6bffdf9b9489837ae406829821b7cedf5caf4380e9e71a480a99f394a6ad1a55",
+      "bytes": 10437,
+      "lines": 62
+    },
+    {
+      "path": "docs/execution/avatar-phase4/RESULT.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "cdbd33cdebb29f964844ea658ee491751394212d647b9c0ba2a39aa4cd79b909",
+      "bytes": 4767,
+      "lines": 68
+    },
+    {
+      "path": "docs/execution/avatar-phase4/a2a3-pg.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "ab37129b51982d3fd12f6169ad23b7b9fed7877dff8d30b5cbab3cabe501ff9e",
+      "bytes": 1370,
+      "lines": 16
+    },
+    {
+      "path": "docs/execution/avatar-phase4/browser-measurements.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "5d290c96214e7db48f484cc152e493303f6a38b8e1450a563184293deeb61c8b",
+      "bytes": 22676,
+      "lines": 966
+    },
+    {
+      "path": "docs/execution/avatar-phase4/build.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "0f7abe24836e4e27a4224c4f299afe0134b772879faf458d280225c87a856779",
+      "bytes": 1965,
+      "lines": 73
+    },
+    {
+      "path": "docs/execution/avatar-phase4/content-pg.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "efda2ed97fc27c166b104e62dfb97af77d84b8b0c9e477b1af5c78be5dc771e1",
+      "bytes": 675,
+      "lines": 7
+    },
+    {
+      "path": "docs/execution/avatar-phase4/e2e.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "b17f369cbd28261ac29ce6e20a9f173f0b2185c71a6cf9983aa33bd0f5c70676",
+      "bytes": 3220,
+      "lines": 51
+    },
+    {
+      "path": "docs/execution/avatar-phase4/guest-pg.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "0e51418af75c0a012dc2336396b2da1000f81369122583fb3527b9eb4eedf087",
+      "bytes": 824,
+      "lines": 9
+    },
+    {
+      "path": "docs/execution/avatar-phase4/guest-ui.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "f848b2883107245ef196b68701a662f272657780b747c0b140d566b402d02792",
+      "bytes": 807,
+      "lines": 9
+    },
+    {
+      "path": "docs/execution/avatar-phase4/lint.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "1d73f31982945633bb8a491209f73fa014e10c64c770caa9d642b1f5d67a676b",
+      "bytes": 53,
+      "lines": 3
+    },
+    {
+      "path": "docs/execution/avatar-phase4/local-e2e.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "d40e47faf5622235fcb3c6b10d23880f18b70059b0e7ce44e5c24d530e596235",
+      "bytes": 6612,
+      "lines": 258
+    },
+    {
+      "path": "docs/execution/avatar-phase4/migration-hashes.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "faaf446a9f5d0d32ffd1a3248da4270652227709afb0060a8162d2cc9a30a8fa",
+      "bytes": 5497,
+      "lines": 157
+    },
+    {
+      "path": "docs/execution/avatar-phase4/recommendation-pg.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "d7cbbbbeee240641be077e5d51852ddf846add2b1232a6f91327dc2461f41fcb",
+      "bytes": 1903,
+      "lines": 19
+    },
+    {
+      "path": "docs/execution/avatar-phase4/screenshots.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "ebc94754be8d48fbf95a2eae7bea65776de160369461f86804e5bcc36ea736d2",
+      "bytes": 1593,
+      "lines": 42
+    },
+    {
+      "path": "docs/execution/avatar-phase4/secrets.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "de327be64033e43981a0a504d3e88308b38851b67288f7e451ddeef4c90a2547",
+      "bytes": 211,
+      "lines": 5
+    },
+    {
+      "path": "docs/execution/avatar-phase4/typecheck.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "bytes": 130,
+      "lines": 6
+    },
+    {
+      "path": "docs/execution/avatar-phase4/unit.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "747501a972c8d4e0b44ca855ccf2c66ddd573e19d54629afc400a86b1dc5c578",
+      "bytes": 19852,
+      "lines": 243
+    },
+    {
+      "path": "docs/execution/avatar-phase4/validation.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "e2e69154087774c540514f9de65c2b0cc87b2ad3166027f897b1a14f594f02cb",
+      "bytes": 7216,
+      "lines": 169
+    },
+    {
+      "path": "package.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "ff4eb5f99844156aab89c949688847a87b5a05a387f579295bec8e6619a0b88c",
+      "bytes": 5915,
+      "lines": 103
+    },
+    {
+      "path": "packages/auth/src/booking-actor.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "74e7e2699d4abdf80a9f5f4c7ff4657d09ed577abbb40a1d41f677fa2a3755aa",
+      "bytes": 1745,
+      "lines": 19
+    },
+    {
+      "path": "packages/auth/src/config.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "a49092841e3102f5b24b7dd2737dfe01c550a8cdffa4df86b326b0aad09f9a4c",
+      "bytes": 1471,
+      "lines": 14
+    },
+    {
+      "path": "packages/auth/src/staff-auth.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "812d2dcf6e9ad48ffb38652b66178f31406739852ff56f7cc629a531c8b456cf",
+      "bytes": 4651,
+      "lines": 45
+    },
+    {
+      "path": "packages/contracts/src/avatar-visualization.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "4f97e6508092b46bf8e091b2a6a921ea2a67b40348deffc29a6a837233190c8f",
+      "bytes": 1838,
+      "lines": 14
+    },
+    {
+      "path": "packages/contracts/src/recommendation.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "6833d072786f569259bdf3be496e8b905aeb173b67836dba3fcfa5948b419ea4",
+      "bytes": 7111,
+      "lines": 56
+    },
+    {
+      "path": "packages/core/src/avatar/layout.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "3c3826733388dd4e6961438bfe22f130456b845762274ecaad1dc8e7421e156f",
+      "bytes": 3101,
+      "lines": 31
+    },
+    {
+      "path": "packages/core/src/avatar/media.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "d0ba1793204ad815250a04adcc334000978fc1fdf0c9d996b728613cd94f355c",
+      "bytes": 2670,
+      "lines": 36
+    },
+    {
+      "path": "packages/core/src/avatar/preview.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "c35d754216dfb2cad5a4aedd7c92bf3efa5e86c0ef4b8e39e681955ff407687b",
+      "bytes": 2234,
+      "lines": 22
+    },
+    {
+      "path": "packages/core/src/avatar/visualization.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "de89be16ea6e0204b151b8472c45eaf6a1a9447f34e2e56352f7f7e48e1797c7",
+      "bytes": 5238,
+      "lines": 49
+    },
+    {
+      "path": "packages/core/src/content/media-plan.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "0c1b9868ff64030674b4b524c85e3138fb9f82977b4b4e89c7a08f43cb26bd94",
+      "bytes": 4248,
+      "lines": 28
+    },
+    {
+      "path": "packages/core/src/content/postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "a75281c53752f03fbf1f4dd2bf11c08ce3100beb8fac33848bb75bfe1282f04e",
+      "bytes": 5376,
+      "lines": 37
+    },
+    {
+      "path": "packages/core/src/content/public-catalog.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "be215a5d357df018ff44370617ded16076dca34d1a0f2f6a08f0ce1577c163e4",
+      "bytes": 4313,
+      "lines": 20
+    },
+    {
+      "path": "packages/core/src/content/release-plan.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "5426d8a5d0ba3ca0d05bffef154f5160072bcf8e8c7d9014e07a873b3a40061e",
+      "bytes": 5429,
+      "lines": 50
+    },
+    {
+      "path": "packages/core/src/content/storage-port.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "a6b98c36a7dd785c707003e61c1ebc235a754860baab4b33d0a7d912048228ba",
+      "bytes": 1435,
+      "lines": 15
+    },
+    {
+      "path": "packages/core/src/content/workflow.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "2bedbe7300d05684f380247bc3d22d10014a34b89b3675c4790aaf585e566965",
+      "bytes": 7436,
+      "lines": 42
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47",
+      "bytes": 7226,
+      "lines": 100
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075",
+      "bytes": 3459,
+      "lines": 37
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11",
+      "bytes": 1309,
+      "lines": 20
+    },
+    {
+      "path": "packages/db/migrations/0018_guest_actor.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "b3d1c1c28b4536c5a4cd81f070da04b297807856c3ff39fd3b0a65ba5470044c",
+      "bytes": 4550,
+      "lines": 38
+    },
+    {
+      "path": "packages/db/migrations/0019_content_workspace.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "45d39bbc3f9e97956e54e39bcbaa582ab08c75c3165a4b5848b6417334fb8ec7",
+      "bytes": 2475,
+      "lines": 13
+    },
+    {
+      "path": "packages/db/migrations/0020_content_media.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "a1099ed4d97273de8eab2c6ba1b8c074747e381d01158510a5b2c9afdf82e4ab",
+      "bytes": 940,
+      "lines": 9
+    },
+    {
+      "path": "packages/db/migrations/0031_avatar_visuals.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "73e180ba592645a7322694b40c4133c189f54f0a7797637003a1e3dacf5ceba2",
+      "bytes": 3679,
+      "lines": 53
+    },
+    {
+      "path": "packages/db/src/avatar-visuals.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "87f027016bd951565c5630c1a68077c87dfb7a5cd3d33c604ac2ba1b97406215",
+      "bytes": 3708,
+      "lines": 44
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "36321553e779d9c46cabf1023d70e8949a47b889c47a675dd4fed25520f0b0fa",
+      "bytes": 3634,
+      "lines": 45
+    },
+    {
+      "path": "scripts/content-roles.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "55a4fb10f03aa5b2fafdb44869d38d0830af728676fc958b6358ab082c6504ce",
+      "bytes": 1942,
+      "lines": 14
+    },
+    {
+      "path": "tests/avatar/fixture.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "bf6dcdcf0d58cd9b94b97856aa92582a77fc1a739d2b2567d8a774e48c91cbc5",
+      "bytes": 1886,
+      "lines": 12
+    },
+    {
+      "path": "tests/avatar/phase4-e2e.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "6e5808b167ca3b28f9c3f1a189c95ef5fe217c4a16db841b27f6d435b93ec410",
+      "bytes": 16708,
+      "lines": 79
+    },
+    {
+      "path": "tests/avatar/phase4-fixture.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "e6cd727fd9945910fbd2b0615e629925d11e6a1d495e08d36513dd495b6299d7",
+      "bytes": 5394,
+      "lines": 34
+    },
+    {
+      "path": "tests/avatar/postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "d7b02ed2c68cb131e29212c21f2a315374d5c3bd209272443561471692faa996",
+      "bytes": 15139,
+      "lines": 62
+    },
+    {
+      "path": "tests/flow-app/src/app/avatar-media/[visualId]/[hash]/route.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "be4a912d515eacd2b1b826eee560a0139035965149a624e5ce06218f167ce41f",
+      "bytes": 112,
+      "lines": 1
+    },
+    {
+      "path": "tests/flow-app/src/app/preview/avatar/page.tsx",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "377c8ed80b096e4403d6d90d5fc7093cd905740e8cd80b43d9c376541cb988e1",
+      "bytes": 97,
+      "lines": 1
+    },
+    {
+      "path": "tests/flow/launcher.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "f8789776866f5233bd7a16bcec1e725091cb0b1030ac18b252c2b889a7098155",
+      "bytes": 7590,
+      "lines": 70
+    },
+    {
+      "path": "tests/public/content-postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "a3d48be553d37606fa20f12d2933d516c4f341e3f87eea79fd08204823dda1ff",
+      "bytes": 6630,
+      "lines": 29
+    },
+    {
+      "path": "tests/public/normal-ui.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "e09a23c8754f265343a8451bd86e0bd155b9b4bcfb249aadbbc966f9aa0ca356",
+      "bytes": 14397,
+      "lines": 52
+    },
+    {
+      "path": "tests/unit/avatar-renderer.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "afa81d83e4db2a974b9671b9e88e3a7089b186ef430189c82af042c0185062d4",
+      "bytes": 5878,
+      "lines": 29
+    },
+    {
+      "path": "tests/unit/avatar-visualization.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "d51bc6e3e3ead2e84739ff935a1a08c5b21a3386854a0ac096d608037ee5e911",
+      "bytes": 8368,
+      "lines": 23
+    },
+    {
+      "path": "tsconfig.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "d1e3321f878d39417eb703e9cab3aa1a8f00cb0c91bc8be93b930cd5b1a1fdea",
+      "bytes": 1009,
+      "lines": 48
+    },
+    {
+      "path": "AGENTS.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "37c404f9808f0411b376f91ee7b75ad85e7b0d4b1d672a2743cffad763a14722",
+      "bytes": 1127,
+      "lines": 17
+    },
+    {
+      "path": "CLAUDE.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "37c404f9808f0411b376f91ee7b75ad85e7b0d4b1d672a2743cffad763a14722",
+      "bytes": 1127,
+      "lines": 17
+    },
+    {
+      "path": "docs/execution/SCOPE.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "37c404f9808f0411b376f91ee7b75ad85e7b0d4b1d672a2743cffad763a14722",
+      "bytes": 1127,
+      "lines": 17
+    },
+    {
+      "path": "docs/execution/AI_DEVELOPMENT_GOVERNANCE.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "92982c0254730d5f489e3c942f4ab827deb19ca16cb1eb96d0c39e651dd72a55",
+      "bytes": 6352,
+      "lines": 93
+    },
+    {
+      "path": "BASE_TO_HEAD_SOURCE_DIFF",
+      "kind": "GIT_DIFF",
+      "gitRef": "790b809a8d8a8989594e0982e264b3a220527936",
+      "sha256": "9bcb1302d025986bb48c3775b6e2b03ad80322e372656313338e10299e4ba15c",
+      "bytes": 56975,
+      "lines": 449
+    }
+  ],
+  "excludedLockfileSha256": "8e971550d44ec36ece189f16310df36d0728dc6806e5d0e06bb3f693a3aac2fc",
+  "source_clean": true,
+  "remote_readback_matches": true,
+  "secrets_pattern_scan": "PASS_NOT_COMPREHENSIVE",
+  "screenshotImagesInTextInput": false
+}

@@ -1,0 +1,136 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "name": "0001–0031 original hashes unchanged; exactly one additive0032",
+      "status": "PASS"
+    },
+    {
+      "name": "populated0031 upgrades without rewriting existing visual/content/business rows",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: id",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: layer",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: avatar_type",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: match_kind",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: model_id",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: variant_id",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: season",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: ski_length_cm",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: media_id",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: derivative_sha256",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: revision_id",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: release_id",
+      "status": "PASS"
+    },
+    {
+      "name": "binding immutable: created_at",
+      "status": "PASS"
+    },
+    {
+      "name": "state and normalized presentation remain editable",
+      "status": "PASS"
+    },
+    {
+      "name": "dedicated narrow reader resolves current metadata and only granted bytes",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects workspace JSON",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects raw media bytes",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects immutable revisions",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects unfiltered visual metadata",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects guest credentials",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects saved business preview",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects visual update",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects business delete",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects workspace update",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow role rejects DDL",
+      "status": "PASS"
+    },
+    {
+      "name": "metadata view is not writable and UPDATE privilege is absent",
+      "status": "PASS"
+    },
+    {
+      "name": "PUBLIC cannot call byte function; search_path and role cannot escalate",
+      "status": "PASS"
+    },
+    {
+      "name": "qualified derivative function resists temporary-table shadowing",
+      "status": "PASS"
+    },
+    {
+      "name": "narrow view preserves exact PREMIUM variant/season/length and new immutable release binding",
+      "status": "PASS"
+    },
+    {
+      "name": "current-rights check cannot be bypassed using an old caller timestamp",
+      "status": "PASS"
+    }
+  ],
+  "checks": 32,
+  "localOnly": true,
+  "cleanup": "Owned pools/PostgreSQL closed"
+}

@@ -1,0 +1,19 @@
+{
+  "checked_product_head": "f5e6c2ef7efd413fd9e3e1248bb785eebb142344",
+  "checked_tree": "b9acf216881603ed4a9c10a7227187c7955f3007",
+  "code_changed": false,
+  "fixture_tests": 9,
+  "values_examined": false,
+  "values_saved": false,
+  "deployments_started": 0,
+  "square_requests": 0,
+  "new_claude_starts": 0,
+  "records": {
+    "project-metadata.json": "f34a478d4899361d4ca7ba9877d99c6390f68510e4bd6ca9907b738cd2a01939",
+    "deployment-count.json": "0f52cbf34825dbfd66c1a30fc8b674a659c5cbbfc7ac720e10d614c11f9b4602",
+    "focused-tests.log": "aaeeae79ffd2d6160e075594e908d952579cbd0c18412216a7654060b18fefe3",
+    "focused-tests.json": "7db720ca0f67c9e28b2f2ab1855f5c70bfacd8e299fe36403fcf362ad98950bb",
+    "preflight-github.json": "ff74489b4a24a62228464468f96f7ace1e7045b1694f5f5d4f596e3446aa2152",
+    "environment-metadata.json": "6f3d42b74641a7aefa78e8b977d9931c5d877e2a308e6a8114cfd0e811417eea"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "manifestCommit": "95344423a08c7ac2150ed7da75966d313078c4e0",
+  "manifestSha256": "ac2f8e03dc0398d6e875d14e30903a84de66bdfcb01a73cde86f2d2576ec2de9",
+  "workingSourceMatchesGit": true,
+  "dbInstalledHash": "ac2f8e03dc0398d6e875d14e30903a84de66bdfcb01a73cde86f2d2576ec2de9",
+  "bookingId": "15000000-0000-4000-8000-000000000001",
+  "attemptId": "15000000-0000-4000-8000-000000000004",
+  "idempotencyKey": "15000000-0000-4000-8000-000000000005",
+  "merchantId": "MLKDVEDH1ME21",
+  "locationId": "LYCHY1VT97DQ3",
+  "amountJpy": 100,
+  "currency": "JPY",
+  "syntheticFixture": 1,
+  "gearClaims": 1,
+  "wearClaims": 2,
+  "validHold": true,
+  "priceAndConditionsHashesMatch": true,
+  "testOnlyGuardCleanup": {
+    "testManifestSha256": "32375778c94eae2c3492aba0ac6d3f5161ec42f48429dcdc01da0879c4ba6843",
+    "testReservationDeleted": 1,
+    "actualPaymentCallsBeforeCleanup": 0,
+    "liveBudgetReset": false
+  },
+  "createPayment": 0,
+  "getPayment": 0
+}

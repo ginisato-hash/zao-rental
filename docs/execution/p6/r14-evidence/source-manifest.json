@@ -1,0 +1,108 @@
+{
+  "startingHead": "d0a1f66b8cfa97ad1b5e5bd06f409e056604cf0a",
+  "authorityCommit": "e3895960fb6a3dc887dfea10cdc7ffcfacbf98bc",
+  "implementationCommit": "bb26d87e2bad0a0514849b2487db18355c4590dd",
+  "implementationTree": "8fb272e19afc99cb8531e5fe748eecebe2b30b43",
+  "files": [
+    {
+      "path": "docs/execution/DEVELOPMENT_PAYMENT_ACTIVATION.md",
+      "bytes": 5228,
+      "sha256": "ed7b1088069cfa5802a0944195a8b1521a0ff261c2b5725785914b4108d85a0b"
+    },
+    {
+      "path": "docs/execution/R14_PROTECTED_INGRESS_GATE.md",
+      "bytes": 3075,
+      "sha256": "f7cbcf33a817179d5eebb3bd5dbcd039fc7c8d79e5a16b7b86354c0cd17cb52c"
+    },
+    {
+      "path": "package.json",
+      "bytes": 5684,
+      "sha256": "8342ec45e89961861ba5286897bdd10fc2fbf8b7ab6c31566de8ea985d365a4f"
+    },
+    {
+      "path": "packages/db/migrations/0028_development_projection_source.sql",
+      "bytes": 1446,
+      "sha256": "0b9fbafefc9a1e6d939e078f354aca08af7982f7f0db9f8582c0dc5b30f82953"
+    },
+    {
+      "path": "packages/db/migrations/0029_development_payment_scope.sql",
+      "bytes": 6829,
+      "sha256": "e2e070adadbed9682ff45c41660e8fa2889124af4840e7af274171574e2b7566"
+    },
+    {
+      "path": "packages/db/src/development-payment-composition.ts",
+      "bytes": 2897,
+      "sha256": "e0736af0b4a95dab72b5edbc1f6fe683b6efe9b364155cbb3f7c5c6ac0164f97"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "bytes": 3537,
+      "sha256": "27a5ec62665344a3d5284e4133da10a40585a81cd46c11fe547d263e370d8dc3"
+    },
+    {
+      "path": "packages/db/src/payment-projection.ts",
+      "bytes": 11939,
+      "sha256": "e8d9f875ed363e027b7b0d91d2bfffca988e82730b494231f62a728cac504d3c"
+    },
+    {
+      "path": "packages/db/src/payment-reconciliation.ts",
+      "bytes": 3624,
+      "sha256": "b5fb45c7046a0a82328885fb911aa66cbbccd7782d10ff81995e42cfdf1dffed"
+    },
+    {
+      "path": "scripts/integration.ts",
+      "bytes": 7422,
+      "sha256": "cd8674257982d0f1f6340db4a0ed355b0a53532d37d58a433c1157d9ce89552b"
+    },
+    {
+      "path": "scripts/ledger-integration.ts",
+      "bytes": 24379,
+      "sha256": "e465eed534291f2500f0888b9caec54e7f5151d2e81dfcde53d524f124a92281"
+    },
+    {
+      "path": "scripts/payment-activation-roles.ts",
+      "bytes": 4490,
+      "sha256": "da520f99fbc42f4281dee2559721d3879b67af263b50e15ec6e7e5426b377fd1"
+    },
+    {
+      "path": "scripts/test-payment-activation.ts",
+      "bytes": 999,
+      "sha256": "764f1101f8fe1d28442ba64784bc8bda1f478f806e246bda174b912e74905b78"
+    },
+    {
+      "path": "tests/readiness/r14-additional.ts",
+      "bytes": 8456,
+      "sha256": "c28b8b523814d0170b0d771d6165818ba8fcf0d362a874db5a5bbc21e017806c"
+    },
+    {
+      "path": "tests/readiness/r14-boundaries.ts",
+      "bytes": 6937,
+      "sha256": "fccbee95e4e48ef128e9a4c11ea5132e536b80a911ef144f1e00ffa0e8d58e6c"
+    },
+    {
+      "path": "tests/readiness/r14-evidence.ts",
+      "bytes": 3943,
+      "sha256": "e360e20cb5eb4918a845359a70f1e6606ead86dd6cc1a51fdfe960874eeea6f1"
+    },
+    {
+      "path": "tests/readiness/r14-fresh-child.ts",
+      "bytes": 1219,
+      "sha256": "f80b93f5e7ea1bc01af939d376dec802db1a5c5be8529feb8cf4f7967d72ccde"
+    },
+    {
+      "path": "tests/readiness/r14-postgres.ts",
+      "bytes": 27385,
+      "sha256": "3d745d0acac4f7c87c682a2a7d12e3c3e286014648f52ab0a5d9c31f9d636198"
+    },
+    {
+      "path": "tests/unit/payment-activation.test.ts",
+      "bytes": 3035,
+      "sha256": "2b31439c5c92e0cc69383e61bd9e4c713dbe375eadc847f43fd588c03b36d1c6"
+    },
+    {
+      "path": "tests/unit/payment-projection-db.test.ts",
+      "bytes": 2874,
+      "sha256": "d8035a2919e441c80e229d1f615e1351fb98e638e104d24b9ecf3ffec93b44df"
+    }
+  ]
+}

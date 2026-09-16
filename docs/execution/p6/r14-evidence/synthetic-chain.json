@@ -1,0 +1,15 @@
+{
+  "kind": "REAL_POSTGRESQL_SYNTHETIC_PROVIDER_NOT_LIVE",
+  "eventId": "r14_a9edb48b-08b0-46a6-89c3-ccd7e064a502",
+  "jobId": "3f7b86a2-720c-4401-ae33-027536601948",
+  "bookingId": "00000000-0000-4000-8000-000000000001",
+  "attemptId": "00000000-0000-4000-8000-000000000004",
+  "providerId": "fixture-payment",
+  "truthFingerprint": "2bb89bcbee8137d19a5fed763680e53aaafcb85275eda6a8e38d593445fa8f82",
+  "observationFingerprint": "329fd1f8838cc10e5a59f750b0ba1b6e9e770e192d6ec1571eb48ab316bfb7bd",
+  "decision": "APPLY_COMPLETED",
+  "booking": "CONFIRMED_DEV",
+  "journalCount": 1,
+  "historyDelta": 2,
+  "actualProviderRequests": 0
+}

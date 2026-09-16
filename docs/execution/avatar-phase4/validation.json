@@ -1,0 +1,169 @@
+{
+  "status": "SELF_VERIFIED_PASS",
+  "recordedAt": "2026-09-15T15:55:54.258617+00:00",
+  "startingHead": "96a34aee8dccb66dca11199af29c33aaf1127546",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "dependencies": "Existing lockfile-identical local dependencies and cached Playwright Chromium1243; new dependencies/downloads0",
+  "unitTests": {
+    "total": 235,
+    "newRenderer": 23,
+    "a2a3AndRelatedExisting": 212,
+    "fail": 0,
+    "skip": 0
+  },
+  "realLocalPostgres": {
+    "phase4MediaSecurity": 27,
+    "a2a3": 15,
+    "recommendationStaff": 17,
+    "guest": 7,
+    "contentRightsRelease": 5,
+    "total": 71
+  },
+  "browser": {
+    "phase4": 22,
+    "existingGuestBooking": 5,
+    "total": 27,
+    "viewports": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "engine": "Chromium153.0.8010.12 / Playwright1.63.0",
+    "realSafari": false,
+    "measurements": 12,
+    "maxSkiHeightErrorPx": 0.012499999999988631,
+    "maxFloorDifferencePx": 0.015625,
+    "horizontalOverflow": 0,
+    "consoleFatal": 0,
+    "hydrationErrors": 0,
+    "externalAttempts": 0
+  },
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS_LOCAL_NEXT_WEBPACK",
+  "secretScan": "PASS_PATTERN_LIMITED",
+  "gitDiffCheck": "PASS",
+  "migrationAdded": 0,
+  "oldMigrationHashesUnchanged": 31,
+  "guestBookingChanged": false,
+  "existingPublicMediaRouteChanged": false,
+  "paymentHoldQuoteRecommendationCodeChanged": false,
+  "visualPathBusinessWrites": 0,
+  "visualBusinessPosts": 0,
+  "recalculation": 0,
+  "newRuntimeRoleProvisioning": 0,
+  "localFixtureReadGrant": "Existing synthetic content_read role only; no normal provisioner/hosted privilege changes",
+  "customerVisible": false,
+  "externalProviderOperations": {
+    "square": 0,
+    "hostedNeon": 0,
+    "vercelDeploy": 0,
+    "vercelEnv": 0,
+    "r2": 0,
+    "externalMedia": 0,
+    "externalBrowser": 0,
+    "production": 0,
+    "realPayment": 0,
+    "realCustomer": 0,
+    "emailSMS": 0,
+    "newService": 0
+  },
+  "mainMerge": 0,
+  "newPR": 0,
+  "cleanup": "All owned local PostgreSQL/Next/browser processes and pools closed",
+  "staticSelfReview": [
+    "Client input is visualization/Direction/locale only; no fetch/business callback",
+    "Next Image unoptimized with only active images mounted; no optimizer/release cache",
+    "Explicit stage geometry, locale text/decorative alt, visible full disclaimer",
+    "Server-only auth/current rights/bytes separated from presentation",
+    "No schema or migration mutation; no new graphics dependency"
+  ],
+  "localPreparationCorrections": [
+    "Node unit adapter preserves real Next Image while handling CJS/ESM import; stylesheet load ignored only in Node test",
+    "Synthetic saved recommendation fixture sets existing required transaction actor; no constraint relaxed",
+    "Business fingerprint table names corrected to current rental_bookings/rental_payment_attempts",
+    "Existing cached Chromium1243 supplied through PLAYWRIGHT_BROWSERS_PATH; no download",
+    "Browser measurement callback avoids serialized Node helper dependency; real DOM measured after image load"
+  ],
+  "logs": {
+    "unit": {
+      "file": "docs/execution/avatar-phase4/unit.log",
+      "sha256": "747501a972c8d4e0b44ca855ccf2c66ddd573e19d54629afc400a86b1dc5c578",
+      "exitCode": 0,
+      "originalRawSha256": "747501a972c8d4e0b44ca855ccf2c66ddd573e19d54629afc400a86b1dc5c578",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "e2e": {
+      "file": "docs/execution/avatar-phase4/e2e.log",
+      "sha256": "b17f369cbd28261ac29ce6e20a9f173f0b2185c71a6cf9983aa33bd0f5c70676",
+      "exitCode": 0,
+      "originalRawSha256": "b17f369cbd28261ac29ce6e20a9f173f0b2185c71a6cf9983aa33bd0f5c70676",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "a2a3-pg": {
+      "file": "docs/execution/avatar-phase4/a2a3-pg.log",
+      "sha256": "ab37129b51982d3fd12f6169ad23b7b9fed7877dff8d30b5cbab3cabe501ff9e",
+      "exitCode": 0,
+      "originalRawSha256": "ab37129b51982d3fd12f6169ad23b7b9fed7877dff8d30b5cbab3cabe501ff9e",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "recommendation-pg": {
+      "file": "docs/execution/avatar-phase4/recommendation-pg.log",
+      "sha256": "d7cbbbbeee240641be077e5d51852ddf846add2b1232a6f91327dc2461f41fcb",
+      "exitCode": 0,
+      "originalRawSha256": "d7cbbbbeee240641be077e5d51852ddf846add2b1232a6f91327dc2461f41fcb",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "guest-pg": {
+      "file": "docs/execution/avatar-phase4/guest-pg.log",
+      "sha256": "0e51418af75c0a012dc2336396b2da1000f81369122583fb3527b9eb4eedf087",
+      "exitCode": 0,
+      "originalRawSha256": "0e51418af75c0a012dc2336396b2da1000f81369122583fb3527b9eb4eedf087",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "content-pg": {
+      "file": "docs/execution/avatar-phase4/content-pg.log",
+      "sha256": "efda2ed97fc27c166b104e62dfb97af77d84b8b0c9e477b1af5c78be5dc771e1",
+      "exitCode": 0,
+      "originalRawSha256": "efda2ed97fc27c166b104e62dfb97af77d84b8b0c9e477b1af5c78be5dc771e1",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "guest-ui": {
+      "file": "docs/execution/avatar-phase4/guest-ui.log",
+      "sha256": "f848b2883107245ef196b68701a662f272657780b747c0b140d566b402d02792",
+      "exitCode": 0,
+      "originalRawSha256": "f848b2883107245ef196b68701a662f272657780b747c0b140d566b402d02792",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "lint": {
+      "file": "docs/execution/avatar-phase4/lint.log",
+      "sha256": "1d73f31982945633bb8a491209f73fa014e10c64c770caa9d642b1f5d67a676b",
+      "exitCode": 0,
+      "originalRawSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "typecheck": {
+      "file": "docs/execution/avatar-phase4/typecheck.log",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "exitCode": 0,
+      "originalRawSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "build": {
+      "file": "docs/execution/avatar-phase4/build.log",
+      "sha256": "0f7abe24836e4e27a4224c4f299afe0134b772879faf458d280225c87a856779",
+      "exitCode": 0,
+      "originalRawSha256": "b664d9556776fdfc8250e9384ebaf210b84e8e0dde35086da87aa83a3ee3fdd8",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    },
+    "secrets": {
+      "file": "docs/execution/avatar-phase4/secrets.log",
+      "sha256": "de327be64033e43981a0a504d3e88308b38851b67288f7e451ddeef4c90a2547",
+      "exitCode": 0,
+      "originalRawSha256": "de327be64033e43981a0a504d3e88308b38851b67288f7e451ddeef4c90a2547",
+      "normalization": "CR and trailing whitespace removed; validation messages unchanged"
+    }
+  }
+}

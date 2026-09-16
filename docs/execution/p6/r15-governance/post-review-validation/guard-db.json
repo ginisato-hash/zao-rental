@@ -1,0 +1,15 @@
+{
+  "name": "guard-db",
+  "command": [
+    "node",
+    "--import",
+    "tsx",
+    "tests/readiness/r15-guard-postgres.ts"
+  ],
+  "startedAtUtc": "2026-09-15T10:24:52.243868+00:00",
+  "finishedAtUtc": "2026-09-15T10:24:53.855829+00:00",
+  "exitCode": 0,
+  "log": "guard-db.log",
+  "classification": "LOCAL_ONLY_NOT_HOSTED",
+  "actualExternalRequests": 0
+}

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "relatedTests": 23,
+  "bundledEntryChecks": 5,
+  "typecheck": "PASS",
+  "lint": "PASS_AFTER_REMOVING_LOCAL_GENERATED_INGRESS_BUNDLE",
+  "secretScan": "PASS",
+  "actualSquareRequests": 0,
+  "note": "Generated ingress bundle was copied into its isolated artifact before removal from source checkout; lint examines source, not bundled dependencies."
+}

@@ -1,0 +1,137 @@
+{
+  "atUtc": "2026-09-15T08:19:47.262563+00:00",
+  "continuationStartedAtUtc": "2026-09-15T08:12:02Z",
+  "continuationStartedAtJst": "2026-09-15T17:12:02+09:00",
+  "originalR15StartNotReset": "2026-09-15T03:06:48Z",
+  "head": "2a41c96b220f7a9c68f5982d6cb104f880f6616b",
+  "tree": "b57941941e8fd931c288225e6a6a83d287a67e12",
+  "remoteHead": "2a41c96b220f7a9c68f5982d6cb104f880f6616b",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "cleanAtStart": true,
+  "avatarBranchAbsent": true,
+  "authorityPath": "docs/execution/PRODUCTION_P6_R15_CONTINUATION_AUTHORITY.md",
+  "authoritySha256": "de4da980e2d55a0540c2bee688c800577ec350f311c529019d2bddcb93514811",
+  "singleWriter": {
+    "currentTask": "01a08bca-eb4e-70d2-846a-7785afae4473",
+    "otherRelevantAuditTask": "idle",
+    "otherRelevantActiveTaskFound": false,
+    "repoCwdRuntimeProcessesFound": 0,
+    "processArgumentsAndEnvironmentNotRead": true
+  },
+  "worktrees": [
+    {
+      "path": "/Users/gini/Projects/zao-rental",
+      "head": "6d0ec6341d2f67579ef8ed74c4b47a8155c32bf3",
+      "branch": "refs/heads/codex/e02-live-preparation",
+      "dirtyEntryCount": 0,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/verification-tree",
+      "head": "489b53707df1c9438bd7e48dbb9fee59ba88610a",
+      "branch": null,
+      "dirtyEntryCount": 0,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/ledger-e03-e04",
+      "head": "9a0224fb19d937656360f951635d65028f7278f8",
+      "branch": "refs/heads/codex/ledger-e03-e04",
+      "dirtyEntryCount": 0,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/period-hold-e06",
+      "head": "63121d0df8650e12bcc053db8a7eba797331b7b5",
+      "branch": "refs/heads/codex/period-hold-e06",
+      "dirtyEntryCount": 0,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/pricing-quote-e08",
+      "head": "fac4fbd9556d26b8a50c1bf98925c44ccb5e841e",
+      "branch": "refs/heads/codex/pricing-quote-e08",
+      "dirtyEntryCount": 0,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p1",
+      "head": "b1911b3b3c3ac1f731bc200f34a89521a466ec28",
+      "branch": "refs/heads/codex/production-readiness-p1",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p2",
+      "head": "7f28aaa5c0d2c714bcaadabc92b453e2b7f83f02",
+      "branch": "refs/heads/codex/production-integration-p2",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p3",
+      "head": "6b40d9b74707111d7ecc04a32b86ec0170c76619",
+      "branch": "refs/heads/codex/production-activation-prep-p3",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p4",
+      "head": "71a58316cb7f552337e569bf8d039f9557da7a59",
+      "branch": "refs/heads/codex/production-activation-p4",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p5",
+      "head": "1082da18c6d4a00dd2ef3a1828ac672d8ad700a8",
+      "branch": "refs/heads/codex/production-preflight-p5",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "head": "2a41c96b220f7a9c68f5982d6cb104f880f6616b",
+      "branch": "refs/heads/codex/external-acceptance-p6",
+      "dirtyEntryCount": 2,
+      "inspectedReadOnly": true,
+      "dirtyEntriesAreThisContinuationAuthorityAndEvidence": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/public-p0",
+      "head": "947cb691c49ee6600e66a4a60f53d421d92beb99",
+      "branch": "refs/heads/codex/public-ux-guest-p0",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/recommendation-e09",
+      "head": "f060662206b350a4b26aa653fdc45b04b828fecb",
+      "branch": "refs/heads/codex/recommendation-e09",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/rental-flow-dev",
+      "head": "0347ed621d293a79cc02e9751da0b81709e4b538",
+      "branch": "refs/heads/codex/rental-flow-dev-e10-e13",
+      "dirtyEntryCount": 1,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/staff-auth-e05",
+      "head": "382696bf78cbdf3e338ca6dba348a528f8cd7e3f",
+      "branch": "refs/heads/codex/staff-auth-e05",
+      "dirtyEntryCount": 0,
+      "inspectedReadOnly": true
+    },
+    {
+      "path": "/Users/gini/Projects/zao-rental/.local/worktrees/store-transfer-e07",
+      "head": "5b488ea40abfb9d2a110b78036325fa3d7a11b48",
+      "branch": "refs/heads/codex/store-transfer-e07",
+      "dirtyEntryCount": 0,
+      "inspectedReadOnly": true
+    }
+  ],
+  "worktreeStatusCollectedAfterAuthorityAndEvidenceWrite": true
+}

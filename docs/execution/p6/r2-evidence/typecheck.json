@@ -1,0 +1,13 @@
+{
+  "check": "typecheck",
+  "command": [
+    "npm",
+    "run",
+    "typecheck"
+  ],
+  "exit_code": 0,
+  "log": "typecheck.log",
+  "raw_log_sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+  "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+  "format": "Repo copy removes terminal CR/trailing whitespace only; original retained in local outputs/production-p6/r2."
+}

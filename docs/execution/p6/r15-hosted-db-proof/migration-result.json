@@ -1,0 +1,19 @@
+{
+  "atUtc": "2026-09-15T11:09:23.357Z",
+  "status": "HOSTED_DB_PROOF_FAIL",
+  "phase": "MIGRATIONS",
+  "sqlstate": "42501",
+  "newDevelopmentDatabase": 1,
+  "retry": 0,
+  "method": "migrateHostedDevelopment",
+  "invocations": 1,
+  "sourceHead": "de78cafeedb3181c476f2a70dab08169748ae8da",
+  "plannedRange": "0001-0030",
+  "sourceHashes": "PASS",
+  "appliedRange": null,
+  "appliedCount": 0,
+  "rollbackConfirmed": true,
+  "failedMigrationId": "NOT_CAPTURED",
+  "failureReason": "PostgreSQL insufficient_privilege (42501); exact failing statement was not retained; no cause inferred",
+  "databaseRetained": "zr_852b20c4d4b0"
+}

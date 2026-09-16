@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "fixture": {
+    "status": "PASS",
+    "classification": "SYNTHETIC_AVATAR_PHASE6",
+    "modelCount": 3,
+    "variantCount": 9,
+    "assetCount": 32,
+    "polePairs": 8,
+    "previousPriceActivation": null,
+    "priceBook": "60000000-0000-4000-8000-000000000060",
+    "priceActivation": "60000000-0000-4000-8000-000000000061",
+    "setupActorActive": false,
+    "existingRowsChanged": 0,
+    "bookingCreated": 0,
+    "paymentCreated": 0,
+    "inventoryClockChanged": false
+  },
+  "memberCount": 2,
+  "directions": 3,
+  "normalContextSavePreviewSelection": true,
+  "holdQuoteBookingPayment": 0
+}

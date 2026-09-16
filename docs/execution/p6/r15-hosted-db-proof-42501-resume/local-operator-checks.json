@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "repairRefusalCases": 4,
+  "dbWrites": 0,
+  "safeNestedOperationClassification": "PASS",
+  "actualExternalRequests": 0
+}

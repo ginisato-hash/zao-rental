@@ -1,0 +1,14 @@
+✔ R15 deployed ESM entrypoints load explicit bundled runtime under plain Node (178.242666ms)
+✔ R15 receiver configuration is Sandbox-only, exact-domain, exact-role and verified TLS (1.230625ms)
+✔ R15 missing signature/config fails closed without DB access; health is liveness only (18.125542ms)
+✔ R15 signature/merchant/query/size failures never open receiver pool (4.369458ms)
+✔ R15 ACK awaits durable receipt; safe signal only; duplicate/hash conflict/DB errors are bounded (1.146708ms)
+✔ R15 deploy surface exposes only two receiver routes, no main app/provider/worker imports (0.694875ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 636.013083

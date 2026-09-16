@@ -1,0 +1,702 @@
+{
+  "branch": "codex/post-r15-avatar-a2-a3",
+  "base_sha": "efb73933a6d3816958882205cfa3623447194625",
+  "head_sha": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+  "authority_sha256": "6fdd26ddc6d7c75419dccd1f427c51d36c8820f0b583d856ce5f985d59cfc9d2",
+  "snapshot_sha256": "1bb20ee64fc71f3f83fed3f53fb8a468148a87af0cc2fa2229fc1b4546897a38",
+  "snapshot_bytes": 560284,
+  "files": [
+    {
+      "path": "apps/web/src/lib/auth.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "4ab116d693b15dbbb32d57901ff1b9e5c8c77e187bbada9e82b9c8fc294c282d",
+      "bytes": 209,
+      "lines": 4
+    },
+    {
+      "path": "apps/web/src/lib/guest-http.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d103c96188989e54b11bfffabf86cd957700e46921d237eff6dd133a45d17c71",
+      "bytes": 4788,
+      "lines": 27
+    },
+    {
+      "path": "apps/web/src/lib/recommendation-http.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "aab945ea39eb7396bff76518f9a48690312640d0b075af2975e84c4a0ef90e57",
+      "bytes": 2700,
+      "lines": 21
+    },
+    {
+      "path": "apps/web/src/lib/staff-runtime.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "018e3b68529e948f7aa0089021851dc93e602c07345fa045c638c94e60f973a3",
+      "bytes": 1913,
+      "lines": 26
+    },
+    {
+      "path": "docs/adr/0033-avatar-2d-foundation.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "cae03bd054ca8e522e9c9843ad6dace1b6be0eb522022e2b8d5cfb10377b04d9",
+      "bytes": 6002,
+      "lines": 87
+    },
+    {
+      "path": "docs/architecture/avatar-2d-repo-inspection.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "b4979f84f69d1ff15b5acb1c6f53925609651efebf427bf6a7a19b9f288c30ab",
+      "bytes": 4937,
+      "lines": 50
+    },
+    {
+      "path": "docs/execution/AVATAR_FOUNDATION_STATUS.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "42c9e98829c6da862e48101fde9344950e8961c3795480098622beab580a8867",
+      "bytes": 1624,
+      "lines": 49
+    },
+    {
+      "path": "docs/execution/POST_R15_AVATAR_A2_A3_AUTHORITY.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "6fdd26ddc6d7c75419dccd1f427c51d36c8820f0b583d856ce5f985d59cfc9d2",
+      "bytes": 14409,
+      "lines": 873
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/RESULT.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "9d7d1f388d4733e7d9bec3de2508dc49aa326b60ca02038bb97963b76e8bb0eb",
+      "bytes": 3595,
+      "lines": 53
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/build.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "5ff60d14041c14fc226b15a31ffc971a327137e934f6e0d9c57d6b3df64db6f8",
+      "bytes": 1915,
+      "lines": 72
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/guest.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "0e51418af75c0a012dc2336396b2da1000f81369122583fb3527b9eb4eedf087",
+      "bytes": 824,
+      "lines": 9
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/lint.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "bytes": 54,
+      "lines": 4
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/local-db.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "96fa8d5f396431e5b2d6858220e94af92a04e74a69519274ad2fd47eb9b0b681",
+      "bytes": 2348,
+      "lines": 74
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/local-db.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "ab37129b51982d3fd12f6169ad23b7b9fed7877dff8d30b5cbab3cabe501ff9e",
+      "bytes": 1370,
+      "lines": 16
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/migration-hashes.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "ed41ecdc329ad8fc04ccdb923c1ff413a75c18e26cc6879ffb377c4957cf26f7",
+      "bytes": 5560,
+      "lines": 188
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/recommendation.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d7cbbbbeee240641be077e5d51852ddf846add2b1232a6f91327dc2461f41fcb",
+      "bytes": 1903,
+      "lines": 19
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/secrets.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "34ae38db0c13ccc2b02a666155d2547067227a13e7ecc0ff38a7ad9fd59a19fd",
+      "bytes": 211,
+      "lines": 5
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/typecheck.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "bytes": 130,
+      "lines": 6
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/unit.log",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "33b491767981edbb98bc777fc01e58b7dc7e05376b41d11d98de2ddd4e3644bc",
+      "bytes": 16628,
+      "lines": 205
+    },
+    {
+      "path": "docs/execution/avatar-a2-a3/validation.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "4ad33101a3450badf4dd58fc2660b30d4bfc25ef7e385284f746f650175a0315",
+      "bytes": 3344,
+      "lines": 95
+    },
+    {
+      "path": "package.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "ff4eb5f99844156aab89c949688847a87b5a05a387f579295bec8e6619a0b88c",
+      "bytes": 5915,
+      "lines": 103
+    },
+    {
+      "path": "packages/contracts/src/avatar-visualization.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "4f97e6508092b46bf8e091b2a6a921ea2a67b40348deffc29a6a837233190c8f",
+      "bytes": 1838,
+      "lines": 14
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "69bb59eb37534fadbadb9f94d7a1c2c4ff1f5ed0ee9e26103784f8ecc83931a8",
+      "bytes": 8013,
+      "lines": 79
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "b33a5bc13b1f1fd1eb024dcc59f220fb62db613b290ca267d2f306df07280401",
+      "bytes": 4618,
+      "lines": 58
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "aa140e45aea391598ded8f90067f2ed877e5d428a5b5a2827b58b00f6521401d",
+      "bytes": 9951,
+      "lines": 38
+    },
+    {
+      "path": "packages/contracts/src/recommendation.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "6833d072786f569259bdf3be496e8b905aeb173b67836dba3fcfa5948b419ea4",
+      "bytes": 7111,
+      "lines": 56
+    },
+    {
+      "path": "packages/core/src/avatar/visualization.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "de89be16ea6e0204b151b8472c45eaf6a1a9447f34e2e56352f7f7e48e1797c7",
+      "bytes": 5238,
+      "lines": 49
+    },
+    {
+      "path": "packages/core/src/content/media-plan.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "0c1b9868ff64030674b4b524c85e3138fb9f82977b4b4e89c7a08f43cb26bd94",
+      "bytes": 4248,
+      "lines": 28
+    },
+    {
+      "path": "packages/core/src/content/postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a75281c53752f03fbf1f4dd2bf11c08ce3100beb8fac33848bb75bfe1282f04e",
+      "bytes": 5376,
+      "lines": 37
+    },
+    {
+      "path": "packages/core/src/content/provider-media.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "f25d177c5694ec406a320f60bcf83e46e3a6352a16f931a0a0881f49ab0ca918",
+      "bytes": 5917,
+      "lines": 35
+    },
+    {
+      "path": "packages/core/src/content/public-catalog.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "be215a5d357df018ff44370617ded16076dca34d1a0f2f6a08f0ce1577c163e4",
+      "bytes": 4313,
+      "lines": 20
+    },
+    {
+      "path": "packages/core/src/content/release-plan.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "5426d8a5d0ba3ca0d05bffef154f5160072bcf8e8c7d9014e07a873b3a40061e",
+      "bytes": 5429,
+      "lines": 50
+    },
+    {
+      "path": "packages/core/src/content/storage-port.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a6b98c36a7dd785c707003e61c1ebc235a754860baab4b33d0a7d912048228ba",
+      "bytes": 1435,
+      "lines": 15
+    },
+    {
+      "path": "packages/core/src/content/workflow.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "2bedbe7300d05684f380247bc3d22d10014a34b89b3675c4790aaf585e566965",
+      "bytes": 7436,
+      "lines": 42
+    },
+    {
+      "path": "packages/core/src/guest/context.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "4133c5c4a31006dfacd64457eb0bf3121ee298ebc1d881346d980f7c60f5218e",
+      "bytes": 3947,
+      "lines": 20
+    },
+    {
+      "path": "packages/core/src/guest/security.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "2990745a79388d41cdcdd2b31e7b900e06f02b53934ab77776ba1798f2bac5cb",
+      "bytes": 8498,
+      "lines": 50
+    },
+    {
+      "path": "packages/core/src/recommendation/recommendation-service.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "cdb933721e4fea28432fb7d20a6c44efc690fcec762885326a0a84f9a4e24eed",
+      "bytes": 15610,
+      "lines": 77
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150",
+      "bytes": 530,
+      "lines": 11
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246",
+      "bytes": 14076,
+      "lines": 140
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47",
+      "bytes": 7226,
+      "lines": 100
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1",
+      "bytes": 8294,
+      "lines": 76
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7",
+      "bytes": 17126,
+      "lines": 128
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954",
+      "bytes": 7743,
+      "lines": 47
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075",
+      "bytes": 3459,
+      "lines": 37
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11",
+      "bytes": 1309,
+      "lines": 20
+    },
+    {
+      "path": "packages/db/migrations/0009_development_booking.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "bdc31ea49660a1edee75fd20dd3c4043090dc0832698f2356f31af219c7f37c0",
+      "bytes": 5827,
+      "lines": 44
+    },
+    {
+      "path": "packages/db/migrations/0010_rental_custody.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "6d07a0dca17e428fcc43d332c8f87ffc35557f5dd23d56e474b6a2d3e30b8816",
+      "bytes": 8045,
+      "lines": 47
+    },
+    {
+      "path": "packages/db/migrations/0011_receipt_timeline.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "5db1b2f9bec8ef4945ccb2065b6e8638d7a8993502adf670bce7fce5a059acf6",
+      "bytes": 313,
+      "lines": 3
+    },
+    {
+      "path": "packages/db/migrations/0012_integrated_wear_catalog.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a6076dbf78245744b0394bcf5a4a5ced868d5798080da19b1b581ba40ad9239d",
+      "bytes": 5596,
+      "lines": 35
+    },
+    {
+      "path": "packages/db/migrations/0013_wear_quantity.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "ec606b57dc1f27e9b015e6c6cad4e4a26fbfc70479d3a3abc50e5ca54ea8817c",
+      "bytes": 12391,
+      "lines": 96
+    },
+    {
+      "path": "packages/db/migrations/0014_wear_return_batch.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "7f19d23b101cc4c795e6cadf6b773e233eb72b3138647d4c0f6953b77c6bd52c",
+      "bytes": 1875,
+      "lines": 20
+    },
+    {
+      "path": "packages/db/migrations/0015_custody_boundary.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "f4885fade5b753e950ea307b47dee5b138d61985a48d09fe9b09f063de6ba095",
+      "bytes": 31418,
+      "lines": 231
+    },
+    {
+      "path": "packages/db/migrations/0016_delayed_pickup.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "177f50e10a653ff176c5863a60d221639470fa3471852c119c8b1bdc79f0d57c",
+      "bytes": 5255,
+      "lines": 27
+    },
+    {
+      "path": "packages/db/migrations/0017_no_pickup_completion.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a85917af78ced36e347f72b4ab8dfb11aaedff8b542eef6f7299eb4db2358f73",
+      "bytes": 3335,
+      "lines": 40
+    },
+    {
+      "path": "packages/db/migrations/0018_guest_actor.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "b3d1c1c28b4536c5a4cd81f070da04b297807856c3ff39fd3b0a65ba5470044c",
+      "bytes": 4550,
+      "lines": 38
+    },
+    {
+      "path": "packages/db/migrations/0019_content_workspace.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "45d39bbc3f9e97956e54e39bcbaa582ab08c75c3165a4b5848b6417334fb8ec7",
+      "bytes": 2475,
+      "lines": 13
+    },
+    {
+      "path": "packages/db/migrations/0020_content_media.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a1099ed4d97273de8eab2c6ba1b8c074747e381d01158510a5b2c9afdf82e4ab",
+      "bytes": 940,
+      "lines": 9
+    },
+    {
+      "path": "packages/db/migrations/0021_guest_security.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d3698864619ac5e4bb30bb6e966cb1228cfa71d9fb83f9eb82b1bcea6ff73978",
+      "bytes": 1428,
+      "lines": 14
+    },
+    {
+      "path": "packages/db/migrations/0022_booking_access.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "e6abd96536ba285e1bca159b79b0ed20cf83dcdf7af4169f510020f321b2b12b",
+      "bytes": 5464,
+      "lines": 67
+    },
+    {
+      "path": "packages/db/migrations/0023_sandbox_activation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "8b0db6afc0540dce17fb206b0fd5e6f7963a44d6f7e20f0f4f445b1643a441da",
+      "bytes": 2159,
+      "lines": 30
+    },
+    {
+      "path": "packages/db/migrations/0024_booking_recovery.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "c69295df3ec5abdcc5e44b50cdf482efebdbf1d260b83b02a8b7289a9c4e6aec",
+      "bytes": 9475,
+      "lines": 106
+    },
+    {
+      "path": "packages/db/migrations/0025_square_webhook_inbox.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "8ffa1c78e9f10338987a1846741cc05cdc523d99ec8949d1bf6757fe48a8268d",
+      "bytes": 7069,
+      "lines": 94
+    },
+    {
+      "path": "packages/db/migrations/0026_payment_reconciliation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "276495dec2116938da4bc0f4f3d3cd742210c2522ab3c3b41c5fefedbf76e605",
+      "bytes": 22053,
+      "lines": 193
+    },
+    {
+      "path": "packages/db/migrations/0027_payment_projection.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "6b0b9eda78d634e10417e83b8268096b7b46f3778dd4ceea2fa8915413733062",
+      "bytes": 4254,
+      "lines": 37
+    },
+    {
+      "path": "packages/db/migrations/0028_development_projection_source.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "0b9fbafefc9a1e6d939e078f354aca08af7982f7f0db9f8582c0dc5b30f82953",
+      "bytes": 1446,
+      "lines": 15
+    },
+    {
+      "path": "packages/db/migrations/0029_development_payment_scope.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "e2e070adadbed9682ff45c41660e8fa2889124af4840e7af274171574e2b7566",
+      "bytes": 6829,
+      "lines": 52
+    },
+    {
+      "path": "packages/db/migrations/0030_r15_operation_guard.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "194f19dd724544706f55252f09cf0583c89bb9d64c08499132f2d2ce753f03bc",
+      "bytes": 3066,
+      "lines": 46
+    },
+    {
+      "path": "packages/db/migrations/0031_avatar_visuals.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "73e180ba592645a7322694b40c4133c189f54f0a7797637003a1e3dacf5ceba2",
+      "bytes": 3679,
+      "lines": 53
+    },
+    {
+      "path": "packages/db/src/avatar-visuals.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "6608efa873d592dc0012392f83f294801839ef3fba0442bad54992012b96c1e2",
+      "bytes": 3275,
+      "lines": 37
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "36321553e779d9c46cabf1023d70e8949a47b889c47a675dd4fed25520f0b0fa",
+      "bytes": 3634,
+      "lines": 45
+    },
+    {
+      "path": "scripts/hosted-payment-migrations.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "b3773dce73780dab5a0220e5d5c4ed5513766bc4500c75c8e182e58786dd63f9",
+      "bytes": 2376,
+      "lines": 28
+    },
+    {
+      "path": "tests/avatar/fixture.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "bf6dcdcf0d58cd9b94b97856aa92582a77fc1a739d2b2567d8a774e48c91cbc5",
+      "bytes": 1886,
+      "lines": 12
+    },
+    {
+      "path": "tests/avatar/postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d7b02ed2c68cb131e29212c21f2a315374d5c3bd209272443561471692faa996",
+      "bytes": 15139,
+      "lines": 62
+    },
+    {
+      "path": "tests/public/guest-postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "fd7582a26ba2e1d5c6c51ec39f16dcf5763231fd095fde277847057c530eeb88",
+      "bytes": 7637,
+      "lines": 32
+    },
+    {
+      "path": "tests/recommendation/fixture.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "4b44d31db4fbb163e35d68e9426534e0c41e279157e7eb5e7201f63ad8e3f25d",
+      "bytes": 3626,
+      "lines": 14
+    },
+    {
+      "path": "tests/recommendation/real-postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "1a7dc61ecbae94e7d9f70becba93aa9fce8f02a3f1b366ad0839cc3f59765669",
+      "bytes": 21448,
+      "lines": 59
+    },
+    {
+      "path": "tests/unit/avatar-visualization.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d51bc6e3e3ead2e84739ff935a1a08c5b21a3386854a0ac096d608037ee5e911",
+      "bytes": 8368,
+      "lines": 23
+    },
+    {
+      "path": "tests/unit/hold-contracts.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "a714093d6f583d736ba11febc9813741fa8821d427263f9424233b6300cbb99f",
+      "bytes": 4530,
+      "lines": 26
+    },
+    {
+      "path": "tests/unit/recommendation.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "0859f1223bbd2a27e78c2d2c971c0e9b466d3fb7f409efd42113b4c5f975638f",
+      "bytes": 3336,
+      "lines": 10
+    },
+    {
+      "path": "tests/unit/staff-security.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "f638409690b9a6eb12e1e3b16ce5a4a0e7ed8c23dd7218a49dcd8bb76e11ca30",
+      "bytes": 2771,
+      "lines": 25
+    },
+    {
+      "path": "tsconfig.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d1e3321f878d39417eb703e9cab3aa1a8f00cb0c91bc8be93b930cd5b1a1fdea",
+      "bytes": 1009,
+      "lines": 48
+    },
+    {
+      "path": "AGENTS.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d37dd41ae2adcf2fdd44636f19465765ee01f5a72ed0372d34b12bb1b1f9222b",
+      "bytes": 1056,
+      "lines": 17
+    },
+    {
+      "path": "CLAUDE.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d37dd41ae2adcf2fdd44636f19465765ee01f5a72ed0372d34b12bb1b1f9222b",
+      "bytes": 1056,
+      "lines": 17
+    },
+    {
+      "path": "docs/execution/SCOPE.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "d37dd41ae2adcf2fdd44636f19465765ee01f5a72ed0372d34b12bb1b1f9222b",
+      "bytes": 1056,
+      "lines": 17
+    },
+    {
+      "path": "docs/execution/AI_DEVELOPMENT_GOVERNANCE.md@CURRENT_SECTION",
+      "kind": "GIT_PREFIX_EXCERPT",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "99d96f152e1de7c33f9a1e969dfd5e18e5052240a74240defb535adce64d840c",
+      "bytes": 6430,
+      "lines": 94
+    },
+    {
+      "path": "BASE_TO_HEAD_SOURCE_DIFF",
+      "kind": "GIT_DIFF",
+      "gitRef": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "sha256": "c5152a43ef8c5cc8f021f4effb5d5f492bedd5d21508a5eef1ecee6c1c0947ff",
+      "bytes": 47208,
+      "lines": 349
+    }
+  ],
+  "excludedLockfileSha256": "8e971550d44ec36ece189f16310df36d0728dc6806e5d0e06bb3f693a3aac2fc",
+  "source_clean": true,
+  "remote_readback_matches": true,
+  "secrets_pattern_scan": "PASS_NOT_COMPREHENSIVE"
+}

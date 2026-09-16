@@ -1,0 +1,24 @@
+{
+  "attempts": [
+    {
+      "kind": "EXISTING_AUTH_METADATA",
+      "environment": "sandbox",
+      "exitCode": 124,
+      "classification": "METADATA_TIMEOUT",
+      "resultRead": false
+    },
+    {
+      "kind": "EXISTING_AUTH_METADATA",
+      "environment": "ordinary_authorized_execution",
+      "exitCode": 124,
+      "classification": "BLOCKED_VERCEL_LOGIN",
+      "safeErrorTerms": [
+        "authentication"
+      ],
+      "resultRead": false
+    }
+  ],
+  "loginRequested": true,
+  "rawAuthOutputSaved": false,
+  "noMutationRetried": true
+}

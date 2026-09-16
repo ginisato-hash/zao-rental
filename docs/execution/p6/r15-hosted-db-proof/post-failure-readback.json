@@ -1,0 +1,20 @@
+{
+  "atUtc": "2026-09-15T11:11:03.271Z",
+  "status": "READ_ONLY_CONFIRMED",
+  "database": "zr_852b20c4d4b0",
+  "schemas": [
+    "public"
+  ],
+  "userTables": [],
+  "migrationTablePresent": false,
+  "appliedMigrationCount": 0,
+  "runtimeRoles": [],
+  "publicSchemaGrants": [
+    {
+      "nspname": "public",
+      "privilege_type": "USAGE"
+    }
+  ],
+  "rollbackConfirmed": true,
+  "runtimeCredentialsCreated": 0
+}

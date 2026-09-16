@@ -1,0 +1,20 @@
+{
+  "atUtc": "2026-09-15T11:46:32.808Z",
+  "status": "BLOCKED_LOCAL_CREDENTIAL_HANDOFF",
+  "logicalAcquisitionAttempts": 1,
+  "credentialRequests": 1,
+  "httpStatuses": [
+    200
+  ],
+  "credentialInMemory": false,
+  "postgresPoolCreated": false,
+  "postgresConfigCreated": false,
+  "ddlProbes": 0,
+  "privilegeRepairs": 0,
+  "migrationReattempts": 0,
+  "rollbackMigrationDiagnostics": 0,
+  "roleProvisions": 0,
+  "browserContextClosed": true,
+  "secretStaging": false,
+  "rawValuesEmitted": false
+}

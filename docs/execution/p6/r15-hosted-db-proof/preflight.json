@@ -1,0 +1,38 @@
+{
+  "recordedAtUtc": "2026-09-15T10:57:48.287130+00:00",
+  "sourceOfTruth": "GitHub",
+  "branch": "codex/external-acceptance-p6",
+  "startingLocalHead": "de78cafeedb3181c476f2a70dab08169748ae8da",
+  "startingRemoteHead": "de78cafeedb3181c476f2a70dab08169748ae8da",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "avatar": "9783373612440acef4c077b0ae23925aa467743d",
+  "startingWorkingTree": "CLEAN_BEFORE_AUTHORITY_EVIDENCE_FILES",
+  "singleWriter": true,
+  "authoritySha256": "71e1c11c33a14a1488b83e759adec9ab27d08892757e634b93c9b463ed33fede",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "node": "v24.15.0",
+  "npm": "11.12.1",
+  "credentialAcquisitionMaximum": 1,
+  "reviewBudget": {
+    "maximum": 4,
+    "initial": {
+      "limit": 1,
+      "used": 1
+    },
+    "correction": {
+      "limit": 1,
+      "used": 1
+    },
+    "F3_HOSTED_PROOF_REVIEW": {
+      "limit": 1,
+      "used": 0
+    },
+    "finalEvidence": {
+      "limit": 1,
+      "used": 0
+    }
+  },
+  "dbWritesStarted": false,
+  "reviewPrerequisite": "HOSTED_DB_PROOF_PASS_COMMIT_PUSH_READBACK",
+  "stopAfterReview": true
+}

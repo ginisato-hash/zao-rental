@@ -1,0 +1,18 @@
+{
+  "scriptsLocalOnly": true,
+  "secretValuesIncluded": false,
+  "files": [
+    {
+      "name": "corrective-preview-create.mjs",
+      "sha256": "e80f6f1aaa8b7260a12dcbbc9ed91572776ef4ec6ab069c070eea328f101c85a"
+    },
+    {
+      "name": "corrective-preview-inspect.mjs",
+      "sha256": "d047a9fc26defd2f43620159cd6c770efecbb00b86bf146f9deba660d08b5a5e"
+    },
+    {
+      "name": "corrective-hosted-browser.mjs",
+      "sha256": "14bbdcf27dfc8168e5bd5d5785a4c6f78106381396cf0b284f3419bfa456c3c9"
+    }
+  ]
+}

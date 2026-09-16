@@ -1,0 +1,18 @@
+{
+  "sourceHead": "de78cafeedb3181c476f2a70dab08169748ae8da",
+  "canonicalSources": {
+    "scripts/hosted-payment-migrations.ts": "addf8c0f141f262d4a80a40c566bd4a7c3ed3881246b0da29805a2f868dea67f",
+    "scripts/hosted-payment-activation.ts": "c2ba0a7f2633bc3de507ac89a5eeb3275bcfba64043fd279d15bad38acfc5792",
+    "scripts/payment-activation-grants.ts": "ce2af7a02e18649a52a21d953d2ef16fff77ebb900c7681d0f10cc69ac4c0648",
+    "packages/db/src/index.ts": "acf4f217fa532e7cee6ac5cc9823cc8b7939e5bf660336cc8c2ebe3b2b519caa"
+  },
+  "localDbOperatorSources": {
+    "db-proof.ts": "dda3c346eeca4b2799149f13dc61eccbef7cecc516f784ec05581a55d43ca738",
+    "db-setup.ts": "0fb88a757e471fe953658f1ad49ad0455ae360a30abdc2776ea8f08d093f7f21",
+    "db-cleanup.ts": "c18afd654fd1dc2e34cf5c7e48f9d95fdb272ed8853ed5ce1caa047657a633cb"
+  },
+  "localOperatorNotProductImplementation": true,
+  "productChanges": 0,
+  "migrationChanges": 0,
+  "rolePolicyChanges": 0
+}

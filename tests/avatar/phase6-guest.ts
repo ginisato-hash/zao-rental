@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {randomBytes} from 'node:crypto';
+import {writeFile} from 'node:fs/promises';
+import {Pool} from 'pg';
+import {startIsolatedPostgres} from '../../scripts/postgres';
+import {migrate} from '../../packages/db/src/index';
+import {provisionLocalAvatarRoles} from '../../scripts/avatar-hosted-roles';
+import {seedPhase6Fixture,phase6PoleVariant} from '../../scripts/avatar-phase6-fixture';
+import {importPhase6Artwork} from '../../scripts/avatar-artwork-hosted';
+import {GuestContexts} from '../../packages/core/src/guest/context';
+import {GuestSecurity,guestPeerKey} from '../../packages/core/src/guest/security';
+import guestPolicy from '../../config/production/guest.p4-approved-policy.json';
+import {GuestBookingService} from '../../packages/core/src/guest/service';
+import {HoldService} from '../../packages/core/src/inventory/hold-service';
+import {QuoteService} from '../../packages/core/src/pricing/quote-service';
+import {RecommendationService} from '../../packages/core/src/recommendation/recommendation-service';
+import {guestCatalog,guestVariants} from '../../packages/core/src/content/public-catalog';
+import {guestHandler} from '../../apps/web/src/lib/guest-http';
+const db=await startIsolatedPostgres(),pools:Pool[]=[];let stage='setup';
+try{
+ await migrate(db.pool);const fixture=await seedPhase6Fixture(db.pool);await importPhase6Artwork(db.pool);const configs=await provisionLocalAvatarRoles(db.pool),p=Object.fromEntries(Object.entries(configs).map(([k,c])=>{const pool=new Pool(c);pools.push(pool);return [k,pool];}));
+ const contexts=new GuestContexts(p.guest!),key=randomBytes(32).toString('hex'),security=new GuestSecurity(p.guest!,contexts,guestPolicy.policy,key),origin='http://127.0.0.1:12345';
+ const api=guestHandler(contexts,actor=>{const h=new HoldService(p.hold!,actor),q=new QuoteService(p.pricing!,actor),r=new RecommendationService(p.recommendation!,actor,h,q,async variants=>guestVariants(await guestCatalog(p.content_read!,variants),variants));return new GuestBookingService(contexts,actor,r,null,async()=>guestCatalog(p.content_read!,await h.recommendationCatalog()));},origin,false,{service:security,peer:()=>guestPeerKey('SYNTHETIC_LOOPBACK',key)});
+ let cookie='';const request=(path:string,body?:unknown)=>api(new Request(origin+'/api/guest'+path,{method:body===undefined?'GET':'POST',headers:{origin,'content-type':'application/json',cookie},...(body===undefined?{}:{body:JSON.stringify(body)})}));
+ stage='context';const created=await request('/context',{});assert.equal(created.status,201);cookie=created.headers.get('set-cookie')!.split(';')[0]!;let draft=(await created.json()).draft;
+ const input={pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-01-05',endDate:'2035-01-05',slot:'DAY'},members:[170,180].map((heightCm,i)=>({key:'person-'+(i+1),sport:'SKI',heightCm,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleSize:'pole-'+phase6PoleVariant,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null}))};
+ stage='save';const saved=await request('/draft',{draftId:draft.id,expectedRevision:draft.revision,input});assert.equal(saved.status,200);draft=await saved.json();
+ stage='preview';const preview=await request('/preview',{draftId:draft.id,expectedRevision:draft.revision});const previewBody=await preview.json();assert.equal(preview.status,200);draft=previewBody;assert.equal(draft.preview.members.length,2);for(const m of draft.preview.members)for(const direction of ['RECOMMENDED','SHORTER','LONGER'])assert.ok(m.candidates[direction]);
+ stage='choose';const chosen=await request('/selection',{draftId:draft.id,expectedRevision:draft.revision,directions:{'person-1':'RECOMMENDED','person-2':'LONGER'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});assert.equal(chosen.status,200);assert.ok((await chosen.json()).selection);
+ for(const table of ['inventory_holds','price_quotes','rental_bookings','rental_payment_attempts'])assert.equal((await db.pool.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n,0);
+ await writeFile('docs/execution/avatar-phase6/guest-local-proof.json',JSON.stringify({status:'PASS',fixture,memberCount:2,directions:3,normalContextSavePreviewSelection:true,holdQuoteBookingPayment:0},null,2)+'\n');console.log('PASS normal local Guest service through Phase6 least-privilege roles');
+}catch(e){console.log(JSON.stringify({status:'FAIL',stage,category:(e as {code?:string}).code??(e as Error).name}));process.exitCode=1;}finally{await Promise.all(pools.map(p=>p.end()));await db.stop();}

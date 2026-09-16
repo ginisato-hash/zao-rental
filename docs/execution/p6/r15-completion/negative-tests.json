@@ -1,0 +1,190 @@
+{
+  "status": "PASS",
+  "count": 46,
+  "results": [
+    {
+      "name": "receiver denied UPDATE rental_bookings SET",
+      "status": "PASS"
+    },
+    {
+      "name": "receiver denied UPDATE inventory_holds SET",
+      "status": "PASS"
+    },
+    {
+      "name": "receiver denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher denied UPDATE rental_bookings SET",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher denied UPDATE inventory_holds SET",
+      "status": "PASS"
+    },
+    {
+      "name": "worker denied UPDATE rental_bookings SET",
+      "status": "PASS"
+    },
+    {
+      "name": "worker denied UPDATE inventory_holds SET",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied UPDATE payment_reconciliation.jobs SET",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied UPDATE rental_bookings SET",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied UPDATE inventory_claims SET",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied UPDATE wear_claims SET",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic denied UPDATE rental_bookings SET",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic denied SELECT payment_reconciliation.dispatch_target('SANDBOX',1,'m','p')",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied SELECT square_webhook.receive('SANDBOX','x','payment.updated','m','p','a')",
+      "status": "PASS"
+    },
+    {
+      "name": "receiver denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "receiver denied UPDATE r15_activation.manifest SET",
+      "status": "PASS"
+    },
+    {
+      "name": "receiver denied DELETE FROM r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "receiver denied TRUNCATE r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher denied UPDATE r15_activation.manifest SET",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher denied DELETE FROM r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher denied TRUNCATE r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "worker denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "worker denied UPDATE r15_activation.manifest SET",
+      "status": "PASS"
+    },
+    {
+      "name": "worker denied DELETE FROM r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "worker denied TRUNCATE r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied UPDATE r15_activation.manifest SET",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied DELETE FROM r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "projector denied TRUNCATE r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic denied UPDATE r15_activation.manifest SET",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic denied DELETE FROM r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic denied TRUNCATE r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied SELECT * FROM",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied UPDATE r15_activation.manifest SET",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied DELETE FROM r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe denied TRUNCATE r15_activation.operations",
+      "status": "PASS"
+    },
+    {
+      "name": "receiver cannot reserve",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher cannot reserve",
+      "status": "PASS"
+    },
+    {
+      "name": "projector cannot reserve",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic cannot reserve",
+      "status": "PASS"
+    },
+    {
+      "name": "publicProbe cannot reserve",
+      "status": "PASS"
+    }
+  ]
+}

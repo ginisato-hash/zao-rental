@@ -1,0 +1,40 @@
+{
+  "recorded_at_utc": "2026-09-14T09:49:15Z",
+  "recorded_at_jst": "2026-09-14T18:49:15+09:00",
+  "source": "Explicit Owner report in current conversation; not provider telemetry",
+  "observed_head": "28005adddea87696586cf1b6690c239c6260014d",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "phase": "BLOCKED_BROWSER_SELF_XSS_CONFIRMED_NOT_EXECUTED",
+  "S1_result": "NOT_RUN",
+  "owner_report": {
+    "browser": "Chrome DevTools",
+    "blocked_by": "Self-XSS Console paste protection",
+    "allow_pasting_entered": false,
+    "script_executed": false,
+    "explicit_post_dispatched": false,
+    "other_tab_browser_or_method_retried": false
+  },
+  "actual_post_dispatches": 0,
+  "square_actual_requests": 0,
+  "payments": 0,
+  "refunds": 0,
+  "webhook_deliveries": 0,
+  "preview_attempts_consumed": 1,
+  "preview_attempts_remaining": 0,
+  "square_get_limit": 2,
+  "square_get_budget_unspent": 2,
+  "budget_reset": false,
+  "automatic_retry_authorized": false,
+  "classification": "Confirmed pre-dispatch stop, not authentication failure, S1_FAIL, S1_PASS or UNKNOWN",
+  "next_gate": "Owner decision on a compliant authenticated invocation method; do not bypass browser protection, extract credentials or retry the superseded handoff.",
+  "this_update": {
+    "provider_requests": 0,
+    "deployments": 0,
+    "model_starts": 0,
+    "db_web_browser_claude_started": 0
+  },
+  "retained_resources": [
+    "accepted R3 Preview",
+    "protected S1 Preview; no remote mutation in this update"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "projects": [
+    {
+      "id": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+      "name": "zao-rental-webhook-sandbox",
+      "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+      "rootDirectory": "apps/webhook-ingress",
+      "protection": "all_except_custom_domains"
+    }
+  ],
+  "pagination": {
+    "count": 1,
+    "next": null,
+    "prev": 1789458323019
+  },
+  "at": "2026-09-15T08:16:45.187112+00:00",
+  "exitCode": 0,
+  "noSecretValuesRetained": true
+}

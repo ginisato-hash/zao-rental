@@ -1,0 +1,29 @@
+{
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "targetedUnitTests": {
+    "passed": 49,
+    "failed": 0
+  },
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS",
+  "secretPatternScan": {
+    "result": "PASS",
+    "files": 1904,
+    "comprehensive": false
+  },
+  "historicalStopRecords": {
+    "STOP_RECORD.md": {
+      "unchanged": true,
+      "sha256": "14f7018afc1bd7983d671f0ce68d1ea39bc8a4d86ce1290c0543bfdee936d3f8"
+    },
+    "RESUME_STOP_RECORD.md": {
+      "unchanged": true,
+      "sha256": "a2dcf95ef1b362569db43dc716634560b583e7b0192b649e415bc0a2e1afaf40"
+    }
+  },
+  "dedicatedProjectBinding": "UNPROVISIONED_FAIL_CLOSED",
+  "oldProjectAndHost": "DENIED",
+  "hostedAcceptance": "NOT_RUN"
+}

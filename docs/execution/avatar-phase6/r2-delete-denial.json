@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "stage": "DELETE_DENIAL",
+  "http": 403,
+  "exceptionClass": "AccessDenied",
+  "confirmedAbsentKey": true,
+  "newObjectCreated": 0,
+  "rawResponseStored": false,
+  "credentialValuesOutput": false
+}

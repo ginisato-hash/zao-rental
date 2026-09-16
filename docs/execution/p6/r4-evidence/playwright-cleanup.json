@@ -1,0 +1,115 @@
+{
+  "at": "2026-09-14T11:24:15.793045+00:00",
+  "result": "COMPLETED",
+  "invocation_result": "UNKNOWN_DO_NOT_RETRY",
+  "evidence_saved_before_cleanup_commit": "ad25a37",
+  "temporary_route_removed": "apps/web/src/app/api/internal/acceptance/square-s1/route.ts",
+  "remaining_composition": "Pure S1 service/transport and fixture-tested acceptance factory retained; no runtime route imports the factory.",
+  "validation": [
+    {
+      "name": "square-tests",
+      "args": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/readiness/square-s1.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts"
+      ],
+      "start": "2026-09-14T11:21:23.431903+00:00",
+      "end": "2026-09-14T11:21:23.693465+00:00",
+      "exit_code": 0,
+      "log": "cleanup-square-tests.log"
+    },
+    {
+      "name": "secret-scan",
+      "args": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "start": "2026-09-14T11:21:23.693821+00:00",
+      "end": "2026-09-14T11:21:23.739679+00:00",
+      "exit_code": 1,
+      "log": "cleanup-secret-scan.log"
+    },
+    {
+      "name": "lint",
+      "args": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "start": "2026-09-14T11:21:23.739959+00:00",
+      "end": "2026-09-14T11:21:28.660732+00:00",
+      "exit_code": 0,
+      "log": "cleanup-lint.log"
+    },
+    {
+      "name": "typecheck",
+      "args": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "start": "2026-09-14T11:21:28.661078+00:00",
+      "end": "2026-09-14T11:21:32.004288+00:00",
+      "exit_code": 0,
+      "log": "cleanup-typecheck.log"
+    },
+    {
+      "name": "secret-scan-after-stage",
+      "args": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "start": "2026-09-14T11:21:49.570072+00:00",
+      "end": "2026-09-14T11:21:49.841656+00:00",
+      "exit_code": 0,
+      "log": "cleanup-secret-scan-after-stage.log",
+      "reason": "Initial scan enumerated tracked-but-deleted route before index update. Staged the intended deletion; no scan logic or source restored/changed."
+    }
+  ],
+  "validation_summary": {
+    "narrow_tests_pass": 47,
+    "failed": 0,
+    "skipped": 0,
+    "secret_scan_final": 0,
+    "lint": 0,
+    "typecheck": 0,
+    "initial_secret_scan": "exit1 because tracked deletion was not yet staged; after staging intended deletion, same scan passed; no scan rule change."
+  },
+  "deployment_cleanup": {
+    "deleted_id": "dpl_3UXKvrNyRp1KpRfpPt7jxAYSF5Bo",
+    "deleted_origin": "https://zao-rental-4rnscn9pc-zao-food-map.vercel.app",
+    "method": "Vercel UI in same Playwright browser context",
+    "before": "Exact ID/origin/Preview/Ready verified on deployment details",
+    "after": "UI redirected with deploymentDeleted=1; refreshed project overview lists only accepted R3 as Preview Ready; no S1 row",
+    "delete_confirmation_completed": true,
+    "accepted_r3_id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+    "accepted_r3_state": "READY",
+    "accepted_r3_retained": true,
+    "production_deployments_observed": 0
+  },
+  "guard_retained": true,
+  "post_dispatch_count": 1,
+  "square_actual_request_count": null,
+  "square_count_basis": "Unknown, at most2 may have been consumed; never treat as zero or retry permission.",
+  "retry_authority": 0,
+  "env_mutations": 0,
+  "merchant_metadata_registered": false,
+  "new_deployments": 0,
+  "protection_changes": 0,
+  "secret_exposure": 0,
+  "payments": 0,
+  "refunds": 0,
+  "webhook_deliveries": 0,
+  "db": 0,
+  "r2": 0,
+  "email_sms": 0,
+  "s2": 0,
+  "new_claude_starts": 0,
+  "additional_spark_starts": 0
+}

@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "recordedAt": "2026-09-15T15:21:25.497447+00:00",
+  "reviewedCodeHead": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+  "productChangesAfterReview": 0,
+  "receiptOnlyPaths": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/execution/"
+  ],
+  "oldMigrationHashesUnchanged": 30,
+  "reviewedSnapshotArchiveIntegrity": "PASS",
+  "reviewReceiptsMatchOriginalFiles": true,
+  "finalSecretScan": "PASS",
+  "secretScanLogSha256": "c3d4d5bc4532a3693eecfa6aa794cc2bf613f63ae289d121ff2edb9a0f770e2e",
+  "gitDiffCheck": "PASS",
+  "reviewSlotConsumed": 1,
+  "reviewSlotLimit": 1,
+  "reviewProcess": "EXITED_0",
+  "ownedLocalPostgresPoolsClusters": "CLOSED",
+  "feature": "OFF",
+  "customerVisible": false,
+  "externalProviderOperations": 0,
+  "visualPathBusinessMutations": 0,
+  "note": "No code changed after source validation/review; product tests/build were not needlessly repeated for receipt-only changes. Final commit/remote/clean readback is reported after push."
+}

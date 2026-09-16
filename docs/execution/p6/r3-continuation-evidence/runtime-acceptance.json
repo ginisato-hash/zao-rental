@@ -1,0 +1,299 @@
+{
+  "observed_at": "2026-09-14T03:04:04.747999+00:00",
+  "exit_code": 1,
+  "source": "Vercel request logs exact deployment, Preview only; metadata whitelist",
+  "entries": [
+    {
+      "timestamp": 1789355007362,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "HEAD",
+      "requestPath": "/staff",
+      "responseStatusCode": 204,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789355006786,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "OPTIONS",
+      "requestPath": "/",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789355006062,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/staff/login",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789355005521,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/staff/login",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789355004579,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/staff",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354990191,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/api/staff",
+      "responseStatusCode": 401,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354973096,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/api/booking-access",
+      "responseStatusCode": 503,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354946446,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/api/guest",
+      "responseStatusCode": 503,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354841895,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/api/health",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354691160,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/admin",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354688675,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/staff/login",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354688260,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/staff/login",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354687776,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/staff",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354686171,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354684591,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354684076,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/customer",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354678480,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "HEAD",
+      "requestPath": "/",
+      "responseStatusCode": 204,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354678044,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "OPTIONS",
+      "requestPath": "/",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354677851,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/staff",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354677557,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/customer",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354677401,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/favicon.ico",
+      "responseStatusCode": 404,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354677125,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/admin",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354676544,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless",
+      "requestMethod": "GET",
+      "requestPath": "/admin",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354676540,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/staff",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354676536,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/customer",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    },
+    {
+      "timestamp": 1789354673651,
+      "deploymentId": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "projectId": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "level": "info",
+      "source": "serverless-middleware",
+      "requestMethod": "GET",
+      "requestPath": "/",
+      "responseStatusCode": 200,
+      "environment": "preview"
+    }
+  ],
+  "raw_message_headers_cookie_or_logs_saved": false,
+  "stderr_classification": {
+    "permission_error": true,
+    "telemetry": false,
+    "auth_error": false
+  }
+}

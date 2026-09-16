@@ -1,0 +1,71 @@
+{
+  "checked_at": "2026-09-14T01:44:17.234370+00:00",
+  "project_id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+  "team_id": "team_PVka5z4T6OMKBmUcqrK09yJz",
+  "source": "Vercel GET /v10/projects/{id}/env?decrypt=false; metadata whitelist only",
+  "read_only": true,
+  "decryption_requested": false,
+  "value_inspection": false,
+  "values_displayed_or_persisted": false,
+  "entries": [
+    {
+      "key": "SQUARE_ENVIRONMENT",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret",
+      "gitBranch": null,
+      "customEnvironmentIds": []
+    },
+    {
+      "key": "SQUARE_API_VERSION",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret",
+      "gitBranch": null,
+      "customEnvironmentIds": []
+    },
+    {
+      "key": "SQUARE_SANDBOX_APPLICATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret",
+      "gitBranch": null,
+      "customEnvironmentIds": []
+    },
+    {
+      "key": "SQUARE_SANDBOX_LOCATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret",
+      "gitBranch": null,
+      "customEnvironmentIds": []
+    },
+    {
+      "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive",
+      "visibility": "secret",
+      "gitBranch": null,
+      "customEnvironmentIds": []
+    }
+  ],
+  "expected_unset": [
+    "SQUARE_SANDBOX_MERCHANT_ID",
+    "SQUARE_SANDBOX_NOTIFICATION_URL",
+    "SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY"
+  ],
+  "production_square_entries": [],
+  "status": "PASS_METADATA_ONLY",
+  "issues": [],
+  "exit_code": 0
+}

@@ -1,0 +1,83 @@
+[
+  {
+    "id": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+    "name": "zao-rental-webhook-sandbox",
+    "framework": null,
+    "rootDirectory": "apps/webhook-ingress",
+    "nodeVersion": "24.x",
+    "ssoProtection": {
+      "deploymentType": "all_except_custom_domains"
+    },
+    "passwordProtectionEnabled": false,
+    "gitProvider": null,
+    "envMetadata": []
+  },
+  {
+    "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "name": "zao-rental",
+    "framework": "nextjs",
+    "rootDirectory": null,
+    "nodeVersion": "24.x",
+    "ssoProtection": {
+      "deploymentType": "all_except_custom_domains"
+    },
+    "passwordProtectionEnabled": false,
+    "gitProvider": null,
+    "envMetadata": [
+      {
+        "key": "SQUARE_ENVIRONMENT",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null,
+        "id": "7vC4S5B3fGQOLKup"
+      },
+      {
+        "key": "SQUARE_API_VERSION",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null,
+        "id": "7pHGWP9xGk6P4fbK"
+      },
+      {
+        "key": "SQUARE_SANDBOX_APPLICATION_ID",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null,
+        "id": "XiD5v04DY8uPinTm"
+      },
+      {
+        "key": "SQUARE_SANDBOX_LOCATION_ID",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null,
+        "id": "zBgj8wc3YFh4BOvo"
+      },
+      {
+        "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null,
+        "id": "YYpHSUJeXj4vOdno"
+      },
+      {
+        "key": "SQUARE_SANDBOX_MERCHANT_ID",
+        "type": "plain",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null,
+        "id": "MLXINORh4uYMi0Hx"
+      }
+    ]
+  }
+]

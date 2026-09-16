@@ -1,0 +1,40 @@
+{
+  "normalization": "Remove CR/trailing spaces/extra blank EOF only; no semantic/test line edits. Original local command outputs retained outside repo.",
+  "files": [
+    {
+      "file": "secrets.log",
+      "beforeFormattingSha256": "8a3e8f5f61c1f80e5598f12964c1e7182a58277d1ecebb59b6f1fa219768d163",
+      "storedSha256": "8a3e8f5f61c1f80e5598f12964c1e7182a58277d1ecebb59b6f1fa219768d163"
+    },
+    {
+      "file": "suite.log",
+      "beforeFormattingSha256": "e0cb94dde64e3b4deeae818a4528dde2af6666dab5694fdaaea7a5214ee68926",
+      "storedSha256": "e0cb94dde64e3b4deeae818a4528dde2af6666dab5694fdaaea7a5214ee68926"
+    },
+    {
+      "file": "lint.log",
+      "beforeFormattingSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "storedSha256": "1d73f31982945633bb8a491209f73fa014e10c64c770caa9d642b1f5d67a676b"
+    },
+    {
+      "file": "typecheck.log",
+      "beforeFormattingSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "storedSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+    },
+    {
+      "file": "real-db-run.log",
+      "beforeFormattingSha256": "bcfa4e86fed96fa005f6e03016719f3c8fec2a21448eadedfe2bc40192399c76",
+      "storedSha256": "bcfa4e86fed96fa005f6e03016719f3c8fec2a21448eadedfe2bc40192399c76"
+    },
+    {
+      "file": "ingress-typecheck.log",
+      "beforeFormattingSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "storedSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "file": "build.log",
+      "beforeFormattingSha256": "2d698111fa36e62a466c8264457fc9bea405df448cf46f08c4f06126b31806eb",
+      "storedSha256": "9eea96850640957ec0c8f50088344d9cbe4a482afdfde33e27c4140487dba0d6"
+    }
+  ]
+}

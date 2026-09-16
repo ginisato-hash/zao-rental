@@ -1,0 +1,55 @@
+{
+  "atUtc": "2026-09-15T08:20:50.825511+00:00",
+  "startingHead": "2a41c96b220f7a9c68f5982d6cb104f880f6616b",
+  "checks": [
+    {
+      "command": "npm run check:secrets",
+      "exitCode": 0,
+      "summary": "> zao-rental@0.1.0 check:secrets\n> node scripts/check-secrets.mjs\n\nPASS 1423 tracked/candidate files checked for private keys, provider tokens and credential-bearing DB URLs. Pattern scan is not comprehensive.",
+      "stderrPresent": false
+    },
+    {
+      "command": "npm run check:reference",
+      "exitCode": 0,
+      "summary": "> zao-rental@0.1.0 check:reference\n> node scripts/check-reference.mjs\n\nPASS 32 bootstrap specification/config/test files byte-identical; entrypoints intentionally integrated.",
+      "stderrPresent": false
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "",
+      "stderrPresent": false
+    }
+  ],
+  "docsOnly": true,
+  "priorStatusSectionsUnchanged": true,
+  "originalR15StartUnchanged": true,
+  "consumedCountersUnchanged": true,
+  "reusedLocalCodeEvidenceHead": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
+  "fullVerifyRerun": false,
+  "newRemoteCI": false,
+  "newIndependentModelReview": false,
+  "secretReview": "Allowlisted provider metadata only + manual changed-file review + existing pattern scan (not comprehensive). No env values, provider raw body, credentials, real people or other project files.",
+  "initialLocalErrors": [
+    {
+      "command": "git fetch (restricted sandbox)",
+      "exitCode": 255,
+      "effect": "No references updated; ordinary approved narrow escalation succeeded"
+    },
+    {
+      "command": "outer workspace git status",
+      "exitCode": 128,
+      "effect": "Outer workspace is not a Git repository; no mutation"
+    },
+    {
+      "command": "ps (restricted sandbox)",
+      "exitCode": 1,
+      "effect": "No process state read; approved metadata-only read later succeeded"
+    },
+    {
+      "command": "python py_compile default cache",
+      "exitCode": 1,
+      "effect": "Default cache write denied; checkpoint script executed successfully without cache compile"
+    }
+  ]
+}

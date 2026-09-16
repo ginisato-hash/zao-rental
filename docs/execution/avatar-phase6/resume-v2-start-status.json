@@ -1,0 +1,102 @@
+{
+  "base": "ec420cbd166af0749caecfa654c0a1e362628891",
+  "branch": "codex/avatar-phase6-hosted-preview",
+  "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
+  "phase": "STOPPED_NEW_TOOL_METADATA_EXPOSURE_SUSPECTED",
+  "initialWorkingTree": "CLEAN",
+  "budgets": {
+    "migrationLogicalRuns": {
+      "used": 0,
+      "max": 1
+    },
+    "r2NewBuckets": {
+      "used": 0,
+      "max": 1
+    },
+    "r2NewObjects": {
+      "used": 0,
+      "max": 3
+    },
+    "previewDeployments": {
+      "used": 0,
+      "max": 2
+    },
+    "claudeInitial": {
+      "used": 0,
+      "max": 1
+    },
+    "claudeCorrection": {
+      "used": 0,
+      "max": 1
+    },
+    "dedicatedVercelProjects": {
+      "used": 0,
+      "max": 1
+    }
+  },
+  "forbiddenCalls": {
+    "square": 0,
+    "payment": 0,
+    "refund": 0,
+    "webhook": 0,
+    "production": 0,
+    "mainMerge": 0
+  },
+  "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
+  "independentReview": "NOT_RUN",
+  "externalAcceptance": "NOT_RUN",
+  "implementation": "PARTIAL_CHECKPOINT_ONLY",
+  "secretExposure": "UNKNOWN_NEW_EXTERNAL_SEARCH_TOOL_METADATA",
+  "providerCredentialAcquisitions": 3,
+  "providerMutations": 0,
+  "ownedBrowserTabsClosed": 3,
+  "checkpointValidation": {
+    "targetedTests": {
+      "passed": 61,
+      "failed": 0
+    },
+    "artworkLockPostgres": "PASS",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "repositorySecretPatternScan": "PASS_1870_FILES_NOT_COMPREHENSIVE",
+    "migrationHashes": "0001\u20130032_UNCHANGED",
+    "hostedNeon": "NOT_RUN",
+    "hostedR2": "NOT_RUN",
+    "hostedBrowser": "NOT_RUN",
+    "claude": "NOT_RUN"
+  },
+  "resumeStartingHead": "71ae7a5bc3d83beecae61d9d35de128dc5018a9c",
+  "resumeAuthoritySha256": "acc82b94606f0d59f58bd2cca9345b0b29f94e865ca9a7f8edf30ecba08a876c",
+  "historicalIncidentClassification": [
+    "HISTORICAL_POTENTIAL_TOOL_METADATA_EXPOSURE",
+    "CONTAINED_NO_REUSE"
+  ],
+  "historicalToolMetadataIncident": "POTENTIAL_EXPOSURE_PRESERVED",
+  "historicalSecretExposureZeroClaim": false,
+  "confirmedProviderCredentialCompromise": "NOT_ESTABLISHED",
+  "knownReplay": 0,
+  "knownExternalDisclosure": 0,
+  "knownCredentialUse": 0,
+  "newSecretExposureObservedAfterResume": "SUSPECTED_NOT_ZERO_CLAIMED",
+  "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
+  "hostedDatabaseWrites": 0,
+  "neonOAuthSessionsCreated": 1,
+  "neonOAuthSessionsRevoked": 1,
+  "ownedBrowserTabsClosedAfterResume": "NOT_CONFIRMED_NO_OPAQUE_HANDLE",
+  "nextGate": "Owner incident assessment and explicit bounded continuation; no Phase7",
+  "resumeValidation": {
+    "migrationLocalPostgres": "PASS_7_CASES",
+    "hostedDatabaseIdentity": "MATCH",
+    "hostedOwnerIdentity": "MATCH",
+    "tlsClientConfiguration": "rejectUnauthorized=true",
+    "postgresReportedSsl": false,
+    "tlsVerificationGate": "NOT_RESOLVED",
+    "hostedHistoricalMigrationPreflight": "NOT_REACHED",
+    "hosted0031": "NOT_RUN",
+    "hosted0032": "NOT_RUN",
+    "dbPools": "CLOSED",
+    "neonOAuthProfile": "REVOKED_AND_REMOVED",
+    "globalBrowserInventoryCalls": 0
+  }
+}

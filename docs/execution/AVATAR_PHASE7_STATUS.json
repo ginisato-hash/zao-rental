@@ -1,0 +1,343 @@
+{
+  "phase": "PHASE7_ENTRY_READY_NETWORK_DEBT_CLOSED",
+  "startingHead": "49d0fbc36d81025f675242a0ffd1bee0f68ce21e",
+  "branch": "codex/avatar-phase7-rc",
+  "authoritySha256": "dedfd26fe0db9ba47a04f8032ec1484de0e4149aeb361fcd54cffec3fbae0a57",
+  "ancestry": {
+    "allExpectedAncestors": true,
+    "commits": {
+      "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+      "R15": "efb73933a6d3816958882205cfa3623447194625",
+      "Avatar_A2_A3": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "Phase4": "4485966d87d55aa010766e5f45820541c989fa54",
+      "Phase5_code": "4f1aadc07cfcdb3f42f84a8cc918d714ef1ba985",
+      "Phase5_artwork": "ec420cbd166af0749caecfa654c0a1e362628891",
+      "Phase6_implementation": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+      "Phase6_terminal": "49d0fbc36d81025f675242a0ffd1bee0f68ce21e"
+    },
+    "merge": 0,
+    "cherryPick": 0,
+    "historyRewrite": 0
+  },
+  "phase6History": "FROZEN: deferred/Hosted FAIL,23 checks PASS,rootCause NOT_ESTABLISHED,historical Production2/2,current Production0/0.",
+  "network": {
+    "classification": "BENIGN_PLATFORM_OR_BROWSER",
+    "browserSessionMax": 1,
+    "forensicFlowMax": 1,
+    "fullPhase6Rerun": 0,
+    "recorderTests": "PASS_19",
+    "safeMetadata": [
+      {
+        "scheme": "https",
+        "hostname": "vercel.live",
+        "port": 443,
+        "resourceType": "script",
+        "initiatorType": "unknown",
+        "initiatorSource": "UNKNOWN",
+        "sameOrigin": false,
+        "classification": "THIRD_PARTY",
+        "blocked": true,
+        "count": 1
+      }
+    ],
+    "flowResult": "UNEXPECTED_REQUEST_BLOCKED",
+    "reachedAvatar": false,
+    "browserSessions": 1,
+    "forensicFlows": 1,
+    "rawUrlSaved": false,
+    "rawCdpPayloadSaved": false,
+    "authSessionRead": 0,
+    "applicationCodeChanged": false,
+    "browserClosed": true,
+    "platformMetadata": {
+      "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+      "exactProject": true,
+      "projectPreviewFeedback": null,
+      "deploymentPreviewFeedback": null,
+      "applicationRequests": 0
+    },
+    "assessment": {
+      "method": "Inference from observed origin/resource type, official Vercel Toolbar documentation and static product source inspection; not a captured initiator-stack attribution.",
+      "observed": "One HTTPS vercel.live:443 script request blocked on the first instrumented navigation; flow ended immediately before Avatar display.",
+      "officialEvidence": [
+        {
+          "url": "https://vercel.com/docs/vercel-toolbar",
+          "fact": "Toolbar is enabled by default for Preview deployments."
+        },
+        {
+          "url": "https://vercel.com/docs/vercel-toolbar/managing-toolbar",
+          "fact": "Toolbar documentation identifies vercel.live as its script origin and documents automation interference."
+        }
+      ],
+      "staticProductSourceMatches": 0,
+      "staticToolbarPackageDependencies": 0,
+      "initiatorAttribution": "UNKNOWN_PRESERVED",
+      "providerFeedbackBooleanMetadata": "NOT_EXPOSED_NULL_NOT_INFERRED_TRUE",
+      "classificationScope": "Observed Phase7-A origin classified as Vercel platform traffic; Phase6 historical specific rootCause remains NOT_ESTABLISHED.",
+      "allowlistAdded": false,
+      "toolbarSettingChanged": false,
+      "secondBrowserFlow": 0,
+      "fullHostedPassClaim": false
+    }
+  },
+  "cleanup": {
+    "vercel": {
+      "status": "PASS",
+      "deployments": [
+        {
+          "id": "dpl_3wAJbFjQ85EseBan8kp77iYQSPvF",
+          "status": "DELETED_CONFIRMED404",
+          "exactProject": true,
+          "canonicalTarget": "preview",
+          "dispatchReserved": true,
+          "deleteCliSuccess": true,
+          "readback404": true
+        },
+        {
+          "id": "dpl_2HAREDuFGBcRNXyKNbiaU4qkMuZZ",
+          "status": "DELETED_CONFIRMED404",
+          "exactProject": true,
+          "canonicalTarget": "preview",
+          "dispatchReserved": true,
+          "deleteCliSuccess": true,
+          "readback404": true
+        },
+        {
+          "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+          "status": "DELETED_CONFIRMED404",
+          "exactProject": true,
+          "canonicalTarget": "preview",
+          "dispatchReserved": true,
+          "deleteCliSuccess": true,
+          "readback404": true
+        }
+      ],
+      "environment": [
+        {
+          "key": "ZAO_AVATAR_PHASE6",
+          "status": "DELETED_CONFIRMED_ABSENT",
+          "type": "sensitive",
+          "target": [
+            "preview"
+          ],
+          "dispatchReserved": true,
+          "deleteCliSuccess": true,
+          "absenceConfirmed": true
+        },
+        {
+          "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+          "status": "DELETED_CONFIRMED_ABSENT",
+          "type": "sensitive",
+          "target": [
+            "preview"
+          ],
+          "dispatchReserved": true,
+          "deleteCliSuccess": true,
+          "absenceConfirmed": true
+        }
+      ],
+      "productionMutations": 0,
+      "unknownResourceMutations": 0,
+      "secretValuesRead": 0,
+      "rawResponseSaved": false,
+      "projectRetained": true,
+      "authentication": "ON",
+      "phase6PreviewRuntimeEnvCount": 0,
+      "productionEnvCount": 0,
+      "forbiddenEnvCount": 0,
+      "currentProductionDeployments": 0,
+      "currentProductionAliases": 0,
+      "historicalProductionDeployments": 2,
+      "historicalProductionAliases": 2
+    },
+    "r2": {
+      "account": "dce72332f2b04366335908cc383996d6",
+      "bucket": "zao-rental-avatar-p6",
+      "bucketConfirmed": true,
+      "r2DevEnabled": false,
+      "customPublicDomainCount": 0,
+      "tokenMetadataHttp": 403,
+      "exactCredentialMatches": 0,
+      "credentialName": "zao-avatar-phase6-read-v1",
+      "credentialState": "DELETED_NOT_ACTIVE",
+      "newCredential": 0,
+      "renewal": 0,
+      "objectDelete": 0,
+      "rawProviderResponseSaved": false,
+      "retainedObjects": [
+        {
+          "sha256": "6673481fbb876be97ebec2b2957709fdbad53f4686983c11e61319f601600e8e",
+          "expectedBytes": 67716,
+          "verified": true
+        },
+        {
+          "sha256": "caf166774ab4a615aeaa93bfc31bce41d2d64756fee0117665f68f71b99aecfa",
+          "expectedBytes": 65816,
+          "verified": true
+        },
+        {
+          "sha256": "54a9d50c0f161714c8b168ecc59c9335f02a03b8f7cd700c0e656c24649e0b48",
+          "expectedBytes": 25164,
+          "verified": true
+        }
+      ],
+      "exactThreeRetained": true,
+      "autoApprovalReview": {
+        "initial": "REJECTED_OLD_PHASE6_RETENTION_RULE",
+        "afterAuthorityEvidence": "REJECTED_ATTACHMENT_NOT_DIRECT_APPROVAL",
+        "mutationDispatched": false,
+        "directOwnerConfirmation": "RECEIVED_EXACT_DIRECT_CHAT_APPROVAL_AND_COMPLETED",
+        "resolution": "Same exact UI deletion completed only after direct Owner approval; prior rejected actions dispatched0."
+      },
+      "status": "PASS",
+      "consoleObserved": {
+        "credentialName": "zao-avatar-phase6-read-v1",
+        "bucket": "zao-rental-avatar-p6",
+        "permission": "Object Read only",
+        "state": "Active until Sep 17, 2026",
+        "valueRead": false,
+        "deleteDispatch": 0,
+        "scopeNote": "Historical pre-approval observation; final revocation proof supersedes active state."
+      },
+      "checkedAfterExactCredentialDelete": true,
+      "objectOrBucketDelete": 0,
+      "credentialValuesRead": 0,
+      "finalRetentionMetadata": {
+        "bucketConfirmed": true,
+        "r2DevEnabled": false,
+        "customPublicDomainCount": 0,
+        "checkedAfterExactCredentialDelete": true,
+        "newCredential": 0,
+        "renewal": 0,
+        "objectOrBucketDelete": 0,
+        "credentialValuesRead": 0
+      },
+      "revocation": {
+        "credentialName": "zao-avatar-phase6-read-v1",
+        "bucketScope": "zao-rental-avatar-p6",
+        "permissionBefore": "Object Read only",
+        "authority": "OWNER_DIRECT_CHAT_APPROVAL_PHASE7_A_R2_CREDENTIAL_RETIREMENT",
+        "dispatchCount": 1,
+        "method": "Cloudflare Account API Tokens UI exact row; typed exact name into deletion confirmation",
+        "verification": {
+          "accountTokenListVisibleAfterReload": true,
+          "exactCredentialVisibleAfterReload": false,
+          "inactiveConfirmedByDeletion": true
+        },
+        "credentialValueRead": 0,
+        "credentialValueDisplayed": 0,
+        "credentialValueSaved": 0,
+        "otherCredentialMutations": 0,
+        "newCredential": 0,
+        "renewal": 0,
+        "bucketOrObjectDelete": 0,
+        "taskOwnedTabClosed": true,
+        "completedAt": "2026-09-16T16:23:05.678697+00:00"
+      }
+    },
+    "taskResources": {
+      "forensicBrowserClosed": true,
+      "R2TaskConsoleTab": "CLOSED",
+      "temporaryNewCredentials": 0
+    },
+    "status": "PASS"
+  },
+  "retainedResources": {
+    "dedicatedVercelProject": true,
+    "privateR2Bucket": "zao-rental-avatar-p6",
+    "R2ExactObjects": 3,
+    "NeonResource": "store_i5vh0ZEKo2ikcVo9",
+    "NeonDatabase": "zr_852b20c4d4b0",
+    "leastPrivilegeRoles": 6
+  },
+  "forbiddenOperations": {
+    "deployment": 0,
+    "newProject": 0,
+    "newDatabase": 0,
+    "newR2Object": 0,
+    "production": 0,
+    "square": 0,
+    "payment": 0,
+    "mainMerge": 0
+  },
+  "productRuntimeChanges": false,
+  "claudeReview": 0,
+  "localValidation": {
+    "recorderTests": 19,
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "relevantAvatarGuestTests": {
+      "passed": 177,
+      "failed": 0,
+      "includesRecorderTests": 19
+    },
+    "secretScan": "PASS_1977_FILES_NOT_COMPREHENSIVE",
+    "migration0001Through0032": "ALL_32_HASHES_UNCHANGED",
+    "gitDiffCheck": "PASS",
+    "node": "24.15.0",
+    "npm": "11.12.1",
+    "finalReviewedCode598Files": "UNCHANGED"
+  },
+  "currentBlockers": [],
+  "nextGate": "PHASE7-B: PROTECTED RC PREVIEW + TARGETED HOSTED SMOKE + MAIN INTEGRATION CANDIDATE. Requires separate Owner authority; fresh short-lived runtime secret strategy, protected RC Preview, targeted network proof/smoke and full regression/CI are not executed in Phase7-A. Production remains a separate gate.",
+  "previewPreflight": {
+    "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+    "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+    "eligible": true,
+    "rawValuesSaved": false,
+    "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+    "ready": true,
+    "exactProject": true,
+    "canonicalTarget": "preview",
+    "authentication": "ON",
+    "productionEnvCount": 0,
+    "forbiddenEnvCount": 0,
+    "customDomainCount": 0,
+    "envMetadata": [
+      {
+        "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      },
+      {
+        "key": "ZAO_AVATAR_PHASE6",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      }
+    ]
+  },
+  "consolidation": {
+    "allLineageAncestors": true,
+    "implementationCopiesAdded": 0,
+    "duplicateMigrationNumbers": 0,
+    "businessLogicAddedOrCopied": 0,
+    "productRuntimeDiffFiles": [],
+    "phase6EvidenceDiffFiles": []
+  },
+  "directRetirementApproval": {
+    "source": "Owner direct chat: Direct Approval | Phase7-A R2 Credential Retirement",
+    "exactCredential": "zao-avatar-phase6-read-v1",
+    "allowed": [
+      "revoke/delete exact credential",
+      "read-only verification",
+      "status/evidence update",
+      "Git commit/push/remote readback"
+    ],
+    "retained": [
+      "private bucket zao-rental-avatar-p6",
+      "exact3 derivative objects",
+      "Neon resource/database/migrations/six roles"
+    ],
+    "newCredential": 0,
+    "renewal": 0,
+    "otherCredentialChange": 0,
+    "Phase7BAutoStart": false
+  }
+}

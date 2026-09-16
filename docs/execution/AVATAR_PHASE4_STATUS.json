@@ -1,0 +1,59 @@
+{
+  "authority": "AVATAR_PHASE4_AUTHORITY.md",
+  "authoritySha256": "3ee51a2775abf98fd5943fc441639997e5f6c69e0e98a04d6cbbf16c986715e1",
+  "startingHead": "96a34aee8dccb66dca11199af29c33aaf1127546",
+  "branch": "codex/avatar-phase4-customer-renderer",
+  "state": "PHASE4_PASS",
+  "customerVisible": false,
+  "migrationAdded": 0,
+  "schemaChanges": 0,
+  "businessWritesFromRenderer": 0,
+  "externalProviderOperations": 0,
+  "review": {
+    "initialStarts": 1,
+    "initialLimit": 1,
+    "correctionStarts": 0,
+    "correctionLimit": 1,
+    "correctionCondition": "BLOCKER/HIGH/MEDIUM locally corrected only; not triggered by this PASS/LOW result",
+    "retry": 0,
+    "verdict": "PASS",
+    "reviewedHead": "790b809a8d8a8989594e0982e264b3a220527936",
+    "snapshotSha256": "9282642d664e4d02a813f1642a9ca3aa3575ef82dbd0c4997f9b35548c3e3153",
+    "authoritySha256": "3ee51a2775abf98fd5943fc441639997e5f6c69e0e98a04d6cbbf16c986715e1",
+    "model": "claude-sonnet-5",
+    "tools": 0,
+    "mcp": 0,
+    "browser": 0,
+    "hooks": 0,
+    "extraUsage": false,
+    "severityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 4
+    },
+    "testsExecutedByReviewer": false,
+    "record": "avatar-phase4/final-review/review.json",
+    "findings": "avatar-phase4/FINDING_DISPOSITION.md",
+    "receiptDescendants": "Documentation/evidence only; reviewed source unchanged"
+  },
+  "priorFindings": {
+    "AV-1": "LOW_OPEN",
+    "AV-2": "LOW_RECORDED_ZERO_ARTWORK_NO_RENDERER_NO_FAKE_ART",
+    "AV-3": "LOW_OPEN"
+  },
+  "nextExactGate": "AVATAR PHASE 5 — GUEST BOOKING INTEGRATION + REAL ARTWORK ACTIVATION",
+  "validation": "avatar-phase4/validation.json",
+  "unitTests": 235,
+  "localPgChecks": 71,
+  "browserChecks": 27,
+  "implementationHead": "790b809a8d8a8989594e0982e264b3a220527936",
+  "implementationValidation": "SELF_VERIFIED_PASS",
+  "independentReview": "PASS",
+  "phase4Findings": {
+    "PHASE4-1": "LOW_OPEN_PERMISSION_ASYMMETRY_RECORDED"
+  },
+  "externalAcceptance": "NOT_RUN_NOT_AUTHORIZED",
+  "ownerGate": "STOP_BEFORE_PHASE5",
+  "result": "avatar-phase4/RESULT.md"
+}

@@ -1,0 +1,27 @@
+{
+  "authority": "P6_R15_COMPLETION",
+  "previewId": "dpl_AVUzH2qBPkmr3V15YefkogYvWKdM",
+  "idempotencyKey": "15000000-0000-4000-8000-000000000010",
+  "notificationUrl": "https://zao-rental-webhook-sandbox.vercel.app/api/webhooks/square",
+  "apiVersion": "2026-08-19",
+  "events": [
+    "payment.created",
+    "payment.updated"
+  ],
+  "createBudget": 1,
+  "retry": 0,
+  "status": "PASS",
+  "subscriptionId": "wbhk_3a75e3b3e2cc4fe4a7406807114a5ce5",
+  "http": 200,
+  "createCount": 1,
+  "signatureHandoff": "PASS",
+  "signatureEnv": {
+    "id": "v13dO6ddtnxID5Lw",
+    "key": "SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY",
+    "type": "sensitive",
+    "target": [
+      "production"
+    ]
+  },
+  "secretExposure": 0
+}

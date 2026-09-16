@@ -1,0 +1,35 @@
+{
+  "kind": "REAL_DB_COMPOSITION_FIXTURE_LOOKUP_NOT_LIVE",
+  "eventId": "r14_ack_33073414-be60-4234-84c8-d3aeb6e390ae",
+  "jobId": "1656188d-cb5f-4c6f-98ed-b802437ff483",
+  "bookingId": "00000000-0000-4000-8000-000000000001",
+  "worker": {
+    "dispatched": 1,
+    "claimed": 1,
+    "results": [
+      {
+        "id": "1656188d-cb5f-4c6f-98ed-b802437ff483",
+        "result": "SAVED",
+        "proposedState": "RECONCILED",
+        "decision": "NOOP_DUPLICATE",
+        "code": null
+      }
+    ]
+  },
+  "result": {
+    "decision": "APPLY_COMPLETED",
+    "revision": 1,
+    "attemptId": "00000000-0000-4000-8000-000000000004",
+    "bookingId": "00000000-0000-4000-8000-000000000001",
+    "duplicate": true,
+    "attemptState": "COMPLETED",
+    "bookingState": "CONFIRMED_DEV",
+    "providerStatus": "COMPLETED",
+    "decisionFingerprint": "56cf46e849c01d09189e4d696194ce55916bdb41b5f6731e2aed845b274913b3",
+    "observationFingerprint": "329fd1f8838cc10e5a59f750b0ba1b6e9e770e192d6ec1571eb48ab316bfb7bd",
+    "operatorActionRequired": false
+  },
+  "fixtureLookups": 1,
+  "actualProviderRequests": 0,
+  "foreignJobUntouched": true
+}

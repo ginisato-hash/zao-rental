@@ -1,0 +1,74 @@
+{
+  "status": "PASS",
+  "engine": "REAL_LOCAL_POSTGRESQL",
+  "freshAndUpgrade": true,
+  "checks": 15,
+  "results": [
+    {
+      "name": "all 30 historical migration hashes unchanged; new 0031 checksum tracked",
+      "status": "PASS"
+    },
+    {
+      "name": "fresh empty PostgreSQL -> canonical 0001–0031",
+      "status": "PASS"
+    },
+    {
+      "name": "populated R15 0030 -> additive 0031 preserves business rows exactly",
+      "status": "PASS"
+    },
+    {
+      "name": "zero visuals is a normal empty read and preserves business object",
+      "status": "PASS"
+    },
+    {
+      "name": "nullable model/variant and explicit existing content purpose grant resolve in stable order",
+      "status": "PASS"
+    },
+    {
+      "name": "ambiguous active generic/default rejected; disabled alternatives allowed",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid media/revision/release foreign keys and appearance/position rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "revoked/expired/internal-only/unprocessed/missing rights excluded including generic fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "stale release, absent purpose grant and mutated immutable revision excluded",
+      "status": "PASS"
+    },
+    {
+      "name": "general model photo rights do not authorize Avatar; digest retargeting denied",
+      "status": "PASS"
+    },
+    {
+      "name": "all inactive leaves recommendation unchanged; soft-disable timestamps and stable identity",
+      "status": "PASS"
+    },
+    {
+      "name": "exact PREMIUM model/variant/season/length relation rejects invalid references and mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "new immutable release grants exact promise; business schema rejects model season drift",
+      "status": "PASS"
+    },
+    {
+      "name": "read-only role resolves all directions/layers in one SELECT and cannot mutate business or visuals/read private bytes",
+      "status": "PASS"
+    },
+    {
+      "name": "no PUBLIC grants, no image bytes/URL/credential columns, no security-definer escalation",
+      "status": "PASS"
+    }
+  ],
+  "oldMigrationHashesUnchanged": 30,
+  "newMigration": "0031",
+  "businessMutationsFromVisualPath": 0,
+  "externalProviderRequests": 0,
+  "queryCountPerRecommendation": 1,
+  "cleanup": "Owned pools/clusters closed"
+}

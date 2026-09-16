@@ -1,0 +1,89 @@
+{
+  "removed": [
+    {
+      "kind": "deployment",
+      "id": "dpl_AVUzH2qBPkmr3V15YefkogYvWKdM",
+      "status": "DELETED"
+    },
+    {
+      "kind": "deployment",
+      "id": "dpl_2NcfhWfbzMrMiXLMm9HF7orj4mTQ",
+      "status": "DELETED"
+    },
+    {
+      "kind": "deployment",
+      "id": "dpl_4PSnSR7i36FX2KYvGTxtvvDUnUJ4",
+      "status": "DELETED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "id": "AoBN9DYzEB51MYHf",
+      "key": "R15_WORKER_DATABASE_URL",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "id": "oN1xz5rdi41rcO60",
+      "key": "R15_DISPATCHER_DATABASE_URL",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "id": "1ZKW8ZsDUFP1g3mh",
+      "key": "R15_PROJECTOR_DATABASE_URL",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "id": "bP0nDHcadsCmY4qL",
+      "key": "R15_DIAGNOSTIC_DATABASE_URL",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+      "id": "Eftu2wBFMi2VtVQB",
+      "key": "R15_ACTIVATION_AUTHORITY",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+      "id": "Xa1456w1MWV7klb7",
+      "key": "R15_RECEIVER_DATABASE_URL",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+      "id": "mLoIhjIOLRDR09W7",
+      "key": "R15_INGRESS_CLASSIFICATION",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+      "id": "aVJzBtlku0Dkp6Vn",
+      "key": "SQUARE_SANDBOX_NOTIFICATION_URL",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+      "id": "mh9ttAQHotEZ71Jv",
+      "key": "SQUARE_SANDBOX_MERCHANT_ID",
+      "status": "DELETE_RETURNED"
+    },
+    {
+      "kind": "env",
+      "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+      "id": "v13dO6ddtnxID5Lw",
+      "key": "SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY",
+      "status": "DELETE_RETURNED"
+    }
+  ]
+}

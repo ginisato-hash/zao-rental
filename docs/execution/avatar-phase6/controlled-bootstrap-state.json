@@ -1,0 +1,52 @@
+{
+  "id": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
+  "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "origin": "https://zao-rental-avatar-preview-489inwpbc-zao-food-map.vercel.app",
+  "target": "production",
+  "readyState": "READY",
+  "framework": "nextjs",
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": ".",
+  "buildRecords": 1,
+  "functionOutputs": 0,
+  "builds": [],
+  "aliases": [
+    "zao-rental-avatar-preview-zao-food-map.vercel.app"
+  ],
+  "frameworkNote": "Provider retained project framework label; empty install/build, sole static HTML source, and function outputs0 establish no application runtime",
+  "rawProviderResponseSaved": false,
+  "authentication": "ON",
+  "productionEnvCount": 0,
+  "forbiddenEnvCount": 0,
+  "customDomainCount": 0,
+  "envMetadata": [
+    {
+      "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "secretValue": "NOT_CAPTURED"
+    },
+    {
+      "key": "ZAO_AVATAR_PHASE6",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "secretValue": "NOT_CAPTURED"
+    }
+  ],
+  "status": "PASS_STATIC_BOOTSTRAP_READY",
+  "sourceFiles": [
+    {
+      "name": "index.html",
+      "type": "file"
+    }
+  ],
+  "applicationSecrets": 0,
+  "serverFunctions": 0,
+  "applicationRuntime": 0,
+  "applicationE2E": 0
+}

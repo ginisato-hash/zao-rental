@@ -1,0 +1,34 @@
+{
+  "atUtc": "2026-09-15T12:31:50.903Z",
+  "status": "42501_DIAGNOSED_ADMINISTRATIVE_ASSESSMENT_REQUIRED",
+  "invocations": 1,
+  "persistentMigrationInvocations": 0,
+  "completedMigrationIdsBeforeRollback": [
+    "0001",
+    "0002",
+    "0003",
+    "0004",
+    "0005",
+    "0006",
+    "0007",
+    "0008",
+    "0009",
+    "0010",
+    "0011",
+    "0012",
+    "0013",
+    "0014"
+  ],
+  "failure": {
+    "phase": "MIGRATION",
+    "migrationId": "0015",
+    "sqlstate": "42501",
+    "operationClass": "ALTER"
+  },
+  "rollbackConfirmed": true,
+  "appliedMigrations": 0,
+  "remainingUserTables": 0,
+  "remainingZaoRoles": [],
+  "publicCreateRepair": "NOT_NEEDED",
+  "otherPrivilegeRepair": 0
+}

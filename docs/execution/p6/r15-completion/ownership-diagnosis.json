@@ -1,0 +1,55 @@
+{
+  "atUtc": "2026-09-15T12:31:46.916Z",
+  "status": "OWNERSHIP_DIAGNOSIS_PASS",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "hostClassification": "NEON_HOSTED_NON_LOOPBACK",
+  "hostSha256": "1b6480fd3fdce776f9926879bf9b1178e9c559568815ec2212f5d4463315eda5",
+  "current_user": "neondb_owner",
+  "database_name": "zr_852b20c4d4b0",
+  "database_owner": "neondb_owner",
+  "public_schema_owner": "pg_database_owner",
+  "current_user_is_database_owner": true,
+  "pg_database_owner_member": true,
+  "pg_database_owner_effective": true,
+  "neon_setup_member": true,
+  "public_usage": true,
+  "public_create": true,
+  "database_create": true,
+  "rolcreatedb": true,
+  "rolcreaterole": true,
+  "rolsuper": false,
+  "search_path": "\"$user\", public",
+  "currentRoleMemberships": [
+    {
+      "role_name": "neon_superuser",
+      "admin_option": false,
+      "inherit_option": true,
+      "set_option": true
+    }
+  ],
+  "publicSchemaAcl": [
+    {
+      "grantee": "PUBLIC",
+      "privilege_type": "USAGE",
+      "is_grantable": false
+    },
+    {
+      "grantee": "pg_database_owner",
+      "privilege_type": "CREATE",
+      "is_grantable": false
+    },
+    {
+      "grantee": "pg_database_owner",
+      "privilege_type": "USAGE",
+      "is_grantable": false
+    }
+  ],
+  "schemas": [
+    "public"
+  ],
+  "userTables": [],
+  "existingZaoRoles": [],
+  "trustedSetupRoleConfirmed": true,
+  "appliedMigrations": 0,
+  "connectionStringPersisted": false
+}

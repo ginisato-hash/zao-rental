@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "deploymentId": "dpl_2NcfhWfbzMrMiXLMm9HF7orj4mTQ",
+  "stableOrigin": "https://zao-rental-webhook-sandbox.vercel.app",
+  "results": [
+    {
+      "kind": "health",
+      "http": 200,
+      "classification": "SANDBOX_WEBHOOK_INGRESS_ONLY"
+    },
+    {
+      "kind": "unsigned",
+      "http": 403,
+      "classification": "WEBHOOK_SIGNATURE_REJECTED"
+    },
+    {
+      "kind": "bad-signature",
+      "http": 403,
+      "classification": "WEBHOOK_SIGNATURE_REJECTED"
+    }
+  ],
+  "failedSignatureDbWrites": 0,
+  "signatureValuesPersisted": false,
+  "rawBodiesPersisted": false
+}

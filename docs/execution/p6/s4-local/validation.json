@@ -1,0 +1,272 @@
+{
+  "source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+  "source_tree": "bc404527b1425ed29eb55a84221612142a1157dc",
+  "tests": 304,
+  "r11_new_tests": 51,
+  "pass": 304,
+  "fail": 0,
+  "skipped": 0,
+  "commands": [
+    {
+      "name": "suite",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/unit/asset-qr.test.ts",
+        "tests/unit/booking-access-keys.test.ts",
+        "tests/unit/catalog-source.test.ts",
+        "tests/unit/content-bulk.test.ts",
+        "tests/unit/content-release.test.ts",
+        "tests/unit/content-workflow.test.ts",
+        "tests/unit/foundation.test.ts",
+        "tests/unit/group-body.test.ts",
+        "tests/unit/hold-continuation.test.ts",
+        "tests/unit/hold-contracts.test.ts",
+        "tests/unit/hold-pool-errors.test.ts",
+        "tests/unit/intake-window.test.ts",
+        "tests/unit/ledger-write-configuration.test.ts",
+        "tests/unit/media-backup.test.ts",
+        "tests/unit/media-plan.test.ts",
+        "tests/unit/p4-decisions.test.ts",
+        "tests/unit/p5-ingress.test.ts",
+        "tests/unit/period-scope.test.ts",
+        "tests/unit/photo-input.test.ts",
+        "tests/unit/photo-job.test.ts",
+        "tests/unit/pool-lifecycle.test.ts",
+        "tests/unit/pricing.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-preflight.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/r2-media.test.ts",
+        "tests/unit/r2-rotation.test.ts",
+        "tests/unit/recommendation.test.ts",
+        "tests/unit/return-cycle.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts",
+        "tests/unit/square-webhook-inbox.test.ts",
+        "tests/unit/square-webhook-receiver.test.ts",
+        "tests/unit/staff-operation-diagnostic.test.ts",
+        "tests/unit/staff-security.test.ts",
+        "tests/unit/test-hygiene.test.ts",
+        "tests/unit/transfer.test.ts",
+        "tests/unit/wear-contract.test.ts",
+        "tests/unit/wear-price-order.test.ts",
+        "tests/unit/web-diagnostics.test.ts",
+        "tests/readiness/square-s1-v2.test.ts",
+        "tests/readiness/square-s1.test.ts",
+        "tests/readiness/square-s2.test.ts",
+        "tests/readiness/square-s3.test.ts",
+        "tests/readiness/s2-operator-guard.test.mjs",
+        "tests/readiness/s3-operator-guard.test.mjs"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-14T17:15:44.111798+00:00",
+      "finishedAt": "2026-09-14T17:15:46.033934+00:00",
+      "exitCode": 0,
+      "log": "suite.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER",
+      "tested_source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+      "log_sha256": "5ebd59bf4351b6ca1ce0552bd167ada424f3b2c3494706f7c63c3d9cb496c4e2"
+    },
+    {
+      "name": "secrets",
+      "command": [
+        "npm",
+        "run",
+        "check:secrets"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-14T17:15:49.471316+00:00",
+      "finishedAt": "2026-09-14T17:15:50.017439+00:00",
+      "exitCode": 0,
+      "log": "secrets.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER",
+      "tested_source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+      "log_sha256": "b73a8ef669801e5da37cfa4e391385f51564df94906f82890d622dfe56413279"
+    },
+    {
+      "name": "lint",
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-14T17:15:50.017937+00:00",
+      "finishedAt": "2026-09-14T17:15:56.487740+00:00",
+      "exitCode": 0,
+      "log": "lint.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER",
+      "tested_source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+      "log_sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e"
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-14T17:15:56.489671+00:00",
+      "finishedAt": "2026-09-14T17:16:01.150271+00:00",
+      "exitCode": 0,
+      "log": "typecheck.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER",
+      "tested_source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+      "log_sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+    },
+    {
+      "name": "build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+      "startedAt": "2026-09-14T17:16:01.151798+00:00",
+      "finishedAt": "2026-09-14T17:16:11.816883+00:00",
+      "exitCode": 0,
+      "log": "build.log",
+      "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER",
+      "tested_source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+      "log_sha256": "d2d799cbfc65143521f75ba853de0c8629873b5abff0c8a17a1a58b7fb6fa784"
+    },
+    {
+      "name": "build-isolated",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "log": "build-isolated.log",
+      "startedAt": "2026-09-14T17:21:23.807211+00:00",
+      "finishedAt": "2026-09-14T17:21:34.787062+00:00",
+      "environmentNames": [
+        "PATH",
+        "HOME",
+        "TMPDIR",
+        "LANG",
+        "NEXT_TELEMETRY_DISABLED",
+        "NODE_ENV"
+      ],
+      "secretEnvironmentNamesInherited": false,
+      "actualProductionDotenvFiles": [],
+      "tested_source_head": "0aac863e909ec243d9842cff74d2d077dbeb9f82",
+      "log_sha256": "745dd8a0056e304ce441e2dd2eadffbd0be6005b1a7c78fe4e1108b479067438"
+    }
+  ],
+  "logs": [
+    {
+      "file": "build-01.log",
+      "sha256": "069b20093adb1b0a52eaeb5996e55be1022ce6d0e323e62cb15bb2fcefa720c7",
+      "original_sha256": "6cdb4d089c980e21271839d1328d2078012dcb792e502b68a4b52930dc78c735",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "build.log",
+      "sha256": "d2d799cbfc65143521f75ba853de0c8629873b5abff0c8a17a1a58b7fb6fa784",
+      "original_sha256": "97e13a008bd75c0e4d9c7959380d933da161b7784a4a413d291c8cddf36845d2",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "lint-01.log",
+      "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "original_sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "lint.log",
+      "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "original_sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "narrow-01.log",
+      "sha256": "cab9a0e1b3943a34651eea231c974b14bf954a093eeb8b5c3b55b6e31cf7c20e",
+      "original_sha256": "27c413005e64b6dee87597c87bff60f4474554e49875c0eaa0c3cddac3525316",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "narrow-02.log",
+      "sha256": "4b808f99a2a25c986a1f5d89f9e6c0b95f05260178123cbedeedfb9ac9efbba2",
+      "original_sha256": "4b808f99a2a25c986a1f5d89f9e6c0b95f05260178123cbedeedfb9ac9efbba2",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "secrets-01.log",
+      "sha256": "d9e74cddd6c3be85e5113aa179c8f9f3b83700687d2f4721d47c146d4ea43bfc",
+      "original_sha256": "d9e74cddd6c3be85e5113aa179c8f9f3b83700687d2f4721d47c146d4ea43bfc",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "secrets.log",
+      "sha256": "b73a8ef669801e5da37cfa4e391385f51564df94906f82890d622dfe56413279",
+      "original_sha256": "b73a8ef669801e5da37cfa4e391385f51564df94906f82890d622dfe56413279",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "suite-01.log",
+      "sha256": "0b3f100c68be16ed795e676fc54ec3618bd6d9b34e008b4db6bf03cdf7dfd740",
+      "original_sha256": "0b3f100c68be16ed795e676fc54ec3618bd6d9b34e008b4db6bf03cdf7dfd740",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "suite.log",
+      "sha256": "5ebd59bf4351b6ca1ce0552bd167ada424f3b2c3494706f7c63c3d9cb496c4e2",
+      "original_sha256": "5ebd59bf4351b6ca1ce0552bd167ada424f3b2c3494706f7c63c3d9cb496c4e2",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "typecheck-01.log",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "original_sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "typecheck.log",
+      "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "original_sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "normalization": "line-ending/trailing-whitespace only; original retained in run workspace"
+    },
+    {
+      "file": "build-isolated.log",
+      "sha256": "745dd8a0056e304ce441e2dd2eadffbd0be6005b1a7c78fe4e1108b479067438",
+      "original_sha256": "e5ccb496ad4174f24fc3c1bcadca4388c75efe3e7662ff8567b01f628042daf7",
+      "normalization": "line-ending/trailing-whitespace only"
+    }
+  ],
+  "initial_attempts": [
+    {
+      "command": "node --import tsx --test tests/unit/square-webhook-receiver.test.ts tests/unit/square-webhook-inbox.test.ts",
+      "log": "narrow-01.log",
+      "exitCode": 1,
+      "pass": 48,
+      "fail": 1,
+      "reason": "Node does not resolve Next server-only alias; test harness uses official Next empty module via isolated Node module hook. Product server-only guard retained."
+    },
+    {
+      "log": "narrow-02.log",
+      "exitCode": 0,
+      "pass": 49,
+      "fail": 0
+    },
+    {
+      "log": "suite-01.log",
+      "exitCode": 0,
+      "pass": 302,
+      "fail": 0
+    }
+  ],
+  "not_run": [
+    "Actual PostgreSQL connection/migration/role enforcement/concurrency/crash recovery",
+    "npm run verify (contains prohibited DB/browser/Runner steps)",
+    "Vercel/Preview/browser/Playwright",
+    "Square API or real webhook",
+    "Claude/Spark/other model",
+    "new PR or workflow_dispatch CI"
+  ]
+}

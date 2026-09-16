@@ -1,0 +1,94 @@
+{
+  "recorded_at": "2026-09-14T03:08:52.469615+00:00",
+  "result": "PASS_BOUNDED_PREVIEW_ACCEPTANCE_WITH_OBSERVABILITY_LIMITS",
+  "deployment_id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+  "url": "https://zao-rental-cfswundgr-zao-food-map.vercel.app",
+  "deployed_commit": "d0bfe551dd6f7fa63ccf0bba97da03292e89cc4e",
+  "deployed_tree": "a8788ecd2c799003b287faa0eb1817c15d2c6b43",
+  "validated_product_commit": "de1d530ec65d0a73d23938b4b4fd9f88e178b74f",
+  "product_diff_between_validated_and_deployed": "EMPTY_DOCS_EVIDENCE_ONLY",
+  "target": "preview",
+  "raw_api_target": null,
+  "target_basis": "CLI inspect target preview AND actual request-log environment preview",
+  "build": "SUCCESS",
+  "cloud_node": "24.19.0",
+  "cloud_npm": "11.12.1",
+  "next": "STOP. Square Sandbox S1 merchant/location read-only acceptance requires separate Owner authorization; no further deploy allowance.",
+  "startup": "PASS_ROOT_AND_STAFF_HTML_RENDERED_AND_SERVERLESS_GETS",
+  "protection": "all_except_custom_domains",
+  "unauthenticated_get": 302,
+  "owner_browser_login": "COMPLETED",
+  "health": {
+    "path": "/api/health",
+    "status": 200,
+    "meaning": "LIVENESS_ONLY"
+  },
+  "dependency_readiness": {
+    "ready": false,
+    "dedicated_readiness_route": false,
+    "probes": {
+      "/api/guest": 503,
+      "/api/booking-access": 503,
+      "/api/staff": 401
+    },
+    "verdict": "EXPECTED_FAIL_CLOSED"
+  },
+  "json_body_observation": "NOT_RENDERED_IN_APP_BROWSER_ERR_BLOCKED_BY_CLIENT; server request logs prove exact HTTP statuses; error body semantics verified against deployed code, not claimed observed",
+  "runtime_logs": {
+    "cli_exit_code": 1,
+    "valid_exact_deployment_rows_received": true,
+    "stderr_permission_error": true,
+    "raw_logs_saved": false,
+    "limits": "Selected request metadata only; not full application or provider telemetry. CLI emitted rows then exit1 with permission error. No global permission/config changes made."
+  },
+  "observations": [
+    "favicon.ico 404; cosmetic, unrelated to runtime acceptance"
+  ],
+  "bootstrap_cleanup": {
+    "at": "2026-09-14T02:55:22.504825+00:00",
+    "bootstrap_removed": "dpl_C44zbkSu1uu4WbPNj9uCLA8zDJWP",
+    "remove_exit_code": 0,
+    "remaining": [
+      {
+        "uid": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+        "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+        "target": null,
+        "state": "READY"
+      }
+    ],
+    "live_aliases": [],
+    "production_aliases": 0,
+    "custom_domains": [],
+    "protection": "all_except_custom_domains",
+    "project_settings_unchanged": true,
+    "app_preview_created": 1
+  },
+  "productionActivation": false,
+  "square_activation": "DISABLED_UNCONNECTED_NO_TRANSPORT_IN_PROBED_ROUTES",
+  "counts": {
+    "actual_preview_deployments_this_continuation": 1,
+    "production_deployments_this_continuation": 0,
+    "square_requests": 0,
+    "payments": 0,
+    "refunds": 0,
+    "webhook_deliveries": 0,
+    "external_db": 0,
+    "r2": 0,
+    "email": 0,
+    "sms": 0,
+    "secret_exposure": 0,
+    "production_square_env_entries": 0,
+    "new_claude_starts": 0,
+    "additional_spark_starts": 0
+  },
+  "counts_basis": "Owned dispatch/request journal + uploaded source and metadata-only env audit; no business provider telemetry queried. Historical unexpected production Attempt1 and authorized static production-metadata bootstrap remain in prior records.",
+  "owned_resources": {
+    "db": 0,
+    "local_web": 0,
+    "claude": 0,
+    "finite_cli_tests": "COMPLETED",
+    "remote_preview": "RETAINED_AUTHORIZED",
+    "bootstrap": "REMOVED",
+    "browser": "Preview tab21 retained for Owner. API navigation tabs22-25 remained blank; staff tab26 also retained. Native Codex UI cleanup tool denied access; no bypass used."
+  }
+}

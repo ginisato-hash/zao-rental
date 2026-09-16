@@ -1,0 +1,216 @@
+{
+  "status": "FAIL",
+  "stage": "unexpected browser network zero",
+  "deployment": {
+    "attempt": 5,
+    "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+    "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+    "head": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+    "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+    "rawTarget": null,
+    "target": "preview",
+    "previewFilteredListingContainsExactId": true,
+    "readyState": "READY",
+    "gitCommitSha": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+    "gitCommitRef": "codex/avatar-phase6-hosted-preview",
+    "framework": "nextjs",
+    "nodeVersion": "24.x",
+    "buildCommand": "node --version && npx --yes --package=npm@11.12.1 -- npm --version && npx --yes --package=npm@11.12.1 -- npm run build",
+    "outputDirectory": "apps/web/.next",
+    "rawProviderResponseSaved": false,
+    "authentication": "ON",
+    "productionEnvCount": 0,
+    "forbiddenEnvCount": 0,
+    "customDomainCount": 0,
+    "envMetadata": [
+      {
+        "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      },
+      {
+        "key": "ZAO_AVATAR_PHASE6",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      }
+    ],
+    "status": "PASS_PROTECTED_PREVIEW_READY"
+  },
+  "results": [
+    {
+      "name": "anonymous Vercel protection denies immutable Preview",
+      "status": "PASS"
+    },
+    {
+      "name": "normal UI creates two synthetic members and real Avatar candidates",
+      "status": "PASS"
+    },
+    {
+      "name": "Neon metadata returns approved generic bodies and ski with optional layers null",
+      "status": "PASS"
+    },
+    {
+      "name": "private R2 exact three WebPs pass hash size and private no-store through app",
+      "status": "PASS"
+    },
+    {
+      "name": "stale revision wrong member visual and digest deny",
+      "status": "PASS"
+    },
+    {
+      "name": "390px appearance1 RECOMMENDED physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "390px appearance1 SHORTER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "390px appearance1 LONGER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "390px appearance2 RECOMMENDED physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "390px appearance2 SHORTER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "390px appearance2 LONGER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "1440px appearance1 RECOMMENDED physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "1440px appearance1 SHORTER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "1440px appearance1 LONGER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "1440px appearance2 RECOMMENDED physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "1440px appearance2 SHORTER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "1440px appearance2 LONGER physical ratio",
+      "status": "PASS"
+    },
+    {
+      "name": "visual interaction causes business writes recommendations and POST zero",
+      "status": "PASS"
+    },
+    {
+      "name": "rights revoke denies existing media and restore recovers",
+      "status": "PASS"
+    },
+    {
+      "name": "media delivery failure leaves ordinary candidates and selection controls usable",
+      "status": "PASS"
+    },
+    {
+      "name": "second active guest cannot read first still-active guest metadata or bytes",
+      "status": "PASS"
+    },
+    {
+      "name": "actual Avatar peer limit returns429 and forged forwarding headers do not split budget",
+      "status": "PASS"
+    },
+    {
+      "name": "normal logout denies old owner media and metadata",
+      "status": "PASS"
+    }
+  ],
+  "measurementCount": 24,
+  "visualPosts": 0,
+  "extraRecommendationCalls": 0,
+  "visualBusinessWrites": 0,
+  "hold": null,
+  "quote": null,
+  "payment": null,
+  "providerFailureProof": "Hosted browser media transport failure injection; provider adapter failure unit tests retained, no hosted R2 outage claimed",
+  "authCookieRead": 0,
+  "authStateSaved": 0,
+  "guestSessionDiscardWithoutRead": true,
+  "crossGuestOwnerWasActive": true,
+  "ordinaryGuestSetupRuns": 2,
+  "rawErrorsOutput": 0,
+  "operatorSummaryNormalization": {
+    "originalCrossGuestOwnerWasActive": false,
+    "originalExtraRecommendationCalls": null,
+    "originalVisualBusinessWrites": null,
+    "reason": "The operator derived these summary fields from the overall failed flag. Completed named assertions independently prove the active-owner cross-guest test and visual-only fingerprint/POST/metadata isolation. Preserve the overall FAIL and unexecuted final whole-run checks."
+  },
+  "visualScope": {
+    "additionalRecommendations": 0,
+    "holdWrites": 0,
+    "quoteWrites": 0,
+    "paymentWrites": 0,
+    "businessWrites": 0,
+    "basis": "Completed visual interaction assertion: business-table fingerprints unchanged, POST list empty, metadata reload list empty."
+  },
+  "unexpectedNetwork": {
+    "status": "FAIL",
+    "blockedAttemptCount": "AT_LEAST_1_EXACT_COUNT_NOT_PERSISTED",
+    "destination": "NOT_PERSISTED_NOT_RECONSTRUCTED",
+    "blocking": "Playwright route guard aborted every detected non-origin request before dispatch",
+    "rootCause": "NOT_ESTABLISHED",
+    "rawRequestUrlsSaved": false,
+    "rerun": 0
+  },
+  "checksNotReached": [
+    "whole-run HOLD/quote/booking/payment/inventory final fingerprint comparison",
+    "final fatal browser-error assertion"
+  ],
+  "measurements": {
+    "passed": 24,
+    "pixelTolerance": 1,
+    "fullNumericArrayPersisted": false,
+    "reason": "Operator writes numeric matrix only after all checks; final guard failure prevented that write. Completed ratio assertions and screenshot artifacts retained."
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/1440-appearance1.png",
+      "sha256": "cc9ee6a1db241f805a04c56491765368daad10b54b8abf36fc3db8fe4025ab89"
+    },
+    {
+      "file": "screenshots/1440-appearance2.png",
+      "sha256": "9e1642013349546f6f91239ecbf0e9566f79ebcc27c77ea50babf815bc67f887"
+    },
+    {
+      "file": "screenshots/390-appearance1.png",
+      "sha256": "16c12c21f7b1ac5c93aab4aa62ba0fcce40e6fc7706020895acefdb67a0de0d6"
+    },
+    {
+      "file": "screenshots/390-appearance2.png",
+      "sha256": "a26ed2c95ee00463457bb2e292484ba3e80e9ab970cb2850f600d0e9db8a8dc2"
+    }
+  ],
+  "cleanup": {
+    "rightsRestored": true,
+    "syntheticPeerRateCountRestored": true,
+    "guestBNormalLogout": "PASS",
+    "guestAContextRevoke": "COMPLETED",
+    "dbPoolClosed": true,
+    "anonymousContextClosed": true,
+    "taskBrowserClosed": true,
+    "basis": "Named PASS assertions and successful final operator receipt after finally; browser close process exit0."
+  },
+  "operatorSourceSha256": "75e3ef79eaf4e536594f7654eda429be2faae2a70076e8d8f98f8e0b7950a124",
+  "terminalClassification": "PHASE6_IMPLEMENTATION_COMPLETE_HOSTED_ACCEPTANCE_DEFERRED"
+}

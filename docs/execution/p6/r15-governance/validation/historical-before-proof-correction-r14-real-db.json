@@ -1,0 +1,12 @@
+{
+  "results": [
+    {
+      "name": "all migrations 0001-0029 recorded with hashes",
+      "result": "FAIL",
+      "kind": "REAL_POSTGRESQL"
+    }
+  ],
+  "passed": 0,
+  "failed": 1,
+  "actualProviderRequests": 0
+}

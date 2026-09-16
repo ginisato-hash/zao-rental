@@ -1,0 +1,40 @@
+{
+  "manifestSha256": "34418edbb3cbb1a42474d979d9e938aa962429f286e72b9bff94517b4c6a36b7",
+  "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
+  "revisionId": "c4ebf391-ba30-48e4-bbb4-0f50b112e985",
+  "releaseId": "b61a81a0-49ac-41a5-85bb-45f29eeae1f8",
+  "rightsUntil": "2026-09-23T08:16:19.016Z",
+  "rightsBasis": "OWNER_SUPPLIED_SOURCE_DERIVATIVE_PROTECTED_PREVIEW_ONLY",
+  "approvedByOwner": true,
+  "purpose": "AVATAR_VISUALIZATION_V1",
+  "productionApproved": false,
+  "publicApproved": false,
+  "sourcePhotosImported": 0,
+  "timeouts": {
+    "lock_timeout": "1500ms",
+    "statement_timeout": "5s"
+  },
+  "bindings": [
+    {
+      "visualId": "519286ad-9ee5-44f4-acb4-023bcf6a83af",
+      "mediaId": "84ad7e69-40e8-4b19-b630-6309daff06a8",
+      "derivativeSha256": "6673481fbb876be97ebec2b2957709fdbad53f4686983c11e61319f601600e8e",
+      "layer": "AVATAR",
+      "appearance": "APPEARANCE_1"
+    },
+    {
+      "visualId": "736d4c44-b78f-47ef-8633-b63ac9a78c37",
+      "mediaId": "7f713020-5c6a-462b-9bcb-47eef8522d4d",
+      "derivativeSha256": "caf166774ab4a615aeaa93bfc31bce41d2d64756fee0117665f68f71b99aecfa",
+      "layer": "AVATAR",
+      "appearance": "APPEARANCE_2"
+    },
+    {
+      "visualId": "0f2e74f8-1191-49cf-816e-59de1cefd13a",
+      "mediaId": "79af3c47-00e7-4604-adc3-87e99122f332",
+      "derivativeSha256": "54a9d50c0f161714c8b168ecc59c9335f02a03b8f7cd700c0e656c24649e0b48",
+      "layer": "SKI",
+      "appearance": null
+    }
+  ]
+}

@@ -1,0 +1,831 @@
+{
+  "phase": "AVATAR_TIER2_IMPLEMENTATION_COMPLETE_MAIN_MERGE_READY",
+  "authoritySha256": "eb8aa563dcbb4705b50f493c78f6351d93bdb0c7c3f4db7d49cae727cc5f1303",
+  "branch": "codex/avatar-phase7-rc",
+  "startingHead": "2b0e4c23e7ec013bc358340e31bcda7522f663a8",
+  "frozenPhase6Head": "49d0fbc36d81025f675242a0ffd1bee0f68ce21e",
+  "mainHead": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "phase7AHistory": "FROZEN_NETWORK_DEBT_CLOSED_RESOURCES_RETIRED",
+  "budgets": {
+    "previewDeployments": {
+      "max": 1,
+      "used": 0,
+      "currentAuthorityMax": 0
+    },
+    "r2ReadCredentials": {
+      "max": 1,
+      "used": 0,
+      "currentAuthorityMax": 0
+    },
+    "claudeInitial": {
+      "max": 1,
+      "used": 1
+    },
+    "claudeCorrection": {
+      "max": 1,
+      "used": 1
+    }
+  },
+  "runtimeChange": "Narrow existing Hosted Preview branch veto to exact codex/avatar-phase7-rc; old Phase6 and unrelated refs remain denied. No new feature.",
+  "localValidation": {
+    "status": "PASS",
+    "resolvedSetupIssues": [
+      {
+        "issue": "Isolated node_modules symlink was rejected by existing candidate-file scan",
+        "resolution": "Replaced task-owned symlink with local APFS clone; scanner unchanged"
+      },
+      {
+        "issue": "Isolated browser path lacked Chromium1243",
+        "resolution": "Used existing task browser cache; no browser download required"
+      }
+    ],
+    "integrationCorrections": [
+      {
+        "files": [
+          "scripts/integration.ts",
+          "scripts/ledger-integration.ts",
+          "tests/readiness/r14-postgres.ts",
+          "tests/readiness/r14-evidence.ts"
+        ],
+        "issue": "Historical 30-migration count assertions did not include existing Avatar0031/0032",
+        "correction": "Expect canonical32; no migration or production code changes"
+      },
+      {
+        "files": [
+          "package.json",
+          "scripts/verify.mjs"
+        ],
+        "correction": "Existing verification workflow also runs current Avatar real-PG/browser and R15 local synthetic regression"
+      },
+      {
+        "files": [
+          "apps/web/src/lib/guest-avatar-http.ts",
+          "apps/web/src/lib/guest-avatar-runtime.ts",
+          "tests/unit/guest-avatar.test.ts"
+        ],
+        "issue": "Next rewrites loopback Request URL hostname to localhost, causing valid local Avatar metadata to return404",
+        "evidence": "Local real-browser failure plus installed Next next-url.js parseURL normalization",
+        "correction": "Require exact configured127.0.0.1 Host and port; accept only127.0.0.1 or framework-normalized localhost URL with http scheme in existing development-only composition",
+        "hostedIngressChanged": false,
+        "forwardedHeadersTrusted": false
+      }
+    ],
+    "node": "24.15.0",
+    "npm": "11.12.1",
+    "fullUnit": {
+      "passed": 680,
+      "failed": 0,
+      "skipped": 0
+    },
+    "verifyCommandCount": 52,
+    "commands": {
+      "check:reference": {
+        "exitCode": 0,
+        "logSha256": "d5585857a54ece08cc81e7241049e8de7d0b31a14fef682edf095d4ad1621096",
+        "disposedOwnedClusters": 0
+      },
+      "check:secrets": {
+        "exitCode": 0,
+        "logSha256": "c51f91d488fdf81586390bf84bb4e4cb70dca63c9d9bc799566fdbd2ecfdadf0",
+        "disposedOwnedClusters": 0
+      },
+      "test:reference": {
+        "exitCode": 0,
+        "logSha256": "58c16be89af231f8ca5158a01c120509f4bb7382e2672459fa3ad337c967e576",
+        "disposedOwnedClusters": 0
+      },
+      "lint": {
+        "exitCode": 0,
+        "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+        "disposedOwnedClusters": 0
+      },
+      "typecheck": {
+        "exitCode": 0,
+        "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+        "disposedOwnedClusters": 0
+      },
+      "test:unit": {
+        "exitCode": 0,
+        "logSha256": "85d8f6ceefe3bb27c938f34349f33b9fd841819f88747bbe048261d3cf4a846a",
+        "disposedOwnedClusters": 0
+      },
+      "test:controller:macos": {
+        "exitCode": 0,
+        "logSha256": "9415d60ba48546fac474d7f8aca3e6139354049c25e3dd13f06de3e79a1be394",
+        "disposedOwnedClusters": 0
+      },
+      "test:integration": {
+        "exitCode": 0,
+        "logSha256": "0fb60f3210c7825e000c80f121608b5f06e3d6f31673dd09726e5b9588b9f4b7",
+        "disposedOwnedClusters": 4
+      },
+      "test:inventory": {
+        "exitCode": 0,
+        "logSha256": "cd6c7c6f8d29cc73be6798a0458c5bd6b5faa3f87e4f33cce32798c39123a17a",
+        "disposedOwnedClusters": 1
+      },
+      "test:transfer": {
+        "exitCode": 0,
+        "logSha256": "6151b6bed307c54b8542daab2fa3f27038487ea1876752f7a65801c5b8166a90",
+        "disposedOwnedClusters": 1
+      },
+      "test:pricing": {
+        "exitCode": 0,
+        "logSha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendation": {
+        "exitCode": 0,
+        "logSha256": "5148553421bee416fa3f95cbccc7db3095533db894f1cd0d4be70c9253eb6384",
+        "disposedOwnedClusters": 1
+      },
+      "build": {
+        "exitCode": 0,
+        "logSha256": "068e6f44e4c36767804e3ca05cadba321c8c1cad58ac3aa7ef06efe43eea2185",
+        "disposedOwnedClusters": 0
+      },
+      "test:auth": {
+        "exitCode": 0,
+        "logSha256": "f33f15ee630c32e3020a298c9d40a341be18c7eb22f0a166d192dcba5f126d6f",
+        "disposedOwnedClusters": 1
+      },
+      "test:holds-ui": {
+        "exitCode": 0,
+        "logSha256": "1e99ac019109f32c721861e2239c70042774d564a970de3a93503270dbb527cc",
+        "disposedOwnedClusters": 1
+      },
+      "test:transfers-ui": {
+        "exitCode": 0,
+        "logSha256": "6da379b58546c18d6a91032e6c8076c1c6099c7dee95d8d0dd851b6a994b9483",
+        "disposedOwnedClusters": 1
+      },
+      "test:quotes-ui": {
+        "exitCode": 0,
+        "logSha256": "f04042a28650471e5f38fb7f50e8176bf146c96ff01c3a1449fa487f44bd8136",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendations-ui": {
+        "exitCode": 0,
+        "logSha256": "b97e3c0df81264413732f1bf2faf029f3948f0d7049fb014e9ea163b7d85f1b5",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendation-audit": {
+        "exitCode": 0,
+        "logSha256": "631f0cdbe9d0e4e579ea45897a35674c7f232f2a50a4b951dd36f1ab0684253e",
+        "disposedOwnedClusters": 1
+      },
+      "test:recommendation-continuation": {
+        "exitCode": 0,
+        "logSha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-s01": {
+        "exitCode": 0,
+        "logSha256": "449153570b79949986f2fa3691ae751ec765fb7dd29c69de88dabe81cdd21a53",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-upgrade": {
+        "exitCode": 0,
+        "logSha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-cd": {
+        "exitCode": 0,
+        "logSha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-eg": {
+        "exitCode": 0,
+        "logSha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b",
+        "disposedOwnedClusters": 1
+      },
+      "test:stabilization-mixed": {
+        "exitCode": 0,
+        "logSha256": "5ecadc441b501ce9e5a91d4e8362e045a5ba1edc2e73eec1ac68cba9884c3ab5",
+        "disposedOwnedClusters": 1
+      },
+      "test:square-activation": {
+        "exitCode": 0,
+        "logSha256": "268f595264b532ddadd98f4731ff2abd4e3923a899903200d85e97486d0df9dd",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-payment": {
+        "exitCode": 0,
+        "logSha256": "b5222ce3161f14002c2f65a4294a53a2c23273b45438bcc7c00d93fc60ad1c99",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-ui": {
+        "exitCode": 0,
+        "logSha256": "d3fdf03e74b05a62ebd43b9f8796e9465e5f01a8b137324b01ebabfb34c731bf",
+        "disposedOwnedClusters": 1
+      },
+      "test:asset-reader": {
+        "exitCode": 0,
+        "logSha256": "34632c6704a19573b3a241baebb5be778ea7913ace7ae42c8fc2ece3102b123a",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-restart": {
+        "exitCode": 0,
+        "logSha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e",
+        "disposedOwnedClusters": 1
+      },
+      "test:flow-scope-race": {
+        "exitCode": 0,
+        "logSha256": "5620dd6666952fc952b8390977d742ef0570f548b32da531a7acadc4f3423644",
+        "disposedOwnedClusters": 1
+      },
+      "test:custody": {
+        "exitCode": 0,
+        "logSha256": "1da8f8672e46c54fd92312416c2488b17fe3257a3d80f9ed0025617aeaf5b2ee",
+        "disposedOwnedClusters": 3
+      },
+      "test:custody-ui": {
+        "exitCode": 0,
+        "logSha256": "8183d637b97599962cbf24c2c541a24977c7fe5eef02689bb5e36d0c627a17f6",
+        "disposedOwnedClusters": 1
+      },
+      "test:late-pickup": {
+        "exitCode": 0,
+        "logSha256": "1a8db5396302c008ee0b686afcd5eb1387a24ebbf5e871a9b078be92f51a42ec",
+        "disposedOwnedClusters": 1
+      },
+      "test:wear": {
+        "exitCode": 0,
+        "logSha256": "03b4945c933fecb83ac18c781b814f13f490492ef7d0ca72e6f8f576f2844b58",
+        "disposedOwnedClusters": 2
+      },
+      "test:wear-ui": {
+        "exitCode": 0,
+        "logSha256": "102ab4f5e1204e497360b395a81cb0f218d226c42eb7a0f4080e8fab9884f650",
+        "disposedOwnedClusters": 1
+      },
+      "test:wear-mixed": {
+        "exitCode": 0,
+        "logSha256": "27616e019027bb4435f820531a88163029509d0274f3ffa0470d43102128ebfe",
+        "disposedOwnedClusters": 2
+      },
+      "test:content-fixture": {
+        "exitCode": 0,
+        "logSha256": "2434698e9641257a6d986ae419ef7f240a866ee54d42ac2cad6be0858f72fcd7",
+        "disposedOwnedClusters": 1
+      },
+      "test:public-guest": {
+        "exitCode": 0,
+        "logSha256": "af53ef49060fe03b9816ff64db68dbf7239ff87026decf9eb519f4421d2503f5",
+        "disposedOwnedClusters": 2
+      },
+      "test:public-content": {
+        "exitCode": 0,
+        "logSha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e",
+        "disposedOwnedClusters": 1
+      },
+      "test:public-ui": {
+        "exitCode": 0,
+        "logSha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be",
+        "disposedOwnedClusters": 2
+      },
+      "test:staff-diagnostic": {
+        "exitCode": 0,
+        "logSha256": "6a09f8a5b4ec28c3c40ef990d9e7f2a0a43d2042c798f501745115cc8e04c695",
+        "disposedOwnedClusters": 1
+      },
+      "test:readiness-guest": {
+        "exitCode": 0,
+        "logSha256": "6af4274e7aa39863cff57a094fd861208d8e5fd34f92f1e729b6c191dbf7fa88",
+        "disposedOwnedClusters": 1
+      },
+      "test:readiness-ui": {
+        "exitCode": 0,
+        "logSha256": "6ef1b6c27b715cb7408700c5f82ebb3f46166d505d8179414c93d2a30dbdd25c",
+        "disposedOwnedClusters": 1
+      },
+      "test:integration-p2": {
+        "exitCode": 0,
+        "logSha256": "e1ae83f8c19c374bd9acaf4b8dca43b70f8918b10ae04e3839e3a9de8c2a126c",
+        "disposedOwnedClusters": 4
+      },
+      "test:activation-p4": {
+        "exitCode": 0,
+        "logSha256": "8ee3fbae3e8e42f6cba6aff0f4a923f24483497add99b817865f8953fb464a0e",
+        "disposedOwnedClusters": 6
+      },
+      "test:booking-recovery": {
+        "exitCode": 0,
+        "logSha256": "1c51a1cb006c90c7230304ae4c3af6c2b35d230f0000def2dae7840ae7546770",
+        "disposedOwnedClusters": 1
+      },
+      "test:booking-recovery-ui": {
+        "exitCode": 0,
+        "logSha256": "fc09961c82396a49e58c2651c0f2e38c0d477ec7b2b47a9d5c9404e9ac774964",
+        "disposedOwnedClusters": 1
+      },
+      "test:production-rehearsal": {
+        "exitCode": 0,
+        "logSha256": "661a066c24561af9e4be2917451e45b289ca98fc58ae0316616d81f46f60a436",
+        "disposedOwnedClusters": 3
+      },
+      "test:r15-regression": {
+        "exitCode": 0,
+        "logSha256": "a89fd0be100eb5792b98da5b5a71b2391c5be6f342cc522759109e93eba2773e",
+        "disposedOwnedClusters": 3
+      },
+      "test:avatar": {
+        "exitCode": 0,
+        "logSha256": "c5e093406bbde37a189236d2953057f8a0d2bb54cb5689ac16f84e26d3589c1f",
+        "disposedOwnedClusters": 8
+      },
+      "test:e2e": {
+        "exitCode": 0,
+        "logSha256": "159b7c431263111eb6097b30cf7373c29a891ab6a660ca8cc568c308817311ee",
+        "disposedOwnedClusters": 0
+      }
+    },
+    "paymentRealPgChecks": 23,
+    "R15RealPg": "PASS_SYNTHETIC_PROVIDER_ONLY",
+    "AvatarRealPgAndBrowser": "PASS_PHASE5_UPGRADE_GUEST_ARTWORK_PHASE6_MIGRATIONS_ROLES_GUEST_IMPORT_LOCK",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "secretScan": "PASS_1981_FILES_PATTERN_SCAN_NOT_COMPREHENSIVE",
+    "gitDiffCheck": "PASS",
+    "migration0001Through0032": "UNCHANGED_EXACT32",
+    "phase6AndPhase7ARecords": "UNCHANGED",
+    "frozenR15Verifier": "UNCHANGED",
+    "isolatedValidationCodeMatchesCurrent": true,
+    "providerMutations": 0,
+    "squareExternalRequests": 0
+  },
+  "claude": {
+    "status": "PASS",
+    "initial": {
+      "reviewedHead": "dac1a90290b8c92cac220cefbfc7be81743ee3c5",
+      "snapshotBytes": 405603,
+      "snapshotSha256": "3484e8a91947444617517254217f2bc72bd9af9d83c5edccdccfdd1dceea6f46",
+      "sourceTreeSha256": "6e0449eaafc798ac5fc9cd2c51c59b601815aa350d291f287c3bd9f395b581e6",
+      "destination": "Existing Claude Team",
+      "directTransmissionApproval": true,
+      "verdict": "CHANGES_REQUIRED",
+      "severityCounts": {
+        "BLOCKER": 0,
+        "HIGH": 0,
+        "MEDIUM": 1,
+        "LOW": 3
+      },
+      "findings": [
+        {
+          "id": "F1",
+          "severity": "MEDIUM",
+          "title": "Guest avatar routes start hosted runtime bootstrap before ingress/deployment validation, unlike the guest draft route",
+          "file_or_component": "apps/web/src/lib/guest-avatar-runtime.ts (guestAvatarBoundary), apps/web/src/lib/guest-avatar-http.ts (guestAvatarHandler)",
+          "line": "guest-avatar-runtime.ts: `if(phase6Requested())return (await hostedPreviewRuntime())!.avatar;`; guest-avatar-http.ts: `const b=await boundary();if(!b)return empty();await b.guard(req);`",
+          "counterexample": "The guest draft route (apps/web/src/app/api/guest/[[...record]]/route.ts) calls `hostedPreviewRequestOrigin(r)` (Host/x-vercel-deployment-url/hostname-pattern check) BEFORE calling `hostedPreviewRuntime()`. The avatar routes (`/api/guest/avatar/...`, `/guest-avatar-media/...`) call `boundary()`→`hostedPreviewRuntime()` first (which performs assertNoHostedPlatformContradiction, 6 pool creations, per-service TLS proof and DB-identity SQL) and only invoke the per-request ingress check (`vercelPreviewPeer`→`hostedPreviewRequestOrigin`) afterward, inside `b.guard(req)`.",
+          "impact": "A request reaching this deployment with a mismatched Host/deployment-URL header (e.g., unexpected alias, proxy misconfiguration, or a cold-instance probe hitting the avatar path first) forces full hosted-runtime bootstrap (6 Postgres pools + TLS handshakes + identity queries) before being rejected, instead of failing fast on ingress mismatch as the draft route does. On serverless cold starts this can be repeated per new instance, and it breaks the intended 'ingress validation before any privileged operation' ordering that the review explicitly requires. Data access itself is not exposed (guard() still throws before `load()`), so this is not a BLOCKER/HIGH.",
+          "minimum_safe_correction": "In `guestAvatarBoundary()` (or in `guestAvatarHandler` before calling `boundary()`), validate `hostedPreviewRequestOrigin(request)` (or equivalent Vercel ingress check) BEFORE invoking `hostedPreviewRuntime()`, mirroring the ordering already used in the guest draft route.",
+          "required_proof": "Add a regression test analogous to 'Guest route rejects mismatched deployment ingress before startup IO' (tests/unit/hosted-preview-runtime.test.ts) but for the avatar GET routes, asserting `globalThis.poolCreates===0` when Host/x-vercel-deployment-url is mismatched."
+        },
+        {
+          "id": "F2",
+          "severity": "LOW",
+          "title": "Node engine pin loosened from exact patch to minor-range",
+          "file_or_component": "package.json, apps/webhook-ingress/package.json",
+          "line": "package.json: `\"node\": \"24.x\"` (was `\"24.15.x\"`)",
+          "counterexample": "Root and webhook-ingress package.json now accept any Node 24.x instead of pinning 24.15.x; CI (.github/workflows/ci.yml) still pins node-version 24.15.0 so this is currently masked, but local/Vercel builds without that exact pin could diverge.",
+          "impact": "Minor reproducibility/supply-chain drift risk for non-CI builds (e.g., Vercel's own Node runtime selection); no direct security exploit path identified.",
+          "minimum_safe_correction": "Restore an exact/narrow patch pin (e.g., \"24.15.x\") for both package.json files unless the broader range is a deliberate, documented decision tied to Vercel's runtime support matrix.",
+          "required_proof": "Confirm Vercel's actual resolved Node version for both projects matches the CI-verified 24.15.0 baseline."
+        },
+        {
+          "id": "F3",
+          "severity": "LOW",
+          "title": "Artwork manifest lacks the publicApproved field referenced by the Production readiness doc",
+          "file_or_component": "docs/execution/avatar-artwork-activation/artwork/manifest.json vs docs/execution/AVATAR_PRODUCTION_READINESS.md",
+          "line": "manifest.json files[] entries expose `productionApproved:false` but no `publicApproved` key; AVATAR_PRODUCTION_READINESS.md states \"productionApproved=false and publicApproved=false\"",
+          "counterexample": "Grep of the manifest snapshot shows no `publicApproved` field anywhere in the JSON.",
+          "impact": "Documentation/manifest inconsistency only — runtime code does not read this manifest field for authorization (DB `avatar_current_visuals`/rights columns gate exposure instead), so there is no live access-control impact. Could mislead a future reviewer relying on the doc's literal field name.",
+          "minimum_safe_correction": "Either add an explicit `publicApproved:false` field to the manifest for parity with the readiness doc, or correct the doc's wording to reference the actual gating mechanism (DB rights fields, not this manifest key).",
+          "required_proof": "Confirm no runtime code path reads `manifest.files[].publicApproved` (none found in this snapshot)."
+        },
+        {
+          "id": "F4",
+          "severity": "LOW",
+          "title": "Migration 0031's initial immutability guard was weaker than 0032's, within the same changeset",
+          "file_or_component": "packages/db/migrations/0031_avatar_visuals.sql / 0032_avatar_delivery_boundary.sql",
+          "line": "0031 avatar_visual_guard(): `IF NEW.id<>OLD.id OR NEW.created_at<>OLD.created_at THEN RAISE EXCEPTION`; 0032 CREATE OR REPLACE compares the full immutable-column ROW.",
+          "counterexample": "Between 0031 and 0032 applied as separate statements, a row UPDATE changing layer/model_id/variant_id/season/ski_length_cm/media_id/derivative_sha256/revision_id/release_id would not have been blocked by 0031's original guard alone.",
+          "impact": "No live exploitability: both migrations are always applied together (sequential migration runner, single deploy), so at runtime only 0032's final, correct guard is ever active. This is only a design-hygiene note for auditors reading the 0031 diff in isolation.",
+          "minimum_safe_correction": "None required for this integration; optionally add a comment in 0031 noting the guard is intentionally superseded by 0032 in the same release.",
+          "required_proof": "Confirm the migration runner applies 0031 and 0032 atomically/sequentially with no gap where 0031-only state is queryable in Production (already true for this local/dev migration path)."
+        }
+      ],
+      "testsExecutedByReviewer": false,
+      "processStarts": 1,
+      "retry": 0,
+      "tools": 0,
+      "mcp": 0,
+      "hooks": 0,
+      "browser": 0,
+      "provider": 0,
+      "edit": 0,
+      "push": 0,
+      "extraUsage": false,
+      "extraUsageDisabledReason": "org_level_disabled",
+      "exitCode": 0,
+      "reviewResultSha256": "c1d9878020a72bad628b12442978b9689e5e5fe97c5aade6164b7d97fbc32104"
+    },
+    "F1Correction": {
+      "status": "RESOLVED_CLAUDE_CORRECTION_PASS",
+      "change": "Pass actual request to guestAvatarBoundary and validate hostedPreviewRequestOrigin before hosted runtime bootstrap, matching Guest draft route. Per-request guard remains in place.",
+      "regression": "Both Avatar GET routes reject mismatched Host and deployment header before pool construction; exact ingress reaches isolated driver stub.",
+      "red": {
+        "failed": 4,
+        "poolCreatesActual": 1,
+        "poolCreatesRequired": 0
+      },
+      "green": {
+        "targetedTests": 30,
+        "failed": 0
+      },
+      "productScope": "No feature removed or added"
+    },
+    "lowDisposition": {
+      "F2": "Recorded: provider package engine range24.x; local/CI exact24.15.0 remains pinned. No new remote Node patch claim.",
+      "F3": "Recorded: artwork manifest has productionApproved=false; public approval is an authority state, also explicitly false in frozen hosted-artwork-import.json, not a manifest.files field. No public/Production grant.",
+      "F4": "Recorded: 0032 strengthens0031; retain historical migration bytes. Fresh/current paths require full32. No Production migration in this task. Parent clarification: the migration runner applies each migration sequentially; no claim of whole-plan atomicity is needed or made. Current runtime is gated on all32 migrations, and Production remains OFF."
+    },
+    "correction": {
+      "reviewedHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
+      "sourceTreeSha256": "9fd40e654296d2f13dde18c0d965e0728c680a723063da9f1ffe2624384aac1a",
+      "snapshotSha256": "f238013c8f9f721b14f5926abaa9c75c15d8048636bef2bd1334071b37052049",
+      "snapshotBytes": 61694,
+      "verdict": "PASS",
+      "severityCounts": {
+        "BLOCKER": 0,
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 3
+      },
+      "resolvedFindings": [
+        "F1"
+      ],
+      "testsExecutedByReviewer": false,
+      "processStarts": 1,
+      "tools": 0,
+      "mcp": 0,
+      "hooks": 0,
+      "browser": 0,
+      "provider": 0,
+      "edit": 0,
+      "push": 0,
+      "extraUsage": false,
+      "extraUsageDisabledReason": "org_level_disabled",
+      "reviewResultSha256": "54f077af26b8acda263553e5a268ff982486ea77a14c13886d638de2db50ec96",
+      "evidenceAssessment": "Diff and current-file review confirm F1's minimum_safe_correction was applied precisely: guestAvatarBoundary(request) now calls hostedPreviewRequestOrigin(request) before hostedPreviewRuntime(), mirroring the guest draft route, and both avatar route entrypoints thread the real Request through guestAvatarHandler->boundary(req) instead of a no-arg boundary(). The four required regression cases (metadata/media x host/x-vercel-deployment-url mismatch) assert poolCreates===0 and a generic 404 before any DB pool is constructed, and a paired 'exact ingress' case per surface confirms poolCreates===1 and the pre-existing isolated driver failure is still reached only after ingress passes, so no fail-open or bypass was introduced. The per-request guard() path (vercelPreviewPeer/hostedPreviewRequestOrigin) is retained unchanged, giving intentional defense-in-depth rather than a regression. tests/avatar/tier2-rate.ts uses avatarGuestSecurity built from the unmodified production guest.p4-approved-policy.json (only version/peerRequests/globalRequests overridden, preserving underlying window semantics), drives 242 concurrent guard() calls across two independent Pool objects/pg connections against real Postgres, and asserts exactly peerRequests(240) succeed with both the peer- and global-scoped guest_rate_buckets rows converging to 240 -- direct evidence of atomic, cross-pool budget enforcement rather than per-process counting. It further asserts loads===0 and reads===0 while HTTP 429 is returned on both GET surfaces before any load()/reader() call, exercises an unrelated ordinary GuestSecurity.guard() call post-exhaustion succeeding with zero business-table writes (booking-policy isolation), and validates window recovery via an inventory_clock() advance yielding a 200 with load()===1. This is parent-supplied execution evidence (686 unit PASS, avatar suite PASS including the new test now wired into test:avatar/CI, lint/typecheck/build/secrets PASS, 32-migration hash unchanged, browser+real-PG Avatar/Guest PASS) which this review did not re-execute (tests_executed:false); the static code/diff inspection independently corroborates that the described ordering and test assertions are structurally present and internally consistent. The four supplied migration-count assertion diffs (30->32) close the prior static evidence gap without touching historical migration bytes. LOW F2-F4 are unchanged by this diff and remain recorded/nonblocking per the LOW DISPOSITION."
+    },
+    "remainingSeverityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 3
+    }
+  },
+  "hosted": {
+    "status": "NOT_RERUN_BY_TIER2_OVERRIDE",
+    "newCredentials": 0,
+    "credentialRotations": 0,
+    "newEnv": 0,
+    "newDeployments": 0,
+    "newHostedE2E": 0,
+    "historicalEvidence": "Reuse frozen component proofs; do not relabel Phase6 overall acceptance or rewrite Phase7-A history.",
+    "transportPreflightBeforeOverride": {
+      "readOnly": true,
+      "currentProductionDeployments": 0,
+      "currentPreviewDeployments": 0,
+      "productionEnv": 0,
+      "authentication": "ON",
+      "note": "Known successful Preview bootstrap precondition absent. Superseded by Tier2 override; no Hosted rebuild required."
+    }
+  },
+  "remoteCI": {
+    "id": 35130836674,
+    "status": "PASS",
+    "conclusion": "success",
+    "headSha": "a87df9a6868bd8a7c743a10514748d2ebfd93620",
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35130836674",
+    "jobId": 104911145586,
+    "allJobSteps": "success",
+    "pullRequestMergeCheckout": "bc8f87e213b90e481cbaa66c9918537bd43e6f18",
+    "artifactId": 10461579375,
+    "artifactSha256": "bdfc78ad1c931c9f7d2b5bb2750d6d5629b42514dc736872000977471d309f5b",
+    "implementationHead": "a87df9a6868bd8a7c743a10514748d2ebfd93620",
+    "sourceTreeSha256": "ef558fdbd383caeec8983ad6d4aec622053224f746a15f5ed52b3ad1153a1907",
+    "reviewedRuntimeHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
+    "scope": "Existing Foundation CI pull_request: full verify including realPG, browsers, lint, typecheck, build and runner simulation",
+    "subsequentEvidenceCommit": "Only this status record changes; reviewed and CI-tested code tree remains identical. GitHub PR checks are authoritative for its latest commit."
+  },
+  "draftPR": {
+    "number": 17,
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/17",
+    "draft": true,
+    "head": "codex/avatar-phase7-rc",
+    "base": "main",
+    "merged": false
+  },
+  "cleanup": {
+    "status": "COMPLETE_NO_NEW_HOSTED_RESOURCES",
+    "localBrowserNextPostgres": "CLOSED",
+    "claudeProcesses": "EXITED",
+    "temporaryHostedCredentialsCreated": 0,
+    "hostedCredentialsRotated": 0,
+    "hostedEnvCreated": 0,
+    "hostedDeploymentCreated": 0,
+    "hostedBrowserSessionsCreated": 0,
+    "newTaskOAuth": 0,
+    "localProviderSecretFilesCreated": 0,
+    "bucketObjectsNeonRolesSchemas": "RETAINED_UNCHANGED"
+  },
+  "forbiddenOperations": {
+    "productionDeploy": 0,
+    "productionEnv": 0,
+    "mainMerge": 0,
+    "square": 0,
+    "realPayment": 0,
+    "realCustomer": 0,
+    "newProject": 0,
+    "newDatabase": 0,
+    "newRole": 0,
+    "newR2Object": 0
+  },
+  "nextGate": "Owner main merge decision only. Main remains unmerged; no Production activation.",
+  "precheck": {
+    "ancestry": "PASS_ALL_EXPECTED_ANCESTORS",
+    "migrations": {
+      "count": 32,
+      "duplicates": 0,
+      "historicalHashChanges": 0
+    },
+    "mainDiffCategories": {
+      "auth/security": 15,
+      "inventory": 1,
+      "pricing": 0,
+      "payment": 65,
+      "guest": 3,
+      "avatar": 52,
+      "DB/migrations": 17,
+      "UI": 2,
+      "docs/evidence": 925,
+      "other": 21
+    },
+    "snapshotExcludesHistoricalEvidenceTranscripts": true,
+    "initialWorkingTree": "CLEAN",
+    "initialLocalRemoteHeadMatch": true
+  },
+  "productionReadiness": {
+    "productionApproved": false,
+    "publicApproved": false,
+    "productionActivation": "BLOCKED_SEPARATE_OWNER_GATE",
+    "avatarOnlyRollback": "Requires separate Production composition proof; current combined Preview capability removal is not business-continuity proof"
+  },
+  "tier2Override": {
+    "source": "Owner direct chat: Phase7-B OVERRIDE — TIER2 FEATURE COMPLETION",
+    "startingHead": "dac1a90290b8c92cac220cefbfc7be81743ee3c5",
+    "scope": "Complete Avatar implementation and Tier2 security validation; Draft PR and CI PASS; no main merge",
+    "requiredFeatures": [
+      "GuestBooking Avatar integration",
+      "physical body/ski ratio",
+      "RECOMMENDED/SHORTER/LONGER",
+      "APPEARANCE_1/APPEARANCE_2",
+      "private media abstraction",
+      "guest ownership",
+      "cross-guest deny",
+      "logout revoke",
+      "stale/wrong member/visual/digest deny",
+      "rights revoke deny",
+      "Avatar rate limit",
+      "390px/1440px responsive",
+      "Avatar failure preserves booking",
+      "visualization causes zero recommendation/HOLD/quote/payment/business writes",
+      "Production feature default OFF"
+    ],
+    "newHostedProofRequired": false,
+    "prohibited": [
+      "new Neon roles",
+      "Neon credential rotation",
+      "new R2 credential",
+      "Vercel env recreation",
+      "RC Preview redeploy",
+      "Hosted E2E rerun",
+      "Production deploy",
+      "Square",
+      "real customer/payment",
+      "main merge"
+    ],
+    "terminalWhenAllGatesPass": "AVATAR_TIER2_IMPLEMENTATION_COMPLETE_MAIN_MERGE_READY",
+    "nextOwnerGate": "main merge decision"
+  },
+  "tier2Validation": {
+    "status": "PASS",
+    "baselineFullRegression": "PASS",
+    "unitPassed": 686,
+    "unitFailed": 0,
+    "unitSkipped": 0,
+    "code": {
+      "summarySha256": "a6831f2a33202ad8ace4185c8803dc2c8b9c67e260cb39bb01ae163eb4704259",
+      "commands": [
+        {
+          "command": "npm run test:unit",
+          "exitCode": 0,
+          "logSha256": "17172a588277346561d40daa9fee28287fd658fab6c5e814ddced8edcdfab0ea",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run lint",
+          "exitCode": 0,
+          "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run typecheck",
+          "exitCode": 0,
+          "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run build",
+          "exitCode": 0,
+          "logSha256": "5385d8f6349b49b1ca74b44468280ddb903d75a32a5fc19158449eb14d6ac1c5",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run check:secrets",
+          "exitCode": 0,
+          "logSha256": "c51f91d488fdf81586390bf84bb4e4cb70dca63c9d9bc799566fdbd2ecfdadf0",
+          "disposedOwnedClusters": 0
+        }
+      ]
+    },
+    "avatar": {
+      "summarySha256": "e0eadf06ae41fed8962637adace926f1cac76cb3bfbfff76e3d2e2be7d2d6012",
+      "commands": [
+        {
+          "command": "npm run test:avatar",
+          "exitCode": 0,
+          "logSha256": "c5e093406bbde37a189236d2953057f8a0d2bb54cb5689ac16f84e26d3589c1f",
+          "disposedOwnedClusters": 8
+        }
+      ]
+    },
+    "isolatedSourceMatches": true,
+    "sourceFilesCompared": 606,
+    "migrations": {
+      "count": 32,
+      "hashChanges": 0,
+      "duplicates": 0
+    },
+    "phase5Guest": {
+      "pgChecks": 36,
+      "browserChecks": 21,
+      "visualBusinessPosts": 0,
+      "externalAttempts": 0
+    },
+    "realArtwork": {
+      "artworkChecks": 1,
+      "pgChecks": 32,
+      "browserChecks": 18,
+      "visualBusinessPosts": 0,
+      "visualBusinessWrites": 0,
+      "extraRecommendationCalls": 0,
+      "extraHold": 0,
+      "extraQuote": 0,
+      "extraPayment": 0,
+      "externalAttempts": 0,
+      "productionApproved": false,
+      "cleanup": "Owned browser/Next/PostgreSQL closed"
+    },
+    "securityAndFeatureCoverage": "GuestBooking; two appearances; three candidate lengths; 390/1440; both members; physical ratio1px; ownership/cross-guest/logout/stale/member/visual/digest/rights; rate limiter realPG; private bytes; provider failure affects Avatar only; zero visualization business mutations",
+    "productionDefaultOff": "PASS_MISSING_CAPABILITY_NO_HOSTED_OR_LOCAL_FALLBACK",
+    "gitDiffCheck": "PASS",
+    "historicalRecords": "UNCHANGED",
+    "cleanup": "Owned local browser/Next/PostgreSQL closed",
+    "avatarRateLimit": {
+      "status": "PASS",
+      "command": "node --import tsx tests/avatar/tier2-rate.ts",
+      "realPostgres": true,
+      "distinctPools": 2,
+      "actualPeerLimit": 240,
+      "parallelAttempts": 242,
+      "allowed": 240,
+      "rateLimited": 2,
+      "metadataHttp": 429,
+      "mediaHttp": 429,
+      "loadCallsWhileLimited": 0,
+      "byteReadCallsWhileLimited": 0,
+      "ordinaryBookingBudget": "UNAFFECTED",
+      "nextWindowHttp": 200,
+      "businessWrites": 0,
+      "providerRequests": 0,
+      "cleanup": "Owned pools/PostgreSQL closed",
+      "testSourceSha256": "6f58b1fc0360b1145b3455198a1ef33527796a6e3c54e2975297b09d62ba3363",
+      "ciBinding": "test:avatar includes this regression"
+    },
+    "secretScan": "PASS_1982_FILES_PATTERN_SCAN_NOT_COMPREHENSIVE",
+    "postRateTestLintTypecheck": "PASS"
+  },
+  "ciRepair": {
+    "scope": "TEST_AND_CI_ONLY",
+    "productRuntimeChanges": 0,
+    "files": [
+      "tests/public/normal-ui.ts",
+      ".github/workflows/ci.yml"
+    ],
+    "correction": "Read-only anonymous page/API status checks compile the exact staff/login/session/ledger/management routes before forms; normal UI login response200 is awaited explicitly; single staff-create POST response201 waits at most60s. Guest ownership, late-pickup custody, unchanged contract/price, and all existing assertions remain.",
+    "jobBudget": "30minutes for all52 verify commands, replacing20minutes. Initial CI reached command40 before a15s UI response timeout; 12 subsequent commands remained. No tests skipped.",
+    "additionalClaudeReview": "NOT_NEEDED_TEST_HARNESS_AND_CI_ONLY; initial1/correction1 already complete; no review loop",
+    "localValidation": {
+      "status": "PASS",
+      "commands": [
+        {
+          "command": "npm run test:public-ui",
+          "exitCode": 0,
+          "logSha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be"
+        },
+        {
+          "command": "npm run lint",
+          "exitCode": 0,
+          "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e"
+        },
+        {
+          "command": "npm run typecheck",
+          "exitCode": 0,
+          "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+        },
+        {
+          "command": "npm run check:secrets",
+          "exitCode": 0,
+          "logSha256": "c5eb042351a9bf9df833bfd49f289df1b32d06dee10d2462c136661fc1d02a86"
+        }
+      ],
+      "publicGuestUiChecks": 5,
+      "contentPublicUiChecks": 5,
+      "staffCreationHttp": 201,
+      "staffHandoffHttp": 200,
+      "priceAndContractUnchanged": true,
+      "cleanup": "Owned browser/Next/PostgreSQL closed"
+    },
+    "localDiagnosisHistory": [
+      "Initial CI timed out awaiting staff-create response despite completed staff visible in screenshot.",
+      "First local harness revision reproduced login-page reload while awaiting ledger navigation.",
+      "Read-only warmup aligned with existing auth GET405 contract; final public UI and content UI suites PASS."
+    ],
+    "fileSha256": {
+      "tests/public/normal-ui.ts": "3cf0c7dcd33fc3321cd59b41d0dbb0ddbb23bdf989a7f3620966a4af9746ed35",
+      ".github/workflows/ci.yml": "92e7b291b4627723f17174aeaaee0ecbbbab32029361ec0a7198ac7dd3b7be5d"
+    },
+    "reviewedRuntimeUnchanged": true,
+    "onlyReviewSnapshotDifferences": [
+      ".github/workflows/ci.yml",
+      "tests/public/normal-ui.ts"
+    ]
+  },
+  "ciHistory": [
+    {
+      "status": "FAILED_TEST_WAIT",
+      "runId": 35128244374,
+      "implementationHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35128244374",
+      "failure": "tests/public/normal-ui.ts staff creation response wait exceeded15000ms",
+      "evidence": "CI screenshot already displays SYNTHETIC Handoff staff in authenticated list; no error alert. Exact response latency/order not captured.",
+      "artifactSha256": "d55f4426af74830d299a88f558ead9222fef8b722e306e45f3bea6b040df86eb"
+    },
+    {
+      "id": 35130836674,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "a87df9a6868bd8a7c743a10514748d2ebfd93620",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35130836674",
+      "jobId": 104911145586,
+      "allJobSteps": "success",
+      "pullRequestMergeCheckout": "bc8f87e213b90e481cbaa66c9918537bd43e6f18",
+      "artifactId": 10461579375,
+      "artifactSha256": "bdfc78ad1c931c9f7d2b5bb2750d6d5629b42514dc736872000977471d309f5b"
+    }
+  ],
+  "completion": {
+    "featureImplementation": "COMPLETE",
+    "tier2SecurityRegression": "PASS",
+    "claudeBlockerHighMedium": 0,
+    "ci": "PASS",
+    "draftPR": "READY_AS_DRAFT",
+    "productionFeature": "DEFAULT_OFF",
+    "phaseProductionDeployments": 0,
+    "square": 0,
+    "realPayment": 0,
+    "realCustomer": 0,
+    "mainMerge": 0,
+    "sourceTreeSha256": "ef558fdbd383caeec8983ad6d4aec622053224f746a15f5ed52b3ad1153a1907",
+    "reviewedRuntimeHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
+    "sourceFiles": 608,
+    "historicalPhase6ProductionDeployments": 2,
+    "historicalPhase6ProductionAliases": 2,
+    "historicalCountsRewritten": false
+  }
+}

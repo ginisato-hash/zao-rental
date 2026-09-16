@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.15.x",
+    "node": "24.x",
     "npm": "11.12.x"
   },
   "packageManager": "npm@11.12.1",
@@ -65,7 +65,13 @@
     "test:booking-recovery": "node --import tsx tests/readiness/booking-recovery.ts",
     "test:booking-recovery-ui": "node --import tsx tests/readiness/booking-recovery-ui.ts",
     "production:preflight": "node --import tsx scripts/production-preflight.ts",
-    "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts"
+    "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts",
+    "test:payment-activation": "node --import tsx scripts/test-payment-activation.ts",
+    "test:r15": "node --import tsx scripts/test-r15-ingress.ts",
+    "typecheck:ingress": "tsc --noEmit --project apps/webhook-ingress/tsconfig.json",
+    "build:ingress": "node scripts/build-ingress.mjs",
+    "test:avatar": "node --import tsx tests/avatar/phase5-upgrade.ts && node --import tsx tests/avatar/phase5-e2e.ts && node --import tsx tests/avatar/artwork-activation.ts && node --import tsx tests/avatar/phase6-migrations.ts && node --import tsx tests/avatar/phase6-roles.ts && node --import tsx tests/avatar/phase6-guest.ts && node --import tsx tests/avatar/phase6-import.ts && node --import tsx tests/avatar/phase6-lock.ts && node --import tsx tests/avatar/tier2-rate.ts",
+    "test:r15-regression": "npm run test:r15 && node --import tsx tests/readiness/r15-guard-postgres.ts && node --import tsx tests/readiness/r15-preview-local.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",
@@ -93,6 +99,7 @@
     "eslint": "9.39.3",
     "eslint-config-next": "16.3.4",
     "tsx": "4.23.13",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "esbuild": "0.28.2"
   }
 }

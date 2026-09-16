@@ -1,0 +1,6 @@
+{
+  "removedOwnedGeneratedArtifact": "apps/webhook-ingress/runtime.cjs",
+  "sha256": "4d482ed47f115d259528ac2f9cdcd6fe4a12d93d8d96037203e5e913520fb847",
+  "sourceChanged": false,
+  "reason": "Generated third-party bundle scanned by source lint; exact owned untracked artifact removed after proof preservation"
+}

@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-14T15:41:31.202279+00:00",
+  "id": "dpl_29v9tPtTicL5GDhY9YZmy7YRDX61",
+  "origin": "https://zao-rental-evr0jvhcj-zao-food-map.vercel.app",
+  "readyState": "READY",
+  "raw_target": null,
+  "source_head": "8ec42146401a4469b55f453ff28867ba5035bbc1",
+  "source_tree": "4f103d9d35d9dc5699d1531cd1e8309d0b8e6b9e",
+  "protection": "all_except_custom_domains",
+  "custom_domains": 0,
+  "production_aliases": 0,
+  "production_square_env": 0,
+  "env_metadata_unchanged": true,
+  "r3_retained": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL"
+}

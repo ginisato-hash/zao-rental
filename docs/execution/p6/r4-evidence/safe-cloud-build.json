@@ -1,0 +1,50 @@
+{
+  "deployment_id": "dpl_3UXKvrNyRp1KpRfpPt7jxAYSF5Bo",
+  "selected": [
+    {
+      "created": 1789358933626,
+      "text": "Detected Next.js version: 16.3.4"
+    },
+    {
+      "created": 1789358933633,
+      "text": "v24.19.0"
+    },
+    {
+      "created": 1789358934149,
+      "text": "11.12.1"
+    },
+    {
+      "created": 1789358943211,
+      "text": "\u2713 Compiled successfully in 5.6s"
+    },
+    {
+      "created": 1789358950758,
+      "text": "  Generating static pages using 3 workers (0/8) ..."
+    },
+    {
+      "created": 1789358951006,
+      "text": "  Generating static pages using 3 workers (2/8) \r"
+    },
+    {
+      "created": 1789358951007,
+      "text": "  Generating static pages using 3 workers (4/8) \r"
+    },
+    {
+      "created": 1789358951007,
+      "text": "  Generating static pages using 3 workers (6/8) \r"
+    },
+    {
+      "created": 1789358951007,
+      "text": "\u2713 Generating static pages using 3 workers (8/8) in 248ms"
+    },
+    {
+      "created": 1789358961767,
+      "text": "Build Completed in /vercel/output [46s]"
+    },
+    {
+      "created": 1789358972576,
+      "text": "Deployment completed"
+    }
+  ],
+  "raw_logs_saved": false
+}

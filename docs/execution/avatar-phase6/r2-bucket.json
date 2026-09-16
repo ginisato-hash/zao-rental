@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "accountId": "dce72332f2b04366335908cc383996d6",
+  "bucket": "zao-rental-avatar-p6",
+  "created": 1,
+  "createRetries": 0,
+  "private": true,
+  "r2DevEnabled": false,
+  "customPublicDomains": 0,
+  "objectsUploaded": 3,
+  "writeCredential": "REVOKED_LOCAL_FILE_REMOVED",
+  "readCredential": "EXACT_BUCKET_OBJECT_READ_ONLY",
+  "existingOtherBucketsTouched": 0,
+  "postUploadPrivateMetadata": {
+    "r2DevEnabled": false,
+    "customPublicDomains": 0
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "name": "zao-rental-avatar-preview",
+  "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+  "ssoProtection": {
+    "deploymentType": "all_except_custom_domains"
+  },
+  "framework": "nextjs",
+  "rootDirectory": null,
+  "outputDirectory": "apps/web/.next",
+  "nodeVersion": "24.x",
+  "autoExposeSystemEnvs": true,
+  "envNames": [],
+  "gitIntegration": false,
+  "created": 1,
+  "deployments": 0,
+  "productionDeployments": 0
+}

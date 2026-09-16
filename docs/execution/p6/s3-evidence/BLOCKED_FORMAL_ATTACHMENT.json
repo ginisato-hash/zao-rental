@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-14T16:07:46.352581+00:00",
+  "classification": "BLOCKED_AUTO_APPROVAL_ATTACHMENT_ADOPTION",
+  "request_sha256": "844306030e8cc3143ddd74e5ab1be2d201535decfc4a0d92a0a5452b13499380",
+  "authority_adoption_rejections_total": 3,
+  "reason": "Auto-review requires explicit adoption in trusted normal chat message, not inside an attachment",
+  "head": "9cae73c16e92844a824c79a74ccea100f94a4f1f",
+  "worktree_clean": true,
+  "authority_file_absent": true,
+  "preview": 0,
+  "square_requests": 0,
+  "refund": 0,
+  "models": 0,
+  "owned_processes_started": 0,
+  "next": "Owner sends short explicit adoption in normal chat text; no file reattachment required; preserve same R10 limits"
+}

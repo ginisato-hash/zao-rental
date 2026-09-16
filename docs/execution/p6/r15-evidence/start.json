@@ -1,0 +1,12 @@
+{
+  "authority": "P6_R15",
+  "startedAtUtc": "2026-09-15T03:06:48Z",
+  "startedAtJst": "2026-09-15T12:06:48+09:00",
+  "startingHead": "dffa78c10825fdb44bd7cb123c2b8b2b4e2113c9",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "branch": "codex/external-acceptance-p6",
+  "workingTreeClean": true,
+  "authoritySha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
+  "priorR14": "R14_PARTIAL",
+  "scope": "SANDBOX_WEBHOOK_INGRESS_ONLY"
+}

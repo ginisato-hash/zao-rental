@@ -1,0 +1,22 @@
+{
+  "kind": "REAL_POSTGRESQL_SYNTHETIC_PROVIDER",
+  "results": [
+    {
+      "name": "owned receiver connection terminated before COMMIT: 503 and no durable receipt",
+      "result": "PASS"
+    },
+    {
+      "name": "ACK is blocked before COMMIT; independent connection sees receipt only after COMMIT",
+      "result": "PASS"
+    },
+    {
+      "name": "fixed target composition: foreign event/job untouched, fixture lookup, truth and projection replay",
+      "result": "PASS"
+    },
+    {
+      "name": "development scope SQL rejects Production and non-one batch; production composition refuses startup",
+      "result": "PASS"
+    }
+  ],
+  "actualProviderRequests": 0
+}

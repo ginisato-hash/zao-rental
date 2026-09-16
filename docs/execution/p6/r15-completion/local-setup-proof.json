@@ -1,0 +1,27 @@
+{
+  "mode": "LOCAL_NON_SUPERUSER_POSTGRES",
+  "externalRequests": 0,
+  "status": "PASS",
+  "baseline": {
+    "code": "42501",
+    "category": "SET_ROLE_REQUIRED",
+    "context": "ALTER_SCHEMA"
+  },
+  "appliedCount": 30,
+  "finalCustodyPolicy": {
+    "database_create": false,
+    "public_create": false,
+    "setup_membership": true,
+    "setup_inherit": false,
+    "setup_set": false,
+    "intended_schema_owner": true
+  },
+  "setupMembership": [
+    {
+      "admin_option": true,
+      "inherit_option": false,
+      "set_option": false
+    }
+  ],
+  "closed": true
+}

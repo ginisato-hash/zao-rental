@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-14T12:57:07.009521+00:00",
+  "kind": "INCIDENTAL_AUTH_CALLBACK_IN_TOOL_OUTPUT",
+  "surface": "Normal Owner login transient page title/accessibility state",
+  "credential_value_recorded_here": false,
+  "credential_value_saved_to_git": false,
+  "square_credentials_exposed": false,
+  "total_secret_exposure_zero_claim_permitted": false,
+  "mitigation": "Never emit raw page titles or authentication URLs; allowlist all subsequent browser observations. No credential extraction or auth-state export.",
+  "s1_posts": 0,
+  "square_requests": 0
+}

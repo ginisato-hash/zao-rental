@@ -1,0 +1,16 @@
+{
+  "deployment": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+  "origin": "https://zao-rental-p7g3j78c0-zao-food-map.vercel.app",
+  "target": "preview",
+  "state": "READY",
+  "build": "SUCCESS",
+  "protectionEnabled": true,
+  "requireLogin": true,
+  "customDomains": 0,
+  "productionAliases": 0,
+  "productionSquareEntries": 0,
+  "remoteHead": "f9468c81144ba6c1db3bade87c6e72d55b8c07a8",
+  "sourceTree": "39b9f85c972cdc01e64c3a4d72ac6f4aa2243025",
+  "authorityCommit": "f4c6dc7c27d11bc4db635ba6eef1bab0686db431",
+  "at": "2026-09-14T13:03:50.672136+00:00"
+}

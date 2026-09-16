@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "roleFlags": "ALL_FALSE",
+  "memberships": 0,
+  "allowed": [
+    "narrow_current_visuals",
+    "bounded_derivative_function"
+  ],
+  "negative": [
+    {
+      "name": "workspace_raw",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "media_raw",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "revision_raw",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "visual_mutation",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "guest_arbitrary",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "recommendation_arbitrary",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "business_write",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "ddl",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "role_management",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "public_function",
+      "sqlstate": "42501"
+    },
+    {
+      "name": "visual_helper",
+      "sqlstate": "42501"
+    }
+  ],
+  "approvedDerivativeCount": 3,
+  "repeatedProvisionRejected": true,
+  "hosted": false
+}

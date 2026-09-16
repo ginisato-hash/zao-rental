@@ -1,0 +1,2 @@
+Initial complete local E2E PASS. The staff preview assertion was then strengthened to compare the valid ordinary preview entry with all three permissions versus BOOKING_VIEW-only. Final run PASS; counts refer to final run only. No product correction or failed acceptance run occurred. All records preserve this sequence.
+The staged diff check found terminal blank lines in two normalized logs before commit; those whitespace-only endings were removed and evidence hashes updated. No code or test result changed.

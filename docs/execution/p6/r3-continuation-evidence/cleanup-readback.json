@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-14T02:55:22.504825+00:00",
+  "bootstrap_removed": "dpl_C44zbkSu1uu4WbPNj9uCLA8zDJWP",
+  "remove_exit_code": 0,
+  "remaining": [
+    {
+      "uid": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+      "target": null,
+      "state": "READY"
+    }
+  ],
+  "live_aliases": [],
+  "production_aliases": 0,
+  "custom_domains": [],
+  "protection": "all_except_custom_domains",
+  "project_settings_unchanged": true,
+  "app_preview_created": 1
+}

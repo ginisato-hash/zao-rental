@@ -1,0 +1,58 @@
+{
+  "narrow": {
+    "command": [
+      "node",
+      "--import",
+      "tsx",
+      "--test",
+      "tests/readiness/square-s1-v2.test.ts",
+      "tests/readiness/square-s1.test.ts",
+      "tests/unit/production-integration.test.ts",
+      "tests/unit/production-readiness.test.ts",
+      "tests/unit/sandbox-environment.test.ts",
+      "tests/unit/sandbox-preflight.test.ts"
+    ],
+    "exitCode": 0,
+    "startedAt": "2026-09-14T12:55:18.716462+00:00",
+    "completedAt": "2026-09-14T12:55:18.986690+00:00"
+  },
+  "secret-scan": {
+    "command": [
+      "node",
+      "scripts/check-secrets.mjs"
+    ],
+    "exitCode": 0,
+    "startedAt": "2026-09-14T12:55:18.987020+00:00",
+    "completedAt": "2026-09-14T12:55:19.282403+00:00"
+  },
+  "lint": {
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "exitCode": 0,
+    "startedAt": "2026-09-14T12:55:19.282627+00:00",
+    "completedAt": "2026-09-14T12:55:24.323433+00:00"
+  },
+  "typecheck": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exitCode": 0,
+    "startedAt": "2026-09-14T12:55:24.323768+00:00",
+    "completedAt": "2026-09-14T12:55:27.691320+00:00"
+  },
+  "build": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exitCode": 0,
+    "startedAt": "2026-09-14T12:55:27.691594+00:00",
+    "completedAt": "2026-09-14T12:55:38.893881+00:00"
+  }
+}

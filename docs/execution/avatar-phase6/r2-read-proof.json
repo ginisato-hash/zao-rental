@@ -1,0 +1,47 @@
+{
+  "status": "PASS",
+  "credentialName": "zao-avatar-phase6-read-v1",
+  "scope": "EXACT_PHASE6_BUCKET",
+  "permission": "OBJECT_READ_ONLY",
+  "assets": [
+    {
+      "sha256": "6673481fbb876be97ebec2b2957709fdbad53f4686983c11e61319f601600e8e",
+      "bytes": 67716,
+      "digestMatch": true
+    },
+    {
+      "sha256": "caf166774ab4a615aeaa93bfc31bce41d2d64756fee0117665f68f71b99aecfa",
+      "bytes": 65816,
+      "digestMatch": true
+    },
+    {
+      "sha256": "54a9d50c0f161714c8b168ecc59c9335f02a03b8f7cd700c0e656c24649e0b48",
+      "bytes": 25164,
+      "digestMatch": true
+    }
+  ],
+  "putExistingIfAbsentHttp": 403,
+  "deleteConfirmedAbsentHttp": 403,
+  "otherBucketAccess": "NOT_RUN_NO_UNRELATED_BUCKET_ENUMERATION",
+  "credentialValuesOutput": false,
+  "uploadRetries": 0,
+  "sdkAutomaticRetries": 0,
+  "proofHistory": [
+    {
+      "attempt": "initial",
+      "result": "FAILED_STAGE_NOT_CAPTURED"
+    },
+    {
+      "attempt": "instrumented",
+      "read3": "PASS",
+      "putHttp": 403,
+      "deleteHttp": "UNKNOWN_NOT_CAPTURED"
+    },
+    {
+      "attempt": "targetedDelete",
+      "precondition": "ABSENT_KEY_RECONCILED_GET404",
+      "deleteHttp": 403
+    }
+  ],
+  "notes": "No upload was repeated. Delete probes targeted only a confirmed absent digest key, never the approved objects. Unknown initial probe results remain historical."
+}

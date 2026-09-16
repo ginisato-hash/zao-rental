@@ -1,0 +1,61 @@
+{
+  "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+  "name": "zao-rental",
+  "framework": "nextjs",
+  "rootDirectory": null,
+  "buildCommand": "npm run build",
+  "protection": {
+    "deploymentType": "all_except_custom_domains"
+  },
+  "gitProvider": null,
+  "envMetadata": [
+    {
+      "key": "SQUARE_ENVIRONMENT",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "id": "7vC4S5B3fGQOLKup"
+    },
+    {
+      "key": "SQUARE_API_VERSION",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "id": "7pHGWP9xGk6P4fbK"
+    },
+    {
+      "key": "SQUARE_SANDBOX_APPLICATION_ID",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "id": "XiD5v04DY8uPinTm"
+    },
+    {
+      "key": "SQUARE_SANDBOX_LOCATION_ID",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "id": "zBgj8wc3YFh4BOvo"
+    },
+    {
+      "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "id": "YYpHSUJeXj4vOdno"
+    },
+    {
+      "key": "SQUARE_SANDBOX_MERCHANT_ID",
+      "type": "plain",
+      "target": [
+        "preview"
+      ],
+      "id": "MLXINORh4uYMi0Hx"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "at": "2026-09-14T02:45:06.134771+00:00",
+  "project": {
+    "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+    "framework": "nextjs",
+    "rootDirectory": null,
+    "buildCommand": "npm run build",
+    "installCommand": null,
+    "outputDirectory": null,
+    "nodeVersion": "24.x",
+    "protection": "all_except_custom_domains",
+    "git_connected": false
+  },
+  "bootstrap": [
+    {
+      "uid": "dpl_C44zbkSu1uu4WbPNj9uCLA8zDJWP",
+      "url": "zao-rental-el6qaeh49-zao-food-map.vercel.app",
+      "target": "production",
+      "readyState": "READY",
+      "state": "READY"
+    }
+  ],
+  "live_aliases": 0,
+  "custom_domains": 0,
+  "environment_metadata": [
+    {
+      "key": "SQUARE_ENVIRONMENT",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_API_VERSION",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_SANDBOX_APPLICATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_SANDBOX_LOCATION_ID",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    },
+    {
+      "key": "SQUARE_SANDBOX_ACCESS_TOKEN",
+      "target": [
+        "preview"
+      ],
+      "type": "sensitive"
+    }
+  ],
+  "production_env_entries": 0,
+  "value_inspection": false
+}

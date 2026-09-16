@@ -1,0 +1,275 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "kind": "ARTWORK",
+      "name": "three Owner-approved local derivatives: manifest, format, alpha, dimensions and physical bounds",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "all0001–0032 historical hashes preserved and migrated",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "atomic core import creates three distinct media/visuals, purpose grant and immutable current release",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "second import refuses populated content and leaves every row unchanged",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: id",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: layer",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: avatar_type",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: match_kind",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: model_id",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: variant_id",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: season",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: ski_length_cm",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: media_id",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: derivative_sha256",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: revision_id",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: release_id",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-1 actual imported binding immutable: created_at",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-3 narrow Avatar role cannot SELECT content_workspace",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-3 narrow Avatar role cannot SELECT content_media_objects",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-3 narrow Avatar role cannot SELECT content_revision_records",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-3 narrow Avatar role cannot SELECT avatar_visuals",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-3 narrow Avatar role cannot SELECT guest_contexts",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-3 narrow Avatar role cannot SELECT recommendation_previews",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "AV-3 cannot mutate visual or business data or create permanent tables",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "narrow function has pinned path, PUBLIC execution denied, role has no elevated flags/memberships",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "normal GuestBooking creates two synthetic member candidates before artwork interactions",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "current owner/member metadata includes approved body/ski and optional layers null",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "authenticated guest receives exact approved WebP bytes without public cache",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "anonymous denial for owner metadata and bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "cross-guest denial for owner metadata and bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "stale revision and foreign member deny media",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px appearance1 RECOMMENDED both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px appearance1 SHORTER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px appearance1 LONGER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px appearance2 RECOMMENDED both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px appearance2 SHORTER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px appearance2 LONGER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px appearance1 RECOMMENDED both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px appearance1 SHORTER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px appearance1 LONGER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px appearance2 RECOMMENDED both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px appearance2 SHORTER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px appearance2 LONGER both members physical ratio/floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "visual controls make no metadata reload, business POST or image optimizer request",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "all guest/business rows unchanged after both appearances/directions/viewports/members",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "rights revocation denies previously valid derivative URL immediately",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "AV-2 no eligible artwork means no fabricated renderer; ordinary candidates remain",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "normal local staff login for PHASE4-1 permission proof",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "PHASE4-1 all three permissions allow bytes; BOOKING_VIEW-only denies bytes and page",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "normal logout revokes owner media/metadata while other guest remains valid",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "no fatal/hydration errors or external attempts",
+      "status": "PASS"
+    }
+  ],
+  "artworkChecks": 1,
+  "pgChecks": 32,
+  "browserChecks": 18,
+  "visualBusinessPosts": 0,
+  "visualBusinessWrites": 0,
+  "extraRecommendationCalls": 0,
+  "extraHold": 0,
+  "extraQuote": 0,
+  "extraPayment": 0,
+  "existingContextInitializationExcluded": true,
+  "externalAttempts": 0,
+  "ownerApprovedLocalArtwork": true,
+  "syntheticBusinessData": true,
+  "productionApproved": false,
+  "cleanup": "Owned browser/Next/PostgreSQL closed"
+}

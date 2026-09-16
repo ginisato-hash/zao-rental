@@ -1,0 +1,16 @@
+{
+  "name": "ingress-typecheck",
+  "command": [
+    "node",
+    "node_modules/typescript/bin/tsc",
+    "--noEmit",
+    "--project",
+    "apps/webhook-ingress/tsconfig.json"
+  ],
+  "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+  "startedAt": "2026-09-15T07:37:10.360719+00:00",
+  "finishedAt": "2026-09-15T07:37:10.928472+00:00",
+  "exitCode": 0,
+  "log": "bundle-ingress-typecheck.log",
+  "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+}

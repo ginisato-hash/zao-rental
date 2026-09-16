@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-15T07:20:29.548414+00:00",
+  "exitCode": 0,
+  "deployment": {
+    "id": "dpl_G7dFJ6e6bNk9i3VKeGBpfskvA26V",
+    "url": "https://zao-rental-webhook-sandbox-ku4k6hicf-zao-food-map.vercel.app",
+    "target": "production",
+    "readyState": "INITIALIZING"
+  },
+  "rawOutputRetained": false,
+  "classification": "DISPATCHED_READBACK_REQUIRED"
+}

@@ -1,0 +1,95 @@
+
+  ▲ vercel integration installations [options]
+
+  List marketplace integration installations for the current team (account      
+  scope)                                                                        
+
+  Options:
+
+  -F,  --format <FORMAT>           Specify the output format (json)             
+  -i,  --integration <SLUG_OR_ID>  Limit to installations of this integration   
+                                   (slug or id)                                 
+       --json                      Output as JSON                               
+
+
+  Global Options:
+
+       --cwd <DIR>            Sets the current working directory for a single   
+                              run of a command                                  
+  -d,  --debug                Debug mode (default off)                          
+  -Q,  --global-config <DIR>  Path to the global `.vercel` directory            
+  -h,  --help                 Output usage information                          
+  -A,  --local-config <FILE>  Path to the local `vercel.json` file              
+       --no-color             No color mode (default off)                       
+       --non-interactive      Run without interactive prompts; when an agent is 
+                              detected this is the default                      
+  -S,  --scope                Set a custom scope                                
+  -t,  --token <TOKEN>        Login token                                       
+  -v,  --version              Output the version number                         
+
+
+  Examples:
+
+  - List all marketplace installations for the team
+
+    $ vercel integration installations
+
+  - Filter by integration slug
+
+    $ vercel integration installations --integration neon
+
+  - JSON output
+
+    $ vercel integration installations --json
+
+Vercel CLI 59.17.0 (Node.js 24.15.0)
+
+  ▲ vercel integration list [project] [options]
+
+  List resources from marketplace integrations for the current project          
+
+  Options:
+
+  -a,  --all                 Lists all resources regardless of project          
+  -F,  --format <FORMAT>     Specify the output format (json)                   
+  -i,  --integration <NAME>  Limits the resources listed to a designated        
+                             integration                                        
+       --json                Output as JSON                                     
+
+
+  Global Options:
+
+       --cwd <DIR>            Sets the current working directory for a single   
+                              run of a command                                  
+  -d,  --debug                Debug mode (default off)                          
+  -Q,  --global-config <DIR>  Path to the global `.vercel` directory            
+  -h,  --help                 Output usage information                          
+  -A,  --local-config <FILE>  Path to the local `vercel.json` file              
+       --no-color             No color mode (default off)                       
+       --non-interactive      Run without interactive prompts; when an agent is 
+                              detected this is the default                      
+  -S,  --scope                Set a custom scope                                
+  -t,  --token <TOKEN>        Login token                                       
+  -v,  --version              Output the version number                         
+
+
+  Examples:
+
+  - List resources for the current linked project
+
+    $ vercel integration list
+
+  - Filter the resources to a single integration
+
+    $ vercel integration list --integration <integration>
+    $ vercel integration list --integration acme
+    $ vercel integration list -i acme
+
+  - List all marketplace resources for the current team
+
+    $ vercel integration list --all
+    $ vercel integration list -a
+
+  - List resources as JSON
+
+    $ vercel integration list --json

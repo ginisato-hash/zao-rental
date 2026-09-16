@@ -1,0 +1,14 @@
+{
+  "attempt": 5,
+  "deploymentId": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+  "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+  "method": "GET",
+  "route": "/api/guest/draft",
+  "dispatchCount": 1,
+  "retry": 0,
+  "status": "PASS_GUEST_FLOW_READY",
+  "httpStatus": 401,
+  "startupStage": null,
+  "safeErrorCategory": "GUEST_CONTEXT_REQUIRED",
+  "rawResponseSaved": false
+}

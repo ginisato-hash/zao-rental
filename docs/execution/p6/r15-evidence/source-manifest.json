@@ -1,0 +1,103 @@
+{
+  "startingHead": "dffa78c10825fdb44bd7cb123c2b8b2b4e2113c9",
+  "authorityCommit": "229e5c3a3eb1e6e41e9915ac6230d4efdb7b4d15",
+  "files": [
+    {
+      "path": "apps/webhook-ingress/api/health.ts",
+      "sha256": "d6a36972d5c18b4e259571c5280160ee24a20dd0d6af5bc1e567119f9102b5ef"
+    },
+    {
+      "path": "apps/webhook-ingress/api/webhooks/square.ts",
+      "sha256": "b685f414e95036c1fa80896c230d5b8d06df37e399e5f2213ac0873532157c17"
+    },
+    {
+      "path": "apps/webhook-ingress/package.json",
+      "sha256": "372fee21fb152ffb394c953702c8291880675d8ed258a627709a03a42a3623c3"
+    },
+    {
+      "path": "apps/webhook-ingress/src/config.ts",
+      "sha256": "0520f48fe0037425e1c82b95da57ff6deb88e833268903b3bc11221cc5cdc3ad"
+    },
+    {
+      "path": "apps/webhook-ingress/src/handler.ts",
+      "sha256": "d9a3add727fb488e3ffcd7f936a2d3f7789da68defca16c22e9d6124e9f49713"
+    },
+    {
+      "path": "apps/webhook-ingress/tsconfig.json",
+      "sha256": "82817c05690a4898f2c623390f50d087b7dde81c038162185a3027dc92a1588d"
+    },
+    {
+      "path": "apps/webhook-ingress/vercel.json",
+      "sha256": "d91a041e210d965334f449cd338a12e56434871cb4bcec794e647eb450407d15"
+    },
+    {
+      "path": "docs/execution/R15_DEVELOPMENT_ACTIVATION.md",
+      "sha256": "7383800e76e95147247c60f24300b1ab51d9de37cf1df2ac4779fdf9379c0693"
+    },
+    {
+      "path": "package.json",
+      "sha256": "d1a771c184a23e50020a8ea0e46198fa205475592697149a6f250edb8ea2990d"
+    },
+    {
+      "path": "packages/core/src/payment/payment-projection.ts",
+      "sha256": "d492520b1b7ff324886d64deaa3785fb7f7adad8f0375147807a1e419449c04d"
+    },
+    {
+      "path": "packages/core/src/payment/r15-projection-authority.ts",
+      "sha256": "b2f4c08ce3a03bc20a971dacf7da0d0e1af57330ac795fdc0076651408556eae"
+    },
+    {
+      "path": "packages/db/src/payment-projection.ts",
+      "sha256": "3cf48235fd56099f772ecf329b456887848d4e573038f85bef11aebea7be6259"
+    },
+    {
+      "path": "packages/db/src/r15-hosted-composition.ts",
+      "sha256": "d9a1fbe40af875298a9e6bcb7f5ecb7e983435e7bf6f70050bb1dce73865c705"
+    },
+    {
+      "path": "scripts/hosted-payment-activation.ts",
+      "sha256": "c2ba0a7f2633bc3de507ac89a5eeb3275bcfba64043fd279d15bad38acfc5792"
+    },
+    {
+      "path": "scripts/hosted-payment-migrations.ts",
+      "sha256": "c6b348a1522ff321c5eaf912d70973f3f3f8d401d4f982f574fd638fdeee8f1e"
+    },
+    {
+      "path": "scripts/payment-activation-grants.ts",
+      "sha256": "7840fb3af5891e36213b81680f18f339a84882218fac8c6a11ddf482695a6399"
+    },
+    {
+      "path": "scripts/payment-activation-roles.ts",
+      "sha256": "f22b2206d361307ae2bcf6168d361a6965647b0b82110cc8b994c73c56daba7f"
+    },
+    {
+      "path": "scripts/test-r15-ingress.ts",
+      "sha256": "fb731b112f2d304ae1038c1f4219333abfb28a1ddfc37cfef692ce6fbc1f7d25"
+    },
+    {
+      "path": "tests/unit/r15-composition.test.ts",
+      "sha256": "235c3420d7c6bec8e77a8986fb14b38cb4eb0a9ba501e24af23b9038631118d3"
+    },
+    {
+      "path": "tests/unit/r15-hosted.test.ts",
+      "sha256": "ee0455bb9ea6418ff745e461c591183b17496939f43ea21c8b8a639daf4e1c2c"
+    },
+    {
+      "path": "tests/unit/r15-ingress.test.ts",
+      "sha256": "d48ce71ad5f32d38a8566f561a8a4ebc2f110dae2289ea62c12b6fc961aafbad"
+    },
+    {
+      "path": "tests/unit/r15-migrations.test.ts",
+      "sha256": "2958291ea13b8765e1ce41ed9c5e4af90d830b35b861ee1505889a312eecf9b1"
+    },
+    {
+      "path": "tests/unit/r15-projection-authority.test.ts",
+      "sha256": "7e4aa960d78dc494c8a7d7fcf7b22b8ec6592a1c2c9b43cf75bf94cade856f41"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "d1e3321f878d39417eb703e9cab3aa1a8f00cb0c91bc8be93b930cd5b1a1fdea"
+    }
+  ],
+  "implementationCommit": "6d7d5bf86138ca2724478b012739277938471700"
+}

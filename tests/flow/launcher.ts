@@ -1,3 +1,4 @@
+import {provisionAvatarReadRole} from '../../scripts/avatar-read-role';
 import {deriveBookingAccessKeys} from '../../packages/core/src/guest/booking-access-keys';
 import {BookingRecovery,type RecoveryMessage} from '../../packages/core/src/guest/booking-recovery';
 import {GuestContexts} from '../../packages/core/src/guest/context';
@@ -16,7 +17,8 @@ import {assertPortFree} from '../../scripts/worktree';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import type {DevelopmentRuntime} from '../../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
-export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean}={}){
+export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean;avatarPhase5?:boolean}={}){
+ let avatar:Awaited<ReturnType<typeof provisionAvatarReadRole>>|undefined;
  let access:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined;
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
  let guest:Awaited<ReturnType<typeof provisionGuestRole>>|undefined,content:Awaited<ReturnType<typeof provisionContentRole>>|undefined;
@@ -27,6 +29,7 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
   startupPhase='ROLES';
   roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);custody=await provisionCustodyRole(db.pool,db.identity);
   if(options.publicP0){guest=await provisionGuestRole(db.pool,db.identity);content=await provisionContentRole(db.pool,db.identity);}
+  if(options.avatarPhase5)avatar=await provisionAvatarReadRole(db.pool,db.identity);
   if(options.publicP4)access=await provisionBookingAccessRole(db.pool,db.identity);
   startupPhase='WEB';
   const origin=`http://127.0.0.1:${db.identity.webPort}`;
@@ -43,7 +46,7 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
     return service.prepare(await new GuestContexts(guest!.guestPool).resolve(guestToken),bookingId,requestId);
    },code(){if(captured.length!==1)throw new Error('SYNTHETIC_MAIL_COUNT');return captured[0]!.code;}
   }:undefined;
-  const env:NodeJS.ProcessEnv={...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin,ZAO_TEST_PUBLIC_INDEXING:'1'}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
+  const env:NodeJS.ProcessEnv={...(avatar?{ZAO_AVATAR_READ_RUNTIME:JSON.stringify(avatar.avatarDb)}:{}),...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin,ZAO_TEST_PUBLIC_INDEXING:'1'}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
   const args=['node_modules/next/dist/bin/next','dev','tests/flow-app','--webpack','--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   function launch(){
    const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});
@@ -54,7 +57,7 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
    return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){stopRequested=true;web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
   }
   let current=launch(),stopping:Promise<void>|undefined,restarting=false;
-  const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await access?.close();await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();
+  const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await avatar?.close();await access?.close();await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();
   if(options.publicP0){
    // Next dev cold route compilation can reconnect HMR and reload an active form.
    // Compile this catch-all before opening a browser; this anonymous read must stay401.
@@ -62,9 +65,9 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
     const rejected=await fetch(origin+'/api/custody/booking/00000000-0000-4000-8000-000000000000');if(rejected.status!==401)throw new Error('TEST_ANONYMOUS_CUSTODY_NOT_REJECTED');
    }catch(e){await stop();throw e;}
   }
-  return {origin,db,roles,flow,custody,guest,content,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
+  return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
    if(stopping||restarting)throw new Error('TEST_RESTART_NOT_ALLOWED');restarting=true;
    try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();return {oldPid:old,newPid:current.pid};}finally{restarting=false;}
   }};
- }catch(error){const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';console.error(JSON.stringify({code:'TEST_APP_START_FAILED',phase:startupPhase,category:/^(23505|23503|23514|40001|40P01|53300|57014|08003|08006|57P01|EADDRINUSE)$/.test(code)?code:'OTHER'}));await access?.close();await guest?.close();await content?.close();await custody?.close();if(flow)await flow.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
+ }catch(error){const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';console.error(JSON.stringify({code:'TEST_APP_START_FAILED',phase:startupPhase,category:/^(23505|23503|23514|40001|40P01|53300|57014|08003|08006|57P01|EADDRINUSE)$/.test(code)?code:'OTHER'}));await avatar?.close();await access?.close();await guest?.close();await content?.close();await custody?.close();if(flow)await flow.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
 }

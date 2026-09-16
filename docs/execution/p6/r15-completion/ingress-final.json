@@ -1,0 +1,14 @@
+{
+  "authority": "P6_R15_COMPLETION",
+  "project": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+  "codeSourceHead": "e81a82374de2f551dd8739e8a74da6166c3102e6",
+  "currentHead": "689d1a9d7b7624d6cc36be62161f5cffba829fbe",
+  "bundleSha256": "4d482ed47f115d259528ac2f9cdcd6fe4a12d93d8d96037203e5e913520fb847",
+  "additionalOrdinal": 2,
+  "historicalOrdinal": 3,
+  "classification": "SANDBOX_WEBHOOK_INGRESS_ONLY",
+  "signatureKeyMetadataVerified": true,
+  "status": "CREATED",
+  "id": "dpl_2NcfhWfbzMrMiXLMm9HF7orj4mTQ",
+  "url": "https://zao-rental-webhook-sandbox-6mb7v1qq9-zao-food-map.vercel.app"
+}

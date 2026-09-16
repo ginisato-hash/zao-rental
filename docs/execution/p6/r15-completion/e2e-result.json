@@ -1,0 +1,26 @@
+{
+  "status": "R15_E2E_PASS",
+  "operatorHttp": 200,
+  "getPaymentHttp": 200,
+  "createPaymentCount": 1,
+  "getPaymentCount": 1,
+  "retry": 0,
+  "paymentId": "hAiVuN7sPLZeZkEy6PFjQ5pCS5SZY",
+  "r12": {
+    "jobId": "ce73eb32-c372-4d0a-af23-907712b336c0",
+    "result": "SAVED",
+    "state": "RECONCILED",
+    "decision": "ACCEPT_COMPLETED"
+  },
+  "r13": {
+    "bookingId": "15000000-0000-4000-8000-000000000001",
+    "attemptId": "15000000-0000-4000-8000-000000000004",
+    "decision": "APPLY_COMPLETED",
+    "bookingState": "CONFIRMED_DEV",
+    "attemptState": "COMPLETED",
+    "revision": 1,
+    "duplicateReplaySafe": true
+  },
+  "projectionCount": 1,
+  "secretExposure": 0
+}

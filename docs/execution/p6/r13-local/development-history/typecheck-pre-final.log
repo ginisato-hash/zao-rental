@@ -1,0 +1,9 @@
+
+> zao-rental@0.1.0 typecheck
+> next typegen apps/web && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+tests/unit/payment-projection.test.ts(55,116): error TS2540: Cannot assign to 'NODE_ENV' because it is a read-only property.
+tests/unit/payment-projection.test.ts(55,266): error TS2704: The operand of a 'delete' operator cannot be a read-only property.
+tests/unit/payment-projection.test.ts(55,304): error TS2540: Cannot assign to 'NODE_ENV' because it is a read-only property.

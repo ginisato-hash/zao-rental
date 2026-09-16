@@ -1,0 +1,13 @@
+{
+  "localOnly": true,
+  "productCodeChange": 0,
+  "files": {
+    "operator.mjs": "5636b9e7af74a428e48e0dea59f410592b865334a767a654fecc7fd9dfd8f50d",
+    "acquire.mjs": "b118a2d545952d53844342e60aa36437f89b19e42cfa86ea44cb2b0199091782",
+    "finish-handoff.mjs": "1a06ba7d543a50a7c937efa54503cfbe7836a3835a98293ffde68123ea6a2c81",
+    "diagnose.ts": "40da59c4ebc03854b34772c1c469cbd26ad4f7ae1154aa20dc6ad6936a6c7adb",
+    "repair.ts": "7ae0ad5df4238a50c98cd2072b0f69a7bc3f455f7dea896c631f5e0b8fb29e9d"
+  },
+  "diagnosisAndRepairModulesExecutedAgainstDatabase": false,
+  "localChecksWereNotHostedProof": true
+}

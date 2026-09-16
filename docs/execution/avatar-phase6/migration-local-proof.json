@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "checks": [
+    "exact historical0001-0030 preflight",
+    "wrong database denied",
+    "checksum drift denied",
+    "partial object state denied",
+    "0032 failure rolls back0031 and both history writes",
+    "exact0031/0032 applied atomically without historical change",
+    "completed history refuses another dispatch"
+  ],
+  "hosted": false,
+  "ownedResourcesClosed": true
+}

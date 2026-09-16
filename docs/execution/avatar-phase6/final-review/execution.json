@@ -1,0 +1,72 @@
+{
+  "kind": "AVATAR_PHASE6_PREDEPLOY_INITIAL_INDEPENDENT_REVIEW",
+  "source_tree_sha256": "71123341c45eafc71cc3f934122b9ec54949460b278c7c89d075a87a524a8744",
+  "base_sha": "2290e66db551d2ce2a961abbd836c9464b1e97a6",
+  "authority_sha256": "9c4114c2d7c31e426263e8a770f9a73744afa50f8e173d98d2a68f28145b1b11",
+  "snapshot_sha256": "3e93d98e6420f7ae7c6133d326c3f5dfdabb250d9a27a9cd1150c2ea9466dc57",
+  "startedAtUtc": "2026-09-16T13:33:55.343Z",
+  "modelProcessStarts": 1,
+  "maximumStarts": 1,
+  "retry": 0,
+  "state": "RETURNED",
+  "capabilities": {
+    "tools": [],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.270",
+    "fast_mode_state": "off"
+  },
+  "hookEvents": [],
+  "rateLimitEvents": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789576200,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    },
+    {
+      "status": "allowed",
+      "resetsAt": 1789576200,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "toolUseCount": 0,
+  "timeoutSeconds": 1200,
+  "finishedAtUtc": "2026-09-16T13:45:46.124Z",
+  "exitCode": 0,
+  "signal": null,
+  "violation": null,
+  "is_error": false,
+  "result_subtype": "success",
+  "permissionDenialCount": 0,
+  "usage": {
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 0,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard"
+  },
+  "reportedCostUsd": 0.423755,
+  "reportedCostIsBillingEstimateNotPurchase": true,
+  "stderrClassification": "NONE",
+  "verdict": "PASS",
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 3
+  }
+}

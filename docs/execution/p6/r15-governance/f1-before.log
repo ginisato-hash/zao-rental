@@ -1,0 +1,32 @@
+✔ R15 finite worker never repeats provider AUTH_BLOCKED (1.967375ms)
+✔ R15 finite worker never repeats provider RATE_LIMITED (0.292583ms)
+✔ R15 finite worker never repeats provider NETWORK_RETRYABLE (0.231709ms)
+✔ R15 amount mismatch stops before provider and does not project (0.188291ms)
+✖ R15 a reconstructed composition cannot repeat the same GetPayment after response loss (1.559166ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 299.241583
+
+✖ failing tests:
+
+test at tests/unit/r15-composition.test.ts:1:3164
+✖ R15 a reconstructed composition cannot repeat the same GetPayment after response loss (1.559166ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/unit/r15-composition.test.ts:32:69)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

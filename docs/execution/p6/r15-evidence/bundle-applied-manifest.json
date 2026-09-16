@@ -1,0 +1,44 @@
+{
+  "base": "982b96e5916ec55ff0ca8a6c63e93c383801574d",
+  "files": [
+    {
+      "path": ".gitignore",
+      "sha256": "d7dc53cd1f49975b6dccf7db1804bafb6397ea8e82b312d5ea9cca06b14f3d46"
+    },
+    {
+      "path": "package.json",
+      "sha256": "ff4eb5f99844156aab89c949688847a87b5a05a387f579295bec8e6619a0b88c"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "8e971550d44ec36ece189f16310df36d0728dc6806e5d0e06bb3f693a3aac2fc"
+    },
+    {
+      "path": "apps/webhook-ingress/api/health.ts",
+      "sha256": "5e656717a04441d35320a1f51f6e1b6623d65452df7427d98b55166dc7cf8999"
+    },
+    {
+      "path": "apps/webhook-ingress/api/webhooks/square.ts",
+      "sha256": "8fb121983eafb5ea619c7a457fc54ed66221014e044c4817517b2891ec6a471d"
+    },
+    {
+      "path": "apps/webhook-ingress/runtime.d.cts",
+      "sha256": "4692060a90b4edbf39801d5aa4823ffcb275d23c70498268b936e8b6688a91a1"
+    },
+    {
+      "path": "scripts/build-ingress.mjs",
+      "sha256": "ade32282d8e825bcfb6fc81f9a93f3b9d0b14894dc45580151f75b3f7a665a3e"
+    },
+    {
+      "path": "scripts/build-ingress.d.mts",
+      "sha256": "a6e257d86d594f0e20d05be2d23d9ee6f766f94fa4768ccb0ab6530bab1309cc"
+    },
+    {
+      "path": "tests/unit/r15-artifact.test.ts",
+      "sha256": "ab7dbe4f2aa181bef56c79b848f5e9853a079e0f6ad7855d2e41c7407149a71d"
+    }
+  ],
+  "counterexample": "artifact-before.log: ERR_MODULE_NOT_FOUND under ordinary Node",
+  "candidateArtifactRegression": "artifact-after.log: 6 passed; candidate full suite has an unrelated no-git preflight failure, canonical suite is still required",
+  "canonicalValidated": false
+}

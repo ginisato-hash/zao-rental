@@ -1,0 +1,1614 @@
+{
+  "branch": "codex/external-acceptance-p6",
+  "base_sha": "b541999163ff129cc588960a2c5bf94da61d0cd9",
+  "head_sha": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+  "authority_sha256": "a71b71e976cb7be4942837e4e4c0ae07e295fcfb78353a72770dbc2a446ba4f0",
+  "snapshot_sha256": "2b6abf6348cec9cb95d9c6aaae4ef39aaa7f4439f2e74b9a2a0ec43aa16fb1df",
+  "snapshot_bytes": 814711,
+  "files": [
+    {
+      "path": "apps/web/src/lib/square-s1-preflight.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1f0abecc27cedc33cc6b29fc0467575a336aed4b56d7b6786c653f7e0918dfcd",
+      "bytes": 3510,
+      "lines": 53
+    },
+    {
+      "path": "apps/webhook-ingress/api/health.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "5e656717a04441d35320a1f51f6e1b6623d65452df7427d98b55166dc7cf8999",
+      "bytes": 102,
+      "lines": 3
+    },
+    {
+      "path": "apps/webhook-ingress/api/webhooks/square.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "8fb121983eafb5ea619c7a457fc54ed66221014e044c4817517b2891ec6a471d",
+      "bytes": 105,
+      "lines": 3
+    },
+    {
+      "path": "apps/webhook-ingress/package.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "372fee21fb152ffb394c953702c8291880675d8ed258a627709a03a42a3623c3",
+      "bytes": 149,
+      "lines": 7
+    },
+    {
+      "path": "apps/webhook-ingress/runtime.d.cts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "4692060a90b4edbf39801d5aa4823ffcb275d23c70498268b936e8b6688a91a1",
+      "bytes": 181,
+      "lines": 3
+    },
+    {
+      "path": "apps/webhook-ingress/src/config.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "0520f48fe0037425e1c82b95da57ff6deb88e833268903b3bc11221cc5cdc3ad",
+      "bytes": 2377,
+      "lines": 23
+    },
+    {
+      "path": "apps/webhook-ingress/src/handler.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d9a3add727fb488e3ffcd7f936a2d3f7789da68defca16c22e9d6124e9f49713",
+      "bytes": 1670,
+      "lines": 24
+    },
+    {
+      "path": "apps/webhook-ingress/tsconfig.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "82817c05690a4898f2c623390f50d087b7dde81c038162185a3027dc92a1588d",
+      "bytes": 124,
+      "lines": 5
+    },
+    {
+      "path": "apps/webhook-ingress/vercel.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a0d5357e64ed261c30d9bcab3f4bc6f42d6a1712a9b081f48391957bcb60dd75",
+      "bytes": 518,
+      "lines": 25
+    },
+    {
+      "path": "docs/execution/AI_DEVELOPMENT_GOVERNANCE.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "49d5cd3d5249e054a772b124b34af5b1ef32840715127b9230cd4f644ed22a27",
+      "bytes": 9770,
+      "lines": 140
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_R15_COMPLETION_AUTHORITY.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a71b71e976cb7be4942837e4e4c0ae07e295fcfb78353a72770dbc2a446ba4f0",
+      "bytes": 21503,
+      "lines": 1343
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/AUTHORITY.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b4bd506ad86ab440e275669e6c2f3cc329070a8a29baab6121cb70df47ddb8c5",
+      "bytes": 806,
+      "lines": 14
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/FINAL_RESULT.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "fa95c31e0af8e289c96740314085d46ce3e37190fd2886170eb8c0e35dca39b2",
+      "bytes": 7494,
+      "lines": 115
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/SETUP_COMPATIBILITY.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "7be755e9a727947ddb2a419e11b5950d8684071224d475d656e3a27bb9fc5dee",
+      "bytes": 2346,
+      "lines": 32
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/counts.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a9dc5fb77e245f12ee7b56aaa609af4987a0ca1c152a0a79611e586e9243bcfe",
+      "bytes": 1078,
+      "lines": 46
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/credential-handling.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "709dea21f25821af999a9284e60999878caa5f10d20b007aae9b5de58e54cda8",
+      "bytes": 598,
+      "lines": 14
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ddl-probe.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "55247e8724093435ff2471511bef80cf577c7f2abe6ec48fa4ba8b3940c1925f",
+      "bytes": 250,
+      "lines": 11
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/e2e-db-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "8d0067ca481776682264399517da561e34412391c4ceec1aa0ac80a7d89961ce",
+      "bytes": 1615,
+      "lines": 56
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/e2e-result.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "e86d5cbfd7b36ef55e73019f02673cf9fb04e7ed079d4940becd5793ee31202a",
+      "bytes": 679,
+      "lines": 26
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/final-review/auth-check.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d73bde79246b72f138d8fee91273a7e4c388ce1b10f643bc8da668de806304c5",
+      "bytes": 563,
+      "lines": 25
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/final-validation.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f84820ac5ae089335b1c1f5751044f228e21586d333629f5f37dabc164604733",
+      "bytes": 879,
+      "lines": 28
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/guard-tests.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d38f619ee7be7292615808c3acda788931f81083dbc4b420cccfefe4dbbeed7e",
+      "bytes": 1577,
+      "lines": 59
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-bootstrap-check.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a3c4b590ae4ed3c875629438fcc58c78812955a43b9ab6a3bc15f8c5ceb0130d",
+      "bytes": 576,
+      "lines": 24
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-bootstrap-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "76eeedcf6c8564bbba34b398e91c172d36b871b19f0589ed67ca417ee761ce83",
+      "bytes": 549,
+      "lines": 18
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-bootstrap.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "254082c586634da022ed8bdbb36aaaf522261e57d75bc3365c9b8222db19c423",
+      "bytes": 623,
+      "lines": 15
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-dry.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "e7c0c52d4d1ad1382475bfbc9cf4dbc4247c90f3ab5c772a9fe43b940ad61352",
+      "bytes": 191,
+      "lines": 13
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-env-list-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c7df07afcbd6973179c8d6e77fc65b10d9a1a15dbbad7e1d75820b91502f78c4",
+      "bytes": 127,
+      "lines": 5
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-env-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "28333d3cf1e0e14d5ec87aca69d497ad762eddcc30be2afabd196fc4fcc50a5b",
+      "bytes": 73,
+      "lines": 4
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-env.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "13f0206f8d9fff245bbdc5e893a34044397f25d58846f96def1b956d333e2d9b",
+      "bytes": 912,
+      "lines": 44
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-final-check.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b52ecab6a0b27fe0e65699af5745a59871828a4a704d3b3ee2c374bd91d05841",
+      "bytes": 601,
+      "lines": 25
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-final-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "18e58d88b5e9a8ec9f960cff2d9343b7ff3a7a286477eae1c559858bb21669c6",
+      "bytes": 399,
+      "lines": 12
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-final.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f93770094415d68ebcd4b768442505256e9c6b1d107e3ce42f5f9ae7ae1a7ad8",
+      "bytes": 591,
+      "lines": 14
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/local-e2e-proof.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "0da54fa07b0035bebc48b570a04e3350ee5940de427e22ea3ba00542d6278968",
+      "bytes": 672,
+      "lines": 14
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/local-preparation.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "3f8f0a76036b95268372dae44c6b64f7f12236d84b34527b99639393f5296144",
+      "bytes": 655,
+      "lines": 24
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/local-setup-proof.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f9ca719bdda2e15ac2003d747d94f6bb11a45bbc056ceb8069acf0f3cdc32bfc",
+      "bytes": 569,
+      "lines": 27
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/main-preview-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1237e6661af20e92ac7c88ecc040a18230e9da202931f76929d43791800f7dcf",
+      "bytes": 365,
+      "lines": 12
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/main-preview.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a07d73b857da58a227f4cf11f80e585438c6c911a642c8543c28c40dd3003a72",
+      "bytes": 476,
+      "lines": 13
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/migration-diagnostic.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1f4b335e62688254119033f3f89ae62e47f807a6fd4d8d892402e0006c391d80",
+      "bytes": 687,
+      "lines": 34
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/migration-result.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f7d263ce0a3a521d93efe60f225c9d44ca55b9a88932a2a36702763f2a828d0a",
+      "bytes": 733,
+      "lines": 29
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/migration-source-hashes.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "4c8478e64c2e49077c221e75286b30d83cbf7c9bce9826b6f621e0d3e5bb2386",
+      "bytes": 4919,
+      "lines": 158
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/natural-webhook.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ed2a6b3f9394888330bf327960338d23dab0b3ccd3fe1b003a54c59aa9fe21c6",
+      "bytes": 1098,
+      "lines": 32
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/negative-tests.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "693c835352e8279d1ccd154ebfb234d556361549294dac11312406f125aa3ec6",
+      "bytes": 4559,
+      "lines": 190
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/official-webhook-http-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b5d054e32e382ce916e7df4f8d86be391fc45789d931c5aab58f693713d58c72",
+      "bytes": 1765,
+      "lines": 74
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/official-webhook-reconciliation.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "25de3f5d77984403168979a95ea5b1fa80abfd0bbc27cf8304a834bd55266894",
+      "bytes": 611,
+      "lines": 20
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/official-webhook.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "9501dda754a756c301d50cbd93bc5085d5c11732377f9e160b24b46fda624275",
+      "bytes": 77,
+      "lines": 4
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/operator-cached-response-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "8fcb9388f49d62649d18df01c35738d619b5892615942bf9c565f6c156aa060e",
+      "bytes": 378,
+      "lines": 17
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/operator-validation.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "6dc98c952b94cb770e25848b5c36721fae405ee4671640ec38b8be95cf63b4ef",
+      "bytes": 373,
+      "lines": 10
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ownership-diagnosis.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "adc56133bf82474ea4bec8a8297c39652353c0be1a12a4fbdb6f891d10a95d55",
+      "bytes": 1444,
+      "lines": 55
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/payment-preparation.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "67846f4d1635be332184cd70baa7aa5ebbcb33efef2f06b0ff12563ccda4dabb",
+      "bytes": 973,
+      "lines": 27
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/payment-result.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "8e28f88a55fb34d1aea9b98540632e8b99a3633f459780e5e88c9b8c55bd391a",
+      "bytes": 643,
+      "lines": 23
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/positive-tests.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f791ac09dd5f8645ae67fb4450a8a62191863bef554bac0b663ea1de55200922",
+      "bytes": 664,
+      "lines": 31
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/preview-artifact-check.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "4bbafa2d64f428315ab2bb5e2b5d33ae542ad263e44504544d9e9ab928c1eee4",
+      "bytes": 138,
+      "lines": 7
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/preview-build.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ca9a74dd1edb69c45032d11a138bc9b85b6e3aef73679c12fd9ae36d006c5a80",
+      "bytes": 7116,
+      "lines": 145
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/preview-env.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1c546b20fc82326983603b2bac8044988223c7e23180a63f86e07636503e51af",
+      "bytes": 992,
+      "lines": 50
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/preview-preflight.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f1f925d06996dc7bfec97fc04d4fc08ee59823debd63678d25f099d766b17b15",
+      "bytes": 271,
+      "lines": 11
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/privilege-repair.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "91843f216427fdf22101dd3c7d8976199aacc3b90869ebab4766d45ac3c8128e",
+      "bytes": 282,
+      "lines": 10
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/project-preflight.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "67bff7ab9d0786062eae73da22d6c142e4884343228bc52fc51f233cda2bea03",
+      "bytes": 1895,
+      "lines": 83
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/resource-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b8003d80f1d5a918336ee75b047b0780032c4d72f76e4cce1075754c945ce412",
+      "bytes": 295,
+      "lines": 13
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/roles-result.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d9956416f63fc6c84f6bab25d3a02ec76f12c1c8014ed766defae4723d9c81f5",
+      "bytes": 1826,
+      "lines": 70
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/runtime-cleanup.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "2700530f85c296f3353bd033922f902a396c8319b64384cd8b9ccbd546d9cf6e",
+      "bytes": 1654,
+      "lines": 62
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/setup-capabilities.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "34201a226f611c0e7fe707446d951aec11c384ef664a551785bb56090b87b260",
+      "bytes": 223,
+      "lines": 9
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/signed-webhook-proof.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ddd19c4128eccee7629ea8885630f614d3071488d07317da511c6ebe8df71ddc",
+      "bytes": 728,
+      "lines": 23
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/subscription-cleanup-readback.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d09bdce7c52d9aa4023915e17817ff1a349abd4a44e8a34727f3395a8c85e42e",
+      "bytes": 395,
+      "lines": 12
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/subscription-cleanup.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b89eb9e6aaa4adb4540755e2e6ea532cb724b12c24e7ea72d2ab7fa9eb3b02ab",
+      "bytes": 140,
+      "lines": 5
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/subscription.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1a2e8d3f1b01715415190cae2f67f3d44a6c7b07d19e0e25c3806de33dec20e4",
+      "bytes": 710,
+      "lines": 27
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/test-credential-cleanup.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "624689d76ada128857cd2992d7cee110bccb4bd4e31345ff96b6f721be3a1d02",
+      "bytes": 233,
+      "lines": 9
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/vercel-cleanup-progress.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "8b21f0cf557119090a52b2a85292b83a8d28a5c0f4462156271c21ec56aee5fa",
+      "bytes": 2338,
+      "lines": 89
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/vercel-cleanup.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c9dfe74b487ae27152cb9f0301fc6cb991d3194ca9bb03d8d42cfbc74baa73af",
+      "bytes": 735,
+      "lines": 30
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/payment-operation-manifest.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ac2f8e03dc0398d6e875d14e30903a84de66bdfcb01a73cde86f2d2576ec2de9",
+      "bytes": 1507,
+      "lines": 42
+    },
+    {
+      "path": "docs/execution/p6/r15-governance/FINDING_DISPOSITION.md",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "4c9a7100a78f862a3d1fdbe87026f4e1abb9fa0f9a19676a0e0a8de09de67917",
+      "bytes": 6622,
+      "lines": 95
+    },
+    {
+      "path": "docs/execution/p6/r15-governance/review-01-review.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f89b607ce406851b6ce4965a07dc68e43fdaf7630af9d4e5e8ea1967d7f3fe71",
+      "bytes": 14122,
+      "lines": 84
+    },
+    {
+      "path": "docs/execution/p6/r15-governance/review-02/execution.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b41ddabe5624fed0afd8ddd21f28a43d714aa9f8780d3d97a12a4d3ba119c41d",
+      "bytes": 2075,
+      "lines": 74
+    },
+    {
+      "path": "docs/execution/p6/r15-governance/review-02/launch-contract.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "bf14f7db3e0b50ad65860a6a5935513d479db23338b7921ff9ca89eec78df3f5",
+      "bytes": 1532,
+      "lines": 64
+    },
+    {
+      "path": "docs/execution/p6/r15-governance/review-02/review.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "33fc1ff6ac2a9fb2c6bb2761f102df57bc8e8ac100ffdcd09f867a7934c259a9",
+      "bytes": 14936,
+      "lines": 63
+    },
+    {
+      "path": "package.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ff4eb5f99844156aab89c949688847a87b5a05a387f579295bec8e6619a0b88c",
+      "bytes": 5915,
+      "lines": 103
+    },
+    {
+      "path": "packages/contracts/src/hold-input.schema.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a413287dedff75b5702991cb5eeaca44866d24f342fc6bc26fa035135e624d98",
+      "bytes": 4159,
+      "lines": 170
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "69bb59eb37534fadbadb9f94d7a1c2c4ff1f5ed0ee9e26103784f8ecc83931a8",
+      "bytes": 8013,
+      "lines": 79
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b33a5bc13b1f1fd1eb024dcc59f220fb62db613b290ca267d2f306df07280401",
+      "bytes": 4618,
+      "lines": 58
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "aa140e45aea391598ded8f90067f2ed877e5d428a5b5a2827b58b00f6521401d",
+      "bytes": 9951,
+      "lines": 38
+    },
+    {
+      "path": "packages/contracts/src/rental-flow.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "88f74c2aa298bb62f0e98b3cc49c9a3be64042258cba8d146d6d17af977c768d",
+      "bytes": 3796,
+      "lines": 20
+    },
+    {
+      "path": "packages/core/src/payment/payment-projection.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d492520b1b7ff324886d64deaa3785fb7f7adad8f0375147807a1e419449c04d",
+      "bytes": 15317,
+      "lines": 147
+    },
+    {
+      "path": "packages/core/src/payment/payment-reconciliation.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "e987bd91572eefc9c965293bb05a3e1e956a28100a9d5c37b22d97097927d5ec",
+      "bytes": 6859,
+      "lines": 73
+    },
+    {
+      "path": "packages/core/src/payment/payment-truth.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "9d0073c6aee008f8ccfedb8ab71cbf57587741825ae13ed8a62be93b1956e592",
+      "bytes": 5281,
+      "lines": 46
+    },
+    {
+      "path": "packages/core/src/payment/r15-projection-authority.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b2f4c08ce3a03bc20a971dacf7da0d0e1af57330ac795fdc0076651408556eae",
+      "bytes": 1302,
+      "lines": 14
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-environment.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "75052d3205e6ff658489dadb7c83c34679e0b6ff8c3896fa28be6aa495255a70",
+      "bytes": 3266,
+      "lines": 65
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-preflight.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "117e7e7e7c4fe35118346fab7db20f694aecfd1b59420cce0d5aa3c5a55e38db",
+      "bytes": 5010,
+      "lines": 38
+    },
+    {
+      "path": "packages/core/src/payment/square-boundary.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "89ac1d70b71ef7169a44385ec3df300199c838671666795a2fc9e8aa442f6063",
+      "bytes": 3508,
+      "lines": 26
+    },
+    {
+      "path": "packages/core/src/payment/square-payment-truth.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "391ee34e3a9d529359ac79a25aa253f0c3fddf977f16251997c512db334edc73",
+      "bytes": 2132,
+      "lines": 22
+    },
+    {
+      "path": "packages/core/src/payment/square-sandbox.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b25e9264977c473895006da32dee78b4b8403b67470662d080efaf45f0198e5c",
+      "bytes": 4424,
+      "lines": 37
+    },
+    {
+      "path": "packages/core/src/payment/square-transport.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "dcd059eb00e7e6dd9c923afda3bedbbfe19992c177b442560844f466b392fa9a",
+      "bytes": 6203,
+      "lines": 73
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-inbox.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "344ca520371a5f937a0fcf54eaad928bfe4010a5297f0fe666fb54c96422bf4a",
+      "bytes": 1089,
+      "lines": 17
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-receiver.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "44369ed107c2e98051b64e6ae4560d48536b065e4f600729b32f669ea21948aa",
+      "bytes": 3988,
+      "lines": 56
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150",
+      "bytes": 530,
+      "lines": 11
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246",
+      "bytes": 14076,
+      "lines": 140
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47",
+      "bytes": 7226,
+      "lines": 100
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1",
+      "bytes": 8294,
+      "lines": 76
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7",
+      "bytes": 17126,
+      "lines": 128
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954",
+      "bytes": 7743,
+      "lines": 47
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075",
+      "bytes": 3459,
+      "lines": 37
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11",
+      "bytes": 1309,
+      "lines": 20
+    },
+    {
+      "path": "packages/db/migrations/0009_development_booking.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "bdc31ea49660a1edee75fd20dd3c4043090dc0832698f2356f31af219c7f37c0",
+      "bytes": 5827,
+      "lines": 44
+    },
+    {
+      "path": "packages/db/migrations/0010_rental_custody.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "6d07a0dca17e428fcc43d332c8f87ffc35557f5dd23d56e474b6a2d3e30b8816",
+      "bytes": 8045,
+      "lines": 47
+    },
+    {
+      "path": "packages/db/migrations/0011_receipt_timeline.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "5db1b2f9bec8ef4945ccb2065b6e8638d7a8993502adf670bce7fce5a059acf6",
+      "bytes": 313,
+      "lines": 3
+    },
+    {
+      "path": "packages/db/migrations/0012_integrated_wear_catalog.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a6076dbf78245744b0394bcf5a4a5ced868d5798080da19b1b581ba40ad9239d",
+      "bytes": 5596,
+      "lines": 35
+    },
+    {
+      "path": "packages/db/migrations/0013_wear_quantity.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ec606b57dc1f27e9b015e6c6cad4e4a26fbfc70479d3a3abc50e5ca54ea8817c",
+      "bytes": 12391,
+      "lines": 96
+    },
+    {
+      "path": "packages/db/migrations/0014_wear_return_batch.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "7f19d23b101cc4c795e6cadf6b773e233eb72b3138647d4c0f6953b77c6bd52c",
+      "bytes": 1875,
+      "lines": 20
+    },
+    {
+      "path": "packages/db/migrations/0015_custody_boundary.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f4885fade5b753e950ea307b47dee5b138d61985a48d09fe9b09f063de6ba095",
+      "bytes": 31418,
+      "lines": 231
+    },
+    {
+      "path": "packages/db/migrations/0016_delayed_pickup.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "177f50e10a653ff176c5863a60d221639470fa3471852c119c8b1bdc79f0d57c",
+      "bytes": 5255,
+      "lines": 27
+    },
+    {
+      "path": "packages/db/migrations/0017_no_pickup_completion.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a85917af78ced36e347f72b4ab8dfb11aaedff8b542eef6f7299eb4db2358f73",
+      "bytes": 3335,
+      "lines": 40
+    },
+    {
+      "path": "packages/db/migrations/0018_guest_actor.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b3d1c1c28b4536c5a4cd81f070da04b297807856c3ff39fd3b0a65ba5470044c",
+      "bytes": 4550,
+      "lines": 38
+    },
+    {
+      "path": "packages/db/migrations/0019_content_workspace.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "45d39bbc3f9e97956e54e39bcbaa582ab08c75c3165a4b5848b6417334fb8ec7",
+      "bytes": 2475,
+      "lines": 13
+    },
+    {
+      "path": "packages/db/migrations/0020_content_media.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a1099ed4d97273de8eab2c6ba1b8c074747e381d01158510a5b2c9afdf82e4ab",
+      "bytes": 940,
+      "lines": 9
+    },
+    {
+      "path": "packages/db/migrations/0021_guest_security.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d3698864619ac5e4bb30bb6e966cb1228cfa71d9fb83f9eb82b1bcea6ff73978",
+      "bytes": 1428,
+      "lines": 14
+    },
+    {
+      "path": "packages/db/migrations/0022_booking_access.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "e6abd96536ba285e1bca159b79b0ed20cf83dcdf7af4169f510020f321b2b12b",
+      "bytes": 5464,
+      "lines": 67
+    },
+    {
+      "path": "packages/db/migrations/0023_sandbox_activation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "8b0db6afc0540dce17fb206b0fd5e6f7963a44d6f7e20f0f4f445b1643a441da",
+      "bytes": 2159,
+      "lines": 30
+    },
+    {
+      "path": "packages/db/migrations/0024_booking_recovery.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c69295df3ec5abdcc5e44b50cdf482efebdbf1d260b83b02a8b7289a9c4e6aec",
+      "bytes": 9475,
+      "lines": 106
+    },
+    {
+      "path": "packages/db/migrations/0025_square_webhook_inbox.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "8ffa1c78e9f10338987a1846741cc05cdc523d99ec8949d1bf6757fe48a8268d",
+      "bytes": 7069,
+      "lines": 94
+    },
+    {
+      "path": "packages/db/migrations/0026_payment_reconciliation.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "276495dec2116938da4bc0f4f3d3cd742210c2522ab3c3b41c5fefedbf76e605",
+      "bytes": 22053,
+      "lines": 193
+    },
+    {
+      "path": "packages/db/migrations/0027_payment_projection.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "6b0b9eda78d634e10417e83b8268096b7b46f3778dd4ceea2fa8915413733062",
+      "bytes": 4254,
+      "lines": 37
+    },
+    {
+      "path": "packages/db/migrations/0028_development_projection_source.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "0b9fbafefc9a1e6d939e078f354aca08af7982f7f0db9f8582c0dc5b30f82953",
+      "bytes": 1446,
+      "lines": 15
+    },
+    {
+      "path": "packages/db/migrations/0029_development_payment_scope.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "e2e070adadbed9682ff45c41660e8fa2889124af4840e7af274171574e2b7566",
+      "bytes": 6829,
+      "lines": 52
+    },
+    {
+      "path": "packages/db/migrations/0030_r15_operation_guard.sql",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "194f19dd724544706f55252f09cf0583c89bb9d64c08499132f2d2ce753f03bc",
+      "bytes": 3066,
+      "lines": 46
+    },
+    {
+      "path": "packages/db/src/development-payment-composition.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "e0736af0b4a95dab72b5edbc1f6fe683b6efe9b364155cbb3f7c5c6ac0164f97",
+      "bytes": 2897,
+      "lines": 17
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "acf4f217fa532e7cee6ac5cc9823cc8b7939e5bf660336cc8c2ebe3b2b519caa",
+      "bytes": 3588,
+      "lines": 44
+    },
+    {
+      "path": "packages/db/src/payment-projection.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "3cf48235fd56099f772ecf329b456887848d4e573038f85bef11aebea7be6259",
+      "bytes": 12366,
+      "lines": 93
+    },
+    {
+      "path": "packages/db/src/payment-reconciliation.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b5fb45c7046a0a82328885fb911aa66cbbccd7782d10ff81995e42cfdf1dffed",
+      "bytes": 3624,
+      "lines": 25
+    },
+    {
+      "path": "packages/db/src/r15-hosted-composition.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1ea45437612ff2a91ab2fb2e7a8c49f485f73ebce44918695d988f5ca6b30473",
+      "bytes": 3334,
+      "lines": 26
+    },
+    {
+      "path": "packages/db/src/r15-operation-guard.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "9ffa52fb5679a4275fc770aaa15429cda5c0f7bb25ff971f14099dd293127471",
+      "bytes": 1660,
+      "lines": 20
+    },
+    {
+      "path": "packages/db/src/schema.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "85ab193a5c1ff92377009525da2b14684dda63e1769a30247546c98478650e5a",
+      "bytes": 542,
+      "lines": 8
+    },
+    {
+      "path": "packages/db/src/square-webhook-inbox.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ee463d57e7116c356e02d1d6beb5be0faef39e8485e2f9694579e97958579550",
+      "bytes": 2628,
+      "lines": 33
+    },
+    {
+      "path": "scripts/build-ingress.d.mts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a6e257d86d594f0e20d05be2d23d9ee6f766f94fa4768ccb0ab6530bab1309cc",
+      "bytes": 135,
+      "lines": 1
+    },
+    {
+      "path": "scripts/build-ingress.mjs",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ade32282d8e825bcfb6fc81f9a93f3b9d0b14894dc45580151f75b3f7a665a3e",
+      "bytes": 1064,
+      "lines": 18
+    },
+    {
+      "path": "scripts/build-r15-preview.mjs",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "9d0bdb551fc96ca956e5d229062a12f4af1997004b656b25f28d47b190dabb3c",
+      "bytes": 1657,
+      "lines": 15
+    },
+    {
+      "path": "scripts/hosted-migration-setup.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "68249f68d67ff14e0a0a2abcb3f324da743e60066a6f683a37610f13824920fa",
+      "bytes": 3324,
+      "lines": 56
+    },
+    {
+      "path": "scripts/hosted-payment-activation.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c2ba0a7f2633bc3de507ac89a5eeb3275bcfba64043fd279d15bad38acfc5792",
+      "bytes": 3760,
+      "lines": 39
+    },
+    {
+      "path": "scripts/hosted-payment-migrations.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b40c7afb84c7855cf8c882751dba2a068c0e439eb52c4244122c6c5eacfb0b71",
+      "bytes": 2368,
+      "lines": 28
+    },
+    {
+      "path": "scripts/payment-activation-grants.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ce2af7a02e18649a52a21d953d2ef16fff77ebb900c7681d0f10cc69ac4c0648",
+      "bytes": 3158,
+      "lines": 30
+    },
+    {
+      "path": "scripts/payment-activation-roles.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f22b2206d361307ae2bcf6168d361a6965647b0b82110cc8b994c73c56daba7f",
+      "bytes": 1793,
+      "lines": 25
+    },
+    {
+      "path": "scripts/r15-operation-manifest.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "a0f4ed90c25a6fdb662547d3dc8f15eed469a6731a187c73e21176da2cab5565",
+      "bytes": 858,
+      "lines": 17
+    },
+    {
+      "path": "scripts/r15-synthetic-fixture.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "2193017c3df1b24da8f5506cfa979f73692919ffc4b9a76719ebf9736ca8de2f",
+      "bytes": 5580,
+      "lines": 36
+    },
+    {
+      "path": "scripts/test-payment-activation.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b57841bc147c74a0e0d83975b76e3f341c3fdb3a5027aeaaa1310e590922e9a5",
+      "bytes": 1211,
+      "lines": 17
+    },
+    {
+      "path": "scripts/test-r15-ingress.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "2b1fdd4e46601c94b9d3631b67d61967319cb3f951d599791c29fdbf541c8ab4",
+      "bytes": 6760,
+      "lines": 62
+    },
+    {
+      "path": "tests/readiness/r14-additional.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c28b8b523814d0170b0d771d6165818ba8fcf0d362a874db5a5bbc21e017806c",
+      "bytes": 8456,
+      "lines": 64
+    },
+    {
+      "path": "tests/readiness/r14-boundaries.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "fccbee95e4e48ef128e9a4c11ea5132e536b80a911ef144f1e00ffa0e8d58e6c",
+      "bytes": 6937,
+      "lines": 51
+    },
+    {
+      "path": "tests/readiness/r14-evidence.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "db0647fae5f02bcf67a00b57b13b70bd9f90b3f4907e51f3d133b7a8e730ee9c",
+      "bytes": 3943,
+      "lines": 24
+    },
+    {
+      "path": "tests/readiness/r14-fresh-child.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "f80b93f5e7ea1bc01af939d376dec802db1a5c5be8529feb8cf4f7967d72ccde",
+      "bytes": 1219,
+      "lines": 12
+    },
+    {
+      "path": "tests/readiness/r14-postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b354f44662f2554d034fc4f9438bbe9b5a332e2d4665d2ea8d7fc525452498bb",
+      "bytes": 27488,
+      "lines": 137
+    },
+    {
+      "path": "tests/readiness/r15-guard-child.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c5732228487142ca8b5ae338a67e7591ec7a323da1bac95490f87ae8fb03557e",
+      "bytes": 600,
+      "lines": 10
+    },
+    {
+      "path": "tests/readiness/r15-guard-postgres.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d7e160dd0b9255bf65961cb75c9665cffa4f7d3b84cde4991b5fea95bd6c172e",
+      "bytes": 6386,
+      "lines": 59
+    },
+    {
+      "path": "tests/readiness/r15-migration-owner.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "6cd2709277dad7ee7f9a728749641ec06a33611ed0acae29e1a3fe4711fe8037",
+      "bytes": 2837,
+      "lines": 32
+    },
+    {
+      "path": "tests/readiness/r15-preview-local.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "6f7a39be7b46d0937af08a23e29e31194f74948b5558aa0a229654195e2d2b86",
+      "bytes": 6614,
+      "lines": 40
+    },
+    {
+      "path": "tests/unit/payment-activation.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1a56d9fdc665af25e161a57641294b2213d9bb3b53a9099afac6e435c9c8c83f",
+      "bytes": 3035,
+      "lines": 23
+    },
+    {
+      "path": "tests/unit/payment-projection-db.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d8035a2919e441c80e229d1f615e1351fb98e638e104d24b9ecf3ffec93b44df",
+      "bytes": 2874,
+      "lines": 12
+    },
+    {
+      "path": "tests/unit/payment-reconciliation-db.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "5edb3c0ae6da6fd4cfe3e177934bdb5f30dde0aef84ff4694dcd4370c7753861",
+      "bytes": 7703,
+      "lines": 52
+    },
+    {
+      "path": "tests/unit/r15-artifact.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ab7dbe4f2aa181bef56c79b848f5e9853a079e0f6ad7855d2e41c7407149a71d",
+      "bytes": 2375,
+      "lines": 32
+    },
+    {
+      "path": "tests/unit/r15-composition.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "75acc007353ae0518f25fbfd92e97dac1fe8df5008bd3b7d101fecf38db7f909",
+      "bytes": 3969,
+      "lines": 33
+    },
+    {
+      "path": "tests/unit/r15-hosted.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "ee0455bb9ea6418ff745e461c591183b17496939f43ea21c8b8a639daf4e1c2c",
+      "bytes": 2177,
+      "lines": 17
+    },
+    {
+      "path": "tests/unit/r15-ingress.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c231c313f4c3431619559e3540b4d9e9102a7c510407c9f4978619c855aa0cf9",
+      "bytes": 6278,
+      "lines": 49
+    },
+    {
+      "path": "tests/unit/r15-migrations.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "c661aeef0e0fc147e72ca1f78ca5d2d24dd7e26ca61296e1d1be8087914a75a0",
+      "bytes": 428,
+      "lines": 6
+    },
+    {
+      "path": "tests/unit/r15-operation-guard.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "b4cab72f7f2673ac32865ae6da9f678489330fadf3f51c9b1da0757a8817e5a7",
+      "bytes": 1235,
+      "lines": 11
+    },
+    {
+      "path": "tests/unit/r15-operation-manifest.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "e146b507471f07e55c60e09752f8ad868a9c88982dd65f0f19ebda761271cad3",
+      "bytes": 1932,
+      "lines": 32
+    },
+    {
+      "path": "tests/unit/r15-preview.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "bf26078f1138d1aaa3d7a6e608e30799974b45b4c25f6a63b41fd014135a33ec",
+      "bytes": 6122,
+      "lines": 22
+    },
+    {
+      "path": "tests/unit/r15-projection-authority.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "7e4aa960d78dc494c8a7d7fcf7b22b8ec6592a1c2c9b43cf75bf94cade856f41",
+      "bytes": 2700,
+      "lines": 24
+    },
+    {
+      "path": "tests/unit/r15-signature-handoff.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "110230f639ea6eca2642086a1ad847cb468db04e98e6bb2c4883a44b7f6c166c",
+      "bytes": 3585,
+      "lines": 37
+    },
+    {
+      "path": "tests/unit/square-webhook-receiver.test.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "93b4a3cffdae4e1b5c5cd2d7505f6e8f2ee98beb6532d2abeffc061c4161f91b",
+      "bytes": 13421,
+      "lines": 121
+    },
+    {
+      "path": "tools/acceptance/r15-neon-credential-handoff.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "1cb601c8befd5dfe6c54043f9fc47adfbe1398675bce83356d87172e01210257",
+      "bytes": 3234,
+      "lines": 67
+    },
+    {
+      "path": "tools/acceptance/r15-preview-entry.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "4053c82276e4a09a59bd4339c9d6fabde385bfc6f1197536375e4bf09041f10a",
+      "bytes": 1150,
+      "lines": 15
+    },
+    {
+      "path": "tools/acceptance/r15-preview.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d143a7fb289e242b8a3b50efb94d403fc5a5b1797dd3ca8d72544310c81d5b6e",
+      "bytes": 11347,
+      "lines": 104
+    },
+    {
+      "path": "tools/acceptance/r15-signature-handoff.ts",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "5a198b51ab643f0b576e98cfa96bffa45bde5083cf0df20ac3715f5fe3791ffd",
+      "bytes": 3688,
+      "lines": 49
+    },
+    {
+      "path": "tsconfig.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "d1e3321f878d39417eb703e9cab3aa1a8f00cb0c91bc8be93b930cd5b1a1fdea",
+      "bytes": 1009,
+      "lines": 48
+    },
+    {
+      "path": "vercel.json",
+      "kind": "GIT_FULL_FILE",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "796173f1aaf7f1826311dd29fcdab92d38d5b911e48f2ddd5868580211a5fbb5",
+      "bytes": 347,
+      "lines": 7
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_STATUS.json@SELECTED_FIELDS",
+      "kind": "GIT_DERIVED_SELECTED_FIELDS",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "cb296ef0074ca045ae919835445f89edde45838bae7d974560f3375ae179061a",
+      "bytes": 4862,
+      "lines": 135
+    },
+    {
+      "path": "docs/execution/p6/r15-completion/ingress-build.json@SELECTED_FIELDS",
+      "kind": "GIT_DERIVED_SELECTED_FIELDS",
+      "gitRef": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+      "sha256": "0a0b0557d12e686526e2c92a8826e746ddff7a4fb784ad7b61436b1edeab182f",
+      "bytes": 26800,
+      "lines": 722
+    },
+    {
+      "path": "tools/acceptance/r15-preview.ts@DEPLOYED_023d819",
+      "kind": "GIT_DEPLOYED_FILE",
+      "gitRef": "023d819ef0ed5b427a2d80a34c68825ca6002f64",
+      "sha256": "560e525efcb4ac30b76943e8f0e10cd9ca91a06ad90d10aa0d1040722591222b",
+      "bytes": 11260,
+      "lines": 104
+    },
+    {
+      "path": "tools/acceptance/r15-preview-entry.ts@DEPLOYED_023d819",
+      "kind": "GIT_DEPLOYED_FILE",
+      "gitRef": "023d819ef0ed5b427a2d80a34c68825ca6002f64",
+      "sha256": "4053c82276e4a09a59bd4339c9d6fabde385bfc6f1197536375e4bf09041f10a",
+      "bytes": 1150,
+      "lines": 15
+    },
+    {
+      "path": "scripts/build-r15-preview.mjs@DEPLOYED_023d819",
+      "kind": "GIT_DEPLOYED_FILE",
+      "gitRef": "023d819ef0ed5b427a2d80a34c68825ca6002f64",
+      "sha256": "9d0bdb551fc96ca956e5d229062a12f4af1997004b656b25f28d47b190dabb3c",
+      "bytes": 1657,
+      "lines": 15
+    },
+    {
+      "path": "LOCAL_APPENDIX/bootstrap-deploy.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "e62ab5917269c1938a2f013b68f856af0a02c59d8521fc16c1adca8cad31be85",
+      "bytes": 433,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/browser-ops.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "1222002edcd427519c5432cbc93ec16f1c0b69bb4bf1151101b9629111597d98",
+      "bytes": 2526,
+      "lines": 28
+    },
+    {
+      "path": "LOCAL_APPENDIX/delete-subscription.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "4b2f623c86af72724638df3b03f7dff395b2a979cc275157cb5c8d1326067860",
+      "bytes": 256,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/delete-subscription.observed.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "8849bdb4f68d56fa44e73cd9774bb0e98edada0c8c286a6d030e9d62d80745f8",
+      "bytes": 129,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/diagnose.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "c4d16d9c61a9866ce1c1ff5467f2e11b4ec24779c0ddddd385142bcdafb004aa",
+      "bytes": 9101,
+      "lines": 46
+    },
+    {
+      "path": "LOCAL_APPENDIX/final-ingress-deploy.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "3082ca56ccd99591fb2e2ff48d0c91d00092aabb293a4c6923737076aa3d187e",
+      "bytes": 405,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/fixture-install.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "33e2fcff9c635377c360aebdf75632d6185338c757d0338994b56436de875d7d",
+      "bytes": 218,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/guard-child.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "a516e005e309c4103ac6c2e51d4f0e31ea93300704631c65b8257e855ad58dd6",
+      "bytes": 747,
+      "lines": 12
+    },
+    {
+      "path": "LOCAL_APPENDIX/guard-tests.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "fe5e98fa9afa5719311d3aaf418d7775c93da6f0f18f415a01c40ef06c291b69",
+      "bytes": 4792,
+      "lines": 31
+    },
+    {
+      "path": "LOCAL_APPENDIX/hosted-tests.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "bdc07955cbff5f6c4e15ae4c267914d6b8ad612fc7ada2a9eec06bf63bc92272",
+      "bytes": 6310,
+      "lines": 33
+    },
+    {
+      "path": "LOCAL_APPENDIX/local-setup-proof.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "48e1646737cfad8797df879c8b1a04c5719c1ab97fbc02ba9b15f6350a7c24fc",
+      "bytes": 3391,
+      "lines": 28
+    },
+    {
+      "path": "LOCAL_APPENDIX/main-preview.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "785962f567d0fba8c1edeebf2f0c49ad03ef6c3299273635ba9edb703e1aeff5",
+      "bytes": 307,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/one-shot.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "b6af5e18af1461c6c6256061e104ee1c964702df667ed78f4879d31657246e75",
+      "bytes": 3853,
+      "lines": 138
+    },
+    {
+      "path": "LOCAL_APPENDIX/operator.mjs",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "0cd321c436ac06ea8e21a97deb92aa5e944c61cd5f242a28edeef58afbdf6357",
+      "bytes": 4045,
+      "lines": 44
+    },
+    {
+      "path": "LOCAL_APPENDIX/payment.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "8ed9c2b7c6331b573c93982009ec2f8760b4aabf73d7e382dcae70f2f74967c7",
+      "bytes": 244,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/payment.observed.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "319ca3a5b0031a3ed46b475de523b41cd0d61e41fa37b49927f56ba3bba1d22e",
+      "bytes": 117,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/reconcile.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "d350103c0e2afb155d29a2a4cc50c9820e63ab4f866a88bf642bd04a3eb73dea",
+      "bytes": 246,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/reconcile.observed.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "9881af2126eb42e26a1f1f42598fa7f8ccd541a8e64b6f639400360b814639b7",
+      "bytes": 119,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/runtime-env.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "b052077c7165dad061e590505aab5aef2ac2dea857036f5b182c04277b445fb7",
+      "bytes": 5164,
+      "lines": 54
+    },
+    {
+      "path": "LOCAL_APPENDIX/step.ts",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "4dd632abafa0ee9dc75145b011bdba06f003a505547e0d0950b9d71353d35f65",
+      "bytes": 2494,
+      "lines": 16
+    },
+    {
+      "path": "LOCAL_APPENDIX/subscription.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "0450deaffde73e2a7f9ac20345038682d105c72bb00b4a45e6e603ff0d0942fd",
+      "bytes": 249,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/subscription.observed.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "0c20a256fafa0b7ded3d147345d0ce2971669f239c997de699ed367894f4f1e6",
+      "bytes": 122,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/test.guard.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "49486f2de8fc584e3f3073e74ced24785afaa2214a83b36e40dbfc175e495ed3",
+      "bytes": 241,
+      "lines": 1
+    },
+    {
+      "path": "LOCAL_APPENDIX/test.observed.json",
+      "kind": "SANITIZED_LOCAL_APPENDIX_NOT_GIT",
+      "gitRef": null,
+      "sha256": "5cbc3d813434250bbfafb8b3ff446c2c71d66ec214252c90e7970565e7eb4533",
+      "bytes": 114,
+      "lines": 1
+    }
+  ],
+  "excludedLockfileSha256": "8e971550d44ec36ece189f16310df36d0728dc6806e5d0e06bb3f693a3aac2fc",
+  "source_clean": true,
+  "remote_readback_matches": true,
+  "secrets_pattern_scan": "PASS_NOT_COMPREHENSIVE"
+}

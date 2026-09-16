@@ -1,0 +1,20 @@
+{
+  "status": "READ_ONLY_RECONCILIATION_NO_RETRY",
+  "testRequestAttempts": 1,
+  "operatorHttp": 0,
+  "observedAt": "2026-09-15T13:38:21.752Z",
+  "receipts": [
+    {
+      "environment": "SANDBOX",
+      "event_id": "8521363e-1443-4db9-8e05-25bfe409b602",
+      "event_type": "payment.created",
+      "merchant_id": "MLKDVEDH1ME21",
+      "payment_id": "hYy9pRFVxpDsO1FB05SunFWUe9JZY",
+      "body_sha256": "62aaab48e86a8aec616ca3e04ee3ff0476c6a4b4ec456ad4f135f0a197560646",
+      "received_at": "2026-09-15T13:38:27.891Z",
+      "state": "RECEIVED",
+      "conflict_count": 0
+    }
+  ],
+  "providerRetry": 0
+}

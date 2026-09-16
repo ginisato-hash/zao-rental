@@ -1,0 +1,167 @@
+{
+  "status": "SELF_VERIFIED_PASS",
+  "recordedAtUtc": "2026-09-16T03:03:07.380074+00:00",
+  "base": "4485966d87d55aa010766e5f45820541c989fa54",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "unit": {
+    "total": 253,
+    "newGuest": 16,
+    "newScopedRenderer": 2,
+    "existingRelated": 235,
+    "fail": 0,
+    "skip": 0
+  },
+  "realLocalPostgres": {
+    "upgradeAndRoles": 32,
+    "phase5AuthAndMedia": 36,
+    "recommendation": 17,
+    "guest": 7,
+    "content": 5,
+    "total": 97
+  },
+  "browser": {
+    "phase5": 21,
+    "existingGuestBooking": 5,
+    "total": 26,
+    "engine": "Chromium153.0.8010.12; desktop and iPhone-sized viewport; not actual Safari",
+    "viewports": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "measurements": 12,
+    "maxSkiHeightErrorPx": 0.008731617647043777,
+    "maxFloorDifferencePx": 0.015625,
+    "horizontalOverflow": 0,
+    "fatalErrors": 0,
+    "hydrationErrors": 0,
+    "externalAttempts": 0
+  },
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS_LOCAL_NEXT_WEBPACK",
+  "secretScan": "PASS_PATTERN_LIMITED",
+  "gitDiffCheck": "PASS",
+  "oldMigrationsUnchanged": 31,
+  "migrationAdded": 1,
+  "newMigration": "0032",
+  "rendererBusinessPosts": 0,
+  "rendererBusinessWrites": 0,
+  "recalculationFromVisuals": 0,
+  "existingGuestContextInitialization": "Existing idempotent context POST on navigation is excluded from visual-operation count; all guest/business rows still fingerprinted unchanged",
+  "localBusinessRegression": "Existing synthetic booking/payment fixtures use local fake ports only",
+  "approvedRealArtwork": "NOT_PROVIDED",
+  "artworkUploads": 0,
+  "publicActivation": false,
+  "customerVisible": false,
+  "localGuestIntegrationReady": true,
+  "externalProviderOperations": {
+    "square": 0,
+    "hostedNeon": 0,
+    "vercelDeploy": 0,
+    "vercelEnv": 0,
+    "r2": 0,
+    "externalMedia": 0,
+    "externalBrowser": 0,
+    "production": 0,
+    "realPayment": 0,
+    "realCustomer": 0,
+    "emailSMS": 0,
+    "newService": 0
+  },
+  "newPR": 0,
+  "mainMerge": 0,
+  "phase4AcceptanceReplay": 0,
+  "phase4ReviewReplay": 0,
+  "dependencyChanges": 0,
+  "browserDownloads": 0,
+  "logs": {
+    "unit": {
+      "file": "docs/execution/avatar-phase5/unit.log",
+      "sha256": "6b323180917880817cfd94ad7d7fa0f7e5e40adf5e653ab4588ac112d66330f7",
+      "originalRawSha256": "6b323180917880817cfd94ad7d7fa0f7e5e40adf5e653ab4588ac112d66330f7",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "upgrade": {
+      "file": "docs/execution/avatar-phase5/upgrade.log",
+      "sha256": "283416801a07f0728ff96cf59ebccbcc41633ba15c67e3cec07a1839e0c90b02",
+      "originalRawSha256": "283416801a07f0728ff96cf59ebccbcc41633ba15c67e3cec07a1839e0c90b02",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "e2e": {
+      "file": "docs/execution/avatar-phase5/e2e.log",
+      "sha256": "8006d18f2acfd6059267cfca9a43f7ef39720f1aad37c282b44f9b2a8c9d6274",
+      "originalRawSha256": "8006d18f2acfd6059267cfca9a43f7ef39720f1aad37c282b44f9b2a8c9d6274",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "recommendation-pg": {
+      "file": "docs/execution/avatar-phase5/recommendation-pg.log",
+      "sha256": "d7cbbbbeee240641be077e5d51852ddf846add2b1232a6f91327dc2461f41fcb",
+      "originalRawSha256": "d7cbbbbeee240641be077e5d51852ddf846add2b1232a6f91327dc2461f41fcb",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "guest-pg": {
+      "file": "docs/execution/avatar-phase5/guest-pg.log",
+      "sha256": "0e51418af75c0a012dc2336396b2da1000f81369122583fb3527b9eb4eedf087",
+      "originalRawSha256": "0e51418af75c0a012dc2336396b2da1000f81369122583fb3527b9eb4eedf087",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "content-pg": {
+      "file": "docs/execution/avatar-phase5/content-pg.log",
+      "sha256": "efda2ed97fc27c166b104e62dfb97af77d84b8b0c9e477b1af5c78be5dc771e1",
+      "originalRawSha256": "efda2ed97fc27c166b104e62dfb97af77d84b8b0c9e477b1af5c78be5dc771e1",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "guest-ui": {
+      "file": "docs/execution/avatar-phase5/guest-ui.log",
+      "sha256": "f848b2883107245ef196b68701a662f272657780b747c0b140d566b402d02792",
+      "originalRawSha256": "f848b2883107245ef196b68701a662f272657780b747c0b140d566b402d02792",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "lint": {
+      "file": "docs/execution/avatar-phase5/lint.log",
+      "sha256": "48eddc8512a0398c20e7c22aff3de4295c76be5847ba372f9c6237d0dc239e78",
+      "originalRawSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "typecheck": {
+      "file": "docs/execution/avatar-phase5/typecheck.log",
+      "sha256": "eac9fd3d6fdf9d91858c701276552a974f706ada286334a8e16bb2be8b9d36ed",
+      "originalRawSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "build": {
+      "file": "docs/execution/avatar-phase5/build.log",
+      "sha256": "06b22b7fa7f4fb07a89dd0c4264f3b85d7e6282f9a1362a480e663de9ffd8a32",
+      "originalRawSha256": "5858140bf18c9c2e42f6eac2274ed909bbd9c7cf3b36fe0d91cb2d1abc3e5594",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    },
+    "secrets": {
+      "file": "docs/execution/avatar-phase5/secrets.log",
+      "sha256": "5515a47e68a5437599931c7dde6de73de3385ba867232667090e2a798acf57f9",
+      "originalRawSha256": "e4b79a66dba09ba0abddbc08b3b521a210903ed70ffc8bcaa9a13cb42fda1f0e",
+      "exitCode": 0,
+      "normalization": "CR/trailing whitespace only; messages unchanged"
+    }
+  },
+  "preparationCorrections": [
+    "View UPDATE rejects with PostgreSQL55000; test now checks rejection and independent absence of UPDATE privilege",
+    "New test routes initially placed under app instead of existing src/app; corrected local test composition",
+    "Next adds RSC Vary tokens; assertion now checks inclusion of Cookie, not exact header equality",
+    "Intermittent staff/login and logout navigation waits during Next dev cold routes; final harness warms ordinary routes and checks authentication/logout HTTP status",
+    "Original LOW exact BOOKING_VIEW-only counterexample added in addition to each missing permission; final run includes all cases"
+  ],
+  "cleanup": "All owned PostgreSQL/Next/Chromium processes and pools closed"
+}

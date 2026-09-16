@@ -1,0 +1,14 @@
+{
+  "closedAt": "2026-09-15T02:42:42.030Z",
+  "ownedRuntimeRoles": [
+    "zr_16311180e859_pay_receipt",
+    "zr_16311180e859_pay_dispatch",
+    "zr_16311180e859_pay_truth",
+    "zr_16311180e859_pay_projection",
+    "zr_16311180e859_pay_diagnostic",
+    "zr_16311180e859_pay_public"
+  ],
+  "remainingConnections": 0,
+  "finiteChildExited": true,
+  "ownerConnectionPendingStop": true
+}

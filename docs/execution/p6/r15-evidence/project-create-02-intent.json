@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-15T07:11:10.418237+00:00",
+  "authority": "P6_R15_EXPLICIT_CHAT_ADOPTION",
+  "maxCreates": 1,
+  "body": {
+    "name": "zao-rental-webhook-sandbox",
+    "framework": null,
+    "rootDirectory": "apps/webhook-ingress",
+    "publicSource": false,
+    "ssoProtection": {
+      "deploymentType": "all_except_custom_domains"
+    },
+    "buildCommand": "",
+    "installCommand": "npm ci --prefix ../.. --ignore-scripts",
+    "skipGitConnectDuringLink": true
+  },
+  "priorAttemptReconciledAbsentAt": "2026-09-15T07:09:39.755656+00:00",
+  "revisionReason": "Use documented creation fields; node/outside-root are verified/configured afterward."
+}

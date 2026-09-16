@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "STOPPED_NEW_TOOL_METADATA_EXPOSURE_SUSPECTED",
+  "phase": "RESUMED_IMPLEMENTING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -46,8 +46,8 @@
   "independentReview": "NOT_RUN",
   "externalAcceptance": "NOT_RUN",
   "implementation": "PARTIAL_CHECKPOINT_ONLY",
-  "secretExposure": "UNKNOWN_NEW_EXTERNAL_SEARCH_TOOL_METADATA",
-  "providerCredentialAcquisitions": 3,
+  "secretExposure": "UNKNOWN_SUSPECTED_BROWSER_TOOL_METADATA",
+  "providerCredentialAcquisitions": 0,
   "providerMutations": 0,
   "ownedBrowserTabsClosed": 3,
   "checkpointValidation": {
@@ -78,25 +78,5 @@
   "knownReplay": 0,
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
-  "newSecretExposureObservedAfterResume": "SUSPECTED_NOT_ZERO_CLAIMED",
-  "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "hostedDatabaseWrites": 0,
-  "neonOAuthSessionsCreated": 1,
-  "neonOAuthSessionsRevoked": 1,
-  "ownedBrowserTabsClosedAfterResume": "NOT_CONFIRMED_NO_OPAQUE_HANDLE",
-  "nextGate": "Owner incident assessment and explicit bounded continuation; no Phase7",
-  "resumeValidation": {
-    "migrationLocalPostgres": "PASS_7_CASES",
-    "hostedDatabaseIdentity": "MATCH",
-    "hostedOwnerIdentity": "MATCH",
-    "tlsClientConfiguration": "rejectUnauthorized=true",
-    "postgresReportedSsl": false,
-    "tlsVerificationGate": "NOT_RESOLVED",
-    "hostedHistoricalMigrationPreflight": "NOT_REACHED",
-    "hosted0031": "NOT_RUN",
-    "hosted0032": "NOT_RUN",
-    "dbPools": "CLOSED",
-    "neonOAuthProfile": "REVOKED_AND_REMOVED",
-    "globalBrowserInventoryCalls": 0
-  }
+  "newSecretExposureObservedAfterResume": 0
 }

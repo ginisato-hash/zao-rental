@@ -1,3 +1,16 @@
+## Current — Phase6 resume stopped under new exposure condition
+
+Read docs/execution/avatar-phase6/RESUME_STOP_RECORD.md and status.json.
+Resume authority §16 triggered by new suspected authentication-bearing metadata in a
+public web search result. Do not reopen/search/reconstruct/replay the incident values.
+Historical STOP_RECORD.md remains immutable; neither old nor new zero-exposure is claimed.
+Hosted DB writes/migration/R2/Vercel/deploy/Claude0. New local migration proof7 casesPASS.
+Task Neon OAuth revoked/removed; owner DB URI remained memory-only; pools closed.
+No provider execution until new incident assessment and explicit bounded continuation.
+Parent single writer. No main/Production/Phase7. Browser global inventory remains forbidden.
+
+## Historical — explicit resume before second stop
+
 ## Current — Phase6 explicit resume with dedicated isolated Preview project
 
 Read docs/execution/AVATAR_PHASE6_RESUME_AUTHORITY.md and avatar-phase6/RESUME_PLAN.md.

@@ -217,3 +217,57 @@ CREATE TRIGGER ops_financial_alerts_immutable BEFORE UPDATE OR DELETE ON ops_fin
 -- Browser response loss replays one saved private price-management result.
 CREATE TABLE price_admin_requests(actor text NOT NULL REFERENCES staff_members(id),request_key uuid NOT NULL,fingerprint text NOT NULL CHECK(length(fingerprint)=64),result jsonb NOT NULL,PRIMARY KEY(actor,request_key));
 CREATE TRIGGER price_admin_requests_immutable BEFORE UPDATE OR DELETE ON price_admin_requests FOR EACH ROW EXECUTE FUNCTION pricing_immutable();
+
+-- Reviewed M1 stocktake correction: the restricted custody executor may change a
+-- counted pole pool, without fabricating a receipt or bypassing outstanding promises.
+CREATE TABLE rental_internal.stocktake_effects(tx bigint NOT NULL,pid integer NOT NULL,pole_id uuid NOT NULL,old_version integer NOT NULL,new_quantity integer NOT NULL,PRIMARY KEY(tx,pid,pole_id));
+REVOKE ALL ON rental_internal.stocktake_effects FROM PUBLIC;
+DO $$BEGIN EXECUTE format('ALTER TABLE rental_internal.stocktake_effects OWNER TO %I',current_database()||'_custody_executor');END$$;
+CREATE FUNCTION ops_reconcile_poles(stocktake_uuid uuid,pole_uuid uuid,expected_revision integer) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+DECLARE s ops_stocktakes;p ledger_poles;base jsonb;out_count integer;counted integer;target integer;actor text:=current_setting('zao.actor',true);
+BEGIN
+ PERFORM pg_advisory_xact_lock(71820600);
+ SELECT * INTO STRICT s FROM ops_stocktakes WHERE id=stocktake_uuid;
+ PERFORM ops_assert_actor('INVENTORY_EDIT',ARRAY[s.store_id],actor);PERFORM ops_assert_actor('INVENTORY_RECONCILE',ARRAY[s.store_id],actor);
+ IF length(btrim(coalesce(current_setting('zao.reason',true),''))) NOT BETWEEN 1 AND 160 THEN RAISE EXCEPTION 'STOCKTAKE_REASON_REQUIRED' USING ERRCODE='23514';END IF;
+ SELECT * INTO STRICT p FROM ledger_poles WHERE id=pole_uuid;
+ SELECT b INTO base FROM jsonb_array_elements(s.baseline->'quantities') b WHERE b->>'id'=pole_uuid::text AND b->>'kind'='POLES';
+ SELECT count(*) INTO out_count FROM rental_loan_items WHERE pole_id=p.id AND state='OUT';
+ IF s.state<>'REVIEW_REQUIRED' OR s.revision<>expected_revision OR p.store_id<>s.store_id OR base IS NULL OR (base->>'version')::integer<>p.version OR (base->>'protected_count')::integer<>out_count OR (base->>'physical')::integer<>p.quantity-out_count OR jsonb_typeof(s.observations->'quantities'->p.id::text) IS DISTINCT FROM 'number' THEN RAISE EXCEPTION 'STOCKTAKE_BASELINE_CHANGED' USING ERRCODE='23514';END IF;
+ IF (s.observations->'quantities'->>p.id::text) !~ '^(0|[1-9][0-9]{0,6})$' THEN RAISE EXCEPTION 'INVALID_COUNT' USING ERRCODE='23514';END IF;
+ counted:=(s.observations->'quantities'->>p.id::text)::integer;target:=counted+out_count;
+ IF counted<0 OR counted>1000000 OR target<out_count OR EXISTS(SELECT 1 FROM rental_loan_items WHERE pole_id=p.id AND state='OUT' AND pole_slot>target) OR EXISTS(SELECT 1 FROM inventory_claims WHERE pole_id=p.id AND active AND transfer_piece_id IS NULL AND pole_slot>target) OR EXISTS(SELECT 1 FROM transfer_pieces WHERE (source_pole_id=p.id OR destination_pole_id=p.id OR receipt_pole_id=p.id) AND state NOT IN ('CANCELLED','CLOSED')) THEN RAISE EXCEPTION 'POLE_PROMISE_RECONCILIATION_REQUIRED' USING ERRCODE='23514';END IF;
+ INSERT INTO rental_internal.stocktake_effects VALUES(txid_current(),pg_backend_pid(),p.id,p.version,target);
+ UPDATE ledger_poles SET quantity=target WHERE id=p.id;
+ DELETE FROM rental_internal.stocktake_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND pole_id=p.id;
+ -- Existing ledger_audit preserves actor, reason and exact before/after counts.
+END$$;
+REVOKE ALL ON FUNCTION ops_reconcile_poles(uuid,uuid,integer) FROM PUBLIC;
+DO $$DECLARE executor text:=current_database()||'_custody_executor';BEGIN
+ EXECUTE format('ALTER FUNCTION ops_reconcile_poles(uuid,uuid,integer) OWNER TO %I',executor);
+ EXECUTE format('GRANT SELECT ON ops_stocktakes TO %I',executor);
+ EXECUTE format('GRANT EXECUTE ON FUNCTION ops_assert_actor(text,text[],text) TO %I',executor);
+END$$;
+
+-- Preserve every previous stock guard branch; authorize only the private exact effect above.
+CREATE OR REPLACE FUNCTION inventory_stock_guard() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE owner_name text;BEGIN
+ SELECT pg_get_userbyid(relowner) INTO owner_name FROM pg_class WHERE oid=TG_RELID;
+ IF current_user=current_database()||'_custody_executor' AND TG_TABLE_NAME='ledger_poles' THEN
+  IF EXISTS(SELECT 1 FROM rental_internal.stocktake_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND pole_id=NEW.id AND old_version=OLD.version AND new_quantity=NEW.quantity AND NEW.status=OLD.status AND NEW.store_id=OLD.store_id AND NEW.variant_id=OLD.variant_id) THEN RETURN NEW;END IF;
+  IF EXISTS(SELECT 1 FROM rental_internal.effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND pole_id=NEW.id AND delta=NEW.quantity-OLD.quantity AND NEW.status=OLD.status) THEN RETURN NEW;END IF;
+ END IF;
+ IF current_user=owner_name AND current_setting('zao.transfer_operation',true)='controlled' THEN
+  IF TG_TABLE_NAME='ledger_poles' THEN
+   IF NEW.quantity<(SELECT count(*) FROM rental_loan_items WHERE pole_id=NEW.id AND state='OUT') THEN RAISE EXCEPTION 'Loaned pairs cannot move' USING ERRCODE='23514';END IF;
+  END IF;RETURN NEW;END IF;
+ IF (TG_TABLE_NAME='ledger_assets' AND EXISTS(SELECT 1 FROM rental_loan_items l LEFT JOIN rental_inspection_events i ON i.loan_item_id=l.id WHERE l.asset_id=NEW.id AND (l.state='OUT' OR i.inspection_id IS NULL))) OR (TG_TABLE_NAME='ledger_poles' AND EXISTS(SELECT 1 FROM rental_loan_items l WHERE l.pole_id=NEW.id AND l.state='OUT')) THEN
+  IF NEW.status IS DISTINCT FROM OLD.status OR (TG_TABLE_NAME='ledger_poles' AND to_jsonb(NEW)->'quantity' IS DISTINCT FROM to_jsonb(OLD)->'quantity') THEN RAISE EXCEPTION 'Custody protected stock' USING ERRCODE='23514';END IF;
+ END IF;
+ IF NEW.status=OLD.status AND (TG_TABLE_NAME='ledger_assets' OR to_jsonb(NEW)->'quantity'=to_jsonb(OLD)->'quantity') THEN RETURN NEW;END IF;
+ IF TG_TABLE_NAME='ledger_assets' THEN
+  IF NEW.status<>'AVAILABLE' AND (EXISTS(SELECT 1 FROM inventory_claims WHERE asset_id=NEW.id AND active) OR EXISTS(SELECT 1 FROM transfer_pieces WHERE asset_id=NEW.id AND state NOT IN ('CANCELLED','CLOSED'))) THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Protected inventory requires reconciliation';END IF;
+ ELSE
+  IF (NEW.quantity<>OLD.quantity OR NEW.status<>OLD.status) AND EXISTS(SELECT 1 FROM transfer_pieces WHERE (source_pole_id=NEW.id OR destination_pole_id=NEW.id OR receipt_pole_id=NEW.id) AND state NOT IN ('CANCELLED','CLOSED')) THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Protected transfer quantity';END IF;
+  IF EXISTS(SELECT 1 FROM inventory_claims WHERE pole_id=NEW.id AND active AND transfer_piece_id IS NULL AND (NEW.status<>'AVAILABLE' OR pole_slot>NEW.quantity)) THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Protected quantity requires reconciliation';END IF;
+ END IF;RETURN NEW;
+END$$;

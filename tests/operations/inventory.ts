@@ -7,7 +7,7 @@ import {InventoryOperations} from '../../packages/core/src/operations/inventory-
 import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
 import {STOCK_IMPORT_HEADER_V2} from '../../packages/contracts/src/stock-import';
 import {stageStockImport} from '../../packages/core/src/content/import-staging';
-import {requestFor,variants,fid} from '../inventory/fixture';
+import {skiSet,requestFor,variants,fid} from '../inventory/fixture';
 const x=await flowFixture();let role:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined,failed=false,stage='fixture',count=0;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 try{
@@ -33,5 +33,27 @@ try{
   const {QuoteService}=await import('../../packages/core/src/pricing/quote-service');const {loadStaff}=await import('../../packages/auth/src/staff-auth');const prices=new QuoteService(x.roles.pricingPool,(await loadStaff(x.db.pool,x.actor))!,x.now),source=(await prices.catalog()).books[0]!,key=randomUUID(),bookId=randomUUID(),v={operation:'createDraft',input:{bookId,sourceId:source.id,rentalFrom:'2035-01-01',rentalUntil:'2035-12-31',reason:'SYNTHETIC private management'}};
   const [a,b]=await Promise.all([prices.manage(v,key),prices.manage(v,key)]);assert.deepEqual(JSON.parse(JSON.stringify(a)),b);await assert.rejects(prices.manage({...v,input:{...v.input,reason:'SYNTHETIC changed'}},key),{code:'IDEMPOTENCY_MISMATCH'});assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM price_books WHERE id=$1',[bookId])).rows[0].n,1);
  });
+ await check('pole reconciliation with active OUT pairs preserves custody, scope and outstanding promises',async()=>{
+  const original=await ledger.get('poles',fid(1301));await ledger.update('poles',original.id,{version:original.version,reason:'SYNTHETIC stocktake fixture',quantity:10});
+  const {CustodyService}=await import('../../packages/core/src/rental/custody-service');const custody=new CustodyService(role!.operationsPool,x.roles.authPool,x.signed.identity);
+  const {loadStaff}=await import('../../packages/auth/src/staff-auth');Object.assign(x.principal,(await loadStaff(x.db.pool,x.actor))!);const d=await x.draft(undefined,skiSet('2035-02-05'));await x.service.startPayment(d.booking.id,randomUUID());await x.clock('2035-02-05T10:00:00+09:00');
+  const v=await custody.checkoutView(d.booking.id),prepared=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC fit'});await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:prepared.preparation.version});
+  const loans=(await x.db.pool.query("SELECT * FROM rental_loan_items WHERE pole_id=$1 AND state='OUT'",[fid(1301)])).rows;assert.equal(loans.length,1);
+  await assert.rejects(role!.operationsPool.query('SELECT ops_reconcile_poles($1,$2,1)',[randomUUID(),fid(1301)]));
+  const take=await svc.create(randomUUID(),'MOUNTAIN_BASE'),view=await svc.get(take.id),pole=view.baseline.quantities.find(q=>q.id===fid(1301))!;assert.equal(pole.physical,9);assert.equal(pole.protected_count,1);
+  const quantities=Object.fromEntries(view.baseline.quantities.map(q=>[q.id,q.id===pole.id?8:q.physical]));await svc.observe(randomUUID(),{id:take.id,expectedRevision:view.revision,assets:view.baseline.assets.filter(a=>a.present_expected).map(a=>a.id),quantities});const updated=await svc.get(take.id);
+  const input={id:take.id,expectedRevision:updated.revision,reason:'SYNTHETIC counted eight available plus one OUT'},key=randomUUID();const r=await svc.reconcile(key,input);assert.equal(r.state,'RECONCILED');assert.deepEqual(await svc.reconcile(key,input),r);
+  assert.equal((await ledger.get('poles',pole.id)).quantity,9);assert.deepEqual((await x.db.pool.query("SELECT * FROM rental_loan_items WHERE pole_id=$1 AND state='OUT'",[pole.id])).rows,loans);
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_internal.stocktake_effects')).rows[0].n,0);
+  assert.ok((await x.db.pool.query("SELECT 1 FROM ledger_history WHERE entity_id=$1 AND actor=$2 AND reason=$3 AND after_data->>'quantity'='9'",[pole.id,x.actor,input.reason])).rowCount);
+  const future=requestFor('2035-02-06');future.members=Array.from({length:9},(_,i)=>({key:'pole-'+i,product:'SINGLE' as const,age:'ADULT' as const,tier:'REGULAR' as const,items:[{family:'POLE' as const,variantIds:[variants.pole]}]}));assert.equal((await x.holds.command('create',randomUUID(),future)).result,'CREATED');
+  const constrained=await svc.create(randomUUID(),'MOUNTAIN_BASE'),cv=await svc.get(constrained.id);await svc.observe(randomUUID(),{id:cv.id,expectedRevision:cv.revision,assets:cv.baseline.assets.filter(a=>a.present_expected).map(a=>a.id),quantities:Object.fromEntries(cv.baseline.quantities.map(q=>[q.id,q.id===pole.id?7:q.physical]))});
+  await assert.rejects(svc.reconcile(randomUUID(),{id:cv.id,expectedRevision:cv.revision+1,reason:'SYNTHETIC reduction would erase a future pair'}),{code:'POLE_PROMISE_RECONCILIATION_REQUIRED'});
+  await assert.rejects(ctx.transaction('INVENTORY_RECONCILE',['MOUNTAIN_BASE'],'SYNTHETIC SQL cannot bypass future claim',c=>c.query('SELECT ops_reconcile_poles($1,$2,$3)',[cv.id,pole.id,cv.revision+1])));
+  assert.equal((await ledger.get('poles',pole.id)).quantity,9);
+  // A direct SQL caller cannot reuse the completed/stale observation or mint the private effect.
+  await assert.rejects(ctx.transaction('INVENTORY_RECONCILE',['MOUNTAIN_BASE'],'SYNTHETIC stale direct call',c=>c.query('SELECT ops_reconcile_poles($1,$2,$3)',[take.id,pole.id,updated.revision])));
+  await assert.rejects(role!.operationsPool.query('INSERT INTO rental_internal.stocktake_effects VALUES(txid_current(),pg_backend_pid(),$1,1,999)',[pole.id]),{code:'42501'});
+ });
  console.log(JSON.stringify({status:'PASS',cases:count,realInventoryImports:0,hostedDb:0}));
-}catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:e instanceof assert.AssertionError?e.message:'SAFE_DETAILS_ONLY'}));}finally{await role?.close();await x.close();}if(failed)process.exit(1);
+}catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:e instanceof assert.AssertionError?e.message:'SAFE_DETAILS_ONLY',location:(e as Error).stack?.split('\n').filter(l=>l.includes('/tests/')||l.includes('/packages/')).join('\n')}));}finally{await role?.close();await x.close();}if(failed)process.exit(1);

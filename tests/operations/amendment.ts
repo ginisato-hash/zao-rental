@@ -49,6 +49,13 @@ try{
   await assert.rejects(svc.quote(randomUUID(),{bookingId:d2.booking.id,expectedHoldVersion:after.holdVersion,conditions:back,reason:'SYNTHETIC unavailable returned asset'}));
   assert.deepEqual((await x.db.pool.query('SELECT asset_id,state FROM rental_loan_items WHERE booking_id=$1 ORDER BY checked_out_at,id',[d2.booking.id])).rows,loans);
  });
+ await check('charge dispatch and lookup deny staff outside the immutable booking store scope',async()=>{
+  const id=(await x.db.pool.query('SELECT id FROM ops_charge_requests WHERE amendment_id=$1',[extension])).rows[0].id,gateway=new FakeGateway(x.now),port=new FinancialOperations(ctx,gateway);
+  const before=(await x.db.pool.query('SELECT to_jsonb(r) value FROM ops_charge_requests r WHERE id=$1',[id])).rows[0].value;
+  await x.db.pool.query("UPDATE staff_members SET scope='ASSIGNED' WHERE id=$1",[x.actor]);await x.db.pool.query('DELETE FROM staff_store_access WHERE staff_id=$1',[x.actor]);await x.db.pool.query("INSERT INTO staff_store_access(staff_id,store_id) VALUES($1,'ONSEN_BASE')",[x.actor]);
+  try{await assert.rejects(port.dispatch('charge',id),{code:'FORBIDDEN'});await assert.rejects(port.reconcile('charge',id),{code:'FORBIDDEN'});assert.equal(gateway.calls.length,0);assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(r) value FROM ops_charge_requests r WHERE id=$1',[id])).rows[0].value,before);}
+  finally{await x.db.pool.query("UPDATE staff_members SET scope='ALL' WHERE id=$1",[x.actor]);}
+ });
  await check('additional charge timeout after acceptance is reconciled without another create or original rewrite',async()=>{
   const id=(await x.db.pool.query('SELECT id FROM ops_charge_requests WHERE amendment_id=$1',[extension])).rows[0].id,gateway=new FakeGateway(x.now);gateway.failAfterSave=true;
   const port=new FinancialOperations(ctx,gateway);assert.equal((await port.dispatch('charge',id)).state,'UNKNOWN');await port.dispatch('charge',id);assert.equal(gateway.calls.length,1);assert.equal((await port.reconcile('charge',id)).state,'COMPLETED');assert.equal(gateway.calls.length,1);assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(b) value FROM rental_bookings b WHERE id=$1',[d.booking.id])).rows[0].value,before);

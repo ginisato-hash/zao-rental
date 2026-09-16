@@ -1,0 +1,32 @@
+
+> zao-rental@0.1.0 test:operations
+> node --import tsx tests/operations/upgrade.ts && node --import tsx tests/operations/amendment.ts && node --import tsx tests/operations/exchange.ts && node --import tsx tests/operations/inventory.ts
+
+PASS complete0033 DDL rollback preserves populated0032 and registry
+PASS populated0032 to0033 preserves confirmed booking/payment/quote/HOLD/inventory/audit; replay unchanged; new permissions default deny
+{"status":"PASS","oldMigrationsUnchanged":32,"upgrade":"0032→0033","rollback":"transactional DDL before commit","hostedDb":0}
+PASS extension freezes delta without changing original booking/payment; replay applies once
+PASS competing accepted extension uses expected version, only one applies
+PASS checkout consumes effective extended period; early return creates no automatic refund
+PASS OUT ski exchange uses atomic factual receipt and new loan; shortage preserves custody
+PASS charge dispatch and lookup deny staff outside the immutable booking store scope
+PASS additional charge timeout after acceptance is reconciled without another create or original rewrite
+PASS refund cap, same-key concurrency, durable UNKNOWN blocks new key and duplicate dispatch
+{"status":"PASS","cases":7,"extensionQuote":true,"additionalAmountPositive":true,"externalProviderCalls":0}
+PASS extension shortage protects the next booking and original facts
+PASS wrong-store and overdue in-transit replacement are denied without changing booking or stock location
+PASS prepared length replacement preserves confirmed booking and checks out amended allocation
+PASS OUT boot size exchange records factual receipt and replacement with unknown BSL retained
+PASS ski to board exchange is atomic even if replacement insertion fails after receipts
+PASS wear size exchange preserves total quantity, old receipt remains unavailable for same-day reuse
+PASS revoked maintained session cannot amend or use custody executor
+{"status":"PASS","cases":7,"providerCalls":0}
+PASS existing importer dry-run has no inventory writes and stages exact metadata
+PASS concurrent import commits once; repeated file/source cannot duplicate immutable Asset
+PASS invalid quantity/category/size/store/BSL, duplicate source and Asset are unresolved
+PASS stocktake scan/count changes no canonical rows and requires explicit reconcile permission
+PASS unexpected serial requires canonical transfer/receipt and never silently moves location
+PASS maintenance/retired assets are excluded by existing server availability
+PASS private price management dedupes response loss and rejects a changed payload under the same key
+PASS pole reconciliation with active OUT pairs preserves custody, scope and outstanding promises
+{"status":"PASS","cases":8,"realInventoryImports":0,"hostedDb":0}

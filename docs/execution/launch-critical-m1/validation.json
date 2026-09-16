@@ -427,5 +427,50 @@
     "PR17 remains unmerged; latest authority permits a stacked completed-code base",
     "Migration rollback is failed-DDL transaction rollback, not destructive schema downgrade"
   ],
-  "cleanup": "Owned browser, application and PostgreSQL processes closed; full-suite successful owned clusters removed through recorded ownership proof"
+  "cleanup": "Owned browser, application and PostgreSQL processes closed; full-suite successful owned clusters removed through recorded ownership proof",
+  "reviewCorrection": {
+    "status": "PASS",
+    "postgresCases": 24,
+    "normalBrowserCases": 7,
+    "custodyRegression": "PASS",
+    "evidence": [
+      {
+        "log": "correction-operations-final.log",
+        "sha256": "1d1ab5749f32ac79601eaa4abca0c8ae8deafe95971063250a8e95b920881f64",
+        "result": "PASS"
+      },
+      {
+        "log": "correction-custody.log",
+        "sha256": "1da8f8672e46c54fd92312416c2488b17fe3257a3d80f9ed0025617aeaf5b2ee",
+        "result": "PASS"
+      },
+      {
+        "log": "correction-operations-ui.log",
+        "sha256": "1886579fa13b17e1fa9ce6f55bd0fbd7d3d6d7b25ffec7cf38fa8eb57e0cd625",
+        "result": "PASS"
+      },
+      {
+        "log": "correction-lint.log",
+        "sha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+        "result": "PASS"
+      },
+      {
+        "log": "correction-typecheck.log",
+        "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+        "result": "PASS"
+      },
+      {
+        "log": "correction-build.log",
+        "sha256": "119528442de0f08f4a97a60f096e290dd4d81370137b92e4e1d66b74375a2b84",
+        "result": "PASS"
+      },
+      {
+        "log": "correction-secrets.log",
+        "sha256": "0a1370762f0dfc40df536e95508b2a9dd8553cc1fe4f6f1970074b00acf9e338",
+        "result": "PASS"
+      }
+    ],
+    "initialFixtureAdjustment": "Refresh synthetic principal after granting permission",
+    "browserLauncherAdjustment": "Use existing task-owned PLAYWRIGHT_BROWSERS_PATH; no download or external browser"
+  }
 }

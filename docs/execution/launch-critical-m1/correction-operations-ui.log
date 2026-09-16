@@ -1,0 +1,12 @@
+
+> zao-rental@0.1.0 test:operations-ui
+> node --import tsx tests/operations/normal-ui.ts
+
+PASS normal Next UI freezes and accepts extension; original paid snapshot stays immutable
+PASS staff exception refund uses the normal API and durable pending ledger without provider calls
+PASS normal inventory screen creates and records a stocktake without mutating stock
+PASS Asset ID search and identical ski QR labels work on normal admin route
+PASS normal CSV dry-run and explicit commit create one synthetic immutable Asset
+PASS normal price draft/edit/preview/private publication preserves existing quote snapshot
+PASS 390/768/1440 responsive operations pages, authorization, scope and CSRF deny
+{"status":"PASS","cases":7,"externalRequests":0,"actualProviderCalls":0,"normalApp":"apps/web"}

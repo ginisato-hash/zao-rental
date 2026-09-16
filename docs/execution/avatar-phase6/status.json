@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "CONTROLLED_STATIC_BOOTSTRAP_READY_PREVIEW_PENDING",
+  "phase": "PROTECTED_PREVIEW_READY_HOSTED_E2E_AUTH_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -41,7 +41,7 @@
       "revokeAtEnd": true
     },
     "deploymentAttempts": {
-      "used": 2,
+      "used": 3,
       "max": 3,
       "allocation": {
         "1": "historical unintended Production, deleted",
@@ -60,7 +60,7 @@
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "NOT_RUN",
-  "externalAcceptance": "NOT_RUN_NO_ACCEPTED_PREVIEW",
+  "externalAcceptance": "NOT_RUN_HUMAN_LOGIN_PENDING",
   "implementation": "HOSTED_PREVIEW_ACCEPTANCE_INCOMPLETE",
   "checkpointValidation": {
     "targetedTests": {
@@ -91,7 +91,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "One final application Preview attempt3; positive provider Preview classification and protection/env gates before app access. Then hosted E2E, bootstrap cleanup and Claude.",
+  "nextGate": "Normal Vercel/Neon human authentication, hosted acceptance, exact bootstrap+alias cleanup, then final Claude. Attempts3/3 consumed; no further deployment.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -144,7 +144,7 @@
     "r2WriteCredential": "REVOKED_LOCAL_FILE_REMOVED",
     "r2ReadCredential": "PASS_READ3_PUT403_DELETE403",
     "dedicatedVercelProject": "CREATED_AUTHENTICATION_ON",
-    "hostedE2E": "NOT_RUN_UNEXPECTED_PRODUCTION_TARGET",
+    "hostedE2E": "NOT_RUN_HUMAN_LOGIN_PENDING",
     "claude": "NOT_RUN",
     "setupOAuth": "REVOKED_AND_REMOVED",
     "cleanup": "PASS_DEPLOYMENT404_ALIAS404_LOCAL_SECRETS_REMOVED",
@@ -186,5 +186,16 @@
     "productionEnvCount": 0,
     "applicationE2E": 0,
     "retainedUntilPreviewAcceptance": true
+  },
+  "actualPreviewDeployments": 1,
+  "acceptedPreview": {
+    "id": "dpl_3wAJbFjQ85EseBan8kp77iYQSPvF",
+    "origin": "https://zao-rental-avatar-preview-q1c57fxk3-zao-food-map.vercel.app",
+    "head": "3fe31f26fcf555ba4a491058a6857603b6abf926",
+    "status": "READY",
+    "canonicalTarget": "preview",
+    "rawTarget": null,
+    "providerPreviewFilteredListingContainsExactId": true,
+    "authentication": "ON"
   }
 }

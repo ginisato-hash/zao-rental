@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "FINAL_PREVIEW_READY_AWAITING_OWNER_VERCEL_AUTH",
+  "phase": "FINAL_PREVIEW_READINESS_PASS_NEON_HUMAN_AUTH_REQUIRED",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -62,7 +62,7 @@
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "PREDEPLOY_PASS_BLOCKER0_HIGH0_MEDIUM0_LOW3",
-  "externalAcceptance": "ATTEMPT5_READY_READINESS_NOT_RUN_AUTH_REQUIRED",
+  "externalAcceptance": "ATTEMPT5_READINESS_PASS_HOSTED_MATRIX_PENDING_NEON_AUTH",
   "implementation": "FINAL_CAPABILITY_INGRESS_CODE_PASS_PREDEPLOY_REVIEW_PASS",
   "checkpointValidation": {
     "targetedTests": {
@@ -93,7 +93,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Owner normal Vercel login in existing task Chrome for Testing. Keep context; then exact attempt5 readinessGET1/retry0. No further deployment; used5/5. Hosted matrix only after readiness PASS. No Phase7/main.",
+  "nextGate": "Owner signals readiness for a fresh normal Neon login timed to its 60s CLI callback window. Existing Vercel context stays authenticated; readiness alreadyPASS/GET1, never repeat. Then bounded Hosted E2E. Deployment5/5 consumed; no Phase7/main.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -308,11 +308,32 @@
       "status": "PASS_PROTECTED_PREVIEW_READY"
     },
     "readiness": {
-      "dispatchCount": 0,
+      "attempt": 5,
+      "deploymentId": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+      "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+      "method": "GET",
+      "route": "/api/guest/draft",
+      "dispatchCount": 1,
       "retry": 0,
-      "status": "NOT_RUN_AUTH_REQUIRED"
+      "status": "PASS_GUEST_FLOW_READY",
+      "httpStatus": 401,
+      "startupStage": null,
+      "safeErrorCategory": "GUEST_CONTEXT_REQUIRED",
+      "rawResponseSaved": false
     },
     "hardGate": "PASS",
-    "credentialHoursRemainingAtDispatch": 18.49
+    "credentialHoursRemainingAtDispatch": 18.49,
+    "vercelHumanAuthentication": "SATISFIED_EXISTING_CONTEXT",
+    "neonHumanAuthentication": "FIRST_CLI_EXIT1_UNCONFIRMED_OWNER_TIMING_REQUIRED",
+    "neonAuthAttempt1": {
+      "exitCode": 1,
+      "completionConfirmed": false,
+      "taskCredentialFileCount": 0,
+      "rawErrorSaved": false,
+      "failureCause": "NOT_CAPTURED",
+      "installedCliAuthWaitSeconds": 60,
+      "installedCliVersion": "4.18.0",
+      "guardPreserved": true
+    }
   }
 }

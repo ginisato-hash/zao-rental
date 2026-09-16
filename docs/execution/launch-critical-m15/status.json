@@ -1,0 +1,12 @@
+{
+  "phase": "M1.5",
+  "implementation": "PASS",
+  "localValidation": "PASS",
+  "review": "PENDING_INITIAL",
+  "ci": "PENDING_EXACT_HEAD",
+  "baseHead": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
+  "migrationAdded": 0,
+  "mainMerge": 0,
+  "actualProductionProviderOperations": 0,
+  "next": "Initial static review + exact CI; then M1.6"
+}

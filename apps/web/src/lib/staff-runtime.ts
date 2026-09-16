@@ -1,3 +1,4 @@
+import {productionRequested,getProductionRuntime} from './production-runtime';
 import 'server-only';
 import {Pool} from 'pg';
 import {createHash} from 'node:crypto';
@@ -18,7 +19,7 @@ function createRuntime(){
  const auth=createStaffAuth(authPool,{origin:config.origin,secret:config.authSecret});
  return {config,operationsPool,recommendationPool,pricingPool,transferPool,holdPool,authPool,ledgerPool,loginPool,auth};
 }
-export function getRuntime(){if(instance===undefined)instance=createRuntime();return instance;}
+export function getRuntime(){if(productionRequested())return getProductionRuntime()?.staff??null;if(instance===undefined)instance=createRuntime();return instance;}
 export async function staffState(headers:Headers):Promise<StaffState>{
  const runtime=getRuntime();
  if(!runtime?.auth)return {status:'anonymous',principal:null,stamp:null};

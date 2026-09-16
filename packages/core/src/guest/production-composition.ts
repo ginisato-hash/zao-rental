@@ -4,7 +4,7 @@ import {GuestContexts} from './context';
 import {GuestSecurity} from './security';
 import {trustedGuestPeer,type TrustedIngressAdapter} from './trusted-ingress';
 export type GuestStartupAudit={event:'GUEST_SECURITY_CONFIGURED';revision:string;policyVersion:string;configurationSha256:string;ingressAdapterId:string};
-/** Injectable production-ready composition boundary; NOT connected to the normal runtime.
+/** Shared production guest-security boundary, used by the explicit normal ProductionRuntime.
  * No env secrets/default policy/provider are loaded here. Audit failure aborts startup.
  * All replicas need identical configuration/key and the same DB. */
 export async function composeProductionGuestSecurity(args:{pool:Pool;configuration:unknown;approvedConfigurationSha256:string|undefined;serverKey:string;ingress:TrustedIngressAdapter;audit:(event:GuestStartupAudit)=>Promise<void>}){

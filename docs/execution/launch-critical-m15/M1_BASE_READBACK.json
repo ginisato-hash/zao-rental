@@ -1,0 +1,39 @@
+{
+  "head": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "pr": {
+    "number": 18,
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/18",
+    "draft": true,
+    "head": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
+    "base": "codex/avatar-phase7-rc",
+    "state": "open",
+    "merged": false
+  },
+  "runs": [
+    {
+      "id": 35151515844,
+      "headSha": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35151515844"
+    },
+    {
+      "id": 35150649166,
+      "headSha": "57bb77b01c4046e62e8a41cdacbc1704b22bbfee",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35150649166"
+    },
+    {
+      "id": 35149355808,
+      "headSha": "40f6be236d883083d5ae64aa5294a4a693d0593e",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35149355808"
+    }
+  ]
+}

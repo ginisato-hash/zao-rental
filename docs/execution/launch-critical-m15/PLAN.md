@@ -1,0 +1,7 @@
+# M1.5 production composition
+
+Base remote M1 implementation1b640da842471167b4e1ecf6a04b06e4a1aa33e4; M1 full local regression and bounded independent review complete, PR18 exact-head CI run35151515844 PASS. No main integration. Parent sole writer.
+
+Reuse guest production security, trusted dispatcher proof, least-privilege role pools, BookingAccess/Recovery, canonical BookingService read state, private R2/rights/Avatar and existing staff auth. One explicit server composition, strict configuration/release binding, startup failure latched before routes, fixed safe status. No NODE_ENV-only activation or Preview/development fallback. Avatar defaults OFF and media failure remains optional presentation failure. Commercial payment activation remains fail-closed at the existing state-machine boundary; provider injection is explicit and fixture-only in tests.
+
+Validate config and credential identity matrix, real owned PostgreSQL composition/role denial, guest/HOLD/quote/payment-state/access continuity with Avatar off/failing, normal browser regression and the full suite. Preserve historical migrations. One static Claude initial review and conditional correction only for B/H/M, followed by stacked Draft PR against M1 and exact-head CI. Terminal only on actual evidence: PRODUCTION_COMPOSITION_CODE_READY_EXTERNAL_CONNECTION_PENDING. Continue M1.6 then M1.7; no external connections/deployment/main merge.

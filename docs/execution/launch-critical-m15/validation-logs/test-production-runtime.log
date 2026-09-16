@@ -1,0 +1,14 @@
+
+> zao-rental@0.1.0 test:production-runtime
+> node --import tsx tests/readiness/normal-production.ts
+
+PASS actual database role and database identity, not caller labels, reject owner/wrong DB/role
+PASS failed startup closes earlier authenticated pools and never publishes runtime
+PASS Production payment port validates real in-memory credential material and rejects Sandbox/missing credentials without a dispatch
+PASS least-privilege normal runtime boots with Avatar/media OFF, separate access/recovery keys and safe readiness
+PASS canonical HOLD/quote/fixture payment then composed payment-state/access reads survive Avatar OFF
+PASS Production HTTP gate refuses simulation/create; existing read/QR survives missing delivery and spoofed ingress
+PASS R2 fixture timeout/revocation is isolated from booking/access and never performs an external fetch
+PASS disabled recovery has no service and shared or missing root keys fail before database connection
+M15 normal production composition 8 real-PG cases PASS; all credentials/metadata synthetic; external0.
+Owned M15 pools/cluster stopped.

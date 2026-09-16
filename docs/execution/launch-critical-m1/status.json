@@ -11,10 +11,12 @@
     "MEDIUM": 0,
     "LOW": 3
   },
-  "ci": "PENDING_EXACT_HEAD",
+  "ci": "PASS",
   "draftPr": 18,
   "mainMerged": false,
   "stackedBase": "codex/avatar-phase7-rc",
-  "next": "Exact-head CI, then M1.5 stacked continuation",
-  "externalProviderOperations": 0
+  "next": "M1.5 stacked continuation authorized; PR17/main merge not performed",
+  "externalProviderOperations": 0,
+  "ciHead": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
+  "ciRun": 35151515844
 }

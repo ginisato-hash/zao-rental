@@ -1,0 +1,94 @@
+{
+  "phase": "PHASE7_A_IN_PROGRESS",
+  "startingHead": "49d0fbc36d81025f675242a0ffd1bee0f68ce21e",
+  "branch": "codex/avatar-phase7-rc",
+  "authoritySha256": "dedfd26fe0db9ba47a04f8032ec1484de0e4149aeb361fcd54cffec3fbae0a57",
+  "ancestry": {
+    "allExpectedAncestors": true,
+    "commits": {
+      "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+      "R15": "efb73933a6d3816958882205cfa3623447194625",
+      "Avatar_A2_A3": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+      "Phase4": "4485966d87d55aa010766e5f45820541c989fa54",
+      "Phase5_code": "4f1aadc07cfcdb3f42f84a8cc918d714ef1ba985",
+      "Phase5_artwork": "ec420cbd166af0749caecfa654c0a1e362628891",
+      "Phase6_implementation": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+      "Phase6_terminal": "49d0fbc36d81025f675242a0ffd1bee0f68ce21e"
+    },
+    "merge": 0,
+    "cherryPick": 0,
+    "historyRewrite": 0
+  },
+  "phase6History": "FROZEN_DEFERRED_HOSTED_FAIL_23_PASS_ROOT_CAUSE_NOT_ESTABLISHED",
+  "network": {
+    "classification": null,
+    "browserSessionMax": 1,
+    "forensicFlowMax": 1,
+    "fullPhase6Rerun": 0,
+    "recorderTests": "PASS_19",
+    "safeMetadata": []
+  },
+  "cleanup": "PENDING",
+  "retainedResources": {
+    "dedicatedVercelProject": true,
+    "privateR2Bucket": "zao-rental-avatar-p6",
+    "R2ExactObjects": 3,
+    "NeonResource": "store_i5vh0ZEKo2ikcVo9",
+    "NeonDatabase": "zr_852b20c4d4b0",
+    "leastPrivilegeRoles": 6
+  },
+  "forbiddenOperations": {
+    "deployment": 0,
+    "newProject": 0,
+    "newDatabase": 0,
+    "newR2Object": 0,
+    "production": 0,
+    "square": 0,
+    "payment": 0,
+    "mainMerge": 0
+  },
+  "productRuntimeChanges": false,
+  "claudeReview": 0,
+  "localValidation": {
+    "recorderTests": 19,
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PENDING",
+    "relevantAvatarGuestTests": "PENDING",
+    "secretScan": "PENDING"
+  },
+  "currentBlockers": [],
+  "nextGate": "PHASE7-B requires separate authority; no automatic continuation.",
+  "previewPreflight": {
+    "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+    "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+    "eligible": true,
+    "rawValuesSaved": false,
+    "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+    "ready": true,
+    "exactProject": true,
+    "canonicalTarget": "preview",
+    "authentication": "ON",
+    "productionEnvCount": 0,
+    "forbiddenEnvCount": 0,
+    "customDomainCount": 0,
+    "envMetadata": [
+      {
+        "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      },
+      {
+        "key": "ZAO_AVATAR_PHASE6",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      }
+    ]
+  }
+}

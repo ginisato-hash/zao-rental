@@ -1,5 +1,6 @@
 import 'server-only';
 import {Pool} from 'pg';
+import {proveNeonClientTls} from '../../../../packages/db/src/neon-tls';
 import {parseHostedPreview,previewOrigin,phase6Services,phase6Database,phase6Role,type Phase6Service} from '../../../../packages/auth/src/hosted-preview-config';
 import {GuestContexts} from '../../../../packages/core/src/guest/context';
 import {GuestSecurity} from '../../../../packages/core/src/guest/security';
@@ -26,10 +27,13 @@ async function createHostedPreview(){
  const pools={} as Record<Phase6Service,Pool>;
  try{
   for(const service of phase6Services){const pool=new Pool({...c.connections[service],max:3,connectionTimeoutMillis:5000,idleTimeoutMillis:10000,statement_timeout:5000,application_name:'zao_avatar_phase6_'+service});pool.on('error',()=>{});pools[service]=pool;
-   const a=(await pool.query(`SELECT current_database() db,current_user role,s.ssl,r.rolsuper,r.rolcreatedb,r.rolcreaterole,r.rolinherit,r.rolreplication,r.rolbypassrls,
+   const client=await pool.connect();try{
+   proveNeonClientTls(client,c.connections[service]);
+   const a=(await client.query(`SELECT current_database() db,current_user role,r.rolsuper,r.rolcreatedb,r.rolcreaterole,r.rolinherit,r.rolreplication,r.rolbypassrls,
     EXISTS(SELECT 1 FROM pg_auth_members WHERE member=r.oid) membership
-    FROM pg_roles r JOIN pg_stat_ssl s ON s.pid=pg_backend_pid() WHERE r.rolname=current_user`)).rows[0];
-   if(!a||a.db!==phase6Database||a.role!==phase6Role(service)||a.ssl!==true||['rolsuper','rolcreatedb','rolcreaterole','rolinherit','rolreplication','rolbypassrls','membership'].some(k=>a[k]!==false))throw Error('PHASE6_DATABASE_IDENTITY_INVALID');
+    FROM pg_roles r WHERE r.rolname=current_user`)).rows[0];
+   if(!a||a.db!==phase6Database||a.role!==phase6Role(service)||['rolsuper','rolcreatedb','rolcreaterole','rolinherit','rolreplication','rolbypassrls','membership'].some(k=>a[k]!==false))throw Error('PHASE6_DATABASE_IDENTITY_INVALID');
+   }finally{client.release();}
   }
   const contexts=new GuestContexts(pools.guest),security=new GuestSecurity(pools.guest,contexts,guestPolicy.policy,c.guestKey),avatarSecurity=avatarGuestSecurity(pools.guest,contexts,c.guestKey);
   await security.transaction(async()=>{});await avatarSecurity.transaction(async()=>{});

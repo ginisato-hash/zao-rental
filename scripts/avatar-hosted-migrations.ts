@@ -2,7 +2,8 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import type {Pool,PoolClient} from 'pg';
 import {migrationPlan,migrationsDirectory} from '../packages/db/src/index';
-import {phase6Database,phase6Endpoint} from '../packages/auth/src/hosted-preview-config';
+import {phase6Database} from '../packages/auth/src/hosted-preview-config';
+import {phase6NeonHostname,proveNeonClientTls} from '../packages/db/src/neon-tls';
 export async function avatarMigrationSources(){
  const expected=JSON.parse(await readFile('docs/execution/avatar-artwork-activation/migration-hashes.json','utf8')) as {file:string;sha256:string}[];
  if(expected.length!==32||migrationPlan.length!==32)throw Error('PHASE6_MIGRATION_RANGE');
@@ -34,8 +35,9 @@ export async function applyAvatarMigrationTransaction(pool:Pool,sources:Sources,
  }catch(e){await c.query('ROLLBACK').catch(()=>{});throw Object.assign(Error('PHASE6_MIGRATION_FAILED'),{migrationId,sqlstate:/^[0-9A-Z]{5}$/.test((e as {code?:string}).code??'')?(e as {code:string}).code:null,category:'MIGRATION_TRANSACTION'});}finally{c.release();}
 }
 export async function migrateHostedAvatar(pool:Pool,reserve:()=>Promise<void>){
- if(process.env.NODE_ENV==='production'||pool.options.database!==phase6Database||pool.options.user!=='neondb_owner'||!pool.options.host?.startsWith(phase6Endpoint+'.')||!pool.options.host.endsWith('.neon.tech')||typeof pool.options.ssl!=='object'||pool.options.ssl.rejectUnauthorized!==true)throw Error('PHASE6_SETUP_CONNECTION_REQUIRED');
- const sources=await avatarMigrationSources(),preflight=await avatarMigrationPreflight(pool,sources,phase6Database,'neondb_owner');
+ if(process.env.NODE_ENV==='production'||pool.options.database!==phase6Database||pool.options.user!=='neondb_owner'||pool.options.host!==phase6NeonHostname||typeof pool.options.ssl!=='object'||pool.options.ssl.rejectUnauthorized!==true)throw Error('PHASE6_SETUP_CONNECTION_REQUIRED');
+ const sources=await avatarMigrationSources(),client=await pool.connect();let preflight;
+ try{proveNeonClientTls(client,pool.options);preflight=await avatarMigrationPreflight(client,sources,phase6Database,'neondb_owner');}finally{client.release();}
  // Caller must exclusively create+fsync a durable one-shot receipt before any mutation.
  await reserve();const result=await applyAvatarMigrationTransaction(pool,sources,phase6Database,'neondb_owner');return {...result,preflight};
 }

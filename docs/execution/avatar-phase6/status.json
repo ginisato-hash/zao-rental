@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "CORRECTIVE_PREVIEW_LOCAL_VALIDATION_PASS_ATTEMPT4_PENDING",
+  "phase": "CORRECTIVE_PREVIEW_READY_READINESS_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -41,7 +41,7 @@
       "revokeAtEnd": true
     },
     "deploymentAttempts": {
-      "used": 3,
+      "used": 4,
       "max": 4,
       "allocation": {
         "1": "historical unintended Production, deleted",
@@ -92,7 +92,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Push/readback corrected source, then exactly one protected Preview attempt4; canonical target and env/protection gate, then one guarded readiness GET.503 stops all acceptance; no attempt5.",
+  "nextGate": "Normal browser authentication then exactly one guarded readiness GET on attempt4.503 => STOP. No more deployment. Hosted PASS before static bootstrap cleanup and Claude.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -188,7 +188,7 @@
     "applicationE2E": 0,
     "retainedUntilPreviewAcceptance": true
   },
-  "actualPreviewDeployments": 1,
+  "actualPreviewDeployments": 2,
   "acceptedPreview": {
     "id": "dpl_3wAJbFjQ85EseBan8kp77iYQSPvF",
     "origin": "https://zao-rental-avatar-preview-q1c57fxk3-zao-food-map.vercel.app",
@@ -224,5 +224,14 @@
   "correctivePreviewStartingHead": "40a67153fcb203cecc8673cc3b50662c414648eb",
   "correctivePreviewAuthoritySha256": "877e8ed10a0d606c1a6c4b61f108df5b19048d9a39ce03ac9f0a40d4433daaba",
   "correctivePreviewAuthorityCommit": "58152d871c5b869f24f2dcdbaae2a23988952b1f",
-  "correctivePreviewLocalValidation": "PASS_630_UNIT_LINT_TYPECHECK_BUILD_SECRET_SCAN_DIFF"
+  "correctivePreviewLocalValidation": "PASS_630_UNIT_LINT_TYPECHECK_BUILD_SECRET_SCAN_DIFF",
+  "correctivePreview": {
+    "id": "dpl_2HAREDuFGBcRNXyKNbiaU4qkMuZZ",
+    "origin": "https://zao-rental-avatar-preview-dkbmsa00j-zao-food-map.vercel.app",
+    "head": "0122451a4d2e2910bb3219912df922babd5a2cdb",
+    "providerState": "READY",
+    "canonicalTarget": "preview",
+    "authentication": "ON",
+    "readiness": "NOT_RUN"
+  }
 }

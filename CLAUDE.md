@@ -1,3 +1,19 @@
+## Current — Phase6 unexpected Production target contained; not PASS
+
+Read docs/execution/avatar-phase6/UNEXPECTED_PRODUCTION_TARGET_RECORD.md and status.json.
+Exact secret transmission was authorized and completed (two sensitive Preview-only envs).
+The one explicitly Preview CLI invocation returned Production; actual Production deployment1
+and alias1 were deleted and read back404. Do not report those historical counts as0.
+Budget1/2 conservatively consumed, remaining1 unused; no accepted Preview, Hosted E2E or
+Claude review. CLI deployment method retired: SDK strips preview target before API POST.
+Task Neon OAuth revoked, local secrets deleted; protected dedicated project/env/private R2
+retained. Both prior metadata stop records unchanged; new task-secret exposure observed0.
+Next: Owner assessment of the contained scope deviation and a verified Preview-only request
+path. No speculative retry, new project, Production/bootstrap, main merge or Phase7.
+Parent single writer. Existing secret-transmission approval does not need repeating.
+
+## Historical — previous active V2 authority checkpoint
+
 ## Current — Phase6 Limited Resume Authority V2
 
 Read docs/execution/AVATAR_PHASE6_RESUME_V2_AUTHORITY.md and avatar-phase6/RESUME_V2_PLAN.md.

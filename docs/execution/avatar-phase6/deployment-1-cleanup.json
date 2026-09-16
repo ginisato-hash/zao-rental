@@ -1,0 +1,27 @@
+{
+  "id": "dpl_AFGcBTc3zZJSNngvrRoBTygJmeCj",
+  "deploymentDeleted": true,
+  "projectRetained": true,
+  "authentication": "all_except_custom_domains",
+  "productionTargetDeploymentId": null,
+  "aliasLookupFound": true,
+  "aliasDeploymentId": "dpl_AFGcBTc3zZJSNngvrRoBTygJmeCj",
+  "aliasNotFound": false,
+  "envMetadata": [
+    {
+      "key": "ZAO_AVATAR_PHASE6",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    },
+    {
+      "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    }
+  ],
+  "secretValuesOutput": false
+}

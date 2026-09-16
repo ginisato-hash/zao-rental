@@ -1,0 +1,14 @@
+{
+  "id": "dpl_AFGcBTc3zZJSNngvrRoBTygJmeCj",
+  "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "requestedTarget": "preview",
+  "observedTarget": "production",
+  "readyStateBeforeCleanup": "BUILDING",
+  "productionAliasesBeforeCleanup": [
+    "zao-rental-avatar-preview-zao-food-map.vercel.app"
+  ],
+  "secretValuesCaptured": false,
+  "deletionConfirmed": false,
+  "notFoundAfterDelete": false,
+  "cleanup": "RECONCILE_REQUIRED"
+}

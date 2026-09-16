@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUME_V2_PROTECTED_PREVIEW_READY_TO_DEPLOY",
+  "phase": "STOPPED_UNEXPECTED_VERCEL_PRODUCTION_TARGET_CONTAINED",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -18,8 +18,9 @@
       "max": 3
     },
     "previewDeployments": {
-      "used": 0,
-      "max": 2
+      "used": 1,
+      "max": 2,
+      "accounting": "Conservative total deployment-attempt usage; actual Preview deployments0, unintended Production deployment1 deleted, remaining1 unused"
     },
     "claudeInitial": {
       "used": 0,
@@ -44,13 +45,13 @@
     "payment": 0,
     "refund": 0,
     "webhook": 0,
-    "production": 0,
+    "production": 1,
     "mainMerge": 0
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "NOT_RUN",
-  "externalAcceptance": "NOT_RUN",
-  "implementation": "PARTIAL_HOSTED_PREVIEW_NOT_DEPLOYED",
+  "externalAcceptance": "NOT_RUN_NO_ACCEPTED_PREVIEW",
+  "implementation": "HOSTED_PREVIEW_ACCEPTANCE_INCOMPLETE",
   "checkpointValidation": {
     "targetedTests": {
       "passed": 61,
@@ -80,7 +81,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Protected Preview deployment1/2, hosted GuestBooking E2E, final Claude review; no Phase7.",
+  "nextGate": "Owner assessment of contained Production boundary deviation; preserve actual Production deployment1/alias1 and consumed attempt1/2. Verify an enforceable first-deployment Preview path before any remaining dispatch. Secret transmission approval remains granted.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -133,10 +134,10 @@
     "r2WriteCredential": "REVOKED_LOCAL_FILE_REMOVED",
     "r2ReadCredential": "PASS_READ3_PUT403_DELETE403",
     "dedicatedVercelProject": "CREATED_AUTHENTICATION_ON",
-    "hostedE2E": "NOT_RUN",
+    "hostedE2E": "NOT_RUN_UNEXPECTED_PRODUCTION_TARGET",
     "claude": "NOT_RUN",
-    "setupOAuth": "LIVE_PENDING_COMPLETION_REVOKE",
-    "cleanup": "PENDING_ACTIVE_TASK",
+    "setupOAuth": "REVOKED_AND_REMOVED",
+    "cleanup": "PASS_DEPLOYMENT404_ALIAS404_LOCAL_SECRETS_REMOVED",
     "newTaskSecretExposureAfterThisResume": 0,
     "vercelEnvironment": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY_FORBIDDEN_KEYS0",
     "deployArtifactPreflight": "PASS_LOCAL_DRY_RUN_ONLY"
@@ -146,5 +147,18 @@
   "vercelDirectOwnerApprovalSha256": "76e3dd93bb62165c374f376d90acee90a077227cb213ea4e14e13458b87bd130",
   "dedicatedVercelProjectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
   "vercelSecretTransmissionOwnerApprovalSha256": "068567fecebf9be5d23dc54d86d64f74a79d392e6ef1666164d57ec7c4d080ed",
-  "vercelSecretTransmissionOwnerApprovalCommit": "28d388620a6dd7e1f6b1310553c7fd25a76316cb"
+  "vercelSecretTransmissionOwnerApprovalCommit": "28d388620a6dd7e1f6b1310553c7fd25a76316cb",
+  "actualProductionAliasCreations": 1,
+  "remainingProductionDeployments": 0,
+  "remainingProductionAliases": 0,
+  "secretTransmission": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY",
+  "deploymentTargetIncident": {
+    "deployedHead": "33e054594ad281d2acc5335e4e5284c81c56bbff",
+    "id": "dpl_AFGcBTc3zZJSNngvrRoBTygJmeCj",
+    "requestedTarget": "preview",
+    "actualTarget": "production",
+    "deleted": true,
+    "aliasDeleted": true,
+    "record": "UNEXPECTED_PRODUCTION_TARGET_RECORD.md"
+  }
 }

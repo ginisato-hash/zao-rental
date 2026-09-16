@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "CORRECTIVE_PREVIEW_ATTEMPT4_AUTHORIZED_LOCAL_VALIDATION_PENDING",
+  "phase": "CORRECTIVE_PREVIEW_LOCAL_VALIDATION_PASS_ATTEMPT4_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -92,7 +92,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Correct optional-absent Git ref semantics and safe startup stages; all local validation PASS before one final Preview attempt4. Exactly one readiness GET;503 => STOP. Hosted PASS before bootstrap deletion and Claude.",
+  "nextGate": "Push/readback corrected source, then exactly one protected Preview attempt4; canonical target and env/protection gate, then one guarded readiness GET.503 stops all acceptance; no attempt5.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -222,5 +222,7 @@
     "localSecretFiles": "ABSENT"
   },
   "correctivePreviewStartingHead": "40a67153fcb203cecc8673cc3b50662c414648eb",
-  "correctivePreviewAuthoritySha256": "877e8ed10a0d606c1a6c4b61f108df5b19048d9a39ce03ac9f0a40d4433daaba"
+  "correctivePreviewAuthoritySha256": "877e8ed10a0d606c1a6c4b61f108df5b19048d9a39ce03ac9f0a40d4433daaba",
+  "correctivePreviewAuthorityCommit": "58152d871c5b869f24f2dcdbaae2a23988952b1f",
+  "correctivePreviewLocalValidation": "PASS_630_UNIT_LINT_TYPECHECK_BUILD_SECRET_SCAN_DIFF"
 }

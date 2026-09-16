@@ -1,0 +1,253 @@
+{
+  "scope": "PHASE6_PREVIEW_IDENTITY_ZERO_DEPLOY_FORENSIC_LOCAL_ONLY",
+  "recordedAt": "2026-09-16T12:50:47.919558+00:00",
+  "authoritySha256": "2ade42a994aff6e2ebd35778034793398dff1becd78f98947548c86978c29e08",
+  "canonicalBranch": "codex/avatar-phase6-hosted-preview",
+  "localHead": "2290e66db551d2ce2a961abbd836c9464b1e97a6",
+  "fetchedRemoteHead": "2290e66db551d2ce2a961abbd836c9464b1e97a6",
+  "exactPredicateEstablished": "NO",
+  "predicate": "UNKNOWN",
+  "historicalReadiness": {
+    "attempt": 4,
+    "deploymentId": "dpl_2HAREDuFGBcRNXyKNbiaU4qkMuZZ",
+    "origin": "https://zao-rental-avatar-preview-dkbmsa00j-zao-food-map.vercel.app",
+    "method": "GET",
+    "route": "/api/guest/draft",
+    "dispatchCount": 1,
+    "retry": 0,
+    "status": "STOP_READINESS_503",
+    "httpStatus": 503,
+    "startupStage": "PREVIEW_IDENTITY",
+    "safeErrorCategory": "GUEST_PREVIEW_UNAVAILABLE",
+    "rawResponseSaved": false
+  },
+  "providerMetadata": {
+    "classification": "OBSERVED_PROVIDER_METADATA_NOT_RUNTIME_ENV",
+    "id": "dpl_2HAREDuFGBcRNXyKNbiaU4qkMuZZ",
+    "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+    "canonicalTarget": "preview",
+    "rawTarget": null,
+    "hostname": "zao-rental-avatar-preview-dkbmsa00j-zao-food-map.vercel.app",
+    "gitCommitRef": "codex/avatar-phase6-hosted-preview",
+    "gitCommitSha": "0122451a4d2e2910bb3219912df922babd5a2cdb",
+    "authentication": "all_except_custom_domains",
+    "gitIntegrationLinked": false,
+    "autoExposeSystemEnvs": true,
+    "envMetadata": [
+      {
+        "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      },
+      {
+        "key": "ZAO_AVATAR_PHASE6",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "gitBranch": null
+      }
+    ],
+    "forbiddenEnvCounts": {
+      "SQUARE_*": 0,
+      "PAYMENT_*": 0,
+      "REFUND_*": 0,
+      "WEBHOOK_*": 0,
+      "DATABASE_URL": 0,
+      "POSTGRES_URL": 0,
+      "PGPASSWORD": 0,
+      "unexpected ZAO_*": 0
+    },
+    "envConfiguredExists": {
+      "ZAO_AVATAR_PHASE6": true,
+      "ZAO_HOSTED_PREVIEW_RUNTIME": true
+    },
+    "rawValuesSaved": false,
+    "runtimeProcessEnvObserved": false
+  },
+  "configuredEnvVerification": {
+    "localDownloadObservation": {
+      "method": "official vercel env run -e preview --project exact; empty local cwd; inherited ZAO env absent",
+      "exitCode": 0,
+      "childBooleanVerification": {
+        "ZAO_AVATAR_PHASE6": {
+          "exists": true,
+          "exactExpectedValue": false
+        },
+        "ZAO_HOSTED_PREVIEW_RUNTIME": {
+          "exists": true,
+          "jsonParseable": false,
+          "expectedTopLevelShape": false
+        }
+      },
+      "unavailableSecretWarning": true,
+      "localFallbackWarning": true,
+      "rawOutputSaved": false,
+      "rawValuesOutput": false,
+      "envFilesWritten": false,
+      "runtimeProcessEnvObserved": false
+    },
+    "deploymentDownloadObservation": {
+      "classification": "OFFICIAL_DOWNLOADABLE_DEPLOYMENT_ENV_NOT_RUNTIME_PROCESS_ENV",
+      "available": false,
+      "systemPredicates": null,
+      "marker": null,
+      "runtimeConfig": null,
+      "rawValuesSaved": false
+    },
+    "interpretation": "Sensitive values were unavailable to the official CLI. False comparison/parse booleans concern unavailable local download values, not the configured deployment values. Do not classify the marker as wrong.",
+    "actualConfiguredMarkerEquality": "UNKNOWN",
+    "actualConfiguredRuntimeShape": "UNKNOWN"
+  },
+  "runtimePredicateKnowledge": {
+    "IDENTITY_VERCEL": "UNKNOWN",
+    "IDENTITY_ENV": "UNKNOWN",
+    "IDENTITY_TARGET_ENV": "UNKNOWN",
+    "IDENTITY_MARKER": "UNKNOWN",
+    "IDENTITY_PROJECT": "UNKNOWN",
+    "IDENTITY_GIT_REF": "UNKNOWN",
+    "IDENTITY_URL": "UNKNOWN",
+    "IDENTITY_FORBIDDEN_ENV": "UNKNOWN"
+  },
+  "existingLocalBuildInspection": {
+    "sourceCommit": "0122451a4d2e2910bb3219912df922babd5a2cdb",
+    "sources": [
+      {
+        "path": "packages/auth/src/hosted-preview-config.ts",
+        "sha256": "27cd55cee8a1221f2d752f5d3a26120854c7ca02910f1a35247bd1353cf92939",
+        "matchesDeployedCommit": true
+      },
+      {
+        "path": "apps/web/src/lib/hosted-preview-runtime.ts",
+        "sha256": "92c4726bdff9eca4fdbd92dc018b32138f750d6e623707f64e007b22b403e747",
+        "matchesDeployedCommit": true
+      },
+      {
+        "path": "apps/web/src/lib/hosted-preview-diagnostics.ts",
+        "sha256": "965b8b4d5f09a9534bf301022f12bd2ce2ebbd05fac66a1a28a842fc5aa0e2cd",
+        "matchesDeployedCommit": true
+      },
+      {
+        "path": "apps/web/src/app/api/guest/[[...record]]/route.ts",
+        "sha256": "81a9a2461f57366f64ce36c2ebc0fd8239600d653d36a608fb2e48fcecee2484",
+        "matchesDeployedCommit": true
+      },
+      {
+        "path": "apps/web/next.config.ts",
+        "sha256": "b0b92ba3c44d9d14f3890463eb63436214486f74fd1e7ce69c317f30240b8658",
+        "matchesDeployedCommit": true
+      },
+      {
+        "path": "vercel.json",
+        "sha256": "796173f1aaf7f1826311dd29fcdab92d38d5b911e48f2ddd5868580211a5fbb5",
+        "matchesDeployedCommit": true
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "8e971550d44ec36ece189f16310df36d0728dc6806e5d0e06bb3f693a3aac2fc",
+        "matchesDeployedCommit": true
+      }
+    ],
+    "localBuildChunkSha256": "f020354d40dbf123e399a97df665b8f9a6fb670b8bbbd4ef7bca9fac4d5c8395",
+    "previewOriginFunctionParameter": "a",
+    "runtimeProcessEnvCallCount": 1,
+    "parameterPropertyChecksRemain": true,
+    "sameCompiledFunctionAcceptsThenRejectsMutatedArgument": true,
+    "localNextConfigHasEnvOverrides": false,
+    "previewOriginBuildTimeFolded": false,
+    "providerBuiltBytesCompared": false,
+    "limitation": "Existing local webpack build and exact deployed source/config inspected; no claim of byte identity with Vercel-built function artifact"
+  },
+  "officialSemantics": {
+    "documentedGuaranteeScope": "Official documentation describes availability at build/runtime, conditional on system variables being exposed; this is not an observation of this deployment runtime.",
+    "documentedBuildAndRuntime": [
+      "VERCEL",
+      "VERCEL_ENV",
+      "VERCEL_TARGET_ENV",
+      "VERCEL_PROJECT_ID",
+      "VERCEL_URL",
+      "VERCEL_GIT_COMMIT_REF"
+    ],
+    "gitUnlinkedCliRefInjection": "NOT_CONCLUSIVELY_GUARANTEED_BY_INSPECTED_DOCUMENTATION_OR_CLIENT_SOURCE",
+    "installedCliVersion": "59.9.1",
+    "observedClientBehavior": "createGitMeta uses local Git and falls back to origin when project link is absent; collecting commit metadata does not prove server-side runtime injection.",
+    "sources": [
+      "https://vercel.com/docs/environment-variables/system-environment-variables",
+      "https://vercel.com/docs/environment-variables/sensitive-environment-variables",
+      "https://vercel.com/docs/cli/env"
+    ]
+  },
+  "proposedMinimalFix": {
+    "kind": "DIAGNOSTIC_REFINEMENT_ONLY",
+    "stages": [
+      "IDENTITY_VERCEL",
+      "IDENTITY_ENV",
+      "IDENTITY_TARGET_ENV",
+      "IDENTITY_MARKER",
+      "IDENTITY_PROJECT",
+      "IDENTITY_GIT_REF",
+      "IDENTITY_URL",
+      "IDENTITY_FORBIDDEN_ENV"
+    ],
+    "semanticFix": "NONE; no conclusive provider semantic mismatch established",
+    "securityBoundaryChange": "NONE",
+    "localOnly": true,
+    "deployed": false,
+    "committed": false,
+    "pushed": false
+  },
+  "localValidation": {
+    "result": "PASS",
+    "node": "24.15.0",
+    "npm": "11.12.1",
+    "fullUnit": {
+      "passed": 638,
+      "failed": 0,
+      "skipped": 0
+    },
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "secretScan": "PASS",
+    "gitDiffCheck": "PASS",
+    "secretScanLimitation": "Repository pattern scan is not comprehensive; provider wrappers also retain allowlisted metadata/booleans only."
+  },
+  "preparedSourceSha256": {
+    "packages/auth/src/hosted-preview-config.ts": "567602f2a17d8a7b21dd5dda1bfb5f4c86e44cc3842d3ad227a910bc5462797d",
+    "apps/web/src/lib/hosted-preview-diagnostics.ts": "0ef79a084c636ca90dbc8e5c0506996a61c0e28b37871c0703a8ed65b9f3ac7b",
+    "apps/web/src/lib/hosted-preview-runtime.ts": "e0392b55bd706365c14d495f0179e11671e6916c455cc3263f49ac02d7785ad8",
+    "tests/unit/hosted-preview-diagnostics.test.ts": "84c08dafdc6be7a8b7560091e408140a23ab5fd039bd690a23117882dc761f69"
+  },
+  "preparedPatchSha256": "73e07668bc673d47fc4baf316b8964ea6537ea3bd70957723df3d30a2544f3a0",
+  "thisForensicCounts": {
+    "deploymentUsed": 0,
+    "providerMutations": 0,
+    "applicationReadinessProbes": 0,
+    "hostedE2E": 0,
+    "Claude": 0,
+    "newBrowserContexts": 0,
+    "NeonOperations": 0,
+    "R2Operations": 0,
+    "SquareOperations": 0,
+    "ProductionChanges": 0,
+    "mainMerge": 0,
+    "GitHubPush": 0,
+    "pulledEnvFiles": 0,
+    "rawSecretOutput": 0
+  },
+  "unchangedPriorCheckpoint": {
+    "deploymentAttemptsUsed": 4,
+    "deploymentAttemptsMax": 4,
+    "historicalProductionDeployments": 2,
+    "historicalProductionAliases": 2,
+    "lastVerifiedCurrentProductionDeployments": 1,
+    "lastVerifiedCurrentProductionAliases": 1,
+    "lastVerifiedProductionEnvCount": 0,
+    "bootstrapRetained": "Hosted PASS prerequisite unmet; no Production readback or mutation in this forensic",
+    "classification": "STOPPED_CORRECTIVE_PREVIEW_READINESS_503_PREVIEW_IDENTITY"
+  },
+  "workingTree": "Intentional local diagnostic code/tests and forensic evidence; canonical HEAD and existing status/stop records unchanged."
+}

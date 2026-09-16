@@ -8,6 +8,7 @@ import {loadGuestAvatar} from '../../../../packages/core/src/avatar/guest';
 import type {GuestAvatarBoundary} from './guest-avatar-http';
 export async function guestAvatarBoundary():Promise<GuestAvatarBoundary|null>{
  if(phase6Requested())return (await hostedPreviewRuntime())!.avatar;
+ if(process.env.NODE_ENV==='production')return null;
  const p=publicRuntime(),visuals=avatarRuntime();if(!p||!visuals)return null;
  const security=avatarGuestSecurity(p.guestPool,p.contexts,p.r.config.authSecret);
  return {guard:req=>{if(new URL(req.url).origin!==p.r.config.origin)throw Error('LOCAL_ORIGIN_REQUIRED');return security.guard(guestPeerKey('127.0.0.1',p.r.config.authSecret));},load:(headers,scope)=>loadGuestAvatar(p.contexts,p.r.recommendationPool,visuals,headers,scope),

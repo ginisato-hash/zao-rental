@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "STOPPED_CORRECTIVE_PREVIEW_READINESS_503_PREVIEW_IDENTITY",
+  "phase": "FINAL_HOSTED_REPAIR_CODE_FROZEN_PREDEPLOY",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -24,7 +24,7 @@
       "supersededBy": "deploymentAttempts under controlled bootstrap amendment; historical field retained"
     },
     "claudeInitial": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "claudeCorrection": {
@@ -42,12 +42,13 @@
     },
     "deploymentAttempts": {
       "used": 4,
-      "max": 4,
+      "max": 5,
       "allocation": {
         "1": "historical unintended Production, deleted",
         "2": "controlled static Production bootstrap only",
         "3": "one actual protected application Preview",
-        "4": "one corrective protected Preview after all local validation PASS"
+        "4": "one corrective protected Preview after all local validation PASS",
+        "5": "final protected Preview acceptance after reviewed capability/ingress repair; no attempt6"
       }
     }
   },
@@ -60,9 +61,9 @@
     "mainMerge": 0
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
-  "independentReview": "NOT_RUN",
+  "independentReview": "PREDEPLOY_PASS_BLOCKER0_HIGH0_MEDIUM0_LOW3",
   "externalAcceptance": "FAIL_ATTEMPT4_READINESS_HTTP503_HOSTED_MATRIX_NOT_RUN",
-  "implementation": "CORRECTIVE_CODE_LOCAL_PASS_HOSTED_READINESS_FAILED",
+  "implementation": "FINAL_CAPABILITY_INGRESS_CODE_PASS_PREDEPLOY_REVIEW_PASS",
   "checkpointValidation": {
     "targetedTests": {
       "passed": 61,
@@ -73,7 +74,7 @@
     "typecheck": "PASS",
     "build": "PASS",
     "repositorySecretPatternScan": "PASS_1870_FILES_NOT_COMPREHENSIVE",
-    "migrationHashes": "0001–0032_UNCHANGED",
+    "migrationHashes": "0001\u20130032_UNCHANGED",
     "hostedNeon": "NOT_RUN",
     "hostedR2": "NOT_RUN",
     "hostedBrowser": "NOT_RUN",
@@ -92,7 +93,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Owner/Technical Director assessment of fixed PREVIEW_IDENTITY startup category on corrective Preview. Attempts4/4 exhausted; no probe/deploy retry or env relaxation. Hosted matrix/Claude not run. Retain static bootstrap and alias because cleanup requires Hosted PASS. No Phase7/main.",
+  "nextGate": "Push/readback frozen code, then hard gate and exactly one attempt5; readinessGET1/retry0. No attempt6 or Phase7.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -245,5 +246,23 @@
     "localSecretFiles": "ABSENT",
     "bootstrap": "RETAINED_HOSTED_PASS_PREREQUISITE_UNMET",
     "claudeStarts": 0
+  },
+  "finalRepair": {
+    "startingHead": "2290e66db551d2ce2a961abbd836c9464b1e97a6",
+    "authoritySha256": "9c4114c2d7c31e426263e8a770f9a73744afa50f8e173d98d2a68f28145b1b11",
+    "record": "FINAL_HOSTED_REPAIR.md",
+    "predeployReview": "PASS",
+    "codeFreeze": true,
+    "readinessMax": 1,
+    "readinessRetry": 0,
+    "sourceTreeSha256": "71123341c45eafc71cc3f934122b9ec54949460b278c7c89d075a87a524a8744",
+    "reviewSnapshotSha256": "3e93d98e6420f7ae7c6133d326c3f5dfdabb250d9a27a9cd1150c2ea9466dc57",
+    "reviewSeverityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 3
+    },
+    "localValidation": "PASS_656_UNIT_LINT_TYPECHECK_BUILD_SECRET_DIFF"
   }
 }

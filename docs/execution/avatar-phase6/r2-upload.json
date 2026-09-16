@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "bucket": "zao-rental-avatar-p6",
+  "objects": 3,
+  "sourcePhotos": 0,
+  "writeLogicalRuns": 1,
+  "retry": 0,
+  "assets": [
+    {
+      "file": "appearance-1.webp",
+      "sha256": "6673481fbb876be97ebec2b2957709fdbad53f4686983c11e61319f601600e8e",
+      "bytes": 67716,
+      "put": "PASS",
+      "privateRead": "PASS",
+      "digestMatch": true
+    },
+    {
+      "file": "appearance-2.webp",
+      "sha256": "caf166774ab4a615aeaa93bfc31bce41d2d64756fee0117665f68f71b99aecfa",
+      "bytes": 65816,
+      "put": "PASS",
+      "privateRead": "PASS",
+      "digestMatch": true
+    },
+    {
+      "file": "generic-ski.webp",
+      "sha256": "54a9d50c0f161714c8b168ecc59c9335f02a03b8f7cd700c0e656c24649e0b48",
+      "bytes": 25164,
+      "put": "PASS",
+      "privateRead": "PASS",
+      "digestMatch": true
+    }
+  ],
+  "writeCredentialCleanup": "PASS_HTTP401_LOCAL_FILE_REMOVED",
+  "runtimeReadProof": "PASS_READ3_PUT403_DELETE403"
+}

@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "credentialName": "zao-avatar-phase6-upload-v2",
+  "inactive": true,
+  "oldCredentialReadHttp": 401,
+  "localWriteSecretFileDeleted": true,
+  "credentialValuesOutput": false
+}

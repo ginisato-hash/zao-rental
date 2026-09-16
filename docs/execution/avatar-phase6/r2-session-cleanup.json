@@ -1,0 +1,11 @@
+{
+  "taskOwnedCloudflareTabsClosed": 2,
+  "localHandoffServerStopped": true,
+  "writeCredentialRevoked": true,
+  "localWriteCredentialDeleted": true,
+  "readCredential": "KEPT_0600_FOR_PREVIEW_HANDOFF",
+  "runtimeRoleCredentials": "KEPT_0600_FOR_PREVIEW_HANDOFF",
+  "newTaskSecretExposureAfterThisResume": 0,
+  "providerCreationBlockedByAutoReview": "DEDICATED_VERCEL_PROJECT_NOT_DISPATCHED",
+  "ownerAuthorityAlreadyRecorded": true
+}

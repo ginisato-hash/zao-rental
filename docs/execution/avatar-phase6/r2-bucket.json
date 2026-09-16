@@ -7,8 +7,12 @@
   "private": true,
   "r2DevEnabled": false,
   "customPublicDomains": 0,
-  "objectsUploaded": 0,
-  "writeCredential": "PENDING",
-  "readCredential": "PENDING",
-  "existingOtherBucketsTouched": 0
+  "objectsUploaded": 3,
+  "writeCredential": "REVOKED_LOCAL_FILE_REMOVED",
+  "readCredential": "EXACT_BUCKET_OBJECT_READ_ONLY",
+  "existingOtherBucketsTouched": 0,
+  "postUploadPrivateMetadata": {
+    "r2DevEnabled": false,
+    "customPublicDomains": 0
+  }
 }

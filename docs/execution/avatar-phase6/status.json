@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUME_V2_R2_UPLOAD_READY",
+  "phase": "RESUME_V2_R2_PASS_VERCEL_CREATE_REVIEW_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -14,7 +14,7 @@
       "max": 1
     },
     "r2NewObjects": {
-      "used": 0,
+      "used": 3,
       "max": 3
     },
     "previewDeployments": {
@@ -80,7 +80,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Complete secret-safe handoff of the already-created bucket-only R2 upload credential, exact3 upload and write-key revocation, read-only key, dedicated protected Preview, hosted E2E, final review.",
+  "nextGate": "Automatic review requires direct chat adoption of already-authorized dedicated Vercel creation; awaiting reply to that concrete request. No creation dispatched. Then protected Preview and hosted E2E/final review.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -129,9 +129,9 @@
     "artworkMetadataImport": "PASS_EXACT3",
     "syntheticFixture": "PASS_EXISTING_ROWS_UNCHANGED",
     "r2Bucket": "PRIVATE_CREATED",
-    "r2Objects": 0,
-    "r2WriteCredential": "HANDOFF_PASS_LOCAL_0600",
-    "r2ReadCredential": "NOT_CREATED",
+    "r2Objects": 3,
+    "r2WriteCredential": "REVOKED_LOCAL_FILE_REMOVED",
+    "r2ReadCredential": "PASS_READ3_PUT403_DELETE403",
     "dedicatedVercelProject": "NOT_CREATED",
     "hostedE2E": "NOT_RUN",
     "claude": "NOT_RUN",

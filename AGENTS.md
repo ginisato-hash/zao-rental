@@ -1,3 +1,11 @@
+## Current checkpoint — Phase6 STOPPED: suspected secret exposure
+
+Read docs/execution/avatar-phase6/STOP_RECORD.md and status.json. Authority §37 stop:
+a browser inventory response included unrelated authentication/session URL parameters.
+No values are saved here. Secret exposure is UNKNOWN, never claim0. Hosted mutations0,
+migration0/deploy0/R2 objects0/Claude0. Partial local implementation is a checkpoint only.
+Do not continue provider work until incident assessment and explicit resume; no Phase6 PASS.
+
 ## Current — Avatar Phase6 protected hosted Preview
 
 Owner adopts docs/execution/AVATAR_PHASE6_AUTHORITY.md. Read avatar-phase6/PLAN.md.

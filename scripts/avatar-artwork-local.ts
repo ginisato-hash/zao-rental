@@ -55,6 +55,7 @@ export async function importLocalArtwork(pool:Pool){
  const c=await pool.connect();
  try{
   await c.query('BEGIN');
+  await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='5000ms'");
   const actual=(await c.query('SELECT current_database() AS db,current_user AS owner,host(inet_server_addr()) AS host,inet_server_port() AS port')).rows[0];
   if(actual.db!==identity.database||actual.owner!==identity.user||actual.host!=='127.0.0.1'||actual.port!==identity.dbPort)throw new Error('ARTWORK_SERVER_IDENTITY_MISMATCH');
   // Explicit locks protect the emptiness check; no merge, ON CONFLICT, overwrite or retarget.

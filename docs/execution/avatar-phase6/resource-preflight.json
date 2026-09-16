@@ -1,0 +1,11 @@
+{
+  "keys": [
+    "store"
+  ],
+  "id": "store_i5vh0ZEKo2ikcVo9",
+  "type": "integration",
+  "name": "zao-rental-sandbox-development",
+  "status": "available",
+  "externalResourceId": "jolly-rain-06413569",
+  "billingPlan": "free_v3"
+}

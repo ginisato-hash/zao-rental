@@ -1,0 +1,43 @@
+✔ exact platform Preview config accepts; build mode is not Production permission (0.640125ms)
+✔ platform config rejects VERCEL (0.082875ms)
+✔ platform config rejects VERCEL_ENV (0.02825ms)
+✔ platform config rejects VERCEL_TARGET_ENV (0.022208ms)
+✔ platform config rejects ZAO_AVATAR_PHASE6 (0.02475ms)
+✔ platform config rejects VERCEL_PROJECT_ID (0.021667ms)
+✔ platform config rejects VERCEL_GIT_COMMIT_REF (0.03425ms)
+✔ platform config rejects VERCEL_URL (0.039416ms)
+✔ platform config rejects SQUARE_SANDBOX_ACCESS_TOKEN (0.045541ms)
+✔ platform config rejects ZAO_DEVELOPMENT_RUNTIME (0.071792ms)
+✔ platform config rejects DATABASE_URL (0.032083ms)
+✔ missing platform binding VERCEL fails (0.034166ms)
+✔ missing platform binding VERCEL_ENV fails (0.019042ms)
+✔ missing platform binding VERCEL_TARGET_ENV fails (0.016ms)
+✔ missing platform binding ZAO_AVATAR_PHASE6 fails (0.019208ms)
+✔ missing platform binding VERCEL_PROJECT_ID fails (0.018583ms)
+✔ missing platform binding VERCEL_GIT_COMMIT_REF fails (0.022042ms)
+✔ missing platform binding VERCEL_URL fails (0.017875ms)
+✔ hosted config rejects host (0.09725ms)
+✔ hosted config rejects database (0.038167ms)
+✔ hosted config rejects role (0.038917ms)
+✔ hosted config rejects tls (0.034125ms)
+✔ hosted config rejects owner (0.030041ms)
+✔ hosted config rejects extra (0.034084ms)
+✔ hosted config rejects r2-write (0.050958ms)
+✔ hosted config rejects expiry (0.036916ms)
+✔ hosted config rejects resource (0.0325ms)
+✔ hosted config rejects guestKey (0.0365ms)
+✔ peer ignores arbitrary generic forwarded/client headers; canonical mapped IPv6 shares budget (9.964083ms)
+✔ ingress rejects missing/malformed/chain  (0.105625ms)
+✔ ingress rejects missing/malformed/chain 192.0.2.1,192.0.2.2 (0.084125ms)
+✔ ingress rejects missing/malformed/chain arbitrary (0.074ms)
+✔ ingress rejects missing/malformed/chain fe80::1%en0 (0.044459ms)
+✔ ingress rejects aliases/mismatched deployment header and absent platform gate (0.129792ms)
+✔ Avatar budget is purpose-separated; approved business values unchanged (0.038333ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.572041

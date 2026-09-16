@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "STOPPED_UNEXPECTED_VERCEL_PRODUCTION_TARGET_CONTAINED",
+  "phase": "CONTROLLED_BOOTSTRAP_EXCEPTION_AUTHORIZED",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -20,7 +20,8 @@
     "previewDeployments": {
       "used": 1,
       "max": 2,
-      "accounting": "Conservative total deployment-attempt usage; actual Preview deployments0, unintended Production deployment1 deleted, remaining1 unused"
+      "accounting": "Conservative total deployment-attempt usage; actual Preview deployments0, unintended Production deployment1 deleted, remaining1 unused",
+      "supersededBy": "deploymentAttempts under controlled bootstrap amendment; historical field retained"
     },
     "claudeInitial": {
       "used": 0,
@@ -38,6 +39,15 @@
       "used": 1,
       "max": 1,
       "revokeAtEnd": true
+    },
+    "deploymentAttempts": {
+      "used": 1,
+      "max": 3,
+      "allocation": {
+        "1": "historical unintended Production, deleted",
+        "2": "controlled static Production bootstrap only",
+        "3": "one actual protected application Preview"
+      }
     }
   },
   "forbiddenCalls": {
@@ -81,7 +91,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Owner assessment of contained Production boundary deviation; preserve actual Production deployment1/alias1 and consumed attempt1/2. Verify an enforceable first-deployment Preview path before any remaining dispatch. Secret transmission approval remains granted.",
+  "nextGate": "Static-only controlled bootstrap attempt2, keep until one actual Preview attempt3 passes target/protection gates and hosted acceptance, then remove bootstrap+aliases and final Claude. No Phase7.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -160,5 +170,11 @@
     "deleted": true,
     "aliasDeleted": true,
     "record": "UNEXPECTED_PRODUCTION_TARGET_RECORD.md"
-  }
+  },
+  "controlledBootstrapStartingHead": "d6736dc68176b8d5a091575ae802d85d2a4867cc",
+  "controlledBootstrapAuthoritySha256": "0a32c4382db281568a5c2e3f9ee756690c3e3ac5280acbfe229e4e0f5a21db95",
+  "historicalProductionDeployments": 1,
+  "historicalProductionAliases": 1,
+  "currentProductionDeployments": 0,
+  "currentProductionAliases": 0
 }

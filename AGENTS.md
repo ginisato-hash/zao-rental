@@ -1,3 +1,19 @@
+## Current — Phase6 controlled static bootstrap exception
+
+Read docs/execution/avatar-phase6/CONTROLLED_BOOTSTRAP_OWNER_AMENDMENT.md and status.json.
+Owner directly adopts contained historical Production deployment1/alias1 (deleted404).
+Historical counts must remain actual; final current Production deployment/alias must be0.
+Total attempt max3: historical1, authorized static-only Production bootstrap2, app Preview3.
+Bootstrap has HTML only, no app/runtime/function/DB/R2/guest credentials or external fetch;
+Production env0, Authentication ON. Keep bootstrap while creating actual Preview once.
+Require provider-confirmed Preview target before any app access/E2E; mismatch => cleanup+STOP.
+After hosted acceptance delete bootstrap and aliases; Claude must review complete deviation
+history and final current zero state. Only amended PASS_WITH_CONTAINED_VERCEL_PRODUCTION_DEVIATION
+is possible; never ordinary PASS. Existing secret approval remains valid; no Phase7/main merge.
+Parent single writer. Historical incidents, migrations, objects and review budgets retained.
+
+## Historical — contained unexpected target checkpoint
+
 ## Current — Phase6 unexpected Production target contained; not PASS
 
 Read docs/execution/avatar-phase6/UNEXPECTED_PRODUCTION_TARGET_RECORD.md and status.json.

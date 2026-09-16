@@ -1,6 +1,8 @@
 import {randomBytes} from 'node:crypto';
 import type {Pool,PoolConfig} from 'pg';
-import {phase6Services,phase6Role,phase6Database,phase6Endpoint,type Phase6Service} from '../packages/auth/src/hosted-preview-config';
+import {phase6Services,phase6Role,phase6Database,type Phase6Service} from '../packages/auth/src/hosted-preview-config';
+import {phase6NeonHostname,proveNeonClientTls} from '../packages/db/src/neon-tls';
+import {worktreeIdentity,rejectAmbientDatabase} from './worktree';
 /** Narrow subset of canonical guest/application/content role grants. Phase6 does not
  * checkout, create HOLD/quotes or write inventory. Those canonical write grants are omitted. */
 export function avatarHostedGrants(role:(s:Phase6Service)=>string){
@@ -26,8 +28,18 @@ export function avatarHostedGrants(role:(s:Phase6Service)=>string){
  ];
 }
 export async function provisionHostedAvatarRoles(owner:Pool){
- if(process.env.NODE_ENV==='production'||owner.options.database!==phase6Database||owner.options.user!=='neondb_owner'||!owner.options.host?.startsWith(phase6Endpoint+'.')||typeof owner.options.ssl!=='object'||owner.options.ssl.rejectUnauthorized!==true)throw Error('PHASE6_SETUP_OWNER_REQUIRED');
+ if(process.env.NODE_ENV==='production'||owner.options.database!==phase6Database||owner.options.user!=='neondb_owner'||owner.options.host!==phase6NeonHostname||typeof owner.options.ssl!=='object'||owner.options.ssl.rejectUnauthorized!==true)throw Error('PHASE6_SETUP_OWNER_REQUIRED');
  const actual=(await owner.query('SELECT current_database() db,current_user role')).rows[0];if(actual.db!==phase6Database||actual.role!=='neondb_owner')throw Error('PHASE6_SETUP_IDENTITY');
+ const c=await owner.connect();try{proveNeonClientTls(c,owner.options);}finally{c.release();}
+ return createRoles(owner);
+}
+export async function provisionLocalAvatarRoles(owner:Pool){
+ rejectAmbientDatabase();const i=worktreeIdentity();
+ if(process.env.NODE_ENV==='production'||owner.options.host!=='127.0.0.1'||owner.options.port!==i.dbPort||owner.options.database!==i.database||owner.options.user!==i.user)throw Error('PHASE6_OWNED_LOCAL_REQUIRED');
+ return createRoles(owner);
+}
+async function createRoles(owner:Pool){
+ const database=owner.options.database!;if(!/^[a-z][a-z0-9_]+$/.test(database))throw Error('PHASE6_DATABASE_IDENTIFIER');
  const c=await owner.connect(),configs={} as Record<Phase6Service,PoolConfig>;
  try{
   await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='5000ms'");
@@ -35,8 +47,8 @@ export async function provisionHostedAvatarRoles(owner:Pool){
   if((await c.query('SELECT 1 FROM pg_roles WHERE rolname=ANY($1::text[])',[phase6Services.map(phase6Role)])).rowCount)throw Error('PHASE6_EXISTING_ROLES_RECONCILE');
   for(const service of phase6Services){const user=phase6Role(service),password=randomBytes(32).toString('hex');
    await c.query(`CREATE ROLE ${user} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
-   await c.query(`GRANT CONNECT ON DATABASE ${phase6Database} TO ${user}`);await c.query(`GRANT USAGE ON SCHEMA public TO ${user}`);
-   configs[service]={host:owner.options.host,port:5432,database:phase6Database,user,password,ssl:{rejectUnauthorized:true}};
+   await c.query(`GRANT CONNECT ON DATABASE ${database} TO ${user}`);await c.query(`GRANT USAGE ON SCHEMA public TO ${user}`);
+   configs[service]={host:owner.options.host,port:owner.options.port,database,user,password,...(owner.options.ssl?{ssl:owner.options.ssl}:{})};
   }
   for(const grant of avatarHostedGrants(phase6Role))await c.query(grant);
   await c.query('COMMIT');return configs;

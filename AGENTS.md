@@ -1,3 +1,23 @@
+## Current — Phase6 explicit resume with dedicated isolated Preview project
+
+Read docs/execution/AVATAR_PHASE6_RESUME_AUTHORITY.md and avatar-phase6/RESUME_PLAN.md.
+Resume71ae7a5bc3d83beecae61d9d35de128dc5018a9c; retain completed code/proofs and budgets.
+Historical STOP_RECORD.md is immutable. Incident contained/no reuse; no zero-exposure claim,
+no incident tab-history reconstruction or blanket credential rotation. Global tab inventory
+(including cua.listTabs) is prohibited. Only new task-owned opaque handles + allowlisted
+origins; never emit/store browser URL queries/fragments/auth state, values or raw responses.
+Provider API/CLI first. Browser only for actual login/MFA/console-only work and authorized
+hosted browser acceptance. No advance Cloudflare login request.
+Existing zao-rental project is forbidden for Phase6 deployment; never read its Square values.
+Create max1 zao-rental-avatar-preview project: Authentication ON, no custom domain,
+Production/alias/Square/payment/refund/webhook env0. Explicit Preview env allowlist only.
+Preserve original Neon migration1/R2 bucket1+objects3/Preview deploy2/Claude1+conditional1.
+Continue hosted implementation/acceptance autonomously after authority push/readback.
+New suspected exposure immediately stops; final PASS must retain historical incident annotation.
+Parent single writer. No main/Production/Phase7 work.
+
+## Historical — contained Phase6 safety-stop checkpoint
+
 ## Current checkpoint — Phase6 STOPPED: suspected secret exposure
 
 Read docs/execution/avatar-phase6/STOP_RECORD.md and status.json. Authority §37 stop:

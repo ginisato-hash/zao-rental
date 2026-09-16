@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUMED_IMPLEMENTING",
+  "phase": "STOPPED_SECRET_EXPOSURE_SUSPECTED",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -26,10 +26,6 @@
       "max": 1
     },
     "claudeCorrection": {
-      "used": 0,
-      "max": 1
-    },
-    "dedicatedVercelProjects": {
       "used": 0,
       "max": 1
     }
@@ -65,18 +61,5 @@
     "hostedR2": "NOT_RUN",
     "hostedBrowser": "NOT_RUN",
     "claude": "NOT_RUN"
-  },
-  "resumeStartingHead": "71ae7a5bc3d83beecae61d9d35de128dc5018a9c",
-  "resumeAuthoritySha256": "acc82b94606f0d59f58bd2cca9345b0b29f94e865ca9a7f8edf30ecba08a876c",
-  "historicalIncidentClassification": [
-    "HISTORICAL_POTENTIAL_TOOL_METADATA_EXPOSURE",
-    "CONTAINED_NO_REUSE"
-  ],
-  "historicalToolMetadataIncident": "POTENTIAL_EXPOSURE_PRESERVED",
-  "historicalSecretExposureZeroClaim": false,
-  "confirmedProviderCredentialCompromise": "NOT_ESTABLISHED",
-  "knownReplay": 0,
-  "knownExternalDisclosure": 0,
-  "knownCredentialUse": 0,
-  "newSecretExposureObservedAfterResume": 0
+  }
 }

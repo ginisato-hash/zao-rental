@@ -360,5 +360,108 @@
       "log": "docs/execution/launch-critical-m15/validation-logs/typecheck.log",
       "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
     }
+  },
+  "baselineFullRegressionHead": "15cf6c2ba9d9152f639a5eb6ae62acbc5ef02f3d",
+  "correction": {
+    "status": "PASS",
+    "findings": [
+      "F1",
+      "F2"
+    ],
+    "checks": [
+      {
+        "command": "test:production-runtime",
+        "exitCode": 0,
+        "logPath": ".local/evidence/check-6672b266-1a50-4929-9b3a-4497479f5a10/test-production-runtime.log",
+        "sourceLogSha256": "27790055d365e92737c6ef64e813bb5065c11a8792fbf82050ce0449eb47bc46",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/test-production-runtime.log",
+        "sha256": "27790055d365e92737c6ef64e813bb5065c11a8792fbf82050ce0449eb47bc46",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      },
+      {
+        "command": "test:production-runtime-ui",
+        "exitCode": 0,
+        "logPath": ".local/evidence/check-6875739b-1dcd-4290-9754-6e45da7ac5a7/test-production-runtime-ui.log",
+        "logSha256": "232a67b5db2c2dffc18a11f41723b8760d164957e186aabf999a53e2e42442fb",
+        "disposed": 1,
+        "sourceLogSha256": "232a67b5db2c2dffc18a11f41723b8760d164957e186aabf999a53e2e42442fb",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/test-production-runtime-ui.log",
+        "sha256": "232a67b5db2c2dffc18a11f41723b8760d164957e186aabf999a53e2e42442fb",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      },
+      {
+        "command": "test:public-content",
+        "exitCode": 0,
+        "logPath": ".local/evidence/check-40c219ef-f390-49a6-bb9f-ad4029776a61/test-public-content.log",
+        "logSha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e",
+        "disposed": 1,
+        "sourceLogSha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/test-public-content.log",
+        "sha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      },
+      {
+        "command": "test:public-ui",
+        "exitCode": 0,
+        "logPath": ".local/evidence/check-f3f32143-95b9-4450-b624-0726eac2bcaf/test-public-ui.log",
+        "logSha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be",
+        "disposed": 2,
+        "sourceLogSha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/test-public-ui.log",
+        "sha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      },
+      {
+        "command": "test:unit",
+        "exitCode": 0,
+        "logPath": "../launch-critical-m15-operator/correction-unit.log",
+        "sourceLogSha256": "d28dd729fca244cf329154f90f08e9cc4b6f3964892c20bf7677624a966928b6",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/test-unit.log",
+        "sha256": "d28dd729fca244cf329154f90f08e9cc4b6f3964892c20bf7677624a966928b6",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      },
+      {
+        "command": "lint",
+        "exitCode": 0,
+        "logPath": "../launch-critical-m15-operator/correction-lint.log",
+        "sourceLogSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/lint.log",
+        "sha256": "1d73f31982945633bb8a491209f73fa014e10c64c770caa9d642b1f5d67a676b",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      },
+      {
+        "command": "typecheck",
+        "exitCode": 0,
+        "logPath": "../launch-critical-m15-operator/correction-types.log",
+        "sourceLogSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/typecheck.log",
+        "sha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      },
+      {
+        "command": "build",
+        "exitCode": 0,
+        "logPath": "../launch-critical-m15-operator/correction-build.log",
+        "sourceLogSha256": "a3d8e462804cf82c93eac6989db6b3754beb2b67990471ad189a8fbc23c36755",
+        "log": "docs/execution/launch-critical-m15/correction-validation-logs/build.log",
+        "sha256": "9ce12b178a0f8592626d4a2ff49d1743a0dcc47e1f9ce7b589cbd3afb9e82c70",
+        "normalizedTrailingNewline": true,
+        "normalizedWhitespace": true
+      }
+    ],
+    "unitTests": 694,
+    "productionRuntimePgCases": 10,
+    "normalBuiltNextBrowserCases": 4,
+    "publicContentPgCases": 5,
+    "publicBrowserCases": 10,
+    "sandboxNote": "One initial unit rerun was denied localhost listen (EPERM); succeeded with authorized owned-local networking. No product workaround.",
+    "migrationChanges": 0
   }
 }

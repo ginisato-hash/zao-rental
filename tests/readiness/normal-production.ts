@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {Pool} from 'pg';
+import {Readable} from 'node:stream';
+import {publicMediaHandler} from '../../apps/web/src/lib/public-media-http';
+import {seedPublicContent} from '../public/content-seed';
+import {registerWear} from '../wear/fixture';
+import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
+import {WearService} from '../../packages/core/src/wear/service';
+import {ledgerPrincipal} from '../../packages/auth/src/staff-auth';
+import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority';
+import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconcile-protection';
 import {normalProductionFixture} from './normal-production-fixture';
 import {composeProductionRuntime,productionConfigurationDigest,type ProductionRuntime} from '../../packages/core/src/guest/production-runtime';
 import {productionConfiguration,ProductionStartupError} from '../../packages/auth/src/production-config';
@@ -31,6 +40,19 @@ try{
   const options={...input,configuration:config,approvedConfigurationSha256:productionConfigurationDigest(config),payment:binding};
   for(const patch of [undefined,{...binding,credentials:async()=>({...await binding.credentials(),token:''})},{...binding,credentials:async()=>({...await binding.credentials(),environment:'SANDBOX'})},{...binding,gateway:{...binding.gateway,kind:'SQUARE_SANDBOX'}}])await assert.rejects(composeProductionRuntime({...options,payment:patch as typeof binding}),{stage:'PAYMENT'});
   const p=await composeProductionRuntime(options);try{assert.equal(p.payment,binding.gateway);assert.equal(p.safeStatus().PAYMENT_ADAPTER,'CONFIGURED_ACTIVATION_PENDING');assert.equal(providerCalls,0);}finally{await p.close();}
+ });
+
+ await check('F1 payment OFF never retains or invokes a supplied unvalidated Sandbox gateway/credential resolver',async()=>{
+  let calls=0;const disabled=await composeProductionRuntime({...input,payment:{provider:'SQUARE',environment:'PRODUCTION',merchantId:'wrong',credentials:async()=>{calls++;throw Error('MUST_NOT_RESOLVE_DISABLED_CREDENTIAL');},gateway:{kind:'SQUARE_SANDBOX',create:async()=>{calls++;throw Error();},lookup:async()=>{calls++;return null;}}}});try{assert.equal(disabled.payment,null);assert.equal(disabled.safeStatus().PAYMENT_ADAPTER,'OFF');assert.equal(calls,0);}finally{await disabled.close();}
+ });
+ await check('F2 media-only composition serves current released private bytes without guest/staff, and revocation or failure denies',async()=>{
+  const ledger=new LedgerService(x.roles.ledgerPool,ledgerPrincipal(x.principal),(c,s,a)=>verifyLedgerWrite(c,x.roles.authPool,x.signed.identity,s,a),(r,id,v)=>reconcileLedgerProtection(x.roles.transferPool,x.roles.authPool,x.signed.identity,r,id,v)),wear=new WearService(x.flow.flowPool,x.roles.authPool,x.signed.identity),stock=await registerWear(ledger,wear),seed=await seedPublicContent(x.db.pool,x.actor,{id:stock.models.SKI!,variantIds:[stock.variants['SKI-150 cm']!],season:'2026/27'});
+  const state=structuredClone(seed.state),release=randomUUID();state.catalog.current=release;state.catalog.releases.push({id:release,entries:Object.values(state.catalog.draftIds)} as typeof state.catalog.releases[number]);await x.db.pool.query('UPDATE content_workspace SET value=$1',[JSON.stringify(state)]);await x.db.pool.query("UPDATE content_model_previews SET state='PREVIEW_APPROVED' WHERE slug='synthetic-ski'");
+  const variant=seed.media.variants[0]!,digest=variant.src.split('/')[2]!,bytes=(await x.db.pool.query('SELECT bytes FROM content_media_objects WHERE sha256=$1',[digest])).rows[0].bytes as Buffer;let calls=0,fail=false,revokeDuringRead=false;const connected:string[]=[];
+  const options=x.input({booking:false,guestRecovery:false,staffOperations:false,media:true});const media=await composeProductionRuntime({...options,connect:async(c,s,v)=>{connected.push(s);return options.connect!(c,s,v);},media:{environment:'PRODUCTION',permission:'OBJECT_READ',credentials:async()=>({accountId:'a'.repeat(32),bucket:'synthetic-m15-private',accessKeyId:randomBytes(12).toString('hex'),secretAccessKey:randomBytes(32).toString('hex'),expiresAt:new Date('2099-01-01T00:00:00Z'),revoked:false}),requestHandler:{handle:async()=>{calls++;if(fail)throw Error('SYNTHETIC_READ_FAILURE');if(revokeDuringRead)await x.db.pool.query("UPDATE content_model_previews SET rights_verified=false WHERE slug='synthetic-ski'");return {response:{statusCode:200,headers:{'content-type':variant.type,'x-amz-meta-sha256':digest},body:Readable.from(bytes)}};}}}});
+  try{assert.deepEqual(connected,['content_read']);assert.equal(media.guest,null);assert.equal(media.staff,null);assert.equal(media.public,null);assert.ok(media.contentReadPool);const route=publicMediaHandler({pool:media.contentReadPool,readBytes:media.readDerivative}),request=()=>new Request(options.deployment.origin+variant.src);const ok=await route(request());assert.equal(ok.status,200);assert.deepEqual(Buffer.from(await ok.arrayBuffer()),bytes);assert.equal(calls,1);
+   fail=true;assert.equal((await route(request())).status,404);fail=false;revokeDuringRead=true;assert.equal((await route(request())).status,404);const used=calls;assert.equal((await route(request())).status,404);assert.equal(calls,used);assert.equal((await publicMediaHandler(null)(request())).status,404);
+  }finally{await media.close();}
  });
  runtime=await composeProductionRuntime(input);const r=runtime,origin=r.configuration.deployment.origin;
  await check('least-privilege normal runtime boots with Avatar/media OFF, separate access/recovery keys and safe readiness',async()=>{assert.equal(r.avatar,null);assert.ok(r.guest&&r.access&&r.recovery&&r.staff);assert.equal(r.safeStatus().NOTIFICATION,'UNCONNECTED');assert.deepEqual(await readinessResponse({ready:true,stage:'READY'}).json(),{status:'READY'});const anonymous={status:'anonymous' as const,principal:null,stamp:null};assert.equal(readinessDetails({ready:true,stage:'READY'},anonymous,r.safeStatus()).status,401);assert.equal(readinessDetails({ready:true,stage:'READY'},{status:'authorized',principal:{...x.principal,permissions:['BOOKING_VIEW']},stamp:'synthetic'},r.safeStatus()).status,403);const out=await readinessDetails({ready:false,stage:'DB_CONFIG'},{status:'authorized',principal:{...x.principal,permissions:['STAFF_MANAGE']},stamp:'synthetic'},{...r.safeStatus(),DB:'SYNTHETIC_RAW_SECRET',password:'SYNTHETIC_RAW_SECRET'}).text();assert.ok(!out.includes('SYNTHETIC_RAW_SECRET'));assert.equal((await readinessResponse({ready:false,stage:'DB_CONFIG'}).json()).stage,undefined);});

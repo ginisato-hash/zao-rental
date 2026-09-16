@@ -17,3 +17,6 @@ export function publicRuntime(){if(productionRequested())return getProductionRun
 export function guestService(actor:GuestActor,booking?:BookingService){if(productionRequested()){const r=getProductionRuntime();if(!r?.guest||booking)throw new Error('PUBLIC_RUNTIME_UNCONNECTED');return r.service(actor);}const p=publicRuntime();if(!p)throw new Error('PUBLIC_RUNTIME_UNCONNECTED');const holds=new HoldService(p.r.holdPool,actor),quotes=new QuoteService(p.r.pricingPool,actor),recs=new RecommendationService(p.r.recommendationPool,actor,holds,quotes,async variants=>guestVariants(await guestCatalog(p.readPool,variants),variants));return new GuestBookingService(p.contexts,actor,recs,booking??null,async()=>guestCatalog(p.readPool,await holds.recommendationCatalog()));}
 
 export function contentRuntime(){if(productionRequested())return null;const r=getRuntime(),c=connection(process.env.ZAO_CONTENT_RUNTIME,'content');if(!r||!c)return null;if(!contentPool){contentPool=new Pool({...c,max:4});contentPool.on('error',()=>{});}return {r,contentPool};}
+
+/** Catalog/media reads do not require an enabled guest booking context. */
+export function publicContentPool(){if(productionRequested())return getProductionRuntime()?.contentReadPool??null;return publicRuntime()?.readPool??null;}

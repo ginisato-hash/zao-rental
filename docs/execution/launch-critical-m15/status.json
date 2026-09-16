@@ -2,11 +2,20 @@
   "phase": "M1.5",
   "implementation": "PASS",
   "localValidation": "PASS",
-  "review": "PENDING_INITIAL",
+  "review": {
+    "initial": 1,
+    "correction": "PENDING",
+    "initialReviewedHead": "15cf6c2ba9d9152f639a5eb6ae62acbc5ef02f3d",
+    "initialVerdict": "CHANGES_REQUIRED",
+    "initialHigh": 1,
+    "initialMedium": 1,
+    "low": 2
+  },
   "ci": "PENDING_EXACT_HEAD",
   "baseHead": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
   "migrationAdded": 0,
   "mainMerge": 0,
   "actualProductionProviderOperations": 0,
-  "next": "Initial static review + exact CI; then M1.6"
+  "next": "Initial static review + exact CI; then M1.6",
+  "draftPr": 19
 }

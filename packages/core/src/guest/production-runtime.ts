@@ -38,7 +38,7 @@ export type ProductionRuntimeInput={configuration:unknown;approvedConfigurationS
 /** One server-owned composition, using existing domain services. There is no ambient
  * URL, NODE_ENV activation, provider fetch, owner connection, or request config. */
 export async function composeProductionRuntime(input:ProductionRuntimeInput){
- let stage:StartupStage='FEATURE_FLAGS';const pools:Partial<Record<ProductionService,Pool>>={};let r2:R2MediaProvider|undefined;
+ let stage:StartupStage='FEATURE_FLAGS';const pools:Partial<Record<ProductionService,Pool>>={};let r2:R2MediaProvider|undefined;let validatedPayment:PaymentGateway|null=null;
  try{
   const c=productionConfiguration(input.configuration);
   if(!/^[a-f0-9]{64}$/.test(input.approvedConfigurationSha256)||productionConfigurationDigest(c)!==input.approvedConfigurationSha256||canonical(c.deployment)!==canonical(input.deployment))throw Error();
@@ -46,11 +46,11 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   stage='GUEST_SECURITY';const roots=[secrets.guestKey,secrets.staffKey,secrets.accessKey,secrets.recoveryKey];if(roots.some(k=>typeof k!=='string'||! /^[a-f0-9]{64}$/.test(k))||new Set(roots).size!==roots.length)throw Error();
   stage='BOOKING_ACCESS';for(const v of [secrets.accessKeyVersion,secrets.recoveryKeyVersion])if(typeof v!=='string'||!/^[-A-Za-z0-9_]{1,64}$/.test(v))throw Error();
   stage='INGRESS';if(typeof input.verifiedPeer!=='function')throw Error();const ingress=productionIngress(c,input.verifiedPeer);
-  stage='PAYMENT';if(c.flags.payment){const p=input.payment;if(!p||p.provider!=='SQUARE'||p.environment!=='PRODUCTION'||typeof p.credentials!=='function'||p.merchantId!==c.payment?.merchantId||p.gateway.kind!=='SQUARE_PRODUCTION'||typeof p.gateway.create!=='function'||typeof p.gateway.lookup!=='function')throw Error();const credential=exact(await p.credentials(),['environment','merchantId','token','revoked']);if(credential.environment!=='PRODUCTION'||credential.merchantId!==c.payment.merchantId||credential.revoked!==false||typeof credential.token!=='string'||credential.token.length<16)throw Error();}
+  stage='PAYMENT';if(c.flags.payment){const p=input.payment;if(!p||p.provider!=='SQUARE'||p.environment!=='PRODUCTION'||typeof p.credentials!=='function'||p.merchantId!==c.payment?.merchantId||p.gateway.kind!=='SQUARE_PRODUCTION'||typeof p.gateway.create!=='function'||typeof p.gateway.lookup!=='function')throw Error();const credential=exact(await p.credentials(),['environment','merchantId','token','revoked']);if(credential.environment!=='PRODUCTION'||credential.merchantId!==c.payment.merchantId||credential.revoked!==false||typeof credential.token!=='string'||credential.token.length<16)throw Error();validatedPayment=p.gateway;}
   stage='MEDIA';if(c.flags.media){const m=input.media;if(!m||m.environment!=='PRODUCTION'||m.permission!=='OBJECT_READ')throw Error();const credentials=async()=>{const v=await m.credentials();if(!c.media||v.accountId!==c.media.accountId||v.bucket!==c.media.bucket||v.revoked||v.expiresAt.toISOString()!==c.media.credentialExpiresAt||v.expiresAt<=new Date()||!v.accessKeyId||!v.secretAccessKey)throw new ProductionStartupError('MEDIA');return v;};await credentials();r2=new R2MediaProvider(c.media!.accountId,c.media!.bucket,credentials,async()=>{throw new ProductionStartupError('MEDIA');},()=>new Date(),m.requestHandler);}
   stage='DB_CONFIG';if(!secrets.database||Object.keys(secrets.database).some(k=>!productionServices.includes(k as ProductionService)))throw Error();
   const active=new Set<ProductionService>();if(c.flags.booking)for(const s of ['auth','guest','hold','pricing','recommendation','content_read','booking_access','operations'] as const)active.add(s);
-  if(c.flags.staffOperations)for(const s of ['auth','ledger','hold','transfer','pricing','recommendation','operations'] as const)active.add(s);if(c.flags.avatar)active.add('avatar_read');
+  if(c.flags.staffOperations)for(const s of ['auth','ledger','hold','transfer','pricing','recommendation','operations'] as const)active.add(s);if(c.flags.avatar)active.add('avatar_read');if(c.flags.media)active.add('content_read');
   // Validate every supplied binding before opening even the first connection.
   for(const s of productionServices)if(active.has(s)||secrets.database[s])validateProductionCredential(c,s,secrets.database[s]);
   for(const s of active){const pool=await (input.connect??connectProductionDatabase)(c,s,secrets.database[s]!);pools[s]=pool;pool.on('error',()=>{});await verifyProductionDatabase(pool,c,s);}
@@ -74,7 +74,7 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
    avatar={guard:(request:Request)=>rate.guard(guest.security.peer(request)),load:(headers:Headers,scope:Parameters<typeof loadGuestAvatar>[4])=>loadGuestAvatar(guest.contexts,required('recommendation'),visuals,headers,scope),reader:()=>({findForDelivery:(id:string,hash:string,now:Date)=>visuals.findForDelivery(id,hash,now),readBytes:async(hash:string)=>{const bytes=await readDerivative(hash);return bytes?Buffer.from(bytes):null;}})};
   }
   stage='READY';await input.audit(stage);let closed=false;
-  return Object.freeze({configuration:c,staff,guest,service,access,recovery,avatar,readDerivative,payment:input.payment?.gateway??null,
+  return Object.freeze({configuration:c,staff,guest,service,access,recovery,avatar,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
    public:guest?{r:base!,guestPool:required('guest'),readPool:required('content_read'),contexts:guest.contexts}:null,
    safeStatus:()=>({APP:closed?'UNAVAILABLE':'READY',DB:closed?'UNAVAILABLE':'READY',GUEST:guest?'READY':'OFF',PAYMENT_ADAPTER:c.flags.payment?'CONFIGURED_ACTIVATION_PENDING':'OFF',MEDIA:c.flags.media?'CONFIGURED':'OFF',NOTIFICATION:input.recoveryDelivery?'CONFIGURED':'UNCONNECTED'} as const),
    async close(){if(closed)return;closed=true;r2?.close();await Promise.all(Object.values(pools).map(p=>p.end().catch(()=>{})));}

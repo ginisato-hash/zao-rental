@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUME_V2_IMPLEMENTING",
+  "phase": "STOPPED_NEW_TOOL_METADATA_EXPOSURE_SUSPECTED",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -32,11 +32,6 @@
     "dedicatedVercelProjects": {
       "used": 0,
       "max": 1
-    },
-    "resumeV2NeonOAuth": {
-      "used": 0,
-      "max": 1,
-      "revokeAtEnd": true
     }
   },
   "forbiddenCalls": {
@@ -89,7 +84,7 @@
   "neonOAuthSessionsCreated": 1,
   "neonOAuthSessionsRevoked": 1,
   "ownedBrowserTabsClosedAfterResume": "NOT_CONFIRMED_NO_OPAQUE_HANDLE",
-  "nextGate": "Client-side TLS then exact hosted preflight/migration/roles, R2 and dedicated protected Preview acceptance, final Claude",
+  "nextGate": "Owner incident assessment and explicit bounded continuation; no Phase7",
   "resumeValidation": {
     "migrationLocalPostgres": "PASS_7_CASES",
     "hostedDatabaseIdentity": "MATCH",
@@ -103,16 +98,5 @@
     "dbPools": "CLOSED",
     "neonOAuthProfile": "REVOKED_AND_REMOVED",
     "globalBrowserInventoryCalls": 0
-  },
-  "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
-  "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
-  "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
-  "publicSearchMetadataAssessment": [
-    "NON_USER_SECRET",
-    "NO_TASK_CREDENTIAL_LINK_ESTABLISHED"
-  ],
-  "historicalBrowserMetadataIncident": "PRESERVED",
-  "userSecretCompromiseEstablished": false,
-  "taskCredentialCompromiseEstablished": false,
-  "newTaskSecretExposureAfterThisResume": 0
+  }
 }

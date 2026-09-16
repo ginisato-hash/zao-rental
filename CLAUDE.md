@@ -1,3 +1,20 @@
+## Current — Phase6 Limited Resume Authority V2
+
+Read docs/execution/AVATAR_PHASE6_RESUME_V2_AUTHORITY.md and avatar-phase6/RESUME_V2_PLAN.md.
+Continue fromae89ebec1a9dfdf07d46e8c3e48ceb9033c65953; preserve both historical stop records.
+The second event is THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA / NON_USER_SECRET /
+NO_TASK_CREDENTIAL_LINK_ESTABLISHED. No history deletion or incident value reconstruction.
+No general public web search. Official CLI/API/known official docs/repo only.
+Stop only for task/user-linked suspected secrets or other explicit V2 gates; unrelated public
+metadata is discarded without value preservation. No global tab inventory; task handles only.
+Use actual client TLSSocket proof, not backend pg_stat_ssl alone. Exact existing Neon/DB;
+one guarded0031/32 transaction, no retry. One new task OAuth allowed, revoke at completion.
+Retain prior validations and budgets. Dedicated zao-rental-avatar-preview project only;
+old project forbidden. Continue authorized hosted/R2/Preview/E2E/final review autonomously.
+Parent single writer. Square/payment/checkout/Production/main/Phase7 operations0.
+
+## Historical — second stop before V2 assessment
+
 ## Current — Phase6 resume stopped under new exposure condition
 
 Read docs/execution/avatar-phase6/RESUME_STOP_RECORD.md and status.json.

@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "RESUME_V2_VERCEL_SECRET_HANDOFF_APPROVAL_PENDING",
+  "phase": "RESUME_V2_PREVIEW_SECRET_TRANSMISSION_AUTHORIZED",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -61,7 +61,7 @@
     "typecheck": "PASS",
     "build": "PASS",
     "repositorySecretPatternScan": "PASS_1870_FILES_NOT_COMPREHENSIVE",
-    "migrationHashes": "0001\u20130032_UNCHANGED",
+    "migrationHashes": "0001–0032_UNCHANGED",
     "hostedNeon": "NOT_RUN",
     "hostedR2": "NOT_RUN",
     "hostedBrowser": "NOT_RUN",
@@ -80,7 +80,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Automatic approval review requires direct approval naming six Phase6 Neon runtime credentials, R2 read-only credential and guest signing key for the dedicated Vercel Preview sensitive env. Prepared operation only; no alternate transmission.",
+  "nextGate": "After authority remote readback: exact dedicated Preview sensitive env, protection, deploy within2, hosted acceptance, final Claude; no repeated approval.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -144,5 +144,6 @@
   "continuationStartingHead": "e77715d10341a7e12b4a47d584030b8da869ea9d",
   "continuationAuthoritySha256": "1026587ec4eff33c0ff8cee4fdc42112965dea0714f8ad0839fbf6f5cb3554e2",
   "vercelDirectOwnerApprovalSha256": "76e3dd93bb62165c374f376d90acee90a077227cb213ea4e14e13458b87bd130",
-  "dedicatedVercelProjectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW"
+  "dedicatedVercelProjectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "vercelSecretTransmissionOwnerApprovalSha256": "068567fecebf9be5d23dc54d86d64f74a79d392e6ef1666164d57ec7c4d080ed"
 }

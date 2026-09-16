@@ -4,18 +4,26 @@
   "localValidation": "PASS",
   "review": {
     "initial": 1,
-    "correction": "PENDING",
+    "correction": 1,
     "initialReviewedHead": "15cf6c2ba9d9152f639a5eb6ae62acbc5ef02f3d",
     "initialVerdict": "CHANGES_REQUIRED",
     "initialHigh": 1,
     "initialMedium": 1,
-    "low": 2
+    "low": 2,
+    "correctionVerdict": "PASS",
+    "blocker": 0,
+    "high": 0,
+    "medium": 0,
+    "historicalLow": 2
   },
-  "ci": "PENDING_EXACT_HEAD",
+  "ci": "PASS",
   "baseHead": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
   "migrationAdded": 0,
   "mainMerge": 0,
   "actualProductionProviderOperations": 0,
-  "next": "Initial static review + exact CI; then M1.6",
-  "draftPr": 19
+  "next": "M1.6 notification/recovery core",
+  "draftPr": 19,
+  "terminal": "PRODUCTION_COMPOSITION_CODE_READY_EXTERNAL_CONNECTION_PENDING",
+  "terminalHead": "d2348566c6361ee1332de7214e608acd0d664c08",
+  "ciRun": 35156788352
 }

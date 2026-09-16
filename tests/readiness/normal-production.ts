@@ -68,7 +68,7 @@ try{
  await check('Production HTTP gate refuses simulation/create; existing read/QR survives missing delivery and spoofed ingress',async()=>{
   const old=process.env.NODE_ENV;try{Reflect.set(process.env,'NODE_ENV','production');const api=guestHandler(r.guest!.contexts,r.service,origin,false,r.guest!.security),headers={origin,cookie:guestCookie(c.token,true),'content-type':'application/json'};
    assert.equal((await api(new Request(origin+'/api/guest/draft',{headers}))).status,200);assert.equal((await api(new Request(origin+'/api/guest/checkout',{method:'POST',headers,body:'{}'}))).status,503);
-   const access=bookingAccessHandler(r.access!,r.guest!.contexts,origin,req=>r.guest!.security.service.guard(r.guest!.security.peer(req)),r.recovery!);assert.equal((await access(new Request(origin+'/api/booking-access/recovery/prepare',{method:'POST',headers,body:JSON.stringify({bookingId,requestId:randomUUID()})}))).status,503);
+   const access=bookingAccessHandler(r.access!,r.guest!.contexts,origin,req=>r.guest!.security.service.guard(r.guest!.security.peer(req)),r.recovery!);assert.equal((await access(new Request(origin+'/api/booking-access/recovery/prepare',{method:'POST',headers,body:JSON.stringify({bookingId,requestId:randomUUID()})}))).status,200);
    assert.equal((await r.access!.read(token)).id,bookingId);assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(b) b,to_jsonb(h) h FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1',[bookingId])).rows[0],before);
   }finally{if(old===undefined)Reflect.deleteProperty(process.env,'NODE_ENV');else Reflect.set(process.env,'NODE_ENV',old);}
  });

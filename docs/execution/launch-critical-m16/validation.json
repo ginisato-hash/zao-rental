@@ -1,0 +1,350 @@
+{
+  "status": "PASS",
+  "platform": "owned local macOS PG/browser",
+  "fullRegression": {
+    "commands": [
+      {
+        "command": "npm run check:reference",
+        "exitCode": 0,
+        "rawLogSha256": "d5585857a54ece08cc81e7241049e8de7d0b31a14fef682edf095d4ad1621096"
+      },
+      {
+        "command": "npm run check:secrets",
+        "exitCode": 0,
+        "rawLogSha256": "f33130aa88f81cbbba6252c7c1cdc751c66c1103125e0df26817de6d60b347dc",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/check-secrets.log",
+        "artifactSha256": "f33130aa88f81cbbba6252c7c1cdc751c66c1103125e0df26817de6d60b347dc"
+      },
+      {
+        "command": "npm run test:reference",
+        "exitCode": 0,
+        "rawLogSha256": "58c16be89af231f8ca5158a01c120509f4bb7382e2672459fa3ad337c967e576"
+      },
+      {
+        "command": "npm run lint",
+        "exitCode": 0,
+        "rawLogSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/lint.log",
+        "artifactSha256": "1d73f31982945633bb8a491209f73fa014e10c64c770caa9d642b1f5d67a676b"
+      },
+      {
+        "command": "npm run typecheck",
+        "exitCode": 0,
+        "rawLogSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/typecheck.log",
+        "artifactSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e"
+      },
+      {
+        "command": "npm run test:unit",
+        "exitCode": 0,
+        "rawLogSha256": "ca6604045b7cf4f33f2b76cb8a896a485229a86a8f479f7beec0142b61245c3f"
+      },
+      {
+        "command": "npm run test:controller:macos",
+        "exitCode": 0,
+        "rawLogSha256": "4604c91b4325fcd19d59886f0ae4bb52d531d72198064726b41952475383a6ab"
+      },
+      {
+        "command": "npm run test:integration",
+        "exitCode": 0,
+        "rawLogSha256": "534356509a75b7ea8a4277daa5af718ba42268a2e01d089a2d73059d63c094c2"
+      },
+      {
+        "command": "npm run test:inventory",
+        "exitCode": 0,
+        "rawLogSha256": "c50e04855f55f6b5266b93536aa796a875c665843cc9dff590ac83404fbb4d78"
+      },
+      {
+        "command": "npm run test:transfer",
+        "exitCode": 0,
+        "rawLogSha256": "6151b6bed307c54b8542daab2fa3f27038487ea1876752f7a65801c5b8166a90"
+      },
+      {
+        "command": "npm run test:pricing",
+        "exitCode": 0,
+        "rawLogSha256": "888465d0ecf21e0064a053850329eccfb7b52a1bfcfde43a27569347cdc27bf3"
+      },
+      {
+        "command": "npm run test:recommendation",
+        "exitCode": 0,
+        "rawLogSha256": "5148553421bee416fa3f95cbccc7db3095533db894f1cd0d4be70c9253eb6384"
+      },
+      {
+        "command": "npm run build",
+        "exitCode": 0,
+        "rawLogSha256": "7bbeffba118166cbc36c933386f0725bf9c098530b3a43b2c69c68434a4cb0e4",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/build.log",
+        "artifactSha256": "fed01bd3e45bdc07136f4ab46ffdbba746df58256927470269c553d3cad13f38"
+      },
+      {
+        "command": "npm run test:auth",
+        "exitCode": 0,
+        "rawLogSha256": "f33f15ee630c32e3020a298c9d40a341be18c7eb22f0a166d192dcba5f126d6f"
+      },
+      {
+        "command": "npm run test:holds-ui",
+        "exitCode": 0,
+        "rawLogSha256": "1e99ac019109f32c721861e2239c70042774d564a970de3a93503270dbb527cc"
+      },
+      {
+        "command": "npm run test:transfers-ui",
+        "exitCode": 0,
+        "rawLogSha256": "6da379b58546c18d6a91032e6c8076c1c6099c7dee95d8d0dd851b6a994b9483"
+      },
+      {
+        "command": "npm run test:quotes-ui",
+        "exitCode": 0,
+        "rawLogSha256": "f04042a28650471e5f38fb7f50e8176bf146c96ff01c3a1449fa487f44bd8136"
+      },
+      {
+        "command": "npm run test:recommendations-ui",
+        "exitCode": 0,
+        "rawLogSha256": "b4a35d24f31a75bced0e8917057a99005433a9813cd8e0594c4abd3ffb7d854e"
+      },
+      {
+        "command": "npm run test:recommendation-audit",
+        "exitCode": 0,
+        "rawLogSha256": "631f0cdbe9d0e4e579ea45897a35674c7f232f2a50a4b951dd36f1ab0684253e"
+      },
+      {
+        "command": "npm run test:recommendation-continuation",
+        "exitCode": 0,
+        "rawLogSha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65"
+      },
+      {
+        "command": "npm run test:stabilization-s01",
+        "exitCode": 0,
+        "rawLogSha256": "449153570b79949986f2fa3691ae751ec765fb7dd29c69de88dabe81cdd21a53"
+      },
+      {
+        "command": "npm run test:stabilization-upgrade",
+        "exitCode": 0,
+        "rawLogSha256": "4e2ee872a7f8175f0aaabb0fbbbb44cd421fd160aac2920cfb8218313e97f4e6"
+      },
+      {
+        "command": "npm run test:stabilization-cd",
+        "exitCode": 0,
+        "rawLogSha256": "c87dfe318a95fd2cd79f545031e3d1d36699d56024971ee791477c908961e6c2"
+      },
+      {
+        "command": "npm run test:stabilization-eg",
+        "exitCode": 0,
+        "rawLogSha256": "925b46a3416bb351b203940797d6fd26e491b566390d48722c721e6a56d5688b"
+      },
+      {
+        "command": "npm run test:stabilization-mixed",
+        "exitCode": 0,
+        "rawLogSha256": "b16490179bd0c51c8751c4c5e1deaa15099d031345ce8e09055bbbd4b9deb392"
+      },
+      {
+        "command": "npm run test:square-activation",
+        "exitCode": 0,
+        "rawLogSha256": "268f595264b532ddadd98f4731ff2abd4e3923a899903200d85e97486d0df9dd"
+      },
+      {
+        "command": "npm run test:flow-payment",
+        "exitCode": 0,
+        "rawLogSha256": "b5222ce3161f14002c2f65a4294a53a2c23273b45438bcc7c00d93fc60ad1c99"
+      },
+      {
+        "command": "npm run test:flow-ui",
+        "exitCode": 0,
+        "rawLogSha256": "d3fdf03e74b05a62ebd43b9f8796e9465e5f01a8b137324b01ebabfb34c731bf"
+      },
+      {
+        "command": "npm run test:asset-reader",
+        "exitCode": 0,
+        "rawLogSha256": "34632c6704a19573b3a241baebb5be778ea7913ace7ae42c8fc2ece3102b123a"
+      },
+      {
+        "command": "npm run test:flow-restart",
+        "exitCode": 0,
+        "rawLogSha256": "2d3b8377b462ab93e30c47811f98a629654f907c70e633da35705947b6a2811e"
+      },
+      {
+        "command": "npm run test:flow-scope-race",
+        "exitCode": 0,
+        "rawLogSha256": "5620dd6666952fc952b8390977d742ef0570f548b32da531a7acadc4f3423644"
+      },
+      {
+        "command": "npm run test:custody",
+        "exitCode": 0,
+        "rawLogSha256": "1da8f8672e46c54fd92312416c2488b17fe3257a3d80f9ed0025617aeaf5b2ee"
+      },
+      {
+        "command": "npm run test:custody-ui",
+        "exitCode": 0,
+        "rawLogSha256": "8183d637b97599962cbf24c2c541a24977c7fe5eef02689bb5e36d0c627a17f6"
+      },
+      {
+        "command": "npm run test:late-pickup",
+        "exitCode": 0,
+        "rawLogSha256": "1a8db5396302c008ee0b686afcd5eb1387a24ebbf5e871a9b078be92f51a42ec"
+      },
+      {
+        "command": "npm run test:wear",
+        "exitCode": 0,
+        "rawLogSha256": "dcb6bfbbfe2b5d68edfcf2c3ac7cd26e22b41b65483068f623add9db85969e66"
+      },
+      {
+        "command": "npm run test:wear-ui",
+        "exitCode": 0,
+        "rawLogSha256": "102ab4f5e1204e497360b395a81cb0f218d226c42eb7a0f4080e8fab9884f650"
+      },
+      {
+        "command": "npm run test:wear-mixed",
+        "exitCode": 0,
+        "rawLogSha256": "ac8e2e84c4897032c03f30a8f2c02fda2f41156f14240c784b35596296218a06"
+      },
+      {
+        "command": "npm run test:content-fixture",
+        "exitCode": 0,
+        "rawLogSha256": "2434698e9641257a6d986ae419ef7f240a866ee54d42ac2cad6be0858f72fcd7"
+      },
+      {
+        "command": "npm run test:public-guest",
+        "exitCode": 0,
+        "rawLogSha256": "af53ef49060fe03b9816ff64db68dbf7239ff87026decf9eb519f4421d2503f5"
+      },
+      {
+        "command": "npm run test:public-content",
+        "exitCode": 0,
+        "rawLogSha256": "d83535151e3ff1fdb09024995ee835f240fb3315bd4ebab8634c7a9491ebde7e"
+      },
+      {
+        "command": "npm run test:public-ui",
+        "exitCode": 0,
+        "rawLogSha256": "aef8535b5a1fc6bce31b7dc4ded3ffc5b9fa3cc4e5e094133b024c9dbbc9f3be"
+      },
+      {
+        "command": "npm run test:staff-diagnostic",
+        "exitCode": 0,
+        "rawLogSha256": "6a09f8a5b4ec28c3c40ef990d9e7f2a0a43d2042c798f501745115cc8e04c695"
+      },
+      {
+        "command": "npm run test:readiness-guest",
+        "exitCode": 0,
+        "rawLogSha256": "6af4274e7aa39863cff57a094fd861208d8e5fd34f92f1e729b6c191dbf7fa88"
+      },
+      {
+        "command": "npm run test:readiness-ui",
+        "exitCode": 0,
+        "rawLogSha256": "6ef1b6c27b715cb7408700c5f82ebb3f46166d505d8179414c93d2a30dbdd25c"
+      },
+      {
+        "command": "npm run test:integration-p2",
+        "exitCode": 0,
+        "rawLogSha256": "e1ae83f8c19c374bd9acaf4b8dca43b70f8918b10ae04e3839e3a9de8c2a126c"
+      },
+      {
+        "command": "npm run test:activation-p4",
+        "exitCode": 0,
+        "rawLogSha256": "8ee3fbae3e8e42f6cba6aff0f4a923f24483497add99b817865f8953fb464a0e"
+      },
+      {
+        "command": "npm run test:booking-recovery",
+        "exitCode": 0,
+        "rawLogSha256": "1c51a1cb006c90c7230304ae4c3af6c2b35d230f0000def2dae7840ae7546770"
+      },
+      {
+        "command": "npm run test:booking-recovery-ui",
+        "exitCode": 0,
+        "rawLogSha256": "fc09961c82396a49e58c2651c0f2e38c0d477ec7b2b47a9d5c9404e9ac774964",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/test-booking-recovery-ui.log",
+        "artifactSha256": "fc09961c82396a49e58c2651c0f2e38c0d477ec7b2b47a9d5c9404e9ac774964"
+      },
+      {
+        "command": "npm run test:production-rehearsal",
+        "exitCode": 0,
+        "rawLogSha256": "661a066c24561af9e4be2917451e45b289ca98fc58ae0316616d81f46f60a436"
+      },
+      {
+        "command": "npm run test:r15-regression",
+        "exitCode": 0,
+        "rawLogSha256": "a89fd0be100eb5792b98da5b5a71b2391c5be6f342cc522759109e93eba2773e"
+      },
+      {
+        "command": "npm run test:avatar",
+        "exitCode": 0,
+        "rawLogSha256": "65701188092c9626ab96a4af089ef31169af0f6174d7a43378f22f928fd6b486"
+      },
+      {
+        "command": "npm run test:operations",
+        "exitCode": 0,
+        "rawLogSha256": "1d1ab5749f32ac79601eaa4abca0c8ae8deafe95971063250a8e95b920881f64"
+      },
+      {
+        "command": "npm run test:operations-ui",
+        "exitCode": 0,
+        "rawLogSha256": "1886579fa13b17e1fa9ce6f55bd0fbd7d3d6d7b25ffec7cf38fa8eb57e0cd625"
+      },
+      {
+        "command": "npm run test:production-runtime",
+        "exitCode": 0,
+        "rawLogSha256": "27790055d365e92737c6ef64e813bb5065c11a8792fbf82050ce0449eb47bc46",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/test-production-runtime.log",
+        "artifactSha256": "27790055d365e92737c6ef64e813bb5065c11a8792fbf82050ce0449eb47bc46"
+      },
+      {
+        "command": "npm run test:production-runtime-ui",
+        "exitCode": 0,
+        "rawLogSha256": "0be274ee81561ab5deff0773eb1aee918940937813a283d945d45f3126aac087"
+      },
+      {
+        "command": "npm run test:notification",
+        "exitCode": 0,
+        "rawLogSha256": "c1905d178e1711c4f9ea8e4d21cc6d12c7272f90951532faeddd9832fa184f75",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/test-notification.log",
+        "artifactSha256": "c1905d178e1711c4f9ea8e4d21cc6d12c7272f90951532faeddd9832fa184f75"
+      },
+      {
+        "command": "npm run test:notification-ui",
+        "exitCode": 0,
+        "rawLogSha256": "ba6b4fa01a612e62ba219e3bb3e56c34f3649ce876eb7af09f94cbb963230b48",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/test-notification-ui.log",
+        "artifactSha256": "ba6b4fa01a612e62ba219e3bb3e56c34f3649ce876eb7af09f94cbb963230b48"
+      },
+      {
+        "command": "npm run test:e2e",
+        "exitCode": 0,
+        "rawLogSha256": "b90fc0f81664398bb7dca7363af33d533d0e6c4092928de28584c34d3edacf88"
+      }
+    ],
+    "count": 58,
+    "sourceManifestSha256": "54a49ff11868cd6f53fecd64928b0e874b5c0fc345249525446aa4673a1cb1de"
+  },
+  "frozenMigrations": "0001\u20130033 byte-identical to M1.5 terminal",
+  "actualMailSmsProviderRequests": 0,
+  "hostedDb": 0,
+  "production": 0,
+  "realCustomer": 0,
+  "notes": [
+    "Previous initial full run failed only the old migration-count assertion; fixed from33 to34, then complete regression rerun.",
+    "All tests use local synthetic data. No actual provider acceptance or commercial readiness claimed."
+  ],
+  "postRegressionHardening": {
+    "change": "Reject SQL NULL resend reason at the restricted DB function boundary; no other product change after complete regression",
+    "tests": [
+      {
+        "command": "npm run test:notification",
+        "exitCode": 0,
+        "rawLogSha256": "82e881b0061f50b01e6af9600607a8215b3b5de898245a3611b26cadc7655ea7",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/final-test-notification.log",
+        "artifactSha256": "82e881b0061f50b01e6af9600607a8215b3b5de898245a3611b26cadc7655ea7"
+      },
+      {
+        "command": "npm run test:integration",
+        "exitCode": 0,
+        "rawLogSha256": "534356509a75b7ea8a4277daa5af718ba42268a2e01d089a2d73059d63c094c2",
+        "artifact": "docs/execution/launch-critical-m16/validation-logs/final-test-integration.log",
+        "artifactSha256": "534356509a75b7ea8a4277daa5af718ba42268a2e01d089a2d73059d63c094c2"
+      }
+    ]
+  },
+  "unitTests": 699,
+  "notificationPostgresCases": 17,
+  "notificationBrowserCases": 3,
+  "e2eTests": 18,
+  "review": "PENDING",
+  "ci": "PENDING"
+}

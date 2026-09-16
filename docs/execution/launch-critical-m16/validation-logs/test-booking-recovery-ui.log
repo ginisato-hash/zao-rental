@@ -1,0 +1,9 @@
+
+> zao-rental@0.1.0 test:booking-recovery-ui
+> node --import tsx tests/readiness/booking-recovery-ui.ts
+
+PASS normal guest UI -> protected API -> synthetic payment -> confirmed real PostgreSQL booking
+PASS fresh browser/no guest -> UI code POST -> normal Next API -> real PostgreSQL -> readonly QR; response-loss reload same-key exchange
+PASS process restart preserves one-time binding; another exchange key refused; original price/due/HOLD expiry unchanged
+P5 recovery UI:3 groups passed; ordinary Next exchange/real PG, in-memory delivery setup, width emulation only; external email0.
+Owned P5 recovery browser/Web/PostgreSQL stopped.

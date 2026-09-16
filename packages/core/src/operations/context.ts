@@ -25,7 +25,7 @@ export class OperationsContext{
    await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',[permission,stores,this.identity.subject]);
    const now=(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now,result=await work(c,now);await c.query('COMMIT');return result;
   }catch(e){await c.query('ROLLBACK');if(e instanceof FlowError||e instanceof HoldError||e instanceof ContentInputError)throw e;const code=(e as {code?:string}).code;
-   if(code==='42501')throw new FlowError('FORBIDDEN',403);if(['23505','23503','23514','22P02'].includes(code??''))throw new FlowError('OPERATION_CONFLICT',409);
+   if(code==='P0429')throw new FlowError('NOTIFICATION_RATE_LIMITED',429);if(code==='42501')throw new FlowError('FORBIDDEN',403);if(['23505','23503','23514','22P02'].includes(code??''))throw new FlowError('OPERATION_CONFLICT',409);
    if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('OPERATION_FAILED',500);
   }finally{c.release();}
  }

@@ -7,7 +7,7 @@ import {connectProductionDatabase,validateProductionCredential,verifyProductionD
 import {createStaffAuth} from '../../../auth/src/staff-auth';
 import type {GuestActor} from '../../../auth/src/booking-actor';
 import {BookingAccess} from './booking-access';
-import {BookingRecovery,type BookingRecoveryDelivery} from './booking-recovery';
+import {BookingRecovery} from './booking-recovery';
 import {composeProductionGuestSecurity} from './production-composition';
 import {productionIngress,type VerifiedProductionPeer} from './production-ingress';
 import {GuestBookingService} from './service';
@@ -31,7 +31,7 @@ export type ProductionRuntimeInput={configuration:unknown;approvedConfigurationS
  deployment:{provider:'VERCEL';environment:'production';projectId:string;releaseId:string;origin:string};
  secrets:ProductionSecretMaterial;verifiedPeer:(request:Request)=>VerifiedProductionPeer|undefined;
  connect?:(c:ProductionConfiguration,service:ProductionService,credential:ProductionDatabaseCredential)=>Promise<Pool>;
- payment?:ProductionPaymentBinding;recoveryDelivery?:BookingRecoveryDelivery;
+ payment?:ProductionPaymentBinding;
  media?:{environment:'PRODUCTION';permission:'OBJECT_READ';credentials:()=>Promise<R2Credential>;requestHandler?:ConstructorParameters<typeof R2MediaProvider>[5]};
  audit:(stage:StartupStage)=>Promise<void>;
 };
@@ -67,7 +67,7 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
    // Commercial create authority remains the existing payment activation boundary.
    const bookings=new BookingService(required('operations'),required('guest'),actor);return new GuestBookingService(guest.contexts,actor,recommendations,bookings,async()=>guestCatalog(required('content_read'),await holds.recommendationCatalog()));};
   stage='BOOKING_ACCESS';const access=guest?new BookingAccess(required('booking_access'),Buffer.from(secrets.accessKey,'hex'),secrets.accessKeyVersion):null;
-  const recovery=guest&&c.flags.guestRecovery?new BookingRecovery(required('booking_access'),Buffer.from(secrets.recoveryKey,'hex'),secrets.recoveryKeyVersion,input.recoveryDelivery):null;
+  const recovery=guest&&c.flags.guestRecovery?new BookingRecovery(required('booking_access'),Buffer.from(secrets.recoveryKey,'hex'),secrets.recoveryKeyVersion,undefined,5000,true):null;
   const readDerivative=async(digest:string)=>{if(!r2||! /^[a-f0-9]{64}$/.test(digest))return null;return r2.readPrivate('private/derivative/sha256/'+digest);};
   stage='MEDIA';let avatar=null;
   if(guest&&c.flags.avatar){const visuals=new PostgresAvatarVisuals(required('avatar_read')),rate=avatarGuestSecurity(required('guest'),guest.contexts,secrets.guestKey);await rate.transaction(async()=>{});
@@ -76,7 +76,7 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   stage='READY';await input.audit(stage);let closed=false;
   return Object.freeze({configuration:c,staff,guest,service,access,recovery,avatar,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
    public:guest?{r:base!,guestPool:required('guest'),readPool:required('content_read'),contexts:guest.contexts}:null,
-   safeStatus:()=>({APP:closed?'UNAVAILABLE':'READY',DB:closed?'UNAVAILABLE':'READY',GUEST:guest?'READY':'OFF',PAYMENT_ADAPTER:c.flags.payment?'CONFIGURED_ACTIVATION_PENDING':'OFF',MEDIA:c.flags.media?'CONFIGURED':'OFF',NOTIFICATION:input.recoveryDelivery?'CONFIGURED':'UNCONNECTED'} as const),
+   safeStatus:()=>({APP:closed?'UNAVAILABLE':'READY',DB:closed?'UNAVAILABLE':'READY',GUEST:guest?'READY':'OFF',PAYMENT_ADAPTER:c.flags.payment?'CONFIGURED_ACTIVATION_PENDING':'OFF',MEDIA:c.flags.media?'CONFIGURED':'OFF',NOTIFICATION:'UNCONNECTED'} as const),
    async close(){if(closed)return;closed=true;r2?.close();await Promise.all(Object.values(pools).map(p=>p.end().catch(()=>{})));}
   });
  }catch(error){r2?.close();await Promise.all(Object.values(pools).map(p=>p.end().catch(()=>{})));throw error instanceof ProductionStartupError?error:new ProductionStartupError(stage);}

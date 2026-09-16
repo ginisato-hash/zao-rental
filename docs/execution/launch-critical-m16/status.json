@@ -1,0 +1,16 @@
+{
+  "phase": "M1.6",
+  "baseHead": "d2348566c6361ee1332de7214e608acd0d664c08",
+  "branch": "codex/launch-critical-notification",
+  "state": "CODE_AND_LOCAL_VALIDATION_PASS_REVIEW_CI_PENDING",
+  "reviewStarts": 0,
+  "ci": "NOT_RUN",
+  "actualMailSms": 0,
+  "providerContracts": 0,
+  "productionOperations": 0,
+  "mainMerge": 0,
+  "next": "Complete local validation, bounded static review and exact CI/Draft; then M1.7",
+  "implementation": "PASS",
+  "localValidation": "PASS",
+  "fullRegressionCommands": 58
+}

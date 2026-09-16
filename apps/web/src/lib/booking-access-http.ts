@@ -26,6 +26,10 @@ export function bookingAccessHandler(access:BookingAccess,contexts:GuestContexts
    // Raw capability is only transported in HttpOnly Set-Cookie, never JSON/DOM/URL.
    return Response.json({saved:true,expiresAt:r.expiresAt,replayed:r.replayed},{headers:{...headers,'Set-Cookie':bookingAccessCookie(r.token,origin.startsWith('https:'),r.maxAgeSeconds)}});
   }
+  if(req.method==='POST'&&path==='/recovery/request'){
+   if(!recovery||!guard)throw new FlowError('BOOKING_RECOVERY_UNCONFIGURED',503);
+   const v=exact(await readJson(req),['bookingId','email','requestId','locale']);return Response.json(await recovery.request(v.bookingId,v.email,v.requestId,v.locale),{headers});
+  }
   if(req.method==='POST'&&['/recovery/prepare','/recovery/exchange','/recovery/revoke'].includes(path)){
    if(!recovery)throw new FlowError('BOOKING_RECOVERY_UNCONFIGURED',503);
    if(path==='/recovery/prepare'){

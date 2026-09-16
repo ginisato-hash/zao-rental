@@ -97,6 +97,9 @@
           },
           "INVENTORY_RECONCILE": {
             "type": "boolean"
+          },
+          "NOTIFICATION_RESEND": {
+            "type": "boolean"
           }
         }
       },
@@ -219,6 +222,9 @@
             "type": "boolean"
           },
           "INVENTORY_RECONCILE": {
+            "type": "boolean"
+          },
+          "NOTIFICATION_RESEND": {
             "type": "boolean"
           }
         }

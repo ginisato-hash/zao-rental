@@ -41,7 +41,7 @@ export class BookingService{
  }
  // Only the trusted server adapter / verified webhook reconciliation calls this method.
  // HTTP never accepts a PaymentObservation or a paid/status flag from a browser.
- async recordObservation(id:string,attemptId:string,eventId:string,o:PaymentObservation,evidenceDigest=flowHash(o)){return this.transaction('BOOKING_CREATE',[],async c=>{const b=await this.booking(c,id,true);await this.authorize('BOOKING_CREATE',[b.conditions.pickupStore,b.conditions.returnStore]);},async(c,now)=>{
+ async recordObservation(id:string,attemptId:string,eventId:string,o:PaymentObservation,evidenceDigest=flowHash(o)){await this.transaction('BOOKING_CREATE',[],async c=>{const b=await this.booking(c,id,true);await this.authorize('BOOKING_CREATE',[b.conditions.pickupStore,b.conditions.returnStore]);},async(c,now)=>{
  const b=await this.booking(c,id,true),a=(await c.query<AttemptRow>('SELECT * FROM rental_payment_attempts WHERE id=$1 AND booking_id=$2',[attemptId,id])).rows[0];if(!a)throw new FlowError('NO_PAYMENT_ATTEMPT');const digest=evidenceDigest,prior=(await c.query('SELECT * FROM rental_provider_events WHERE event_id=$1',[eventId])).rows[0];if(prior){if(prior.attempt_id!==attemptId||prior.payload_sha256!==digest)throw new FlowError('EVENT_ID_CONFLICT');return;}
  let outcome='OBSERVED';try{matchPayment(this.request(a),o);if(a.provider_id&&a.provider_id!==o.providerId||Date.parse(o.updatedAt)>now.getTime()||o.completedAt&&Date.parse(o.completedAt)>now.getTime())throw new FlowError('PAYMENT_EVIDENCE_MISMATCH');}catch{outcome='MISMATCH';await c.query("UPDATE rental_payment_attempts SET state='REVIEW',updated_at=$2 WHERE id=$1 AND state<>'COMPLETED'",[a.id,now]);if(!b.confirmed_at)await c.query("UPDATE rental_bookings SET state='PAYMENT_REVIEW',version=version+1 WHERE id=$1",[id]);}
  if(outcome!=='MISMATCH'){
@@ -61,5 +61,9 @@ export class BookingService{
    if(o.status!=='COMPLETED')await c.query('UPDATE inventory_holds SET payment_state=$2,version=version+1 WHERE id=$1',[h.id,state==='FAILED'?'FAILURE':'PENDING']);
   }
  }
- await c.query('INSERT INTO rental_provider_events(event_id,attempt_id,payload_sha256,outcome) VALUES($1,$2,$3,$4)',[eventId,a.id,digest,outcome]);});}
+ await c.query('INSERT INTO rental_provider_events(event_id,attempt_id,payload_sha256,outcome) VALUES($1,$2,$3,$4)',[eventId,a.id,digest,outcome]);});
+ // Notification failure cannot roll back a committed booking. The immutable
+ // confirmation capture is reconciled into the outbox by the worker after an outage.
+ try{await this.pool.query('SELECT notification_enqueue_confirmed($1)',[id]);}catch{/* No raw recipient/provider/DB diagnostics. */}
+ }
 }

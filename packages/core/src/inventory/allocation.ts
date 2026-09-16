@@ -11,7 +11,7 @@ type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:strin
 type Unit={id:string;variant_id:string;family:string;age:string;tier:string;store_id:string;quantity:number;status:string;transfer_piece_id?:string;physical_pole_id?:string};
 type Claim={transfer_piece_id:string|null;hold_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;day:string;start:string;end:string;pickup_store:string;return_store:string};
 type Witness={transferPiece:string|null;holdId:string;key:string;asset:string|null;pole:string|null;slots:Record<string,number>};
-export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
+export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
   if(new Date(normalizePeriod(conditions.period).dueAt)<=now)throw new HoldError('PERIOD_ENDED');
   // Bounded metadata scan, not a LIMIT that silently discards existing promises.
   const nodes=(await c.query<ScopeNode>(`SELECT id,occupancy_start::text AS start,CASE WHEN pickup_store<>return_store THEN '9999-12-31' ELSE occupancy_end::text END AS end,
@@ -52,7 +52,8 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   const demandsFor=(diagnostic:boolean):Demand[]=>requirements.filter(r=>!isWear(r.family)).map(r=>{
    const start=r.job.c.period.startDate,end=diagnostic||r.job.c.pickupStore===r.job.c.returnStore?r.job.c.period.endDate:'9999-12-31';
    const candidates=units.filter(u=>{
-    if(pin&&r.job.id==='candidate'&&r.memberKey===pin.requirementKey&&u.id!==pin.assetId)return false;
+    const pinnedUnit=pin instanceof Map?pin.get(r.memberKey):pin&&'requirementKey' in pin&&r.memberKey===pin.requirementKey?pin.assetId:undefined;
+    if(pinnedUnit&&r.job.id==='candidate'&&u.id!==pinnedUnit)return false;
     if(!r.variantIds.includes(u.variant_id)||u.status!=='AVAILABLE'||u.quantity<1)return false;
     if(!diagnostic){
      const movement=transfers.find(p=>u.family==='POLE'?p.id===u.transfer_piece_id:p.asset_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state));

@@ -13,6 +13,7 @@ export const migrationPlan = [
   {id:'0030',file:'0030_r15_operation_guard.sql'},
   {id:'0031',file:'0031_avatar_visuals.sql'},
   {id:'0032',file:'0032_avatar_delivery_boundary.sql'},
+  {id:'0033',file:'0033_launch_operations.sql'},
 ] as const;
 export async function migrate(pool: Pool): Promise<void> {
   const entries=await Promise.all(migrationPlan.map(async entry => {

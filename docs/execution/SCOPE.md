@@ -1,3 +1,9 @@
+## Current — Launch-critical stacked local implementation
+
+Latest Owner authority: launch-critical-m1/M15_OWNER_AUTHORITY.md and the direct M1.6/M1.7 request. Follow launch-critical-m1/STACKED_PLAN.md. Complete the M1 prerequisite, then production composition, notification/recovery and operations/restore on separate stacked branches and Draft PRs. Parent sole writer; bounded static Claude initial1 per phase, correction1 only for B/H/M. Preserve all historical records below. No main merge, hosted/provider/Production changes, real mail/payment/customer/inventory. Local synthetic PG/browser and GitHub CI only. Do not claim PR17 merged or Production acceptance. Stop after M1.7.
+
+## Historical checkpoints
+
 ## Current — Phase6 corrective attempt4 readiness503; STOP
 
 Read docs/execution/avatar-phase6/ATTEMPT4_READINESS_STOP.md and status.json.

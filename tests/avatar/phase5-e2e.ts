@@ -19,7 +19,7 @@ try{
  const password=randomBytes(24).toString('base64url'),subject=await bootstrapDevelopmentAdmin(db.pool,{email:'avatar-phase5@example.invalid',displayName:'SYNTHETIC Phase5',password});
  for(const permission of ['PRICE_EDIT','BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'])await db.pool.query('INSERT INTO staff_permission_overrides VALUES($1,$2,true)',[subject,permission]);
  await new QuoteService(app.roles.pricingPool,(await loadStaff(db.pool,subject))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
- await check('PG','fresh canonical0001–0032 with dedicated Avatar role',async()=>{assert.equal((await db.pool.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,32);assert.ok(app!.avatar);});
+ await check('PG','fresh canonical0001–0032 with dedicated Avatar role',async()=>{assert.equal((await db.pool.query("SELECT count(*)::int n FROM foundation_migrations WHERE id<='0032'")).rows[0].n,32);assert.ok(app!.avatar);});
  browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}}),anon=await browser.newContext({baseURL:origin}),other=await browser.newContext({baseURL:origin}),staff=await browser.newContext({baseURL:origin});
  for(const context of [c,anon,other,staff]){context.setDefaultTimeout(20000);await context.route('**/*',async route=>{if(new URL(route.request().url()).origin!==origin){externalAttempts++;await route.abort();}else{if(measuringVisuals&&route.request().method()==='POST'&&new URL(route.request().url()).pathname!=='/api/guest/context')visualPosts++;await route.continue();}});}
  // Warm ordinary routes before interaction so Next dev compilation does not reload a submitted form.

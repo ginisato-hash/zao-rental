@@ -1,0 +1,6 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+import QRCode from 'qrcode';
+import './operations.css';
+function Label({id,hint}:{id:string;hint:string}){const ref=useRef<HTMLCanvasElement>(null);useEffect(()=>{const canvas=ref.current;if(canvas)void QRCode.toCanvas(canvas,id,{width:160,margin:2,errorCorrectionLevel:'M'}).catch(()=>{canvas.width=0;});},[id]);return <article className="asset-label"><p>{hint}</p><canvas ref={ref} aria-label={'用品QR '+id}/><p><code>{id}</code></p></article>;}
+export function AssetLabelSheet({id,family,size}:{id:string;family:string;size?:string|undefined}){const [bootsBoth,setBootsBoth]=useState(false);if(!['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT'].includes(family))return null;const copies=family==='SKI'||family.endsWith('_BOOT')&&bootsBoth?2:1;return <section><h3>用品ラベル</h3>{family.endsWith('_BOOT')&&<label><input type="checkbox" checked={bootsBoth} onChange={e=>setBootsBoth(e.target.checked)}/>両側に同じIDを印刷</label>}<p>{copies}枚 · スキーは左右同一ID、ボードは1枚。</p><button onClick={()=>window.print()}>ラベルを印刷</button><div className="asset-labels">{Array.from({length:copies},(_,i)=><Label key={id+'-'+i} id={id} hint={[family,size].filter(Boolean).join(' ')}/>)}</div></section>;}

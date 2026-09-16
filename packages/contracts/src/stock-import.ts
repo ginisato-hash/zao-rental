@@ -1,0 +1,1 @@
+export const STOCK_IMPORT_HEADER_V2=['source_kind','intent','model_id','season','variant_id','manufacturer_sku','quantity','unit','asset_ids','store_id','source_document','source_row','category','size','tier','bsl_mm','status'];

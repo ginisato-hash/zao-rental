@@ -1,0 +1,7 @@
+PASS extension freezes delta without changing original booking/payment; replay applies once
+PASS competing accepted extension uses expected version, only one applies
+PASS checkout consumes effective extended period; early return creates no automatic refund
+PASS OUT ski exchange uses atomic factual receipt and new loan; shortage preserves custody
+PASS additional charge timeout after acceptance is reconciled without another create or original rewrite
+PASS refund cap, same-key concurrency, durable UNKNOWN blocks new key and duplicate dispatch
+{"status":"PASS","cases":6,"extensionQuote":true,"additionalAmountPositive":true,"externalProviderCalls":0}

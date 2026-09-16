@@ -4,7 +4,7 @@ import {startDevelopmentApp} from './development-app';
 import {bootstrapDevelopmentAdmin} from './bootstrap-staff';
 const args=process.argv.slice(2);if(args.some(a=>a!=='--bootstrap-admin'))throw new Error('Supported option: --bootstrap-admin');
 if(args.includes('--bootstrap-admin')&&(!process.stdin.isTTY||!process.stdout.isTTY))throw new Error('Bootstrap requires a human-operated terminal; do not pass secrets as arguments or files');
-const app=await startDevelopmentApp();
+const app=await startDevelopmentApp({operations:true});
 const stop=()=>void app.stop();process.once('SIGINT',stop);process.once('SIGTERM',stop);
 async function secret(prompt:string){process.stdout.write(prompt);emitKeypressEvents(process.stdin);process.stdin.setRawMode(true);process.stdin.resume();
  return new Promise<string>((resolve,reject)=>{let value='';const finish=(cancel=false)=>{process.stdin.off('keypress',key);process.stdin.setRawMode(false);process.stdout.write('\n');if(cancel)reject(new Error('BOOTSTRAP_CANCELLED'));else resolve(value);};const key=(text:string,k:{name?:string;ctrl?:boolean})=>{if(k.ctrl&&k.name==='c')finish(true);else if(k.name==='return')finish();else if(k.name==='backspace')value=value.slice(0,-1);else if(text&&!k.ctrl&&value.length<128)value+=text;};process.stdin.on('keypress',key);});

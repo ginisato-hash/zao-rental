@@ -1,0 +1,31 @@
+{
+  "branch": "codex/launch-critical-ops-m1",
+  "reviewed_head": "57bb77b01c4046e62e8a41cdacbc1704b22bbfee",
+  "base_sha": "40f6be236d883083d5ae64aa5294a4a693d0593e",
+  "source_tree_sha256": "b58c98804181c19beacf78ef7a1b3c6f6a24a07870c8a9fa66dbb1231665bb14",
+  "authority_sha256": "1d35cf5034ce0498ef55d7cc3d3d7e504a34c6a145510eb4ddb3fd34f9c1cbda",
+  "snapshot_sha256": "08906a673ec19b5f67efab1c77ba7e73ae1e235330a34d847f5b06f3f6442e84",
+  "snapshot_bytes": 184656,
+  "changedFiles": [
+    "packages/core/src/operations/financial.ts",
+    "packages/core/src/operations/inventory-service.ts",
+    "packages/db/migrations/0033_launch_operations.sql",
+    "scripts/operations-roles.ts",
+    "tests/operations/amendment.ts",
+    "tests/operations/inventory.ts"
+  ],
+  "criticalFiles": [
+    "packages/core/src/operations/financial.ts",
+    "packages/core/src/operations/inventory-service.ts",
+    "packages/core/src/operations/context.ts",
+    "packages/db/migrations/0033_launch_operations.sql",
+    "packages/db/migrations/0015_custody_boundary.sql",
+    "scripts/operations-roles.ts",
+    "packages/core/src/content/import-staging.ts",
+    "packages/core/src/rental/custody-service.ts",
+    "docs/execution/launch-critical-m1/claude-initial-review.json",
+    "docs/execution/launch-critical-m1/FINDING_DISPOSITION.md"
+  ],
+  "secretPatternScan": "PASS_NOT_COMPREHENSIVE",
+  "historicalTranscriptsIncluded": 0
+}

@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "FINAL_PREVIEW_READINESS_PASS_NEON_HUMAN_AUTH_REQUIRED",
+  "phase": "PHASE6_IMPLEMENTATION_COMPLETE_HOSTED_ACCEPTANCE_DEFERRED",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -62,7 +62,7 @@
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "PREDEPLOY_PASS_BLOCKER0_HIGH0_MEDIUM0_LOW3",
-  "externalAcceptance": "ATTEMPT5_READINESS_PASS_HOSTED_MATRIX_PENDING_NEON_AUTH",
+  "externalAcceptance": "ATTEMPT5_HOSTED_FAIL_UNEXPECTED_BROWSER_NETWORK_GUARD",
   "implementation": "FINAL_CAPABILITY_INGRESS_CODE_PASS_PREDEPLOY_REVIEW_PASS",
   "checkpointValidation": {
     "targetedTests": {
@@ -78,7 +78,8 @@
     "hostedNeon": "NOT_RUN",
     "hostedR2": "NOT_RUN",
     "hostedBrowser": "NOT_RUN",
-    "claude": "NOT_RUN"
+    "claude": "NOT_RUN",
+    "scopeNote": "Historical checkpoint only; final-predeploy-validation.json records final656-test validation."
   },
   "resumeStartingHead": "71ae7a5bc3d83beecae61d9d35de128dc5018a9c",
   "resumeAuthoritySha256": "acc82b94606f0d59f58bd2cca9345b0b29f94e865ca9a7f8edf30ecba08a876c",
@@ -93,7 +94,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Owner signals readiness for a fresh normal Neon login timed to its 60s CLI callback window. Existing Vercel context stays authenticated; readiness alreadyPASS/GET1, never repeat. Then bounded Hosted E2E. Deployment5/5 consumed; no Phase7/main.",
+  "nextGate": "Terminal deferred: no repeat readiness, Hosted E2E, deployment attempt6, Phase7 or main merge. Owner/Technical Director may assess the bounded acceptance failure; no further execution is authorized by this completed attempt.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -152,7 +153,8 @@
     "cleanup": "OWNED_BROWSER_CLOSED_LOCAL_SECRETS_ABSENT_BOOTSTRAP_RETAINED_PER_PASS_PREREQUISITE",
     "newTaskSecretExposureAfterThisResume": 0,
     "vercelEnvironment": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY_FORBIDDEN_KEYS0",
-    "deployArtifactPreflight": "PASS_LOCAL_DRY_RUN_ONLY"
+    "deployArtifactPreflight": "PASS_LOCAL_DRY_RUN_ONLY",
+    "scopeNote": "Historical resume-V2 checkpoint fields retained; finalRepair and top-level phase are the terminal authority/result."
   },
   "continuationStartingHead": "e77715d10341a7e12b4a47d584030b8da869ea9d",
   "continuationAuthoritySha256": "1026587ec4eff33c0ff8cee4fdc42112965dea0714f8ad0839fbf6f5cb3554e2",
@@ -161,8 +163,8 @@
   "vercelSecretTransmissionOwnerApprovalSha256": "068567fecebf9be5d23dc54d86d64f74a79d392e6ef1666164d57ec7c4d080ed",
   "vercelSecretTransmissionOwnerApprovalCommit": "28d388620a6dd7e1f6b1310553c7fd25a76316cb",
   "actualProductionAliasCreations": 2,
-  "remainingProductionDeployments": 1,
-  "remainingProductionAliases": 1,
+  "remainingProductionDeployments": 0,
+  "remainingProductionAliases": 0,
   "secretTransmission": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY",
   "deploymentTargetIncident": {
     "deployedHead": "33e054594ad281d2acc5335e4e5284c81c56bbff",
@@ -177,28 +179,31 @@
   "controlledBootstrapAuthoritySha256": "0a32c4382db281568a5c2e3f9ee756690c3e3ac5280acbfe229e4e0f5a21db95",
   "historicalProductionDeployments": 2,
   "historicalProductionAliases": 2,
-  "currentProductionDeployments": 1,
-  "currentProductionAliases": 1,
+  "currentProductionDeployments": 0,
+  "currentProductionAliases": 0,
   "controlledBootstrapAuthorityCommit": "22806158dabe09d5ebf86577a8fce83ca563adf2",
   "controlledBootstrap": {
     "id": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
-    "status": "PASS_STATIC_BOOTSTRAP_READY",
+    "status": "DELETED_CONFIRMED404",
     "applicationSecrets": 0,
     "functionOutputs": 0,
     "productionEnvCount": 0,
     "applicationE2E": 0,
-    "retainedUntilPreviewAcceptance": true
+    "retainedUntilPreviewAcceptance": false,
+    "cleanupReason": "ATTEMPT5_TERMINAL_FAILURE_NO_FURTHER_DEPLOYMENTS",
+    "exactAliasDeleted404": true
   },
-  "actualPreviewDeployments": 2,
+  "actualPreviewDeployments": 3,
   "acceptedPreview": {
-    "id": "dpl_3wAJbFjQ85EseBan8kp77iYQSPvF",
-    "origin": "https://zao-rental-avatar-preview-q1c57fxk3-zao-food-map.vercel.app",
-    "head": "3fe31f26fcf555ba4a491058a6857603b6abf926",
+    "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+    "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+    "head": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
     "status": "READY",
     "canonicalTarget": "preview",
-    "rawTarget": null,
-    "providerPreviewFilteredListingContainsExactId": true,
-    "authentication": "ON"
+    "authentication": "ON",
+    "retained": true,
+    "hostedAcceptance": "FAIL_NOT_FUNCTIONALLY_ACCEPTED",
+    "acceptanceTerminology": "Provider identity/target/protection accepted only; no Hosted PASS."
   },
   "humanAuthResumeAuthorityCommit": "ae15dacaa94383dc4d4c387a50187f19945ed035",
   "hostedReadiness": {
@@ -324,7 +329,7 @@
     "hardGate": "PASS",
     "credentialHoursRemainingAtDispatch": 18.49,
     "vercelHumanAuthentication": "SATISFIED_EXISTING_CONTEXT",
-    "neonHumanAuthentication": "FIRST_CLI_EXIT1_UNCONFIRMED_OWNER_TIMING_REQUIRED",
+    "neonHumanAuthentication": "COMPLETE_PROFILE_SUBSEQUENTLY_REVOKED_AND_REMOVED",
     "neonAuthAttempt1": {
       "exitCode": 1,
       "completionConfirmed": false,
@@ -334,6 +339,72 @@
       "installedCliAuthWaitSeconds": 60,
       "installedCliVersion": "4.18.0",
       "guardPreserved": true
+    },
+    "neonAuthAttempt2": {
+      "exitCode": 0,
+      "completionConfirmed": true,
+      "profile": "avatar-phase6-final",
+      "rawAuthOutputSaved": false
+    },
+    "hostedAcceptance": {
+      "status": "FAIL",
+      "fixedOperatorStage": "unexpected browser network zero",
+      "passedChecks": 23,
+      "physicalRatioAssertions": 24,
+      "visualBusinessWrites": 0,
+      "crossGuestOwnerWasActive": true,
+      "wholeRunFinalFingerprint": "NOT_REACHED",
+      "unexpectedNetwork": "BLOCKED_ATTEMPTS_PRESENT_DESTINATION_AND_COUNT_NOT_PERSISTED",
+      "repeat": 0,
+      "receipt": "final-hosted-acceptance.json"
+    },
+    "bootstrapCleanup": "PASS_EXACT_DEPLOYMENT_AND_ALIAS404_CURRENT_PRODUCTION0",
+    "temporaryAuthCleanup": "PASS_OAUTH_REVOKED_PROFILE_REMOVED_EMPTY_DIRECTORY",
+    "ownedBrowser": "CLOSED",
+    "dbPools": "CLOSED",
+    "ownedCliAuthBrowserTab": "CLOSURE_NOT_CONFIRMED_NO_OPAQUE_HANDLE_NO_GLOBAL_INVENTORY",
+    "codeChangedAfterReview": false,
+    "reviewedCodeFilesVerified": 598,
+    "postHostedClaudeStarts": 0,
+    "terminalClassification": "PHASE6_IMPLEMENTATION_COMPLETE_HOSTED_ACCEPTANCE_DEFERRED",
+    "productionApplicationOperations": {
+      "secrets": 0,
+      "db": 0,
+      "r2": 0,
+      "e2e": 0
+    },
+    "squarePaymentRefundWebhookRealBookingOperations": 0,
+    "newTaskSecretExposureObserved": 0,
+    "historicalIncidentZeroClaim": false,
+    "technicalDirectorEvidenceAssessment": {
+      "verdict": "DEFER_HOSTED_ACCEPTANCE",
+      "passedChecksRetained": true,
+      "failureNotReclassifiedAsPass": true,
+      "screenshotsInspected": [
+        "390-appearance1.png",
+        "1440-appearance2.png"
+      ],
+      "screenshotCount": 4,
+      "sourceAndHistoricalIncidentFilesUnchanged": true
+    },
+    "finalEvidenceValidation": {
+      "reviewedCode598Files": "UNCHANGED",
+      "historicalIncidentRecords": "UNCHANGED",
+      "secretPatternScan": "PASS_1972_FILES_NOT_COMPREHENSIVE",
+      "gitDiffCheck": "PASS",
+      "applicationCodeChanged": false,
+      "node": "24.15.0",
+      "npm": "11.12.1"
     }
+  },
+  "historicalAttempt3ProviderAcceptedPreview": {
+    "id": "dpl_3wAJbFjQ85EseBan8kp77iYQSPvF",
+    "origin": "https://zao-rental-avatar-preview-q1c57fxk3-zao-food-map.vercel.app",
+    "head": "3fe31f26fcf555ba4a491058a6857603b6abf926",
+    "status": "READY",
+    "canonicalTarget": "preview",
+    "rawTarget": null,
+    "providerPreviewFilteredListingContainsExactId": true,
+    "authentication": "ON"
   }
 }

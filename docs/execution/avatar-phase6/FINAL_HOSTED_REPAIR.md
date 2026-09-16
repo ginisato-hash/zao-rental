@@ -81,3 +81,50 @@ The reviewed implementation is frozen. Review PASS is code readiness, not Hosted
 - P6-3 LOW: preserve historical PHASE5-1 and its limited independent review scope.
   Actual hosted429 proof remains in the upcoming acceptance, never inferred from
   code review alone. Earlier AV-2/AV-3/PHASE5-1 histories are not erased.
+
+## Terminal attempt5 result
+
+Classification: `PHASE6_IMPLEMENTATION_COMPLETE_HOSTED_ACCEPTANCE_DEFERRED`.
+Implementation `188f9daf465a52cfa168d4af73ed8b1d8d655f41`; reviewed code598 files
+unchanged, local656 tests/lint/typecheck/build/secret scan PASS. Claude predeploy
+BLOCKER0/HIGH0/MEDIUM0/LOW3 remains valid for code; no post-hosted Claude run.
+
+Exact attempt5 `dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K` is retained READY, canonical
+Preview, Authentication ON. Readiness GET1/retry0 returned normal401
+GUEST_CONTEXT_REQUIRED. Hosted E2E ran once:23 checks PASS,24 physical ratio
+assertions at390/1440px, two members, both appearances and all three directions.
+Actual Neon metadata and exact3 private R2 WebP hashes/bytes PASS. Anonymous,
+active-owner cross-guest, stale/member/visual/digest, rights revoke, real429 and
+logout checks PASS. Visual-only POST/recommendation/HOLD/quote/payment/business
+writes0 was proven by the completed scoped fingerprint and browser assertions.
+Media-failure degradation used browser transport fault injection, not an R2 outage.
+
+Overall Hosted result is FAIL at `unexpected browser network zero`: the route
+guard recorded at least one non-origin attempt and aborted it. Exact count and
+destination were not persisted; root cause is NOT_ESTABLISHED. No rerun, new
+probe, deployment or inferred PASS. The final whole-run business fingerprint and
+fatal-error checks were not reached. Four screenshots and completed assertion
+results remain; the full numeric measurement array was not written on failure.
+The receipt explicitly corrects summary booleans originally derived from the
+overall failure flag, without changing that failure or claiming skipped checks.
+
+Under authority section19 terminal-failure cleanup, exact static bootstrap and
+exact Production alias are deleted/read back404. The initial CLI DELETE was
+blocked locally before HTTP by its noninteractive confirmation requirement;
+read-only reconciliation established both still existed, then the Owner-approved
+exact cleanup used the CLI confirmation flag. Current Production deployments0,
+aliases0, env0; historical deployments2/aliases2 remain unchanged. Attempt5 Preview
+is retained and read back READY/Preview. No new env/project/deploy/alias was made.
+
+Temporary Neon OAuth revoked/profile removed; task credential directory empty.
+Synthetic rights/rate state restored, GuestB logged out, GuestA context revoked,
+DB pool and task Playwright browser closed. Normal CLI auth browser-tab closure
+is not confirmed because no task-owned opaque handle exists; no global inventory.
+Private R2 bucket/exact3 objects and Preview runtime read credential retained.
+The existing credential deadline remains2026-09-17T08:18:35.188Z; no renewal.
+New task secret exposure observed0, historical metadata incidents preserved with
+no historical zero-exposure claim. Square/payment/refund/webhook/real booking
+operations0; Production DB/R2/application E2E0; main merge0.
+
+Deployment5/5 is exhausted. Terminal deferred; no attempt6, readiness/acceptance
+repeat, Phase7 or main continuation. GitHub final receipt commit is authoritative.

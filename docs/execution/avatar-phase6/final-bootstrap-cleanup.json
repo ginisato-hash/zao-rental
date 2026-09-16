@@ -1,0 +1,63 @@
+{
+  "bootstrapId": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
+  "alias": "zao-rental-avatar-preview-zao-food-map.vercel.app",
+  "reason": "ATTEMPT5_TERMINAL_FAILURE_NO_FURTHER_DEPLOYMENTS",
+  "historicalProductionDeployments": 2,
+  "historicalProductionAliases": 2,
+  "rawProviderResponseSaved": false,
+  "initialCleanup": {
+    "result": "LOCAL_CLI_DELETE_CONFIRMATION_REQUIRED",
+    "providerDeleteDispatched": false,
+    "reconciliation": "EXACT_BOOTSTRAP_AND_ALIAS_STILL_EXIST",
+    "source": "Installed vercel59.9.1 confirmMutatingOperation: non-TTY DELETE returns false before fetch without explicit confirmation flag"
+  },
+  "explicitOwnerDeletionAuthority": "FINAL_HOSTED_REPAIR_SECTION19",
+  "aliasDelete": {
+    "confirmed": true,
+    "unknown": false
+  },
+  "alias404": true,
+  "deploymentDelete": {
+    "confirmed": true,
+    "unknown": false
+  },
+  "deployment404": true,
+  "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "authentication": "ON",
+  "productionEnvCount": 0,
+  "forbiddenEnvCount": 0,
+  "customDomainCount": 0,
+  "envMetadata": [
+    {
+      "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "secretValue": "NOT_CAPTURED"
+    },
+    {
+      "key": "ZAO_AVATAR_PHASE6",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "secretValue": "NOT_CAPTURED"
+    }
+  ],
+  "status": "PASS",
+  "currentProductionDeployments": 0,
+  "currentProductionAliases": 0,
+  "initialAcceptedPreviewRetainedBoolean": false,
+  "previewRetention": {
+    "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+    "retained": true,
+    "readyState": "READY",
+    "canonicalTarget": "preview",
+    "exactProject": true,
+    "applicationRequests": 0,
+    "rawProviderResponseSaved": false
+  },
+  "hostedAcceptance": "FAIL",
+  "previewRetentionNote": "Retained infrastructure is READY/protected Preview; Hosted acceptance failed. Initial acceptedPreviewRetained=false represented acceptance status, not deletion."
+}

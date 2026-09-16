@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "boundedLockSqlstate": "55P03",
+  "elapsedMs": 1604.843042,
+  "rollbackRows": 0,
+  "approvedVisuals": 3,
+  "repeatedImportRefused": true,
+  "timeouts": {
+    "lock_timeout": "1500ms",
+    "statement_timeout": "5s"
+  },
+  "rightsBasis": "OWNER_SUPPLIED_SOURCE_DERIVATIVE_PROTECTED_PREVIEW_ONLY",
+  "hosted": false
+}

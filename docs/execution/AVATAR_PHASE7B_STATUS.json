@@ -1,5 +1,5 @@
 {
-  "phase": "AVATAR_TIER2_REVIEW_PASS_CI_RERUN_PENDING",
+  "phase": "AVATAR_TIER2_IMPLEMENTATION_COMPLETE_MAIN_MERGE_READY",
   "authoritySha256": "eb8aa563dcbb4705b50f493c78f6351d93bdb0c7c3f4db7d49cae727cc5f1303",
   "branch": "codex/avatar-phase7-rc",
   "startingHead": "2b0e4c23e7ec013bc358340e31bcda7522f663a8",
@@ -480,6 +480,12 @@
       "extraUsageDisabledReason": "org_level_disabled",
       "reviewResultSha256": "54f077af26b8acda263553e5a268ff982486ea77a14c13886d638de2db50ec96",
       "evidenceAssessment": "Diff and current-file review confirm F1's minimum_safe_correction was applied precisely: guestAvatarBoundary(request) now calls hostedPreviewRequestOrigin(request) before hostedPreviewRuntime(), mirroring the guest draft route, and both avatar route entrypoints thread the real Request through guestAvatarHandler->boundary(req) instead of a no-arg boundary(). The four required regression cases (metadata/media x host/x-vercel-deployment-url mismatch) assert poolCreates===0 and a generic 404 before any DB pool is constructed, and a paired 'exact ingress' case per surface confirms poolCreates===1 and the pre-existing isolated driver failure is still reached only after ingress passes, so no fail-open or bypass was introduced. The per-request guard() path (vercelPreviewPeer/hostedPreviewRequestOrigin) is retained unchanged, giving intentional defense-in-depth rather than a regression. tests/avatar/tier2-rate.ts uses avatarGuestSecurity built from the unmodified production guest.p4-approved-policy.json (only version/peerRequests/globalRequests overridden, preserving underlying window semantics), drives 242 concurrent guard() calls across two independent Pool objects/pg connections against real Postgres, and asserts exactly peerRequests(240) succeed with both the peer- and global-scoped guest_rate_buckets rows converging to 240 -- direct evidence of atomic, cross-pool budget enforcement rather than per-process counting. It further asserts loads===0 and reads===0 while HTTP 429 is returned on both GET surfaces before any load()/reader() call, exercises an unrelated ordinary GuestSecurity.guard() call post-exhaustion succeeding with zero business-table writes (booking-policy isolation), and validates window recovery via an inventory_clock() advance yielding a 200 with load()===1. This is parent-supplied execution evidence (686 unit PASS, avatar suite PASS including the new test now wired into test:avatar/CI, lint/typecheck/build/secrets PASS, 32-migration hash unchanged, browser+real-PG Avatar/Guest PASS) which this review did not re-execute (tests_executed:false); the static code/diff inspection independently corroborates that the described ordering and test assertions are structurally present and internally consistent. The four supplied migration-count assertion diffs (30->32) close the prior static evidence gap without touching historical migration bytes. LOW F2-F4 are unchanged by this diff and remain recorded/nonblocking per the LOW DISPOSITION."
+    },
+    "remainingSeverityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 3
     }
   },
   "hosted": {
@@ -500,13 +506,21 @@
     }
   },
   "remoteCI": {
-    "status": "FAILED_TEST_WAIT",
-    "runId": 35128244374,
-    "implementationHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
-    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35128244374",
-    "failure": "tests/public/normal-ui.ts staff creation response wait exceeded15000ms",
-    "evidence": "CI screenshot already displays SYNTHETIC Handoff staff in authenticated list; no error alert. Exact response latency/order not captured.",
-    "artifactSha256": "d55f4426af74830d299a88f558ead9222fef8b722e306e45f3bea6b040df86eb"
+    "id": 35130836674,
+    "status": "PASS",
+    "conclusion": "success",
+    "headSha": "a87df9a6868bd8a7c743a10514748d2ebfd93620",
+    "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35130836674",
+    "jobId": 104911145586,
+    "allJobSteps": "success",
+    "pullRequestMergeCheckout": "bc8f87e213b90e481cbaa66c9918537bd43e6f18",
+    "artifactId": 10461579375,
+    "artifactSha256": "bdfc78ad1c931c9f7d2b5bb2750d6d5629b42514dc736872000977471d309f5b",
+    "implementationHead": "a87df9a6868bd8a7c743a10514748d2ebfd93620",
+    "sourceTreeSha256": "ef558fdbd383caeec8983ad6d4aec622053224f746a15f5ed52b3ad1153a1907",
+    "reviewedRuntimeHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
+    "scope": "Existing Foundation CI pull_request: full verify including realPG, browsers, lint, typecheck, build and runner simulation",
+    "subsequentEvidenceCommit": "Only this status record changes; reviewed and CI-tested code tree remains identical. GitHub PR checks are authoritative for its latest commit."
   },
   "draftPR": {
     "number": 17,
@@ -517,9 +531,17 @@
     "merged": false
   },
   "cleanup": {
-    "status": "NO_NEW_HOSTED_RESOURCES_CREATED",
-    "temporaryCredentialsCreated": 0,
-    "browserSessionsCreated": 0
+    "status": "COMPLETE_NO_NEW_HOSTED_RESOURCES",
+    "localBrowserNextPostgres": "CLOSED",
+    "claudeProcesses": "EXITED",
+    "temporaryHostedCredentialsCreated": 0,
+    "hostedCredentialsRotated": 0,
+    "hostedEnvCreated": 0,
+    "hostedDeploymentCreated": 0,
+    "hostedBrowserSessionsCreated": 0,
+    "newTaskOAuth": 0,
+    "localProviderSecretFilesCreated": 0,
+    "bucketObjectsNeonRolesSchemas": "RETAINED_UNCHANGED"
   },
   "forbiddenOperations": {
     "productionDeploy": 0,
@@ -533,7 +555,7 @@
     "newRole": 0,
     "newR2Object": 0
   },
-  "nextGate": "PR CI rerun PASS after test-only repair; then Owner main merge decision.",
+  "nextGate": "Owner main merge decision only. Main remains unmerged; no Production activation.",
   "precheck": {
     "ancestry": "PASS_ALL_EXPECTED_ANCESTORS",
     "migrations": {
@@ -763,5 +785,47 @@
       ".github/workflows/ci.yml",
       "tests/public/normal-ui.ts"
     ]
+  },
+  "ciHistory": [
+    {
+      "status": "FAILED_TEST_WAIT",
+      "runId": 35128244374,
+      "implementationHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35128244374",
+      "failure": "tests/public/normal-ui.ts staff creation response wait exceeded15000ms",
+      "evidence": "CI screenshot already displays SYNTHETIC Handoff staff in authenticated list; no error alert. Exact response latency/order not captured.",
+      "artifactSha256": "d55f4426af74830d299a88f558ead9222fef8b722e306e45f3bea6b040df86eb"
+    },
+    {
+      "id": 35130836674,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "a87df9a6868bd8a7c743a10514748d2ebfd93620",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35130836674",
+      "jobId": 104911145586,
+      "allJobSteps": "success",
+      "pullRequestMergeCheckout": "bc8f87e213b90e481cbaa66c9918537bd43e6f18",
+      "artifactId": 10461579375,
+      "artifactSha256": "bdfc78ad1c931c9f7d2b5bb2750d6d5629b42514dc736872000977471d309f5b"
+    }
+  ],
+  "completion": {
+    "featureImplementation": "COMPLETE",
+    "tier2SecurityRegression": "PASS",
+    "claudeBlockerHighMedium": 0,
+    "ci": "PASS",
+    "draftPR": "READY_AS_DRAFT",
+    "productionFeature": "DEFAULT_OFF",
+    "phaseProductionDeployments": 0,
+    "square": 0,
+    "realPayment": 0,
+    "realCustomer": 0,
+    "mainMerge": 0,
+    "sourceTreeSha256": "ef558fdbd383caeec8983ad6d4aec622053224f746a15f5ed52b3ad1153a1907",
+    "reviewedRuntimeHead": "9f45336eb63852d1bb0671fc3cfbd78d2532a862",
+    "sourceFiles": 608,
+    "historicalPhase6ProductionDeployments": 2,
+    "historicalPhase6ProductionAliases": 2,
+    "historicalCountsRewritten": false
   }
 }

@@ -1,6 +1,20 @@
-# Avatar Phase5 implementation checkpoint
+# Avatar Phase5 final result
 
-Codex self-validation PASS; independent review NOT_RUN. Direct Owner adoption saved
+**PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED.** Codex self-validation PASS and independent
+Claude static review PASS, BLOCKER0/HIGH0/MEDIUM0/LOW3. Approved artwork NOT_PROVIDED.
+Implementation/evidence reviewed HEAD: `4f1aadc07cfcdb3f42f84a8cc918d714ef1ba985`,
+pushed/read back clean before review. The final receipt is documentation/evidence only;
+its exact commit SHA is in the final delivery report and is not labeled reviewed code.
+No product/test source changed after review.
+
+Initial review1, correction0, retry0; Claude Sonnet5 / existing Team, extra usage disabled
+at organization level and isUsingOverage=false. Tools/MCP/hooks/browser0, tests executed
+by reviewer=false. Review process exited0. Original result, compressed snapshot, manifest,
+execution, durable one-shot guard and integrity records are under final-review/.
+Snapshot SHA256: `d8079ac6525ec132ca34ac5a551bd65d7710a7c03f60de7d1d1840a1c55b1b33`.
+Final receipt integrity/secret/diff checks are recorded in final-validation.json.
+
+Direct Owner adoption saved
 verbatim in AVATAR_PHASE5_AUTHORITY.md. Base4485966d87d55aa010766e5f45820541c989fa54;
 branch codex/avatar-phase5-guest-integration. Phase4 history/acceptance/review is frozen.
 No separate detailed Phase5 attachment was available; implementation interpretations
@@ -27,11 +41,13 @@ execute the byte function; fixed search_path and temp shadow tests pass. Existin
 content_read remains historical and is not used for Avatar queries. No authoring API.
 Staff byte permissions now match the preview page: BOOKING_VIEW/HOLD_VIEW/QUOTE_VIEW.
 
-LOW correction claims remain Codex self-validation until independent assessment:
-AV-1 binding UPDATE guard with all13 protected fields tested; AV-3 new Avatar reader
-isolated from the broad historical content role (the old role itself is not redesigned);
-PHASE4-1 exact BOOKING_VIEW-only counterexample now denies both staff surfaces.
-AV-2 remains the explicit zero-art/no-renderer/no-fake product decision, not silently closed.
+Independent review closes AV-1 (all13 binding UPDATE fields tested) and PHASE4-1
+(exact BOOKING_VIEW-only denial on both staff surfaces). AV-3 is partially addressed by
+the actual narrow local Avatar reader but remains OPEN for future Production scope;
+the historical general content role is unchanged. AV-2 retains the explicit zero-art/
+no-renderer/no-fake decision without independent closure. New PHASE5-1 LOW records the
+absence of rate limiting on local Avatar guest endpoints; add it before future non-local
+exposure. All original findings and limits are in FINDING_DISPOSITION.md.
 
 253 unit/related tests,97 real local PostgreSQL checks,26 browser checks PASS; fail0/skip0
 in final runs. PG includes populated0031 upgrade, fresh0032, exact PREMIUM and temp-shadow
@@ -43,7 +59,7 @@ failures are retained. Seven screenshot fixtures are synthetic, never approved a
 
 Approved real artwork NOT_PROVIDED. Real artwork creation/upload/hosted registration0;
 customerVisible=false, publicActivation=false. Local development integration is ready;
-Production adapter still fails closed. Expected PASS terminal is
+Production adapter still fails closed. Confirmed code PASS terminal is
 PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED, not deployed product/artwork acceptance.
 
 Square/hosted Neon/Vercel/R2/external media/browser/Production/real customers/payments/

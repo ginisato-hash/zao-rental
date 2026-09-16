@@ -1,0 +1,9 @@
+{
+  "kind": "AVATAR_PHASE5_INITIAL_REVIEW_ONE_SHOT",
+  "head_sha": "4f1aadc07cfcdb3f42f84a8cc918d714ef1ba985",
+  "snapshot_sha256": "d8079ac6525ec132ca34ac5a551bd65d7710a7c03f60de7d1d1840a1c55b1b33",
+  "startedAtUtc": "2026-09-16T03:07:40.940Z",
+  "startsConsumed": 1,
+  "maximumStarts": 1,
+  "state": "RESERVED_POSSIBLY_STARTED_NO_RETRY"
+}

@@ -1,0 +1,25 @@
+{
+  "helpExitCode": 0,
+  "authExitCode": 0,
+  "loggedIn": true,
+  "authMethod": "claude.ai",
+  "apiProvider": "firstParty",
+  "subscriptionType": "team",
+  "requiredFlags": {
+    "--safe-mode": true,
+    "--tools": true,
+    "--strict-mcp-config": true,
+    "--setting-sources": true,
+    "--disable-slash-commands": true,
+    "--no-session-persistence": true,
+    "--no-chrome": true,
+    "--permission-mode": true,
+    "--include-hook-events": true
+  },
+  "unknownSafeMode": false,
+  "metadataErrorClasses": [
+    "NONE",
+    "NONE"
+  ],
+  "modelRequests": 0
+}

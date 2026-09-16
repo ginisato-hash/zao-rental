@@ -1,0 +1,55 @@
+{
+  "reviewResultUnmodified": true,
+  "files": [
+    {
+      "file": "docs/execution/avatar-phase5/final-review/auth-check.json",
+      "bytes": 563,
+      "sha256": "d73bde79246b72f138d8fee91273a7e4c388ce1b10f643bc8da668de806304c5"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/execution.json",
+      "bytes": 1753,
+      "sha256": "97c05a57d09f8848214a118419c891299762bae019f19b0571fcbcaea017c5a6"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/final-review.guard.json",
+      "bytes": 341,
+      "sha256": "8911670d5bf519d3b050b0692ba69ef675518368d7cb99ce859f3b9ab49349ab"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/input-integrity.json",
+      "bytes": 318,
+      "sha256": "b1e0355a4abbb9b1af3be596c420948a2cef641e97c7314ea7daabfe25305f59"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/instructions.txt",
+      "bytes": 3699,
+      "sha256": "c5338d53059ad5e252b0d199700a8b2fbdf597d8d4382cfd14e612c8d4e6f90f"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/launch-contract.json",
+      "bytes": 1444,
+      "sha256": "ffa92e767af3e6d4a8fa618808580f864a9e0e0cf4443d3217bb8196c3824cf8"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/manifest.json",
+      "bytes": 31555,
+      "sha256": "ba17ed7fdab2509816d8071016e8a66f4aafa889dc4290587742ce9336fd5089"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/review.json",
+      "bytes": 16283,
+      "sha256": "6f22db5697777f8215c147f92afe37cde05a54ae62d76f8f45028696546f1cd9"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/review.txt",
+      "bytes": 16295,
+      "sha256": "8e20f80b5c5bba0b48a716a1fe16d5efbd3a539c3f9642c0169a5b042badcbb7"
+    },
+    {
+      "file": "docs/execution/avatar-phase5/final-review/snapshot.txt.gz",
+      "bytes": 161996,
+      "sha256": "eaf6a7e60e239cbd6f2d158380146acc545b09a7f64d396fb50ff5b99c1a098f"
+    }
+  ]
+}

@@ -3,23 +3,69 @@
   "authoritySha256": "4efc89a045e7326297829d6c7b209c5b3c0b8dd1024ea4221485fc95065cd254",
   "startingHead": "4485966d87d55aa010766e5f45820541c989fa54",
   "branch": "codex/avatar-phase5-guest-integration",
-  "state": "SELF_VERIFIED_PASS_REVIEW_PENDING",
+  "state": "PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED",
   "approvedRealArtwork": "NOT_PROVIDED",
   "customerVisible": false,
   "externalProviderOperations": 0,
   "review": {
-    "initialStarts": 0,
+    "initialStarts": 1,
     "correctionStarts": 0,
-    "retry": 0
+    "retry": 0,
+    "verdict": "PASS",
+    "reviewedHead": "4f1aadc07cfcdb3f42f84a8cc918d714ef1ba985",
+    "authoritySha256": "4efc89a045e7326297829d6c7b209c5b3c0b8dd1024ea4221485fc95065cd254",
+    "snapshotSha256": "d8079ac6525ec132ca34ac5a551bd65d7710a7c03f60de7d1d1840a1c55b1b33",
+    "model": "claude-sonnet-5",
+    "tools": 0,
+    "mcp": 0,
+    "hooks": 0,
+    "browser": 0,
+    "extraUsage": false,
+    "severityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 3
+    },
+    "testsExecutedByReviewer": false,
+    "record": "avatar-phase5/final-review/review.json",
+    "findings": "avatar-phase5/FINDING_DISPOSITION.md",
+    "receiptDescendants": "Documentation/evidence only; reviewed product/test source unchanged"
   },
   "expectedNoArtworkTerminal": "PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED",
   "implementationValidation": "SELF_VERIFIED_PASS",
-  "independentReview": "NOT_RUN",
+  "independentReview": "PASS",
   "migrationAdded": 1,
   "oldMigrationsUnchanged": 31,
   "validation": "avatar-phase5/validation.json",
   "unitTests": 253,
   "localPgChecks": 97,
   "browserChecks": 26,
-  "localGuestIntegrationReady": true
+  "localGuestIntegrationReady": true,
+  "implementationHead": "4f1aadc07cfcdb3f42f84a8cc918d714ef1ba985",
+  "publicActivation": false,
+  "nextInputGate": "Approved real artwork with provenance/rights/purpose binding; no automatic hosted activation",
+  "result": "avatar-phase5/RESULT.md",
+  "findingDispositions": {
+    "AV-1": {
+      "originalSeverity": "LOW",
+      "status": "CLOSED"
+    },
+    "AV-2": {
+      "originalSeverity": "LOW",
+      "status": "RECORDED_PRODUCT_DECISION_NOT_INDEPENDENTLY_CLOSED"
+    },
+    "AV-3": {
+      "originalSeverity": "LOW",
+      "status": "PARTIALLY_ADDRESSED_LOCAL_SCOPE_ONLY"
+    },
+    "PHASE4-1": {
+      "originalSeverity": "LOW",
+      "status": "CLOSED"
+    },
+    "PHASE5-1": {
+      "originalSeverity": "LOW",
+      "status": "OPEN_LOCAL_UNTHROTTLED_NO_PUBLIC_ACTIVATION"
+    }
+  }
 }

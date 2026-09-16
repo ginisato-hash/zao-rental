@@ -1,7 +1,8 @@
 # Avatar Production readiness gate
 
-This document grants no Production or main-merge permission. Phase7-B is a protected
-Preview integration candidate only. Production deployment and activation remain blocked.
+This document grants no Production or main-merge permission. The Phase7-B Tier2
+override targets implementation completion and a Draft PR with passing CI; it does not
+rebuild Hosted infrastructure. Production deployment and activation remain blocked.
 
 | Gate | Required decision or proof |
 |---|---|

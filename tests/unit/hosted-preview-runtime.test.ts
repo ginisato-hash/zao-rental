@@ -10,6 +10,8 @@ const setup=`
  registerHooks({resolve(s,c,next){if(s==='pg')return {url:pg,shortCircuit:true};return next(s==='server-only'?'next/dist/compiled/server-only/empty.js':s,c);}});
  const {phase6Requested,hostedPreviewRuntime}=await import('./apps/web/src/lib/hosted-preview-runtime.ts');
  const {GET}=await import('./apps/web/src/app/api/guest/[[...record]]/route.ts');
+ const {GET:avatarMetadata}=await import('./apps/web/src/app/api/guest/avatar/[draftId]/[revision]/[memberKey]/route.ts');
+ const {GET:avatarMedia}=await import('./apps/web/src/app/guest-avatar-media/[draftId]/[revision]/[memberKey]/[visualId]/[hash]/route.ts');
  const {guestAvatarBoundary}=await import('./apps/web/src/lib/guest-avatar-runtime.ts');
  const a=await import('./packages/auth/src/hosted-preview-config.ts');
  const {phase6NeonHostname:host}=await import('./packages/db/src/neon-tls.ts');
@@ -28,7 +30,7 @@ test('production missing capability never starts hosted or falls back to local G
   if(value===undefined)delete process.env.ZAO_HOSTED_PREVIEW_RUNTIME;else process.env.ZAO_HOSTED_PREVIEW_RUNTIME=value;
   assert.equal(phase6Requested(),false);assert.equal(await hostedPreviewRuntime(),null);
   const r=await GET(request());assert.equal(r.status,503);assert.deepEqual(await r.json(),{error:'GUEST_PREVIEW_UNCONNECTED'});
-  assert.equal(await guestAvatarBoundary(),null);
+  assert.equal(await guestAvatarBoundary(request()),null);
  }
  assert.equal(globalThis.poolCreates??0,0);
 `));
@@ -51,4 +53,19 @@ test('invalid nonempty config reports fixed parse failure without fallback',()=>
 test('Guest route rejects mismatched deployment ingress before startup IO',()=>run(`
  process.env.ZAO_HOSTED_PREVIEW_RUNTIME=JSON.stringify(config);const req=request();req.headers.set('x-vercel-deployment-url','synthetic-private-header');
  const r=await GET(req);assert.equal(r.status,503);assert.deepEqual(await r.json(),{error:'GUEST_PREVIEW_UNAVAILABLE',stage:'INGRESS_DEPLOYMENT_HEADER'});assert.equal(globalThis.poolCreates??0,0);
+`));
+for(const kind of ['metadata','media'])for(const header of ['host','x-vercel-deployment-url'])test('Avatar '+kind+' rejects mismatched '+header+' before startup IO',()=>run(`
+ process.env.ZAO_HOSTED_PREVIEW_RUNTIME=JSON.stringify(config);
+ const scope='20000000-0000-4000-8000-000000000001/1/person-1';
+ const path=${JSON.stringify(kind)}==='media'?'/guest-avatar-media/'+scope+'/20000000-0000-4000-8000-000000000002/'+'a'.repeat(64):'/api/guest/avatar/'+scope;
+ const headers=new Headers(request().headers);headers.set(${JSON.stringify(header)},'unexpected.vercel.app');
+ const r=await (${JSON.stringify(kind)}==='media'?avatarMedia:avatarMetadata)(new Request('https://'+h+path,{headers}));
+ assert.equal(r.status,404);assert.equal(await r.text(),'');assert.equal(globalThis.poolCreates??0,0);
+`));
+for(const kind of ['metadata','media'])test('Avatar '+kind+' accepts exact ingress before isolated driver failure',()=>run(`
+ process.env.ZAO_HOSTED_PREVIEW_RUNTIME=JSON.stringify(config);
+ const scope='20000000-0000-4000-8000-000000000001/1/person-1';
+ const path=${JSON.stringify(kind)}==='media'?'/guest-avatar-media/'+scope+'/20000000-0000-4000-8000-000000000002/'+'a'.repeat(64):'/api/guest/avatar/'+scope;
+ const r=await (${JSON.stringify(kind)}==='media'?avatarMedia:avatarMetadata)(new Request('https://'+h+path,{headers:request().headers}));
+ assert.equal(r.status,404);assert.equal(await r.text(),'');assert.equal(globalThis.poolCreates,1);
 `));

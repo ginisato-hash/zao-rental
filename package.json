@@ -70,7 +70,7 @@
     "test:r15": "node --import tsx scripts/test-r15-ingress.ts",
     "typecheck:ingress": "tsc --noEmit --project apps/webhook-ingress/tsconfig.json",
     "build:ingress": "node scripts/build-ingress.mjs",
-    "test:avatar": "node --import tsx tests/avatar/phase5-upgrade.ts && node --import tsx tests/avatar/phase5-e2e.ts && node --import tsx tests/avatar/artwork-activation.ts && node --import tsx tests/avatar/phase6-migrations.ts && node --import tsx tests/avatar/phase6-roles.ts && node --import tsx tests/avatar/phase6-guest.ts && node --import tsx tests/avatar/phase6-import.ts && node --import tsx tests/avatar/phase6-lock.ts",
+    "test:avatar": "node --import tsx tests/avatar/phase5-upgrade.ts && node --import tsx tests/avatar/phase5-e2e.ts && node --import tsx tests/avatar/artwork-activation.ts && node --import tsx tests/avatar/phase6-migrations.ts && node --import tsx tests/avatar/phase6-roles.ts && node --import tsx tests/avatar/phase6-guest.ts && node --import tsx tests/avatar/phase6-import.ts && node --import tsx tests/avatar/phase6-lock.ts && node --import tsx tests/avatar/tier2-rate.ts",
     "test:r15-regression": "npm run test:r15 && node --import tsx tests/readiness/r15-guard-postgres.ts && node --import tsx tests/readiness/r15-preview-local.ts"
   },
   "dependencies": {

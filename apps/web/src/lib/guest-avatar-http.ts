@@ -12,7 +12,7 @@ export function assertLocalAvatarOrigin(request:Request,origin:string){
  const url=new URL(request.url),expected=new URL(origin);
  if(expected.protocol!=='http:'||expected.hostname!=='127.0.0.1'||url.protocol!==expected.protocol||url.port!==expected.port||!['127.0.0.1','localhost'].includes(url.hostname)||request.headers.get('host')!==expected.host)throw Error('LOCAL_ORIGIN_REQUIRED');
 }
-export function guestAvatarHandler(boundary:()=>GuestAvatarBoundary|null|Promise<GuestAvatarBoundary|null>,media:boolean){return async(req:Request)=>{
+export function guestAvatarHandler(boundary:(request:Request)=>GuestAvatarBoundary|null|Promise<GuestAvatarBoundary|null>,media:boolean){return async(req:Request)=>{
  const empty=()=>new Response(null,{status:404,headers:privateHeaders});
  if(req.method!=='GET')return new Response(null,{status:405,headers:{...privateHeaders,Allow:'GET'}});
  try{
@@ -21,7 +21,7 @@ export function guestAvatarHandler(boundary:()=>GuestAvatarBoundary|null|Promise
   const parts=url.pathname.slice(prefix.length).split('/');if(parts.length!==(media?5:3))return empty();
   const scope=guestAvatarScope(parts[0]!,parts[1]!,parts[2]!);if(!scope)return empty();
   if(media&&(!avatarUuid.test(parts[3]!)||!avatarDigest.test(parts[4]!)))return empty();
-  const b=await boundary();if(!b)return empty();await b.guard(req);const before=await b.load(req.headers,scope);
+  const b=await boundary(req);if(!b)return empty();await b.guard(req);const before=await b.load(req.headers,scope);
   if(!media)return Response.json(before.payloads,{headers:privateHeaders});
   const ref=offeredAvatarVisual(before.payloads,parts[3]!,parts[4]!);if(!ref)return empty();
   const bytes=await avatarDerivative(b.reader(parts[3]!),parts[3]!,parts[4]!);if(!bytes)return empty();

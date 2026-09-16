@@ -1,5 +1,5 @@
 {
-  "phase": "PHASE7B_LOCAL_PASS_INTEGRATION_REVIEW_PENDING",
+  "phase": "AVATAR_TIER2_LOCAL_PASS_CORRECTION_REVIEW_PENDING",
   "authoritySha256": "eb8aa563dcbb4705b50f493c78f6351d93bdb0c7c3f4db7d49cae727cc5f1303",
   "branch": "codex/avatar-phase7-rc",
   "startingHead": "2b0e4c23e7ec013bc358340e31bcda7522f663a8",
@@ -9,15 +9,17 @@
   "budgets": {
     "previewDeployments": {
       "max": 1,
-      "used": 0
+      "used": 0,
+      "currentAuthorityMax": 0
     },
     "r2ReadCredentials": {
       "max": 1,
-      "used": 0
+      "used": 0,
+      "currentAuthorityMax": 0
     },
     "claudeInitial": {
       "max": 1,
-      "used": 0
+      "used": 1
     },
     "claudeCorrection": {
       "max": 1,
@@ -354,17 +356,128 @@
     "squareExternalRequests": 0
   },
   "claude": {
-    "status": "NOT_RUN"
+    "status": "INITIAL_CHANGES_REQUIRED_CORRECTION_IN_PROGRESS",
+    "initial": {
+      "reviewedHead": "dac1a90290b8c92cac220cefbfc7be81743ee3c5",
+      "snapshotBytes": 405603,
+      "snapshotSha256": "3484e8a91947444617517254217f2bc72bd9af9d83c5edccdccfdd1dceea6f46",
+      "sourceTreeSha256": "6e0449eaafc798ac5fc9cd2c51c59b601815aa350d291f287c3bd9f395b581e6",
+      "destination": "Existing Claude Team",
+      "directTransmissionApproval": true,
+      "verdict": "CHANGES_REQUIRED",
+      "severityCounts": {
+        "BLOCKER": 0,
+        "HIGH": 0,
+        "MEDIUM": 1,
+        "LOW": 3
+      },
+      "findings": [
+        {
+          "id": "F1",
+          "severity": "MEDIUM",
+          "title": "Guest avatar routes start hosted runtime bootstrap before ingress/deployment validation, unlike the guest draft route",
+          "file_or_component": "apps/web/src/lib/guest-avatar-runtime.ts (guestAvatarBoundary), apps/web/src/lib/guest-avatar-http.ts (guestAvatarHandler)",
+          "line": "guest-avatar-runtime.ts: `if(phase6Requested())return (await hostedPreviewRuntime())!.avatar;`; guest-avatar-http.ts: `const b=await boundary();if(!b)return empty();await b.guard(req);`",
+          "counterexample": "The guest draft route (apps/web/src/app/api/guest/[[...record]]/route.ts) calls `hostedPreviewRequestOrigin(r)` (Host/x-vercel-deployment-url/hostname-pattern check) BEFORE calling `hostedPreviewRuntime()`. The avatar routes (`/api/guest/avatar/...`, `/guest-avatar-media/...`) call `boundary()`→`hostedPreviewRuntime()` first (which performs assertNoHostedPlatformContradiction, 6 pool creations, per-service TLS proof and DB-identity SQL) and only invoke the per-request ingress check (`vercelPreviewPeer`→`hostedPreviewRequestOrigin`) afterward, inside `b.guard(req)`.",
+          "impact": "A request reaching this deployment with a mismatched Host/deployment-URL header (e.g., unexpected alias, proxy misconfiguration, or a cold-instance probe hitting the avatar path first) forces full hosted-runtime bootstrap (6 Postgres pools + TLS handshakes + identity queries) before being rejected, instead of failing fast on ingress mismatch as the draft route does. On serverless cold starts this can be repeated per new instance, and it breaks the intended 'ingress validation before any privileged operation' ordering that the review explicitly requires. Data access itself is not exposed (guard() still throws before `load()`), so this is not a BLOCKER/HIGH.",
+          "minimum_safe_correction": "In `guestAvatarBoundary()` (or in `guestAvatarHandler` before calling `boundary()`), validate `hostedPreviewRequestOrigin(request)` (or equivalent Vercel ingress check) BEFORE invoking `hostedPreviewRuntime()`, mirroring the ordering already used in the guest draft route.",
+          "required_proof": "Add a regression test analogous to 'Guest route rejects mismatched deployment ingress before startup IO' (tests/unit/hosted-preview-runtime.test.ts) but for the avatar GET routes, asserting `globalThis.poolCreates===0` when Host/x-vercel-deployment-url is mismatched."
+        },
+        {
+          "id": "F2",
+          "severity": "LOW",
+          "title": "Node engine pin loosened from exact patch to minor-range",
+          "file_or_component": "package.json, apps/webhook-ingress/package.json",
+          "line": "package.json: `\"node\": \"24.x\"` (was `\"24.15.x\"`)",
+          "counterexample": "Root and webhook-ingress package.json now accept any Node 24.x instead of pinning 24.15.x; CI (.github/workflows/ci.yml) still pins node-version 24.15.0 so this is currently masked, but local/Vercel builds without that exact pin could diverge.",
+          "impact": "Minor reproducibility/supply-chain drift risk for non-CI builds (e.g., Vercel's own Node runtime selection); no direct security exploit path identified.",
+          "minimum_safe_correction": "Restore an exact/narrow patch pin (e.g., \"24.15.x\") for both package.json files unless the broader range is a deliberate, documented decision tied to Vercel's runtime support matrix.",
+          "required_proof": "Confirm Vercel's actual resolved Node version for both projects matches the CI-verified 24.15.0 baseline."
+        },
+        {
+          "id": "F3",
+          "severity": "LOW",
+          "title": "Artwork manifest lacks the publicApproved field referenced by the Production readiness doc",
+          "file_or_component": "docs/execution/avatar-artwork-activation/artwork/manifest.json vs docs/execution/AVATAR_PRODUCTION_READINESS.md",
+          "line": "manifest.json files[] entries expose `productionApproved:false` but no `publicApproved` key; AVATAR_PRODUCTION_READINESS.md states \"productionApproved=false and publicApproved=false\"",
+          "counterexample": "Grep of the manifest snapshot shows no `publicApproved` field anywhere in the JSON.",
+          "impact": "Documentation/manifest inconsistency only — runtime code does not read this manifest field for authorization (DB `avatar_current_visuals`/rights columns gate exposure instead), so there is no live access-control impact. Could mislead a future reviewer relying on the doc's literal field name.",
+          "minimum_safe_correction": "Either add an explicit `publicApproved:false` field to the manifest for parity with the readiness doc, or correct the doc's wording to reference the actual gating mechanism (DB rights fields, not this manifest key).",
+          "required_proof": "Confirm no runtime code path reads `manifest.files[].publicApproved` (none found in this snapshot)."
+        },
+        {
+          "id": "F4",
+          "severity": "LOW",
+          "title": "Migration 0031's initial immutability guard was weaker than 0032's, within the same changeset",
+          "file_or_component": "packages/db/migrations/0031_avatar_visuals.sql / 0032_avatar_delivery_boundary.sql",
+          "line": "0031 avatar_visual_guard(): `IF NEW.id<>OLD.id OR NEW.created_at<>OLD.created_at THEN RAISE EXCEPTION`; 0032 CREATE OR REPLACE compares the full immutable-column ROW.",
+          "counterexample": "Between 0031 and 0032 applied as separate statements, a row UPDATE changing layer/model_id/variant_id/season/ski_length_cm/media_id/derivative_sha256/revision_id/release_id would not have been blocked by 0031's original guard alone.",
+          "impact": "No live exploitability: both migrations are always applied together (sequential migration runner, single deploy), so at runtime only 0032's final, correct guard is ever active. This is only a design-hygiene note for auditors reading the 0031 diff in isolation.",
+          "minimum_safe_correction": "None required for this integration; optionally add a comment in 0031 noting the guard is intentionally superseded by 0032 in the same release.",
+          "required_proof": "Confirm the migration runner applies 0031 and 0032 atomically/sequentially with no gap where 0031-only state is queryable in Production (already true for this local/dev migration path)."
+        }
+      ],
+      "testsExecutedByReviewer": false,
+      "processStarts": 1,
+      "retry": 0,
+      "tools": 0,
+      "mcp": 0,
+      "hooks": 0,
+      "browser": 0,
+      "provider": 0,
+      "edit": 0,
+      "push": 0,
+      "extraUsage": false,
+      "extraUsageDisabledReason": "org_level_disabled",
+      "exitCode": 0,
+      "reviewResultSha256": "c1d9878020a72bad628b12442978b9689e5e5fe97c5aade6164b7d97fbc32104"
+    },
+    "F1Correction": {
+      "status": "LOCAL_TARGETED_PASS_PENDING_CORRECTION_REVIEW",
+      "change": "Pass actual request to guestAvatarBoundary and validate hostedPreviewRequestOrigin before hosted runtime bootstrap, matching Guest draft route. Per-request guard remains in place.",
+      "regression": "Both Avatar GET routes reject mismatched Host and deployment header before pool construction; exact ingress reaches isolated driver stub.",
+      "red": {
+        "failed": 4,
+        "poolCreatesActual": 1,
+        "poolCreatesRequired": 0
+      },
+      "green": {
+        "targetedTests": 30,
+        "failed": 0
+      },
+      "productScope": "No feature removed or added"
+    },
+    "lowDisposition": {
+      "F2": "Recorded: provider package engine range24.x; local/CI exact24.15.0 remains pinned. No new remote Node patch claim.",
+      "F3": "Recorded: artwork manifest has productionApproved=false; public approval is an authority state, also explicitly false in frozen hosted-artwork-import.json, not a manifest.files field. No public/Production grant.",
+      "F4": "Recorded: 0032 strengthens0031; retain historical migration bytes. Fresh/current paths require full32. No Production migration in this task."
+    }
   },
   "hosted": {
-    "status": "NOT_RUN"
+    "status": "NOT_RERUN_BY_TIER2_OVERRIDE",
+    "newCredentials": 0,
+    "credentialRotations": 0,
+    "newEnv": 0,
+    "newDeployments": 0,
+    "newHostedE2E": 0,
+    "historicalEvidence": "Reuse frozen component proofs; do not relabel Phase6 overall acceptance or rewrite Phase7-A history.",
+    "transportPreflightBeforeOverride": {
+      "readOnly": true,
+      "currentProductionDeployments": 0,
+      "currentPreviewDeployments": 0,
+      "productionEnv": 0,
+      "authentication": "ON",
+      "note": "Known successful Preview bootstrap precondition absent. Superseded by Tier2 override; no Hosted rebuild required."
+    }
   },
   "remoteCI": {
     "status": "NOT_RUN"
   },
   "draftPR": null,
   "cleanup": {
-    "status": "NOT_STARTED"
+    "status": "NO_NEW_HOSTED_RESOURCES_CREATED",
+    "temporaryCredentialsCreated": 0,
+    "browserSessionsCreated": 0
   },
   "forbiddenOperations": {
     "productionDeploy": 0,
@@ -378,7 +491,7 @@
     "newRole": 0,
     "newR2Object": 0
   },
-  "nextGate": "One static Claude integration review; deploy budget0/1, no hosted credentials created.",
+  "nextGate": "One bounded F1 correction review, final implementation push, Draft PR and CI PASS.",
   "precheck": {
     "ancestry": "PASS_ALL_EXPECTED_ANCESTORS",
     "migrations": {
@@ -407,5 +520,150 @@
     "publicApproved": false,
     "productionActivation": "BLOCKED_SEPARATE_OWNER_GATE",
     "avatarOnlyRollback": "Requires separate Production composition proof; current combined Preview capability removal is not business-continuity proof"
+  },
+  "tier2Override": {
+    "source": "Owner direct chat: Phase7-B OVERRIDE — TIER2 FEATURE COMPLETION",
+    "startingHead": "dac1a90290b8c92cac220cefbfc7be81743ee3c5",
+    "scope": "Complete Avatar implementation and Tier2 security validation; Draft PR and CI PASS; no main merge",
+    "requiredFeatures": [
+      "GuestBooking Avatar integration",
+      "physical body/ski ratio",
+      "RECOMMENDED/SHORTER/LONGER",
+      "APPEARANCE_1/APPEARANCE_2",
+      "private media abstraction",
+      "guest ownership",
+      "cross-guest deny",
+      "logout revoke",
+      "stale/wrong member/visual/digest deny",
+      "rights revoke deny",
+      "Avatar rate limit",
+      "390px/1440px responsive",
+      "Avatar failure preserves booking",
+      "visualization causes zero recommendation/HOLD/quote/payment/business writes",
+      "Production feature default OFF"
+    ],
+    "newHostedProofRequired": false,
+    "prohibited": [
+      "new Neon roles",
+      "Neon credential rotation",
+      "new R2 credential",
+      "Vercel env recreation",
+      "RC Preview redeploy",
+      "Hosted E2E rerun",
+      "Production deploy",
+      "Square",
+      "real customer/payment",
+      "main merge"
+    ],
+    "terminalWhenAllGatesPass": "AVATAR_TIER2_IMPLEMENTATION_COMPLETE_MAIN_MERGE_READY",
+    "nextOwnerGate": "main merge decision"
+  },
+  "tier2Validation": {
+    "status": "PASS",
+    "baselineFullRegression": "PASS",
+    "unitPassed": 686,
+    "unitFailed": 0,
+    "unitSkipped": 0,
+    "code": {
+      "summarySha256": "a6831f2a33202ad8ace4185c8803dc2c8b9c67e260cb39bb01ae163eb4704259",
+      "commands": [
+        {
+          "command": "npm run test:unit",
+          "exitCode": 0,
+          "logSha256": "17172a588277346561d40daa9fee28287fd658fab6c5e814ddced8edcdfab0ea",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run lint",
+          "exitCode": 0,
+          "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run typecheck",
+          "exitCode": 0,
+          "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run build",
+          "exitCode": 0,
+          "logSha256": "5385d8f6349b49b1ca74b44468280ddb903d75a32a5fc19158449eb14d6ac1c5",
+          "disposedOwnedClusters": 0
+        },
+        {
+          "command": "npm run check:secrets",
+          "exitCode": 0,
+          "logSha256": "c51f91d488fdf81586390bf84bb4e4cb70dca63c9d9bc799566fdbd2ecfdadf0",
+          "disposedOwnedClusters": 0
+        }
+      ]
+    },
+    "avatar": {
+      "summarySha256": "e0eadf06ae41fed8962637adace926f1cac76cb3bfbfff76e3d2e2be7d2d6012",
+      "commands": [
+        {
+          "command": "npm run test:avatar",
+          "exitCode": 0,
+          "logSha256": "c5e093406bbde37a189236d2953057f8a0d2bb54cb5689ac16f84e26d3589c1f",
+          "disposedOwnedClusters": 8
+        }
+      ]
+    },
+    "isolatedSourceMatches": true,
+    "sourceFilesCompared": 606,
+    "migrations": {
+      "count": 32,
+      "hashChanges": 0,
+      "duplicates": 0
+    },
+    "phase5Guest": {
+      "pgChecks": 36,
+      "browserChecks": 21,
+      "visualBusinessPosts": 0,
+      "externalAttempts": 0
+    },
+    "realArtwork": {
+      "artworkChecks": 1,
+      "pgChecks": 32,
+      "browserChecks": 18,
+      "visualBusinessPosts": 0,
+      "visualBusinessWrites": 0,
+      "extraRecommendationCalls": 0,
+      "extraHold": 0,
+      "extraQuote": 0,
+      "extraPayment": 0,
+      "externalAttempts": 0,
+      "productionApproved": false,
+      "cleanup": "Owned browser/Next/PostgreSQL closed"
+    },
+    "securityAndFeatureCoverage": "GuestBooking; two appearances; three candidate lengths; 390/1440; both members; physical ratio1px; ownership/cross-guest/logout/stale/member/visual/digest/rights; rate limiter realPG; private bytes; provider failure affects Avatar only; zero visualization business mutations",
+    "productionDefaultOff": "PASS_MISSING_CAPABILITY_NO_HOSTED_OR_LOCAL_FALLBACK",
+    "gitDiffCheck": "PASS",
+    "historicalRecords": "UNCHANGED",
+    "cleanup": "Owned local browser/Next/PostgreSQL closed",
+    "avatarRateLimit": {
+      "status": "PASS",
+      "command": "node --import tsx tests/avatar/tier2-rate.ts",
+      "realPostgres": true,
+      "distinctPools": 2,
+      "actualPeerLimit": 240,
+      "parallelAttempts": 242,
+      "allowed": 240,
+      "rateLimited": 2,
+      "metadataHttp": 429,
+      "mediaHttp": 429,
+      "loadCallsWhileLimited": 0,
+      "byteReadCallsWhileLimited": 0,
+      "ordinaryBookingBudget": "UNAFFECTED",
+      "nextWindowHttp": 200,
+      "businessWrites": 0,
+      "providerRequests": 0,
+      "cleanup": "Owned pools/PostgreSQL closed",
+      "testSourceSha256": "6f58b1fc0360b1145b3455198a1ef33527796a6e3c54e2975297b09d62ba3363",
+      "ciBinding": "test:avatar includes this regression"
+    },
+    "secretScan": "PASS_1982_FILES_PATTERN_SCAN_NOT_COMPREHENSIVE",
+    "postRateTestLintTypecheck": "PASS"
   }
 }

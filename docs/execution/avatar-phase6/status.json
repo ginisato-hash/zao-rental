@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "CONTROLLED_BOOTSTRAP_EXCEPTION_AUTHORIZED",
+  "phase": "CONTROLLED_STATIC_BOOTSTRAP_READY_PREVIEW_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -41,7 +41,7 @@
       "revokeAtEnd": true
     },
     "deploymentAttempts": {
-      "used": 1,
+      "used": 2,
       "max": 3,
       "allocation": {
         "1": "historical unintended Production, deleted",
@@ -91,7 +91,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Static-only controlled bootstrap attempt2, keep until one actual Preview attempt3 passes target/protection gates and hosted acceptance, then remove bootstrap+aliases and final Claude. No Phase7.",
+  "nextGate": "One final application Preview attempt3; positive provider Preview classification and protection/env gates before app access. Then hosted E2E, bootstrap cleanup and Claude.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -158,9 +158,9 @@
   "dedicatedVercelProjectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
   "vercelSecretTransmissionOwnerApprovalSha256": "068567fecebf9be5d23dc54d86d64f74a79d392e6ef1666164d57ec7c4d080ed",
   "vercelSecretTransmissionOwnerApprovalCommit": "28d388620a6dd7e1f6b1310553c7fd25a76316cb",
-  "actualProductionAliasCreations": 1,
-  "remainingProductionDeployments": 0,
-  "remainingProductionAliases": 0,
+  "actualProductionAliasCreations": 2,
+  "remainingProductionDeployments": 1,
+  "remainingProductionAliases": 1,
   "secretTransmission": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY",
   "deploymentTargetIncident": {
     "deployedHead": "33e054594ad281d2acc5335e4e5284c81c56bbff",
@@ -173,8 +173,18 @@
   },
   "controlledBootstrapStartingHead": "d6736dc68176b8d5a091575ae802d85d2a4867cc",
   "controlledBootstrapAuthoritySha256": "0a32c4382db281568a5c2e3f9ee756690c3e3ac5280acbfe229e4e0f5a21db95",
-  "historicalProductionDeployments": 1,
-  "historicalProductionAliases": 1,
-  "currentProductionDeployments": 0,
-  "currentProductionAliases": 0
+  "historicalProductionDeployments": 2,
+  "historicalProductionAliases": 2,
+  "currentProductionDeployments": 1,
+  "currentProductionAliases": 1,
+  "controlledBootstrapAuthorityCommit": "22806158dabe09d5ebf86577a8fce83ca563adf2",
+  "controlledBootstrap": {
+    "id": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
+    "status": "PASS_STATIC_BOOTSTRAP_READY",
+    "applicationSecrets": 0,
+    "functionOutputs": 0,
+    "productionEnvCount": 0,
+    "applicationE2E": 0,
+    "retainedUntilPreviewAcceptance": true
+  }
 }

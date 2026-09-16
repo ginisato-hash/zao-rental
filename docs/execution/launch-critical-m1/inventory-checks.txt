@@ -1,0 +1,8 @@
+PASS existing importer dry-run has no inventory writes and stages exact metadata
+PASS concurrent import commits once; repeated file/source cannot duplicate immutable Asset
+PASS invalid quantity/category/size/store/BSL, duplicate source and Asset are unresolved
+PASS stocktake scan/count changes no canonical rows and requires explicit reconcile permission
+PASS unexpected serial requires canonical transfer/receipt and never silently moves location
+PASS maintenance/retired assets are excluded by existing server availability
+PASS private price management dedupes response loss and rejects a changed payload under the same key
+{"status":"PASS","cases":7,"realInventoryImports":0,"hostedDb":0}

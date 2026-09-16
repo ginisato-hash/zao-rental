@@ -88,6 +88,15 @@
           },
           "RENTAL_RETURN": {
             "type": "boolean"
+          },
+          "RENTAL_AMEND": {
+            "type": "boolean"
+          },
+          "REFUND_OVERRIDE": {
+            "type": "boolean"
+          },
+          "INVENTORY_RECONCILE": {
+            "type": "boolean"
           }
         }
       },
@@ -201,6 +210,15 @@
             "type": "boolean"
           },
           "RENTAL_RETURN": {
+            "type": "boolean"
+          },
+          "RENTAL_AMEND": {
+            "type": "boolean"
+          },
+          "REFUND_OVERRIDE": {
+            "type": "boolean"
+          },
+          "INVENTORY_RECONCILE": {
             "type": "boolean"
           }
         }

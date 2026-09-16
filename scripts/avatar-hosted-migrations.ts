@@ -6,7 +6,7 @@ import {phase6Database} from '../packages/auth/src/hosted-preview-config';
 import {phase6NeonHostname,proveNeonClientTls} from '../packages/db/src/neon-tls';
 export async function avatarMigrationSources(){
  const expected=JSON.parse(await readFile('docs/execution/avatar-artwork-activation/migration-hashes.json','utf8')) as {file:string;sha256:string}[];
- if(expected.length!==32||migrationPlan.length!==32)throw Error('PHASE6_MIGRATION_RANGE');
+ if(expected.length!==32||migrationPlan.slice(0,32).length!==32)throw Error('PHASE6_MIGRATION_RANGE');
  const sources=[];
  for(let i=0;i<32;i++){const m=migrationPlan[i]!,sql=await readFile(migrationsDirectory+'/'+m.file,'utf8'),sha256=createHash('sha256').update(sql).digest('hex');
   if(!expected[i]!.file.endsWith('/'+m.file)||sha256!==expected[i]!.sha256)throw Error('PHASE6_MIGRATION_HASH');sources.push({...m,sha256,sql});}

@@ -24,7 +24,7 @@ export class CustodyService extends BookingService{
    const result=await fn(c,now);await c.query('INSERT INTO rental_requests(actor,request_key,fingerprint,result) VALUES($1,$2,$3,$4)',[this.identity.subject,key,fingerprint,JSON.stringify(result)]);return result;
   });
  }
- private async pickup(c:Conn,id:string){const b=await this.booking(c,id);await this.authorize('RENTAL_CHECKOUT',[b.conditions.pickupStore]);return b;}
+ private async pickup(c:Conn,id:string){const b=await this.booking(c,id);await this.authorize('RENTAL_CHECKOUT',[b.conditions.pickupStore]);const h=(await c.query<{conditions:HoldConditions}>('SELECT conditions FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0]!;return {...b,conditions:h.conditions};}
  private async assignment(c:Conn,id:string){const b=await this.pickup(c,id);const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];
   const items=(await c.query(`SELECT DISTINCT cl.requirement_key,cl.asset_id,cl.pole_id,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family,v.size,m.name,a.bsl_status,a.bsl_mm FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) JOIN ledger_models m ON m.id=v.model_id WHERE cl.hold_id=$1 AND cl.active ORDER BY cl.requirement_key`,[b.hold_id])).rows;
   return {bookingId:b.id,bookingVersion:b.version,holdVersion:h.version,conditions:b.conditions,pickupTiming:pickupTiming(b.conditions.period,await this.time(c)),noPickup:(await c.query('SELECT outcome,completed_at FROM rental_no_pickup_events WHERE booking_id=$1',[b.id])).rows[0]??null,items,preparation:(await c.query('SELECT * FROM rental_preparations WHERE id=$1',[b.id])).rows[0]??null,loans:(await c.query('SELECT * FROM rental_loan_items WHERE booking_id=$1 ORDER BY requirement_key',[b.id])).rows};
@@ -56,7 +56,7 @@ export class CustodyService extends BookingService{
    const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];await this.verifyClaims(c,h,now);
    if(h.allocation_stage!=='PREPARATION_FIXED')throw new FlowError('PREPARATION_NOT_FIXED');
    const rows=(await c.query(`SELECT DISTINCT ON(requirement_key) cl.*,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) WHERE cl.hold_id=$1 AND cl.active ORDER BY requirement_key,day`,[b.hold_id])).rows;
-   if(flowHash(rows.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})))!==flowHash(p.fit_evidence.selections))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');
+   if(flowHash(rows.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})))!==flowHash(p.fit_evidence.selections)){const amendment=(await c.query("SELECT q.assignment FROM ops_amendments a JOIN ops_amendment_quotes q ON q.id=a.id WHERE a.booking_id=$1 AND q.expected_hold_version+1=$2 AND length(btrim(a.fit_evidence))>0",[b.id,h.version])).rows[0];if(!amendment||flowHash(rows.map(i=>({key:i.requirement_key,asset:i.asset_id,pole:i.pole_id})))!==flowHash(amendment.assignment.equipment.map((i:{key:string;asset:string|null;pole:string|null})=>({key:i.key,asset:i.asset,pole:i.pole}))))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');}
    const period=normalizePeriod(b.conditions.period);
    for(const i of rows)await c.query(`INSERT INTO rental_loan_items(id,cycle_id,booking_id,requirement_key,asset_id,pole_id,pole_slot,family,variant_id,unit,quantity,pickup_store,checked_out_at,checked_out_by,due_at,state) VALUES($1,$2,$2,$3,$4,$5,$6,$7,$8,$9,1,$10,$11,$12,$13,'OUT')`,[randomUUID(),b.id,i.requirement_key,i.asset_id,i.pole_id,i.pole_slot,i.family,i.variant_id,i.family==='SNOWBOARD'?'BOARD':'PAIR',b.conditions.pickupStore,now,this.identity.subject,period.dueAt]);
    await c.query("UPDATE inventory_holds SET allocation_stage='RENTAL_FIXED',version=version+1 WHERE id=$1",[b.hold_id]);return this.assignment(c,b.id);
@@ -95,3 +95,11 @@ export class CustodyService extends BookingService{
  async returns(store:string){flowStore(store);await this.authorize('RENTAL_RETURN',[store]);return {batches:(await this.pool.query('SELECT * FROM rental_return_batches WHERE owner_id=$1 AND store_id=$2 ORDER BY created_at DESC LIMIT 100',[this.identity.subject,store])).rows,received:(await this.pool.query(`SELECT e.*,l.family,l.requirement_key,l.version,l.asset_id,l.pole_id,i.inspection_id FROM rental_custody_events e JOIN rental_loan_items l ON l.id=e.loan_item_id LEFT JOIN rental_inspection_events i ON i.loan_item_id=l.id WHERE e.actual_store=$1 ORDER BY e.applied_at DESC LIMIT 200`,[store])).rows};}
 }
 export type CustodyConditions=HoldConditions;
+
+export async function receiveExchangeLoan(c:PoolClient,actor:string,store:string,loan:Loan,now:Date){
+ const batch=randomUUID(),candidate=randomUUID(),receipt=randomUUID();
+ await c.query('INSERT INTO rental_return_batches(id,owner_id,store_id,created_at) VALUES($1,$2,$3,$4)',[batch,actor,store,now]);
+ await c.query("INSERT INTO rental_return_candidates(id,batch_id,request_key,scan_sha256,asset_id,pole_id,loan_item_id,cycle_id,loan_version,scanned_at,state,outcome) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'CANDIDATE','PINNED_LOAN_CYCLE')",[candidate,batch,randomUUID(),flowHash({loanId:loan.id,version:loan.version}),loan.asset_id,loan.pole_id,loan.id,loan.cycle_id,loan.version,now]);
+ await c.query('INSERT INTO rental_receipts(id,loan_item_id,candidate_id,received_store,actor,scanned_at,confirmed_at,actual_received_at) VALUES($1,$2,$3,$4,$5,$6,$6,$6)',[receipt,loan.id,candidate,store,actor,now]);
+ await c.query('SELECT public.rental_apply_receipt($1)',[receipt]);
+}

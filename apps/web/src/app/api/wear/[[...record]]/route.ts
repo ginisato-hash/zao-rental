@@ -1,6 +1,6 @@
 import {wearHandler} from '../../../../lib/wear-http';
 import {staffState,getRuntime} from '../../../../lib/staff-runtime';
+import {WearService} from '../../../../../../../packages/core/src/wear/service';
 export const dynamic='force-dynamic';
-// The normal app never receives the isolated test role or enables synthetic custody.
-export const GET=(r:Request)=>wearHandler(staffState,null,getRuntime()?.config.origin??'')(r);
+export const GET=(request:Request)=>{const r=getRuntime();return wearHandler(staffState,r?.operationsPool?identity=>new WearService(r.operationsPool!,r.authPool,identity):null,r?.config.origin??'')(request);};
 export const POST=GET;

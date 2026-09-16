@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "CORRECTIVE_PREVIEW_READY_READINESS_PENDING",
+  "phase": "CORRECTIVE_PREVIEW_READY_NORMAL_AUTH_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -232,6 +232,6 @@
     "providerState": "READY",
     "canonicalTarget": "preview",
     "authentication": "ON",
-    "readiness": "NOT_RUN"
+    "readiness": "NOT_RUN_NORMAL_BROWSER_AUTH_PENDING"
   }
 }

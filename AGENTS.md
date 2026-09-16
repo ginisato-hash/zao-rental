@@ -2,7 +2,7 @@
 
 Read docs/execution/avatar-phase6/CORRECTIVE_PREVIEW_ATTEMPT4_AUTHORITY.md and status.json.
 Parent single writer. Preserve503 and Production/metadata incident history. Max attempts4;
-used3, exactly one corrective protected Preview remains after all local checks PASS.
+used4/4; corrective Preview is READY after all local checks PASS. No more deployment.
 Allow absent Git ref only; wrong present ref still denied. Preserve exact project/URL,
 Preview target and forbidden-env checks. Add only fixed no-secret startup categories.
 After deploy confirm provider Preview/protection/env scope, then exactly one readiness

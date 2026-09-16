@@ -1,0 +1,61 @@
+PASS PG fresh canonical0001–0032 with dedicated Avatar role
+PASS BROWSER ordinary GuestBooking without approved artwork still previews candidates
+PASS PG zero-art metadata is null and normal business candidate lengths remain present
+PASS PG guest metadata uses own current saved recommendation and strips business/private data
+PASS PG anonymous cannot load victim metadata or bytes
+PASS PG other guest cannot load victim metadata or bytes
+PASS PG own image GET returns private valid WebP only
+PASS PG unknown member denies404
+PASS PG stale revision denies404
+PASS PG foreign draft denies404
+PASS PG private original denies404
+PASS PG malformed UUID denies404
+PASS PG wrong digest denies404
+PASS PG claims in query denies404
+PASS PG malformed metadata denies404
+PASS PG encoded traversal denies404
+PASS PG eligible garment outside this saved member offer is denied
+PASS PG guest route cannot use staff-only URL or broaden existing public media
+PASS PG POST rejects405 and cross-site image read rejects404
+PASS PG rights revoked denies old guest image URL
+PASS PG rights expired denies old guest image URL
+PASS PG internal-only denies old guest image URL
+PASS PG unprocessed denies old guest image URL
+PASS PG current release changed denies old guest image URL
+PASS PG purpose removed denies old guest image URL
+PASS PG immutable revision mismatch denies old guest image URL
+PASS PG digest retarget denies old guest image URL
+PASS PG release entry removed denies old guest image URL
+PASS PG duplicate metadata denies old guest image URL
+PASS PG inactive visual denies old image URL
+PASS BROWSER 320px SHORTER actual guest DOM ratio and common floor
+PASS BROWSER 320px RECOMMENDED actual guest DOM ratio and common floor
+PASS BROWSER 320px LONGER actual guest DOM ratio and common floor
+PASS BROWSER 390px SHORTER actual guest DOM ratio and common floor
+PASS BROWSER 390px RECOMMENDED actual guest DOM ratio and common floor
+PASS BROWSER 390px LONGER actual guest DOM ratio and common floor
+PASS BROWSER 768px SHORTER actual guest DOM ratio and common floor
+PASS BROWSER 768px RECOMMENDED actual guest DOM ratio and common floor
+PASS BROWSER 768px LONGER actual guest DOM ratio and common floor
+PASS BROWSER 1440px SHORTER actual guest DOM ratio and common floor
+PASS BROWSER 1440px RECOMMENDED actual guest DOM ratio and common floor
+PASS BROWSER 1440px LONGER actual guest DOM ratio and common floor
+PASS BROWSER appearance switch is local, updates body and causes no metadata reload or POST
+PASS BROWSER English candidate page keeps full disclaimer and appearance labels
+PASS BROWSER revoked rights refresh omits renderer and keeps business candidates usable
+PASS BROWSER optional artwork HTTP failure does not fail candidate step or invent art
+PASS PG all visual reads and switches preserve guest/business rows exactly
+LOCAL_STAFF_SIGNIN_HTTP 200
+PASS BROWSER normal local staff login for permission comparison
+PASS PG full staff permissions retain preview and derivative access
+PASS PG PHASE4-1: BOOKING_VIEW with HOLD_VIEW denied blocks both staff surfaces
+PASS PG PHASE4-1: BOOKING_VIEW with QUOTE_VIEW denied blocks both staff surfaces
+PASS PG PHASE4-1 exact counterexample: BOOKING_VIEW only denies preview and bytes
+PASS PG guest context expiry/revocation invalidate old image capability
+PASS PG normal draft revision change immediately invalidates prior metadata/media URLs
+PASS BROWSER existing explicit candidate selection and group estimate remain functional
+PHASE5_E2E_FAILED logout invalidates saved avatar URLs without affecting another guest TimeoutError
+    at <anonymous> (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-e2e.ts:83:175)
+    at async check (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-e2e.ts:15:78)
+    at async <anonymous> (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-e2e.ts:83:2)
+Owned Phase5 browser/Next/PostgreSQL closed.

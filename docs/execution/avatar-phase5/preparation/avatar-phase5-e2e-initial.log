@@ -1,0 +1,4 @@
+{"code":"TEST_APP_START_FAILED","phase":"WEB","category":"OTHER"}
+PHASE5_E2E_FAILED setup Error
+    at async <anonymous> (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-e2e.ts:17:6)
+Owned Phase5 browser/Next/PostgreSQL closed.

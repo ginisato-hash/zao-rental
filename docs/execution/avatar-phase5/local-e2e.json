@@ -1,0 +1,297 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "kind": "PG",
+      "name": "fresh canonical0001–0032 with dedicated Avatar role",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "ordinary GuestBooking without approved artwork still previews candidates",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "zero-art metadata is null and normal business candidate lengths remain present",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "guest metadata uses own current saved recommendation and strips business/private data",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "anonymous cannot load victim metadata or bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "other guest cannot load victim metadata or bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "own image GET returns private valid WebP only",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "unknown member denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "stale revision denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "foreign draft denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "private original denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "malformed UUID denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "wrong digest denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "claims in query denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "malformed metadata denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "encoded traversal denies404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "eligible garment outside this saved member offer is denied",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "guest route cannot use staff-only URL or broaden existing public media",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "POST rejects405 and cross-site image read rejects404",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "rights revoked denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "rights expired denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "internal-only denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "unprocessed denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "current release changed denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "purpose removed denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "immutable revision mismatch denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "digest retarget denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "release entry removed denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "duplicate metadata denies old guest image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "inactive visual denies old image URL",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "320px SHORTER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "320px RECOMMENDED actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "320px LONGER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px SHORTER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px RECOMMENDED actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "390px LONGER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "768px SHORTER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "768px RECOMMENDED actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "768px LONGER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px SHORTER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px RECOMMENDED actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "1440px LONGER actual guest DOM ratio and common floor",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "appearance switch is local, updates body and causes no metadata reload or POST",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "English candidate page keeps full disclaimer and appearance labels",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "revoked rights refresh omits renderer and keeps business candidates usable",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "optional artwork HTTP failure does not fail candidate step or invent art",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "all visual reads and switches preserve guest/business rows exactly",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "normal local staff login for permission comparison",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "full staff permissions retain preview and derivative access",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "PHASE4-1: BOOKING_VIEW with HOLD_VIEW denied blocks both staff surfaces",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "PHASE4-1: BOOKING_VIEW with QUOTE_VIEW denied blocks both staff surfaces",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "PHASE4-1 exact counterexample: BOOKING_VIEW only denies preview and bytes",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "guest context expiry/revocation invalidate old image capability",
+      "status": "PASS"
+    },
+    {
+      "kind": "PG",
+      "name": "normal draft revision change immediately invalidates prior metadata/media URLs",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "existing explicit candidate selection and group estimate remain functional",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "logout invalidates saved avatar URLs without affecting another guest",
+      "status": "PASS"
+    },
+    {
+      "kind": "BROWSER",
+      "name": "no fatal errors, hydration errors or external attempts",
+      "status": "PASS"
+    }
+  ],
+  "pgChecks": 36,
+  "browserChecks": 21,
+  "visualBusinessPosts": 0,
+  "externalAttempts": 0,
+  "approvedRealArtwork": false,
+  "syntheticFixturesOnly": true,
+  "cleanup": "Owned browser/Next/PostgreSQL closed"
+}

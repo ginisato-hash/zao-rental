@@ -1,5 +1,18 @@
 Read docs/execution/AI_DEVELOPMENT_GOVERNANCE.md first.
 
+## Current — Avatar Phase5 guest integration
+
+Direct Owner adoption: docs/execution/AVATAR_PHASE5_AUTHORITY.md and AVATAR_PHASE5_STATUS.json.
+Base4485966d87d55aa010766e5f45820541c989fa54; codex/avatar-phase5-guest-integration.
+Single writer; GuestBooking integration, guest media auth, additive0032 and LOW responses,
+local PG/browser validation and fresh static Claude review are authorized. Preserve0001–0031.
+No Phase4 replay/re-review. Approved artwork absence does not block code completion:
+terminal PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED. No synthetic art approval claim.
+Hosted Neon/Vercel/R2/Production/main merge0; no business authority from visuals.
+See avatar-phase5/PLAN.md under docs/execution for explicit implementation assumptions.
+
+## Historical — completed Avatar Phase4
+
 ## Current — Avatar Phase4 customer renderer
 
 Read docs/execution/AVATAR_PHASE4_AUTHORITY.md and AVATAR_PHASE4_STATUS.json.

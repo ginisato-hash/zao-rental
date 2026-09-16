@@ -1,0 +1,25 @@
+{
+  "authority": "AVATAR_PHASE5_AUTHORITY.md",
+  "authoritySha256": "4efc89a045e7326297829d6c7b209c5b3c0b8dd1024ea4221485fc95065cd254",
+  "startingHead": "4485966d87d55aa010766e5f45820541c989fa54",
+  "branch": "codex/avatar-phase5-guest-integration",
+  "state": "SELF_VERIFIED_PASS_REVIEW_PENDING",
+  "approvedRealArtwork": "NOT_PROVIDED",
+  "customerVisible": false,
+  "externalProviderOperations": 0,
+  "review": {
+    "initialStarts": 0,
+    "correctionStarts": 0,
+    "retry": 0
+  },
+  "expectedNoArtworkTerminal": "PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED",
+  "implementationValidation": "SELF_VERIFIED_PASS",
+  "independentReview": "NOT_RUN",
+  "migrationAdded": 1,
+  "oldMigrationsUnchanged": 31,
+  "validation": "avatar-phase5/validation.json",
+  "unitTests": 253,
+  "localPgChecks": 97,
+  "browserChecks": 26,
+  "localGuestIntegrationReady": true
+}

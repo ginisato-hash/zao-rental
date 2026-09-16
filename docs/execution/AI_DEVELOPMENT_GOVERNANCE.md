@@ -81,7 +81,17 @@ New checkpoints distinguish `implementation_validation` (SELF_VERIFIED/FAILED/NO
 build/secret-scan/UI/provider checks are Codex self-validation. Historical status is not
 rewritten to claim reviews or external acceptance that did not occur.
 
-## Current Avatar Phase4 milestone
+## Current Avatar Phase5 milestone
+
+Direct Owner adoption AVATAR_PHASE5_AUTHORITY.md authorizes GuestBooking integration,
+guest media auth, additive0032, LOW responses, local PG/browser proof and fresh static
+Claude review from frozen Phase4 receipt4485966. Permanent roles, one writer and
+secret isolation remain. No Phase4 replay/re-review. Missing approved artwork permits
+PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED after code validation and independent PASS.
+Hosted Neon/Vercel/R2/Production/main merge remain0. See avatar-phase5/PLAN.md for
+implementation interpretations; these are not a substitute for direct Owner authority.
+
+## Historical Avatar Phase4 milestone
 
 Direct Owner AVATAR_PHASE4_AUTHORITY.md authorizes a new local renderer/media milestone
 from A2/A3 receipt96a34ae. Previous branches and migrations0001–0031 remain frozen.

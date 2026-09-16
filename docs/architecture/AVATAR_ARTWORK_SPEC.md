@@ -92,3 +92,32 @@ no authoritative fixed artboard dimensions; the above dimensions are this explic
 renderer contract, not new DB fields. Its SVG/Canvas/Prisma and customer/editor directions
 are superseded for this scope by the current Owner's HTML/CSS/WebP-only, schema-unchanged,
 staff-only requirements. These choices do not revise recommendation or inventory rules.
+
+
+## Phase5 local integration boundary
+
+The same raster/artboard/rights contract applies to the guest candidate-step component.
+There is no approved real artwork in the supplied Phase5 inputs. Synthetic generated
+fixtures remain test-only and are never promoted by a passing test or review.
+No real artwork creation, import, upload, hosted registration or activation occurred.
+
+Guest metadata/image access is scoped to the ordinary authenticated guest context,
+its current draft id/revision, saved recommendation owner and member key. Metadata
+is not an authorization token. Each image GET repeats current scope/offered-reference
+checks around current-rights byte delivery; old/foreign/revoked scopes return empty404.
+Appearance stays in component state, not localStorage, profile, quote or booking data.
+Existing candidate radios drive the displayed direction and require the existing
+explicit group-selection action before any business choice is saved.
+
+0032 preserves0001–0031 and makes visual bindings immutable. To adopt a different
+approved revision/release/binding in a future authoring flow, create a new visual UUID
+and matching immutable purpose grant; never retarget a granted row. This phase adds
+no writer/editor endpoint. State/sort/normalized presentation fields remain mutable.
+The dedicated local avatar_read role receives only the eligible-metadata view and the
+current-eligible derivative function. Existing general content_read privileges are
+historical and are not granted to the new Avatar role or used for Avatar reads.
+
+Code-level guest integration is available only through the existing local development
+runtime. Production fails closed. Public artwork activation remains false; the old
+AVATAR_VISUALIZATION_FEATURE=false rollout marker is retained and is not an independent
+runtime permission. Normal no-art completion: PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED.

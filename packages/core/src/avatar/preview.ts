@@ -1,6 +1,5 @@
 import type {Pool} from 'pg';
-import type {StaffPrincipal} from '../../../auth/src/staff-auth';
-import {authorizeBookingActor} from '../../../auth/src/booking-actor';
+import {authorizeBookingActor,type BookingActor} from '../../../auth/src/booking-actor';
 import {HoldError} from '../../../contracts/src/hold';
 import {AVATAR_TYPES} from '../../../contracts/src/avatar-visualization';
 import type {AvatarType,AvatarVisualizationV1} from '../../../contracts/src/avatar-visualization';
@@ -8,7 +7,7 @@ import type {RecommendationInput,MemberRecommendation} from '../../../contracts/
 import {mapAvatarVisualization,type AvatarVisualReader} from './visualization';
 export type AvatarPreviewPayloads=Record<AvatarType,AvatarVisualizationV1|null>;
 /** Read an existing owned recommendation only. Never invoke preview/select/resume. */
-export async function loadAvatarPreview(pool:Pick<Pool,'query'>,principal:StaffPrincipal,previewId:string,memberKey:string,reader:AvatarVisualReader,now:Date):Promise<AvatarPreviewPayloads>{
+export async function loadAvatarPreview(pool:Pick<Pool,'query'>,principal:BookingActor,previewId:string,memberKey:string,reader:AvatarVisualReader,now:Date):Promise<AvatarPreviewPayloads>{
  const permissions=['BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'];await authorizeBookingActor(pool,principal,permissions);
  const row=(await pool.query<{input:RecommendationInput;offered:MemberRecommendation[]}>('SELECT input,offered FROM recommendation_previews WHERE id=$1 AND owner_id=$2',[previewId,principal.subject])).rows[0];
  if(!row)throw new HoldError('FORBIDDEN',403);

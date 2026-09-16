@@ -1,0 +1,37 @@
+[
+  {
+    "file": "docs/execution/avatar-phase5/screenshots/390-SHORTER.png",
+    "sha256": "9f9ef9ddafa368009838c3737f8e24ab172c0aefa152be4b682537e031df845c",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase5/screenshots/390-RECOMMENDED.png",
+    "sha256": "3d39d1056ada04e1f69592d1c8c654c4742994c1eb85cbe1585ac557723e0629",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase5/screenshots/390-LONGER.png",
+    "sha256": "60658b50d49030bcfd4822fad6998f7ea9c11d749278b6941c201390746901b8",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase5/screenshots/1440-SHORTER.png",
+    "sha256": "43d89b8a5857802358c6ec914b3728ca2392cb3f0ea908beb569ac7b60240306",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase5/screenshots/1440-RECOMMENDED.png",
+    "sha256": "e6b9e756619cf219738777f34f4de6e442e4698ca705935c6a4fe3ae641e3a4b",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase5/screenshots/1440-LONGER.png",
+    "sha256": "dfd477a5f759149ea4b9c4ca51fb825a67ba85406df1cea35ad9a601c92d5a92",
+    "syntheticOnly": true
+  },
+  {
+    "file": "docs/execution/avatar-phase5/screenshots/desktop-appearance2.png",
+    "sha256": "91a8451557490d66b08a0661a1068d2ca0349f12d0ecb9d8a5a75bf6871be49d",
+    "syntheticOnly": true
+  }
+]

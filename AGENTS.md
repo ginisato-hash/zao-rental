@@ -1,3 +1,17 @@
+## Current — Phase6 corrective Preview attempt4 authorized
+
+Read docs/execution/avatar-phase6/CORRECTIVE_PREVIEW_ATTEMPT4_AUTHORITY.md and status.json.
+Parent single writer. Preserve503 and Production/metadata incident history. Max attempts4;
+used3, exactly one corrective protected Preview remains after all local checks PASS.
+Allow absent Git ref only; wrong present ref still denied. Preserve exact project/URL,
+Preview target and forbidden-env checks. Add only fixed no-secret startup categories.
+After deploy confirm provider Preview/protection/env scope, then exactly one readiness
+GET /api/guest/draft.503 => STOP; no further deploy. Hosted PASS required before bootstrap
+and exact alias deletion, then Claude initial1. Historical Production2/2 retained;
+current1/1 static bootstrap until acceptance. No Production deploy, new project, main/Phase7.
+
+## Historical — previous exhausted-attempt3 stop
+
 ## Current — Phase6 existing Preview unusable; STOP
 
 Read docs/execution/avatar-phase6/HOSTED_RUNTIME_503_STOP.md and status.json.

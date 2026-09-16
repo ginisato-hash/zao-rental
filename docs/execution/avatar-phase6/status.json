@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "STOPPED_EXISTING_PREVIEW_RUNTIME_503",
+  "phase": "CORRECTIVE_PREVIEW_ATTEMPT4_AUTHORIZED_LOCAL_VALIDATION_PENDING",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -42,11 +42,12 @@
     },
     "deploymentAttempts": {
       "used": 3,
-      "max": 3,
+      "max": 4,
       "allocation": {
         "1": "historical unintended Production, deleted",
         "2": "controlled static Production bootstrap only",
-        "3": "one actual protected application Preview"
+        "3": "one actual protected application Preview",
+        "4": "one corrective protected Preview after all local validation PASS"
       }
     }
   },
@@ -91,7 +92,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Owner/Technical Director assessment of unusable existing Preview (Guest HTTP503). No redeploy: attempts3/3 exhausted. Bootstrap+alias retained because hosted PASS cleanup prerequisite is unmet. No Claude/Phase7/main continuation.",
+  "nextGate": "Correct optional-absent Git ref semantics and safe startup stages; all local validation PASS before one final Preview attempt4. Exactly one readiness GET;503 => STOP. Hosted PASS before bootstrap deletion and Claude.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -219,5 +220,7 @@
     "ownedBrowser": "CLOSED",
     "temporaryOAuthDirectory": "EMPTY",
     "localSecretFiles": "ABSENT"
-  }
+  },
+  "correctivePreviewStartingHead": "40a67153fcb203cecc8673cc3b50662c414648eb",
+  "correctivePreviewAuthoritySha256": "877e8ed10a0d606c1a6c4b61f108df5b19048d9a39ce03ac9f0a40d4433daaba"
 }

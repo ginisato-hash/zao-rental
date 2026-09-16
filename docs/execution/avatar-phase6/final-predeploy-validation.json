@@ -18,5 +18,59 @@
   "frozenR15Verifier": "UNCHANGED",
   "providerMutations": 0,
   "deploymentUsed": 0,
-  "hostedAcceptance": "NOT_RUN"
+  "hostedAcceptance": "NOT_RUN",
+  "implementationCommit": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+  "codeChangedAfterReview": false,
+  "remoteReadbackMatches": true,
+  "workingTreeBeforeDispatch": "CLEAN",
+  "predeployReview": {
+    "verdict": "PASS",
+    "initialStarts": 1,
+    "correctionStarts": 0,
+    "severityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 3
+    }
+  },
+  "hardGate": {
+    "status": "PASS",
+    "checkedAt": "2026-09-16T13:49:00.983Z",
+    "implementationCommit": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+    "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+    "authentication": "ON",
+    "productionEnvCount": 0,
+    "forbiddenEnvCount": 0,
+    "customDomainCount": 0,
+    "envMetadata": [
+      {
+        "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      },
+      {
+        "key": "ZAO_AVATAR_PHASE6",
+        "type": "sensitive",
+        "target": [
+          "preview"
+        ],
+        "secretValue": "NOT_CAPTURED"
+      }
+    ],
+    "existingProductionBootstrap": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
+    "staticFunctionOutputs": 0,
+    "r2ReadCredential": {
+      "expiresAt": "2026-09-17T08:18:35.188Z",
+      "remainingSeconds": 66576,
+      "minimumSeconds": 7200,
+      "source": "Original safe handoff receipt; conservative runtime deadline; no credential value retrieved or renewed"
+    },
+    "sourceTreeSha256": "71123341c45eafc71cc3f934122b9ec54949460b278c7c89d075a87a524a8744",
+    "predeployReview": "PASS",
+    "rawValuesCaptured": false
+  }
 }

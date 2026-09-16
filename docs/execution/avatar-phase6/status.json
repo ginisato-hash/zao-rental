@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "FINAL_HOSTED_REPAIR_CODE_FROZEN_PREDEPLOY",
+  "phase": "FINAL_PREVIEW_READY_AWAITING_OWNER_VERCEL_AUTH",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -41,7 +41,7 @@
       "revokeAtEnd": true
     },
     "deploymentAttempts": {
-      "used": 4,
+      "used": 5,
       "max": 5,
       "allocation": {
         "1": "historical unintended Production, deleted",
@@ -62,7 +62,7 @@
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "PREDEPLOY_PASS_BLOCKER0_HIGH0_MEDIUM0_LOW3",
-  "externalAcceptance": "FAIL_ATTEMPT4_READINESS_HTTP503_HOSTED_MATRIX_NOT_RUN",
+  "externalAcceptance": "ATTEMPT5_READY_READINESS_NOT_RUN_AUTH_REQUIRED",
   "implementation": "FINAL_CAPABILITY_INGRESS_CODE_PASS_PREDEPLOY_REVIEW_PASS",
   "checkpointValidation": {
     "targetedTests": {
@@ -93,7 +93,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Push/readback frozen code, then hard gate and exactly one attempt5; readinessGET1/retry0. No attempt6 or Phase7.",
+  "nextGate": "Owner normal Vercel login in existing task Chrome for Testing. Keep context; then exact attempt5 readinessGET1/retry0. No further deployment; used5/5. Hosted matrix only after readiness PASS. No Phase7/main.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -263,6 +263,56 @@
       "MEDIUM": 0,
       "LOW": 3
     },
-    "localValidation": "PASS_656_UNIT_LINT_TYPECHECK_BUILD_SECRET_DIFF"
+    "localValidation": "PASS_656_UNIT_LINT_TYPECHECK_BUILD_SECRET_DIFF",
+    "implementationCommit": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+    "deploymentAttempt": 5,
+    "deployment": {
+      "attempt": 5,
+      "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+      "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+      "head": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+      "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+      "rawTarget": null,
+      "target": "preview",
+      "previewFilteredListingContainsExactId": true,
+      "readyState": "READY",
+      "gitCommitSha": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+      "gitCommitRef": "codex/avatar-phase6-hosted-preview",
+      "framework": "nextjs",
+      "nodeVersion": "24.x",
+      "buildCommand": "node --version && npx --yes --package=npm@11.12.1 -- npm --version && npx --yes --package=npm@11.12.1 -- npm run build",
+      "outputDirectory": "apps/web/.next",
+      "rawProviderResponseSaved": false,
+      "authentication": "ON",
+      "productionEnvCount": 0,
+      "forbiddenEnvCount": 0,
+      "customDomainCount": 0,
+      "envMetadata": [
+        {
+          "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+          "type": "sensitive",
+          "target": [
+            "preview"
+          ],
+          "secretValue": "NOT_CAPTURED"
+        },
+        {
+          "key": "ZAO_AVATAR_PHASE6",
+          "type": "sensitive",
+          "target": [
+            "preview"
+          ],
+          "secretValue": "NOT_CAPTURED"
+        }
+      ],
+      "status": "PASS_PROTECTED_PREVIEW_READY"
+    },
+    "readiness": {
+      "dispatchCount": 0,
+      "retry": 0,
+      "status": "NOT_RUN_AUTH_REQUIRED"
+    },
+    "hardGate": "PASS",
+    "credentialHoursRemainingAtDispatch": 18.49
   }
 }

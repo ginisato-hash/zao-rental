@@ -1,0 +1,14 @@
+{
+  "attempt": 5,
+  "totalMax": 5,
+  "head": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+  "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "requestedTarget": "preview",
+  "rawTarget": null,
+  "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+  "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+  "status": "DISPATCH_CONFIRMED",
+  "scannedSourceFiles": 1538,
+  "secretPatternScan": "PASS_NOT_COMPREHENSIVE",
+  "rawOutputSuppressed": true
+}

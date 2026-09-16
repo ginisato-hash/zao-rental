@@ -1,3 +1,17 @@
+## Current — Phase6 corrective attempt4 readiness503; STOP
+
+Read docs/execution/avatar-phase6/ATTEMPT4_READINESS_STOP.md and status.json.
+Corrected source0122451 passed630 unit tests/lint/typecheck/build/secret scan/diff.
+Attempt4 is provider READY Preview with Authentication ON. Its exactly-one readiness
+GET returned503, safe startup stage PREVIEW_IDENTITY. Specific mismatched condition
+is NOT_ESTABLISHED. No additional probe/deploy: attempt budget4/4 exhausted.
+Hosted E2E and Claude NOT_RUN; no PASS. Historical Production2/2 and current1/1 static
+bootstrap remain; Owner requires Hosted PASS before deleting bootstrap/alias.
+Production env0. Browser closed, local secrets absent, no new Neon OAuth/operator DB.
+Stop for Owner assessment. No main/Phase7 or environment identity-boundary relaxation.
+
+## Historical — corrective attempt4 authorization and readiness preparation
+
 ## Current — Phase6 corrective Preview attempt4 authorized
 
 Read docs/execution/avatar-phase6/CORRECTIVE_PREVIEW_ATTEMPT4_AUTHORITY.md and status.json.

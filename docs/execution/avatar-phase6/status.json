@@ -2,7 +2,7 @@
   "base": "ec420cbd166af0749caecfa654c0a1e362628891",
   "branch": "codex/avatar-phase6-hosted-preview",
   "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
-  "phase": "CORRECTIVE_PREVIEW_READY_NORMAL_AUTH_PENDING",
+  "phase": "STOPPED_CORRECTIVE_PREVIEW_READINESS_503_PREVIEW_IDENTITY",
   "initialWorkingTree": "CLEAN",
   "budgets": {
     "migrationLogicalRuns": {
@@ -61,8 +61,8 @@
   },
   "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
   "independentReview": "NOT_RUN",
-  "externalAcceptance": "FAIL_READINESS_HTTP503_HOSTED_MATRIX_NOT_RUN",
-  "implementation": "HOSTED_ACCEPTANCE_BLOCKED_NO_DEPLOYMENT_BUDGET",
+  "externalAcceptance": "FAIL_ATTEMPT4_READINESS_HTTP503_HOSTED_MATRIX_NOT_RUN",
+  "implementation": "CORRECTIVE_CODE_LOCAL_PASS_HOSTED_READINESS_FAILED",
   "checkpointValidation": {
     "targetedTests": {
       "passed": 61,
@@ -92,7 +92,7 @@
   "knownExternalDisclosure": 0,
   "knownCredentialUse": 0,
   "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
-  "nextGate": "Normal browser authentication then exactly one guarded readiness GET on attempt4.503 => STOP. No more deployment. Hosted PASS before static bootstrap cleanup and Claude.",
+  "nextGate": "Owner/Technical Director assessment of fixed PREVIEW_IDENTITY startup category on corrective Preview. Attempts4/4 exhausted; no probe/deploy retry or env relaxation. Hosted matrix/Claude not run. Retain static bootstrap and alias because cleanup requires Hosted PASS. No Phase7/main.",
   "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
   "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
   "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
@@ -145,7 +145,7 @@
     "r2WriteCredential": "REVOKED_LOCAL_FILE_REMOVED",
     "r2ReadCredential": "PASS_READ3_PUT403_DELETE403",
     "dedicatedVercelProject": "CREATED_AUTHENTICATION_ON",
-    "hostedE2E": "FAIL_READINESS_HTTP503",
+    "hostedE2E": "NOT_RUN_ATTEMPT4_READINESS_HTTP503",
     "claude": "NOT_RUN",
     "setupOAuth": "REVOKED_AND_REMOVED",
     "cleanup": "OWNED_BROWSER_CLOSED_LOCAL_SECRETS_ABSENT_BOOTSTRAP_RETAINED_PER_PASS_PREREQUISITE",
@@ -232,6 +232,18 @@
     "providerState": "READY",
     "canonicalTarget": "preview",
     "authentication": "ON",
-    "readiness": "NOT_RUN_NORMAL_BROWSER_AUTH_PENDING"
+    "readiness": "FAIL_HTTP503_PREVIEW_IDENTITY",
+    "readinessDispatchCount": 1,
+    "readinessRetryCount": 0,
+    "specificIdentityMismatch": "NOT_ESTABLISHED"
+  },
+  "correctivePreviewCleanup": {
+    "ownedBrowser": "CLOSED",
+    "newNeonOAuthSessions": 0,
+    "operatorDatabaseConnections": 0,
+    "temporaryOAuthDirectory": "EMPTY",
+    "localSecretFiles": "ABSENT",
+    "bootstrap": "RETAINED_HOSTED_PASS_PREREQUISITE_UNMET",
+    "claudeStarts": 0
   }
 }

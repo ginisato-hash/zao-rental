@@ -55,13 +55,32 @@ with404 readback. Exact sensitive Preview envs2 were removed using metadata-only
 selection. Dedicated project retained with Authentication ON; Phase6 runtime env0,
 Production env0, forbidden env0, current Production deployment/alias0/0. Historical
 Production2/2 remains frozen. Private R2 bucket remains private/r2.dev disabled,
-custom public domains0. Exact active read credential retirement is the remaining
-cleanup step; its control-panel action was blocked by automatic approval review
-which did not accept the attached section14 as direct approval. Nothing was
-revoked by the blocked action. Direct Owner confirmation has been requested.
+custom public domains0. Exact read credential retirement initially encountered
+an automatic approval rejection: the attached section14 was not accepted as direct
+approval. Those rejected actions dispatched0. Owner subsequently supplied explicit
+direct chat approval for this exact credential. The exact `zao-avatar-phase6-read-v1`
+row (bucket `zao-rental-avatar-p6`, Object Read only) was deleted once after typing
+its exact name in the confirmation dialog. A refreshed, loaded Account API Tokens
+list confirms the credential is absent, hence no longer active. No credential value
+was read/displayed/saved and no other credential was changed or created. The task
+console tab was closed. Post-deletion read-only checks reconfirm the private bucket,
+r2.dev disabled, public custom domains0 and all exact3 object bytes/hashes retained.
 
 Local evidence:19 recorder tests and177 relevant Avatar/Guest tests total PASS;
 lint/typecheck/build/secret-pattern scan/diff check PASS. No product/runtime changes,
 so Claude review0. Migration0001–0032 hashes unchanged; historical Phase6 documents,
 AGENTS/CLAUDE/SCOPE unchanged. RC ancestry is linear with no cherry-picks, duplicate
 implementation copies, new migrations or business-logic changes.
+
+## Terminal result
+
+`PHASE7_ENTRY_READY_NETWORK_DEBT_CLOSED`. Network classification and cleanup/validation
+PASS are Phase7-A evidence only; Phase6 history remains unchanged. Product/runtime
+code changes0, Claude0, deployment0, new credential0, renewal0, Neon changes0,
+Square/payment/Production operations0 and main merge0. RC branch remains
+`codex/avatar-phase7-rc`, based directly on exact Phase6 terminal49d0fbc.
+
+Next gate: `PHASE7-B — PROTECTED RC PREVIEW + TARGETED HOSTED SMOKE + MAIN INTEGRATION
+CANDIDATE`. Fresh short-lived runtime credentials, protected RC deployment, targeted
+network proof/smoke and full regression/CI belong to that separate authority.
+No automatic Phase7-B, main merge or Production deployment. Stop at this terminal.

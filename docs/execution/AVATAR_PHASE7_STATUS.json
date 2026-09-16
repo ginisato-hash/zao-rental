@@ -1,5 +1,5 @@
 {
-  "phase": "PHASE7_A_R2_RETIREMENT_APPROVAL_REQUIRED",
+  "phase": "PHASE7_ENTRY_READY_NETWORK_DEBT_CLOSED",
   "startingHead": "49d0fbc36d81025f675242a0ffd1bee0f68ce21e",
   "branch": "codex/avatar-phase7-rc",
   "authoritySha256": "dedfd26fe0db9ba47a04f8032ec1484de0e4149aeb361fcd54cffec3fbae0a57",
@@ -19,7 +19,7 @@
     "cherryPick": 0,
     "historyRewrite": 0
   },
-  "phase6History": "FROZEN_DEFERRED_HOSTED_FAIL_23_PASS_ROOT_CAUSE_NOT_ESTABLISHED",
+  "phase6History": "FROZEN: deferred/Hosted FAIL,23 checks PASS,rootCause NOT_ESTABLISHED,historical Production2/2,current Production0/0.",
   "network": {
     "classification": "BENIGN_PLATFORM_OR_BROWSER",
     "browserSessionMax": 1,
@@ -159,7 +159,7 @@
       "tokenMetadataHttp": 403,
       "exactCredentialMatches": 0,
       "credentialName": "zao-avatar-phase6-read-v1",
-      "credentialState": "NOT_CONFIRMED",
+      "credentialState": "DELETED_NOT_ACTIVE",
       "newCredential": 0,
       "renewal": 0,
       "objectDelete": 0,
@@ -186,23 +186,61 @@
         "initial": "REJECTED_OLD_PHASE6_RETENTION_RULE",
         "afterAuthorityEvidence": "REJECTED_ATTACHMENT_NOT_DIRECT_APPROVAL",
         "mutationDispatched": false,
-        "directOwnerConfirmation": "PENDING"
+        "directOwnerConfirmation": "RECEIVED_EXACT_DIRECT_CHAT_APPROVAL_AND_COMPLETED",
+        "resolution": "Same exact UI deletion completed only after direct Owner approval; prior rejected actions dispatched0."
       },
-      "status": "PENDING_DIRECT_OWNER_APPROVAL",
+      "status": "PASS",
       "consoleObserved": {
         "credentialName": "zao-avatar-phase6-read-v1",
         "bucket": "zao-rental-avatar-p6",
         "permission": "Object Read only",
         "state": "Active until Sep 17, 2026",
         "valueRead": false,
-        "deleteDispatch": 0
+        "deleteDispatch": 0,
+        "scopeNote": "Historical pre-approval observation; final revocation proof supersedes active state."
+      },
+      "checkedAfterExactCredentialDelete": true,
+      "objectOrBucketDelete": 0,
+      "credentialValuesRead": 0,
+      "finalRetentionMetadata": {
+        "bucketConfirmed": true,
+        "r2DevEnabled": false,
+        "customPublicDomainCount": 0,
+        "checkedAfterExactCredentialDelete": true,
+        "newCredential": 0,
+        "renewal": 0,
+        "objectOrBucketDelete": 0,
+        "credentialValuesRead": 0
+      },
+      "revocation": {
+        "credentialName": "zao-avatar-phase6-read-v1",
+        "bucketScope": "zao-rental-avatar-p6",
+        "permissionBefore": "Object Read only",
+        "authority": "OWNER_DIRECT_CHAT_APPROVAL_PHASE7_A_R2_CREDENTIAL_RETIREMENT",
+        "dispatchCount": 1,
+        "method": "Cloudflare Account API Tokens UI exact row; typed exact name into deletion confirmation",
+        "verification": {
+          "accountTokenListVisibleAfterReload": true,
+          "exactCredentialVisibleAfterReload": false,
+          "inactiveConfirmedByDeletion": true
+        },
+        "credentialValueRead": 0,
+        "credentialValueDisplayed": 0,
+        "credentialValueSaved": 0,
+        "otherCredentialMutations": 0,
+        "newCredential": 0,
+        "renewal": 0,
+        "bucketOrObjectDelete": 0,
+        "taskOwnedTabClosed": true,
+        "completedAt": "2026-09-16T16:23:05.678697+00:00"
       }
     },
     "taskResources": {
       "forensicBrowserClosed": true,
-      "R2TaskConsoleTab": "MARKED_HANDOFF_FOR_EXACT_CREDENTIAL_APPROVAL",
+      "R2TaskConsoleTab": "CLOSED",
       "temporaryNewCredentials": 0
-    }
+    },
+    "status": "PASS"
   },
   "retainedResources": {
     "dedicatedVercelProject": true,
@@ -238,12 +276,11 @@
     "migration0001Through0032": "ALL_32_HASHES_UNCHANGED",
     "gitDiffCheck": "PASS",
     "node": "24.15.0",
-    "npm": "11.12.1"
+    "npm": "11.12.1",
+    "finalReviewedCode598Files": "UNCHANGED"
   },
-  "currentBlockers": [
-    "AUTO_APPROVAL_REVIEW_REQUIRES_DIRECT_CHAT_APPROVAL_FOR_EXACT_R2_READ_CREDENTIAL_REVOCATION"
-  ],
-  "nextGate": "Complete only exact active zao-avatar-phase6-read-v1 revocation after direct Owner chat approval required by automatic approval review; then terminal Phase7-A classification. Phase7-B remains separately gated.",
+  "currentBlockers": [],
+  "nextGate": "PHASE7-B: PROTECTED RC PREVIEW + TARGETED HOSTED SMOKE + MAIN INTEGRATION CANDIDATE. Requires separate Owner authority; fresh short-lived runtime secret strategy, protected RC Preview, targeted network proof/smoke and full regression/CI are not executed in Phase7-A. Production remains a separate gate.",
   "previewPreflight": {
     "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
     "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
@@ -283,5 +320,24 @@
     "businessLogicAddedOrCopied": 0,
     "productRuntimeDiffFiles": [],
     "phase6EvidenceDiffFiles": []
+  },
+  "directRetirementApproval": {
+    "source": "Owner direct chat: Direct Approval | Phase7-A R2 Credential Retirement",
+    "exactCredential": "zao-avatar-phase6-read-v1",
+    "allowed": [
+      "revoke/delete exact credential",
+      "read-only verification",
+      "status/evidence update",
+      "Git commit/push/remote readback"
+    ],
+    "retained": [
+      "private bucket zao-rental-avatar-p6",
+      "exact3 derivative objects",
+      "Neon resource/database/migrations/six roles"
+    ],
+    "newCredential": 0,
+    "renewal": 0,
+    "otherCredentialChange": 0,
+    "Phase7BAutoStart": false
   }
 }

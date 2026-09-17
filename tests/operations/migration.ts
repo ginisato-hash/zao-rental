@@ -38,15 +38,19 @@ try{
  assert.deepEqual((await db.pool.query("SELECT b.state,a.state pay FROM rental_bookings b JOIN rental_payment_attempts a ON a.booking_id=b.id")).rows,[{state:'CONFIRMED_DEV',pay:'COMPLETED'}]);
  const fingerprint=async()=>{const r:Record<string,unknown>={};for(const t of TABLES)r[t]=(await db.pool.query(`SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') v FROM ${t} t`)).rows[0].v;return r;};
  const before=await fingerprint(),sql=await readFile(migrationsDirectory+'/'+NEW,'utf8');
- // The objects this migration introduces, read from the migration itself.
+ // The objects this migration introduces, read from the migration itself. A migration may
+ // legitimately add no relation at all and only replace a function, so count both.
  const created=[...sql.matchAll(/CREATE (?:TABLE|VIEW) ([A-Za-z_][A-Za-z0-9_.]*)/g)].map(m=>m[1]!);
- assert.ok(created.length>0);
+ const addedFunctions=[...sql.matchAll(/CREATE FUNCTION ([A-Za-z_][A-Za-z0-9_.]*)/g)].map(m=>m[1]!);
+ const replacedFunctions=[...sql.matchAll(/CREATE OR REPLACE FUNCTION ([A-Za-z_][A-Za-z0-9_.]*)/g)].map(m=>m[1]!);
+ assert.ok(created.length+addedFunctions.length+replacedFunctions.length>0,'migration introduces nothing');
  const grantedBefore=(await db.pool.query('SELECT count(*)::int n FROM staff_role_permissions')).rows[0].n;
 
  await check('complete new DDL rolls back without touching populated state or the registry',async()=>{
   stage='rollback';const c=await db.pool.connect();
   try{await c.query('BEGIN');await c.query(sql);await assert.rejects(c.query('SELECT synthetic_intentional_failure()'));await c.query('ROLLBACK');}finally{c.release();}
   for(const name of created)assert.equal((await db.pool.query(`SELECT to_regclass('${name}') v`)).rows[0].v,null,name);
+  for(const name of addedFunctions)assert.equal((await db.pool.query('SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace s ON s.oid=p.pronamespace WHERE s.nspname||\'.\'||p.proname=$1 OR (s.nspname=\'public\' AND p.proname=$1)',[name])).rows[0].n,0,name);
   assert.deepEqual(await fingerprint(),before);
   assert.equal((await db.pool.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,PRIOR);
  });
@@ -66,6 +70,8 @@ try{
    assert.ok((await db.pool.query(`SELECT to_regclass('${name}') v`)).rows[0].v,name);
    assert.equal((await db.pool.query(`SELECT count(*)::int n FROM ${name}`)).rows[0].n,0,name);
   }
+  for(const name of [...addedFunctions,...replacedFunctions])
+   assert.ok((await db.pool.query('SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace s ON s.oid=p.pronamespace WHERE s.nspname||\'.\'||p.proname=$1 OR (s.nspname=\'public\' AND p.proname=$1)',[name])).rows[0].n>0,name);
   // A migration may widen the permission vocabulary but must never grant a permission.
   assert.equal((await db.pool.query('SELECT count(*)::int n FROM staff_role_permissions')).rows[0].n,grantedBefore);
   assert.equal((await db.pool.query("SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'ops[_]%' AND has_function_privilege('public',p.oid,'EXECUTE')")).rows[0].n,0);
@@ -77,7 +83,7 @@ try{
   assert.deepEqual(await fingerprint(),before);
  });
 
- console.log(JSON.stringify({status:'PASS',cases:count,migration:migrationPlan.at(-1)!.id,upgrade:migrationPlan.at(-2)!.id+'→'+migrationPlan.at(-1)!.id,historicalChecksumsPreserved:PRIOR,rollback:'transactional DDL before commit',hostedDb:0}));
+ console.log(JSON.stringify({status:'PASS',cases:count,migration:migrationPlan.at(-1)!.id,relationsAdded:created.length,functionsAdded:addedFunctions.length,functionsReplaced:replacedFunctions.length,upgrade:migrationPlan.at(-2)!.id+'→'+migrationPlan.at(-1)!.id,historicalChecksumsPreserved:PRIOR,rollback:'transactional DDL before commit',hostedDb:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',detail:e instanceof assert.AssertionError?e.message.slice(0,400):'SAFE_DETAILS_ONLY'}));}
 finally{await flow?.close();await roles?.close();await db.stop();}
 if(failed)process.exit(1);

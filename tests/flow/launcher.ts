@@ -1,3 +1,31 @@
+import {readdir} from 'node:fs/promises';
+/** Reachable routes of the fixture app, derived from the app directory so the list cannot
+ * drift. A required dynamic segment is skipped; an optional catch-all is reached at its own
+ * base path, which is enough to compile the module. */
+async function fixtureRoutes(directory='tests/flow-app/src/app',prefix=''):Promise<{path:string;api:boolean}[]>{
+ const routes:{path:string;api:boolean}[]=[];
+ for(const entry of await readdir(directory,{withFileTypes:true})){
+  if(entry.isDirectory()){
+   if(entry.name==='.next')continue;
+   // An optional catch-all also matches the path without it; anything else cannot be reached
+   // without inventing a value, so it is left to compile on its own first use.
+   if(entry.name.startsWith('[')&&!/^\[\[\.\.\..+\]\]$/.test(entry.name))continue;
+   const segment=entry.name.startsWith('[')?'':'/'+entry.name;
+   routes.push(...await fixtureRoutes(directory+'/'+entry.name,prefix+segment));
+  }else if(entry.name==='page.tsx')routes.push({path:prefix||'/',api:false});
+  else if(entry.name==='route.ts')routes.push({path:prefix||'/',api:true});
+ }
+ return routes;
+}
+/** Compile every reachable route before the browser opens. Page routes are fetched; API
+ * routes are probed with HEAD so no GET handler runs, because only the compilation matters. */
+async function warmPageRoutes(origin:string){
+ let routes:{path:string;api:boolean}[]=[];
+ try{routes=await fixtureRoutes();}catch{return;}
+ const unique=[...new Map(routes.map(r=>[r.path+':'+r.api,r])).values()];
+ for(let i=0;i<unique.length;i+=4)
+  await Promise.all(unique.slice(i,i+4).map(r=>fetch(origin+r.path,{method:r.api?'HEAD':'GET',redirect:'manual'}).catch(()=>undefined)));
+}
 import {provisionAvatarReadRole} from '../../scripts/avatar-read-role';
 import {deriveBookingAccessKeys} from '../../packages/core/src/guest/booking-access-keys';
 import {BookingRecovery,type RecoveryMessage} from '../../packages/core/src/guest/booking-recovery';
@@ -63,6 +91,10 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
    // Compile this catch-all before opening a browser; this anonymous read must stay401.
    try{let ready=false;for(let n=0;n<100;n++){try{if((await fetch(origin+'/api/health')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}if(!ready)throw new Error('TEST_APP_START_TIMEOUT');
     const rejected=await fetch(origin+'/api/custody/booking/00000000-0000-4000-8000-000000000000');if(rejected.status!==401)throw new Error('TEST_ANONYMOUS_CUSTODY_NOT_REJECTED');
+    // Every page route compiles on its first request too, so a test's opening navigation can
+    // otherwise spend its whole timeout waiting for webpack. Compile the static ones now;
+    // the response is irrelevant, only that the route has been built.
+    await warmPageRoutes(origin);
    }catch(e){await stop();throw e;}
   }
   return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){

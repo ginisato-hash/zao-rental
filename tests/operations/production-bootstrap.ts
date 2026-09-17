@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import {Pool} from 'pg';
+import {Pool,type PoolClient} from 'pg';
 import {migrate,migrationPlan,migrationsDirectory} from '../../packages/db/src/index';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {bootstrapProductionSchema,bootstrapPlan,schemaFingerprint,securityFingerprint,approvalRegistryRows,
@@ -22,6 +22,12 @@ async function mutate(pool:Pool,sql:string[]){
  const client=await pool.connect();
  try{await client.query('BEGIN');for(const statement of sql)await client.query(statement);
   return await securityFingerprint(client);}
+ finally{await client.query('ROLLBACK').catch(()=>undefined);client.release();}
+}
+/** Runs assertions against one transaction, then rolls it back. */
+async function withRollback(pool:Pool,fn:(client:PoolClient)=>Promise<void>){
+ const client=await pool.connect();
+ try{await client.query('BEGIN');await fn(client);}
  finally{await client.query('ROLLBACK').catch(()=>undefined);client.release();}
 }
 const changedKeys=(a:Awaited<ReturnType<typeof securityFingerprint>>,b:Awaited<ReturnType<typeof securityFingerprint>>)=>
@@ -229,6 +235,51 @@ try{
   // Every mutation was rolled back; the two databases still agree.
   assert.equal((await securityFingerprint(production!)).sha256,baseline!.sha256);
   assert.equal((await securityFingerprint(canonical!)).sha256,baseline!.sha256);
+ });
+
+ await check('derived roles are selected by literal prefix, not by a LIKE pattern',async()=>{
+  const expected=TARGET+'_custody_executor';
+  // Same length as the expected role, with the database name's underscores replaced by x/y/z.
+  const lookalike='zaoxrentalyproductionztest_custody_executor';
+  assert.equal(lookalike.length,expected.length);
+  // The live server confirms why a LIKE pattern is wrong here: the database name's own
+  // underscores are single-character wildcards, so the foreign name matches.
+  const probe=(await production!.query<{matches_like:boolean;matches_prefix:boolean}>(
+   `SELECT $1::text LIKE current_database()||'\\_%' AS matches_like,
+           starts_with($1::text,current_database()::text||'_') AS matches_prefix`,[lookalike])).rows[0]!;
+  assert.equal(probe.matches_like,true);
+  assert.equal(probe.matches_prefix,false);
+
+  // 1. The expected role is selected and normalised.
+  assert.equal((await environmentIdentifiers(production!)).get(expected),'<DATABASE>_custody_executor');
+  const baseline=await securityFingerprint(production!);
+  assert.ok(baseline.material.derivedRoles!.includes('<DATABASE>_custody_executor'));
+
+  // 2 and 4. A foreign lookalike may coexist: it must not enter the map, must not be given this
+  // database's placeholder, and must not raise a false collision against the real role.
+  await withRollback(production!,async client=>{
+   await client.query(`CREATE ROLE "${lookalike}" NOLOGIN`);
+   const map=await environmentIdentifiers(client);
+   assert.equal(map.has(lookalike),false);
+   assert.equal(map.get(expected),'<DATABASE>_custody_executor');
+   assert.equal((await securityFingerprint(client)).sha256,baseline.sha256,'a foreign role moved this database\'s fingerprint');
+  });
+
+  // 3. The lookalike replacing the expected role must not be taken for it, and the substitution
+  // must show up rather than pass as the expected placeholder.
+  await withRollback(production!,async client=>{
+   await client.query(`ALTER ROLE "${expected}" RENAME TO "${lookalike}"`);
+   const map=await environmentIdentifiers(client);
+   assert.equal(map.has(lookalike),false);
+   assert.equal(map.has(expected),false);
+   const after=await securityFingerprint(client);
+   assert.notEqual(after.sha256,baseline.sha256,'the substituted custody role went undetected');
+   assert.equal(after.material.derivedRoles!.includes('<DATABASE>_custody_executor'),false);
+  });
+
+  // Both transactions rolled back; the baseline returns.
+  assert.equal((await environmentIdentifiers(production!)).get(expected),'<DATABASE>_custody_executor');
+  assert.equal((await securityFingerprint(production!)).sha256,baseline.sha256);
  });
 
  await check('Production carries no approvals, no development foundation rows and no R15 activation',async()=>{

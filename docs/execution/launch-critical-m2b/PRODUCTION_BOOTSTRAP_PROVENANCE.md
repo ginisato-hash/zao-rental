@@ -153,6 +153,22 @@ substitutes **whole identifier tokens only**. A role belonging to another enviro
 the map, so it survives literally and fails the comparison instead of being folded into the
 local one.
 
+Which roles count as "derived from this database" is decided by a **literal prefix**
+(`starts_with(rolname, current_database() || '_')`), never by a LIKE pattern. A database name
+containing underscores — `zao_rental_production_test` does — turns each of them into a
+single-character wildcard, so `LIKE current_database() || '\_%'` also selects the foreign,
+same-length name `zaoxrentalyproductionztest_custody_executor`. Confirmed on a live server:
+that name matches the LIKE pattern and fails the prefix test.
+
+Two failure modes followed from it, both reproduced against `6ddf378` on a live PostgreSQL
+before the fix. With the foreign role **coexisting**, the suffix mapping gave it the same
+`<DATABASE>_custody_executor` placeholder as the real role and raised a *false*
+`IDENTIFIER_COLLISION`, so an unrelated role elsewhere in the cluster broke the comparison of a
+healthy database. Worse, with the foreign role **replacing** the real one — the custody executor
+renamed to the lookalike — it was silently mapped to `<DATABASE>_custody_executor` and no error
+was raised at all, so a substituted custody role would have compared equal. Under the prefix
+check the first case leaves the fingerprint untouched and the second changes it.
+
 Two conditions are refused rather than collapsed: a database whose name equals its owner's
 (`PRODUCTION_FINGERPRINT_AMBIGUOUS_IDENTITY`) and two identifiers mapping to one placeholder
 (`PRODUCTION_FINGERPRINT_IDENTIFIER_COLLISION`). The local worktree cluster names its database

@@ -222,8 +222,11 @@ export async function environmentIdentifiers(pool:Queryable){
  const row=(await pool.query<{database:string;owner:string}>('SELECT current_database() database,current_user owner')).rows[0]!;
  if(row.database===row.owner)throw new Error('PRODUCTION_FINGERPRINT_AMBIGUOUS_IDENTITY '+row.database);
  const map=new Map<string,string>([[row.database,'<DATABASE>'],[row.owner,'<MIGRATION_OWNER>']]);
+ // Literal prefix, never LIKE: a database name containing underscores would make them
+ // single-character wildcards, so `zaoxrentalyproductionztest_custody_executor` would be taken
+ // for this database's own role and mapped onto its placeholder.
  const derived=(await pool.query<{rolname:string}>(
-  `SELECT rolname FROM pg_roles WHERE rolname LIKE current_database()||'\\_%' ORDER BY 1`)).rows;
+  `SELECT rolname FROM pg_roles WHERE starts_with(rolname::text,current_database()::text||'_') ORDER BY 1`)).rows;
  for(const {rolname} of derived){
   const placeholder='<DATABASE>'+rolname.slice(row.database.length);
   if(map.has(rolname))throw new Error('PRODUCTION_FINGERPRINT_IDENTIFIER_COLLISION '+rolname);
@@ -307,7 +310,7 @@ export async function securityFingerprint(pool:Queryable){
   ['publicRoutineExecute',`SELECT n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')' AS value
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname<>'information_schema' AND has_function_privilege('public',p.oid,'EXECUTE')`],
-  ['derivedRoles',`SELECT rolname AS value FROM pg_roles WHERE rolname LIKE current_database()||'\\_%'`],
+  ['derivedRoles',`SELECT rolname AS value FROM pg_roles WHERE starts_with(rolname::text,current_database()::text||'_')`],
   ['tableGrants',`SELECT table_schema||'.'||table_name||' '||grantee||' '||privilege_type||' grantable='||is_grantable AS value FROM information_schema.role_table_grants WHERE grantee<>'PUBLIC'`],
   ['columnGrants',`SELECT table_schema||'.'||table_name||'.'||column_name||' '||grantee||' '||privilege_type||' grantable='||is_grantable AS value FROM information_schema.column_privileges WHERE grantee<>'PUBLIC'`],
   ['routineGrants',`SELECT n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||') '||${GRANTEE}||' '||a.privilege_type||' grantable='||a.is_grantable::text AS value

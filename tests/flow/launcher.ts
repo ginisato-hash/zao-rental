@@ -45,7 +45,7 @@ import {assertPortFree} from '../../scripts/worktree';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import type {DevelopmentRuntime} from '../../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
-export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean;avatarPhase5?:boolean}={}){
+export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean;avatarPhase5?:boolean;warmRoutes?:boolean}={}){
  let avatar:Awaited<ReturnType<typeof provisionAvatarReadRole>>|undefined;
  let access:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined;
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
@@ -91,10 +91,11 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
    // Compile this catch-all before opening a browser; this anonymous read must stay401.
    try{let ready=false;for(let n=0;n<100;n++){try{if((await fetch(origin+'/api/health')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}if(!ready)throw new Error('TEST_APP_START_TIMEOUT');
     const rejected=await fetch(origin+'/api/custody/booking/00000000-0000-4000-8000-000000000000');if(rejected.status!==401)throw new Error('TEST_ANONYMOUS_CUSTODY_NOT_REJECTED');
-    // Every page route compiles on its first request too, so a test's opening navigation can
-    // otherwise spend its whole timeout waiting for webpack. Compile the static ones now;
-    // the response is irrelevant, only that the route has been built.
-    await warmPageRoutes(origin);
+    // Every route compiles on its first request too, so a test's opening navigation can
+    // otherwise spend its whole timeout waiting for webpack. Suites that navigate straight
+    // into a page opt in; warming is not automatic because the requests are real requests and
+    // would consume guest budget in suites that measure it.
+    if(options.warmRoutes)await warmPageRoutes(origin);
    }catch(e){await stop();throw e;}
   }
   return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){

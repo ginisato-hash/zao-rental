@@ -7,6 +7,15 @@ back door that writes business state, and recording a result grants nothing.
 Recording needs the explicit `FIELD_ACCEPTANCE` permission on top of `OPERATIONS_VIEW`;
 reading the launch gate does not allow recording. Both are denied by default.
 
+Every record and every read is **store scoped**. A record is identified by run, scenario,
+device class *and* store, so a member of staff scoped to one store can neither read nor
+overwrite a result recorded at another. The cross-store aggregate and the launch gate need
+explicit `ALL` scope, and across stores the worst result wins.
+
+A scenario is bound to the device classes it can actually be performed on: an iPhone scan
+can only be recorded from `IOS`, an Android scan from `ANDROID`, and no physical-device
+scenario can be satisfied from a desktop. The database enforces the same matrix.
+
 ## What is stored
 
 A run identifier, the scenario, the device class, the store, one of `PASS` / `FAIL` /

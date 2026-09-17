@@ -5,7 +5,7 @@ import {useRef,useState} from 'react';
 type Exception={id:string;eventType:string;correlationId:string;bookingId:string|null;assetId:string|null;store:string;severity:string;status:string;occurredAt:string;resolvedAt:string|null;resolutionActor:string|null;resolutionReason:string|null;sourceConditionActive:boolean|null};
 type Cursor={beforeTime:string;beforeId:string}|null;
 const TYPES=['PAYMENT_PENDING','PAYMENT_UNKNOWN','WEBHOOK_RECONCILIATION_REQUIRED','WEBHOOK_FAILED','HOLD_EXPIRED','TRANSFER_DELAYED','RETURN_INSPECTION_REQUIRED','INVENTORY_INVARIANT_FAILED','REFUND_PENDING','REFUND_UNKNOWN','NOTIFICATION_FAILED','STORAGE_FAILED','BOOKING_RECOVERY_FAILED','DB_UNAVAILABLE','PROVIDER_TIMEOUT'];
-const COMPONENTS=['APP','DB','GUEST','PAYMENT_ADAPTER','MEDIA','NOTIFICATION'];
+const COMPONENTS=['APP','DB','GUEST','PAYMENT_ADAPTER','WEBHOOK','MEDIA','NOTIFICATION'];
 export function OpsWorkspace({stamp,stores,systemScope,canAcknowledge}:{stamp:string;stores:readonly string[];systemScope:boolean;canAcknowledge:boolean}){
  const scopes=systemScope?[...stores,'SYSTEM']:[...stores];
  const [store,setStore]=useState(scopes[0]??''),[type,setType]=useState(''),[severity,setSeverity]=useState(''),[status,setStatus]=useState('UNACKNOWLEDGED'),[ageHours,setAgeHours]=useState('0');

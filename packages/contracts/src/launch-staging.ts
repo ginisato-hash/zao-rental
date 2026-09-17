@@ -3,6 +3,9 @@ import {exact} from './pricing';
 /** Launch staging contracts. Nothing here may carry credential material: the manifest
  * describes what a connection will need, never how to authenticate it. */
 export const manifestComponents=['NEON','SQUARE','SQUARE_WEBHOOK','R2','NOTIFICATION_PROVIDER','VERCEL','CUSTOM_DOMAIN','BACKUP_PITR'] as const;
+/** Components that must be actively connected before opening. The rest may be disabled
+ * deliberately, which is a decision rather than an omission. */
+export const mandatoryComponents=['NEON','SQUARE','SQUARE_WEBHOOK','VERCEL','BACKUP_PITR'] as const;
 export type ManifestComponent=typeof manifestComponents[number];
 export const manifestEnvironments=['DEVELOPMENT','PREVIEW','PRODUCTION'] as const;
 export const activationStates=['NOT_CONFIGURED','CONFIGURED','ACTIVATION_PENDING','ACTIVE','DISABLED'] as const;
@@ -41,8 +44,11 @@ export function productionConfigManifest(input:unknown){
  if(!Array.isArray(input)||input.length!==manifestComponents.length)throw new HoldError('MANIFEST_SHAPE_INVALID',422);
  const entries=input.map(manifestEntry);
  if(new Set(entries.map(e=>e.component)).size!==manifestComponents.length)throw new HoldError('MANIFEST_SHAPE_INVALID',422);
- const pending=entries.filter(e=>e.activationState!=='ACTIVE'&&e.activationState!=='DISABLED');
- return Object.freeze({entries,missing:pending.map(e=>({component:e.component,activationState:e.activationState,requiredRole:e.requiredRole,requiredCapabilities:e.requiredCapabilities})),complete:pending.length===0,containsSecrets:false as const});
+ const required=(c:ManifestComponent)=>(mandatoryComponents as readonly string[]).includes(c);
+ // DISABLED only settles an optional component; a mandatory one still counts as missing.
+ const pending=entries.filter(e=>e.activationState!=='ACTIVE'&&(e.activationState!=='DISABLED'||required(e.component)));
+ const disabledMandatory=entries.filter(e=>e.activationState==='DISABLED'&&required(e.component)).map(e=>e.component);
+ return Object.freeze({entries,missing:pending.map(e=>({component:e.component,activationState:e.activationState,mandatory:required(e.component),requiredRole:e.requiredRole,requiredCapabilities:e.requiredCapabilities})),disabledMandatory,complete:pending.length===0,containsSecrets:false as const});
 }
 export const launchGateRows=['CODE','CI','DB_SCHEMA','REAL_DATA','PAYMENT','WEBHOOK','MEDIA','NOTIFICATION','BACKUP','FIELD_DEVICE','STAFF_REHEARSAL'] as const;
 export type LaunchGateRow=typeof launchGateRows[number];
@@ -66,6 +72,7 @@ export function backupConnectionGate(input:unknown):{state:LaunchGateState;reaso
  return {state:unconfigured?'NOT_RUN':reasons.length?'BLOCKED':'READY',reasons};
 }
 
+export const mandatoryCategories=['DB','MIGRATIONS','STAFF_AUTH','GUEST','BOOKING_ACCESS','PAYMENT','WEBHOOK','BACKUP','APP'] as const;
 export const stagingCategories=['APP','DB','MIGRATIONS','STAFF_AUTH','GUEST','BOOKING_ACCESS','PAYMENT','WEBHOOK','MEDIA','NOTIFICATION','BACKUP','FEATURE_FLAGS'] as const;
 export type StagingCategory=typeof stagingCategories[number];
 export const stagingStates=['READY','OFF','UNCONNECTED','CONFIGURED','CONFIGURED_ACTIVATION_PENDING','UNAVAILABLE'] as const;
@@ -78,9 +85,13 @@ export function launchStagingPreflight(input:unknown){
  assertNoSecretMaterial(v);
  for(const category of stagingCategories)if(!stagingStates.includes(v[category] as StagingState))throw new HoldError('STAGING_STATE_INVALID',422);
  const categories=stagingCategories.map(category=>({category,state:v[category] as StagingState}));
+ const mandatory=(c:StagingCategory)=>(mandatoryCategories as readonly string[]).includes(c);
  const blocked=categories.filter(c=>c.state==='UNAVAILABLE').map(c=>c.category);
  const connectionPending=categories.filter(c=>['UNCONNECTED','CONFIGURED','CONFIGURED_ACTIVATION_PENDING'].includes(c.state)).map(c=>c.category);
- return Object.freeze({categories,blocked,connectionPending,ready:blocked.length===0&&connectionPending.length===0,readsProductionCredentials:false as const,productionOperations:0 as const});
+ // A mandatory component switched OFF is not readiness, it is an unmet requirement.
+ const disabledMandatory=categories.filter(c=>c.state==='OFF'&&mandatory(c.category)).map(c=>c.category);
+ const unmet=[...new Set([...blocked,...connectionPending.filter(mandatory),...disabledMandatory])];
+ return Object.freeze({categories,blocked,connectionPending,disabledMandatory,unmet,ready:unmet.length===0,readsProductionCredentials:false as const,productionOperations:0 as const});
 }
 
 /** Square connection acceptance over identity metadata only. No access token, signing key
@@ -88,6 +99,27 @@ export function launchStagingPreflight(input:unknown){
  * is even eligible to be attempted. A Sandbox/Production mismatch always fails closed. */
 export type SquareConnectionFacts={environment:'SANDBOX'|'PRODUCTION';applicationEnvironment:'SANDBOX'|'PRODUCTION';merchantId:string;currency:string;locationIds:Record<string,string>;webhookNotificationUrl:string;idempotencyScope:string;reconciliationLookupEnabled:boolean};
 const MERCHANT=/^[A-Z0-9][A-Z0-9_-]{3,63}$/,LOCATION=/^[A-Z0-9][A-Z0-9_-]{3,63}$/;
+export type SquareExpectedIdentity={merchantId:string;locationIds:Record<string,string>;webhookOrigin:string;webhookPath:string;currency:'JPY';environment:'PRODUCTION'|'SANDBOX';idempotencyScope:string};
+/** Compares observed connection facts against the Owner-approved expected identity. Shape
+ * alone is never acceptance: a different merchant, location, host or path is a failure even
+ * when perfectly well formed. No credential is read or stored on either side. */
+export function squareIdentityAcceptance(actual:unknown,expected:unknown){
+ const shape=squareConnectionAcceptance(actual);
+ const e=exact(expected,['merchantId','locationIds','webhookOrigin','webhookPath','currency','environment','idempotencyScope']);
+ const {webhookOrigin:_o,webhookPath:_p,...scannable}=e as Record<string,unknown>;void _o;void _p;
+ assertNoSecretMaterial(scannable);
+ const f=actual as Record<string,unknown>,failures=[...shape.failures];
+ if(f.merchantId!==e.merchantId)failures.push('MERCHANT_IDENTITY_UNEXPECTED');
+ if(f.currency!==e.currency)failures.push('CURRENCY_UNEXPECTED');
+ if(f.environment!==e.environment)failures.push('ENVIRONMENT_UNEXPECTED');
+ if(f.idempotencyScope!==e.idempotencyScope)failures.push('IDEMPOTENCY_SCOPE_UNEXPECTED');
+ const actualMap=(f.locationIds??{}) as Record<string,string>,expectedMap=(e.locationIds??{}) as Record<string,string>;
+ const stores=[...new Set([...Object.keys(actualMap),...Object.keys(expectedMap)])];
+ if(stores.some(store=>actualMap[store]!==expectedMap[store]))failures.push('LOCATION_IDENTITY_UNEXPECTED');
+ let url:URL|undefined;try{url=new URL(String(f.webhookNotificationUrl));}catch{/* already reported by shape */}
+ if(!url||url.origin!==e.webhookOrigin||url.pathname!==e.webhookPath)failures.push('WEBHOOK_BINDING_UNEXPECTED');
+ return Object.freeze({ready:failures.length===0,failures:[...new Set(failures)],providerRequestsMade:0 as const,credentialsRead:false as const});
+}
 export function squareConnectionAcceptance(input:unknown){
  const f=exact(input,['environment','applicationEnvironment','merchantId','currency','locationIds','webhookNotificationUrl','idempotencyScope','reconciliationLookupEnabled']);
  // The notification URL is a real URL, so it is excluded from the secret scan and checked

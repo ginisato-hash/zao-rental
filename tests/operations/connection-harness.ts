@@ -9,7 +9,8 @@ import {BookingNotificationWorker} from '../../packages/core/src/notification/wo
 import {BookingRecovery} from '../../packages/core/src/guest/booking-recovery';
 import {LoopbackDeliveryAdapter,type LoopbackScenario} from '../notification/loopback';
 import {parseVerifiedSquareWebhook,verifySquareWebhook} from '../../packages/core/src/payment/square-boundary';
-import {productionConfigManifest,launchStagingPreflight,squareConnectionAcceptance,backupConnectionGate,assertNoSecretMaterial,manifestComponents} from '../../packages/contracts/src/launch-staging';
+import {productionConfigManifest,launchStagingPreflight,squareConnectionAcceptance,squareIdentityAcceptance,backupConnectionGate,assertNoSecretMaterial,manifestComponents} from '../../packages/contracts/src/launch-staging';
+import {productionPreflight} from '../../packages/contracts/src/production-preflight';
 const declared=JSON.parse(readFileSync('config/production/launch-staging.json','utf8'));
 const KEY=randomBytes(32).toString('base64'),URL_='https://rental.example.invalid/api/webhooks/square';
 const sign=(raw:Uint8Array,url=URL_,key=KEY)=>createHmac('sha256',key).update(url).update(raw).digest('base64');
@@ -59,6 +60,60 @@ try{
   assert.ok(squareConnectionAcceptance(square({webhookNotificationUrl:'https://127.0.0.1/x'})).failures.includes('WEBHOOK_URL_INVALID'));
   assert.ok(squareConnectionAcceptance(square({reconciliationLookupEnabled:false})).failures.includes('GET_PAYMENT_RECONCILIATION_REQUIRED'));
   assert.equal(providerRequests,0);
+ });
+
+ const expected={merchantId:'MLKDVEDH1ME21',locationIds:{MOUNTAIN_BASE:'LOC_MOUNTAIN',ONSEN_BASE:'LOC_ONSEN'},webhookOrigin:'https://rental.example.invalid',webhookPath:'/api/webhooks/square',currency:'JPY',environment:'PRODUCTION',idempotencyScope:'booking-payment'};
+ await check('a well formed but unexpected Square identity is refused',async()=>{
+  assert.equal(squareIdentityAcceptance(square(),expected).ready,true);
+  // Every one of these is syntactically valid and still wrong.
+  assert.ok(squareIdentityAcceptance(square({merchantId:'MOTHERMERCHANT99'}),expected).failures.includes('MERCHANT_IDENTITY_UNEXPECTED'));
+  assert.ok(squareIdentityAcceptance(square({locationIds:{MOUNTAIN_BASE:'LOC_OTHER',ONSEN_BASE:'LOC_ONSEN'}}),expected).failures.includes('LOCATION_IDENTITY_UNEXPECTED'));
+  assert.ok(squareIdentityAcceptance(square({locationIds:{MOUNTAIN_BASE:'LOC_ONSEN',ONSEN_BASE:'LOC_MOUNTAIN'}}),expected).failures.includes('LOCATION_IDENTITY_UNEXPECTED'));
+  assert.ok(squareIdentityAcceptance(square({webhookNotificationUrl:'https://attacker.example.invalid/api/webhooks/square'}),expected).failures.includes('WEBHOOK_BINDING_UNEXPECTED'));
+  assert.ok(squareIdentityAcceptance(square({webhookNotificationUrl:'https://rental.example.invalid/api/webhooks/elsewhere'}),expected).failures.includes('WEBHOOK_BINDING_UNEXPECTED'));
+  assert.ok(squareIdentityAcceptance(square({idempotencyScope:'other-scope'}),expected).failures.includes('IDEMPOTENCY_SCOPE_UNEXPECTED'));
+  const mismatch=squareIdentityAcceptance(square({environment:'SANDBOX',applicationEnvironment:'SANDBOX'}),expected);
+  assert.equal(mismatch.ready,false);assert.ok(mismatch.failures.includes('ENVIRONMENT_UNEXPECTED'));
+  const serialized=JSON.stringify(squareIdentityAcceptance(square(),expected));
+  for(const leak of ['sq0','sk_','token','password'])assert.ok(!serialized.includes(leak),leak);
+  assert.equal(providerRequests,0);
+ });
+
+ await check('a mandatory component that is off or disabled is never ready or complete',async()=>{
+  // Staging: a mandatory category left OFF is an unmet requirement, not readiness.
+  const allReady=Object.fromEntries(Object.keys(declared.categories).map(k=>[k,'READY']));
+  assert.equal(launchStagingPreflight(allReady).ready,true);
+  for(const mandatory of ['DB','MIGRATIONS','STAFF_AUTH','GUEST','BOOKING_ACCESS','PAYMENT','WEBHOOK','BACKUP']){
+   const off=launchStagingPreflight({...allReady,[mandatory]:'OFF'});
+   assert.equal(off.ready,false,mandatory);assert.ok((off.unmet as string[]).includes(mandatory),mandatory);
+  }
+  // An optional category may be switched off deliberately.
+  assert.equal(launchStagingPreflight({...allReady,MEDIA:'OFF',NOTIFICATION:'OFF'}).ready,true);
+  assert.equal(launchStagingPreflight({...allReady,DB:'UNAVAILABLE'}).blocked[0],'DB');
+  // Manifest: DISABLED settles an optional component only.
+  const active=declared.manifest.map((m:Record<string,unknown>)=>({...m,activationState:'ACTIVE'}));
+  assert.equal(productionConfigManifest(active).complete,true);
+  for(const mandatory of ['NEON','SQUARE','SQUARE_WEBHOOK','VERCEL','BACKUP_PITR']){
+   const disabled=productionConfigManifest(active.map((m:Record<string,unknown>)=>m.component===mandatory?{...m,activationState:'DISABLED'}:m));
+   assert.equal(disabled.complete,false,mandatory);assert.ok((disabled.disabledMandatory as string[]).includes(mandatory),mandatory);
+  }
+  assert.equal(productionConfigManifest(active.map((m:Record<string,unknown>)=>m.component==='R2'?{...m,activationState:'DISABLED'}:m)).complete,true);
+ });
+
+ await check('overall preflight readiness is the conjunction of every gate',async()=>{
+  const facts={head:'a'.repeat(40),tree:'b'.repeat(40),main:null,checkedAt:new Date().toISOString(),worktreeClean:true,guestPolicyApproved:true,independentCoupling:true,mainProtection:null,foundation:null};
+  const legacy=productionPreflight(facts as never);
+  const allReady=Object.fromEntries(Object.keys(declared.categories).map(k=>[k,'READY']));
+  const active=declared.manifest.map((m:Record<string,unknown>)=>({...m,activationState:'ACTIVE'}));
+  const overall=(l:boolean,staging:Record<string,string>,manifest:unknown[])=>l&&launchStagingPreflight(staging).ready&&productionConfigManifest(manifest).complete;
+  // The declared state of this repository is deliberately not ready.
+  assert.equal(overall(true,declared.categories,declared.manifest),false);
+  // Legacy gates passing is not enough while staging or the manifest is outstanding.
+  assert.equal(overall(true,{...allReady,PAYMENT:'UNCONNECTED'},active),false);
+  assert.equal(overall(true,allReady,declared.manifest),false);
+  assert.equal(overall(false,allReady,active),false);
+  assert.equal(overall(true,allReady,active),true);
+  assert.equal(typeof legacy.ready,'boolean');
  });
 
  await check('webhook acceptance covers signature, duplication, ordering and identity mismatch',async()=>{

@@ -28,7 +28,7 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  // The console functions are SECURITY DEFINER, so the role needs execute rights only
  // and never direct access to ops_exceptions or the source projection.
  if((await owner.query("SELECT to_regprocedure('ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION ops_collect_exceptions(text),ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid),ops_acknowledge_exception(uuid,text,text),ops_observe_signal(text,uuid,text) TO ${user}`);
- if((await owner.query("SELECT to_regprocedure('field_acceptance_status(uuid)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION field_acceptance_record(uuid,text,text,text,text,text),field_acceptance_status(uuid) TO ${user}`);
+ if((await owner.query("SELECT to_regprocedure('field_acceptance_status(uuid,text)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION field_acceptance_record(uuid,text,text,text,text,text),field_acceptance_status(uuid,text),real_data_accept(uuid,text,text[]),real_data_acceptance_status() TO ${user}`);
  const operationsDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};const operationsPool=new Pool({...operationsDb,max:4,connectionTimeoutMillis:2000});
  return {operationsDb,operationsPool,close:trackPoolLifecycle(operationsPool)};
 }

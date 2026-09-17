@@ -32,7 +32,12 @@ if(!offline){
 // every reported value is a fixed enum, so this section can carry no secret.
 const declared=JSON.parse(readFileSync('config/production/launch-staging.json','utf8'));
 const staging=launchStagingPreflight(declared.categories),manifest=productionConfigManifest(declared.manifest);
-const result={...productionPreflight(facts),launchStaging:{categories:staging.categories,blocked:staging.blocked,connectionPending:staging.connectionPending,ready:staging.ready,readsProductionCredentials:false,manifestComplete:manifest.complete,manifestMissing:manifest.missing}};
-console.error('ZAO Rental production preflight: '+(result.ready?'READY':'NOT READY')+' (read-only; no activation)');for(const g of result.gates)console.error(g.id+': '+g.state+' — '+g.reason);
+const legacy=productionPreflight(facts);
+// Readiness is the conjunction: the original gates, the staging categories and the manifest
+// must all be satisfied. A mandatory component that is merely OFF or DISABLED is not ready.
+const overallReady=legacy.ready&&staging.ready&&manifest.complete;
+const result={...legacy,ready:overallReady,legacyReady:legacy.ready,launchStaging:{categories:staging.categories,blocked:staging.blocked,connectionPending:staging.connectionPending,disabledMandatory:staging.disabledMandatory,unmet:staging.unmet,ready:staging.ready,readsProductionCredentials:false,manifestComplete:manifest.complete,manifestDisabledMandatory:manifest.disabledMandatory,manifestMissing:manifest.missing}};
+console.error('ZAO Rental production preflight: '+(result.ready?'READY':'NOT READY')+' (read-only; no activation)');
+console.error('LAUNCH_STAGING overall: '+(result.launchStaging.ready?'READY':'NOT READY')+'; manifest: '+(result.launchStaging.manifestComplete?'COMPLETE':'INCOMPLETE')+'; unmet: '+(result.launchStaging.unmet.join(',')||'none'));for(const g of result.gates)console.error(g.id+': '+g.state+' — '+g.reason);
 for(const c of result.launchStaging.categories)console.error('LAUNCH_STAGING '+c.category+': '+c.state);
 console.log(JSON.stringify(result,null,2));process.exit(result.ready?0:2);

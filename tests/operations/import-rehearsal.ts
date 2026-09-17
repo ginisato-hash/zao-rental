@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {flowFixture} from '../flow/fixture';
+import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {provisionOperationsRole} from '../../scripts/operations-roles';
 import {OperationsContext} from '../../packages/core/src/operations/context';
 import {InventoryOperations} from '../../packages/core/src/operations/inventory-service';
 import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
 import {STOCK_IMPORT_HEADER_V3} from '../../packages/contracts/src/stock-import';
+import {LaunchGate} from '../../packages/core/src/operations/launch-gate';
 const SEASON='2026/27',STORES=['MOUNTAIN_BASE','ONSEN_BASE'] as const,PER_STORE=125;
 // 500 equipment sets: 125 ski + 125 board per store, each with matching boots, plus pole
 // pairs and wear pieces. Synthetic only; this is never observed inventory.
@@ -23,6 +25,8 @@ async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();cou
 try{
  role=await provisionOperationsRole(x.db.pool,x.db.identity);
  const ctx=new OperationsContext(role.operationsPool,x.roles.authPool,x.signed.identity),svc=new InventoryOperations(ctx);
+ await x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'OPERATIONS_VIEW',true)",[x.actor]);
+ Object.assign(x.principal,(await loadStaff(x.roles.authPool,x.actor))!);
  const ledger=new LedgerService(x.db.pool,{subject:x.actor,role:'ADMIN',storeIds:[...STORES]},async()=>{},async()=>{});
  const source={notes:'',sourceKind:'SYNTHETIC',sourceDocument:'SYNTHETIC M2A catalog',sourceLocator:'m2a'};
 
@@ -113,6 +117,30 @@ try{
   assert.ok(r.unknownStore>=1&&r.unknownCategory>=1&&r.invalidQuantity>=1&&r.unresolvedModel>=2&&r.unresolvedBsl>=1&&r.duplicateAssetId>=1);
   const serialized=JSON.stringify(r);
   for(const cell of ['WRONG BRAND','160 cm','NOT_A_CATEGORY'])assert.ok(!serialized.includes(cell),cell);
+ });
+
+ await check('real inventory readiness follows an explicit receipt, not the source name',async()=>{
+  const gate=new LaunchGate(ctx);
+  const components={APP:'READY',DB:'READY',GUEST:'READY',PAYMENT_ADAPTER:'UNCONNECTED',WEBHOOK:'UNCONNECTED',MEDIA:'OFF',NOTIFICATION:'UNCONNECTED'};
+  // The stock is committed but undeclared, so the gate must not call it real yet.
+  assert.equal((await gate.status({runId:null,components,backup:null})).rows.find(r=>r.row==='REAL_DATA')!.state,'NOT_RUN');
+  const digest=createHash('sha256').update(csv).digest('hex');
+  await assert.rejects(svc.acceptRealData(randomUUID(),{commitId:stageId,sourceSha256:'0'.repeat(64),stores:['MOUNTAIN_BASE','ONSEN_BASE']}),{status:409});
+  // Declaring it is an explicit staff act; the counts come from what the commit applied.
+  const key=randomUUID(),input={commitId:stageId,sourceSha256:digest,stores:['MOUNTAIN_BASE','ONSEN_BASE']};
+  const receipt=await svc.acceptRealData(key,input),again=await svc.acceptRealData(key,input);
+  assert.deepEqual(receipt,again);
+  assert.equal((receipt as {acceptedRows:number}).acceptedRows,KINDS.length*STORES.length);
+  assert.equal((receipt as {acceptedAssets:number}).acceptedAssets,PER_STORE*4*STORES.length);
+  assert.equal((receipt as {sourceClass:string}).sourceClass,'REAL');
+  assert.equal((receipt as {synthetic:boolean}).synthetic,false);
+  assert.deepEqual((receipt as {stores:string[]}).stores.slice().sort(),[...STORES].sort());
+  const after=await gate.status({runId:null,components,backup:null});
+  assert.equal(after.rows.find(r=>r.row==='REAL_DATA')!.state,'READY');
+  assert.equal(after.realDataReceipts,1);
+  assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM ops_history WHERE resource='real_data_acceptance'")).rows[0].n,1);
+  const serialized=JSON.stringify(receipt);
+  for(const leak of ['@','password','token','://'])assert.ok(!serialized.includes(leak),leak);
  });
 
  await check('imported stock is visible to reconciliation and search without extra queries',async()=>{

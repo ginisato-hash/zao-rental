@@ -5,9 +5,50 @@ self-authored change is recorded as `INDEPENDENT_REVIEW_PASS`.
 
 ```
 role:                     PRIMARY_IMPLEMENTER
-m2aIndependentReview:     INDEPENDENT_REVIEW_PENDING
+m2aIndependentReview:     CORRECTION_IMPLEMENTED_AWAITING_INDEPENDENT_RECHECK
 pr21IndependentReview:    INDEPENDENT_REVIEW_PENDING
 ```
+
+## Independent review correction R1
+
+An independent reviewer returned BLOCKER 0, HIGH 1, MEDIUM 4 against
+`48827e79d602bc5a68f5da1e59aa17fc49ef37b0`. All five are corrected below in migration
+`0037` and the surrounding services. Nothing else was changed and no feature was added.
+
+**IR-01 (HIGH) — field acceptance crossed the store boundary.** The uniqueness key was
+`(run_id, scenario, device_class)`, so a staff member scoped to one store could reach an
+existing row recorded at another store through `ON CONFLICT` and rewrite its result, and
+`field_acceptance_status` took no store at all. The key now includes `store_id`, conflict
+resolution is scoped to the store, reading requires a store that the SQL boundary checks
+against the maintained session, and the `SYSTEM` aggregate requires explicit `ALL` scope.
+The launch gate is itself `ALL`-scope only. Across stores the **worst** result wins, so one
+store's failure can never be hidden by another store's pass.
+
+**IR-02 (MEDIUM) — scenario and device class were independent.** A physical-device scenario
+could be recorded as `PASS` from a desktop. The two are now bound by an explicit matrix
+enforced both in the service and as a database `CHECK`, so bypassing the service does not
+help.
+
+**IR-03 (MEDIUM) — Square acceptance checked shape, not identity.** `squareIdentityAcceptance`
+now compares observed facts against Owner-approved expected metadata and requires an exact
+match on merchant, both locations, currency, environment, idempotency scope and the webhook
+origin **and** path. A different but perfectly well formed merchant, location, host or path
+is a failure. No credential is read or stored on either side.
+
+**IR-04 (MEDIUM) — preflight could report a false READY.** Exit status followed only the
+original gates. Readiness is now the conjunction of the original gates, the staging
+categories and the manifest, and a component that is merely `OFF` or `DISABLED` no longer
+counts as satisfied when it is mandatory. Mandatory sets are stated explicitly; optional
+components may still be disabled deliberately.
+
+**IR-05 (MEDIUM) — webhook and real-data signals were derived unsafely.** Webhook readiness
+was read from the payment adapter, so a ready adapter implied a ready webhook; it is now an
+independent `WEBHOOK` safe status derived from its own declared notification address.
+`REAL_DATA` was decided by a source-file naming heuristic; it now requires an explicit
+`real_data_acceptance` receipt bound to a committed import, whose row and asset counts are
+recomputed in SQL from what the commit actually applied and which must cover both stores.
+A synthetic rehearsal has no receipt and therefore can never read as real stock, even when
+its source document is named like a receipt.
 
 ## Scope actually delivered
 

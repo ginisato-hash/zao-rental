@@ -6,7 +6,7 @@ import {migrationPlan} from '../../packages/db/src/index';
 import {developmentPaymentComposition} from '../../packages/db/src/development-payment-composition';
 import type {InboxPool} from '../../packages/db/src/square-webhook-inbox';
 import {id} from '../fixtures/payment-projection';
-test('additive migration plan has one ordered entry per version, no duplicates',()=>{assert.deepEqual(migrationPlan.map(m=>m.id),Array.from({length:36},(_,i)=>String(i+1).padStart(4,'0')));});
+test('additive migration plan has one ordered entry per version, no duplicates',()=>{assert.deepEqual(migrationPlan.map(m=>m.id),Array.from({length:37},(_,i)=>String(i+1).padStart(4,'0')));});
 test('target-scoped development SQL preserves R12 state machine and adds only pre-lock selection limits',()=>{
  const old=readFileSync('packages/db/migrations/0026_payment_reconciliation.sql','utf8');let actual=readFileSync('packages/db/migrations/0029_development_payment_scope.sql','utf8');
  actual=actual.slice(actual.indexOf('CREATE FUNCTION'),actual.indexOf('\nREVOKE ALL'));

@@ -59,6 +59,19 @@ export class InventoryOperations{
    return {id,stageSha256:stage.stageSha256,unresolved:stage.unresolved,conflicts,rows:stage.plan?.entries.map(e=>({sourceKey:e.sourceKey,disposition:e.disposition,issues:e.issues}))??[],report:importDryRunReport(stage,exists),ready:stage.schemaVersion>=2&&!stage.unresolved.length&&!conflicts.length};
   }));
  }
+ /** Declares that a committed import was real stock. Counts are recomputed in SQL from
+  * what the commit actually applied, so the receipt cannot overstate coverage, and the
+  * declaration needs explicit ALL scope because it is a cross-store statement. */
+ async acceptRealData(key:string,value:unknown){
+  const v=flowObject(value,['commitId','sourceSha256','stores']);flowId(v.commitId);
+  if(typeof v.sourceSha256!=='string'||!/^[a-f0-9]{64}$/.test(v.sourceSha256)||!Array.isArray(v.stores)||!v.stores.length||v.stores.some(s=>!['MOUNTAIN_BASE','ONSEN_BASE'].includes(s as string))||new Set(v.stores).size!==v.stores.length)throw new FlowError('REAL_DATA_INPUT_INVALID',422);
+  const p=await this.ctx.authorize('INVENTORY_EDIT');if(p.scope!=='ALL')throw new FlowError('FORBIDDEN',403);
+  return this.ctx.transaction('INVENTORY_EDIT',[],'REAL_DATA_ACCEPTANCE',c=>this.ctx.idempotent(c,key,v,async()=>(await c.query('SELECT real_data_accept($1,$2,$3::text[]) v',[v.commitId,v.sourceSha256,v.stores])).rows[0].v));
+ }
+ async realDataAcceptance(){
+  await this.ctx.authorize('OPERATIONS_VIEW');
+  return this.ctx.transaction('OPERATIONS_VIEW',[],'REAL_DATA_STATUS',async c=>(await c.query('SELECT real_data_acceptance_status() v')).rows[0].v as {commitId:string;acceptedAssets:number;stores:string[];commitPresent:boolean}[]);
+ }
  async commitImport(key:string,value:unknown){const v=flowObject(value,['id','stageSha256','reason']);flowId(v.id);if(typeof v.stageSha256!=='string'||! /^[a-f0-9]{64}$/.test(v.stageSha256))throw new FlowError('INVALID_STAGE_HASH',422);const reason=operationalReason(v.reason);
   return this.ctx.transaction('INVENTORY_EDIT',[],reason,(c)=>this.ctx.idempotent(c,key,{op:'commitImport',v},async()=>{
    const saved=(await c.query<{actor:string;stage:ImportStage}>('SELECT actor,stage FROM ops_import_stages WHERE id=$1',[v.id])).rows[0];if(!saved||saved.actor!==this.ctx.identity.subject)throw new FlowError('FORBIDDEN',403);if(![2,3].includes(saved.stage.schemaVersion))throw new FlowError('IMPORT_V2_METADATA_REQUIRED',409);

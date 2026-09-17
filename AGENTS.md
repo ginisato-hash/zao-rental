@@ -1,3 +1,7 @@
+## Current — M1.6 notification and recovery delivery core
+
+Base M1.5 terminal d2348566, exact review/CI PASS (PR19). Follow the current Owner M1.6/M1.7 direct request and launch-critical-m16/PLAN.md. Parent sole writer; local synthetic PG/browser only, no actual provider/mail/SMS/Production/main merge. Complete M1.6 review/CI/stacked Draft then M1.7. Preserve historical records below.
+
 ## Current — M1.5 normal production composition (local code only)
 
 Follow docs/execution/launch-critical-m15/OWNER_AUTHORITY.md and PLAN.md. Parent sole writer; no hosted/provider/Production operations. M1 code/review complete, PR18 exact CI verification retained; current stacked branch codex/launch-critical-prod-composition. Complete M1.5, then authorized M1.6/M1.7. Historical records below remain unchanged.

@@ -1,0 +1,16 @@
+
+> zao-rental@0.1.0 test:booking-recovery
+> node --import tsx tests/readiness/booking-recovery.ts
+
+PASS unconfirmed/foreign enrollment and unconnected delivery rejected before sending
+PASS delivery loss: durable reservation and same-key lookup after restart, hashes only
+PASS rotation invalidates old proof without changing the booking
+PASS expired input guest exchanges once; concurrent same-key replay identical; different key denied
+PASS POST/cookie-only replay, CSRF/query/forged field denial; no raw code/token response
+PASS restricted DB role cannot read contact/raw proofs or mutate business tables/audit
+PASS revoke read capability prevents old exchange replay from resurrecting it
+PASS lock wait rechecks original due; no write after deadline
+PASS expired proof stays denied; explicit revocation idempotent and no contract/TTL/price changes
+PASS bounded delivery timeout aborts; same-key resume looks up without another send
+P5 booking recovery: 10 real PostgreSQL/HTTP cases passed; delivery fixture only; no external requests.
+Owned P5 recovery PostgreSQL stopped.

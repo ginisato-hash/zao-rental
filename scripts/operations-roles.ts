@@ -24,6 +24,7 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  await owner.query(`GRANT UPDATE(state,outcome) ON rental_return_candidates TO ${user}`);
  await owner.query(`GRANT USAGE ON SEQUENCE inventory_claims_id_seq,wear_claims_id_seq,wear_history_id_seq TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock(),inventory_record_replan(jsonb,jsonb),ops_assert_actor(text,text[],text),rental_apply_receipt(uuid),rental_apply_inspection(uuid),rental_complete_no_pickup(uuid),ops_checkout_amendment(uuid),ops_reconcile_poles(uuid,uuid,integer) TO ${user}`);
+ if((await owner.query("SELECT to_regprocedure('notification_status(text)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION notification_status(text),notification_resend(uuid,uuid,text,text) TO ${user}`);
  const operationsDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};const operationsPool=new Pool({...operationsDb,max:4,connectionTimeoutMillis:2000});
  return {operationsDb,operationsPool,close:trackPoolLifecycle(operationsPool)};
 }

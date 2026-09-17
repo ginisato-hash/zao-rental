@@ -1,0 +1,21 @@
+
+> zao-rental@0.1.0 test:notification
+> node --import tsx tests/notification/postgres.ts
+
+PASS canonical confirmation concurrent enqueue produces one durable request and replay
+PASS unselected provider and absent/revoked credentials fail closed without dispatch
+PASS successful delivery stores safe receipt only and duplicate dispatch is inert
+PASS timeout after acceptance is UNKNOWN; no blind send/manual resend; lookup closes response loss
+PASS 429/5xx/definite preaccept failure wait and exhaust a bounded three-attempt budget
+PASS permanent rejection is visible dead letter and cannot be manually resent
+PASS timeout before acceptance is still UNKNOWN without authoritative nonacceptance evidence
+PASS bounded dispatch deadline aborts and retains UNKNOWN without retry
+PASS worker crash after durable claim becomes lookup-only UNKNOWN, never lease-expiry retry
+PASS authorized audited manual resend is idempotent, rate limited and cannot evade a child UNKNOWN
+PASS resend requires explicit live permission; status is store scoped and excludes recipient secrets
+PASS public recovery matching/unknown email and booking have identical enumeration-resistant responses
+PASS recovery delivery uses existing hash-only single-purpose proof and canonical recipient
+PASS durable public rate limit and booking cooldown suppress floods without identity leaks
+PASS worker and access roles cannot read raw proof/contact tables or write booking/payment/custody
+PASS reconciliation rebuilds only missing confirmation rows after queue outage; bookings remain confirmed
+{"status":"PASS","cases":16,"actualMailSmsProviderRequests":0,"realCustomer":0}

@@ -1,0 +1,86 @@
+
+> zao-rental@0.1.0 build
+> next build apps/web --webpack
+
+▲ Next.js 16.3.4 (webpack)
+✓ Running next.config.ts took 11ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.6s
+  Running TypeScript ...
+  Finished TypeScript in 1709ms ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/8) ...
+  Generating static pages using 9 workers (2/8) 
+  Generating static pages using 9 workers (4/8) 
+  Generating static pages using 9 workers (6/8) 
+✓ Generating static pages using 9 workers (8/8) in 90ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /[locale]/[[...page]]
+├ ƒ /[locale]/book
+├ ƒ /[locale]/rental/premium/[slug]
+├ ƒ /[locale]/reservation
+├ ƒ /[locale]/retired/[slug]
+├ ƒ /admin
+├ ƒ /admin/assets
+├ ƒ /admin/inventory
+├ ƒ /admin/notifications
+├ ƒ /admin/prices
+├ ƒ /api/admin
+├ ƒ /api/admin/readiness
+├ ƒ /api/auth/[...all]
+├ ƒ /api/booking-access/[[...record]]
+├ ƒ /api/bookings/[[...record]]
+├ ƒ /api/content-photos/[[...record]]
+├ ƒ /api/content/[[...record]]
+├ ƒ /api/custody/[[...record]]
+├ ƒ /api/guest/[[...record]]
+├ ƒ /api/guest/avatar/[draftId]/[revision]/[memberKey]
+├ ƒ /api/health
+├ ƒ /api/holds/[[...record]]
+├ ƒ /api/ledger/[resource]/[[...record]]
+├ ƒ /api/operations/[[...record]]
+├ ƒ /api/quotes/[[...record]]
+├ ƒ /api/readiness
+├ ƒ /api/recommendations/[[...record]]
+├ ƒ /api/session
+├ ƒ /api/staff
+├ ƒ /api/staff-users/[[...record]]
+├ ƒ /api/transfers/[[...record]]
+├ ƒ /api/wear/[[...record]]
+├ ƒ /api/webhooks/square
+├ ƒ /avatar-media/[visualId]/[hash]
+├ ƒ /customer
+├ ƒ /guest-avatar-media/[draftId]/[revision]/[memberKey]/[visualId]/[hash]
+├ ƒ /media/[hash]/[file]
+├ ƒ /preview/avatar
+├ ƒ /preview/integrated
+├ ƒ /preview/rental
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ƒ /staff
+├ ƒ /staff/amendments
+├ ƒ /staff/content
+├ ƒ /staff/holds
+├ ƒ /staff/ledger
+├ ƒ /staff/login
+├ ƒ /staff/logout
+├ ƒ /staff/password
+├ ƒ /staff/quotes
+├ ƒ /staff/recommendations
+├ ƒ /staff/rentals
+├ ƒ /staff/transfers
+├ ƒ /staff/users
+└ ƒ /staff/wear
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

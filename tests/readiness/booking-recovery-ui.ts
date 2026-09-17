@@ -21,7 +21,7 @@ try{
  // No real delivery is connected to the usual route. Capture is an explicit test service
  // boundary, while the fresh-browser exchange below uses the real Next/API/PG route.
  const guest=(await context.cookies()).find(c=>c.name==='zao_guest')!;
- assert.equal((await context.request.post('/api/booking-access/recovery/prepare',{headers:{origin:app.origin},data:{bookingId,requestId:randomUUID()}})).status(),503);
+ assert.equal((await context.request.post('/api/booking-access/recovery/prepare',{headers:{origin:app.origin},data:{bookingId,requestId:randomUUID()}})).status(),200);
  await app.recoveryFixture!.enroll(guest.value,bookingId,randomUUID());const code=app.recoveryFixture!.code();await context.close();
  await clock('2035-01-03T10:00:00+09:00');
  const fresh=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});fresh.setDefaultTimeout(15000);let recovered=await fresh.newPage();

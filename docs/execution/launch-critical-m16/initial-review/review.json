@@ -1,0 +1,45 @@
+{
+  "branch": "codex/launch-critical-notification",
+  "reviewed_head": "85a9f7522d8d72cded8733d2fe9cdb8c1f6f37ea",
+  "base_sha": "d2348566c6361ee1332de7214e608acd0d664c08",
+  "source_tree_sha256": "de449ba1589898533ab0fc41e9d1db78fba31d486c3675c4ba2604d64d9c7efe",
+  "authority_sha256": "b4f232b2e5285817a067e31b5ae87a463ce3f59ec06b06f20ab228e0c586c140",
+  "snapshot_sha256": "8b4fa6086f12938f1ef8c87b8b95f64755ef2f32732fa4ab8300fbe3aacb3d1b",
+  "verdict": "CHANGES_REQUIRED",
+  "tests_executed": false,
+  "findings": [
+    {
+      "id": "M1",
+      "severity": "MEDIUM",
+      "title": "Confirmed-booking notification enqueue is hardcoded to 'ja' locale, defeating the JA/EN confirmation goal",
+      "file_or_component": "packages/core/src/payment/booking-service.ts:67 calling packages/db/migrations/0034_booking_notification.sql notification_enqueue_confirmed(uuid,text) (p_locale DEFAULT 'ja')",
+      "line": 67,
+      "counterexample": "An English-speaking guest completes checkout via the /en/ flow and pays successfully. recordObservation() calls `SELECT notification_enqueue_confirmed($1)` with only the booking id — the SQL function's `p_locale` parameter defaults to 'ja'. The resulting BOOKING_CONFIRMED outbox row is created with locale='ja', so once a provider is connected this guest will always receive the Japanese confirmation body/subject, regardless of which locale they booked in. (Recovery notifications are unaffected — request()/queue_recovery() correctly thread locale through.)",
+      "impact": "Real English-speaking customers would receive Japanese-only booking confirmations once a provider is connected in a later phase, contradicting the stated JA/EN template requirement for the confirmation event and creating a user-facing correctness defect that is easy to miss because it only manifests after provider activation.",
+      "minimum_safe_correction": "Persist the guest's selected locale on the booking (or quote) at creation time and pass it explicitly to `notification_enqueue_confirmed(id, locale)` from `recordObservation`, instead of relying on the SQL default; add a regression test asserting an 'en' booking enqueues a locale='en' outbox row.",
+      "required_proof": "A postgres-level test that creates a booking through the guest 'en' flow, drives it to CONFIRMED_DEV, and asserts the resulting `booking_notification_outbox.locale='en'`."
+    },
+    {
+      "id": "M2",
+      "severity": "MEDIUM",
+      "title": "No automated or staff-triggered path resolves UNKNOWN (ambiguous timeout/crash) deliveries",
+      "file_or_component": "packages/core/src/notification/worker.ts (runBatch/reconcile), packages/db/migrations/0034_booking_notification.sql (notification_due)",
+      "line": 39,
+      "counterexample": "A delivery times out after acceptance (TIMEOUT_AFTER_ACCEPT) and is durably marked UNKNOWN. `notification_due()`'s WHERE clause only selects PENDING/RETRYABLE_FAILURE (by next_attempt_at) or SENDING-with-expired-claim rows; UNKNOWN rows never reappear there, so `runBatch()` — the only automatic loop in the codebase — will never call `reconcile()` on them. The staff UI (`NotificationWorkspace`) shows the UNKNOWN status but only enables the resend action for SENT or PERMANENT_FAILURE/RETRY_EXHAUSTED rows, so staff have no button to trigger a provider lookup either. No cron/HTTP route calling `worker.reconcile()` exists outside test code.",
+      "impact": "Once a real provider is connected, any ambiguous timeout leaves the delivery permanently stuck in UNKNOWN with no exposed mechanism (automated or manual) to ever resolve it to SENT via provider lookup, silently degrading confirmation/recovery delivery reliability over time. This is presumably intended to be closed by the M1.7 ops-exceptions surface, but as shipped in this PR the gap is real and undocumented in the staff UI.",
+      "minimum_safe_correction": "Either add UNKNOWN rows (past a short grace window) to `notification_due()`/a parallel reconciliation sweep that calls `worker.reconcile()`, or add an explicit staff-triggered 'ステータスを照会' action wired to `reconcile()` for UNKNOWN rows with the same permission/audit gating as resend, and document the gap/dependency on M1.7 if deferred intentionally.",
+      "required_proof": "A test demonstrating that after a TIMEOUT_AFTER_ACCEPT dispatch, some already-shipped operator surface (batch job or staff action) transitions the row out of UNKNOWN without a blind resend."
+    }
+  ],
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 2,
+    "LOW": 1
+  },
+  "scope_assessment": "Diff reviewed in full against the stated M1.6 charter: outbox schema/migration 0034, worker (claim/dispatch/settle/reconcile/synchronize), staff notification list/resend routes and UI, guest-facing recovery request route, contracts/templates, production delivery port, and all associated role-grant scripts and tests. Migrations 0001–0033 are unmodified per diff; 0034 is additive only. Booking/payment/HOLD/custody code paths touched are limited to a single post-commit, best-effort enqueue call in booking-service.ts, isolated from the payment transaction as designed.",
+  "security_boundary_assessment": "SECURITY DEFINER functions consistently set search_path=pg_catalog,public,pg_temp; REVOKE ALL FROM PUBLIC is applied to the new table and every new function including booking_access.queue_recovery/request_recovery. Role scripts (notification-roles.ts, updated flow-roles.ts/operations-roles.ts/booking-access-role.ts) grant EXECUTE only on the specific functions needed, with conditional to_regprocedure guards, and no direct table grants to the worker/flow roles — matches the test asserting these roles cannot read contact/proof tables or write booking/payment/HOLD/custody. Staff resend correctly layers OperationsContext.authorize (session+permission+store) with SQL-level ops_assert_actor(BOOKING_VIEW)+ops_assert_actor(NOTIFICATION_RESEND)+explicit store-membership-against-booking check, plus DB-level 1-day/3-count and 1-minute cooldown, plus JS-level ops_requests idempotency by (actor,key,fingerprint) and SQL-level dedupe_key uniqueness — no gap found. Recovery code remains hash-only at rest; notificationProof() reconstructs the deterministic HMAC only in-process immediately before rendering and verifies it against the stored hash before use, matching the 'hash-only proof' requirement. Enumeration-resistant recovery request returns an identical body for matching/foreign/absent/budget-suppressed cases (verified by test); a residual timing side channel exists (see LOW, not itemized as a blocking finding given the UUID keyspace). Production notification binding fails closed with no default provider and re-validates credentials on every call; safeStatus() now unconditionally reports NOTIFICATION:'UNCONNECTED', consistent with 'fail-closed unselected Production provider'.",
+  "validation_assessment": "Supplied validation.json shows a single owned-local full regression (58 commands, exit 0) including test:notification and test:notification-ui, plus one post-regression SQL hardening (NULL resend reason) with two targeted reruns; this is parent-provided evidence, not independently executed by this review. Test file inspection (tests/notification/postgres.ts, tests/notification/normal-ui.ts) corroborates coverage of concurrent enqueue, timeout-before/after-acceptance, 429/5xx/permanent-reject bounded retry exhaustion, worker-crash claim-expiry, manual resend idempotency/rate-limit/authorization/store-scope, enumeration-resistant recovery responses, PII-free status/audit payloads, and booking survival after notification failure. No test in the supplied set exercises confirmation-locale wiring from the real payment path (M1) or an operator-facing UNKNOWN reconciliation trigger (M2), consistent with these findings.",
+  "insufficient_evidence": [],
+  "next_gate": "Address M1 (thread actual guest locale into notification_enqueue_confirmed from the real payment-confirmation call site) and M2 (expose or explicitly scope-defer, with a documented owner decision, an automated/staff-triggered reconcile() path for UNKNOWN deliveries) with a targeted test for each, then resubmit for the single permitted correction re-review before CI/PR merge; LOW timing-side-channel item is recorded only and does not block this gate."
+}

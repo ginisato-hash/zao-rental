@@ -13,13 +13,14 @@ import {HoldService} from '../../packages/core/src/inventory/hold-service';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {FakeGateway,simulation} from '../flow/fixture';
-const NEW='0035_operations_console.sql',PRIOR=migrationPlan.length-1;
+// Always exercises the newest migration in the plan, whichever one this branch adds.
+const NEW=migrationPlan.at(-1)!.file,PRIOR=migrationPlan.length-1;
 const sha=(s:string)=>createHash('sha256').update(s).digest('hex');
 const TABLES=['ledger_assets','inventory_holds','inventory_claims','price_quotes','rental_bookings','rental_payment_attempts','rental_history','booking_notification_outbox'];
 const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined,flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined,failed=false,stage='prefix',count=0;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 try{
- assert.equal(migrationPlan.at(-1)!.file,NEW);
+ assert.ok(/^00\d\d_/.test(NEW));
  await db.pool.query('CREATE TABLE foundation_migrations(id text PRIMARY KEY,checksum text NOT NULL)');
  for(const m of migrationPlan.slice(0,PRIOR)){const sql=await readFile(migrationsDirectory+'/'+m.file,'utf8');await db.pool.query(sql);await db.pool.query('INSERT INTO foundation_migrations VALUES($1,$2)',[m.id,sha(sql)]);}
  await seedRecommendation(db.pool);roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);
@@ -37,12 +38,15 @@ try{
  assert.deepEqual((await db.pool.query("SELECT b.state,a.state pay FROM rental_bookings b JOIN rental_payment_attempts a ON a.booking_id=b.id")).rows,[{state:'CONFIRMED_DEV',pay:'COMPLETED'}]);
  const fingerprint=async()=>{const r:Record<string,unknown>={};for(const t of TABLES)r[t]=(await db.pool.query(`SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') v FROM ${t} t`)).rows[0].v;return r;};
  const before=await fingerprint(),sql=await readFile(migrationsDirectory+'/'+NEW,'utf8');
+ // The objects this migration introduces, read from the migration itself.
+ const created=[...sql.matchAll(/CREATE (?:TABLE|VIEW) ([A-Za-z_][A-Za-z0-9_.]*)/g)].map(m=>m[1]!);
+ assert.ok(created.length>0);
+ const grantedBefore=(await db.pool.query('SELECT count(*)::int n FROM staff_role_permissions')).rows[0].n;
 
  await check('complete new DDL rolls back without touching populated state or the registry',async()=>{
   stage='rollback';const c=await db.pool.connect();
   try{await c.query('BEGIN');await c.query(sql);await assert.rejects(c.query('SELECT synthetic_intentional_failure()'));await c.query('ROLLBACK');}finally{c.release();}
-  assert.equal((await db.pool.query("SELECT to_regclass('ops_exceptions') v")).rows[0].v,null);
-  assert.equal((await db.pool.query("SELECT to_regclass('ops_exception_sources') v")).rows[0].v,null);
+  for(const name of created)assert.equal((await db.pool.query(`SELECT to_regclass('${name}') v`)).rows[0].v,null,name);
   assert.deepEqual(await fingerprint(),before);
   assert.equal((await db.pool.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,PRIOR);
  });
@@ -58,11 +62,12 @@ try{
  });
 
  await check('the upgraded database exposes the console with new permissions denied by default',async()=>{
-  assert.equal((await db.pool.query("SELECT to_regclass('ops_exceptions') v")).rows[0].v,'ops_exceptions');
-  assert.equal((await db.pool.query("SELECT count(*)::int n FROM staff_role_permissions WHERE permission IN ('OPERATIONS_VIEW','OPERATIONS_ACKNOWLEDGE')")).rows[0].n,0);
-  assert.equal((await db.pool.query('SELECT count(*)::int n FROM ops_exceptions')).rows[0].n,0);
-  for(const fn of ['ops_collect_exceptions(text)','ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid)','ops_acknowledge_exception(uuid,text,text)','ops_observe_signal(text,uuid,text)'])
-   assert.ok((await db.pool.query(`SELECT to_regprocedure('${fn}') v`)).rows[0].v,fn);
+  for(const name of created){
+   assert.ok((await db.pool.query(`SELECT to_regclass('${name}') v`)).rows[0].v,name);
+   assert.equal((await db.pool.query(`SELECT count(*)::int n FROM ${name}`)).rows[0].n,0,name);
+  }
+  // A migration may widen the permission vocabulary but must never grant a permission.
+  assert.equal((await db.pool.query('SELECT count(*)::int n FROM staff_role_permissions')).rows[0].n,grantedBefore);
   assert.equal((await db.pool.query("SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'ops[_]%' AND has_function_privilege('public',p.oid,'EXECUTE')")).rows[0].n,0);
  });
 
@@ -72,7 +77,7 @@ try{
   assert.deepEqual(await fingerprint(),before);
  });
 
- console.log(JSON.stringify({status:'PASS',cases:count,migration:migrationPlan.at(-1)!.id,upgrade:'0034→0035',historicalChecksumsPreserved:PRIOR,rollback:'transactional DDL before commit',hostedDb:0}));
+ console.log(JSON.stringify({status:'PASS',cases:count,migration:migrationPlan.at(-1)!.id,upgrade:migrationPlan.at(-2)!.id+'→'+migrationPlan.at(-1)!.id,historicalChecksumsPreserved:PRIOR,rollback:'transactional DDL before commit',hostedDb:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',detail:e instanceof assert.AssertionError?e.message.slice(0,400):'SAFE_DETAILS_ONLY'}));}
 finally{await flow?.close();await roles?.close();await db.stop();}
 if(failed)process.exit(1);

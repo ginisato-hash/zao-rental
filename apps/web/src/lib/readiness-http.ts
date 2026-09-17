@@ -7,7 +7,9 @@ const headers={'Cache-Control':'private, no-store','Vary':'Cookie','X-Robots-Tag
 export function readinessResponse(state:RuntimeReadiness){return Response.json({status:state.ready?'READY':'UNAVAILABLE'},{status:state.ready?200:503,headers});}
 export function readinessDetails(state:RuntimeReadiness,staff:StaffState,components:unknown){
  if(staff.status!=='authorized'||!staff.principal)return Response.json({error:'UNAUTHENTICATED'},{status:401,headers});
- if(!canManage(staff.principal))return Response.json({error:'FORBIDDEN'},{status:403,headers});
+ // Operations console readers see the same fixed safe enums; no component identity,
+ // credential state, host or error detail is added for either audience.
+ if(!canManage(staff.principal)&&!staff.principal.permissions.includes('OPERATIONS_VIEW'))return Response.json({error:'FORBIDDEN'},{status:403,headers});
  // Copy only the fixed safe enums, even if a future adapter adds diagnostic fields.
  const input=components&&typeof components==='object'?components as Record<string,unknown>:{};
  const allowed=['READY','UNAVAILABLE','OFF','CONFIGURED','CONFIGURED_ACTIVATION_PENDING','UNCONNECTED'];

@@ -15,6 +15,7 @@ export const migrationPlan = [
   {id:'0032',file:'0032_avatar_delivery_boundary.sql'},
   {id:'0033',file:'0033_launch_operations.sql'},
   {id:'0034',file:'0034_booking_notification.sql'},
+  {id:'0035',file:'0035_operations_console.sql'},
 ] as const;
 export async function migrate(pool: Pool): Promise<void> {
   const entries=await Promise.all(migrationPlan.map(async entry => {

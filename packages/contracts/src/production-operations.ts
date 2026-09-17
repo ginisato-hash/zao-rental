@@ -28,3 +28,21 @@ export function secretMetadataFromEnvironment(env:Readonly<Record<string,string|
  const raw=env.ZAO_PRODUCTION_SECRET_METADATA;if(!raw||Buffer.byteLength(raw)>16384||Object.keys(env).some(k=>/^NEXT_PUBLIC_/i.test(k)&&env[k]))throw new HoldError('SECRET_METADATA_INVALID',503);
  let v:unknown;try{v=JSON.parse(raw);}catch{throw new HoldError('SECRET_METADATA_INVALID',503);}if(!Array.isArray(v)||v.length>20)throw new HoldError('SECRET_METADATA_INVALID',503);return activeSecretSet(v,required,now);
 }
+
+/** Operations console vocabulary. An exception is an acknowledged projection of existing
+ * business/audit state, never the authority for payment, inventory, refund or delivery. */
+export const exceptionCodes=['PAYMENT_PENDING','PAYMENT_UNKNOWN','WEBHOOK_RECONCILIATION_REQUIRED','WEBHOOK_FAILED','HOLD_EXPIRED','TRANSFER_DELAYED','RETURN_INSPECTION_REQUIRED','INVENTORY_INVARIANT_FAILED','REFUND_PENDING','REFUND_UNKNOWN','NOTIFICATION_FAILED','STORAGE_FAILED','BOOKING_RECOVERY_FAILED','DB_UNAVAILABLE','PROVIDER_TIMEOUT'] as const;
+export type ExceptionCode=typeof exceptionCodes[number];
+export const exceptionStores=['MOUNTAIN_BASE','ONSEN_BASE','SYSTEM'] as const;
+export const exceptionReasons=['TRIAGED','ASSIGNED','VERIFIED_WITH_CANONICAL_RECORD'] as const;
+/** Runtime transport/media/database failures that a request can observe directly. */
+export const exceptionSignalCodes=['STORAGE_FAILED','NOTIFICATION_FAILED','BOOKING_RECOVERY_FAILED','DB_UNAVAILABLE','PROVIDER_TIMEOUT','WEBHOOK_FAILED'] as const;
+export type ExceptionSignalCode=typeof exceptionSignalCodes[number];
+/** Safe projection: identifiers, fixed enums and times only. No recipient, provider payload,
+ * token, signed URL, stack or raw error text is representable here. */
+export type SafeException={id:string;eventType:ExceptionCode;correlationId:string;bookingId:string|null;assetId:string|null;store:string;severity:'INFO'|'WARN'|'ERROR';status:'UNACKNOWLEDGED'|'ACKNOWLEDGED';occurredAt:string;resolvedAt:string|null;resolutionActor:string|null;resolutionReason:typeof exceptionReasons[number]|null;sourceConditionActive:boolean|null};
+export function operationalExceptionSignal(input:unknown){
+ const v=exact(input,['eventType','correlationId','store']);
+ if(!exceptionSignalCodes.includes(v.eventType as ExceptionSignalCode)||typeof v.correlationId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(v.correlationId)||!exceptionStores.includes(v.store as typeof exceptionStores[number]))throw new HoldError('OPERATIONAL_EVENT_REJECTED',422);
+ return {eventType:v.eventType as ExceptionSignalCode,correlationId:v.correlationId,store:v.store as typeof exceptionStores[number]};
+}

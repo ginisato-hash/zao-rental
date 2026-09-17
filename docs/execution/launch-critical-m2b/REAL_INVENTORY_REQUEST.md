@@ -16,6 +16,10 @@ So before the stock file is useful, the catalogue needs, per product:
 
 - brand (manufacturer) and model name
 - family: `SKI`, `SNOWBOARD`, `SKI_BOOT`, `SNOWBOARD_BOOT`, `POLE`, `WEAR_JACKET`, `WEAR_PANTS`
+  (what the importer accepts. This round **registers** only `SKI`, `SNOWBOARD`, `SKI_BOOT` and
+  `SNOWBOARD_BOOT`; `WEAR_JACKET` and `WEAR_PANTS` follow once their stock material arrives, and
+  `POLE`, `HELMET` and `SNOWBOARD_BINDING` are out of this round's scope with their existing
+  support untouched — see `INVENTORY_OWNER_DECISIONS.md` §0)
 - catalogue season in `YYYY/YY`
 - each size actually held, written exactly as it will appear in the stock file (`160 cm`, `26.5 cm`, `M`)
 - class: `REGULAR`, `PREMIUM`, or `STANDARD` for wear

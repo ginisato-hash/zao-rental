@@ -19,6 +19,17 @@ async function fixtureRoutes(directory='tests/flow-app/src/app',prefix=''):Promi
 }
 /** Compile every reachable route before the browser opens. Page routes are fetched; API
  * routes are probed with HEAD so no GET handler runs, because only the compilation matters. */
+/** Waits until one route actually answers. `next dev` compiles lazily, so a live health
+ * endpoint says nothing about the page route a caller is about to open: without this the
+ * browser's navigation timeout silently stands in for server readiness, and fails under load. */
+async function waitForRoute(origin:string,path:string,timeoutMs=120000){
+ const deadline=Date.now()+timeoutMs;
+ for(;;){
+  try{if((await fetch(origin+path,{redirect:'manual'})).status<500)return;}catch{}
+  if(Date.now()>deadline)throw new Error('TEST_ROUTE_NOT_READY '+path);
+  await new Promise(r=>setTimeout(r,100));
+ }
+}
 async function warmPageRoutes(origin:string){
  let routes:{path:string;api:boolean}[]=[];
  try{routes=await fixtureRoutes();}catch{return;}
@@ -98,9 +109,13 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
     if(options.warmRoutes)await warmPageRoutes(origin);
    }catch(e){await stop();throw e;}
   }
-  return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
+  return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(readyPaths:string[]=[]){
    if(stopping||restarting)throw new Error('TEST_RESTART_NOT_ALLOWED');restarting=true;
-   try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();return {oldPid:old,newPid:current.pid};}finally{restarting=false;}
+   try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();
+    // Readiness is proved here rather than left to whoever navigates next.
+    await waitForRoute(origin,'/api/health');
+    for(const path of readyPaths)await waitForRoute(origin,path);
+    return {oldPid:old,newPid:current.pid};}finally{restarting=false;}
   }};
  }catch(error){const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';console.error(JSON.stringify({code:'TEST_APP_START_FAILED',phase:startupPhase,category:/^(23505|23503|23514|40001|40P01|53300|57014|08003|08006|57P01|EADDRINUSE)$/.test(code)?code:'OTHER'}));await avatar?.close();await access?.close();await guest?.close();await content?.close();await custody?.close();if(flow)await flow.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
 }

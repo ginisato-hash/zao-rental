@@ -1,9 +1,34 @@
 # Inventory: decisions needed from the Owner
 
-Each item below blocks the real import. None can be inferred from the supplied file, and none
-has been guessed. Figures come from `INVENTORY_SOURCE_AUDIT.md`.
+Each open item below blocks the real import. None can be inferred from the supplied file, and
+none has been guessed. Figures come from `INVENTORY_SOURCE_AUDIT.md`.
 
-## 1. Tier — blocks every one of the 86 rows
+## 0. Registration scope — DECIDED
+
+This round registers four families only, with the lending unit fixed for each:
+
+| family | rows | units | lending unit |
+| --- | --- | --- | --- |
+| `SKI` | 18 | 213 | one pair, one Asset |
+| `SNOWBOARD` | 12 | 205 | board with its mounted binding, one Asset |
+| `SKI_BOOT` | 19 | 242 | left/right pair, one Asset |
+| `SNOWBOARD_BOOT` | 18 | 241 | left/right pair, one Asset |
+| **IN_SCOPE_TOTAL** | **67** | **901** | |
+
+`SNOWBOARD_BINDING`, `HELMET` and `POLE` are `EXCLUDED_BY_OWNER_SCOPE` for this round — 19 rows,
+591 units. Their schema, family definitions, existing stock, recommendation, reservation
+constraints, loan/return handling and importer support are untouched. `WEAR_JACKET` and
+`WEAR_PANTS` are `FUTURE_INPUT_REQUIRED` and absent from this source; the earlier "wear 200"
+figure is not revived, and no wear quantity, size or store split is assumed.
+
+Boots are never split into left and right Assets. Where both sides are labelled, both labels
+carry the same Asset ID.
+
+`SOURCE_RAW_TOTAL` stays 86 rows and 1492 units. Registering the 901 is not "all stock
+registered" and not "every rental product ready to sell". Set products needing poles or other
+excluded items still have their stock checked; nothing here relaxes that.
+
+## 1. Tier — blocks all 67 in-scope rows
 
 The catalogue requires `REGULAR`, `PREMIUM` or `STANDARD` per variant. The source carries no
 class at all. Product names like `S/MAX` are model names, not evidence of a premium class, so
@@ -14,7 +39,7 @@ to be premium, they need naming individually.
 
 > Decision: ............................................................
 
-## 2. Store allocation — blocks every one of the 86 rows
+## 2. Store allocation — blocks all 67 in-scope rows
 
 The only destination on the file is the company itself. The system needs each unit assigned to
 `MOUNTAIN_BASE` or `ONSEN_BASE`; an even split was not assumed.
@@ -24,21 +49,23 @@ covered** before the launch gate can report real data as ready.
 
 > Decision: ............................................................
 
-## 3. Helmets (144) and snowboard bindings (227)
+## 3. Helmets and snowboard bindings — CLOSED for this round
 
-Neither has a model in the system, so 371 of 1492 units cannot be imported at all today. See
-`ACCESSORY_MODEL_DECISION.md` for the options and their consequences. Until this is settled,
-a completed import covers 1121 units and the remainder is explicitly outstanding — it is not
-quietly dropped.
+Superseded by §0. Bindings are part of the snowboard's single Asset and are never registered
+independently; helmets are out of scope this round. `ACCESSORY_MODEL_OWNER_GATE` is removed as
+a blocker for this round's scope and is not resolved for helmets — it is simply not in the path.
 
-> Decision: ............................................................
+This document previously stated that all 227 binding units were `BOARD BIND. UNITE (4 IN 1 PACK)`
+and offered 227 × 4 = 908. That was wrong: 144 of the 227 are UNITE rows (source rows 70–72,
+32/76/36) and the other 83 are not (rows 83, 87, 88 — 75/4/4). See `ACCESSORY_MODEL_DECISION.md`.
 
-## 4. Binding pack semantics
+## 4. Binding pack semantics — NOT A GATE for this round
 
-`BOARD BIND. UNITE (4 IN 1 PACK)` — does 残数 227 count packs or individual bindings? The
-difference is a factor of four, so no conversion was applied.
-
-> Decision (vendor confirmation): ............................................................
+Whether 残数 counts packs or individual bindings, and whether a unit is one side, a pair or a
+set, remains unconfirmed for the 144 UNITE units and separately for the other 83. Because no
+binding is registered independently, this no longer gates registration and no vendor enquiry is
+raised for it. It stays recorded as an open property of the source. None of 227, 659 or 908 may
+be adopted as a physical quantity.
 
 ## 5. Boot sizes expressed as ranges
 

@@ -55,9 +55,14 @@ Handled by the bootstrap, which rewrites **only the identity test** inside the t
 top-level `DO $$…END$$;` blocks so it demands the exact approved target database instead of
 the disposable pattern. Everything else in those blocks is preserved — `0016` also asserts
 function ownership and `0017` asserts the custody executor role exists, and both survive
-untouched. Function bodies never begin a line with `DO $$`, so runtime guards are structurally
-out of reach, which the test asserts by comparing `0028` and `0029` byte-for-byte before and
-after rewriting.
+untouched. `0028` and `0029` are compared byte-for-byte before and after rewriting.
+
+The rewrite passes two independent gates: a committed approved-source manifest pinning all
+thirty-nine reviewed digests and each guard's byte offset, and a SQL scanner that requires the
+guard to sit at an identifier boundary inside the body of a top-level `DO` statement, in code
+context. An earlier version inferred "top level" from a line-start regular expression, which
+accepted guards hidden in comments, strings and dynamic SQL; see
+[PRODUCTION_BOOTSTRAP_PROVENANCE.md](PRODUCTION_BOOTSTRAP_PROVENANCE.md).
 
 ## C — role names derived from the database name
 

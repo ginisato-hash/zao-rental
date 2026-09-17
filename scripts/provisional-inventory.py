@@ -22,10 +22,27 @@ FAMILY = {
     'スキーポール':('POLE','ADULT'),
     '大人ボード':('SNOWBOARD','ADULT'), '子供ボード':('SNOWBOARD','KIDS'), 'キッズボード':('SNOWBOARD','KIDS'),
     '大人ボードブーツ':('SNOWBOARD_BOOT','ADULT'), '子供ボードブーツ':('SNOWBOARD_BOOT','KIDS'), 'キッズボードブーツ':('SNOWBOARD_BOOT','KIDS'),
-    'ヘルメット':('UNSUPPORTED_HELMET_PENDING_MODEL','ADULT'),
-    'ボードバイン':('UNSUPPORTED_BINDING_PENDING_MODEL','ADULT'),
+    'ヘルメット':('HELMET','ADULT'),
+    'ボードバイン':('SNOWBOARD_BINDING','ADULT'),
 }
-UNIT = {'SKI':'ASSET_PAIR','SKI_BOOT':'ASSET_PAIR','SNOWBOARD_BOOT':'ASSET_PAIR','SNOWBOARD':'ASSET_BOARD','POLE':'PAIR_QUANTITY'}
+# Owner decision for this round: only these four families are registered now. A snowboard is
+# one lending unit — board plus its mounted binding — so the binding never becomes an Asset,
+# QR label, price, reservation stock or quantity pool of its own. Boots are one Asset per
+# left/right pair; both sides carry the same Asset ID when both are labelled.
+IN_SCOPE = {'SKI':'ASSET_PAIR','SNOWBOARD':'ASSET_BOARD','SKI_BOOT':'ASSET_PAIR','SNOWBOARD_BOOT':'ASSET_PAIR'}
+# Excluded by Owner scope for this round. Not data defects, not unknown families, not
+# unclassified rows: the catalogue, importer, recommendation, reservation and label support for
+# them is untouched and they keep their source rows and quantities.
+EXCLUDED_BY_OWNER_SCOPE = {'SNOWBOARD_BINDING','HELMET','POLE'}
+# Added once the Owner supplies inventory material for them; absent from this source.
+FUTURE_INPUT_REQUIRED = {'WEAR_JACKET','WEAR_PANTS'}
+UNIT = dict(IN_SCOPE)
+ASSET_NOTE = {
+ 'SNOWBOARD':'BOARD_WITH_MOUNTED_BINDING_ONE_ASSET',
+ 'SKI':'ONE_PAIR_ONE_ASSET',
+ 'SKI_BOOT':'LEFT_RIGHT_PAIR_ONE_ASSET',
+ 'SNOWBOARD_BOOT':'LEFT_RIGHT_PAIR_ONE_ASSET',
+}
 
 def digest(path):
     h = hashlib.sha256()
@@ -72,8 +89,8 @@ def classify(row):
         blocking.append('BRAND_NOT_DETERMINABLE')
     if not season(row['comment']):
         blocking.append('SEASON_NOT_DETERMINABLE')
-    if family.startswith('UNSUPPORTED_'):
-        blocking.append(family)
+    if family in EXCLUDED_BY_OWNER_SCOPE:
+        blocking.append('EXCLUDED_BY_OWNER_SCOPE')
         size = row['jp_size']
     elif family == 'SKI':
         size, issue = ski_size(row)
@@ -86,7 +103,8 @@ def classify(row):
     # Present in no form anywhere in the source.
     blocking.append('TIER_OWNER_MAPPING_REQUIRED')
     blocking.append('STORE_OWNER_ALLOCATION_REQUIRED')
-    return {'family':family,'age':age,'size':size,'brand':brand,'blocking':blocking}
+    scope = 'IN_SCOPE' if family in IN_SCOPE else ('EXCLUDED_BY_OWNER_SCOPE' if family in EXCLUDED_BY_OWNER_SCOPE else 'UNCLASSIFIED')
+    return {'family':family,'age':age,'size':size,'brand':brand,'blocking':blocking,'scope':scope}
 
 def main(path, out_dir):
     actual = digest(path)
@@ -96,20 +114,21 @@ def main(path, out_dir):
     mapping_path = out_dir + '/PROVISIONAL_CATALOG_MAPPING.csv'
     candidate_path = out_dir + '/V3_CANDIDATE_NOT_FOR_IMPORT.csv'
     with open(mapping_path,'w',newline='',encoding='utf8') as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator='\n')
         w.writerow(['source_row','item_code','source_name','source_category','source_jp_size','quantity',
-                    'mapped_family','age','candidate_season','candidate_brand','candidate_size',
+                    'mapped_family','owner_scope','asset_model','age','candidate_season','candidate_brand','candidate_size',
                     'tier_status','store_status','bsl_status','importable','blocking_reason'])
         for row in rows:
             c = classify(row)
             supported = c['family'] in UNIT
             bsl = 'UNVERIFIED_NULL' if c['family'] == 'SKI_BOOT' else 'NOT_APPLICABLE'
             w.writerow([row['row'],row['code'],row['name'],row['category'],row['jp_size'],row['quantity'],
-                        c['family'],c['age'],season(row['comment']),c.get('brand',''),c['size'],
+                        c['family'],c['scope'],ASSET_NOTE.get(c['family'],'NOT_REGISTERED_THIS_ROUND'),
+                        c['age'],season(row['comment']),c.get('brand',''),c['size'],
                         'OWNER_MAPPING_REQUIRED','OWNER_ALLOCATION_REQUIRED',bsl,
                         'NO' if not supported else 'PENDING_OWNER_DECISIONS','|'.join(c['blocking'])])
     with open(candidate_path,'w',newline='',encoding='utf8') as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator='\n')
         w.writerow(V3_HEADER)
         for row in rows:
             c = classify(row)
@@ -121,7 +140,7 @@ def main(path, out_dir):
                         'OWNER_REQUIRED_ASSET_IDS' if unit.startswith('ASSET_') else '',
                         'OWNER_REQUIRED_STORE','【(株)Yuge 山形蔵王】新店舗投入予定明細_20260914.xlsx',
                         f"row{row['row']}",c['family'],c['size'],'OWNER_REQUIRED_TIER','', 'UNVERIFIED',
-                        c.get('brand',''),row['name'],''])
+                        c.get('brand',''),row['name'],ASSET_NOTE[c['family']]])
     categories = collections.Counter()
     for row in rows:
         categories[row['category']] += row['quantity']
@@ -133,8 +152,17 @@ def main(path, out_dir):
     print('declaredTotal', declared_total, 'summedTotal', sum(r['quantity'] for r in rows))
     print('byCategory', dict(categories))
     print('byFamily', dict(families))
-    print('supportedTotal', sum(v for k,v in families.items() if k in UNIT))
-    print('unsupportedTotal', sum(v for k,v in families.items() if k.startswith('UNSUPPORTED_')))
+    scopes = collections.Counter()
+    scope_rows = collections.Counter()
+    for row in rows:
+        c = classify(row)
+        scopes[c['scope']] += row['quantity']
+        scope_rows[c['scope']] += 1
+    print('SOURCE_RAW_TOTAL', sum(r['quantity'] for r in rows), 'rows', len(rows))
+    print('IN_SCOPE_TOTAL', scopes['IN_SCOPE'], 'rows', scope_rows['IN_SCOPE'])
+    print('EXCLUDED_BY_OWNER_SCOPE', scopes['EXCLUDED_BY_OWNER_SCOPE'], 'rows', scope_rows['EXCLUDED_BY_OWNER_SCOPE'])
+    print('FUTURE_INPUT_REQUIRED', sorted(FUTURE_INPUT_REQUIRED), 'presentInSource', 0)
+    print('candidateRows', sum(1 for r in rows if classify(r)['family'] in IN_SCOPE))
 
 if __name__ == '__main__':
     main(sys.argv[1], sys.argv[2])

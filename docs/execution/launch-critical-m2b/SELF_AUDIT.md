@@ -6,7 +6,8 @@ independent review.
 ```
 role:                    PRIMARY_IMPLEMENTER
 m2bIndependentReview:    INDEPENDENT_REVIEW_PENDING
-classification:          M2B_BOOTSTRAP_AND_INVENTORY_PREP_READY_FOR_INDEPENDENT_REVIEW
+classification:          M2B_CORRECTIONS_READY_FOR_INDEPENDENT_RECHECK
+reviewedHead:            38e6e403d80e4f86ddfdea56f6c8423f60e41358 (REQUEST_CHANGES)
 ```
 
 ## Continuation round
@@ -28,42 +29,39 @@ code, and aggregating them would have invented or destroyed variants. And all ei
 carry no JP size at all, so the length was taken from the product name and cross-checked
 against the item code suffix — all eighteen agreed, none was guessed.
 
-**Production bootstrap implemented and proved.** `LOCAL_COUPLING_CLASSIFICATION.md` enumerates
-the local-only coupling as A1 development foundation artifacts, A2 historical R15 Sandbox
-activation artifacts, B the twelve migration-time guards, C database-derived role names and D
-the application-layer payment guards. The bootstrap rewrites only the identity test inside the
-twelve top-level guard blocks, demanding the exact approved target database instead of the
-disposable `zr_` pattern — a narrower test, not a weaker one — and leaves the additional
-ownership and role assertions in those blocks untouched.
+**Independent review of `38e6e40` returned REQUEST_CHANGES.** F1–F4 are addressed below. The
+review was right on every point; two of its findings were reproduced here before being fixed.
 
-The transformer is exact and fail-closed, not a global substitution: each guarded migration is
-named with the exact subject expression it may carry, the occurrence count is pinned (including
-the runtime counts `0028` = 1 and `0029` = 2 that must never be rewritten), the match must lie
-inside a top-level `DO $$…END$$;` span, and every byte outside the single replaced span is
-asserted unchanged. Six distinct shape changes are proved to abort rather than pass through.
-`0001`–`0039` remain byte-identical on disk.
+| finding | what was wrong | what changed |
+| --- | --- | --- |
+| F1 HIGH | `migrationTimeSpans()` treated a line-start `DO $$` as proof of top level. A guard in a block comment, in a dollar-quoted string or in dynamic SQL inside a function was accepted and rewritten, and `0015`'s subject `n` matched the tail of `tenant_n`. All four reproduced. | Two independent gates. A committed approved-source manifest pins all 39 reviewed digests plus each guard's byte offset, subject and fragment; and a SQL scanner that understands comments, strings and dollar quoting requires the guard to sit at an identifier boundary, in the body of a top-level `DO`, in code context. Each gate refuses every counterexample alone. |
+| F2 HIGH | The fingerprint named more categories but missed real differences: `pg_` membership edges were filtered out, PUBLIC was dropped from ACL collections by `grantee<>0`, routines were compared without signatures, grant options and RLS policy text were absent, and no test proved any difference was detectable. | Memberships reach `pg_` parents through a recursive closure and carry `admin`/`inherit`/`set`; grantee `0` is rendered as `PUBLIC`; routines are identified by signature; grant options, schema and sequence grants, default privileges and RLS policy text are compared. Fifteen privilege changes are injected into a real isolated PostgreSQL inside a transaction, each asserted to move both the fingerprint and its own category, then rolled back. |
+| F3 MEDIUM | Substring folding of the database and owner names could map two genuinely different custody roles to one placeholder. | An explicit identifier map substituting whole tokens only. A foreign environment's role is not in the map, so it survives literally and fails the comparison. Ambiguous identity and placeholder collisions are refused, not collapsed. |
+| F4 MEDIUM | `ACCESSORY_MODEL_DECISION.md` and `INVENTORY_OWNER_DECISIONS.md` treated all 227 binding units as `UNITE (4 IN 1 PACK)` and offered 227 × 4 = 908. | Corrected per source row: 144 UNITE (rows 70–72, 32/76/36) and 83 others (rows 83/87/88, 75/4/4). 908 was never defensible; 659 is an assumption-bearing illustration; none of 227, 659, 908 is a physical quantity. Recorded as a documentation error plus the Owner's scope limitation, not as the review being wrong. |
 
-`foundation_migrations.checksum` is recorded as the canonical source migration checksum, never
-the checksum of executed bytes; the executed bytes are recorded separately per migration as
-`transformedSha256`, with transformer version, transformation class, approved target and a
-plan-level `planSha256` (`PRODUCTION_BOOTSTRAP_PROVENANCE.md`). The provenance is asserted to
-contain no value outside identifiers and digests.
+The two findings reproduced before fixing: the four F1 counterexamples were all accepted and
+rewritten by the reviewed transformer. Restoring the reviewed F2 filters makes the new mutation
+tests fail — and for a PUBLIC schema `CREATE` grant the reviewed fingerprint did not change at
+all, so that grant would have passed a Production comparison unnoticed.
 
-**Both equivalences hold.** `STRUCTURAL_EQUIVALENCE` — identical normalised fingerprint over
+**Both equivalences hold, and are now shown to be sensitive.** `STRUCTURAL_EQUIVALENCE` over
 schemas, tables, columns, constraints, indexes, functions, triggers, views and types.
-`SECURITY_EQUIVALENCE` — identical derived custody roles, role attributes, role memberships,
-table/column/routine grants, PUBLIC grants and PUBLIC execute, SECURITY DEFINER flags with
-pinned `search_path`, table/schema/routine owners, row security, approval registries and the
-seeded permission registry; plus assertions that no role reaches an escalation attribute
-directly or through a membership. The migration registry matches exactly, `migrate()` afterwards
-is inert across the full prefix, and A1/A2 registries are asserted at 0 rows in the bootstrapped
-database. Ten cases, all PASS; Production DDL 0.
+`SECURITY_EQUIVALENCE` over the categories listed in `PRODUCTION_BOOTSTRAP_PROVENANCE.md`, with
+every injected change detected and attributed. The migration registry matches exactly,
+`migrate()` afterwards is inert across the full prefix, and A1/A2 registries are asserted at
+0 rows. Thirteen cases, all PASS, no `NOT_RUN`.
 
-One correction worth recording: the first `SECURITY_EQUIVALENCE` failures were defects in the
-comparison, not in the bootstrap. Rows were sorted by SQL before normalisation, so the two
-environments' raw role names collated differently; and `pg_roles` is cluster-global, so a shared
-test cluster was being compared instead of the database. Sorting after folding and scoping role
-catalogues to the roles each database actually uses fixed both without weakening the comparison.
+**Inventory scope decided by the Owner.** This round registers `SKI`, `SNOWBOARD`, `SKI_BOOT`
+and `SNOWBOARD_BOOT` only: 67 of 86 source rows, 901 of 1492 units. A snowboard is one lending
+unit — board plus mounted binding, one Asset — so no binding gets an Asset, QR label, price,
+reservation stock or quantity pool of its own; boots are one Asset per left/right pair.
+`SNOWBOARD_BINDING`, `HELMET` and `POLE` are `EXCLUDED_BY_OWNER_SCOPE` (19 rows, 591 units)
+with their schema, catalogue, importer, recommendation, reservation and label support
+untouched; `WEAR_JACKET` and `WEAR_PANTS` are `FUTURE_INPUT_REQUIRED` and absent from this
+source. The candidate file was verified to contain only the four in-scope families, and no
+binding, helmet or pole row reaches it. Ski-boot BSL stays `UNVERIFIED_NULL`; nothing is
+guessed. `ACCESSORY_MODEL_OWNER_GATE` is removed as a blocker for this scope, not resolved for
+helmets.
 
 **Terminal A was not reached.** `M2B_PRODUCTION_CONNECTED_DARK_READY_FOR_PHYSICAL_ACCEPTANCE`
 requires a dedicated Production database, verified Square Production identity, a configured
@@ -131,12 +129,20 @@ approved source and no receipt, and a synthetic rehearsal can never produce one.
 
 ## Operation counts
 
-Production deploys 0. Production database mutations 0. Square requests 0. Real payments or
-refunds 0. Real inventory imports 0. External e-mail or SMS 0. Domain changes 0. Secrets
-read, printed or written 0. Provider mutations of any kind 0 — discovery was read-only.
-Migrations added 1 (`0039`); `0001`–`0038` byte-identical, and no migration file was edited in
-this round. Production DDL 0: the bootstrap was exercised only against a local database named
-`zao_rental_production_test`.
+The previous round reported "Production DDL 0", which was imprecise: DDL *was* executed, into a
+Production-**shaped** local database. Stated correctly:
+
+```
+hostedProductionDdl:          0
+realNeonProductionMutation:   0
+productionShapedLocalDdl:     performed (local database zao_rental_production_test)
+```
+
+Production deploys 0. Square requests 0. Real payments or refunds 0. Real inventory imports 0.
+External e-mail or SMS 0. Domain changes 0. Public DNS changes 0. `main` merges 0. Force pushes
+0. Secrets read, printed or written 0. Provider mutations of any kind 0 — discovery was
+read-only. Migrations added 0 in this round; `0001`–`0039` byte-identical, and no migration file
+was edited.
 
 ## Outstanding for review
 

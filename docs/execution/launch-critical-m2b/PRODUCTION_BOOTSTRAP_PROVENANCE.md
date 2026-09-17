@@ -1,64 +1,86 @@
 # Production bootstrap: transformation provenance
 
+Transformer `production-bootstrap/3`. Supersedes `/2`, which the independent review of
+`38e6e40` found would accept guards it should have refused.
+
+## Two independent gates
+
+A guard is rewritten only if **both** gates agree. Either refuses on its own, and the test
+exercises each separately so neither can be carried by the other.
+
+### Gate 1 — approved source
+
+`config/production/bootstrap-source-manifest.json` pins, for each of the thirty-nine reviewed
+migrations: its id, file, SHA256, runtime-guard count, and — where one exists — the exact byte
+`offset`, `subject` and `fragment` of the single guard that may be rewritten.
+
+It is **committed data, loaded and never recomputed**. Computing a digest from whatever is on
+disk records provenance but proves nothing about approval, which is the distinction the review
+drew. Re-pinning the manifest is therefore a visible change to reviewed source, reviewed as
+such; there is deliberately no tool in the repository that re-pins it automatically. A test
+asserts every pinned digest still matches its file and every pinned offset still holds its
+pinned fragment, so drift shows up as a failure rather than as a silent re-pin.
+
+Refusals: `PRODUCTION_SOURCE_UNKNOWN_MIGRATION`, `PRODUCTION_SOURCE_NOT_APPROVED`,
+`PRODUCTION_MANIFEST_LENGTH_MISMATCH`, `PRODUCTION_MANIFEST_FILE_MISMATCH`,
+`PRODUCTION_MANIFEST_RUNTIME_GUARD_MISMATCH`, `PRODUCTION_GUARD_PIN_MISMATCH`.
+
+### Gate 2 — structure
+
+`locateMigrationGuard()` finds the guard using a SQL scanner that honours line comments,
+nestable block comments, single-quoted strings, quoted identifiers and dollar quoting. The
+guard must be:
+
+1. the exact literal fragment `<subject> !~ '^zr_[a-f0-9]{12}$'`, with `<subject>` pinned per
+   migration (`0015` guards the variable `n`; the other eleven call `current_database()`);
+2. present exactly once, at an **identifier boundary**, so `n` never matches the tail of
+   `tenant_n`;
+3. inside the dollar-quoted body of a **top-level `DO` statement** — determined by scanning
+   statements, not by a line-start regular expression;
+4. in **code** context within that body, not inside a comment or a nested literal.
+
+Refusals: `PRODUCTION_GUARD_SHAPE_UNEXPECTED`, `PRODUCTION_GUARD_FRAGMENT_UNEXPECTED`,
+`PRODUCTION_GUARD_NOT_MIGRATION_TIME`, `PRODUCTION_GUARD_NOT_CODE`,
+`PRODUCTION_GUARD_COLLATERAL_CHANGE`, `PRODUCTION_GUARD_RESIDUAL`,
+`PRODUCTION_GUARD_COUNT_UNEXPECTED`.
+
+### What the previous transformer accepted
+
+Reproduced against `38e6e40` before the fix; all four were accepted and rewritten. All are now
+refused by Gate 2 on structure alone and by Gate 1 on bytes.
+
+| input | `/2` | `/3` structural refusal |
+| --- | --- | --- |
+| guard inside a block comment | accepted | `NOT_MIGRATION_TIME` |
+| guard inside a dollar-quoted string | accepted | `NOT_MIGRATION_TIME` |
+| guard inside dynamic SQL in a function | accepted | `NOT_MIGRATION_TIME` |
+| `0015` subject renamed `n` → `tenant_n` | accepted | `FRAGMENT_UNEXPECTED` |
+| guard commented out inside a `DO` body | — | `NOT_CODE` |
+
+The six earlier negative controls (guard removed, second guard added, wrong subject, unguarded
+migration gains a guard, runtime-guard count drift, unknown id) still refuse.
+
 ## The checksum distinction
 
 `foundation_migrations.checksum` is the **CANONICAL SOURCE MIGRATION CHECKSUM** — the SHA256 of
-the migration file on disk. For the twelve rewritten migrations it is deliberately *not* the
-checksum of the bytes that were executed.
+the reviewed file on disk. For the twelve rewritten migrations it is deliberately *not* the
+checksum of the bytes executed. That is what lets a Production registry and a local registry be
+compared directly, and what `migrate()` checks when deciding a migration is already applied.
 
-That is on purpose: it is what lets a Production registry and a local registry be compared
-directly, and it is what `migrate()` checks when it decides a migration is already applied. The
-bootstrap test asserts both databases report identical `(id, checksum)` rows and that each
-checksum equals the digest of the canonical file.
-
-The executed bytes are recorded separately, per migration, as `transformedSha256`. Nothing
-infers one from the other.
-
-## Provenance record
-
-`bootstrapPlan(target)` emits one record per migration and `bootstrapProductionSchema()` returns
-the transformed subset. Each record carries exactly:
-
-- `id` — migration id
-- `canonicalSha256` — SHA256 of the canonical source file
-- `transformerVersion` — `production-bootstrap/2`
-- `transformation` — `MIGRATION_TIME_DATABASE_IDENTITY_PREDICATE`, or `NONE`
-- `transformedSha256` — SHA256 of the SQL actually executed
-- `target` — the approved target database identity
-
-plus a plan-level `planSha256` over the ordered provenance list. No secret values: the test
-asserts the serialised provenance contains nothing outside `[A-Za-z0-9_@/{}[]":,.-]`.
-
-## Transformer contract (fail-closed, exact)
-
-Not a broad regex or a global substitution. For each of the twelve known guarded migrations the
-transformer:
-
-1. requires the exact source fragment `<subject> !~ '^zr_[a-f0-9]{12}$'`, where `<subject>` is
-   pinned per migration (`0015` guards the local variable `n`; the other eleven call
-   `current_database()` directly);
-2. requires the exact occurrence count — 1 for a guarded migration, 0 for an unguarded one, and
-   the pinned runtime counts `0028` = 1 and `0029` = 2;
-3. requires that the single occurrence lies inside a top-level `DO $$…END$$;` span, so a guard
-   in a function body is refused rather than rewritten;
-4. replaces only that span with `<subject> <> '<target>'`;
-5. asserts every byte before and after the replaced span is unchanged, and that no
-   disposable-name predicate remains;
-6. aborts on any other shape — `PRODUCTION_GUARD_SHAPE_UNEXPECTED`,
-   `PRODUCTION_GUARD_FRAGMENT_UNEXPECTED`, `PRODUCTION_GUARD_NOT_MIGRATION_TIME`,
-   `PRODUCTION_GUARD_COLLATERAL_CHANGE`, `PRODUCTION_GUARD_RESIDUAL`,
-   `PRODUCTION_GUARD_COUNT_UNEXPECTED`.
-
-Runtime guards in function bodies are never touched, and `0028`/`0029` are asserted
-byte-identical before and after. Historical source files `0001`–`0039` remain byte-identical on
-disk; nothing in the bootstrap writes them.
+The executed bytes are recorded separately as `transformedSha256`. Nothing infers one from the
+other. Each provenance record carries `id`, `canonicalSha256`, `approvedSha256` (the pinned
+value, which must equal the canonical one), `transformerVersion`, `transformation`,
+`transformedSha256` and `target`; the plan carries `manifestSha256` and `planSha256`. The test
+asserts the serialised provenance contains nothing outside identifiers and digests.
 
 ## Rehearsal record
 
-Target `zao_rental_production_test`, transformer `production-bootstrap/2`, transformation class
+Target `zao_rental_production_test`, transformation class
 `MIGRATION_TIME_DATABASE_IDENTITY_PREDICATE`, 12 of 39 migrations transformed.
 
-`planSha256` = `27cc0ba6b959b2764563bcff1d097fcb0466f3cd6eddafd41b71ea9d02e7bc5c`
+- `manifestSha256` = `4c1fb5b51f2fa16e12d7368d0c84d562016c1ed04d39a0e13a1660fc7355df6c`
+- `planSha256` = `a889a4d4d70ad213f3ea0a7d73930f6feeb380d812fbe6d3231ecbe690184f40`
+- schema fingerprint = `b3c045839c94a1c1f4b1f384c7fa994911cf1facf561829c3ec48b596f1b57fa`
 
 | migration | canonical sha256 | transformed sha256 |
 | --- | --- | --- |
@@ -75,22 +97,66 @@ Target `zao_rental_production_test`, transformer `production-bootstrap/2`, trans
 | `0038` | `6206807d6748dfe3…` | `6e2f9e8d77027e60…` |
 | `0039` | `ebac5b4ab802827b…` | `fc1e5f2b83a2c356…` |
 
-`planSha256` and every `transformedSha256` are bound to the target: the real Production target
-has not been named, so its plan produces different digests, which are recorded at bootstrap time
-from the run's own return value rather than copied from here.
+`planSha256` and every `transformedSha256` are bound to the target. The real Production target
+has not been named, so its plan produces different digests, recorded at bootstrap time from the
+run's own return value rather than copied from here.
 
-## SECURITY_EQUIVALENCE coverage
+## SECURITY_EQUIVALENCE: what is compared, and proof that it detects
 
-The security fingerprint compares, between the canonical local database and the bootstrapped
-one: derived custody roles, role attributes, role memberships, table/column/routine grants,
-PUBLIC table grants and PUBLIC execute, SECURITY DEFINER flags with their pinned `search_path`,
-table/schema/routine owners, row security, the approval registries and the seeded permission
-registry. Transformed migration provenance is proved separately by the registry comparison
-above.
+Compared between the canonical local database and the bootstrapped one: derived roles, role
+attributes, role memberships (with `admin`, `inherit` and `set` options, reaching `pg_` parents
+through a recursive closure), table / column / routine / schema / sequence grants and default
+privileges — each with its grant option and with routines identified by signature — PUBLIC table,
+column and routine privileges, `SECURITY DEFINER` flags with their pinned `search_path`, table /
+schema / routine owners, row-security flags **and policy text** (`permissive`, `cmd`, `roles`,
+`USING`, `WITH CHECK`), the approval registries and the seeded permission registry.
 
-Two normalisations are applied, and neither weakens the comparison: the database name and the
-connected owner fold to `<ENVIRONMENT>` (role names are derived from the database name by
-construction), and rows are sorted **after** folding, because the raw names collate differently
-between the two environments while the content is what is being compared. Role catalogues are
-scoped to the roles each database actually uses, since `pg_roles` is cluster-global and in a
-shared test cluster would otherwise compare the cluster rather than the database.
+Agreement between two healthy databases proves nothing on its own, so each of the following is
+injected into the Production-shaped database inside a transaction, asserted to change both the
+fingerprint and its own category, and rolled back; equality with the canonical database is
+re-asserted afterwards.
+
+| injected change | category that must move |
+| --- | --- |
+| `pg_read_all_data` membership | `roleMemberships` |
+| `pg_write_all_data` membership | `roleMemberships` |
+| membership through a newly created parent role | `roleMemberships` |
+| `ADMIN` / `INHERIT` / `SET` option, each compared against its opposite | `roleMemberships` |
+| `SELECT(id)` granted to PUBLIC | `publicColumnGrants` |
+| schema `CREATE` granted to a role | `schemaGrants` |
+| schema `CREATE` granted to **PUBLIC** | `schemaGrants` |
+| sequence `USAGE` granted to a role | `sequenceGrants` |
+| sequence `USAGE` granted to **PUBLIC** | `sequenceGrants` |
+| default privileges added | `defaultPrivileges` |
+| table grant given `WITH GRANT OPTION` | `tableGrants` |
+| row-security policy created | `rowSecurityPolicies` |
+| owner swapped between two same-named routines of different signature | `routineOwners` |
+| execute granted on one signature of a same-named pair | `routineGrants` |
+
+In an ACL, grantee `0` is PUBLIC. The `/2` collections filtered it out with `a.grantee<>0`,
+which silently dropped the widest grant there is; grantee `0` is now rendered as `PUBLIC` and
+compared.
+
+Two falsification runs confirm the mutation tests are not vacuous. Restoring the `/2`
+membership filter makes `pg_read_all_data membership` fail (`expected roleMemberships, changed
+roleAttributes`). Restoring the `/2` `a.grantee<>0` filter on schema grants makes
+`PUBLIC schema CREATE grant went undetected` fail — under `/2` that grant did not move the
+fingerprint at all.
+
+## Normalisation: explicit identifiers, not substring replacement
+
+`/2` folded the database name and the connected owner into one placeholder by substring
+replacement, which could map two genuinely different custody roles to the same value. `/3`
+builds an explicit map — `current_database()` → `<DATABASE>`, `current_user` →
+`<MIGRATION_OWNER>`, and each role named `<database>_<suffix>` → `<DATABASE>_<suffix>` — and
+substitutes **whole identifier tokens only**. A role belonging to another environment is not in
+the map, so it survives literally and fails the comparison instead of being folded into the
+local one.
+
+Two conditions are refused rather than collapsed: a database whose name equals its owner's
+(`PRODUCTION_FINGERPRINT_AMBIGUOUS_IDENTITY`) and two identifiers mapping to one placeholder
+(`PRODUCTION_FINGERPRINT_IDENTIFIER_COLLISION`). The local worktree cluster names its database
+and its owner identically, so the test creates a separate `zr_<12hex>` canonical database and
+connects to it as the cluster owner — both environments then have owner ≠ database, which is
+what makes the comparison symmetric. Rows are still sorted after normalisation, and no custody
+role is excluded from the comparison to achieve any of this.

@@ -11,7 +11,7 @@ export type ProductionConfiguration={
  deployment:{provider:'VERCEL';environment:'production';projectId:string;releaseId:string;origin:string};
  database:{provider:'NEON';environment:'production';host:string;name:string;roles:Record<ProductionService,string>};
  flags:ProductionFlags;guest:Readonly<ProductionGuestConfiguration>;approvedGuestSha256:string;
- payment:null|{provider:'SQUARE';environment:'PRODUCTION';merchantId:string;locations:Record<'MOUNTAIN_BASE'|'ONSEN_BASE',string>};
+ payment:null|{provider:'SQUARE';environment:'PRODUCTION';merchantId:string;locations:Record<'MOUNTAIN_BASE'|'ONSEN_BASE',string>;webhookNotificationUrl:string|null};
  media:null|{provider:'CLOUDFLARE_R2';environment:'PRODUCTION';accountId:string;bucket:string;visibility:'PRIVATE';r2DevEnabled:false;publicDomains:[];credentialExpiresAt:string};
 };
 const text=(v:unknown,pattern:RegExp)=>{if(typeof v!=='string'||!pattern.test(v))throw Error();return v;};
@@ -38,7 +38,19 @@ export function productionConfiguration(input:unknown,now=new Date()):Readonly<P
   if(new Set(Object.values(roles)).size!==productionServices.length)throw Error();
   stage='GUEST_SECURITY';const guest=productionGuestConfiguration(c.guest),approvedGuestSha256=text(c.approvedGuestSha256,/^[a-f0-9]{64}$/);if(guestConfigurationHash(guest)!==approvedGuestSha256)throw Error();
   stage='PAYMENT';let payment:ProductionConfiguration['payment']=null;
-  if(c.payment!==null){const p=exact(c.payment,['provider','environment','merchantId','locations']),l=exact(p.locations,['MOUNTAIN_BASE','ONSEN_BASE']);if(p.provider!=='SQUARE'||p.environment!=='PRODUCTION')throw Error();payment={provider:'SQUARE',environment:'PRODUCTION',merchantId:id(p.merchantId),locations:Object.freeze({MOUNTAIN_BASE:id(l.MOUNTAIN_BASE),ONSEN_BASE:id(l.ONSEN_BASE)})};}
+  if(c.payment!==null){
+   // Webhook delivery is a separate connection from the payment adapter, so it is declared
+   // separately and stays optional. It is an address, never a signing key.
+   const paymentKeys=['provider','environment','merchantId','locations'];
+   if(c.payment&&typeof c.payment==='object'&&Object.hasOwn(c.payment,'webhookNotificationUrl'))paymentKeys.push('webhookNotificationUrl');
+   const p=exact(c.payment,paymentKeys),l=exact(p.locations,['MOUNTAIN_BASE','ONSEN_BASE']);if(p.provider!=='SQUARE'||p.environment!=='PRODUCTION')throw Error();
+   let webhookNotificationUrl:string|null=null;
+   if(p.webhookNotificationUrl!==undefined&&p.webhookNotificationUrl!==null){
+    const raw=text(p.webhookNotificationUrl,/^https:\/\/[^\s?#]{1,200}$/);const u=new URL(raw);
+    if(u.protocol!=='https:'||u.search||u.hash||u.username||u.password||['localhost','127.0.0.1','::1'].includes(u.hostname))throw Error();
+    webhookNotificationUrl=raw;
+   }
+   payment={provider:'SQUARE',environment:'PRODUCTION',merchantId:id(p.merchantId),locations:Object.freeze({MOUNTAIN_BASE:id(l.MOUNTAIN_BASE),ONSEN_BASE:id(l.ONSEN_BASE)}),webhookNotificationUrl};}
   if(flags.payment&&!payment)throw Error();
   stage='MEDIA';let media:ProductionConfiguration['media']=null;
   if(c.media!==null){const m=exact(c.media,['provider','environment','accountId','bucket','visibility','r2DevEnabled','publicDomains','credentialExpiresAt']);if(m.provider!=='CLOUDFLARE_R2'||m.environment!=='PRODUCTION'||m.visibility!=='PRIVATE'||m.r2DevEnabled!==false||!Array.isArray(m.publicDomains)||m.publicDomains.length||typeof m.credentialExpiresAt!=='string'||!Number.isFinite(Date.parse(m.credentialExpiresAt))||Date.parse(m.credentialExpiresAt)<=now.getTime())throw Error();media={provider:'CLOUDFLARE_R2',environment:'PRODUCTION',accountId:text(m.accountId,/^[a-f0-9]{32}$/),bucket:text(m.bucket,/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/),visibility:'PRIVATE',r2DevEnabled:false,publicDomains:[],credentialExpiresAt:new Date(m.credentialExpiresAt).toISOString()};}

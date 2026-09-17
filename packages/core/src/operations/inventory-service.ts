@@ -1,7 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {FlowError,flowId,flowObject,flowHash,flowVersion,flowStore} from '../../../contracts/src/rental-flow';
 import {ContentInputError} from '../content/bulk-plan';
-import {stageStockImport,commitImportDryRun,type ImportStage} from '../content/import-staging';
+import {stageStockImport,commitImportDryRun,importDryRunReport,type ImportStage} from '../content/import-staging';
 import type {ImportVariant} from '../content/stock-import-plan';
 import {OperationsContext,operationalReason,type OpsConnection} from './context';
 type Asset={id:string;store_id:string;status:string;version:number;present_expected:boolean};
@@ -46,7 +46,7 @@ export class InventoryOperations{
   }));
  }
  private async catalog(c:OpsConnection){
-  const variants=(await c.query<ImportVariant>(`SELECT v.id,v.model_id AS "modelId",m.catalog_season AS season,''::text AS "manufacturerSku",v.family,v.size,v.tier FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.id`)).rows;
+  const variants=(await c.query<ImportVariant>(`SELECT v.id,v.model_id AS "modelId",m.catalog_season AS season,''::text AS "manufacturerSku",v.family,v.size,v.tier,m.brand,m.name AS "modelName" FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.id`)).rows;
   return {variants,revision:flowHash(variants),prior:Object.fromEntries((await c.query<{source_key:string;source_sha256:string}>('SELECT source_key,source_sha256 FROM ops_import_sources')).rows.map(r=>[r.source_key,r.source_sha256]))};
  }
  async importCatalog(){await this.ctx.authorize('INVENTORY_EDIT');const c=await this.catalog(this.ctx.pool);return {variants:c.variants,revision:c.revision,manufacturerSkuPolicy:'EMPTY_WHEN_NOT_IN_AUTHORITATIVE_CATALOG'};}
@@ -56,18 +56,33 @@ export class InventoryOperations{
    const exists=new Set((await c.query<{id:string}>('SELECT id FROM ledger_assets WHERE id=ANY($1::uuid[])',[stage.staged.flatMap(r=>r.normalized.assetIds).filter(x=>/^[0-9a-f-]{36}$/.test(x))])).rows.map(r=>r.id));
    const conflicts=stage.plan?.entries.filter(e=>e.disposition!=='ALREADY_IMPORTED'&&e.source.assetIds.some(id=>exists.has(id))).map(e=>e.source.locator)??[];
    const id=randomUUID();await c.query('INSERT INTO ops_import_stages(id,actor,stage,stage_sha256) VALUES($1,$2,$3,$4)',[id,this.ctx.identity.subject,JSON.stringify(stage),stage.stageSha256]);
-   return {id,stageSha256:stage.stageSha256,unresolved:stage.unresolved,conflicts,rows:stage.plan?.entries.map(e=>({sourceKey:e.sourceKey,disposition:e.disposition,issues:e.issues}))??[],ready:stage.schemaVersion===2&&!stage.unresolved.length&&!conflicts.length};
+   return {id,stageSha256:stage.stageSha256,unresolved:stage.unresolved,conflicts,rows:stage.plan?.entries.map(e=>({sourceKey:e.sourceKey,disposition:e.disposition,issues:e.issues}))??[],report:importDryRunReport(stage,exists),ready:stage.schemaVersion>=2&&!stage.unresolved.length&&!conflicts.length};
   }));
+ }
+ /** Declares that a committed import was real stock. Counts are recomputed in SQL from
+  * what the commit actually applied, so the receipt cannot overstate coverage, and the
+  * declaration needs explicit ALL scope because it is a cross-store statement. */
+ async acceptRealData(key:string,value:unknown){
+  const v=flowObject(value,['commitId','expectedStores']);flowId(v.commitId);
+  // The caller may state what coverage it expects; SQL derives the real coverage from the
+  // committed rows and rejects a mismatch. Nothing here can assert that a source is real.
+  if(v.expectedStores!==null&&(!Array.isArray(v.expectedStores)||!v.expectedStores.length||v.expectedStores.some(s=>!['MOUNTAIN_BASE','ONSEN_BASE'].includes(s as string))||new Set(v.expectedStores).size!==v.expectedStores.length))throw new FlowError('REAL_DATA_INPUT_INVALID',422);
+  const p=await this.ctx.authorize('INVENTORY_EDIT');if(p.scope!=='ALL')throw new FlowError('FORBIDDEN',403);
+  return this.ctx.transaction('INVENTORY_EDIT',[],'REAL_DATA_ACCEPTANCE',c=>this.ctx.idempotent(c,key,v,async()=>(await c.query('SELECT real_data_accept($1,$2::text[]) v',[v.commitId,v.expectedStores])).rows[0].v));
+ }
+ async realDataAcceptance(){
+  await this.ctx.authorize('OPERATIONS_VIEW');
+  return this.ctx.transaction('OPERATIONS_VIEW',[],'REAL_DATA_STATUS',async c=>(await c.query('SELECT real_data_acceptance_status() v')).rows[0].v as {commitId:string;acceptedAssets:number;stores:string[];commitPresent:boolean;sourceMatches:boolean;sourceApproved:boolean}[]);
  }
  async commitImport(key:string,value:unknown){const v=flowObject(value,['id','stageSha256','reason']);flowId(v.id);if(typeof v.stageSha256!=='string'||! /^[a-f0-9]{64}$/.test(v.stageSha256))throw new FlowError('INVALID_STAGE_HASH',422);const reason=operationalReason(v.reason);
   return this.ctx.transaction('INVENTORY_EDIT',[],reason,(c)=>this.ctx.idempotent(c,key,{op:'commitImport',v},async()=>{
-   const saved=(await c.query<{actor:string;stage:ImportStage}>('SELECT actor,stage FROM ops_import_stages WHERE id=$1',[v.id])).rows[0];if(!saved||saved.actor!==this.ctx.identity.subject)throw new FlowError('FORBIDDEN',403);if(saved.stage.schemaVersion!==2)throw new FlowError('IMPORT_V2_METADATA_REQUIRED',409);
+   const saved=(await c.query<{actor:string;stage:ImportStage}>('SELECT actor,stage FROM ops_import_stages WHERE id=$1',[v.id])).rows[0];if(!saved||saved.actor!==this.ctx.identity.subject)throw new FlowError('FORBIDDEN',403);if(![2,3].includes(saved.stage.schemaVersion))throw new FlowError('IMPORT_V2_METADATA_REQUIRED',409);
    const stores=[...new Set(saved.stage.staged.flatMap(r=>r.normalized.storeId?[r.normalized.storeId]:[]))];await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['INVENTORY_EDIT',stores,this.ctx.identity.subject]);
    const prior=(await c.query('SELECT stage_sha256,result FROM ops_import_commits WHERE id=$1',[v.id])).rows[0];if(prior){if(prior.stage_sha256!==v.stageSha256)throw new FlowError('IDEMPOTENCY_MISMATCH',409);return prior.result;}
    const catalog=await this.catalog(c),existing=new Set((await c.query<{id:string}>('SELECT id FROM ledger_assets WHERE id=ANY($1::uuid[])',[saved.stage.staged.flatMap(r=>r.normalized.assetIds)])).rows.map(r=>r.id));let plan;
    try{plan=commitImportDryRun(saved.stage,v.stageSha256 as string,catalog.variants,catalog.prior,catalog.revision,existing);}catch(e){throw new FlowError(e instanceof ContentInputError?e.code:'IMPORT_UNRESOLVED',409);}
    for(const op of plan.operations){const r=op.source,m=r.metadata!,variant=catalog.variants.find(v=>v.id===r.variantId)!;
-    if(op.kind==='ADD_ASSETS')for(const [n,id] of r.assetIds.entries())await c.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,$4,$4,$5,$6,$7,$8,'','UNVERIFIED',$9,$10)`,[id,r.variantId,variant.family,r.storeId,m.status,variant.family==='SKI_BOOT'?m.bslMm===null?'UNVERIFIED':'RECORDED':'NOT_APPLICABLE',m.bslMm,m.bslMm===null?'':'Receipt source '+m.sourceRow,m.sourceDocument,m.sourceRow+':'+(n+1)]);
+    if(op.kind==='ADD_ASSETS')for(const [n,id] of r.assetIds.entries())await c.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,$4,$4,$5,$6,$7,$8,$11,'UNVERIFIED',$9,$10)`,[id,r.variantId,variant.family,r.storeId,m.status,variant.family==='SKI_BOOT'?m.bslMm===null?'UNVERIFIED':'RECORDED':'NOT_APPLICABLE',m.bslMm,m.bslMm===null?'':'Receipt source '+m.sourceRow,m.sourceDocument,m.sourceRow+':'+(n+1),m.note??'']);
     else if(variant.family==='POLE'){const pool=(await c.query<{id:string}>('SELECT id FROM ledger_poles WHERE variant_id=$1 AND store_id=$2 AND status=$3',[r.variantId,r.storeId,m.status])).rows[0];if(pool)await c.query('UPDATE ledger_poles SET quantity=quantity+$2 WHERE id=$1',[pool.id,r.quantity]);else await c.query("INSERT INTO ledger_poles(id,variant_id,store_id,status,quantity,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,$4,$5,'','UNVERIFIED',$6,$7)",[randomUUID(),r.variantId,r.storeId,m.status,r.quantity,m.sourceDocument,m.sourceRow]);}
     else{let pool=(await c.query<{id:string}>('SELECT id FROM wear_pools WHERE variant_id=$1 AND store_id=$2',[r.variantId,r.storeId])).rows[0];if(!pool){pool={id:randomUUID()};await c.query('INSERT INTO wear_pools(id,variant_id,store_id) VALUES($1,$2,$3)',[pool.id,r.variantId,r.storeId]);}const column=m.status==='AVAILABLE'?'ready':'unavailable';await c.query(`UPDATE wear_pools SET ${column}=${column}+$2 WHERE id=$1`,[pool.id,r.quantity]);}
     await c.query('INSERT INTO ops_import_sources(source_key,source_sha256,stage_id,actor) VALUES($1,$2,$3,$4)',[op.sourceKey,op.sourceHash,v.id,this.ctx.identity.subject]);

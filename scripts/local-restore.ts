@@ -16,7 +16,7 @@ export const RESTORE_REQUIRED=[
  'public.rental_preparations','public.rental_loan_items','public.rental_receipts','public.rental_inspections','public.rental_inspection_events','public.rental_custody_events','public.rental_no_pickup_events','public.rental_return_batches','public.rental_return_candidates',
  'public.transfer_batches','public.transfer_pieces','public.transfer_history','public.transfer_requests',
  'public.wear_pools','public.wear_claims','public.wear_loans','public.wear_receipts','public.wear_return_batches','public.wear_transfers','public.wear_transfer_receipts','public.wear_unresolved_returns','public.wear_history','public.wear_requests',
- 'public.ops_amendments','public.ops_amendment_quotes','public.ops_charge_requests','public.ops_refund_requests','public.ops_financial_alerts','public.ops_history','public.ops_stocktakes','public.ops_stocktake_reconciliations','public.ops_receipt_terms','public.ops_exceptions','public.ops_import_sources','public.ops_import_stages','public.ops_import_commits',
+ 'public.ops_amendments','public.ops_amendment_quotes','public.ops_charge_requests','public.ops_refund_requests','public.ops_financial_alerts','public.ops_history','public.ops_stocktakes','public.ops_stocktake_reconciliations','public.ops_receipt_terms','public.ops_exceptions','public.field_acceptance_records','public.ops_import_sources','public.ops_import_stages','public.ops_import_commits','public.real_inventory_sources','public.real_data_acceptance',
  'public.booking_notification_outbox',
  'square_webhook.inbox','payment_reconciliation.streams','payment_reconciliation.jobs','payment_reconciliation.events','payment_reconciliation.audit','payment_reconciliation.provider_stops',
 ] as const;
@@ -151,7 +151,7 @@ export async function validateRestored(pool:Pool){
  return {foreignKeys:checked,sequences:advanced};
 }
 /** Contract-critical rows compared verbatim between source and restored database. */
-export const CRITICAL=['public.rental_bookings','public.price_quotes','public.rental_payment_attempts','public.inventory_holds','public.inventory_claims','public.rental_loan_items','public.rental_receipts','public.transfer_batches','public.transfer_pieces','public.ops_amendments','public.ops_refund_requests','public.ops_exceptions','public.booking_notification_outbox','public.rental_history','public.ops_history'] as const;
+export const CRITICAL=['public.rental_bookings','public.price_quotes','public.rental_payment_attempts','public.inventory_holds','public.inventory_claims','public.rental_loan_items','public.rental_receipts','public.transfer_batches','public.transfer_pieces','public.ops_amendments','public.ops_refund_requests','public.ops_exceptions','public.field_acceptance_records','public.real_data_acceptance','public.booking_notification_outbox','public.rental_history','public.ops_history'] as const;
 export async function criticalFingerprint(pool:Pool){
  const out:Record<string,{rows:number;sha256:string}>={};
  for(const name of CRITICAL){

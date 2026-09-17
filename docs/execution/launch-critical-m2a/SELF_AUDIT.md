@@ -5,7 +5,7 @@ self-authored change is recorded as `INDEPENDENT_REVIEW_PASS`.
 
 ```
 role:                     PRIMARY_IMPLEMENTER
-m2aIndependentReview:     CORRECTION_IMPLEMENTED_AWAITING_INDEPENDENT_RECHECK
+m2aIndependentReview:     CORRECTION_R2_IMPLEMENTED_AWAITING_INDEPENDENT_RECHECK
 pr21IndependentReview:    INDEPENDENT_REVIEW_PENDING
 ```
 
@@ -96,6 +96,36 @@ than guessing. It must be read from the PR.
 `packages/db/src/migration-plan.ts` exists because the fs-based db index cannot be bundled
 into the web build. `packages/db/src/index.ts` re-exports it, so there is still one source of
 truth and no migration content changed.
+
+## Independent review recheck R2
+
+The recheck closed IR-01, IR-02, IR-03, IR-04 and IR-05A, and held IR-05B at MEDIUM:
+`real_data_accept` took the store set from the caller and wrote `source_class='REAL'` without
+proving the committed import was a real source, so the synthetic rehearsal could declare
+itself real. Migration `0038` closes it. The five already-closed areas were not touched.
+
+**Provenance is no longer created by calling the function.** `real_inventory_sources` holds
+approved source digests and is owned by the database owner; no application role is granted
+`INSERT`, so staff can record that an approved file was imported but can never approve one.
+Acceptance requires the committed stage's own `sourceSha256` to be present in that register.
+A file name, a `source_document`, `source_kind`, or any caller-supplied class or boolean is
+never consulted.
+
+**Store coverage is derived, not asserted.** The covered stores are computed in SQL from the
+rows the commit actually applied. A caller may state the coverage it expects and a mismatch
+is rejected, but the derived set is what is persisted.
+
+**A receipt only counts while it still holds.** The launch gate ignores a receipt whose
+commit is gone, whose source digest no longer matches its stage, or whose approval has been
+withdrawn. The stage itself is immutable, so the digest cannot be rewritten to manufacture a
+match; withdrawing the approval is the supported way to retire a receipt, and the record of
+what happened is kept.
+
+Counterexamples now proven: the unapproved synthetic rehearsal is rejected and `REAL_DATA`
+stays `NOT_RUN`; the operations role cannot insert an approved source; approving an unrelated
+digest does not help; a one-store commit with a two-store claim is rejected and, accepted
+honestly, yields `PENDING` rather than `READY`; an owner-approved two-store source reaches
+`READY`; and withdrawing that approval returns it to `NOT_RUN`.
 
 ## Security checklist
 

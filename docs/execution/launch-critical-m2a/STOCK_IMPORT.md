@@ -49,3 +49,14 @@ existing quantity model.
    a commit can only apply the plan that was actually reviewed.
 4. **Re-uploading the same file is safe.** Already-imported rows are reported as no-ops and
    create nothing; immutable asset identifiers cannot be duplicated.
+
+## Declaring an import as real stock
+
+Committing an import does not make it real stock. Readiness requires a separate acceptance
+receipt, and a receipt can only be created for a file whose digest the owner has already
+approved in `real_inventory_sources`. That register is owned by the deployment boundary: no
+application role can write to it, so importing staff cannot approve their own file.
+
+The covered stores are derived from the rows the commit actually applied. You may state the
+coverage you expect and a mismatch is refused, but your statement is never the authority.
+Withdrawing an approval retires the receipt and returns the launch gate to `NOT_RUN`.

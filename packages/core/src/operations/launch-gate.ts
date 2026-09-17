@@ -27,7 +27,8 @@ export class LaunchGate{
   // Real stock is proved by an explicit acceptance receipt bound to a committed import,
   // never by how a source file happens to be named. A synthetic rehearsal has no receipt.
   const receipts=await new InventoryOperations(this.ctx).realDataAcceptance();
-  const accepted=receipts.filter(r=>r.commitPresent);
+  // Drift in the underlying commit or a withdrawn approval retires the receipt.
+  const accepted=receipts.filter(r=>r.commitPresent&&r.sourceMatches&&r.sourceApproved);
   const stores=new Set(accepted.flatMap(r=>r.stores));
   rows.REAL_DATA=accepted.length>0&&accepted.some(r=>r.acceptedAssets>0)?(stores.has('MOUNTAIN_BASE')&&stores.has('ONSEN_BASE')?'READY':'PENDING'):'NOT_RUN';
   rows.PAYMENT=map(components.PAYMENT_ADAPTER);

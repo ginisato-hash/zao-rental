@@ -112,8 +112,8 @@ try{
    await c.query("INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_evidence,notes,source_kind,source_document,source_locator) SELECT gen_random_uuid(),v.id,v.family,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE','NOT_APPLICABLE','','','UNVERIFIED','SHOP RECEIPT 2026-01','row-9' FROM ledger_variants v WHERE v.family='SKI' LIMIT 1");
    await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
   assert.equal((await gate.status({runId:run,components:COMPONENTS,backup:null})).rows.find(r=>r.row==='REAL_DATA')!.state,'NOT_RUN');
-  await assert.rejects(inventory.acceptRealData(randomUUID(),{commitId:randomUUID(),sourceSha256:'a'.repeat(64),stores:['MOUNTAIN_BASE']}),{status:409});
-  await assert.rejects(inventory.acceptRealData(randomUUID(),{commitId:randomUUID(),sourceSha256:'nothex',stores:['MOUNTAIN_BASE']}),{status:422});
+  await assert.rejects(inventory.acceptRealData(randomUUID(),{commitId:randomUUID(),expectedStores:null}),{status:409});
+  await assert.rejects(inventory.acceptRealData(randomUUID(),{commitId:randomUUID(),expectedStores:['NOWHERE']}),{status:422});
  });
 
  await check('an unusable operations sink never blocks a booking',async()=>{

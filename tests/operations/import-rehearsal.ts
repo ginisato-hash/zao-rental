@@ -40,11 +40,11 @@ try{
   catalog.set(k.family,{modelId:model.id,variantId:variant.id,brand,modelName});
  }
  const assetIds=new Map<string,string[]>();
- const row=(k:typeof KINDS[number],store:string,note:string)=>{
+ const row=(k:typeof KINDS[number],store:string,note:string,tag='')=>{
   const c=catalog.get(k.family)!,asset=k.unit.startsWith('ASSET_');
   const ids=asset?Array.from({length:PER_STORE},()=>randomUUID()):[];
   if(asset)assetIds.set(k.family+':'+store,ids);
-  return ['SHOP_RECEIPT','ADD',c.modelId,SEASON,c.variantId,'',PER_STORE,k.unit,ids.join('|'),store,'SYNTHETIC M2A receipt','row-'+k.family+'-'+store,k.family,k.size,k.tier,k.bsl,'AVAILABLE',c.brand,c.modelName,note].join(',');
+  return ['SHOP_RECEIPT','ADD',c.modelId,SEASON,c.variantId,'',PER_STORE,k.unit,ids.join('|'),store,'SYNTHETIC M2A receipt'+tag,'row-'+k.family+'-'+store+tag,k.family,k.size,k.tier,k.bsl,'AVAILABLE',c.brand,c.modelName,note].join(',');
  };
  const lines=STORES.flatMap(store=>KINDS.map(k=>row(k,store,'M2A rehearsal '+k.family)));
  const csv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+lines.join('\n')+'\n';
@@ -119,28 +119,74 @@ try{
   for(const cell of ['WRONG BRAND','160 cm','NOT_A_CATEGORY'])assert.ok(!serialized.includes(cell),cell);
  });
 
- await check('real inventory readiness follows an explicit receipt, not the source name',async()=>{
-  const gate=new LaunchGate(ctx);
-  const components={APP:'READY',DB:'READY',GUEST:'READY',PAYMENT_ADAPTER:'UNCONNECTED',WEBHOOK:'UNCONNECTED',MEDIA:'OFF',NOTIFICATION:'UNCONNECTED'};
-  // The stock is committed but undeclared, so the gate must not call it real yet.
-  assert.equal((await gate.status({runId:null,components,backup:null})).rows.find(r=>r.row==='REAL_DATA')!.state,'NOT_RUN');
-  const digest=createHash('sha256').update(csv).digest('hex');
-  await assert.rejects(svc.acceptRealData(randomUUID(),{commitId:stageId,sourceSha256:'0'.repeat(64),stores:['MOUNTAIN_BASE','ONSEN_BASE']}),{status:409});
-  // Declaring it is an explicit staff act; the counts come from what the commit applied.
-  const key=randomUUID(),input={commitId:stageId,sourceSha256:digest,stores:['MOUNTAIN_BASE','ONSEN_BASE']};
+ // A second, deliberately separate source file. Its content is synthetic, but its digest
+ // stands in for a file the owner has approved at the deployment-owned boundary.
+ const approvedLines=STORES.map(store=>row(KINDS[0]!,store,'M2A approved source',' approved'));
+ const approvedCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+approvedLines.join('\n')+'\n';
+ const oneStoreCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(KINDS[1]!,'MOUNTAIN_BASE','M2A one store source',' one-store')+'\n';
+ const gate=new LaunchGate(ctx);
+ const components={APP:'READY',DB:'READY',GUEST:'READY',PAYMENT_ADAPTER:'UNCONNECTED',WEBHOOK:'UNCONNECTED',MEDIA:'OFF',NOTIFICATION:'UNCONNECTED'};
+ const realData=async()=>(await gate.status({runId:null,components,backup:null})).rows.find(r=>r.row==='REAL_DATA')!.state;
+ const commit=async(text:string,sheet:string)=>{const plan=await svc.stageImport(randomUUID(),{csv:text,sheet});await svc.commitImport(randomUUID(),{id:plan.id,stageSha256:plan.stageSha256,reason:'SYNTHETIC '+sheet});return plan.id;};
+ // Only the database owner may approve a source; no application role is granted INSERT.
+ const approve=async(text:string,label:string)=>{const digest=createHash('sha256').update(text).digest('hex');await x.db.pool.query('INSERT INTO real_inventory_sources(source_sha256,label) VALUES($1,$2)',[digest,label]);return digest;};
+
+ await check('an unapproved synthetic rehearsal can never be declared real stock',async()=>{
+  assert.equal(await realData(),'NOT_RUN');
+  await assert.rejects(svc.acceptRealData(randomUUID(),{commitId:stageId,expectedStores:null}),{status:409});
+  await assert.rejects(svc.acceptRealData(randomUUID(),{commitId:stageId,expectedStores:[...STORES]}),{status:409});
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM real_data_acceptance')).rows[0].n,0);
+  assert.equal(await realData(),'NOT_RUN');
+ });
+
+ await check('an application role cannot approve a source, and an unknown digest stays unapproved',async()=>{
+  await assert.rejects(role!.operationsPool.query("INSERT INTO real_inventory_sources(source_sha256,label) VALUES($1,'forged')",['b'.repeat(64)]),{code:'42501'});
+  await x.db.pool.query('INSERT INTO real_inventory_sources(source_sha256,label) VALUES($1,$2)',['c'.repeat(64),'unrelated approved file']);
+  // Approving some other file does not make this commit real.
+  await assert.rejects(svc.acceptRealData(randomUUID(),{commitId:stageId,expectedStores:null}),{status:409});
+  assert.equal(await realData(),'NOT_RUN');
+ });
+
+ let oneStoreCommit='';
+ await check('store coverage is derived from the commit, not from the caller',async()=>{
+  oneStoreCommit=await commit(oneStoreCsv,'one-store');
+  await approve(oneStoreCsv,'M2A one store approved');
+  // The caller claims both stores; the commit only covers one.
+  await assert.rejects(svc.acceptRealData(randomUUID(),{commitId:oneStoreCommit,expectedStores:[...STORES]}),{status:409});
+  const receipt=await svc.acceptRealData(randomUUID(),{commitId:oneStoreCommit,expectedStores:null});
+  assert.deepEqual((receipt as {stores:string[]}).stores,['MOUNTAIN_BASE']);
+  // One store is coverage in progress, not readiness.
+  assert.equal(await realData(),'PENDING');
+ });
+
+ let approvedCommit='';
+ await check('an owner-approved source covering both stores reaches READY',async()=>{
+  approvedCommit=await commit(approvedCsv,'approved-source');
+  const digest=await approve(approvedCsv,'M2A approved two store source');
+  const key=randomUUID(),input={commitId:approvedCommit,expectedStores:[...STORES]};
   const receipt=await svc.acceptRealData(key,input),again=await svc.acceptRealData(key,input);
   assert.deepEqual(receipt,again);
-  assert.equal((receipt as {acceptedRows:number}).acceptedRows,KINDS.length*STORES.length);
-  assert.equal((receipt as {acceptedAssets:number}).acceptedAssets,PER_STORE*4*STORES.length);
+  assert.deepEqual((receipt as {stores:string[]}).stores.slice().sort(),[...STORES].sort());
   assert.equal((receipt as {sourceClass:string}).sourceClass,'REAL');
   assert.equal((receipt as {synthetic:boolean}).synthetic,false);
-  assert.deepEqual((receipt as {stores:string[]}).stores.slice().sort(),[...STORES].sort());
-  const after=await gate.status({runId:null,components,backup:null});
-  assert.equal(after.rows.find(r=>r.row==='REAL_DATA')!.state,'READY');
-  assert.equal(after.realDataReceipts,1);
-  assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM ops_history WHERE resource='real_data_acceptance'")).rows[0].n,1);
+  assert.equal((receipt as {approvedSource:boolean}).approvedSource,true);
+  assert.equal((await x.db.pool.query('SELECT approved_source_sha256 FROM real_data_acceptance WHERE commit_id=$1',[approvedCommit])).rows[0].approved_source_sha256,digest);
+  assert.equal(await realData(),'READY');
   const serialized=JSON.stringify(receipt);
   for(const leak of ['@','password','token','://'])assert.ok(!serialized.includes(leak),leak);
+ });
+
+ await check('the committed source is immutable and a withdrawn approval retires the receipt',async()=>{
+  assert.equal(await realData(),'READY');
+  // The receipt is bound to a stage that cannot be rewritten, so its digest cannot drift.
+  await assert.rejects(x.db.pool.query("UPDATE ops_import_stages SET stage=jsonb_set(stage,'{sourceSha256}',to_jsonb($2::text)) WHERE id=$1",[approvedCommit,'d'.repeat(64)]),{code:'23514'});
+  assert.equal((await x.db.pool.query('SELECT stage->>$2 v FROM ops_import_stages WHERE id=$1',[approvedCommit,'sourceSha256'])).rows[0].v,createHash('sha256').update(approvedCsv).digest('hex'));
+  assert.equal(await realData(),'READY');
+  // Withdrawing the approval retires the receipt without deleting the record of what happened.
+  await x.db.pool.query('DELETE FROM real_inventory_sources WHERE source_sha256=$1',[createHash('sha256').update(approvedCsv).digest('hex')]);
+  await x.db.pool.query('DELETE FROM real_inventory_sources WHERE source_sha256=$1',[createHash('sha256').update(oneStoreCsv).digest('hex')]);
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM real_data_acceptance')).rows[0].n,2);
+  assert.equal(await realData(),'NOT_RUN');
  });
 
  await check('imported stock is visible to reconciliation and search without extra queries',async()=>{

@@ -56,6 +56,24 @@ than guessing. It must be read from the PR.
 into the web build. `packages/db/src/index.ts` re-exports it, so there is still one source of
 truth and no migration content changed.
 
+## Security checklist
+
+Each line is asserted by a test in the suites listed, not by inspection alone.
+
+| check | result | evidence |
+| --- | --- | --- |
+| secret or PII leakage | 0 | `check:secrets`; manifest refuses credential-shaped keys and values; field acceptance has no free-text column; import report carries no cell value |
+| provider network calls | 0 | no `fetch`, URL client or socket exists in any new server module; harnesses are fixtures |
+| Production mutation | 0 | no Production credential is read; preflight validates declared config shape only |
+| authentication bypass | 0 | anonymous 401 and unprivileged 403 on `/api/admin/launch` and `/api/operations/*`; field acceptance and the console are default deny |
+| arbitrary URL / SSRF | 0 | the only `new URL(...)` parses the webhook address to validate it and never requests it; https, no credentials, no query, no loopback |
+| store mapping | explicit | Square acceptance requires both stores, rejects an incomplete or ambiguous mapping |
+| field acceptance mutates business state | never | records write only their own table plus one audit row; business fingerprint unchanged |
+| launch gate is read-only | yes | no form, no password input and no control beyond reload; `canActivateProduction: false` |
+| import idempotency | held | replaying the same file creates nothing and reports every row as a no-op |
+| migration safety | held | fresh apply, populated upgrade, concurrent apply once, replay inert, failed-DDL rollback, historical checksums preserved |
+| rollback and feature isolation | held | media, notification and operations failures leave booking, HOLD, quote, payment and custody intact |
+
 ## Deliberate limits
 
 - Physical iPhone/Android testing is `NOT_RUN`; M2A builds the tooling and the record only.

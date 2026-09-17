@@ -15,7 +15,7 @@ let stage='start',failed=false,owned=false,count=0,app:Awaited<ReturnType<typeof
 const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 try{
- app=await startFlowApp({contentFixture:true});namespace=app.db.identity.namespace;const origin=app.origin;
+ app=await startFlowApp({contentFixture:true,warmRoutes:true});namespace=app.db.identity.namespace;const origin=app.origin;
  await bootstrapDevelopmentAdmin(app.db.pool,{email:'content-root@example.invalid',displayName:'SYNTHETIC Content Root',password});
  const subject=(await app.db.pool.query("SELECT id FROM staff_users WHERE email='content-root@example.invalid'")).rows[0].id;
  await seedContentFixture(namespace,subject);owned=true;const fixture=new FileFixture(namespace);

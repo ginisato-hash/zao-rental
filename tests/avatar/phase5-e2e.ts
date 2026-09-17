@@ -14,7 +14,7 @@ const evidence='docs/execution/avatar-phase5',results:{kind:string;name:string;s
 let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,browser:Awaited<ReturnType<typeof chromium.launch>>|undefined,stage='setup',failed=false,externalAttempts=0,visualPosts=0,measuringVisuals=false;
 const check=async(kind:string,name:string,fn:()=>Promise<void>)=>{stage=name;await fn();results.push({kind,name,status:'PASS'});console.log('PASS '+kind+' '+name);};
 try{
- app=await startFlowApp({publicP0:true,avatarPhase5:true});const {db,origin}=app;
+ app=await startFlowApp({publicP0:true,avatarPhase5:true,warmRoutes:true});const {db,origin}=app;
  await seedRecommendation(db.pool,true);await db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:00Z'::timestamptz$$");
  const password=randomBytes(24).toString('base64url'),subject=await bootstrapDevelopmentAdmin(db.pool,{email:'avatar-phase5@example.invalid',displayName:'SYNTHETIC Phase5',password});
  for(const permission of ['PRICE_EDIT','BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'])await db.pool.query('INSERT INTO staff_permission_overrides VALUES($1,$2,true)',[subject,permission]);

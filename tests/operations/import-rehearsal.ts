@@ -121,7 +121,8 @@ try{
 
  // A second, deliberately separate source file. Its content is synthetic, but its digest
  // stands in for a file the owner has approved at the deployment-owned boundary.
- const approvedLines=STORES.map(store=>row(KINDS[0]!,store,'M2A approved source',' approved'));
+ const poleKind=KINDS.find(k=>k.unit==='PAIR_QUANTITY')!;
+ const approvedLines=STORES.flatMap(store=>[row(KINDS[0]!,store,'M2A approved source',' approved'),row(poleKind,store,'M2A approved poles',' approved')]);
  const approvedCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+approvedLines.join('\n')+'\n';
  const oneStoreCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(KINDS[1]!,'MOUNTAIN_BASE','M2A one store source',' one-store')+'\n';
  const gate=new LaunchGate(ctx);
@@ -171,6 +172,11 @@ try{
   assert.equal((receipt as {synthetic:boolean}).synthetic,false);
   assert.equal((receipt as {approvedSource:boolean}).approvedSource,true);
   assert.equal((await x.db.pool.query('SELECT approved_source_sha256 FROM real_data_acceptance WHERE commit_id=$1',[approvedCommit])).rows[0].approved_source_sha256,digest);
+  // accepted_assets counts immutable Assets; accepted_quantity sums the physical quantity
+  // the quantity-backed rows actually carried, not how many lines mentioned them.
+  assert.equal((receipt as {acceptedRows:number}).acceptedRows,STORES.length*2);
+  assert.equal((receipt as {acceptedAssets:number}).acceptedAssets,PER_STORE*STORES.length);
+  assert.equal((receipt as {acceptedQuantity:number}).acceptedQuantity,PER_STORE*STORES.length);
   assert.equal(await realData(),'READY');
   const serialized=JSON.stringify(receipt);
   for(const leak of ['@','password','token','://'])assert.ok(!serialized.includes(leak),leak);

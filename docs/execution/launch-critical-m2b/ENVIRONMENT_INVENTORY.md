@@ -28,14 +28,39 @@ database should sit in the same region as the runtime; choosing a Tokyo region f
 worth deciding before the Production database is created, because moving it later is
 disruptive.
 
-## Neon — NOT CONFIGURED
+## Neon — ACCOUNT AND SANDBOX EXIST, PRODUCTION NOT CREATED
 
-No `neonctl` binary, no local Neon configuration, and `vercel integration ls` reports **no
-resources** for the project, so the historical hosted development database is not attached to
-anything. A dedicated Production database therefore does not exist yet.
+An earlier revision of this document said Neon was "absent entirely". That was wrong, and the
+mistake is worth naming: no CLI and no local configuration were found on this machine, and
+that was read as the provider not existing. Absence of tooling is not absence of an account.
 
-`HUMAN_PROVIDER_GATE` — creating it needs an account decision and, depending on plan,
-acceptance of terms or a billing change, which is an Owner action.
+The Owner has confirmed:
+
+| field | value |
+| --- | --- |
+| project | `zao-rental-sandbox-development` |
+| project id | `jolly-rain-06413569` |
+| organisation | `org-delicate-dream-81592413` |
+| region | `aws-ap-southeast-1` |
+| PostgreSQL | 18 |
+| plan | `free_v3` |
+| history retention | 21600 s (6 hours) |
+| default branch | `main` |
+
+```
+NEON_ACCOUNT:    EXISTS
+NEON_SANDBOX:    EXISTS
+NEON_PRODUCTION: NOT_CREATED
+```
+
+This project is the sandbox/development environment and **must not be reused for Production**.
+
+Two consequences follow. The Production database should sit in `aws-ap-southeast-1` alongside
+the existing APAC environment, with the Vercel runtime co-located in `sin1`, rather than the
+Tokyo pairing suggested in the earlier revision — that suggestion is withdrawn. And the
+sandbox's 6-hour history retention is far below the 7-day retention with point-in-time
+recovery the launch gate requires, so if the Production plan cannot provide it,
+`HUMAN_BILLING_GATE` applies and `BACKUP` stays `BLOCKED`. No plan change was made.
 
 ## Square — NOT CONNECTED
 
@@ -84,7 +109,7 @@ machine; every recent spreadsheet found belongs to other products. See
 | subgate | state | blocking action |
 | --- | --- | --- |
 | Vercel project | READY | — |
-| Production database | BLOCKED | Owner: provider account, region, plan |
+| Production database | BLOCKED | schema cannot be created yet — see `PRODUCTION_BOOTSTRAP_BOUNDARY.md`; plan must also reach 7-day retention + PITR |
 | Production migrations | BLOCKED | depends on the database |
 | Square identity | BLOCKED | Owner: Production credentials and expected identity |
 | Square webhook | BLOCKED | depends on Square and a Production origin |

@@ -62,6 +62,15 @@ try{
  assert.notEqual(await page.evaluate(key=>sessionStorage.getItem(key),requestStorage),firstRequest);
  const caps=(await app.db.pool.query('SELECT revoked_at FROM booking_access.capabilities')).rows;assert.equal(caps.length,2);assert.equal(caps.filter(r=>r.revoked_at===null).length,1);
  console.log('PASS lost revoke response preserves key; acknowledged replay then explicit same-tab resave uses one new capability without reviving the old one');
+ stage='CH-05 regression: pagehide->focus->pagehide does not leave reload permanently disabled';
+ // Synthetic event dispatch, not a real backgrounded tab/BFCache or a physical device test.
+ // The second pagehide interrupts the reload() the focus handler started before it resolves;
+ // before the CH-05 fix, blur() itself set reading=true with no request behind it, so that
+ // reload()'s ticket-gated finally could never clear it and the button stayed disabled forever.
+ assert.equal(await page.getByRole('button',{name:'予約を再読込',exact:true}).isDisabled(),false);
+ await page.evaluate(()=>{window.dispatchEvent(new Event('pagehide'));window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('pagehide'));});
+ await expect(page.getByRole('button',{name:'予約を再読込',exact:true})).toBeEnabled();
+ console.log('PASS synthetic pagehide/focus/pagehide leaves reload enabled; not a real BFCache or device backgrounding test');
  stage='guest expiration and separate booking read';await clock('2035-01-02T11:00:00+09:00');assert.equal((await context.request.get('/api/guest/draft')).status(),401);await page.reload();await expect(page.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();const response=await context.request.get('/api/booking-access');assert.equal(response.status(),200);assert.match(response.headers()['cache-control']!,/no-store/);const data=await response.json();assert.equal(data.readOnly,true);assert.equal(data.chargeReady,false);assert.equal('contact' in data,false);assert.equal('members' in data,false);assert.equal(JSON.stringify(data).includes(cookie.value),false);
  const stranger=await browser.newContext({baseURL:app.origin});assert.equal((await stranger.request.get('/api/booking-access')).status(),401);await stranger.close();
  console.log('PASS expired input context cannot mutate; separate booking cookie reads minimal confirmation/QR through original due; another browser denied');

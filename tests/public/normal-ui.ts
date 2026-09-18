@@ -46,6 +46,31 @@ try{
    const forward=await apiRequest.newContext();try{assert.equal(new URL(route.request().url()).origin,app!.origin);const response=await forward.fetch(route.request(),{maxRetries:0,maxRedirects:0});assert.equal(response.status(),200);await route.abort('failed');done();}catch(e){fail(e);}finally{await forward.dispose();}
   });await page.getByRole('button',{name:'在庫をHOLDして開発用決済を照合'}).click();await lost;await expect(page.getByRole('button',{name:'保存済みの結果を再読込'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'保存済みの結果を再読込'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
  });
+ await check('UIR-01/UIR-02 regression: no cross-context input leak, malformed cache does not crash, server-saved input still restores',async()=>{
+  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  // A sentinel from an unrelated key prefix (what a real booking-access/recovery flow would set)
+  // must survive whatever cleanup this scenario triggers -- only zao-guest-draft-input is in scope.
+  await p.evaluate(()=>sessionStorage.setItem('zao-booking-access-request:sentinel','keep-me'));
+  // Simulate what a pre-fix session, or another guest sharing this tab, would have left behind:
+  // a full Input object (including body measurements) under the old unscoped key.
+  await p.evaluate(()=>sessionStorage.setItem('zao-guest-draft-input',JSON.stringify({pickupStore:'ONSEN_BASE',returnStore:'ONSEN_BASE',period:{startDate:'2035-09-09',endDate:'2035-09-09',slot:'DAY'},members:[{key:'person-1',sport:'SKI',heightCm:999,footCm:99,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null}]})));
+  // A cookie expiring, or an explicit logout, creates a fresh guest context transparently
+  // (POST /context returns 201, not 401) -- this is the exact path the review's UIR-01 flagged.
+  await p.evaluate(()=>fetch('/api/guest/logout',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:'{}'}));
+  await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  await expect(p.getByLabel('利用開始日',{exact:true})).toHaveValue('');await expect(p.getByLabel('利用終了日',{exact:true})).toHaveValue('');
+  assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-guest-draft-input')),null,'stale cross-context cache is purged, not restored');
+  assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-booking-access-request:sentinel')),'keep-me','cleanup is scoped to the one key, not a blanket sessionStorage clear');
+  // UIR-02: a malformed cached shape must not crash the page.
+  await p.evaluate(()=>sessionStorage.setItem('zao-guest-draft-input','{}'));
+  await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-guest-draft-input')),null);
+  // A real, server-saved draft (not the removed local cache) must still restore across reload.
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
+  await p.reload();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
+  await ctx.close();
+ });
  await check('cross-guest/CSRF and role/amount tampering rejected; logout drops the former context',async()=>{
   const old=await (await context.request.get('/api/guest/draft')).json();const other=await browser.newContext({baseURL:app!.origin});assert.equal((await other.request.get('/api/guest/draft')).status(),401);assert.equal((await other.request.post('/api/guest/context',{data:{}})).status(),403);await other.request.post('/api/guest/context',{headers:{origin:app!.origin},data:{}});assert.equal((await other.request.post('/api/guest/draft',{headers:{origin:app!.origin},data:{draftId:old.id,expectedRevision:old.revision,input:old.input}})).status(),403);assert.equal((await context.request.post('/api/guest/checkout',{headers:{origin:app!.origin},data:{paid:true,amount:1,role:'ADMIN'}})).status(),422);await page.getByRole('button',{name:'この予約画面を閉じる'}).click();await page.waitForURL(app!.origin+'/ja');assert.equal((await context.request.get('/api/guest/draft')).status(),401);await other.close();
  });

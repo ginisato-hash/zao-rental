@@ -23,7 +23,7 @@ export function ConfirmedBooking(){
   request('').then(v=>{if(!cancelled&&n===ticket.current){setView(v);setMessage('');}})
    .catch(()=>{if(!cancelled&&n===ticket.current)setMessage('予約の閲覧権がないか、失効・期限切れです。');})
    .finally(()=>{if(!cancelled&&n===ticket.current){setPendingBookingId(pendingRevoke());setReading(false);}});
-  const blur=()=>{++ticket.current;setView(null);setReading(true);},focus=()=>{void reload();};
+  const blur=()=>{++ticket.current;setView(null);setReading(false);},focus=()=>{void reload();};
   window.addEventListener('pagehide',blur);window.addEventListener('focus',focus);window.addEventListener('pageshow',focus);
   return()=>{cancelled=true;window.removeEventListener('pagehide',blur);window.removeEventListener('focus',focus);window.removeEventListener('pageshow',focus);};
  },[]);

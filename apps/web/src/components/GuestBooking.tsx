@@ -23,11 +23,6 @@ let starting:Promise<unknown>|null=null;
 // discard of any value a pre-fix session already wrote remains.
 const INPUT_STORAGE_KEY='zao-guest-draft-input';
 function clearStoredInput(){try{sessionStorage.removeItem(INPUT_STORAGE_KEY);}catch{}}
-// Reads a pre-existing step out of history.state, if this component instance is mounting
-// onto an entry we (or a prior instance) already tagged -- e.g. the page was reloaded while
-// positioned mid-history. Never overwrite that entry blindly on mount; only establish a
-// fresh {step:0} baseline when none exists yet (a plain first visit).
-function readHistoryStep():number{if(typeof window==='undefined')return 0;try{const s=(window.history.state as {step?:number}|null)?.step;return typeof s==='number'&&Number.isInteger(s)&&s>=0&&s<=3?s:0;}catch{return 0;}}
 async function request(path:string,body?:unknown){const r=await fetch('/api/guest'+path,{cache:'no-store',method:body===undefined?'GET':'POST',headers:{'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error),{status:r.status});return data;}
 function blank(n:number):Member{return {key:'person-'+n,sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null};}
 function blankInput():Input{return {pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'',endDate:'',slot:'DAY'},members:[blank(1)]};}
@@ -37,7 +32,7 @@ const PAYMENT_STATE_COPY:Record<string,{ja:string;en:string}>={SUBMITTING:{ja:'�
 const SLOT_OPTIONS:[string,string][]=[['DAY','1日 / Day'],['AM','午前 / Morning'],['PM','午後 / Afternoon'],['MULTIDAY','2日以上 / Multi-day']];
 const STORE_LABEL:Record<string,string>={MOUNTAIN_BASE:'Mountain Base',ONSEN_BASE:'Onsen Base'};
 export function GuestBooking({locale}:{locale:Locale}){const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
- const [draft,setDraft]=useState<Draft|null>(null),[options,setOptions]=useState<Options>({models:[],sizes:[]}),[input,setInput]=useState<Input>(blankInput),[step,setStep]=useState(readHistoryStep),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[directions,setDirections]=useState<Record<string,string>>({}),[accepted,setAccepted]=useState(false),[advance,setAdvance]=useState(false),[contact,setContact]=useState<Contact>({displayName:'SYNTHETIC Guest',email:'synthetic-guest@example.invalid',termsAccepted:false}),[simulation,setSimulation]=useState(false);
+ const [draft,setDraft]=useState<Draft|null>(null),[options,setOptions]=useState<Options>({models:[],sizes:[]}),[input,setInput]=useState<Input>(blankInput),[step,setStep]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[directions,setDirections]=useState<Record<string,string>>({}),[accepted,setAccepted]=useState(false),[advance,setAdvance]=useState(false),[contact,setContact]=useState<Contact>({displayName:'SYNTHETIC Guest',email:'synthetic-guest@example.invalid',termsAccepted:false}),[simulation,setSimulation]=useState(false);
  const alive=useRef(true),ticket=useRef(0),inFlight=useRef(false);
  // CH-04A: the displayed step is reflected in browser history so Back/Forward move one
  // step instead of leaving the app. Only the step number (an allowlisted, non-secret
@@ -64,21 +59,27 @@ export function GuestBooking({locale}:{locale:Locale}){const ja=locale==='ja',t=
   // entry after a reload), leave it untouched rather than overwriting it with 0.
   if(typeof (history.state as {step?:number}|null)?.step!=='number')history.replaceState({step},'');
   const onPopState=(e:PopStateEvent)=>{
-   const d=draftRef.current,max=!d?0:(d.selection||d.booking||d.hold)?3:d.preview?2:1;
+   const d=draftRef.current,max=!d?0:(d.selection||d.booking||d.hold)?3:d.preview?2:d.input?1:0;
    const requested=typeof (e.state as {step?:number}|null)?.step==='number'?(e.state as {step:number}).step:0;
    const target=Math.min(Math.max(requested,0),max);
    historyStepRef.current=target;setStep(target);
   };
   window.addEventListener('popstate',onPopState);
   return()=>window.removeEventListener('popstate',onPopState);
- // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: reads step's initial value only, matching the lazy useState(readHistoryStep) it backstops
+ // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: reads step's initial value (always 0 here) just to seed a baseline entry before open() resolves
  },[]);
  const open=useCallback((d:Draft)=>{setDraft(d);if(d.input){setInput(d.input);setSavedInputJson(JSON.stringify(d.input));}if(d.selection){setDirections(d.selection.directions);setAdvance(d.selection.wantAdvance);if(d.selection.contact)setContact(d.selection.contact);}
-  const newStep=(d.selection||d.booking||d.hold)?3:d.preview?2:null;
-  if(newStep!==null){
-   if(!initializedRef.current){history.replaceState({step:newStep},'');historyStepRef.current=newStep;}
-   else if(newStep>historyStepRef.current){history.pushState({step:newStep},'');historyStepRef.current=newStep;}
-   setStep(newStep);
+  // Server state is authoritative, history is not: maxForDraft is the step this draft's
+  // own data actually supports right now. The step UI never renders before `draft` is set
+  // (see the {draft&&...} gate below), so there is nothing to preserve from before this
+  // call -- the very first call (mount resume) always adopts maxForDraft outright, e.g.
+  // correctly resetting to step 0 if a reload lands on a since-invalidated context (cookies
+  // cleared) that no longer supports whatever step a stale history entry once recorded.
+  const maxForDraft=(d.selection||d.booking||d.hold)?3:d.preview?2:d.input?1:0;
+  if(!initializedRef.current){
+   history.replaceState({step:maxForDraft},'');historyStepRef.current=maxForDraft;setStep(maxForDraft);
+  }else if(maxForDraft>historyStepRef.current){
+   history.pushState({step:maxForDraft},'');historyStepRef.current=maxForDraft;setStep(maxForDraft);
   }
   initializedRef.current=true;
   if(d.simulation!==undefined)setSimulation(d.simulation);

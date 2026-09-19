@@ -36,15 +36,29 @@ try{
  });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
   await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole); // option keys come from the server below if catalog prefix differs
-  await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員のサイズ・モデル条件・ウェア構成を確認した').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('全員分の参考総額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'.local/screenshots/guest-review-mobile.png',fullPage:true});
+  await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員のサイズ・モデル条件・ウェア構成を確認した').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('全員分の参考総額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  // CL-02: no wear items and advance was never requested in this flow, so both adjustment
+  // rows must stay hidden -- only the subtotal and group-total rows are present.
+  await expect(page.locator('dl.guest-price dt')).toHaveText(['小計','全員分の参考総額']);
+  await expect(page.locator('dl.guest-price')).not.toContainText('ウェア調整');
+  await expect(page.locator('dl.guest-price')).not.toContainText('事前決済調整');
+  await page.screenshot({path:'.local/screenshots/guest-review-mobile.png',fullPage:true});
  });
  await check('final test payment response loss and reload restore the same booking/QR from real DB without duplicate hold or payment',async()=>{
-  await page.getByLabel('合成データによる開発確認であることを確認').check();let done!:()=>void,fail!:(e:unknown)=>void;const lost=new Promise<void>((r,j)=>{done=r;fail=j;});await page.route('**/api/guest/checkout',async route=>{
+  await page.getByLabel('合成データによる開発確認であることを確認').check();let done!:()=>void,fail!:(e:unknown)=>void;const lost=new Promise<void>((r,j)=>{done=r;fail=j;});let cm06Checked=false;await page.route('**/api/guest/checkout',async route=>{
    // One fresh local transport avoids reusing the context's idle HTTP connection.
    // This still sends exactly once, proves the server committed, then loses only
    // the browser response; no retry converts an ambiguous result into PASS.
-   const forward=await apiRequest.newContext();try{assert.equal(new URL(route.request().url()).origin,app!.origin);const response=await forward.fetch(route.request(),{maxRetries:0,maxRedirects:0});assert.equal(response.status(),200);await route.abort('failed');done();}catch(e){fail(e);}finally{await forward.dispose();}
-  });await page.getByRole('button',{name:'在庫をHOLDして開発用決済を照合'}).click();await lost;await expect(page.getByRole('button',{name:'保存済みの結果を再読込'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'保存済みの結果を再読込'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
+   const forward=await apiRequest.newContext();try{
+    // CM-06: this route handler itself is the response gate -- the checkout button's request
+    // is genuinely in flight for the whole span between the click and this callback finishing,
+    // so the busy UI is observed here rather than via a fixed sleep race.
+    await expect(page.getByRole('button',{name:'処理しています…',exact:true})).toHaveAttribute('aria-busy','true');
+    await expect(page.getByRole('button',{name:'処理しています…',exact:true})).toBeDisabled();
+    await expect(page.getByRole('status').filter({hasText:'処理中です'})).toBeVisible();
+    cm06Checked=true;
+    assert.equal(new URL(route.request().url()).origin,app!.origin);const response=await forward.fetch(route.request(),{maxRetries:0,maxRedirects:0});assert.equal(response.status(),200);await route.abort('failed');done();}catch(e){fail(e);}finally{await forward.dispose();}
+  });await page.getByRole('button',{name:'在庫をHOLDして開発用決済を照合'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'保存済みの結果を再読込'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'保存済みの結果を再読込'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
  });
  await check('UIR-01/UIR-02 regression: no cross-context input leak, malformed cache does not crash, server-saved input still restores',async()=>{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
@@ -55,13 +69,22 @@ try{
   // Simulate what a pre-fix session, or another guest sharing this tab, would have left behind:
   // a full Input object (including body measurements) under the old unscoped key.
   await p.evaluate(()=>sessionStorage.setItem('zao-guest-draft-input',JSON.stringify({pickupStore:'ONSEN_BASE',returnStore:'ONSEN_BASE',period:{startDate:'2035-09-09',endDate:'2035-09-09',slot:'DAY'},members:[{key:'person-1',sport:'SKI',heightCm:999,footCm:99,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null}]})));
+  // TEST-OBS-01: observe the actual context switch, not just its symptoms -- the review
+  // noted the prior version of this case asserted blank fields/purged cache but never
+  // confirmed logout actually succeeded or that a genuinely different draft id resulted;
+  // a failed logout would leave the original unsaved draft in place, and the earlier
+  // assertions would still pass by coincidence rather than by exercising UIR-01's path.
+  const beforeDraftId=(await p.evaluate(()=>fetch('/api/guest/draft',{cache:'no-store'}).then(r=>r.json()))).id as string;
   // A cookie expiring, or an explicit logout, creates a fresh guest context transparently
   // (POST /context returns 201, not 401) -- this is the exact path the review's UIR-01 flagged.
-  await p.evaluate(()=>fetch('/api/guest/logout',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:'{}'}));
+  const logoutStatus=await p.evaluate(()=>fetch('/api/guest/logout',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:'{}'}).then(r=>r.status));
+  assert.equal(logoutStatus,200,'logout must actually succeed for this to be the reviewed context-switch path');
   await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await expect(p.getByLabel('利用開始日',{exact:true})).toHaveValue('');await expect(p.getByLabel('利用終了日',{exact:true})).toHaveValue('');
   assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-guest-draft-input')),null,'stale cross-context cache is purged, not restored');
   assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-booking-access-request:sentinel')),'keep-me','cleanup is scoped to the one key, not a blanket sessionStorage clear');
+  const afterDraftId=(await p.evaluate(()=>fetch('/api/guest/draft',{cache:'no-store'}).then(r=>r.json()))).id as string;
+  assert.notEqual(afterDraftId,beforeDraftId,'the reloaded context must be a genuinely different draft, not the same one merely re-fetched');
   // UIR-02: a malformed cached shape must not crash the page.
   await p.evaluate(()=>sessionStorage.setItem('zao-guest-draft-input','{}'));
   await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
@@ -70,6 +93,29 @@ try{
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await p.reload();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await ctx.close();
+ });
+ await check('CL-02 regression: advance-adjustment row appears only when nonzero; JA/EN narrow width',async()=>{
+  // JA: requesting the advance-payment estimate (still within its qualification window)
+  // must surface a nonzero "事前決済調整（見込み）" row alongside the subtotal/total;
+  // no wear items are selected here, so the wear-adjustment row must stay absent.
+  const jaCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});jaCtx.setDefaultTimeout(15000);const ja=await jaCtx.newPage();last=ja;
+  await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await ja.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員のサイズ・モデル条件・ウェア構成を確認した').check();await ja.getByLabel('事前決済5％調整の見込みを確認する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
+  await expect(ja.locator('dl.guest-price dt')).toHaveText(['小計','事前決済調整（見込み）','全員分の参考総額']);
+  await expect(ja.locator('dl.guest-price')).not.toContainText('ウェア調整');
+  const advanceRowValue=await ja.locator('dl.guest-price dd').nth(1).innerText();assert.notEqual(advanceRowValue.trim(),'');assert.doesNotMatch(advanceRowValue,/¥0(?:[^0-9]|$)/);
+  assert.ok(await ja.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await jaCtx.close();
+  // EN, same narrow viewport, default (zero-adjustment) flow: labels localize and no
+  // adjustment rows leak in when nothing triggers them, mirroring the JA zero case above.
+  const enCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});enCtx.setDefaultTimeout(15000);const en=await enCtx.newPage();last=en;
+  await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'Choose equipment',exact:true}).click();await en.getByLabel('Pole size 1',{exact:true}).selectOption('pole-'+variants.pole);await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
+  // The EN direction label is currently the raw enum ('RECOMMENDED'), not localized copy.
+  await en.getByRole('radio',{name:/RECOMMENDED/i}).check();await en.getByLabel('I confirm each person’s size, model promise and wear selections').check();await en.getByRole('button',{name:'Review the whole group',exact:true}).click();await expect(en.getByRole('region',{name:'Group review'})).toBeVisible();
+  await expect(en.locator('dl.guest-price dt')).toHaveText(['Subtotal','Group estimate']);
+  await expect(en.locator('dl.guest-price')).not.toContainText('Wear adjustment');
+  await expect(en.locator('dl.guest-price')).not.toContainText('Estimated advance adjustment');
+  assert.ok(await en.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await enCtx.close();
  });
  await check('cross-guest/CSRF and role/amount tampering rejected; logout drops the former context',async()=>{
   const old=await (await context.request.get('/api/guest/draft')).json();const other=await browser.newContext({baseURL:app!.origin});assert.equal((await other.request.get('/api/guest/draft')).status(),401);assert.equal((await other.request.post('/api/guest/context',{data:{}})).status(),403);await other.request.post('/api/guest/context',{headers:{origin:app!.origin},data:{}});assert.equal((await other.request.post('/api/guest/draft',{headers:{origin:app!.origin},data:{draftId:old.id,expectedRevision:old.revision,input:old.input}})).status(),403);assert.equal((await context.request.post('/api/guest/checkout',{headers:{origin:app!.origin},data:{paid:true,amount:1,role:'ADMIN'}})).status(),422);await page.getByRole('button',{name:'この予約画面を閉じる'}).click();await page.waitForURL(app!.origin+'/ja');assert.equal((await context.request.get('/api/guest/draft')).status(),401);await other.close();

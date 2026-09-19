@@ -5,11 +5,15 @@ screenshots. No `DELETE`/`SHORTEN`/`MOVE`/`HIDE`/`ADVANCED`/`VISUAL`/`KEEP`/`ASS
 annotations are applied here — that classification belongs to the Technical Director's
 own review pass in Phase UX-2. This document only records what is currently on screen.
 
-**Server:** the already-running, Owner-maintained local dev server at
-`http://127.0.0.1:38946` (`next-server`, pid 2101). The server was only ever navigated
-against (GET/POST calls a normal visitor or one synthetic booking would make); it was
-never started, stopped, or restarted, and no source file under `apps/web` or `packages`
-was modified to produce this audit.
+**Server:** customer screens, the reservation recheck, and the candidate-variance
+maintained-server observation all used the already-running, Owner-maintained local dev
+server at `http://127.0.0.1:38946` (`next-server`, pid 2101) — only ever navigated against
+(GET/POST calls a normal visitor or one synthetic booking would make); never started,
+stopped, or restarted. Staff/admin screens and the controlled candidate-variance
+re-verification instead used a fully isolated, disposable local app + PostgreSQL instance
+(see their own sections below), which was stopped and torn down after use and never shared
+any state, account, or credential with the maintained server. No source file under
+`apps/web` or `packages` was modified to produce this audit.
 
 **Method:** screenshots were captured with a scripted headless Playwright browser
 (`playwright`, already a repo devDependency) driving the running server directly —
@@ -210,76 +214,138 @@ same run, this page did not show the just-created booking/QR. Below that, a "別
 登録メールアドレス inputs and a "復旧を依頼する" button.
 
 Observations: this route was technically reached (screen captured, "not reached" does not
-apply), but it never showed the booking/QR that was just confirmed and saved in the same
-run — it consistently rendered the no-access/expired state instead. This route also uses a
-visibly different page shell (no shared header/footer/nav styling) from every other
-customer screen captured above.
+apply). This route also uses a visibly different page shell (no shared header/footer/nav
+styling) from every other customer screen captured above.
+
+**UX1-EV-02 recheck (resolved, not a harness bug):** re-ran the full save/open sequence
+against the maintained server in a single Playwright `BrowserContext`/`Page` (per the TD's
+exact 9-step recheck procedure), with the booking-access `POST /api/booking-access/issue`
+response instrumented directly (status + timing, no cookie values logged). Result across 4
+separate attempts (1 initial + 3 retries via the app's own "保存の完了は未確認です。同じ要求を
+再照合してください" retry affordance): **`POST /api/booking-access/issue` returned HTTP 503
+every single time**, `GET /api/booking-access` also returned 503, and no `zao_booking_access`
+cookie was ever set (checked for existence only, per instruction). The earlier
+"expired/no-access" observation was a downstream symptom of this 503, not a browser-context
+bug in the audit script — the corrected recheck screenshots
+(`screenshots/customer-reservation-confirmation-recheck-ja-390.png` / `-1440.png`) show the
+booking-result screen itself, since the "保存した予約とQRを開く" link never appears without a
+successful save.
+
+This is consistent with the original NR-01 finding's documented condition
+(`ZAO_BOOKING_ACCESS_RUNTIME` not connected when the app is started without the
+`publicP1`/`publicP4`-equivalent flags) — i.e. a characteristic of how this maintained
+review server instance happens to be started, not a product code defect. The existing
+`tests/readiness/booking-access-ui.ts` suite (which boots with those flags) independently
+and repeatedly verifies the identical save→open→QR-visible contract succeeding (reconfirmed
+passing earlier in this same session's history-correction batch). No BookingAccess product
+code was changed to investigate or "fix" this, per UX-1 scope.
 
 ---
 
-## Staff screens — BLOCKED
+## Staff / admin screens
 
-**Result: 0 of the requested staff screens were captured.** Per the coordinator's
-correction, the existing credential file `.local/ui-review/credentials.txt` (already
-present in this worktree, gitignored, not created by this session) was read **directly at
-runtime by a throwaway Node/Playwright script** — the email/password never passed through
-this agent's own context, any Bash command, or any file this agent wrote — and used once,
-solely to fill `/staff/login`'s own email/password fields and submit the existing form. No
-new staff account was created, no password was reset, and no permission was changed.
+**Result: 28/28 target screens captured (14 routes × 390/1440).** Per UX1-EV-01, the
+maintained server's credential was never used again for this — instead, a throwaway script
+(deleted after use, never committed) booted a fully isolated, disposable local app +
+PostgreSQL instance via the same `startDevelopmentApp({operations:true})` +
+`bootstrapDevelopmentAdmin` + `writeAccount` pattern already used by
+`tests/operations/{console-ui,launch-ui,normal-ui}.ts` and `tests/notification/normal-ui.ts`.
+A synthetic ADMIN account (`uxaudit-operator@example.invalid`, random throwaway password,
+scope `ALL`) was created **only inside that disposable database** with every permission
+those precedent files use across their own synthetic accounts (`INVENTORY_VIEW/EDIT`,
+`BOOKING_VIEW/CREATE`, `HOLD_VIEW/EDIT`, `QUOTE_VIEW/CREATE`, `PRICE_EDIT`,
+`TRANSFER_VIEW/PLAN/DISPATCH/RECEIVE`, `OPERATIONS_VIEW/ACKNOWLEDGE`, `FIELD_ACCEPTANCE`,
+`RENTAL_CHECKOUT/RETURN/AMEND`, `NOTIFICATION_RESEND`), logged in through the real
+`/staff/login` → `/api/auth/sign-in/email` → `/staff/ledger` form, then all 14 routes were
+visited and screenshotted at 390 and 1440. `tests/recommendation/fixture.ts`'s
+`seedRecommendation` populated realistic catalog/inventory data first (visible in the
+ledger's 16 records below), and pages with an explicit "読み込む" load action
+(amendments/quotes/inventory/prices/notifications/ops/launch) had it clicked once before
+capture, matching how the precedent test suites themselves interact with those pages. The
+isolated app/DB was stopped cleanly afterward. **The maintained server's own account,
+credentials, and permissions were never touched**, and no product/test code was added to
+the repo to enable this (the capture script lived under this worktree's already-gitignored
+`.local/` and was deleted when done).
 
-What happened: the blank `/staff/login` form was captured safely (before any value was
-entered) at both 390 and 1440 — `screenshots/staff-login-390.png` and
-`screenshots/staff-login-1440.png`. The one login submission did not complete within the
-capture script's wait window: the button remained in its own busy state ("確認中…") and the
-page neither redirected to `/staff/ledger` nor showed a visible error, so login success
-could not be confirmed. A second, more patient verification attempt was itself blocked by
-this environment's own safety control (flagged as a credential-handling/exploration
-action), so no further login attempts were made, per the instruction not to retry or
-brute-force. One screenshot from the single attempt inadvertently captured the still-filled
-email field before the app's own post-submit reset ran (the password field was correctly
-masked); that image was deleted immediately and is not present in the output directory —
-no credential-bearing image is included anywhere in this deliverable.
+| Spec item | Route | Screenshots | Notes |
+|---|---|---|---|
+| home | `/staff` | `staff-home-{390,1440}.png` | Minimal: a heading and one "道具の台帳へ" link, nothing else. |
+| ledger | `/staff/ledger` | `staff-ledger-{390,1440}.png` | Full "個体台帳" inventory table, 16 seeded records (skis/boards/boots), search/filter row, per-store status pills, a right-rail explainer panel. |
+| rental | `/staff/rentals` | `staff-rentals-{390,1440}.png` | Rental/pickup workspace. |
+| amendments | `/staff/amendments` | `staff-amendments-{390,1440}.png` | Amendment workspace, load button clicked; no seeded amendment records, so the list itself renders empty under its own filter controls. |
+| holds | `/staff/holds` | `staff-holds-{390,1440}.png` | Hold workspace; no seeded active holds (none were created for this capture), so shows its normal empty state. |
+| quotes | `/staff/quotes` | `staff-quotes-{390,1440}.png` | Quote workspace, load button clicked. |
+| transfers | `/staff/transfers` | `staff-transfers-{390,1440}.png` | Transfer workspace. |
+| wear | `/staff/wear` | `staff-wear-{390,1440}.png` | Wear-specific inventory view. |
+| inventory | `/admin/inventory` | `admin-inventory-{390,1440}.png` | Inventory operations workspace, load button clicked. |
+| prices | `/admin/prices` | `admin-prices-{390,1440}.png` | Price admin workspace, load button clicked. |
+| assets | `/admin/assets` | `admin-assets-{390,1440}.png` | Asset/label printing view (ski/board QR labels). |
+| notifications | `/admin/notifications` | `admin-notifications-{390,1440}.png` | Notification workspace, load button clicked. |
+| ops | `/admin/ops` | `admin-ops-{390,1440}.png` | "運用例外" (operations exceptions) workspace, load button clicked; a one-paragraph explainer ("ここは業務状態の記録ではなく観測です…") precedes the filter controls; no seeded exceptions, so the result list is empty under the filters. A dev-mode "Compiling…" HMR badge is visible in one corner of this screenshot — that is a `next dev` tooling artifact of this capture method, not part of the shipped product UI. |
+| launch | `/admin/launch` | `admin-launch-{390,1440}.png` | Launch-readiness gate, load button clicked. |
 
-Because authentication could not be confirmed, **none of the following routes were
-captured**, and no code, config, account, or password was touched to try to unblock them:
+Two pre-existing blank-form screenshots remain from the earlier attempt against the
+maintained server: `staff-login-390.png` / `staff-login-1440.png` (still valid as the
+actual `/staff/login` screen's own appearance, unrelated to which server backs it).
 
-| Spec item | Existing route (`apps/web/src/app/staff/*` or `apps/web/src/app/admin/*`) | Status |
-|---|---|---|
-| home | `/staff` | BLOCKED — auth not confirmed |
-| ledger | `/staff/ledger` | BLOCKED — auth not confirmed |
-| rental | `/staff/rentals` | BLOCKED — auth not confirmed |
-| amendments | `/staff/amendments` | BLOCKED — auth not confirmed |
-| holds | `/staff/holds` | BLOCKED — auth not confirmed |
-| quotes | `/staff/quotes` | BLOCKED — auth not confirmed |
-| transfers | `/staff/transfers` | BLOCKED — auth not confirmed |
-| wear | `/staff/wear` | BLOCKED — auth not confirmed |
-| inventory | `/admin/inventory` | BLOCKED — auth not confirmed |
-| prices | `/admin/prices` | BLOCKED — auth not confirmed |
-| assets | `/admin/assets` | BLOCKED — auth not confirmed |
-| notifications | `/admin/notifications` | BLOCKED — auth not confirmed |
-| ops | `/admin/ops` | BLOCKED — auth not confirmed |
-| launch | `/admin/launch` | BLOCKED — auth not confirmed |
+**Note on empty states:** several pages above show their genuine empty/no-activity state
+because this capture intentionally created no holds, amendments, or transfers beyond what
+`seedRecommendation` provides — showing the actual current empty state is itself accurate
+audit evidence, not a gap; populating every workflow state was out of scope for a visual
+inventory pass.
 
-**Correction to this agent's own original draft:** the original pass here searched only
-`apps/web/src/app/staff/*` and concluded these six had no route at all. That was wrong —
-they exist as real, permission-gated pages under `apps/web/src/app/admin/*`
-(`admin/inventory`, `admin/prices`, `admin/assets`, `admin/notifications`, `admin/ops`,
-`admin/launch`, each checking a staff permission such as `OPERATIONS_VIEW`/
-`INVENTORY_VIEW`/`PRICE_EDIT`/`QUOTE_VIEW` per file), confirmed by directly checking the
-file tree for `/admin` as well as `/staff`. They are gated by the same staff login, so
-they remain BLOCKED for the same reason as the `/staff/*` rows above, not because no page
-exists. All 14 requested items do map to real routes; none are missing from the codebase.
+---
 
-**To unblock:** the Owner/Technical Director should confirm whether the credential in
-`.local/ui-review/credentials.txt` is expected to be currently valid on this specific
-maintained server instance, or supply/refresh one. No further login attempts should be
-scripted from this task without that confirmation.
+## UX1-EV-03 — Candidate length variance (resolved: inventory-sensitive, not nondeterministic)
+
+The original audit observed the "長め" (longer) candidate as 155cm in one capture and 165cm
+in another for nominally the same input. Reverifying on the maintained server just now (for
+the same 2035-01-05 input used originally) surfaced an even more direct version of the same
+effect: only the "おすすめ" (recommended) candidate rendered at all — "短め"/"長め" had
+become unavailable — consistent with this server's inventory for that date having been
+further consumed by the many synthetic bookings this session's various audit passes have
+since created against it (candidates the server returns as unavailable simply don't render
+a radio row at all: `{Object.entries(m.candidates).map(([d,c])=>c&&<label ...>)}` in
+`GuestBooking.tsx` skips any `null` candidate).
+
+To test this properly under the TD's exact "same DB snapshot, no intervening HOLD/booking"
+condition, a fresh **isolated** app + database was booted (same harness pattern as
+UX1-EV-01, `startFlowApp({publicP0:true})` + `seedRecommendation`, a fixed
+`inventory_clock()`), and the identical preview flow (same dates, same pole size, no
+selection/checkout — `候補と参考料金を確認` only) was run twice against that one untouched
+instance, back to back, with `inventory_holds` row count checked before/between/after (0 the
+entire time, confirming preview truly never HOLDs stock, matching the UI's own "候補確認では
+まだ在庫を確保しません" copy). Result: **both runs returned byte-identical candidates** —
+`長め 155 cm`, `短め 145 cm`, `おすすめ 150 cm` both times.
+
+**Classification: expected inventory-sensitive behavior, not a recommendation/candidate
+determinism bug.** Under a genuinely fixed inventory snapshot the computation is stable;
+the variation seen both originally and again just now tracks real inventory consumption on
+a long-lived, repeatedly-booked-against server, not randomness in the algorithm. No
+recommendation/candidate logic was inspected further or changed, per UX-1 scope.
+
+---
+
+## Foundation CI
+
+- PR #26's own run [`35455085882`](https://github.com/ginisato-hash/zao-rental/actions/runs/35455085882) (HEAD `6c2d6880b12dbee25bd54f5c7714541f7d64e5f1`) completed: **success**.
+- Per the TD's clarification (PR #26 changes only docs/screenshots, so this run is a valid
+  repeat observation for the same product-code tree): the parent HEAD `6652a125`'s Foundation
+  CI run `35453883418` failure (`PHASE5_E2E_FAILED normal draft revision change immediately
+  invalidates prior metadata/media URLs`, actual 503 / expected 200) is recorded as a
+  **non-deterministic CI/test incident** — the immediately preceding run on the same
+  product-code tree (`35449537327`) passed this exact check, and this repeat run
+  (`35455085882`) also passed it. No separate rerun of `35453883418` was performed, per
+  instruction. No product code was changed in response to this.
 
 ---
 
 ## Screenshot inventory
 
 - Customer: `docs/execution/prelaunch-uiux-v2/screenshots/customer-*.png` — 36 files
-  (9 screens × {ja, en} × {390, 1440}).
-- Staff: `docs/execution/prelaunch-uiux-v2/screenshots/staff-login-390.png` and
-  `staff-login-1440.png` only (2 files) — both the blank, pre-submission login form.
+  (9 screens × {ja, en} × {390, 1440}), plus 2 reservation-recheck files
+  (`customer-reservation-confirmation-recheck-ja-{390,1440}.png`) — **38 customer files**.
+- Staff/admin: `docs/execution/prelaunch-uiux-v2/screenshots/{staff,admin}-*.png` — 28 files
+  from the isolated-harness capture (14 routes × {390, 1440}) plus the 2 earlier blank
+  `staff-login-{390,1440}.png` shots — **30 staff/admin files**.
+- **68 screenshots total.**

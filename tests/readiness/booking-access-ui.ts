@@ -13,7 +13,7 @@ try{
  const clock=async(t:string)=>{assert.match(t,/^[0-9:T+-]+$/);await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${t}'::timestamptz$$`);};await clock('2035-01-01T10:00:00+09:00');
  const root=await bootstrapDevelopmentAdmin(app.db.pool,{email:'p4-root@example.invalid',displayName:'SYNTHETIC P4',password:randomBytes(24).toString('base64url')});for(const permission of ['QUOTE_VIEW','QUOTE_CREATE','PRICE_EDIT'])await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true)',[root,permission]);await new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  const context=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});context.setDefaultTimeout(15000);const page=await context.newPage();
- stage='ordinary guest UI confirmation';await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-05');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByRole('checkbox',{name:'全員のサイズ・モデル条件・ウェア構成を確認した'}).check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await page.getByRole('checkbox',{name:'合成データによる開発確認であることを確認'}).check();await page.getByRole('button',{name:'在庫をHOLDして開発用決済を照合'}).click();await expect(page.getByRole('heading',{name:'CONFIRMED_DEV',exact:true})).toBeVisible();
+ stage='ordinary guest UI confirmation';await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-05');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByRole('checkbox',{name:'全員のサイズ・モデル条件・ウェア構成を確認した'}).check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await page.getByRole('checkbox',{name:'合成データによる開発確認であることを確認'}).check();await page.getByRole('button',{name:'在庫をHOLDして開発用決済を照合'}).click();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();
  console.log('PASS normal guest UI -> protected API -> synthetic payment -> confirmed real PostgreSQL booking');
  stage='response loss';let ack!:()=>void;const lost=new Promise<void>(r=>ack=r);await page.route('**/api/booking-access/issue',async route=>{const response=await route.fetch();if(response.status()!==200)throw new Error('ACCESS_ISSUE_FAILED');await route.abort('failed');ack();});await page.getByRole('button',{name:'予約閲覧をこの端末へ保存'}).click();await lost;await expect(page.getByRole('region',{name:'予約閲覧の保存'}).getByRole('status')).toContainText('未確認');await context.clearCookies({name:'zao_booking_access'});await page.unroute('**/api/booking-access/issue');await page.reload();await expect(page.getByRole('button',{name:'予約閲覧をこの端末へ保存'})).toBeVisible();await page.getByRole('button',{name:'予約閲覧をこの端末へ保存'}).click();await page.getByRole('link',{name:'保存した予約とQRを開く'}).click();await expect(page.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();assert.equal((await app.db.pool.query('SELECT count(*)::int n FROM booking_access.capabilities')).rows[0].n,1);assert.equal((await app.db.pool.query('SELECT count(*)::int n FROM rental_bookings')).rows[0].n,1);const cookie=(await context.cookies()).find(c=>c.name==='zao_booking_access')!;assert.ok(cookie.httpOnly);assert.equal(cookie.sameSite,'Strict');assert.equal(cookie.path,'/api/booking-access');assert.equal(page.url(),app.origin+'/ja/reservation');assert.equal((await page.content()).includes(cookie.value),false);
  console.log('PASS lost issuance response + reload replays one saved capability; raw token absent JSON/DOM/URL');
@@ -62,6 +62,28 @@ try{
  assert.notEqual(await page.evaluate(key=>sessionStorage.getItem(key),requestStorage),firstRequest);
  const caps=(await app.db.pool.query('SELECT revoked_at FROM booking_access.capabilities')).rows;assert.equal(caps.length,2);assert.equal(caps.filter(r=>r.revoked_at===null).length,1);
  console.log('PASS lost revoke response preserves key; acknowledged replay then explicit same-tab resave uses one new capability without reviving the old one');
+ stage='CH-05 regression: pagehide->focus->pagehide does not leave reload permanently disabled';
+ // TEST-OBS-02: reuse the same readGate mechanism as BA-01-RES above so this actually
+ // observes the focus handler's reload() disabling the button (reading=true) before the
+ // second pagehide interrupts it, instead of only checking button state before and after
+ // all three events -- a fast in-memory response could otherwise make the whole race
+ // invisible. The second pagehide interrupts the reload() the focus handler started before
+ // it resolves; before the CH-05 fix, blur() itself set reading=true with no request behind
+ // it, so that reload()'s ticket-gated finally could never clear it and the button stayed
+ // disabled forever.
+ assert.equal(await page.getByRole('button',{name:'予約を再読込',exact:true}).isDisabled(),false);
+ let ch05Entered!:()=>void,ch05Release!:()=>void;
+ const ch05Observed=new Promise<void>(r=>ch05Entered=r),ch05Blocked=new Promise<void>(r=>ch05Release=r);
+ readGate={entered:ch05Entered,blocked:ch05Blocked};
+ try{
+  await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await ch05Observed;
+  await expect(page.getByRole('button',{name:'予約を再読込',exact:true})).toBeDisabled();
+  await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+  await expect(page.getByRole('button',{name:'予約を再読込',exact:true})).toBeEnabled();
+ }finally{readGate=null;ch05Release();}
+ console.log('PASS pagehide->focus is observed mid-flight as reading-in-progress/disabled via the gated GET; the second pagehide leaves reload enabled instead of permanently disabled; not a real BFCache or device backgrounding test');
  stage='guest expiration and separate booking read';await clock('2035-01-02T11:00:00+09:00');assert.equal((await context.request.get('/api/guest/draft')).status(),401);await page.reload();await expect(page.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();const response=await context.request.get('/api/booking-access');assert.equal(response.status(),200);assert.match(response.headers()['cache-control']!,/no-store/);const data=await response.json();assert.equal(data.readOnly,true);assert.equal(data.chargeReady,false);assert.equal('contact' in data,false);assert.equal('members' in data,false);assert.equal(JSON.stringify(data).includes(cookie.value),false);
  const stranger=await browser.newContext({baseURL:app.origin});assert.equal((await stranger.request.get('/api/booking-access')).status(),401);await stranger.close();
  console.log('PASS expired input context cannot mutate; separate booking cookie reads minimal confirmation/QR through original due; another browser denied');

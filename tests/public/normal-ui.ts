@@ -44,6 +44,20 @@ try{
   await expect(page.locator('dl.guest-price')).not.toContainText('事前決済調整');
   await page.screenshot({path:'.local/screenshots/guest-review-mobile.png',fullPage:true});
  });
+ await check('UX-3A regression: the unsaved-changes banner does not appear on first arrival at a step, only after an actual edit on it',async()=>{
+  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-01');
+  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  // Filling step 0 and advancing to step 1 is real, unsubmitted progress, but nothing on step
+  // 1 itself has been touched yet -- the warning must stay absent immediately on arrival here.
+  await expect(p.getByLabel('用品 1',{exact:true})).toBeVisible();
+  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);
+  await expect(p.getByText('保存されていない変更があります')).toBeVisible();
+  await ctx.close();
+ });
  await check('final test payment response loss and reload restore the same booking/QR from real DB without duplicate hold or payment',async()=>{
   await page.getByLabel('合成データによる開発確認であることを確認').check();let done!:()=>void,fail!:(e:unknown)=>void;const lost=new Promise<void>((r,j)=>{done=r;fail=j;});let cm06Checked=false;await page.route('**/api/guest/checkout',async route=>{
    // One fresh local transport avoids reusing the context's idle HTTP connection.
@@ -58,7 +72,7 @@ try{
     await expect(page.getByRole('status').filter({hasText:'処理中です'})).toBeVisible();
     cm06Checked=true;
     assert.equal(new URL(route.request().url()).origin,app!.origin);const response=await forward.fetch(route.request(),{maxRetries:0,maxRedirects:0});assert.equal(response.status(),200);await route.abort('failed');done();}catch(e){fail(e);}finally{await forward.dispose();}
-  });await page.getByRole('button',{name:'在庫をHOLDして開発用決済を照合'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'保存済みの結果を再読込'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'保存済みの結果を再読込'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
+  });await page.getByRole('button',{name:'この内容で予約を確定する（開発用決済）'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'保存済みの結果を再読込'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'保存済みの結果を再読込'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
  });
  await check('UIR-01/UIR-02 regression: no cross-context input leak, malformed cache does not crash, server-saved input still restores',async()=>{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
@@ -172,7 +186,7 @@ try{
   await p.getByRole('button',{name:'全員分の最終確認へ'}).click();
   await expect(p.getByRole('region',{name:'全員分の確認'})).toContainText('スノーボードセット');
   await p.getByLabel('合成データによる開発確認であることを確認').check();
-  await expect(p.getByRole('button',{name:'在庫をHOLDして開発用決済を照合',exact:true})).toBeEnabled();
+  await expect(p.getByRole('button',{name:'この内容で予約を確定する（開発用決済）',exact:true})).toBeEnabled();
   await expect(p.getByText('内容が変更されています')).toHaveCount(0);
   await ctx.close();
   // 2) UIR-03: editing the equipment AFTER a saved review, without resubmitting, must never
@@ -210,7 +224,7 @@ try{
   await expect(p2.getByRole('region',{name:'全員分の確認'})).toContainText('スキーセット');
   await expect(p2.getByRole('region',{name:'全員分の確認'})).not.toContainText('スノーボードセット');
   await p2.getByLabel('合成データによる開発確認であることを確認').check();
-  await expect(p2.getByRole('button',{name:'在庫をHOLDして開発用決済を照合',exact:true})).toBeEnabled();
+  await expect(p2.getByRole('button',{name:'この内容で予約を確定する（開発用決済）',exact:true})).toBeEnabled();
   // 5) Same guard for a candidate-direction change made after an existing selection (pick a
   // different direction on step 2 while a server selection already exists, without resubmitting
   // it) is verified at the function level only: computeMaxStep's selectionSynced branch is
@@ -247,7 +261,7 @@ try{
   await expect(p.getByRole('region',{name:'Group review'})).toContainText('Ski set');
   await expect(p.getByRole('region',{name:'Group review'})).not.toContainText('Snowboard set');
   await p.getByLabel('I understand this is a synthetic development preview').check();
-  await expect(p.getByRole('button',{name:'Hold stock and reconcile test payment',exact:true})).toBeEnabled();
+  await expect(p.getByRole('button',{name:'Confirm this booking (test payment)',exact:true})).toBeEnabled();
   await ctx.close();
  });
  await check('cross-guest/CSRF and role/amount tampering rejected; logout drops the former context',async()=>{

@@ -26,6 +26,34 @@ function clearStoredInput(){try{sessionStorage.removeItem(INPUT_STORAGE_KEY);}ca
 async function request(path:string,body?:unknown){const r=await fetch('/api/guest'+path,{cache:'no-store',method:body===undefined?'GET':'POST',headers:{'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error),{status:r.status});return data;}
 function blank(n:number):Member{return {key:'person-'+n,sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null};}
 function blankInput():Input{return {pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'',endDate:'',slot:'DAY'},members:[blank(1)]};}
+function periodValid(i:Input):boolean{return Boolean(i.period.startDate&&i.period.endDate&&i.period.endDate>=i.period.startDate);}
+// UIR-03/UIR-04: the step reachable via history (or an in-app back/forward action) must
+// reflect what is actually safe to show right now, not just which fields happen to exist on
+// the last-fetched draft. Once a draft is locked (a HOLD/payment attempt already submitted, or
+// a confirmed booking), every editable field is disabled regardless of step -- there is no way
+// for a local edit to diverge from it any more, and hiding it behind a lower step would revive
+// nothing editable while incorrectly blocking a legitimate view of an already-confirmed review
+// (the server also does not always echo `input` back once locked, which alone would otherwise
+// wrongly cap this at step 1). Before locking, two independent conditions must hold before any
+// server-derived step (preview/selection/review) can be reached again: the currently displayed
+// input must still match what the server actually has on file for this draft (inputSynced), and
+// once a selection exists, the displayed candidate directions/advance choice must still match it
+// (selectionSynced). Diverge either one -- e.g. editing equipment after already reaching the
+// final review, then using Back/Forward -- and only the local, always-safe step 1 form (or
+// step 0) remains reachable until the user explicitly resubmits through the normal
+// save/preview/selection calls, which is the only path allowed to restore a higher step.
+function computeMaxStep(d:Draft|null,input:Input,directions:Record<string,string>,advance:boolean):number{
+ if(!d)return 0;
+ if(d.locked)return 3;
+ let m=periodValid(input)?1:0;
+ const inputSynced=Boolean(d.input)&&JSON.stringify(input)===JSON.stringify(d.input);
+ if(!inputSynced)return m;
+ if(d.preview)m=2;
+ const selectionSynced=!d.selection||(JSON.stringify(directions)===JSON.stringify(d.selection.directions)&&advance===d.selection.wantAdvance);
+ if(!selectionSynced)return m;
+ if(d.selection||d.booking||d.hold)m=3;
+ return m;
+}
 const GUEST_ERROR_COPY:Record<string,{ja:string;en:string}>={STALE_DRAFT:{ja:'この予約はほかの操作で更新されました。最新の内容を読み込み直してください。',en:'This draft changed elsewhere. Reload the latest saved result.'},SELECTION_INVALID:{ja:'選択したサイズの組み合わせが無効になりました。候補をもう一度選び直してください。',en:'The selected size combination is no longer valid. Choose your sizes again.'},CATALOG_SELECTION_INVALID:{ja:'選択した用品が現在の在庫条件に合いません。用品とサイズをやり直してください。',en:'The selected item no longer matches the current catalogue. Redo the equipment and size step.'},MODEL_RELEASE_CHANGED:{ja:'選択したモデルが変更されました。モデルを選び直してください。',en:'The selected model has changed. Choose a model again.'},PRICE_CHANGED_REVIEW_REQUIRED:{ja:'料金が更新されました。下の新しい見積を確認してください。',en:'The price changed. Review the new estimate below.'},HOLD_OR_QUOTE_RECONCILIATION_REQUIRED:{ja:'在庫の仮押さえ状態が変わりました。もう一度照合してください。',en:'The stock hold state changed. Reconcile again.'},STALE_PRICE_REVIEW:{ja:'確認待ちの見積が古くなりました。最新の内容を読み込み直してください。',en:'The pending price review is out of date. Reload the latest saved result.'},PRICE_REVIEW_REQUIRED:{ja:'進める前に新しい見積の確認が必要です。',en:'Review the updated estimate before continuing.'},PRICE_REVIEW_UNAVAILABLE:{ja:'見積の確認情報を取得できませんでした。最新の内容を読み込み直してください。',en:'The estimate details could not be loaded. Reload the latest saved result.'},DRAFT_ALREADY_SELECTED:{ja:'この内容はすでに確定済みです。最新の内容を読み込み直してください。',en:'This selection is already confirmed. Reload the latest saved result.'},INVALID_PERIOD:{ja:'利用開始日・終了日を確認してください（終了日は開始日以降、最大10日）。',en:'Check the start and end dates (end date on or after start, up to 10 days).'},INVALID_GROUP:{ja:'利用人数を確認してください。',en:'Check the number of people in the group.'},INVALID_LOCALE:{ja:'表示言語の設定に問題がありました。ページを再読み込みしてください。',en:'There was a problem with the language setting. Reload the page.'},MODEL_NOT_RELEASED:{ja:'選択したモデルは現在公開されていません。別のモデルを選んでください。',en:'The selected model is not currently available. Choose another model.'},SELECTION_REQUIRED:{ja:'全員分のサイズを選択してください。',en:'Choose a size for every person before continuing.'},INPUT_REQUIRED:{ja:'必須項目が未入力です。内容を確認してください。',en:'Some required details are missing. Check the form and try again.'},IDEMPOTENCY_MISMATCH:{ja:'直前の操作と内容が一致しませんでした。もう一度やり直してください。',en:'The request did not match the previous attempt. Please try again.'},FORBIDDEN:{ja:'この操作を行う権限がありません。',en:'You do not have permission to do this.'},NO_PAYMENT_ATTEMPT:{ja:'まだ決済の照合対象がありません。',en:'There is nothing to reconcile yet.'},PAYMENT_NOT_CONNECTED_CHARGE_DISABLED:{ja:'この環境では決済接続が未設定です。',en:'Payment is not connected in this environment.'},PAYMENT_READ_UNCONNECTED:{ja:'この環境では決済状態を確認できません。',en:'Payment status cannot be checked in this environment.'},GUEST_UNCONNECTED:{ja:'この環境では予約機能が未接続です。',en:'Booking is not connected in this environment.'},GUEST_PREVIEW_UNCONNECTED:{ja:'この環境では候補確認が未接続です。',en:'Preview is not connected in this environment.'},CONTRACT_VERSION_REQUIRED:{ja:'条件の再確認が必要です。用品とサイズをもう一度選び直してください。',en:'Your selection needs to be reconfirmed. Redo the equipment and size step.'},DUPLICATE_MEMBER:{ja:'利用者の情報が重複しています。人数と入力内容を確認してください。',en:'Duplicate person details were found. Check the group size and each person’s details.'},INVALID_EQUIPMENT_PROFILE:{ja:'身長・足サイズなどの入力を確認してください。',en:'Check the height, foot size and related details you entered.'},INVALID_RECOMMENDATION_INPUT:{ja:'用品の選択内容に問題があります。用品とサイズをやり直してください。',en:'There is a problem with the equipment selection. Redo the equipment and size step.'},INVALID_WEAR_PROFILE:{ja:'ウェアのサイズ選択を確認してください。',en:'Check the wear size you selected.'},MODEL_PROMISE_REQUIRED:{ja:'Premiumではモデルの選択が必要です。',en:'Choose a model to continue with Premium.'},POLE_VARIANT_MISMATCH:{ja:'ポールのサイズ選択を確認してください。',en:'Check the pole size you selected.'},PRODUCT_NOT_OFFERED:{ja:'選択した組み合わせは現在ご利用いただけません。用品とサイズをやり直してください。',en:'That combination is not currently available. Redo the equipment and size step.'},SIZE_NOT_APPLICABLE:{ja:'その年齢区分・プランではそのサイズを選べません。',en:'That size is not available for the chosen age category or plan.'},SKI_PROFILE_OR_AGE_MISMATCH:{ja:'年齢区分とスキー情報の入力を確認してください。',en:'Check that the age category and ski details match.'},UNNECESSARY_SNOWBOARD_INPUT:{ja:'スノーボード選択時はスキー用の項目を入力しないでください。',en:'Clear the ski-only fields when snowboard is selected.'},WEAR_VARIANT_MISMATCH:{ja:'ウェアのサイズ選択を確認してください。',en:'Check the wear size you selected.'},ANALYTICS_SHAPE:{ja:'内部データの形式でエラーが発生しました。もう一度お試しください。',en:'An internal data error occurred. Please try again.'},IMMUTABLE_RESERVATION:{ja:'この予約は確定済みのため変更できません。',en:'This booking is already confirmed and can no longer be changed.'},INCOMPLETE_SET:{ja:'選択した構成が揃っていません。用品とサイズを確認してください。',en:'The selected set is incomplete. Check the equipment and size step.'},INCOMPLETE_WEAR_SET:{ja:'ウェアの構成が揃っていません。ジャケット・パンツのサイズを確認してください。',en:'The wear set is incomplete. Check the jacket and pants sizes.'},INVALID_CLOCK:{ja:'日時の取得でエラーが発生しました。もう一度お試しください。',en:'There was a problem reading the current time. Please try again.'},INVALID_CONDITIONS:{ja:'利用日と全構成品のサイズを選択してください。',en:'Choose the rental dates and a size for every item.'},INVALID_CONTINUATION_CONTEXT:{ja:'続きの操作を行うための情報が正しくありません。最新の内容を読み込み直してください。',en:'The context for continuing is invalid. Reload the latest saved result.'},INVALID_DATE:{ja:'有効な日付を指定してください。',en:'Enter a valid date.'},INVALID_PRODUCT_CLASS:{ja:'選択した用品の種類に問題があります。用品とサイズをやり直してください。',en:'There is a problem with the selected equipment type. Redo the equipment and size step.'},MODEL_PROMISE_MISMATCH:{ja:'選択したモデルが条件と一致しません。モデルを選び直してください。',en:'The selected model no longer matches. Choose a model again.'},PERIOD_ENDED:{ja:'指定した利用期間はすでに終了しています。日程を選び直してください。',en:'The selected rental period has already ended. Choose different dates.'},WEAR_EXPLICIT_SIZE_REQUIRED:{ja:'ウェアはサイズを明示的に選択してください。',en:'Choose an explicit size for the wear item.'}};
 const BOOKING_STATE_COPY:Record<string,{ja:string;en:string}>={DRAFT:{ja:'未確定',en:'Not yet submitted'},PAYMENT_PENDING:{ja:'決済照合待ち',en:'Waiting on payment'},PAYMENT_REVIEW:{ja:'決済確認が必要です',en:'Payment needs review'},CONFIRMED_DEV:{ja:'予約が確認されました',en:'Booking confirmed'},COMPLETED_DEV:{ja:'ご利用が完了しました',en:'Rental completed'}};
 const PAYMENT_STATE_COPY:Record<string,{ja:string;en:string}>={SUBMITTING:{ja:'送信中',en:'Submitting'},UNKNOWN:{ja:'確認できませんでした。しばらくしてからもう一度照合してください',en:'Could not be confirmed yet. Reconcile again shortly.'},PENDING:{ja:'処理中',en:'Pending'},COMPLETED:{ja:'完了',en:'Completed'},FAILED:{ja:'失敗しました',en:'Failed'},REVIEW:{ja:'確認が必要です',en:'Needs review'}};
@@ -37,12 +65,25 @@ export function GuestBooking({locale}:{locale:Locale}){const ja=locale==='ja',t=
  // CH-04A: the displayed step is reflected in browser history so Back/Forward move one
  // step instead of leaving the app. Only the step number (an allowlisted, non-secret
  // integer) ever goes into history.state -- never input, contact, tokens or booking data.
- // historyStepRef is the step our own pushState/replaceState calls last recorded; it is a
- // ref (not state) so the stable `open` callback below can read/write it without becoming
- // unstable. initializedRef distinguishes the initial mount's resume (which replaces the
- // starting entry, however far along a saved draft already is) from later genuine forward
- // progress within this session (which pushes a new entry).
- const historyStepRef=useRef(step),initializedRef=useRef(false),draftRef=useRef<Draft|null>(null);
+ // initializedRef distinguishes the initial mount's resume (which replaces the starting
+ // entry, however far along a saved draft already is) from later genuine forward progress
+ // within this session (which pushes a new entry).
+ const initializedRef=useRef(false),draftRef=useRef<Draft|null>(null);
+ // UIR-04: a step NUMBER is not a real-history ENTRY COUNT -- a direct visit/restore (the
+ // mount effect below, or open()'s own initial replaceState) can jump the step value without
+ // creating any new real browser entries. historyStackRef/historyPosRef instead track only
+ // the real entries this mounted instance actually knows for certain, so backToStep never
+ // guesses history.go()'s distance from arithmetic on step numbers alone.
+ const historyStackRef=useRef<{step:number}[]>([{step:0}]),historyPosRef=useRef(0);
+ // Set only when this exact mount landed on an entry that already carried one of our own
+ // step numbers (a hard reload mid-navigation, not just a soft popstate, still preserves an
+ // entry's own state -- observed live: history.go() across more than one entry can fall back
+ // to a full document reload here). null means a genuine fresh visit, where open() below
+ // should adopt the server's own maxForDraft outright to resume progress from a prior
+ // session; a number means open() must instead clamp THAT requested step, never silently
+ // overriding it with maxForDraft the way a fresh visit does.
+ const initialRequestedStepRef=useRef<number|null>(null);
+ const liveRef=useRef({input,directions,advance});
  // CH-04B (still OPEN/DESIGN_GATE): there is no reload-safe autosave for un-submitted
  // input -- reviving the browser-side cache UIR-01/02 removed is explicitly out of scope.
  // What this batch adds instead: an accurate signal for whether the current step 0-1 input
@@ -52,44 +93,84 @@ export function GuestBooking({locale}:{locale:Locale}){const ja=locale==='ja',t=
  // server already has (in memory only, not persisted), so it isn't a new persistence surface.
  const [savedInputJson,setSavedInputJson]=useState<string|null>(null);
  const dirty=step<2&&JSON.stringify(input)!==(savedInputJson??JSON.stringify(blankInput()));
- useEffect(()=>{draftRef.current=draft;});
+ // UIR-03 defense in depth: even if some other path ever let step 3 render with data that no
+ // longer matches what the server actually holds for this draft, checkout must still refuse
+ // to submit the old server contract as if it reflected newer, unsaved local choices.
+ const contractSynced=!draft||((!draft.input||JSON.stringify(input)===JSON.stringify(draft.input))&&(!draft.selection||(JSON.stringify(directions)===JSON.stringify(draft.selection.directions)&&advance===draft.selection.wantAdvance)));
+ useEffect(()=>{draftRef.current=draft;liveRef.current={input,directions,advance};});
  useEffect(()=>{
-  // Only stamp a fresh {step:0} baseline when this entry has no step of ours yet (a plain
-  // first visit). If one is already present (e.g. this instance mounted onto a mid-history
-  // entry after a reload), leave it untouched rather than overwriting it with 0.
-  if(typeof (history.state as {step?:number}|null)?.step!=='number')history.replaceState({step},'');
+  // Any mount that was not specifically caused by a Back/Forward action (Navigation Timing's
+  // own 'back_forward' type -- covers both a real gesture and our own history.go() falling
+  // back to a hard reload, observed live in this app) must start a brand new baseline and let
+  // open() below adopt the server's own maxForDraft outright, EVEN IF history.state already
+  // holds one of our old {step} objects. This covers two different cases that would otherwise
+  // wrongly clamp to a stale step: a genuine fresh top-level visit ('navigate' -- a typed URL
+  // or this harness's page.goto, where a browser can reuse/coalesce a joint session-history
+  // entry across same-URL visits and leave a stale value behind here), and a same-URL
+  // location.reload() after a context-changing action such as GuestRecovery's own recovery
+  // flow ('reload' -- the freshly recovered server draft, not the pre-recovery step, must win).
+  const navType=(performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming|undefined)?.type;
+  const existing=history.state as {step?:number}|null;
+  if(navType==='back_forward'&&typeof existing?.step==='number'){
+   // Reusing an entry from before this mount (e.g. remounted after a reload landing
+   // mid-history). Only this one entry is known for certain; it becomes our sole baseline
+   // rather than assuming any further real entries exist behind it.
+   initialRequestedStepRef.current=existing.step;
+   historyStackRef.current=[{step:existing.step}];historyPosRef.current=0;
+  }else{
+   history.replaceState({step:0},'');historyStackRef.current=[{step:0}];historyPosRef.current=0;
+  }
   const onPopState=(e:PopStateEvent)=>{
-   const d=draftRef.current,max=!d?0:(d.selection||d.booking||d.hold)?3:d.preview?2:d.input?1:0;
    const requested=typeof (e.state as {step?:number}|null)?.step==='number'?(e.state as {step:number}).step:0;
-   const target=Math.min(Math.max(requested,0),max);
-   historyStepRef.current=target;setStep(target);
+   const {input:li,directions:ld,advance:la}=liveRef.current;
+   const target=Math.min(Math.max(requested,0),computeMaxStep(draftRef.current,li,ld,la));
+   // Whatever real entry we just landed on becomes the new sole known baseline: after a
+   // native Back/Forward we no longer assume anything about entries further back really
+   // being ours, so a later backToStep falls back to a safe push instead of guessing.
+   historyStackRef.current=[{step:target}];historyPosRef.current=0;
+   setStep(target);
   };
   window.addEventListener('popstate',onPopState);
   return()=>window.removeEventListener('popstate',onPopState);
- // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: reads step's initial value (always 0 here) just to seed a baseline entry before open() resolves
  },[]);
  const open=useCallback((d:Draft)=>{setDraft(d);if(d.input){setInput(d.input);setSavedInputJson(JSON.stringify(d.input));}if(d.selection){setDirections(d.selection.directions);setAdvance(d.selection.wantAdvance);if(d.selection.contact)setContact(d.selection.contact);}
-  // Server state is authoritative, history is not: maxForDraft is the step this draft's
-  // own data actually supports right now. The step UI never renders before `draft` is set
-  // (see the {draft&&...} gate below), so there is nothing to preserve from before this
-  // call -- the very first call (mount resume) always adopts maxForDraft outright, e.g.
-  // correctly resetting to step 0 if a reload lands on a since-invalidated context (cookies
-  // cleared) that no longer supports whatever step a stale history entry once recorded.
-  const maxForDraft=(d.selection||d.booking||d.hold)?3:d.preview?2:d.input?1:0;
+  // Server state is authoritative, history is not: maxForDraft is the step this draft's own
+  // data actually supports right now, computed against what local state will become right
+  // after the setInput/setDirections/setAdvance calls above (the server's own field when the
+  // draft provides one, otherwise whatever was already displayed) -- never a stale guess.
+  // The step UI never renders before `draft` is set (see the {draft&&...} gate below), so
+  // there is nothing to preserve from before this call. A genuine fresh visit (no requested
+  // step recorded on this entry) always adopts maxForDraft outright, e.g. correctly resuming
+  // progress from a prior session, or resetting to step 0 if this context has since been
+  // invalidated (cookies cleared) and no longer supports any step. But if this mount landed
+  // on an entry that already requested a specific step -- including via the hard-reload
+  // fallback a multi-entry history.go() was observed to trigger in this app -- that request
+  // is clamped against maxForDraft rather than silently overridden by it, so Back/Forward
+  // (or an in-app back action) still reaches the step it actually asked for whenever the
+  // server data still supports it.
+  const {input:li,directions:ld,advance:la}=liveRef.current;
+  const maxForDraft=computeMaxStep(d,d.input??li,d.selection?d.selection.directions:ld,d.selection?d.selection.wantAdvance:la);
   if(!initializedRef.current){
-   history.replaceState({step:maxForDraft},'');historyStepRef.current=maxForDraft;setStep(maxForDraft);
-  }else if(maxForDraft>historyStepRef.current){
-   history.pushState({step:maxForDraft},'');historyStepRef.current=maxForDraft;setStep(maxForDraft);
+   const requested=initialRequestedStepRef.current;
+   const target=requested===null?maxForDraft:Math.min(Math.max(requested,0),maxForDraft);
+   history.replaceState({step:target},'');historyStackRef.current=[{step:target}];historyPosRef.current=0;setStep(target);
+  }else if(maxForDraft>historyStackRef.current[historyPosRef.current]!.step){
+   history.pushState({step:maxForDraft},'');historyStackRef.current=historyStackRef.current.slice(0,historyPosRef.current+1).concat({step:maxForDraft});historyPosRef.current++;setStep(maxForDraft);
   }
   initializedRef.current=true;
   if(d.simulation!==undefined)setSimulation(d.simulation);
  },[]);
- // Forward: only pushes a new entry when this is genuinely new progress (n beyond
- // anything already recorded). Back: mirrors an equivalent number of browser Back
- // presses via history.go, so pressing the real Back button afterwards continues
- // correctly instead of re-entering an entry this click already consumed.
- function pushStep(n:number){if(n>historyStepRef.current){history.pushState({step:n},'');historyStepRef.current=n;}setStep(n);}
- function backToStep(n:number){const delta=n-historyStepRef.current;if(delta<0)history.go(delta);historyStepRef.current=n;setStep(n);}
+ // Forward: only pushes a new entry when this is genuinely new progress (n beyond anything
+ // already recorded in our own known stack). Back: always pushes a fresh entry too, rather
+ // than retracing an existing one with history.go() -- go() was observed, live, to sometimes
+ // fall back to a full reload that Navigation Timing reports as a plain 'reload', identical to
+ // an unrelated same-URL location.reload() elsewhere in this app (GuestRecovery's own), making
+ // the two impossible to tell apart from here; a go()-triggered instance of that fallback loses
+ // the very step it was trying to retrace. Always pushing avoids relying on go() at all: no
+ // guessed distance, no ambiguous reload to recover from, and the browser's own Back button
+ // afterwards still correctly undoes exactly this step change, same as any other push here.
+ function pushStep(n:number){if(n>historyStackRef.current[historyPosRef.current]!.step){history.pushState({step:n},'');historyStackRef.current=historyStackRef.current.slice(0,historyPosRef.current+1).concat({step:n});historyPosRef.current++;}setStep(n);}
+ function backToStep(n:number){history.pushState({step:n},'');historyStackRef.current=historyStackRef.current.slice(0,historyPosRef.current+1).concat({step:n});historyPosRef.current++;setStep(n);}
  useEffect(()=>{alive.current=true;const n=++ticket.current;if(!starting)starting=request('/context',{}).finally(()=>{starting=null;});starting.then(async()=>{const [d,o]=await Promise.all([request('/draft'),request('/options')]);if(alive.current&&n===ticket.current){open(d);setOptions(o);}}).catch(e=>{if(alive.current&&n===ticket.current)setMessage(e.message);});return()=>{alive.current=false;};},[open]);
  useEffect(()=>{clearStoredInput();},[]);
  // Auxiliary only, per CH-04B's scope: beforeunload is not guaranteed to fire (notably on
@@ -123,7 +204,7 @@ export function GuestBooking({locale}:{locale:Locale}){const ja=locale==='ja',t=
  {step===3&&<section className="guest-review" aria-label={t('全員分の確認','Group review')}><h2>{t('最終確認','Final review')}</h2>{!draft.locked&&<button disabled={busy} onClick={()=>backToStep(1)}>{t('条件を編集して再計算','Edit and recalculate')}</button>}<p>{input.period.startDate} → {input.period.endDate} · {slotLabel(input.period.slot)}</p><p>{storeLabel(input.pickupStore)} → {storeLabel(input.returnStore)}</p>{input.members.map((m,n)=><article key={m.key}><h3>{t('利用者','Person')} {n+1} · {sportLabel(m.sport)} · {tierLabel(m.tier)}</h3><p>{draft.preview?.members[n]?.candidates[directions[m.key]??'']?.lengthCm||'—'} cm · {options.models.find(p=>p.key===m.premiumModel)?.name??t('モデル非指定','No specific model')} · {options.sizes.find(v=>v.key===m.jacketSize)?.label??t('選択なし','Not selected')} / {options.sizes.find(v=>v.key===m.pantsSize)?.label??t('選択なし','Not selected')}</p></article>)}<p>{t('税区分・営業規約は公開前確認中。見積は請求確定ではありません。','Tax display and public terms remain under review. Estimates are not final charges.')}</p>
  {draft.estimate&&<dl className="guest-price"><dt>{t('小計','Subtotal')}</dt><dd>{money(draft.estimate.subtotalJpy)}</dd>{Boolean(draft.estimate.bundleDiscountJpy)&&<><dt>{t('ウェア調整','Wear adjustment')}</dt><dd>{money(draft.estimate.bundleDiscountJpy)}</dd></>}{Boolean(draft.estimate.advanceDiscountJpy)&&<><dt>{t('事前決済調整（見込み）','Estimated advance adjustment')}</dt><dd>{money(draft.estimate.advanceDiscountJpy)}</dd></>}<dt>{t('全員分の参考総額','Group estimate')}</dt><dd><strong>{money(draft.estimate.totalJpy)}</strong></dd></dl>}
  <label>{t('お名前（架空）','Name (synthetic)')}<input value={contact.displayName} disabled={busy||draft.locked} onChange={e=>setContact(c=>({...c,displayName:e.target.value}))}/></label><label>{t('メール（架空）','Email (synthetic)')}<input value={contact.email} disabled={busy||draft.locked} onChange={e=>setContact(c=>({...c,email:e.target.value}))}/></label><label className="guest-choice"><input type="checkbox" checked={contact.termsAccepted} disabled={busy||draft.locked} onChange={e=>setContact(c=>({...c,termsAccepted:e.target.checked}))}/>{t('合成データによる開発確認であることを確認','I understand this is a synthetic development preview')}</label>
- {!draft.booking&&<button aria-busy={busy} disabled={busy||!contact.termsAccepted||!simulation} onClick={()=>void run(()=>request('/checkout',{locale,draftId:draft.id,expectedRevision:draft.revision,reviewHash:draft.reviewHash,contact:{displayName:contact.displayName,email:contact.email,termsAccepted:contact.termsAccepted}}))}>{busy?t('処理しています…','Working…'):draft.locked?t('同じ保存済み要求を照合','Reconcile saved request'):t('在庫をHOLDして開発用決済を照合','Hold stock and reconcile test payment')}</button>}{busy&&<p role="status">{t('処理中です。しばらくそのままお待ちください。','Working. Please wait, do not press again.')}</p>}{!simulation&&<p>{t('この環境では決済接続が未設定です。','Payment is not connected in this environment.')}</p>}
+ {!draft.booking&&<button aria-busy={busy} disabled={busy||!contact.termsAccepted||!simulation||!contractSynced} onClick={()=>void run(()=>request('/checkout',{locale,draftId:draft.id,expectedRevision:draft.revision,reviewHash:draft.reviewHash,contact:{displayName:contact.displayName,email:contact.email,termsAccepted:contact.termsAccepted}}))}>{busy?t('処理しています…','Working…'):draft.locked?t('同じ保存済み要求を照合','Reconcile saved request'):t('在庫をHOLDして開発用決済を照合','Hold stock and reconcile test payment')}</button>}{!contractSynced&&<p role="status">{t('内容が変更されています。前の画面からもう一度選択し直し、最新の内容で確認してください。','Your selections changed. Go back and choose again so the review matches your latest choices.')}</p>}{busy&&<p role="status">{t('処理中です。しばらくそのままお待ちください。','Working. Please wait, do not press again.')}</p>}{!simulation&&<p>{t('この環境では決済接続が未設定です。','Payment is not connected in this environment.')}</p>}
  {draft.quote&&!draft.booking&&draft.priceReviewRequired&&<button disabled={busy} onClick={()=>void run(()=>request('/accept-price',{draftId:draft.id,expectedRevision:draft.revision,snapshotSha256:draft.quote!.snapshotSha256}))}>{t('保存済みの新しい見積を確認・承認する','Review and accept the new saved estimate')}</button>}
  {draft.hold&&<p>{draft.booking?.state==='CONFIRMED_DEV'?t('確認済み予約は元の契約期間の在庫保護を維持。参考：初期HOLD期限','Confirmed booking retains contract-period protection. Initial HOLD expiry for reference'):t('在庫HOLD期限','Inventory HOLD expiry')}: <time dateTime={draft.hold.expiresAt}>{jstTime(draft.hold.expiresAt)}</time>{draft.booking?.state!=='CONFIRMED_DEV'&&<> / {draft.hold.state}</>}</p>}{draft.quote&&<p>{t('保存済み見積','Saved estimate')}: {money(draft.quote.snapshot.totalJpy)} / {draft.quote.validity}</p>}
  {draft.booking&&<div role="status" className="guest-result"><h3>{bookingStateText(draft.booking.state)}</h3><p>{t('予約番号','Booking reference')}: <strong>{draft.booking.id}</strong></p><p>{money(draft.booking.priceSnapshot.totalJpy)}</p>{draft.booking.payments.map((p,n)=><p key={n}>{t('決済状況','Payment status')}: {paymentStateText(p.state)}</p>)}{draft.booking.state==='CONFIRMED_DEV'&&<SaveBookingAccess bookingId={draft.booking.id} locale={locale}/>}{draft.booking.qrImage&&<picture><img src={draft.booking.qrImage} width={240} height={240} alt={t('開発予約QR','Development booking QR')}/></picture>}{draft.booking.state!=='CONFIRMED_DEV'&&<button disabled={busy} onClick={()=>void run(()=>request('/reconcile',{}))}>{t('決済状態を再照合','Reconcile payment status')}</button>}</div>}

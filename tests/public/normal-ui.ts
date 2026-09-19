@@ -58,6 +58,21 @@ try{
   await expect(p.getByText('保存されていない変更があります')).toBeVisible();
   await ctx.close();
  });
+ await check('UX-4A regression: a second person card starts collapsed, expands on request, and both reach the candidate step',async()=>{
+  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-07');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-07');
+  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);
+  await p.getByLabel('利用人数',{exact:true}).fill('2');
+  await expect(p.getByLabel('ポールのサイズ 2',{exact:true})).not.toBeVisible();
+  await p.getByText('利用者 2').first().click();
+  await expect(p.getByLabel('ポールのサイズ 2',{exact:true})).toBeVisible();
+  await p.getByLabel('ポールのサイズ 2',{exact:true}).selectOption('pole-'+variants.pole);
+  await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
+  await expect(p.getByRole('radio',{name:/おすすめ/})).toHaveCount(2);
+  await ctx.close();
+ });
  await check('final test payment response loss and reload restore the same booking/QR from real DB without duplicate hold or payment',async()=>{
   await page.getByLabel('合成データによる開発確認であることを確認').check();let done!:()=>void,fail!:(e:unknown)=>void;const lost=new Promise<void>((r,j)=>{done=r;fail=j;});let cm06Checked=false;await page.route('**/api/guest/checkout',async route=>{
    // One fresh local transport avoids reusing the context's idle HTTP connection.

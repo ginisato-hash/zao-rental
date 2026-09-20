@@ -6,11 +6,15 @@ Authority: PR #26 comment [`5748592542`](https://github.com/ginisato-hash/zao-re
 **Correction batch 1**: closed [comment `5748832358`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5748832358)
 (REQUEST_CHANGES — design only; findings UX5B-D01 through UX5B-D07).
 
-**Correction batch 2**: closes [comment `5749532490`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5749532490)
+**Correction batch 2**: closed [comment `5749532490`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5749532490)
 (REQUEST_CHANGES — design only; findings UX5B-R01 through UX5B-R05, re-reviewing candidate HEAD
 `8f0ac9a`/submission `5749506864`). D02 and D04 were reconfirmed accepted by that review; R01-R05
-are addressed in place below. This is the same document throughout, corrected in place each time,
-never restarted.
+were addressed in place.
+
+**Correction batch 3**: closes [comment `5749696628`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5749696628)
+(REQUEST_CHANGES — design only; re-reviewing candidate HEAD `abbf0c3`/submission at that HEAD;
+R01-R05 confirmed materially closed; new findings UX5B-R06 through UX5B-R10). R06-R10 are addressed
+in place below. This is the same document throughout, corrected in place each time, never restarted.
 
 This document is design/research only. No schema, migration, endpoint or Staff Home change is
 made in this phase. Every field below was read directly from the migration or service source
@@ -162,14 +166,15 @@ and next-action classification.
   `principal.storeIds`. The manifest's authorization must compose the same way (§4).
 - `BookingService.list()` (`booking-service.ts:31`) — existing store/permission-scoped booking
   read; the manifest's booking half is a superset of this query, not a replacement.
-- `CustodyService.returns(store)` (`custody-service.ts:95`) — **scoped by
-  `owner_id=this.identity.subject`, i.e. the calling staff member's own saved return batches,
-  not every batch at that store.** A manifest that shows *all* staff's return activity at a store
-  would be a new scope decision beyond what's authorized today. `NEEDS_DETAIL_REVIEW`: whether
-  UX-5B's return section stays per-actor (matching today) or becomes store-wide (a policy change
-  requiring separate TD sign-off, not assumed here). This does not affect §9.1's Branches B/C,
-  which read `rental_loan_items`/`rental_custody_events` directly (store-scoped, not actor-scoped)
-  rather than reusing `returns()`'s actor-scoped batch list.
+- `CustodyService.returns(store)` (`custody-service.ts:95`) — its `batches` field is scoped by
+  `owner_id=this.identity.subject`, i.e. the calling staff member's own saved return-batch drafts,
+  but its `received` field (the applied receipt/inspection facts) is `WHERE
+  e.actual_store=$store` with **no actor predicate at all** — already store-wide for exactly the
+  facts the manifest needs. **Resolved (UX5B-R10, §4.1)**: the manifest's task population is
+  store-wide, following `received`'s existing precedent, not `batches`'s unrelated per-actor
+  drafts concept. §9.1's Branches B/C, which read `rental_loan_items`/`rental_custody_events`
+  directly (store-scoped, not actor-scoped, matching `received`), already implemented this; §4.1
+  states it as an explicit decision rather than leaving it open.
 - `OperationsConsole.list()` (`packages/core/src/operations/console-service.ts:18`) — requires
   `OPERATIONS_VIEW`, calls `ops_collect_exceptions` then `ops_list_exceptions`; SYSTEM scope
   requires `principal.scope==='ALL'`. Per UX5B-R03 (§5.4), the manifest **never calls this method
@@ -286,6 +291,14 @@ Concrete contract for the manifest specifically:
   completed** — otherwise a booking received and inspected on the same day has no candidate branch
   left the instant inspection finishes, and `COMPLETE` (§7) could never be emitted for it. The wear
   mirror (Branch C-wear) applies the identical rule on `wear_receipts.received_at`.
+- **No-pickup terminal completion (UX5B-R06, new)**: a booking whose pickup window closed without
+  a pickup (`rental_no_pickup_events`, §2.5) is a candidate **on the JST date of
+  `rental_no_pickup_events.completed_at`**, at the booking's pickup store — a separate branch from
+  Branch A, since for a MULTIDAY booking the terminal event's `completed_at` date is the booking's
+  *end* date (`h.due_at`'s date, per §3's `dueAt` derivation), not `occupancy_start`, so Branch A
+  alone never produces a row on the day the terminal event actually occurs (see §9.1 Branch D). Like
+  every other terminal-completion fact in this design, it is visible for exactly the one JST date the
+  event happened on, never as a standing historical fact.
 - **Midnight-crossing returns**: none exist today — every slot's `due_at` lands within normal JST
   business hours (12:00 or 17:00) per `normalizePeriod` (`packages/contracts/src/hold.ts:39`);
   there is no overnight/AM-next-day slot in the current `Period` type
@@ -321,6 +334,42 @@ be in `principal.storeIds` (already `ALL`-expanded to every `ledger_stores` row 
 No row may ever be returned for a store outside `principal.storeIds`, at the SQL predicate level,
 never filtered after the fact in application code and never simply hidden by the client.
 
+### 4.1 Store-wide task population (UX5B-R10, resolved)
+
+**Decision**: the Daily Manifest's pickup/return/custody/wear task population is **authorized
+store-wide** — every task at a store that the requesting composition (`BOOKING_VIEW` + the
+relevant capability + store access) is authorized to see, not filtered to "tasks this specific
+staff member created." This was already the query plan's behavior (Branches B/C and their wear
+mirrors, §9.1, read `rental_loan_items`/`rental_custody_events`/`wear_receipts` directly with no
+actor predicate); this correction states it as an explicit decision with its evidence, rather than
+leaving §12 open while the plan already assumed it.
+
+**Evidence from existing authorized surfaces** (no new authorization is introduced):
+- `BookingService.list()` (`booking-service.ts:31`) has no owner filter for a staff principal —
+  every booking whose planned pickup/return store is in `principal.storeIds` is visible, for any
+  staff member with that store access.
+- `CustodyService.returns(store)` (`custody-service.ts:95`) already splits this exact distinction
+  today: `batches` (the calling staff member's own saved return-batch drafts) is `owner_id=$actor`
+  scoped, but `received` (the applied receipt/inspection facts the manifest actually needs) is
+  `WHERE e.actual_store=$store` with **no actor predicate at all** — store-wide already, for the
+  same underlying rows this design's Branch C reads.
+- `WearService.returnWorkspace(store)` (`service.ts:45`) reads `wear_unresolved_returns`/
+  `wear_return_batches` by `store_id` alone, likewise with no actor predicate.
+
+**Why this matters**: `CustodyService.returns()`'s per-actor `batches` list is a *staff member's own
+saved-draft-batch UI/history* concept, unrelated to whether a *task* (an item due, received, or
+pending inspection) is visible to that staff member. The Manifest's job is the latter — it has no
+"batch" or "draft" concept of its own (§9.1's branches read applied facts, never
+`rental_return_batches`) — so per-actor batch ownership does not apply to it, and adopting it would
+be a *narrower*, unauthorized-by-existing-precedent scope, not a safer default.
+
+**Regression test** (added to §10 item 28): two staff members, A and B, both with
+`BOOKING_VIEW + RENTAL_RETURN` at the same store; A performs a receipt/inspection action; B's
+Manifest request for that store (not A's) must show the same store-wide task
+(`inspectionPendingHereCount`/the relevant `nextAction`) that A's does. This does not change §8's
+booking/customer-data boundary (§5.5, R08) — store-wide population selects *which tasks exist*, not
+*what fields a given row may expose*.
+
 ## 5. Proposed read-only API contract (not implemented)
 
 - **Method/path**: `GET /api/operations/manifest` — reusing the existing `/api/operations`
@@ -329,10 +378,15 @@ never filtered after the fact in application code and never simply hidden by the
   defaults per §3), `section` (optional `pickup`\|`return`\|`all`, default `all` — a candidate-set
   **filter**, not a pagination mechanism; see §5.3), `cursor`/`pageSize` (pagination — §5.1,
   UX5B-R04).
-- **Row identity**: `bookingId` (the canonical `rental_bookings.id`). A booking with both a
-  pickup-today fact and a return-due-today fact (same-day turnover) is **one row** with
-  independent `pickup`/`return` sub-objects, since `bookingId` is the natural row key and a
-  booking cannot have two different `contact`/`period` values.
+- **Row identity (corrected, UX5B-R08 — see §5.5)**: for a `BOOKING_SCOPED` row (the booking's
+  planned pickup or return store is in `principal.storeIds`, matching existing `BookingService`
+  scope) the row key is `B:<bookingId>` (`rental_bookings.id`). A booking with both a
+  pickup-today fact and a return-due-today fact (same-day turnover) is still **one** `B:` row with
+  independent `pickup`/`return` sub-objects, since a booking cannot have two different
+  `contact`/`period` values. For a `CUSTODY_ONLY` row (§5.5 — an actual-store custody/inspection
+  task whose booking is *not* `BOOKING_SCOPED`), the row key is `E:<loanItemId>` or
+  `W:<wearReceiptId>` instead, since exposing `bookingId` for a booking outside the caller's
+  planned-store scope is exactly the widening §5.5 exists to prevent.
 
 ### 5.1 Pagination contract (UX5B-D07 / UX5B-R04, resolved)
 
@@ -342,41 +396,75 @@ overflow *inside a single branch* was not actually retrievable through `section`
 booking count for a store/day, so a bounded-complete contract cannot be justified. This design now
 uses **real deterministic keyset (seek) pagination** instead:
 
-- **Candidate set**: the deduped union of `bookingId`s selected by every branch the requested
-  `section` includes (§9.1 A / B+C+wear-mirrors / all), computed once inside the manifest's
-  `REPEATABLE READ READ ONLY` transaction (§9.5) for that page's request.
-- **Sort/cursor field**: `bookingId` alone (ascending). `bookingId` is a UUID primary key
-  (`rental_bookings.id`), already unique per row, so — unlike `ops_list_exceptions`'s
-  `(occurred_at, id)` compound cursor (`0035:85`), which needs a tie-break because `occurred_at`
-  can collide — a single-column cursor is sufficient here; no tie-break field is needed. This
-  intentionally optimizes for a stable, dependency-free, always-available seek key over a
-  staff-friendly display order; client-side grouping/sorting for display (e.g. by pickup time) is
-  a presentational concern layered on top of the fully-retrieved, deduped page set and does not
-  affect pagination correctness.
-- **Query**: `WHERE bookingId > $cursor ORDER BY bookingId ASC LIMIT $pageSize + 1` against the
-  deduped candidate set, applied *after* branch union/dedup and *before* the batched per-booking
-  reads (§9.2) — so the expensive batched queries (steps 4-9 of §9.2) only ever run for the one
-  page's `bookingId`s, not the whole candidate set.
+- **Candidate set**: the deduped union of row keys (§5.5 — `B:<bookingId>` / `E:<loanItemId>` /
+  `W:<wearReceiptId>`) selected by every branch the requested `section` includes (§9.1 A / B+C+wear
+  mirrors / all), computed once inside the manifest's `REPEATABLE READ READ ONLY` transaction
+  (§9.5) for that page's request.
+- **Sort/cursor field (corrected, UX5B-R08)**: the row key itself (§5.5), ordered ascending as
+  plain text. Every row key is already unique per row (a UUID primary key prefixed by its table's
+  letter), so — unlike `ops_list_exceptions`'s `(occurred_at, id)` compound cursor (`0035:85`),
+  which needs a tie-break because `occurred_at` can collide — a single-column text cursor is
+  sufficient here; no tie-break field is needed. Lexicographic ordering over `B:`/`E:`/`W:` keys is
+  an arbitrary but fully deterministic total order — it groups by row kind first, which is
+  acceptable because, as with `bookingId` before it, this optimizes for a stable, dependency-free
+  seek key, not a staff-friendly display order; client-side grouping/sorting for display (e.g. by
+  pickup time or row kind) is a presentational concern layered on top of the fully-retrieved,
+  deduped page set and does not affect pagination correctness.
+- **Query**: `WHERE rowKey > $cursor.lastKey ORDER BY rowKey ASC LIMIT $pageSize + 1` against the
+  deduped candidate set, applied *after* branch union/dedup and *before* the batched per-row reads
+  (§9.2) — so the expensive batched queries (steps 4-9 of §9.2) only ever run for the one page's
+  rows, not the whole candidate set.
 - **`pageSize`**: optional, default `100`, maximum `300` (`422` if outside `[1,300]` or
   non-integer) — a per-request work bound, not a whole-manifest limit; unlike the rejected D07
   design, exceeding it never rejects the request, it just means more pages.
-- **Response fields**: `nextCursor` (the last row's `bookingId` on this page, or `null` on the
-  last page) and `hasMore` (`true` iff the `LIMIT $pageSize+1` query returned a `$pageSize+1`th
-  row, which is discarded before serialization). The client advances by passing the previous
-  page's `nextCursor` as the next request's `cursor`.
-- **Duplicate/omission guarantee, and its limit**: within one page (one `REPEATABLE READ READ
-  ONLY` transaction), the union/dedup/order is exact by construction. Across pages, each page is
-  its own separate HTTP request and its own separate transaction — there is no cross-request
-  snapshot. A booking that enters or leaves candidacy *between* two page requests (e.g. it becomes
-  due today, or completes) can therefore be seen on 0 or on 2 page-fetches for that walk; this is
-  the same inherent, accepted behavior as any other keyset-paginated list in this codebase (e.g.
-  `ops_list_exceptions`'s own `p_before_time`/`p_before_id` cursor) and is not a defect this design
-  needs to solve. Within a single page, `bookingId` uniqueness means no row can appear twice or be
-  skipped.
-- **Full-retrieval proof obligation**: walking `cursor`→`nextCursor` until `hasMore=false` must
-  return the exact expected `bookingId` set with no duplicates and no omissions, for a candidate
-  set exceeding one `pageSize` — this is the corrected UX5B-R04 test (§10 item 17), replacing the
-  rejected `422`-only test.
+- **Response fields**: `nextCursor` (opaque, encoding this page's last row key — see the cursor
+  format below — or `null` on the last page) and `hasMore` (`true` iff the `LIMIT $pageSize+1`
+  query returned a `$pageSize+1`th row, which is discarded before serialization). The client
+  advances by passing the previous page's `nextCursor` as the next request's `cursor`.
+- **Cursor format and context binding (UX5B-R09, resolved)**: the cursor is an opaque
+  base64url-encoded JSON object, never a bare row key:
+  ```jsonc
+  { "v": 1, "store": "MOUNTAIN_BASE", "date": "2026-09-20", "section": "all", "lastKey": "B:…" }
+  ```
+  On every request that carries a `cursor`, the server decodes it and requires `store`/`date`/
+  `section` to **exactly match** the request's own query parameters (after `date` defaults per
+  §3); a mismatch, an undecodable cursor, or a `v` the server does not recognize is `422`, never a
+  silent reinterpretation. This is a correctness/consistency check, not an authorization boundary:
+  the cursor carries no permission or store-access grant of its own; every request — first page or
+  continuation — still runs `BookingService.authorize` (§4) independently before the query in
+  §9.2 ever runs, so a resubmitted or hand-edited cursor can change *which page is returned*, never
+  *what a caller is allowed to see*. Binding the query context into the cursor exists solely to
+  reject an accidentally-reused cursor from a different store/date/section walk before it produces
+  a confusing, silently-wrong page.
+- **Live-set semantics, stated accurately (corrected, UX5B-R09)**: within one page (one
+  `REPEATABLE READ READ ONLY` transaction), the union/dedup/order is exact by construction — no
+  row can appear twice or be skipped *inside that one query*. Across pages, each page is its own
+  separate HTTP request and its own separate transaction, so **a multi-page walk is not a
+  historical snapshot of the candidate set at the moment the walk began**. Precisely: with a
+  strictly increasing `rowKey > cursor.lastKey` predicate, a given `rowKey` cannot itself be
+  returned on two different pages of the same walk. But between two page requests, a row can enter
+  or leave candidacy (a booking becomes due, is received, or completes): a newly-entering row whose
+  key is `<= cursor.lastKey` is missed by the rest of that walk (the predicate has already passed
+  it), while a newly-entering row whose key is `> cursor.lastKey` can appear on a later page even
+  though it did not exist when the walk started. This is the same inherent, accepted behavior as
+  any other keyset-paginated list in this codebase (e.g. `ops_list_exceptions`'s own
+  `p_before_time`/`p_before_id` cursor); it is not a defect this design needs to solve, but the
+  document must not claim a stronger guarantee ("seen on 0 or 2 page-fetches") than a live keyset
+  walk actually provides.
+- **Client freshness policy (UX5B-R09, resolved)**: no cross-request snapshot token is introduced
+  — that would be new business state this phase does not need. The client instead restarts a fresh
+  walk from `cursor=null`: after a full walk completes (`hasMore=false`), after any mutation it
+  performed succeeds (checkout/receive/inspect/etc.), on an explicit manual refresh, and after a
+  reasonable staleness threshold the UI defines. A page already fetched is never silently
+  revalidated in place; staleness is resolved by walking again, exactly like `generatedAt` (§6)
+  already documents for a single page.
+- **Full-retrieval proof obligation, scoped to a static fixture (corrected, UX5B-R09)**: walking
+  `cursor`→`nextCursor` until `hasMore=false` against a **frozen, non-mutating** synthetic fixture
+  must return the exact expected row-key set with no duplicates and no omissions, for a candidate
+  set exceeding one `pageSize` — this is the UX5B-R04 test (§10 item 21). A *separate* test (§10
+  item 30) exercises a mutation occurring mid-walk, and asserts only the live-set behavior
+  documented above (a row can be missed or newly appear), never the exact-set guarantee, which
+  applies solely to the static-fixture case.
 
 ### 5.2 Cache/session/error semantics (unchanged from prior draft)
 
@@ -424,6 +512,72 @@ correctly identified that this still made the manifest *endpoint* observably mut
 call, which contradicts both the phase goal and the original UX5B-D06 instruction. This correction
 removes that call entirely rather than relocating it again.)
 
+### 5.5 Row scope: `BOOKING_SCOPED` vs `CUSTODY_ONLY` (UX5B-R08, resolved)
+
+**Problem this closes**: `BookingService.list()`/`get()` (`booking-service.ts:31,30`) only ever
+expose a booking when its *planned* `pickupStore` or `returnStore` is in `principal.storeIds`.
+Branch C/C-wear (§9.1) instead select a booking solely because `actual_store=$requestedStore` —
+which the existing `CustodyService.returns()`/`WearService.receive()` surfaces already read this
+way (§2.6, `custody-service.ts:95`), but only ever projected minimal operational fields (receipt
+id, loan item id, store, family, applied-at, inspection presence — never `displayName`, price, or
+booking period). A booking can legitimately be received at a store neither its planned pickup nor
+planned return store — that is what "cross-store reintegration" already means (§2.6). Composing
+that Branch C row into §6's full row shape (`displayName`, `period`, `totalJpy`, `bookingState`)
+would let a store expose another store's customer/booking data through nothing more than an
+anomalous physical receipt, which no existing surface authorizes. This is the exact widening
+UX5B-D02 already forbade re-attributing across stores, applied to *data exposure* rather than
+*task attribution*.
+
+**Resolution**: every manifest row carries a `rowKind`, decided per row, independent of
+permission composition (§4) or `section` (§5.3):
+
+- **`BOOKING_SCOPED`**: the booking's planned `pickupStore` or planned `returnStore` is in
+  `principal.storeIds` — i.e. it already satisfies `BookingService.list()`'s own scope rule. Row
+  key `B:<bookingId>` (§5's row-identity bullet). The full row shape in §6 is available, exactly
+  as already designed. Every Branch A/B row (§9.1) is `BOOKING_SCOPED` by construction, because
+  Branch A/B's `$requestedStore` — which `authorize()` already requires to be in
+  `principal.storeIds` — is itself the booking's planned pickup/return store. Branch C/C-wear rows
+  are `BOOKING_SCOPED` too whenever that same planned-store test independently passes (the common
+  case: received at the planned store, or at another store the same principal also has access to
+  and that happens to be a planned store).
+- **`CUSTODY_ONLY`**: a Branch C/C-wear row whose booking's planned `pickupStore` **and** planned
+  `returnStore` are *both* outside `principal.storeIds` — an actual-store operational task with no
+  existing planned-store authorization for the booking as a whole. Row key `E:<loanItemId>` (equipment)
+  or `W:<wearReceiptId>` (wear) — never `bookingId`, so a `CUSTODY_ONLY` row cannot be mistaken for,
+  or later joined client-side into, a `BOOKING_SCOPED` booking card. Its projection is limited to
+  exactly the fields `CustodyService.returns()`/`WearService.receive()` already expose for this
+  actual-store task today:
+  - equipment: `receiptId`, `loanItemId`, `sourceStore`, `actualStore`, `family`,
+    `requirementKey`, `version`, `appliedAt`, `inspectionPending` (boolean — presence of
+    `rental_inspection_events`, the same fact §6's `inspectionPendingHereCount` already counts),
+    and `assetId`/`poleId` when present (already returned by `returns()` today).
+  - wear: `receiptId` (`wear_receipts.id`), `loanId`, `sourceStore` (`wear_loans.planned_pickup_store`),
+    `actualStore`, `family`/`size`/`age` (via the existing variant join `receive()`/
+    `returnWorkspace()` already perform), `state` (`RETURNED_PENDING`/`CLEANING`/`TODAY_BLOCKED`/
+    `READY`/`UNAVAILABLE`), `receivedAt`.
+  - **Never included on a `CUSTODY_ONLY` row**: `displayName`, `contact`, `totalJpy`/
+    `priceSnapshot`, `period`, `bookingState`, `bookingId`, or `nextAction` (§7 is defined only in
+    terms of a full booking's facts and permission composition; a `CUSTODY_ONLY` row's actionable
+    fact is "inspect/clean this specific item," which the existing `CustodyService.inspection()`/
+    `WearService.cleaning()` endpoints already key by `loanItemId`/`receiptId` alone — no
+    `bookingId` is needed to act on it).
+- A booking is never represented by *both* a `BOOKING_SCOPED` row and a `CUSTODY_ONLY` row in the
+  same response: the scope test above is evaluated once per booking (using its planned stores,
+  fixed data), so every candidate row for that booking — whichever branch selected it — resolves to
+  the same `rowKind` consistently within one manifest read.
+
+**No new authorization surface is created.** `CUSTODY_ONLY` never promotes to a full booking card;
+if a future need requires that, it is a separate, explicit scope decision, not an implicit
+consequence of this endpoint's existence.
+
+**Test** (§10 item 27): a principal assigned only to store `Y` (not store `X`), with
+`BOOKING_VIEW + RENTAL_RETURN`; a booking planned entirely for store `X` (pickup and return both
+`X`) whose item is actually received at `Y`. Assert the manifest for store `Y` returns a
+`CUSTODY_ONLY` row (`E:<loanItemId>`) with the minimal fields above and specifically asserts the
+absence of `displayName`/`totalJpy`/`period`/`bookingState`/`bookingId`/`nextAction` — never a
+`403`, since the receiving-store custody task itself is legitimately visible, only the wider
+booking card is not.
+
 ## 6. Response schema (proposed, not implemented)
 
 ```jsonc
@@ -433,10 +587,12 @@ removes that call entirely rather than relocating it again.)
   "section": "all",
   "generatedAt": "2026-09-20T01:00:00.000Z", // inventory_clock() at read time, for staff-visible staleness only
   "pageSize": 100,
-  "nextCursor": null,                        // last row's bookingId, or null on the last page (UX5B-R04, §5.1)
+  "nextCursor": null,                        // opaque, context-bound cursor encoding this page's last row key, or null on the last page (UX5B-R04/R09, §5.1)
   "hasMore": false,                          // true iff another page exists; never a silent partial page
   "rows": [
     {
+      "rowKind": "BOOKING_SCOPED",     // or "CUSTODY_ONLY" (UX5B-R08, §5.5) — this example is the BOOKING_SCOPED shape; a CUSTODY_ONLY row's much smaller shape is defined in full in §5.5, not duplicated here
+      "key": "B:…uuid…",               // row identity/pagination key (§5's row-identity bullet, §5.1); "B:"+bookingId for this rowKind
       "bookingId": "…uuid…",           // secondary detail/navigation target only, per TD's UX shape
       "displayName": "…",              // contact.displayName
       "period": { "startDate": "2026-09-20", "endDate": "2026-09-20", "slot": "DAY" },
@@ -456,10 +612,11 @@ removes that call entirely rather than relocating it again.)
         "wearCheckedOut": false        // EXISTS wear_loans WHERE booking_id=?
       },
       "return": {                      // omitted entirely if principal lacks RENTAL_RETURN
-        "isReturnDueToday": false,     // Branch B: state='OUT' AND due today (§9.1) — corrected scope, UX5B-D01
+        "equipmentReturnDueToday": false, // Branch B: state='OUT' AND due today (§9.1) — corrected scope, UX5B-D01; renamed from isReturnDueToday (UX5B-R07) so it cannot be read as covering wear
         "outCount": 3,                 // rental_loan_items state='OUT', regardless of due date
         "receivedHereCount": 0,        // rental_custody_events.actual_store = this store, received today OR still inspection-pending (Branch C, corrected UX5B-R01)
         "inspectionPendingHereCount": 0, // received here (any date) but no rental_inspection_events row — carry-over, UX5B-D01
+        "wearReturnDueToday": false,   // new (UX5B-R07): Branch B-wear membership — wear_loans.returned<quantity AND planned_return_store=$store AND booking endDate=$date (§9.1)
         "wearOutstandingQuantity": 0,  // sum(wear_loans.quantity - returned) — not yet returned by guest at all
         "wearReturnedPendingQuantity": 0, // sum(wear_receipts.quantity) WHERE state='RETURNED_PENDING' — care not started (UX5B-R02, replaces the old single wearReceiptPending boolean)
         "wearCleaningQuantity": 0,        // sum(...) WHERE state='CLEANING'
@@ -504,11 +661,11 @@ reject checkout on `transfer_attention IS NOT NULL`, per §2.2).
 | `CHECK_PAYMENT_OR_EXCEPTION` | `bookingState IN ('PAYMENT_PENDING','PAYMENT_REVIEW')` **or** `inventory_holds.transfer_attention IS NOT NULL` | `bookingState` alone needs only `BOOKING_VIEW`. `transfer_attention` is evaluated **only** when the composition also has `RENTAL_CHECKOUT` — corrected by UX5B-R05; a `BOOKING_VIEW`-only caller never sees this class triggered by `transfer_attention`, since that field is not otherwise exposed to that composition (§4). |
 | `PREPARE_EQUIPMENT` | `bookingState='CONFIRMED_DEV'`, `pickup.equipmentRequired=true`, `pickup.equipmentPrepared=false`, `pickup.timing` is `PICKUP_WINDOW` or `LATE_PICKUP_ELIGIBLE` | `RENTAL_CHECKOUT`. Corrected by UX5B-R02: never true for a wear-only booking (`equipmentRequired=false`), where this predicate is unconditionally false. |
 | `CHECKOUT` | `bookingState='CONFIRMED_DEV'`, equipment-preparation gate satisfied (`!pickup.equipmentRequired \|\| pickup.equipmentPrepared`), **at least one required domain not yet checked out** (`(pickup.equipmentRequired && !pickup.equipmentCheckedOut) \|\| (pickup.wearRequired && !pickup.wearCheckedOut)`), same timing gate | `RENTAL_CHECKOUT`. Corrected by UX5B-R02: reachable for a wear-only booking directly (no equipment gate to satisfy), and reachable regardless of whether equipment or wear is checked out first — the old predicate required equipment specifically `checkedOut=false` *and* wear already done, which made a mixed booking with equipment already out but wear still pending fall through to no actionable class at all. |
-| `OUT_WAIT_RETURN` | `pickup.equipmentCheckedOut=true` (or `!pickup.equipmentRequired`), `return.outCount>0`, not due today | `RENTAL_CHECKOUT` **and** `RENTAL_RETURN` (needs both pickup and return facts). Unchanged scope from batch 1 — still equipment-`outCount`-driven; see §12 for the analogous wear-only gap this correction does not fix, left open as its own flagged item since UX5B-R02 only required the checkout stage to be domain-aware. |
-| `RECEIVE_RETURN` | `return.isReturnDueToday=true`, `return.outCount>0` | `RENTAL_RETURN`. Unchanged scope from batch 1 (equipment-specific), for the same reason as `OUT_WAIT_RETURN` above. |
+| `OUT_WAIT_RETURN` | Domain-aware (UX5B-R07, corrected): `(!return.equipmentReturnDueToday && (pickup.equipmentCheckedOut \|\| !pickup.equipmentRequired) && return.outCount>0) \|\| (!return.wearReturnDueToday && (pickup.wearCheckedOut \|\| !pickup.wearRequired) && return.wearOutstandingQuantity>0)` — i.e. some required domain is checked out/outstanding but not yet due. As before (unchanged by this correction), this is only ever reachable within the range some other branch already produces a row for the booking (typically Branch A's pickup day with a future due date, §3/§9.1) — omitted-ongoing multiday rows still never appear for this alone. | `RENTAL_CHECKOUT` **and** `RENTAL_RETURN` (needs both pickup and return facts). |
+| `RECEIVE_RETURN` | Domain-aware (UX5B-R07, corrected): `(return.equipmentReturnDueToday && return.outCount>0) \|\| (return.wearReturnDueToday && return.wearOutstandingQuantity>0)` — any required return domain that is due today and still outstanding with the guest, equipment and/or wear, independently. This is what closes the concrete gap the re-review found: a wear-only booking due today (`equipmentReturnDueToday` false/`outCount=0` because there is no equipment) now matches on the wear clause alone; a mixed booking with equipment already received (`outCount=0`) but wear still outstanding matches on the wear clause alone too — neither domain being satisfied blocks the other from driving this class. | `RENTAL_RETURN`. |
 | `INSPECTION_PENDING` | `return.inspectionPendingHereCount>0` | `RENTAL_RETURN`. Corrected by UX5B-R02: **equipment-only** now — no longer also triggered by any non-`READY` wear receipt (that was the exact overclaim UX5B-R02 rejected). |
 | `WEAR_CARE_IN_PROGRESS` (new, UX5B-R02) | `return.wearReturnedPendingQuantity>0 \|\| return.wearCleaningQuantity>0 \|\| return.wearTodayBlockedQuantity>0`, **and** `return.wearUnavailableQuantity=0` | `RENTAL_RETURN`. Display-only/informational — cleaning is a backend workflow, so this class explicitly does **not** imply a staff action is owed today, unlike `INSPECTION_PENDING`/`RECEIVE_RETURN`. |
-| `COMPLETE` | every equipment requirement `RECEIVED` and inspected, **and** `return.wearOutstandingQuantity=0 && wearReturnedPendingQuantity=0 && wearCleaningQuantity=0 && wearTodayBlockedQuantity=0 && wearUnavailableQuantity=0` (i.e. every returned wear unit is `READY`), or `pickup.noPickup=true` — completion gating itself is **unchanged** by this correction batch (§2.10); only which candidate branch keeps the row visible on completion day changed (UX5B-R01, §9.1 Branch C) | `RENTAL_CHECKOUT` **and** `RENTAL_RETURN` (completion depends on both pickup and return facts) |
+| `COMPLETE` | every equipment requirement `RECEIVED` and inspected, **and** `return.wearOutstandingQuantity=0 && wearReturnedPendingQuantity=0 && wearCleaningQuantity=0 && wearTodayBlockedQuantity=0 && wearUnavailableQuantity=0` (i.e. every returned wear unit is `READY`), or `pickup.noPickup=true` — completion gating itself is **unchanged** by this correction batch (§2.10); only which candidate branch keeps the row visible on completion day changed: same-day receipt/inspection via Branch C (UX5B-R01, §9.1), and — for the `pickup.noPickup=true` case, in particular a MULTIDAY booking — the event-day Branch D (UX5B-R06, §9.1), without which that case had no row to attach `COMPLETE` to at all outside the `AM`/`PM`/`DAY` slots | `RENTAL_CHECKOUT` **and** `RENTAL_RETURN` (completion depends on both pickup and return facts) |
 | `NO_ACTION` | `bookingState='DRAFT'`; a multiday booking outside the today window (§3); or the neutral fallback for a composition that cannot see the facts needed for a more specific class (§7.3) | any |
 | `NEEDS_DETAIL_REVIEW` | any state combination not covered above — e.g. partial checkout (some requirement keys `OUT`, others not, which today's schema does not appear to allow per `rental_active_requirement`'s uniqueness but is not proven impossible by this design pass), `return.wearUnavailableQuantity>0` (UX5B-R02: no single safe staff action is established for `UNAVAILABLE` from this read-only design pass), or a wear/equipment combination where one side is `COMPLETE`-eligible and the other is not yet determinable | any |
 
@@ -552,14 +709,15 @@ Already reflected in §6. Explicitly excluded: raw provider ids
 
 ### 9.1 Corrected candidate branches (UX5B-D01, UX5B-D02)
 
-Three **paired, not independently `OR`ed**, branches, each producing a `bookingId` set for a given
-`$store`/`$date`, unioned before per-booking composition:
+Four branches — A/B/C **paired, not independently `OR`ed**, plus D (new, UX5B-R06) — each
+producing a row-key set (§5.5) for a given `$store`/`$date`, unioned before per-row composition:
 
 - **Branch A — pickup**: `rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE
   h.pickup_store=$store AND h.occupancy_start=$date`. Populates `pickup.*`.
 - **Branch B — return due, not yet received anywhere**: `... JOIN rental_loan_items l ON
   l.booking_id=b.id WHERE h.return_store=$store AND l.state='OUT' AND (l.due_at AT TIME ZONE
-  'Asia/Tokyo')::date=$date`. Populates `return.isReturnDueToday`/`outCount`. An item that has
+  'Asia/Tokyo')::date=$date`. Populates `return.equipmentReturnDueToday`/`outCount` (renamed from
+  `isReturnDueToday`, UX5B-R07, §6). An item that has
   already moved to `RECEIVED` (anywhere) naturally drops out of this branch — it is not "still
   due," it is "received," which is Branch C's concern. This is what makes cross-store attribution
   deterministic (UX5B-D02): a due item is either still owed at the planned return store (Branch B)
@@ -581,7 +739,9 @@ Three **paired, not independently `OR`ed**, branches, each producing a `bookingI
   "still pending" once the row is selected.
 - **Wear mirrors of B/C**: **B-wear** — `wear_loans wl JOIN rental_bookings b ON b.id=wl.booking_id
   WHERE wl.planned_return_store=$store AND wl.returned<wl.quantity AND
-  (b.conditions->'period'->>'endDate')::date=$date`; **C-wear — corrected identically to Branch C
+  (b.conditions->'period'->>'endDate')::date=$date` — populates `return.wearReturnDueToday`
+  (UX5B-R07, §6) exactly as Branch B populates `return.equipmentReturnDueToday`, its equipment
+  analogue; **C-wear — corrected identically to Branch C
   (UX5B-R01)** — `wear_receipts wr JOIN wear_loans wl ON wl.id=wr.loan_id WHERE
   wr.actual_store=$store AND ( (wr.received_at AT TIME ZONE 'Asia/Tokyo')::date=$date OR
   wr.state<>'READY' )` — a wear receipt is a candidate either because it was received on `$date`
@@ -590,10 +750,36 @@ Three **paired, not independently `OR`ed**, branches, each producing a `bookingI
 - **Branch A** has no wear-specific mirror: wear pickup is part of the same booking-level pickup
   event as equipment, already covered by Branch A; `pickup.wearCheckedOut` is a fact composed from
   `wear_loans` existence for that `bookingId`, not a separate candidate branch.
+- **Branch D — no-pickup terminal completion (UX5B-R06, new)**: `rental_no_pickup_events n JOIN
+  rental_bookings b ON b.id=n.booking_id JOIN inventory_holds h ON h.id=b.hold_id WHERE
+  h.pickup_store=$store AND (n.completed_at AT TIME ZONE 'Asia/Tokyo')::date=$date`. Populates
+  `pickup.noPickup=true` (already in §6) for exactly the JST date the terminal event occurred —
+  never a standing historical fact, matching every other terminal-completion branch's "visible on
+  its completion day" contract (§3). This is the missing candidate for §7.1's `COMPLETE` class when
+  `pickup.noPickup=true` fires on a MULTIDAY booking, whose `n.completed_at` date is the booking's
+  *end* date (`h.due_at`'s date; `rental_complete_no_pickup`, `0017_no_pickup_completion.sql:22`,
+  rejects the call while `h.due_at>now_at`, i.e. it only succeeds once `h.due_at<=inventory_clock()`)
+  rather than `occupancy_start` — the date Branch A alone would have checked.
+  For an `AM`/`PM`/`DAY` (single-day) booking, `occupancy_start` and the no-pickup completion date
+  coincide, so Branch D and Branch A simply agree on the same date for those slots; Branch D is
+  only *additionally* necessary for `MULTIDAY`.
+- **Later-day carry-over completion, stated as policy (UX5B-R06, resolved)**: Branch C/C-wear
+  intentionally drop a prior-day receipt from candidacy the moment its inspection/care finishes on
+  a *later* day than it was received (§3's carry-over bullets: a row is a candidate either on its
+  event day, or while still pending — never both once pending resolves on a later day). This
+  document adopts that as the explicit, sole completion-visibility policy, rather than leaving a
+  second "general, not-necessarily-same-day `COMPLETE`" claim standing alongside it: **a carry-over
+  task disappears from the manifest the instant it completes, without leaving a `COMPLETE` row
+  behind on that later day.** `COMPLETE` (§7.1) therefore only ever has a candidate row to attach
+  to on the same day the terminal work (receipt+inspection, wear reaching `READY`, or a Branch D
+  no-pickup event) actually finished — never on some later, unrelated day. No new
+  completion-event-day branch is added for this later-day case; §10 item 16 is corrected to match
+  (this was previously an unreachable "general `COMPLETE`" test, not a real gap).
 
-`section=pickup` restricts the branch union to Branch A only; `section=return` restricts it to
-B+C (+ wear mirrors). Pagination over the resulting deduped `bookingId` union is a **separate**
-concern, corrected by UX5B-R04 — see §5.1 (no per-branch row cap exists any more).
+`section=pickup` restricts the branch union to Branch A and Branch D only; `section=return`
+restricts it to B+C (+ wear mirrors). Pagination over the resulting deduped row-key union (§5.5)
+is a **separate** concern, corrected by UX5B-R04/R09 — see §5.1 (no per-branch row cap exists any
+more).
 
 ### 9.2 Read sequence (service-composition plan, not SQL to be written yet)
 
@@ -602,38 +788,60 @@ performs zero mutations) and UX5B-R04 (cursor applied before the batched per-boo
 those reads only ever cover one page):
 
 1. Open `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY` (§9.5). Everything below runs inside it.
-2. One query per requested branch (§9.1), collecting the union of matching `bookingId`s (and, for
-   Branch C, the matching `loan_item_id`s directly, since Branch C's own row is already keyed by
-   `loan_item_id`).
-3. Dedup the union to a `bookingId` set, apply `WHERE bookingId > $cursor ORDER BY bookingId ASC
-   LIMIT $pageSize + 1` (§5.1, UX5B-R04), discard the `$pageSize+1`th row after computing
-   `hasMore`/`nextCursor` from its presence, and keep only the resulting page's `bookingId`s for
-   every step below.
-4. One batched query: `rental_preparations WHERE id = ANY($pageBookingIds)` (PK lookup, no
-   fan-out).
-5. One batched query: `rental_loan_items WHERE booking_id = ANY($pageBookingIds)`.
-6. One batched query joining `rental_custody_events`/`rental_inspection_events` keyed by the
-   `loan_item_id` set collected from step 5 and Branch C, restricted to the page.
-7. One batched query: `rental_no_pickup_events WHERE booking_id = ANY($pageBookingIds)`.
-8. One batched query: `wear_loans WHERE booking_id = ANY($pageBookingIds)`.
-9. One batched query joining `wear_receipts` keyed by the `loan_id` set from step 8.
+2. One query per requested branch (§9.1: A, B, C+wear mirrors, D), collecting each candidate row's
+   key (§5.5). Branch A/B/D rows are always `B:<bookingId>`. A Branch C/C-wear row's `rowKind`
+   (§5.5) is decided here, from the same query's already-loaded
+   `conditions->>'pickupStore'/'returnStore'`: `B:<bookingId>` if the planned-store test passes,
+   otherwise `E:<loanItemId>`/`W:<wearReceiptId>` — applied consistently to every row that booking
+   produces in this read.
+3. Dedup the union to a row-key set, apply `WHERE rowKey > $cursor.lastKey ORDER BY rowKey ASC
+   LIMIT $pageSize + 1` (§5.1, UX5B-R04/R09), discard the `$pageSize+1`th row after computing
+   `hasMore`/`nextCursor` from its presence, and keep only the resulting page's rows for every step
+   below. Split the page into its `B:` (`$pageBookingIds`) and `E:`/`W:` (`$pageLoanItemIds`/
+   `$pageWearReceiptIds`) keys for the batched reads that follow.
+4. For the page's `B:` rows: one batched query `rental_preparations WHERE id =
+   ANY($pageBookingIds)` (PK lookup, no fan-out) — skipped when the page has no `B:` rows.
+5. For the page's `B:` rows: one batched query `rental_loan_items WHERE booking_id =
+   ANY($pageBookingIds)`.
+6. One batched query joining `rental_custody_events`/`rental_inspection_events`, keyed by the
+   `loan_item_id` set collected from step 5 **and** the page's `$pageLoanItemIds` (§5.5) together —
+   a single query serves both row kinds; a `CUSTODY_ONLY` (`E:`) row simply projects the minimal
+   subset of its columns defined in §5.5, never a second query.
+7. For the page's `B:` rows: one batched query `rental_no_pickup_events WHERE booking_id =
+   ANY($pageBookingIds)`.
+8. For the page's `B:` rows: one batched query `wear_loans WHERE booking_id =
+   ANY($pageBookingIds)`.
+9. One batched query joining `wear_receipts`, keyed by the `loan_id` set from step 8 **and** the
+   page's `$pageWearReceiptIds` (§5.5) together — same single-query composition as step 6 for a
+   `CUSTODY_ONLY` (`W:`) row.
 10. `ops_list_exceptions(...)` (`0035:85`, pure `SELECT` — §5.4) for the store, grouped by
-    `booking_id` in application code. This is the **only** exception-related call the manifest
-    makes; it never calls `ops_collect_exceptions`.
-11. Compose §6/§7 per booking in application code from the in-memory batch results.
+    `booking_id` in application code, applied only to the page's `B:` rows — a `CUSTODY_ONLY` row
+    carries no `bookingId` to group by and never gets an `exception` sub-object (§5.5). This is the
+    **only** exception-related call the manifest makes; it never calls `ops_collect_exceptions`.
+11. Compose §6 (`B:` rows, full shape) or §5.5 (`E:`/`W:` rows, minimal shape) per row in
+    application code from the in-memory batch results.
 
-Steps 4-10 only ever run for one page's `bookingId`s (bounded by `pageSize`, max 300), not the
-whole candidate set — this is a bounded number of queries regardless of total row count (no
-per-booking query), directly avoiding N+1.
+Steps 4-10 only ever run for one page's rows (bounded by `pageSize`, max 300), not the whole
+candidate set — this is a bounded number of queries regardless of total row count (no per-row
+query), directly avoiding N+1.
 
 ### 9.3 Existing indexes usable as-is
 
-`rental_bookings` PK (`id`) — the btree index backing this PK is what makes UX5B-R04's `WHERE
-bookingId > $cursor ORDER BY bookingId ASC` keyset pagination (§5.1) efficient without any new
-index. Also `rental_preparations` PK (`id`), `rental_active_requirement`/`rental_initial_requirement`
-on `rental_loan_items`, the `UNIQUE` indexes on `rental_custody_events.loan_item_id` and
-`rental_inspection_events.loan_item_id`, `rental_no_pickup_events` PK, `wear_loans`
-`UNIQUE(booking_id,requirement_key)`, `ops_exception_recent`.
+`rental_bookings` PK (`id`), `rental_preparations` PK (`id`),
+`rental_active_requirement`/`rental_initial_requirement` on `rental_loan_items`, the `UNIQUE`
+indexes on `rental_custody_events.loan_item_id` and `rental_inspection_events.loan_item_id`,
+`rental_no_pickup_events` PK, `wear_loans` `UNIQUE(booking_id,requirement_key)`,
+`wear_receipts` PK, `ops_exception_recent` — each branch's own query in §9.1/9.2 step 2 is backed
+by one of these existing indexes, with no new index needed to produce that branch's candidates.
+
+**Corrected (UX5B-R08/R09)**: unlike a single-table cursor, the row-key union/dedup/sort that
+UX5B-R04's keyset pagination (§5.1) walks is **not** backed by one physical index — `B:`/`E:`/`W:`
+keys come from three different tables' PKs (`rental_bookings.id`, `rental_loan_items.id`,
+`wear_receipts.id`). That union, dedup, and ascending sort happen over the already-branch-queried,
+in-memory candidate set for one `$store`/`$date` (§9.1/9.2 step 2-3), not as a single index-backed
+`ORDER BY` spanning three tables. This is an application/query-composition cost, bounded by that
+store/date's total candidate count — the same volume question §9.4 already leaves open — not a new
+index requirement.
 
 ### 9.4 Indexes this design believes would be needed — DESIGN_GATE, not authorized here
 
@@ -740,17 +948,31 @@ Modeled on the existing `startDevelopmentApp`/`writeAccount`/`HoldService`+`Quot
     later day (it is neither "received on `$date`" nor "still pending") — the same-day guarantee
     from items 11/12 is intentionally scoped to the day the work actually finished, not to every
     subsequent day.
-14. **No-pickup completion**: `rental_no_pickup_events` row exists → `nextAction='COMPLETE'`,
-    never `PREPARE_EQUIPMENT`/`CHECKOUT`.
+14. **No-pickup completion, including the MULTIDAY completion-day case (corrected, UX5B-R06)**:
+    `rental_no_pickup_events` row exists → `nextAction='COMPLETE'`, never
+    `PREPARE_EQUIPMENT`/`CHECKOUT`, asserted for two period shapes: (a) a single-day (`AM`/`PM`/
+    `DAY`) booking, where `occupancy_start` and the completion date coincide, so Branch A and
+    Branch D both already select the row; and (b) a **MULTIDAY** booking whose `occupancy_start`
+    is *not* the manifest date but whose `rental_no_pickup_events.completed_at` JST date is —
+    explicitly assert that Branch A alone (a manifest read for `occupancy_start`'s date) does
+    **not** show `COMPLETE` for it, while Branch D (§9.1) does show it, and only on the completion
+    date. This is the direct regression test for the gap the re-review found: under the pre-R06
+    branch set, a MULTIDAY no-pickup completion had no candidate row on the date it occurred.
 15. **Wear care-in-progress states distinguished from inspection-pending (new, UX5B-R02)**:
     equipment fully received and inspected, wear returned but its `wear_receipts` row is in
     `RETURNED_PENDING`, `CLEANING`, or `TODAY_BLOCKED` (parametrized over all three) →
     `nextAction='WEAR_CARE_IN_PROGRESS'`, **never** `INSPECTION_PENDING` and **never** `COMPLETE`.
     A fourth case, `wear_receipts.state='UNAVAILABLE'`, asserts `nextAction='NEEDS_DETAIL_REVIEW'`
     instead (no class claims a single safe action for it, per §7.1).
-16. **Mixed equipment+wear, both complete (UX5B-D03)**: equipment inspected and every
-    `wear_receipts` row `READY` → `nextAction='COMPLETE'` (the general, not-necessarily-same-day
-    version of items 11/12).
+16. **Carry-over work disappears on completion, not a later-day `COMPLETE` (corrected, UX5B-R06)**:
+    this replaces the withdrawn, unreachable "general, not-necessarily-same-day
+    equipment-inspected-and-every-wear-`READY` `COMPLETE`" claim (UX5B-D03's original wording) with
+    the actual, stated policy (§3/§9.1): assert that a receipt/inspection or wear-care completion
+    finishing on a day **after** its receipt date drops the booking from the manifest on that later
+    day, with **no** `COMPLETE` row emitted then or ever after — same-day completion (items 11/12)
+    remains the only way `COMPLETE` becomes visible for a normal return. This is the same negative
+    already asserted for inspection-only carry-over in item 13, extended explicitly to the
+    booking-level `COMPLETE` classification so the two do not silently disagree.
 17. **Payment/transfer exception → detail review, split by composition (UX5B-D05 / UX5B-R05)**: a
     booking with a live `PAYMENT_PENDING` `bookingState` classifies as `CHECK_PAYMENT_OR_EXCEPTION`
     for **every** composition including `BOOKING_VIEW`-only. A separate booking with a live
@@ -773,17 +995,73 @@ Modeled on the existing `startDevelopmentApp`/`writeAccount`/`HoldService`+`Quot
     manifest, asserting the now-collected exception appears in `exception.count` — proving the
     manifest's exception data is a snapshot of that existing, separate collection step, not a
     fresh one it triggers.
-21. **Cursor pagination — full, duplicate-free, omission-free retrieval (corrected, UX5B-R04)**:
-    seed more than 300 candidate `bookingId`s for one store/date/section combination (replacing the
-    rejected D07 "seed >300, assert 422" test), then walk the manifest with a small `pageSize`
-    (e.g. `pageSize=5`) from `cursor=null` through successive `nextCursor`s until `hasMore=false`,
-    and assert: (a) the union of every page's `bookingId`s equals the full expected candidate set
-    exactly, (b) no `bookingId` appears on more than one page, (c) no `bookingId` is missing, and
-    (d) the same walk at `pageSize=300` (the maximum) also succeeds and returns the complete set in
-    fewer pages. Also assert `422` for `pageSize=0`, `pageSize=301`, and a non-integer `pageSize`.
+21. **Cursor pagination — full, duplicate-free, omission-free retrieval, scoped to a frozen
+    fixture (corrected, UX5B-R04/R09)**: seed more than 300 candidate rows (§5.5 row keys) for one
+    store/date/section combination, with **no mutation of manifest-relevant state for the
+    duration of the walk** (replacing the rejected D07 "seed >300, assert 422" test), then walk the
+    manifest with a small `pageSize` (e.g. `pageSize=5`) from `cursor=null` through successive
+    `nextCursor`s until `hasMore=false`, and assert: (a) the union of every page's row keys equals
+    the full expected candidate set exactly, (b) no row key appears on more than one page, (c) no
+    row key is missing, and (d) the same walk at `pageSize=300` (the maximum) also succeeds and
+    returns the complete set in fewer pages. Also assert `422` for `pageSize=0`, `pageSize=301`,
+    and a non-integer `pageSize`. The frozen-fixture constraint is what makes the exact-set
+    assertions in (a)-(c) valid — see item 30 for the separate, live-mutation case, which asserts
+    only the weaker live-set guarantee (§5.1).
 22. **Zero client-side state inference**: an end-to-end UI-level assertion (once implemented) that
     the rendered next-action text always matches the server-returned `nextAction` string verbatim,
     across the full class list in §7.1 including `WEAR_CARE_IN_PROGRESS`.
+23. **Wear-only return due today (new, UX5B-R07)**: a wear-only booking (`equipmentCount=0`)
+    checked out, `wearOutstandingQuantity>0`, planned return date today (`wearReturnDueToday=true`
+    via Branch B-wear) → `nextAction='RECEIVE_RETURN'` for a return-composed caller. This is the
+    direct regression test for the re-review's concrete failure case: under the pre-R07 predicate
+    (equipment-`outCount`-only), this booking fell to `NEEDS_DETAIL_REVIEW` instead.
+24. **Mixed booking, equipment already received, wear still outstanding (new, UX5B-R07)**: same
+    booking, `return.outCount=0` (equipment fully received) but `wearReturnDueToday=true` and
+    `wearOutstandingQuantity>0` → `nextAction='RECEIVE_RETURN'`, proving the wear clause alone
+    drives the class without needing the equipment clause to also hold.
+25. **Mixed booking, equipment outstanding due today, wear already returned; and both domains
+    outstanding due today (new, UX5B-R07)**: two sub-cases against a full-capability caller —
+    (a) `equipmentReturnDueToday=true`/`outCount>0`, every wear unit already `wearReadyQuantity`
+    (nothing outstanding) → `nextAction='RECEIVE_RETURN'` driven by the equipment clause alone;
+    (b) both `equipmentReturnDueToday=true`/`outCount>0` **and**
+    `wearReturnDueToday=true`/`wearOutstandingQuantity>0` → `nextAction='RECEIVE_RETURN'` from
+    either/both clauses, never a distinct "double return" class.
+26. **Wear analogue of `OUT_WAIT_RETURN` (new, UX5B-R07)**: a wear-only booking picked up today
+    (`pickup.wearCheckedOut=true`), planned return date in the future (`wearReturnDueToday=false`,
+    `wearOutstandingQuantity>0`) → `nextAction='OUT_WAIT_RETURN'` for a return-composed caller on
+    that same pickup-day manifest read (the only read Branch A guarantees a row for; the design
+    does not add a standing "currently out" bucket, per §3/§12 item 2), `NO_ACTION` for a
+    checkout-only caller.
+27. **Cross-store actual-receipt `CUSTODY_ONLY` minimal projection (new, UX5B-R08)**: a principal
+    assigned only to store `Y` (not store `X`), with `BOOKING_VIEW + RENTAL_RETURN`; a booking
+    planned entirely for store `X` (both pickup and return) whose item is actually received at
+    `Y`. Assert the manifest for store `Y` returns a `rowKind='CUSTODY_ONLY'` row keyed
+    `E:<loanItemId>` with only the fields listed in §5.5, and specifically assert the **absence**
+    of `displayName`/`totalJpy`/`period`/`bookingState`/`bookingId`/`nextAction` on that row —
+    never a `403`, since the receiving-store custody task itself is legitimately visible, only the
+    wider booking card is not. Repeat for the wear mirror (`W:<wearReceiptId>`, `receive()`'s
+    `actual_store`).
+28. **Store-wide task visibility across two staff actors (new, UX5B-R10)**: two synthetic staff
+    accounts, A and B, both `BOOKING_VIEW + RENTAL_RETURN` at the same store, neither the other's
+    manager/owner. A performs a receipt (`CustodyService`'s applied-receipt path) for a booking at
+    that store. Assert B's Manifest request for that same store (not A's) shows the resulting
+    `inspectionPendingHereCount`/`nextAction='INSPECTION_PENDING'` task identically to A's own
+    request — proving task visibility is store-wide, not scoped to the actor who performed the
+    prior action, consistent with `CustodyService.returns()`'s own `received` query (§4.1).
+29. **Cursor context binding rejects a mismatched reuse (new, UX5B-R09)**: fetch a first page for
+    `store=MOUNTAIN_BASE`, `date=2026-09-20`, `section=all`, capture its `nextCursor`, then replay
+    that exact cursor against `store=ONSEN_BASE` (or a different `date`, or a different `section`)
+    → `422`, never a silently-wrong page from the mismatched context. Also assert `422` for an
+    undecodable cursor string and for a well-formed cursor with an unrecognized `v`.
+30. **Live-set pagination behavior under a mid-walk mutation (new, UX5B-R09)**: seed a candidate
+    set spanning at least two pages, begin walking with `pageSize` small enough to guarantee more
+    than one request, and between two of those page requests (i) insert a new candidate row whose
+    key sorts *before* the last-returned `cursor.lastKey` and (ii) insert one whose key sorts
+    *after* it. Assert (i) is **not** seen by the rest of that walk and (ii) **is** seen — the
+    exact live-set behavior documented in §5.1 — and assert this test never claims the item
+    21/exact-set guarantee, which is intentionally scoped to a frozen fixture only. This is
+    distinct from item 19 (single read's `REPEATABLE READ` consistency within one page) and from
+    item 21 (the static, exact-set pagination proof).
 
 ## 11. Explicit out-of-scope (this phase)
 
@@ -794,39 +1072,43 @@ authorized phase. No index change (§9.4).
 
 ## 12. Open design gates (`NEEDS_DETAIL_REVIEW` summary)
 
-1. §2.9 — whether the return section stays per-actor (matching today's `CustodyService.returns`)
-   or becomes store-wide for the manifest. *(Unaffected by any correction so far; still open.)*
-2. §3 — whether a multiday ongoing rental (neither pickup nor return today) should get a third,
-   explicit "currently out" manifest bucket. *(Narrowed from the prior draft: defaulting to
-   omission is now the stated design, not an open question; only the optional future bucket
-   remains open.)*
-3. §9.4 — the real daily-volume number that would justify actually adding the listed indexes. No
+1. §9.4 — the real daily-volume number that would justify actually adding the listed indexes. No
    longer gates the pagination contract itself (UX5B-R04 replaced the volume-dependent bounded
    ceiling with real cursor pagination), so this is now purely an indexing-priority question, not a
    correctness one.
-4. §7.1 — whether the partial-checkout state (some requirement keys `OUT`, others not) is actually
+2. §7.1 — whether the partial-checkout state (some requirement keys `OUT`, others not) is actually
    reachable under the current schema.
-5. **New (identified while closing UX5B-R02, not itself required by R01-R05)**: `OUT_WAIT_RETURN`
-   and `RECEIVE_RETURN` (§7.1) remain equipment-`outCount`-specific, unlike the now domain-aware
-   `CHECKOUT`/`PREPARE_EQUIPMENT` pair. A booking whose equipment is fully returned but whose wear
-   was never returned at all (`wearOutstandingQuantity>0`, no `wear_receipts` row yet — distinct
-   from item 15/§10's "returned but not `READY`" case) falls to `NEEDS_DETAIL_REVIEW` today rather
-   than a class analogous to `OUT_WAIT_RETURN`/`RECEIVE_RETURN`. UX5B-R02's instruction was scoped
-   to the checkout stage; extending the same domain-aware treatment to the return-due stage is
-   flagged here for a future review, not silently added in this batch.
-6. UX-5A's own Today section computing "today" from browser time (§3) — flagged, not fixed, in
+3. §3/§12 (prior item 2) — whether a multiday ongoing rental (neither pickup nor return today, and
+   not a Branch D completion) should get a third, explicit "currently out" manifest bucket, beyond
+   the "visible only on its pickup day" scope that `OUT_WAIT_RETURN` (§7.1, now domain-aware per
+   R07) already has for both equipment and wear. Defaulting to omission remains the stated design;
+   only this optional future bucket remains open.
+4. UX-5A's own Today section computing "today" from browser time (§3) — flagged, not fixed, in
    this document.
 
 Resolved by UX5B-D01–D07 (closed by "Correction batch 1"): the original candidate-set/carry-over
 question, cross-store attribution/duplication, exception-read-vs-read-only composition, and the
 first pagination-strategy question.
 
-Resolved by UX5B-R01–R05 (closed by "Correction batch 2", this batch): same-day return-to-complete
-manifest visibility (R01); wear-only and mixed-domain checkout classification, and collapsing every
+Resolved by UX5B-R01–R05 (closed by "Correction batch 2"): same-day return-to-complete manifest
+visibility (R01); wear-only and mixed-domain checkout classification, and collapsing every
 non-`READY` wear state into one `INSPECTION_PENDING` signal (R02); the manifest endpoint actually
 performing a mutation via `ops_collect_exceptions` (R03); the D07 pagination contract not actually
 being retrievable on a single-branch overflow, replaced by real cursor pagination (R04); and
 `transfer_attention` leaking into a `BOOKING_VIEW`-only `nextAction` (R05).
+
+Resolved by UX5B-R06–R10 (closed by "Correction batch 3", this batch): terminal completion
+candidate coverage for MULTIDAY no-pickup and for later-day carry-over, via Branch D plus an
+explicit "carry-over disappears on completion" policy, replacing the unreachable general
+`COMPLETE` claim (R06); wear-only and mixed-domain return classification for `OUT_WAIT_RETURN`/
+`RECEIVE_RETURN`, closing what was previously open item 5 (the equipment-only scope of those two
+classes) and the wear-only-return gap outright, rather than deferring either (R07);
+`BOOKING_SCOPED`/`CUSTODY_ONLY` row projection so an actual-store-only custody task never leaks
+booking/customer/price data beyond existing `BookingService` scope (R08); accurate live-set
+pagination semantics plus an opaque, context-bound cursor and a static-fixture-scoped exact-set
+proof (R09); and the store-wide-vs-per-actor Daily Manifest population question, resolved
+store-wide with cited evidence from existing authorization surfaces (R10 — this closes what was
+previously open item 1, §2.9's per-actor-vs-store-wide question, in the affirmative for store-wide).
 
 ## Submission
 

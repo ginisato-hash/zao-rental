@@ -106,3 +106,52 @@ Run from the isolated `prelaunch-uiux-finishing` worktree, never the maintained 
 No pricing/recommendation/inventory/HOLD/payment/auth/permission/schema/Production changes. No
 UX-5B manifest API. No route's own server-side permission check was touched — only which links
 `StaffHome` chooses to render were corrected to match those existing checks.
+
+## Correction batch 2 — TD comment [`5747839394`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5747839394)
+
+UX5R-01, UX5R-02 and the secondary-link portion of UX5R-03 were confirmed CLOSED. One remaining
+finding, UX5R-04, closed in this batch.
+
+Commit: `d032082` (code/tests).
+
+### UX5R-04 (MEDIUM) — primary Pickup/Return surfaces did not mirror the destination route's combined permission gate
+
+`/staff/rentals` and the custody HTTP handler both require `BOOKING_VIEW` before `RENTAL_CHECKOUT`/
+`RENTAL_RETURN` authorization is even considered. Because a `staff_permission_overrides` row can
+grant `RENTAL_CHECKOUT`/`RENTAL_RETURN` while independently denying `BOOKING_VIEW`, Staff Home's
+previous `canCheckout`-only / `canReturn`-only gates could advertise a search box, Today-card
+action, Pickup section or Return section whose destination immediately denies access.
+
+Fixed by deriving two composed values inside `StaffHome` itself (no server/route/permission change):
+
+```
+effectivePickup = canBookingView && canCheckout
+effectiveReturn = canBookingView && canReturn
+```
+
+`BookingSearchInput`, the Today card's action, the Pickup section and the Return section/link
+(and its data fetch) all now use these composed values instead of the raw capability alone.
+
+### Regression test
+
+`tests/staff/home-ui.ts` adds a third synthetic account, `RENTAL_CHECKOUT=true`,
+`RENTAL_RETURN=true`, `BOOKING_VIEW=false` (explicit deny override — the exact valid composition
+the finding describes), and asserts none of 予約QR・検索/本日の予約/貸出・受付/返却の進行状況
+render for it.
+
+### Verification (this batch)
+
+Run from the isolated `prelaunch-uiux-finishing` worktree (reverified healthy before/after):
+
+- `npm run lint` / `typecheck` / `build` / `check:secrets` — pass
+- `npm run test:staff-home-ui` — 7/7 pass (new UX5R-04 case added)
+- `npm run test:auth` — 18/18 pass
+- `npm run test:custody-ui` — 5/5 pass
+- Staff Home screenshots re-captured; byte-identical to the prior batch for the full-capability
+  account (expected — that account's view doesn't change under this fix)
+
+### Hard boundaries confirmed
+
+No pricing/recommendation/inventory/HOLD/payment/auth/permission/schema/Production changes. No
+route's own server-side permission check changed — the composition lives entirely in `StaffHome`.
+No UX-5B manifest API.

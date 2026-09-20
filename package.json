@@ -77,6 +77,7 @@
     "test:operations-ui": "node --import tsx tests/operations/normal-ui.ts",
     "test:operations-console": "node --import tsx tests/operations/console.ts && node --import tsx tests/operations/failure-injection.ts",
     "test:operations-console-ui": "node --import tsx tests/operations/console-ui.ts",
+    "test:operations-manifest": "node --import tsx tests/operations/manifest.ts",
     "test:operations-restore": "node --import tsx tests/operations/restore.ts",
     "test:operations-baseline": "node --import tsx tests/operations/baseline.ts",
     "test:m2a-import": "node --import tsx tests/operations/import-rehearsal.ts",

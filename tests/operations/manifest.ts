@@ -47,6 +47,10 @@ try{
   await assert.rejects(returnOnlyA.manifest({store:'ONSEN_BASE',date:null,section:null,cursor:null,pageSize:null}),{status:403});
   await assert.rejects(full.manifest({store:'NOWHERE',date:null,section:null,cursor:null,pageSize:null}),{status:422});
   await assert.rejects(full.manifest({store:'MOUNTAIN_BASE',date:'not-a-date',section:null,cursor:null,pageSize:null}),{status:422});
+  // Regex shape alone accepts these; only the round-trip calendar check (utcDate reuse,
+  // UX5C-R03) catches them before $2::date ever reaches Branch SQL.
+  await assert.rejects(full.manifest({store:'MOUNTAIN_BASE',date:'2035-02-31',section:null,cursor:null,pageSize:null}),{status:422});
+  await assert.rejects(full.manifest({store:'MOUNTAIN_BASE',date:'2035-02-29',section:null,cursor:null,pageSize:null}),{status:422});
   await assert.rejects(full.manifest({store:'MOUNTAIN_BASE',date:null,section:'bogus',cursor:null,pageSize:null}),{status:422});
   await assert.rejects(full.manifest({store:'MOUNTAIN_BASE',date:null,section:null,cursor:null,pageSize:0}),{status:422});
   await assert.rejects(full.manifest({store:'MOUNTAIN_BASE',date:null,section:null,cursor:null,pageSize:301}),{status:422});

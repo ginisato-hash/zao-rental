@@ -2,6 +2,9 @@
 
 Authority: PR #26 comment [`5749991741`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5749991741)
 (Technical Director — UX-5B DESIGN PASS / server implementation authorization).
+Correction batch 1 closes [comment `5751235980`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5751235980)
+(Technical Director — UX-5C SERVER REQUEST_CHANGES on candidate HEAD `2d3d2a8`, submission
+`5751199806`; findings UX5C-R01 through UX5C-R04). See §12 for what changed and why.
 Design source: `docs/execution/prelaunch-uiux-v2/STAFF_MANIFEST_DESIGN.md`.
 
 ## 1. Scope delivered
@@ -32,26 +35,49 @@ then opens one `BEGIN ISOLATION LEVEL REPEATABLE READ` transaction per page and 
    to exhaustion inside the same transaction, so `count`/`topSeverity` are exact, never a partial
    first page. `ops_collect_exceptions` and `OperationsConsole.list()` are never called.
 
-## 3. A load-bearing correction to the design's transaction mode
+## 3. Transaction mode: two separate MVCC snapshots (corrected per UX5C-R01, §12)
 
 The design document and the service's own original comment specified a literal Postgres
-`BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY` transaction. Running the real acceptance
-tests against Postgres 16 found this is incompatible with also calling `ops_list_exceptions`
-(required by TD Clarification 2): that function calls `ops_assert_console_store` →
-`ops_assert_actor`, which does `SELECT 1 FROM auth_session ... FOR SHARE`
-(`0033_launch_operations.sql:48`) for its session-liveness check. Postgres unconditionally
-forbids any row-locking clause inside a `READ ONLY` transaction, regardless of the function's
-own privileges (`SECURITY DEFINER` does not change this) — every call to the manifest's
-`exceptions()` method failed with SQLSTATE `25006`.
+`BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY` transaction for the whole manifest read,
+including the exception metadata. Running the real acceptance tests against Postgres 16 found
+this is incompatible with also calling `ops_list_exceptions` (required by TD Clarification 2):
+that function calls `ops_assert_console_store` → `ops_assert_actor`, which does
+`SELECT 1 FROM auth_session ... FOR SHARE` (`0033_launch_operations.sql:48`) for its
+session-liveness check. Postgres unconditionally forbids any row-locking clause inside a
+`READ ONLY` transaction, regardless of the function's own privileges (`SECURITY DEFINER` does
+not change this) — every call failed with SQLSTATE `25006`.
 
-The transaction now uses `BEGIN ISOLATION LEVEL REPEATABLE READ` (isolation only, not the
-literal `READ ONLY` mode). This still gives the one-snapshot-per-page consistency guarantee
-`STAFF_MANIFEST_DESIGN.md` §9.4/§9.5 requires; the manifest itself issues no `INSERT`/`UPDATE`/
-`DELETE` anywhere, which is what "read-only" means for the zero-mutation acceptance test (§7
-below) and for the endpoint's own contract — it is not the same thing as the database enforcing
-it via the `READ ONLY` transaction flag. `exceptions()` also had to set `zao.session` (not only
-`zao.actor`) before calling `ops_list_exceptions`, matching the pairing every other caller of
-`ops_assert_actor` in this codebase already uses (`OperationsContext.transaction()`).
+The first correction attempt dropped `READ ONLY` from the *whole* manifest transaction. UX5C-R01
+correctly rejected that: the `_operations` role has real `INSERT`/`UPDATE` grants on operational
+tables (§ scripts/operations-roles.ts), so a plain `REPEATABLE READ` transaction only proves
+*today's code path* happens not to write — it does not keep the database-enforced boundary
+against an accidental future write in this read model. The service now splits the two concerns
+into two separate connections/transactions with two separate MVCC snapshots, each independently
+correct for what it does:
+
+1. **`businessSnapshot()`** — the authoritative snapshot. Runs Branch A/B/C/D + wear mirrors,
+   `booking`/`hold`/`custody`/`wear`/`no-pickup` reads, the `BOOKING_SCOPED`/`CUSTODY_ONLY`
+   projections and `nextAction` composition, and owns `generatedAt`, all inside
+   `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY` — literal Postgres-enforced `READ ONLY`,
+   restored exactly as originally authorized. It never calls `ops_list_exceptions`.
+2. **`exceptionSnapshot()`** — the observational snapshot, opened only when the caller has
+   `OPERATIONS_VIEW` and only after the business snapshot has committed. Runs in its own
+   connection under plain `BEGIN ISOLATION LEVEL REPEATABLE READ` (not `READ ONLY`, since
+   `ops_assert_actor`'s `FOR SHARE` needs that), still issues zero writes of its own, still never
+   calls `ops_collect_exceptions`, and still walks `ops_list_exceptions`'s own cursor to
+   exhaustion (§9). `mergeExceptions()` merges its tally into `BOOKING_SCOPED` rows only, after
+   both snapshots exist — `manifest()` is the only place that ever sees both results together.
+
+**This means the exception snapshot is, by construction, a different MVCC snapshot from the
+business snapshot** — a booking/exception change that commits in the gap between the two
+`pool.connect()` calls can be reflected in one snapshot and not the other. This is an accepted,
+documented trade-off, not a defect: exception metadata is explicitly observational
+(`0035_operations_console.sql`'s own comment, "never the authority for payment, inventory,
+refund, custody or delivery") and UX5B-D04 already requires it never drive `nextAction`, which is
+decided entirely inside the authoritative business snapshot before the exception snapshot ever
+runs. `exceptionSnapshot()` also sets `zao.session` (not only `zao.actor`) before calling
+`ops_list_exceptions`, matching the pairing every other caller of `ops_assert_actor` in this
+codebase already uses (`OperationsContext.transaction()`).
 
 ## 4. Other correctness fixes found by running the acceptance tests
 
@@ -148,51 +174,100 @@ capability is absent, verified by the `BOOKING_VIEW`-only test asserting an empt
 
 - `test:operations-manifest`'s "a generic unrelated exception..." case snapshots every business
   and `ops_exceptions` table before and after a `full.manifest()` call and asserts an exact
-  `deepEqual` — PASS.
+  `deepEqual` — PASS. This covers both snapshots: the business connection and the exception
+  connection each issue only `SELECT`s.
 - The suite reports `{"businessMutations":0,"providerCalls":0,"hostedDb":0}` on its final line.
-- A dedicated case holds a `REPEATABLE READ` transaction open, performs a concurrent booking
-  creation on a separate connection, and asserts the held transaction's own `rental_bookings`
-  count is unaffected — PASS.
+- A dedicated case holds a `REPEATABLE READ READ ONLY` transaction open on the business snapshot's
+  connection, performs a concurrent booking creation on a separate connection, and asserts the
+  held transaction's own `rental_bookings` count is unaffected — PASS. Because the business
+  snapshot is Postgres-enforced `READ ONLY`, an accidental future `INSERT`/`UPDATE`/`DELETE` added
+  to `businessSnapshot()`/`read()`/`bookingRow()`/`candidateKeys()` would fail at the database
+  level with SQLSTATE `25006`, not merely happen to be absent from today's code path.
 
 ## 9. Exception full-page aggregation evidence
 
 A dedicated case seeds 60 additional `ops_exceptions` rows (exceeding `ops_list_exceptions`'s own
 51-row page) against one booking and asserts the manifest's `exception.count>=61` (not a
-truncated ~51) and `topSeverity==='ERROR'` — PASS, proving `exceptions()` walks the function's own
-cursor to exhaustion inside the one read-only transaction rather than reporting a partial page.
+truncated ~51) and `topSeverity==='ERROR'` — PASS, proving `exceptionSnapshot()` walks the
+function's own cursor to exhaustion inside its own read-write-capable-but-zero-write transaction,
+independently of the business snapshot, rather than reporting a partial page.
 
 ## 10. Test results
 
-`npm run test:operations-manifest` — **17/17 PASS**, covering: auth/permission/store failure
-modes; server `inventory_clock()`-derived date; BOOKING_VIEW-only row suppression; permission
-composition response shapes; PREPARE_EQUIPMENT/CHECKOUT/OUT_WAIT_RETURN/RECEIVE_RETURN
-(equipment-only, wear-only, mixed) per TD Clarification 1; MULTIDAY no-pickup Branch D; same-day
-receipt+inspection COMPLETE with no standing later-day row; inspection-pending carry-over;
-wear RETURNED_PENDING/CLEANING/UNAVAILABLE→NEEDS_DETAIL_REVIEW semantics; cross-store
-BOOKING_SCOPED vs CUSTODY_ONLY with the forbidden-field assertion and server-derived
-`taskState`/`taskAction`; store-wide two-staff task visibility; generic-exception
-non-interference and zero-mutation; exact exception aggregation past one page; full-set cursor
-pagination with cross-context `422`; REPEATABLE READ isolation under a concurrent mutation.
+`npm run test:operations-manifest` now runs two files and is **29/29 PASS**:
+
+- `tests/operations/manifest.ts` (`ManifestService` direct, real PostgreSQL) — **17/17 PASS**,
+  covering: auth/permission/store failure modes (including two impossible-but-well-shaped dates,
+  §12 UX5C-R03); server `inventory_clock()`-derived date; BOOKING_VIEW-only row suppression;
+  permission composition response shapes; PREPARE_EQUIPMENT/CHECKOUT/OUT_WAIT_RETURN/
+  RECEIVE_RETURN (equipment-only, wear-only, mixed) per TD Clarification 1; MULTIDAY no-pickup
+  Branch D; same-day receipt+inspection COMPLETE with no standing later-day row;
+  inspection-pending carry-over; wear RETURNED_PENDING/CLEANING/UNAVAILABLE→NEEDS_DETAIL_REVIEW
+  semantics; cross-store BOOKING_SCOPED vs CUSTODY_ONLY with the forbidden-field assertion and
+  server-derived `taskState`/`taskAction`; store-wide two-staff task visibility; generic-exception
+  non-interference and zero-mutation; exact exception aggregation past one page; full-set cursor
+  pagination with cross-context `422`; REPEATABLE READ isolation under a concurrent mutation.
+- `tests/operations/manifest-http.ts` (real `operationsHandler`, real PostgreSQL, real better-auth
+  session, no live server/port — §12 UX5C-R02) — **12/12 PASS**: authorized GET success with
+  `Cache-Control: private, no-store` / `Vary: Cookie`; anonymous → `401`; missing permission →
+  `403`; wrong store → `403`; unknown query key → `422`; two impossible calendar dates → `422`;
+  invalid `pageSize`/`cursor` → `422`; cursor context mismatch → `422` through HTTP;
+  `x-zao-session` mismatch → `409`; `POST /manifest` → `404` (not a mutation surface).
 
 Regression suite: `npm run lint` PASS, `npm run typecheck` PASS, `npm run build` PASS,
 `npm run check:secrets` PASS, `npm run test:operations-console` PASS, `npm run test:custody`
 PASS, `npm run test:wear` PASS.
 
-`npm run test:auth` and `npm run test:staff-home-ui` were **not run**: both require
+`npm run test:auth` and `npm run test:staff-home-ui` were **not run locally**: both require
 `startDevelopmentApp`, which binds a single deterministic web port derived from this worktree's
 absolute path (`scripts/worktree.ts`'s `worktreeIdentity()`); that port was already held by this
 worktree's long-running maintained UI review server (`.local/ui-review/server.ts`, verified by
-process ancestry and cwd, not stopped). This diff touches no auth or Staff Home code
-(`git diff --stat` is limited to `apps/web/src/lib/operations-http.ts`, `package.json`, and the
-two new manifest files), so there is no plausible mechanism for a regression in either suite from
-this change; the gap is an environmental scheduling conflict, not evidence of a passing or
-failing state.
+process ancestry and cwd, not stopped). This diff touches no auth or Staff Home code, so there is
+no plausible mechanism for a regression in either suite from this change. TD comment `5751235980`
+independently confirmed both suites actually ran in Foundation CI `35522463886` at the prior
+candidate HEAD (`test:auth` 18 checks, `test:staff-home-ui` 7/7) and are not an outstanding gap;
+Foundation CI at the corrected HEAD (recorded in the PR submission comment) covers them again.
 
 ## 11. Boundaries confirmed unchanged
 
-`git diff --stat` (tracked files): `apps/web/src/lib/operations-http.ts` (+2/-2, the one GET
-branch and allowlist entry), `package.json` (+1, the new test script). New files:
-`packages/core/src/operations/manifest-service.ts`, `tests/operations/manifest.ts`, and this
-document. No file under `packages/db/migrations`, `scripts/operations-roles.ts`, Staff Home
+`git diff --stat` against base `a94af58` (tracked files): `apps/web/src/lib/operations-http.ts`
+(+2/-2, the one GET branch and allowlist entry), `package.json` (+2: `test:operations-manifest`
+now chains the new HTTP test), `scripts/verify.mjs` (+1: `test:operations-manifest` added to the
+Foundation CI command list, §12 UX5C-R04). New files: `packages/core/src/operations/manifest-service.ts`,
+`tests/operations/manifest.ts`, `tests/operations/manifest-http.ts`, and this document. No file
+under `packages/db/migrations`, `scripts/operations-roles.ts`, Staff Home
 (`apps/web/src/app/staff/**`, `apps/web/src/components/StaffHome.tsx`), or any
 payment/HOLD/pricing/Square code was touched.
+
+## 12. Corrections applied in response to TD REQUEST_CHANGES (comment `5751235980`)
+
+Reviewed candidate HEAD `2d3d2a8` / submission `5751199806`. Verified-good findings (Branch
+A/B/C/D + wear mirror gating, `BOOKING_SCOPED`/`CUSTODY_ONLY` conservatism, `CUSTODY_ONLY`
+`taskState`/`taskAction`, domain-aware checkout/return classification, no `ops_collect_exceptions`/
+`OperationsConsole.list()` calls, exception aggregation past 51 rows, context-bound cursor,
+Foundation CI `35522463886` SUCCESS including `test:auth`/`test:staff-home-ui`) required no
+change and are preserved exactly. Four corrections were required before Staff Home integration:
+
+- **UX5C-R01 (HIGH)** — restored literal Postgres `READ ONLY` enforcement for the authoritative
+  business snapshot by splitting it from the observational exception snapshot into two
+  connections/transactions (§3). The exception snapshot's own zero-mutation and full-cursor-walk
+  behavior (§8/§9) is unchanged; it just no longer shares a transaction with the business read.
+- **UX5C-R02 (MEDIUM)** — added `tests/operations/manifest-http.ts`, a real-PostgreSQL test of
+  the actual `GET /api/operations/manifest` route through `operationsHandler` (no live HTTP
+  server/port — the same in-process `Request`-object pattern `tests/flow/fixture.ts`'s own
+  `login()` already uses for `authHandler`), covering every status/header case UX5C-R02 asked for
+  (§10).
+- **UX5C-R03 (MEDIUM)** — `isCalendarDate()` now reuses `packages/contracts/src/hold.ts`'s
+  existing `utcDate()` round-trip validator (regex shape + `Date.parse` + re-serialize) instead of
+  regex shape alone, so `2035-02-31`/`2035-02-29` (non-leap) are rejected `422` before `$2::date`
+  ever reaches Branch SQL. Added at both the service level (`tests/operations/manifest.ts`) and
+  the HTTP level (`tests/operations/manifest-http.ts`).
+- **UX5C-R04 (MEDIUM)** — added `'test:operations-manifest'` to `scripts/verify.mjs`'s fixed
+  command list, next to the other operations server suites (`test:operations-console`,
+  `test:operations-console-ui`), so Foundation CI (`npm run verify`) runs it on every future
+  commit. Confirmed by inspecting the corrected-HEAD Foundation CI log for the actual
+  `npm run test:operations-manifest` invocation and its `29/29 PASS` output (recorded in the PR
+  submission comment).
+
+No schema/migration/index/GRANT/auth-permission change; no Staff Home wiring; no Production/main
+activity in any of the four corrections.

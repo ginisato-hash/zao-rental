@@ -1,11 +1,15 @@
 import type {Pool,PoolClient} from 'pg';
 import {loadStaff,type Permission,type StaffPrincipal} from '../../../auth/src/staff-auth';
 import {FlowError,flowObject,flowStore} from '../../../contracts/src/rental-flow';
-import {isWear,type HoldConditions} from '../../../contracts/src/hold';
+import {isWear,utcDate,type HoldConditions} from '../../../contracts/src/hold';
 import {pickupTiming} from '../../../contracts/src/pickup';
 type Identity={subject:string;sessionId:string};
 type Section='pickup'|'return'|'all';
-const DATE_RE=/^20\d{2}-\d{2}-\d{2}$/;
+// Reuses the project's own round-trip calendar validator (regex shape + Date.parse +
+// re-serialize) rather than regex shape alone, so an impossible-but-well-shaped date like
+// 2035-02-31 or 2035-02-29 (non-leap) is rejected here as 422, never reaching `$2::date`
+// in Branch SQL where Postgres would raise and the generic catch would surface it as 500.
+function isCalendarDate(date:string):boolean{try{utcDate(date);return true;}catch{return false;}}
 const CURSOR_VERSION=1;
 type CursorContext={v:number;store:string;date:string;section:Section;lastKey:string};
 // Row identity is never bare bookingId: an actual-store-only custody/inspection task
@@ -33,9 +37,14 @@ type WearReceiptRow={id:string;loan_id:string;booking_id:string;quantity:number;
 type NoPickupRow={booking_id:string;completed_at:Date};
 type KeyEntry={kind:'B'|'E'|'W';bookingId?:string;loanItemId?:string;wearReceiptId?:string};
 /** Read-only Staff Daily Manifest surface (UX-5C). Never mutates a business, exception
- * or history row; the one REPEATABLE READ transaction per page is the only consistency
- * guarantee this endpoint makes — see STAFF_MANIFEST_DESIGN.md. Not literal Postgres
- * READ ONLY mode: ops_list_exceptions needs a row lock internally (see manifest()). */
+ * or history row. Two separate MVCC snapshots per page, deliberately: the authoritative
+ * business snapshot (Branch A/B/C/D + wear mirrors, projections, `nextAction`,
+ * `generatedAt`) runs under Postgres-enforced `REPEATABLE READ READ ONLY`; the
+ * observational exception snapshot runs afterward, in its own plain `REPEATABLE READ`
+ * transaction, because `ops_list_exceptions` needs a row lock READ ONLY forbids outright
+ * (see `exceptionSnapshot()`). Exception metadata is merged only into `BOOKING_SCOPED`
+ * rows and never drives `nextAction` — see STAFF_MANIFEST_DESIGN.md and
+ * STAFF_MANIFEST_SERVER_IMPLEMENTATION.md §"UX5C-R01". */
 export class ManifestService{
  constructor(private pool:Pool,private authPool:Pool,private identity:Identity){}
  private async principal(store:string):Promise<StaffPrincipal>{
@@ -49,21 +58,27 @@ export class ManifestService{
  async manifest(input:unknown){
   const v=flowObject(input,['store','date','section','cursor','pageSize']),store=flowStore(v.store);
   const principal=await this.principal(store);
-  if(v.date!==null&&(typeof v.date!=='string'||!DATE_RE.test(v.date)))throw new FlowError('MANIFEST_DATE_INVALID',422);
+  if(v.date!==null&&(typeof v.date!=='string'||!isCalendarDate(v.date)))throw new FlowError('MANIFEST_DATE_INVALID',422);
   const section=(v.section??'all') as Section;if(!['pickup','return','all'].includes(section))throw new FlowError('MANIFEST_SECTION_INVALID',422);
   const pageSize=(v.pageSize??100) as number;if(!Number.isInteger(pageSize)||pageSize<1||pageSize>300)throw new FlowError('MANIFEST_PAGE_SIZE_INVALID',422);
   if(v.cursor!==null&&typeof v.cursor!=='string')throw new FlowError('MANIFEST_CURSOR_INVALID',422);
   const cursorCtx=v.cursor!==null?decodeCursor(v.cursor as string):null;
+  const result=await this.businessSnapshot(principal,store,v.date as string|null,section,pageSize,cursorCtx);
+  // Exception metadata is a second, independent MVCC snapshot — see the class comment and
+  // exceptionSnapshot() below — merged in only after the authoritative business snapshot commits.
+  if(principal.permissions.includes('OPERATIONS_VIEW' as Permission))await this.mergeExceptions(store,result.rows as Record<string,unknown>[]);
+  return result;
+ }
+ private async businessSnapshot(principal:StaffPrincipal,store:string,requestedDate:string|null,section:Section,pageSize:number,cursorCtx:CursorContext|null){
   const c=await this.pool.connect();
   try{
-   // Not literal Postgres READ ONLY mode: ops_list_exceptions (required by §5.4/TD Clarification 2)
-   // calls ops_assert_actor, which does `SELECT ... FOR SHARE` on auth_session for its session-liveness
-   // check (0033_launch_operations.sql:48) — Postgres forbids any row-locking clause inside a READ ONLY
-   // transaction outright, regardless of the function's own privileges. REPEATABLE READ alone still gives
-   // the one-snapshot-per-page consistency guarantee; this service issues no INSERT/UPDATE/DELETE itself.
-   await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ');
+   // Authoritative business snapshot: Branch A/B/C/D + wear mirrors, projections and
+   // `nextAction` are all decided inside this one Postgres-enforced READ ONLY transaction.
+   // It never calls ops_list_exceptions (that needs a row lock READ ONLY forbids outright,
+   // regardless of the function's own privileges) — see exceptionSnapshot() below.
+   await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
    const now=(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;
-   const date=(v.date as string|null)??jstDate(now);
+   const date=requestedDate??jstDate(now);
    if(cursorCtx&&(cursorCtx.store!==store||cursorCtx.date!==date||cursorCtx.section!==section))throw new FlowError('MANIFEST_CURSOR_CONTEXT_MISMATCH',422);
    const result=await this.read(c,principal,store,date,section,pageSize,cursorCtx,now);
    await c.query('COMMIT');return result;
@@ -71,6 +86,15 @@ export class ManifestService{
    if(e instanceof FlowError)throw e;const code=(e as {code?:string}).code;
    if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('MANIFEST_READ_FAILED',500);
   }finally{c.release();}
+ }
+ private async mergeExceptions(store:string,rows:Record<string,unknown>[]){
+  const bookingIds=rows.filter(r=>r.rowKind==='BOOKING_SCOPED').map(r=>r.bookingId as string);
+  const tally=bookingIds.length?await this.exceptionSnapshot(store,bookingIds):new Map<string,{count:number;topSeverity:'INFO'|'WARN'|'ERROR'}>();
+  for(const row of rows){
+   if(row.rowKind!=='BOOKING_SCOPED')continue;
+   const e=tally.get(row.bookingId as string);
+   row.exception={attention:!!e&&e.count>0,count:e?.count??0,topSeverity:e?.topSeverity??null};
+  }
  }
  // Candidate branches (§9.1) are queried once per store/date/section here; every branch
  // is skipped entirely, not merely filtered afterwards, when the composed permission it
@@ -102,7 +126,7 @@ export class ManifestService{
   return {keys,pickupToday,equipmentReturnDueToday,wearReturnDueToday};
  }
  private async read(c:PoolClient,principal:StaffPrincipal,store:string,date:string,section:Section,pageSize:number,cursorCtx:CursorContext|null,now:Date){
-  const checkout=principal.permissions.includes('RENTAL_CHECKOUT' as Permission),ret=principal.permissions.includes('RENTAL_RETURN' as Permission),ops=principal.permissions.includes('OPERATIONS_VIEW' as Permission);
+  const checkout=principal.permissions.includes('RENTAL_CHECKOUT' as Permission),ret=principal.permissions.includes('RENTAL_RETURN' as Permission);
   const {keys,pickupToday,equipmentReturnDueToday,wearReturnDueToday}=await this.candidateKeys(c,principal,store,date,section,checkout,ret);
   const sortedKeys=[...keys.keys()].sort(),afterCursor=cursorCtx?sortedKeys.filter(k=>k>cursorCtx.lastKey):sortedKeys;
   const page=afterCursor.slice(0,pageSize),hasMore=afterCursor.length>pageSize,lastKey=page.at(-1);
@@ -126,37 +150,51 @@ export class ManifestService{
   const wearReceiptsRaw=wearLoanIds.length||pageWearReceiptIds.length?(await c.query<WearReceiptRow>('SELECT wr.id,wr.loan_id,wl.booking_id,wr.quantity,wr.state,wr.actual_store,wr.received_at,wl.planned_pickup_store AS source_store,v.family,v.size,v.age FROM wear_receipts wr JOIN wear_loans wl ON wl.id=wr.loan_id JOIN ledger_variants v ON v.id=wl.variant_id WHERE wr.loan_id=ANY($1) OR wr.id=ANY($2)',[wearLoanIds,pageWearReceiptIds])).rows:[];
   const wearReceiptsByBooking=new Map<string,WearReceiptRow[]>();for(const r of wearReceiptsRaw){const arr=wearReceiptsByBooking.get(r.booking_id)??[];arr.push(r);wearReceiptsByBooking.set(r.booking_id,arr);}
   const wearReceiptsById=new Map(wearReceiptsRaw.map(r=>[r.id,r]));
-  const exceptionsByBooking=ops&&pageBookingIds.length?await this.exceptions(c,store,pageBookingIds):new Map<string,{count:number;topSeverity:'INFO'|'WARN'|'ERROR'}>();
   const rows=page.map(key=>{
    const entry=keys.get(key)!;
-   if(entry.kind==='B')return this.bookingRow(entry.bookingId!,{checkout,ret,ops,store,date,now,bookingsById,holdsByBooking,preparedByBooking,loanItemsByBooking,custodyByLoanItem,custodyByBooking,noPickup,wearLoansByBooking,wearReceiptsByBooking,pickupToday,equipmentReturnDueToday,wearReturnDueToday,exceptionsByBooking});
+   if(entry.kind==='B')return this.bookingRow(entry.bookingId!,{checkout,ret,store,date,now,bookingsById,holdsByBooking,preparedByBooking,loanItemsByBooking,custodyByLoanItem,custodyByBooking,noPickup,wearLoansByBooking,wearReceiptsByBooking,pickupToday,equipmentReturnDueToday,wearReturnDueToday});
    if(entry.kind==='E')return this.custodyOnlyEquipmentRow(entry.loanItemId!,custodyByLoanItem);
    return this.custodyOnlyWearRow(entry.wearReceiptId!,wearReceiptsById);
   });
   return {store,date,section,generatedAt:now.toISOString(),pageSize,nextCursor,hasMore,rows};
  }
- // Walks ops_list_exceptions's own (occurredAt,id) cursor to exhaustion inside the same
- // read-only transaction, so an exact per-booking count/topSeverity never reports a
- // partial page as the total (UX-5C Implementation Clarification 2).
- private async exceptions(c:PoolClient,store:string,pageBookingIds:string[]){
-  // ops_assert_actor's session-liveness check reads zao.session, not just zao.actor
-  // (0033_launch_operations.sql:48); OperationsContext.transaction() sets both for the
-  // same reason before any ops_* call.
-  await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true)",[this.identity.subject,this.identity.sessionId]);
-  const wanted=new Set(pageBookingIds),tally=new Map<string,{count:number;topSeverity:'INFO'|'WARN'|'ERROR'}>();
-  let beforeTime:string|null=null,beforeId:string|null=null;
-  for(;;){
-   const rows=(await c.query('SELECT ops_list_exceptions($1,$2,$3,$4,$5,$6,$7) v',[store,null,null,0,'UNACKNOWLEDGED',beforeTime,beforeId])).rows[0].v as {id:string;bookingId:string|null;severity:'INFO'|'WARN'|'ERROR';occurredAt:string}[];
-   for(const e of rows){
-    if(!e.bookingId||!wanted.has(e.bookingId))continue;
-    const prior=tally.get(e.bookingId);
-    tally.set(e.bookingId,{count:(prior?.count??0)+1,topSeverity:!prior||severityRank[e.severity]>severityRank[prior.topSeverity]?e.severity:prior.topSeverity});
+ // Observational snapshot, deliberately a *different* MVCC snapshot from the authoritative
+ // business read above (see the class comment): ops_list_exceptions -> ops_assert_console_store
+ // -> ops_assert_actor needs `SELECT ... FOR SHARE` on auth_session for its session-liveness
+ // check (0033_launch_operations.sql:48), which Postgres forbids inside a READ ONLY transaction
+ // outright, regardless of the function's own privileges — so this runs in its own plain
+ // REPEATABLE READ connection/transaction, never inside the business snapshot's READ ONLY one.
+ // It still issues zero writes, never calls ops_collect_exceptions, and walks
+ // ops_list_exceptions's own (occurredAt,id) cursor to exhaustion, so an exact per-booking
+ // count/topSeverity never reports a partial page as the total (UX-5C Implementation
+ // Clarification 2). Its tally is merged only into BOOKING_SCOPED rows by mergeExceptions()
+ // and never drives `nextAction` (UX5B-D04).
+ private async exceptionSnapshot(store:string,pageBookingIds:string[]){
+  const c=await this.pool.connect();
+  try{
+   await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ');
+   // ops_assert_actor's session-liveness check reads zao.session, not just zao.actor
+   // (0033_launch_operations.sql:48); OperationsContext.transaction() sets both for the
+   // same reason before any ops_* call.
+   await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true)",[this.identity.subject,this.identity.sessionId]);
+   const wanted=new Set(pageBookingIds),tally=new Map<string,{count:number;topSeverity:'INFO'|'WARN'|'ERROR'}>();
+   let beforeTime:string|null=null,beforeId:string|null=null;
+   for(;;){
+    const rows=(await c.query('SELECT ops_list_exceptions($1,$2,$3,$4,$5,$6,$7) v',[store,null,null,0,'UNACKNOWLEDGED',beforeTime,beforeId])).rows[0].v as {id:string;bookingId:string|null;severity:'INFO'|'WARN'|'ERROR';occurredAt:string}[];
+    for(const e of rows){
+     if(!e.bookingId||!wanted.has(e.bookingId))continue;
+     const prior=tally.get(e.bookingId);
+     tally.set(e.bookingId,{count:(prior?.count??0)+1,topSeverity:!prior||severityRank[e.severity]>severityRank[prior.topSeverity]?e.severity:prior.topSeverity});
+    }
+    if(rows.length<51)break;const last=rows.at(-1)!;beforeTime=last.occurredAt;beforeId=last.id;
    }
-   if(rows.length<51)break;const last=rows.at(-1)!;beforeTime=last.occurredAt;beforeId=last.id;
-  }
-  return tally;
+   await c.query('COMMIT');return tally;
+  }catch(e){await c.query('ROLLBACK');
+   if(e instanceof FlowError)throw e;const code=(e as {code?:string}).code;
+   if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('MANIFEST_READ_FAILED',500);
+  }finally{c.release();}
  }
- private bookingRow(bookingId:string,ctx:{checkout:boolean;ret:boolean;ops:boolean;store:string;date:string;now:Date;bookingsById:Map<string,BookingRow>;holdsByBooking:Map<string,HoldRow>;preparedByBooking:Map<string,boolean>;loanItemsByBooking:Map<string,LoanItemRow[]>;custodyByLoanItem:Map<string,CustodyRow>;custodyByBooking:Map<string,CustodyRow[]>;noPickup:Map<string,NoPickupRow>;wearLoansByBooking:Map<string,WearLoanRow[]>;wearReceiptsByBooking:Map<string,WearReceiptRow[]>;pickupToday:Set<string>;equipmentReturnDueToday:Set<string>;wearReturnDueToday:Set<string>;exceptionsByBooking:Map<string,{count:number;topSeverity:'INFO'|'WARN'|'ERROR'}>}){
+ private bookingRow(bookingId:string,ctx:{checkout:boolean;ret:boolean;store:string;date:string;now:Date;bookingsById:Map<string,BookingRow>;holdsByBooking:Map<string,HoldRow>;preparedByBooking:Map<string,boolean>;loanItemsByBooking:Map<string,LoanItemRow[]>;custodyByLoanItem:Map<string,CustodyRow>;custodyByBooking:Map<string,CustodyRow[]>;noPickup:Map<string,NoPickupRow>;wearLoansByBooking:Map<string,WearLoanRow[]>;wearReceiptsByBooking:Map<string,WearReceiptRow[]>;pickupToday:Set<string>;equipmentReturnDueToday:Set<string>;wearReturnDueToday:Set<string>}){
   const b=ctx.bookingsById.get(bookingId)!,hold=ctx.holdsByBooking.get(bookingId);
   const conditions=b.conditions,equipmentReq=equipmentRequirementKeys(conditions),equipmentIsRequired=equipmentReq.size>0,wearIsRequired=bookingWearRequired(conditions);
   const loans=ctx.loanItemsByBooking.get(bookingId)??[],outCount=loans.filter(l=>l.state==='OUT').length,equipmentCheckedOut=outCount>0;
@@ -173,7 +211,6 @@ export class ManifestService{
   const totalJpy=typeof b.price_snapshot?.totalJpy==='number'?b.price_snapshot.totalJpy:undefined;
   const pickupObj=ctx.checkout?{isPickupToday:ctx.pickupToday.has(bookingId),equipmentRequired:equipmentIsRequired,equipmentPrepared:ctx.preparedByBooking.get(bookingId)??false,equipmentCheckedOut,noPickup:hasNoPickup,timing,wearRequired:wearIsRequired,wearCheckedOut}:undefined;
   const returnObj=ctx.ret?{equipmentReturnDueToday:equipmentDueToday,outCount,receivedHereCount,inspectionPendingHereCount,wearReturnDueToday:wearDueToday,wearOutstandingQuantity,wearReturnedPendingQuantity,wearCleaningQuantity,wearTodayBlockedQuantity,wearUnavailableQuantity,wearReadyQuantity}:undefined;
-  const exceptionObj=ctx.ops?(()=>{const e=ctx.exceptionsByBooking.get(bookingId);return {attention:!!e&&e.count>0,count:e?.count??0,topSeverity:e?.topSeverity??null};})():undefined;
   // "Done" means the domain actually went through pickup+return+inspection, not merely
   // "nothing outstanding" — a never-checked-out booking also has outCount=0/wl.length=0
   // and must not be mistaken for COMPLETE.
@@ -187,7 +224,7 @@ export class ManifestService{
   const nextAction=this.classify(b.state,ctx.checkout,ctx.ret,pickupObj,returnObj,hold?.transfer_attention??null,equipmentDone,wearDone,equipmentEverCheckedOut);
   const row:Record<string,unknown>={rowKind:'BOOKING_SCOPED',key:bookingKey(bookingId),bookingId,displayName:b.contact.displayName,period:conditions.period,pickupStore:conditions.pickupStore,returnStore:conditions.returnStore,bookingState:b.state,equipmentCount:equipmentReq.size,nextAction};
   if(totalJpy!==undefined)row.totalJpy=totalJpy;
-  if(pickupObj)row.pickup=pickupObj;if(returnObj)row.return=returnObj;if(exceptionObj)row.exception=exceptionObj;
+  if(pickupObj)row.pickup=pickupObj;if(returnObj)row.return=returnObj;
   return row;
  }
  // First-match-wins, in the exact §7.1 order. Each class is only ever reachable through

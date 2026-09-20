@@ -51,10 +51,12 @@ try{
  async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL('**/staff/ledger');return p;}
  const owner=await context(),narrow=await context(),inverse=await context(),checkoutOnly=await context(),onsen=await context();
  const page=await login(owner,'ux5d-full@example.invalid'),narrowPage=await login(narrow,'ux5d-narrow@example.invalid'),inversePage=await login(inverse,'ux5d-inverse@example.invalid'),checkoutPage=await login(checkoutOnly,'ux5d-checkout@example.invalid'),onsenPage=await login(onsen,'ux5d-onsen@example.invalid');
- // Every request Staff Home issues, across every logged-in page, for the whole run: the final
- // check below asserts the two retired summary endpoints never appear here even once.
+ // Every request issued while a page is actually showing Staff Home (pathname exactly /staff,
+ // never a subroute like /staff/rentals which has its own legitimate custody workspace calls),
+ // across every logged-in page, for the whole run: the final check below asserts the two retired
+ // summary endpoints never appear here even once.
  const requestedPaths:string[]=[];
- for(const p of [page,narrowPage,inversePage,checkoutPage,onsenPage])p.on('request',r=>{try{const u=new URL(r.url());if(u.origin===origin)requestedPaths.push(u.pathname);}catch{/* ignore non-URL requests */}});
+ for(const p of [page,narrowPage,inversePage,checkoutPage,onsenPage])p.on('request',r=>{try{const u=new URL(r.url());if(u.origin!==origin)return;if(new URL(r.frame().url()).pathname!=='/staff')return;requestedPaths.push(u.pathname);}catch{/* ignore non-URL requests */}});
  const principal=(await loadStaff(db.pool,full))!,sessionId=(await db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[full])).rows[0].id as string;
  const holds=new HoldService(roles.holdPool,principal,()=>now),quotes=new QuoteService(roles.pricingPool,principal,()=>now);
  const year=now.getUTCFullYear();

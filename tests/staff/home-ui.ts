@@ -27,11 +27,15 @@ try{
  // explicitly revoke it here so this account is genuinely narrow (BOOKING_VIEW only), the same
  // way an operator would configure a booking-only role in the real staff-management screen.
  await writeAccount(roles.authPool,admin,undefined,{...base,email:'ux5a-narrow@example.invalid',displayName:'SYNTHETIC Narrow Staff',role:'VIEWER',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{BOOKING_VIEW:true,INVENTORY_VIEW:false}});
+ // UX5R-04: a valid permission composition where RENTAL_CHECKOUT/RENTAL_RETURN are granted but
+ // BOOKING_VIEW is explicitly denied. /staff/rentals and the custody HTTP handler both require
+ // BOOKING_VIEW first, so this account cannot actually use pickup or return.
+ await writeAccount(roles.authPool,admin,undefined,{...base,email:'ux5a-inverse@example.invalid',displayName:'SYNTHETIC Inverse Staff',role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{BOOKING_VIEW:false,RENTAL_CHECKOUT:true,RENTAL_RETURN:true}});
  for(let i=0;i<150;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===149)throw Error('LOCAL_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}});c.setDefaultTimeout(15000);return c;}
  async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL('**/staff/ledger');return p;}
- const owner=await context(),narrow=await context();
- const page=await login(owner,'ux5a-full@example.invalid'),narrowPage=await login(narrow,'ux5a-narrow@example.invalid');
+ const owner=await context(),narrow=await context(),inverse=await context();
+ const page=await login(owner,'ux5a-full@example.invalid'),narrowPage=await login(narrow,'ux5a-narrow@example.invalid'),inversePage=await login(inverse,'ux5a-inverse@example.invalid');
  const principal=(await loadStaff(db.pool,full))!,sessionId=(await db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[full])).rows[0].id as string;
  const holds=new HoldService(roles.holdPool,principal,()=>now),quotes=new QuoteService(roles.pricingPool,principal,()=>now);
  const year=now.getUTCFullYear();
@@ -66,6 +70,11 @@ try{
   await narrowPage.getByText('その他の管理機能').click();
   for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・HOLD','サイズ推薦','ウェアの数量貸出・返却','スタッフ管理'])await expect(narrowPage.getByRole('link',{name})).toHaveCount(0);
   for(const name of ['変更・返金依頼','パスワード変更'])await expect(narrowPage.getByRole('link',{name})).toBeVisible();
+ });
+
+ await check('UX5R-04: RENTAL_CHECKOUT/RENTAL_RETURN without BOOKING_VIEW must not surface pickup/return/search surfaces the destination route would deny',async()=>{
+  await inversePage.goto('/staff');await expect(inversePage.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  for(const label of ['予約QR・検索','本日の予約','貸出・受付','返却の進行状況'])await expect(inversePage.getByRole('region',{name:label})).toHaveCount(0);
  });
 
  await check('Today booking card action is gated by RENTAL_CHECKOUT, not by the booking state (UX5R-01), and opens the real booking preselected into the pickup workflow',async()=>{

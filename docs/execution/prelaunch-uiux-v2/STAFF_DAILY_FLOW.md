@@ -6,15 +6,39 @@ UX-5A implementation batch, UX-5B DESIGN_GATE).
 
 Commit: `0facf8c` (code/tests/screenshots).
 
+## Current final UX-5A state (read this first)
+
+The tables below record the *as-authored* HEAD `0facf8c` and each subsequent correction batch as
+historical evidence. Several rows in the original "UX-5A — implementation" table were superseded
+by later correction batches and are marked inline; this section is the single current summary —
+where it and an older row disagree, this section is correct, not the older row.
+
+As of `d032082` (UX5R-04, the last accepted correction batch below):
+
+- Search/QR, the Today-card pickup action and the 貸出・受付 section are gated on
+  `effectivePickup = canBookingView && canCheckout` — **not** `BOOKING_VIEW` alone. A
+  `BOOKING_VIEW`-only account (no `RENTAL_CHECKOUT`) sees 本日 (read-only) but does **not** see
+  予約QR・検索 or 貸出・受付 (UX5R-01's gating change).
+- 返却の進行状況 is gated on `effectiveReturn = canBookingView && canReturn`.
+- The Today-card action label is the neutral `貸出・受付で状態を確認`, never inferred from
+  `bookingState` (UX5R-01).
+- Returns in progress reads `保存済みの返却バッチ N件 · 検品待ち N件` — never "進行中の返却"
+  (UX5R-02; `保存済みの返却バッチ` replaced that label because `GET /api/custody/returns` batches
+  carry no open/closed status).
+- Each secondary link is gated on the permission its destination route already requires (UX5R-03).
+- A `RENTAL_CHECKOUT`/`RENTAL_RETURN`-granted account with `BOOKING_VIEW` explicitly denied sees
+  none of 予約QR・検索/本日の予約/貸出・受付/返却の進行状況 (UX5R-04).
+- `tests/staff/home-ui.ts` is 7/7 (UX5R-04 added the inverse-composition case to the original 6).
+
 ## UX-5A — implementation
 
 | Item | Change | File(s) |
 | --- | --- | --- |
 | Staff Home → operational dashboard | `/staff` no longer renders the one-link page. It now renders `StaffHome`: reservation QR/search, Today, Pickup/immediate work, Returns in progress, Exceptions (compact), then a collapsed secondary Ledger/Admin links section — each section gated on the actual staff permission it needs (`BOOKING_VIEW`, `RENTAL_CHECKOUT`, `RENTAL_RETURN`, `OPERATIONS_VIEW`), never a role/route heuristic. | `app/staff/page.tsx`, `components/StaffHome.tsx`, `components/staff-home.css` |
 | Booking search / reservation QR | New `BookingSearchInput` accepts a canonical booking UUID or the existing `zao-rental:reservation:<uuid>` QR payload (manual input or camera scan). It never creates a new QR format or booking identifier, and never touches `AssetQrInput`/`assetIdFromQr` (Asset-only, unchanged). A new client-safe `bookingIdFromInput` in `packages/contracts/src/reservation-qr.ts` mirrors the existing server-only `parseReservationQr` (same prefix/ID shape) without pulling `node:crypto` into the client bundle. | `components/BookingSearchInput.tsx`, `packages/contracts/src/reservation-qr.ts` |
-| Today booking cards | Uses the existing `GET /api/bookings` (already store/permission-scoped server-side). Filters client-side to bookings whose period includes today (Asia/Tokyo). Shows date/slot, guest name, booking state, pickup/return store, total — raw booking ID stays out of the card. "この予約を開く" appears only for `CONFIRMED_DEV`/`COMPLETED_DEV` bookings; other states show text only, so the card never infers pickup/checkout readiness — that stays with the custody detail. | `components/StaffHome.tsx` |
-| QR/search → pickup workflow | Both the search box and a Today card's "この予約を開く" navigate to `/staff/rentals?booking=<id>`. `CustodyWorkspace` gained an additive `presetBooking` prop: on mount, if `canCheckout` and the value round-trips through the same `bookingIdFromInput` validation, it prefills the existing booking field and fires the exact same `/api/custody/booking/:id` lookup the button already performed. No existing aria-label, button text or DOM order changed, so the whole existing custody test surface (`test:custody`, `test:custody-ui`, `test:late-pickup`) still exercises the same selectors. | `components/CustodyWorkspace.tsx`, `app/staff/rentals/page.tsx` |
-| Returns in progress | Staff Home reuses `GET /api/custody/returns?store=` (unchanged) and shows two counts: open return batches, and received-but-not-yet-inspected items. Labelled "進行中の返却" / "検品待ち" — never "本日返却予定", since the endpoint is not a complete today's-expected-returns population (that is exactly the UX-5B gate below). | `components/StaffHome.tsx` |
+| Today booking cards | Uses the existing `GET /api/bookings` (already store/permission-scoped server-side). Filters client-side to bookings whose period includes today (Asia/Tokyo). Shows date/slot, guest name, booking state, pickup/return store, total — raw booking ID stays out of the card. *(As authored at `0facf8c`: "この予約を開く" appeared only for `CONFIRMED_DEV`/`COMPLETED_DEV` bookings. Superseded by UX5R-01 below — the button is now gated purely on the `RENTAL_CHECKOUT` capability, labelled `貸出・受付で状態を確認`, and shown regardless of `bookingState`.)* | `components/StaffHome.tsx` |
+| QR/search → pickup workflow | Both the search box and a Today card's action navigate to `/staff/rentals?booking=<id>`. `CustodyWorkspace` gained an additive `presetBooking` prop: on mount, if `canCheckout` and the value round-trips through the same `bookingIdFromInput` validation, it prefills the existing booking field and fires the exact same `/api/custody/booking/:id` lookup the button already performed. No existing aria-label, button text or DOM order changed, so the whole existing custody test surface (`test:custody`, `test:custody-ui`, `test:late-pickup`) still exercises the same selectors. | `components/CustodyWorkspace.tsx`, `app/staff/rentals/page.tsx` |
+| Returns in progress | Staff Home reuses `GET /api/custody/returns?store=` (unchanged) and shows two counts: saved return batches, and received-but-not-yet-inspected items — never "本日返却予定", since the endpoint is not a complete today's-expected-returns population (that is exactly the UX-5B gate below). *(As authored at `0facf8c`: labelled "進行中の返却" / "検品待ち". Superseded by UX5R-02 below — relabelled `保存済みの返却バッチ` / `検品待ち` because the batches carry no open/closed status.)* | `components/StaffHome.tsx` |
 | Exceptions (compact) | Store-scoped `GET /api/operations/exceptions?...&status=UNACKNOWLEDGED&ageHours=0` (unchanged), rendered as a short list (severity/type/store) with a link to the existing full `/admin/ops` console. No acknowledge action here — this stays observational and does not duplicate the admin console. Hidden entirely without `OPERATIONS_VIEW`. | `components/StaffHome.tsx` |
 
 ### Staff visual rules followed
@@ -31,8 +55,8 @@ No changes to pricing/recommendation logic, inventory availability, HOLD duratio
 ## Regression tests
 
 New `tests/staff/home-ui.ts` (`npm run test:staff-home-ui`), added to `scripts/verify.mjs`:
-- Staff Home replaces the one-link page; a narrower (`BOOKING_VIEW`-only) staff account still sees Today/search but not Pickup/Returns/Exceptions.
-- A real `CONFIRMED_DEV` booking (created through `HoldService`/`QuoteService`/`BookingService` against a real isolated PostgreSQL, not a fixture object) renders as a Today card and its "この予約を開く" button lands on `/staff/rentals?booking=<id>` with the pickup workflow already showing that booking.
+- Staff Home replaces the one-link page; a narrower (`BOOKING_VIEW`-only) staff account still sees Today/search but not Pickup/Returns/Exceptions. *(As authored at `0facf8c`. Superseded by UX5R-01 below — search/QR is also gated on `RENTAL_CHECKOUT` now, so a `BOOKING_VIEW`-only account sees Today read-only but not search either; see "Current final UX-5A state" above.)*
+- A real `CONFIRMED_DEV` booking (created through `HoldService`/`QuoteService`/`BookingService` against a real isolated PostgreSQL, not a fixture object) renders as a Today card and its pickup-action button (originally labelled "この予約を開く", relabelled `貸出・受付で状態を確認` by UX5R-01) lands on `/staff/rentals?booking=<id>` with the pickup workflow already showing that booking.
 - The booking-search box accepts the `zao-rental:reservation:<uuid>` QR payload text and reaches the same preselected pickup workflow.
 - Returns in progress reflects a real open batch, then real received/inspection-pending counts after confirming it.
 - The exceptions summary surfaces the real unacknowledged `PAYMENT_PENDING` exception generated by a second, still-pending booking, and the same read is `403` for a staff account without `OPERATIONS_VIEW`.

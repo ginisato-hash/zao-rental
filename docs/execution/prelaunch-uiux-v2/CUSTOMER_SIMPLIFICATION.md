@@ -70,3 +70,63 @@ All run from the isolated `prelaunch-uiux-finishing` worktree (never the maintai
 
 Foundation CI: see the `ZAO_UIUX_V2_CUSTOMER_SIMPLIFICATION_READY_FOR_TD_REVIEW` report for the
 run confirmed at this candidate HEAD.
+
+## Correction batch — TD comment [`5746531522`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5746531522)
+
+Independent TD review of `e8241e4` returned REQUEST_CHANGES (HIGH 1, MEDIUM 2, LOW 1). This
+batch closes all four findings on the same branch/PR, without reopening or re-litigating the
+already-PASSed UX-1 audit or the already-adopted UX-3A/UX-4A batch above.
+
+Commit: `88e1d1f` (code/tests/screenshots).
+
+| Finding | Fix | File(s) |
+| --- | --- | --- |
+| UX3R-01 (HIGH) — unsaved-input protection silently disabled after a step transition | Split the single `dirty` flag into `unsavedInput` (current input vs. last server-saved input, independent of `touched`) and `showUnsavedHint` (`touched && unsavedInput`, presentation only). `guardNav` and the `beforeunload` handler now read `unsavedInput`; only the visible banner reads `showUnsavedHint`. No persistence/autosave was added; CH-04B remains DESIGN_GATE. | `GuestBooking.tsx` |
+| UX3R-02 (MEDIUM) — full booking UUID still primary | Moved `予約番号: <strong>{draft.booking.id}</strong>` out of the primary `guest-result` card and into the existing secondary review body (rendered inside `<details>` once a booking exists). UUID value, QR payload and booking-ID semantics are unchanged. | `GuestBooking.tsx` |
+| UX4R-01 (MEDIUM) — `/rental` still dominated by the generic landing composition | On `path === 'rental'` only: the Regular/Premium comparison now renders immediately after a compact hero (`public-hero--compact`, mountain illustration removed), before `public-detail`; the equipment-category EXPLORE grid is demoted into a collapsed `<details className="public-secondary">` ("用品カテゴリから選ぶ"). Other routes are visually unchanged. No prices were added; existing pricing contract untouched. | `PublicPage.tsx`, `public.css` |
+| UX3R-03 (LOW) — `/reservation` shell only semantically aligned | `/reservation`'s header nav now includes the same locale-switch link as the public shell, and the page adds the same footer composition (wordmark, tagline, staff-access link) used by `PublicPage`. `BookingAccess`/auth/capability semantics are untouched. | `reservation/page.tsx` |
+
+### Regression test
+
+Added to `tests/public/normal-ui.ts` (`UX3R-01 regression`): fills dates on step 0, advances to
+step 1 without saving, confirms the visible banner is hidden but a guarded locale-nav click still
+triggers the native confirm and cancelling it keeps the user on `/ja/book` with the input intact;
+then edits step 1, returns to step 0 (`backToStep(0)`), and confirms the guard still fires there too.
+
+### Verification (this batch)
+
+Run from the isolated `prelaunch-uiux-finishing` worktree, never the maintained review server in
+`prelaunch-uiux-audit` (whose long-running `.local/ui-review` server and embedded PostgreSQL were
+independently confirmed healthy — `/api/health` and `/ja/rental` both 200 — before and after this
+batch's own test runs):
+
+- `npm run lint` — pass (0 errors/warnings)
+- `npm run typecheck` — pass
+- `npm run build` — pass
+- `npm run check:secrets` — pass (2284 tracked/candidate files scanned)
+- `tests/public/normal-ui.ts` — 12/12 pass, including the new UX3R-01 regression case
+- `tests/readiness/guest-ui.ts` — 3/3 pass
+- `tests/readiness/booking-access-ui.ts` — 7/7 pass
+- `tests/readiness/booking-recovery-ui.ts` — 3/3 pass
+- `npm run test:avatar` — 9/9 suites pass (phase5-upgrade, phase5-e2e, artwork-activation,
+  phase6-migrations, phase6-roles, phase6-guest, phase6-import, phase6-lock, tier2-rate)
+
+### Screenshots (this batch)
+
+- `screenshots/ux3a-4a-after/rental-ja-{390,1440}.png` — Regular/Premium comparison as first
+  substantive content; equipment-category EXPLORE collapsed under "用品カテゴリから選ぶ"
+- `screenshots/ux3a-4a-after/booking-result-ja-390.png` — confirmed-result card with confirmation/
+  total/payment status/QR primary and the full booking reference moved into "予約内容の詳細"
+- `screenshots/ux3a-4a-after/reservation-shell-ja-{390,1440}.png` — `/reservation` with the shared
+  wordmark, locale switch and footer/staff-access link
+
+### Hard boundaries confirmed
+
+No changes to pricing/recommendation logic, inventory availability, HOLD duration/start contract,
+payment idempotency/retry/refund, Square semantics, auth/capability semantics, permissions, schema/
+migrations, or Production config. No client-side re-recommendation was introduced; candidate
+selection still submits only server-returned SHORTER/RECOMMENDED/LONGER directions. CH-04B
+(reload-safe autosave) remains an unimplemented DESIGN_GATE.
+
+Next: Foundation CI at the consolidated HEAD, then
+`ZAO_UIUX_V2_CUSTOMER_SIMPLIFICATION_READY_FOR_TD_REVIEW` on PR #26.

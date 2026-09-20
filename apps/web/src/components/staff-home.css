@@ -10,6 +10,8 @@
 .staff-card{background:white;border:1px solid #d4e0da;border-radius:8px;padding:12px;min-width:0}
 .staff-card p{margin:4px 0}
 .staff-card .staff-card-primary{margin-top:8px}
+.staff-card .staff-card-action{font-weight:650}
+.staff-card .staff-card-attention{color:#9a3412}
 .staff-secondary{color:#4a5c54;font-size:13px}
 .staff-home details.staff-secondary-links{background:transparent;padding:0}
 .staff-home details.staff-secondary-links>summary{cursor:pointer;font-weight:650;padding:10px 0;min-height:44px;display:flex;align-items:center}

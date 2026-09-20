@@ -19,21 +19,25 @@ Design source: `docs/execution/prelaunch-uiux-v2/STAFF_MANIFEST_DESIGN.md`.
 ## 2. Architecture
 
 `ManifestService.manifest()` authorizes (`BOOKING_VIEW` + requested store in `principal.storeIds`),
-then opens one `BEGIN ISOLATION LEVEL REPEATABLE READ` transaction per page and calls `read()`:
+then runs two separate snapshots per page (see §3 for exactly why this is two, not one):
 
-1. `candidateKeys()` — Branch A (pickup today / no-pickup completion day), Branch B/B-wear
-   (equipment/wear return due today), Branch C/C-wear (actual-store receipt, current or
-   carry-over pending). Each candidate branch is gated by the composed capability
-   (`RENTAL_CHECKOUT` for pickup branches, `RENTAL_RETURN` for return/custody branches) —
-   a `BOOKING_VIEW`-only caller never even issues the candidate queries for a capability it lacks.
-2. Row keys (`B:<bookingId>` / `E:<loanItemId>` / `W:<wearReceiptId>`) are sorted, sliced by the
+1. **`businessSnapshot()`** opens `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY` and calls
+   `read()`, which runs `candidateKeys()` — Branch A (pickup today / no-pickup completion day),
+   Branch B/B-wear (equipment/wear return due today), Branch C/C-wear (actual-store receipt,
+   current or carry-over pending). Each candidate branch is gated by the composed capability
+   (`RENTAL_CHECKOUT` for pickup branches, `RENTAL_RETURN` for return/custody branches) — a
+   `BOOKING_VIEW`-only caller never even issues the candidate queries for a capability it lacks.
+   Row keys (`B:<bookingId>` / `E:<loanItemId>` / `W:<wearReceiptId>`) are sorted, sliced by the
    opaque cursor and `pageSize`, and only the page's rows are read in full via batched queries.
-3. `bookingRow()` composes the safe `BOOKING_SCOPED` projection and the permission-aware
+   `bookingRow()` composes the safe `BOOKING_SCOPED` projection and the permission-aware
    `nextAction` (`classify()`); `custodyOnlyEquipmentRow()`/`custodyOnlyWearRow()` compose the
-   minimal `CUSTODY_ONLY` projection with server-derived `taskState`/`taskAction`.
-4. Exception metadata (`exceptions()`) walks `ops_list_exceptions`'s own `(occurredAt,id)` cursor
-   to exhaustion inside the same transaction, so `count`/`topSeverity` are exact, never a partial
-   first page. `ops_collect_exceptions` and `OperationsConsole.list()` are never called.
+   minimal `CUSTODY_ONLY` projection with server-derived `taskState`/`taskAction`. This snapshot
+   owns `generatedAt` and issues no `INSERT`/`UPDATE`/`DELETE`.
+2. **`exceptionSnapshot()`**, only when the caller has `OPERATIONS_VIEW`, opens its own plain
+   `BEGIN ISOLATION LEVEL REPEATABLE READ` connection afterward and walks `ops_list_exceptions`'s
+   own `(occurredAt,id)` cursor to exhaustion, so `count`/`topSeverity` are exact, never a partial
+   first page. `mergeExceptions()` merges its tally into `BOOKING_SCOPED` rows only.
+   `ops_collect_exceptions` and `OperationsConsole.list()` are never called.
 
 ## 3. Transaction mode: two separate MVCC snapshots (corrected per UX5C-R01, §12)
 

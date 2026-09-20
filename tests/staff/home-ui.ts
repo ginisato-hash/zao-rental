@@ -19,7 +19,15 @@ async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();cou
 function todayJst(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo'}).format(new Date());}
 try{
  app=await startDevelopmentApp({built:true,operations:true});const {origin,db,roles}=app;await seedRecommendation(db.pool);
- const now=new Date();
+ // The manifest/dashboard "today" must be the real JST calendar date (Staff Home computes it
+ // from browser time, so a synthetic date here would desync from what the page actually shows).
+ // But the checkout window (rental_validate_loan) and same-day period-end checks are real
+ // business-hour gates (08:30-17:00 JST), so a run that happens to execute outside that window
+ // would otherwise fail with PERIOD_ENDED/checkout-time errors that have nothing to do with this
+ // batch. Pin inventory_clock() to a fixed, safe time of day on the real, unmodified JST date.
+ const today=todayJst();
+ const now=new Date(today+'T10:00:00+09:00');
+ await db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${now.toISOString()}'::timestamptz$$`);
  const root=await bootstrapDevelopmentAdmin(db.pool,{email:'ux5a-root@example.invalid',displayName:'SYNTHETIC Admin',password}),admin=(await loadStaff(db.pool,root))!;
  const base={active:true,role:'ADMIN' as const,password};
  const full=(await writeAccount(roles.authPool,admin,undefined,{...base,email:'ux5a-full@example.invalid',displayName:'SYNTHETIC Full Staff',scope:'ALL',storeIds:[],permissions:{HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true,BOOKING_VIEW:true,BOOKING_CREATE:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,OPERATIONS_VIEW:true,OPERATIONS_ACKNOWLEDGE:true,INVENTORY_VIEW:true,TRANSFER_VIEW:true}})).id!;
@@ -41,7 +49,7 @@ try{
  const year=now.getUTCFullYear();
  await quotes.initializePrivate(randomUUID(),(year-3)+'-01-01',(year+3)+'-12-31');
  flow=await provisionFlowRole(db.pool,db.identity);
- const today=todayJst(),fake=new FakeGateway(()=>now),bookings=new BookingService(flow.flowPool,roles.authPool,{subject:full,sessionId},fake,simulation);
+ const fake=new FakeGateway(()=>now),bookings=new BookingService(flow.flowPool,roles.authPool,{subject:full,sessionId},fake,simulation);
  async function makeBooking(status:'COMPLETED'|'PENDING',variantId:string,displayName:string){
   const conditions=requestFor(today,[variantId]),held=await holds.command('create',randomUUID(),conditions),q=(await quotes.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
   const booking=await bookings.create(randomUUID(),q.id,{displayName,email:'synthetic-ux5a-guest@example.invalid',termsAccepted:true});

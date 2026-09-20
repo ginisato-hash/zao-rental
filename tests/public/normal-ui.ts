@@ -58,6 +58,35 @@ try{
   await expect(p.getByText('保存されていない変更があります')).toBeVisible();
   await ctx.close();
  });
+ await check('UX3R-01 regression: hiding the unsaved-changes banner on step arrival must never disable the actual guardNav/beforeunload protection',async()=>{
+  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-04-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-04-01');
+  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  // Fresh arrival at step 1: the visible banner is hidden (UX-3A), but the entered dates are
+  // still real, unsaved input -- a guarded nav must still prompt, and cancelling it must keep
+  // the user on the same page with that input intact.
+  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  let dialogSeen=false;
+  p.once('dialog',async d=>{dialogSeen=true;assert.match(d.message(),/保存されていない入力/);await d.dismiss();});
+  await p.getByRole('link',{name:'プランを見る',exact:true}).click();
+  await p.waitForTimeout(300);
+  assert.ok(dialogSeen,'guardNav must still fire even though the visible banner is hidden right after a step transition');
+  await expect(p).toHaveURL(/\/ja\/book$/);
+  await expect(p.getByLabel('用品 1',{exact:true})).toBeVisible();
+  // Editing step 1, then going back to step 0 (another touched-resetting transition), must not
+  // drop protection either -- same guarantee one step earlier in the wizard.
+  await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);
+  await expect(p.getByText('保存されていない変更があります')).toBeVisible();
+  await p.getByRole('button',{name:'日程に戻る',exact:true}).click();
+  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  let secondDialogSeen=false;
+  p.once('dialog',async d=>{secondDialogSeen=true;await d.accept();});
+  await p.getByRole('link',{name:'プランを見る',exact:true}).click();
+  await p.waitForURL(/\/ja\/rental$/);
+  assert.ok(secondDialogSeen,'guardNav must still fire after backToStep(0) even though the banner is hidden there too');
+  await ctx.close();
+ });
  await check('UX-4A regression: a second person card starts collapsed, expands on request, and both reach the candidate step',async()=>{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();

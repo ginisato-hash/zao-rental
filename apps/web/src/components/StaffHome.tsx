@@ -1,9 +1,9 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
 import type {StoreId} from '../../../../packages/contracts/src/ledger';
-import {StaffSessionBoundary} from './StaffSessionBoundary';
+import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
 import {BookingSearchInput} from './BookingSearchInput';
 import {useOperationsRequest} from './useOperationsRequest';
 import './holds.css';
@@ -40,27 +40,57 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  // destination route's full, composed permission set is met — never RENTAL_CHECKOUT/RENTAL_RETURN
  // alone, which a permission override can grant while BOOKING_VIEW is independently denied.
  const effectivePickup=canBookingView&&canCheckout,effectiveReturn=canBookingView&&canReturn,showManifest=effectivePickup||effectiveReturn;
- const bookingsReq=useOperationsRequest(stamp,'staff-home-bookings'),manifestReq=useOperationsRequest(stamp,'staff-home-manifest');
+ const bookingsReq=useOperationsRequest(stamp,'staff-home-bookings');
  const [bookings,setBookings]=useState<BookingRow[]|null>(null);
  const [activeStore,setActiveStore]=useState<StoreId>(stores[0]!);
- // Tagged by the store it was fetched for, not reset imperatively on store change: while
- // manifestState.store !== activeStore (the moment activeStore changes, before the fresh
- // response lands), the derived manifestRows below is null — so a stale task card from the
- // previous store is never visible, not even for one render (UX-5D §"Store selection").
- const [manifestState,setManifestState]=useState<{store:StoreId|null;rows:ManifestRow[];cursor:string|null;hasMore:boolean}>({store:null,rows:[],cursor:null,hasMore:false});
+ // Tagged by the store it was fetched for AND carrying `date` together with the rows (not a
+ // separate piece of state) — see loadManifest below for why. While manifestState.store !==
+ // activeStore (the moment activeStore changes, before the fresh response lands), the derived
+ // values below are null — so a stale task card, or a stale business date, from the previous
+ // store is never visible, not even for one render (UX-5D §"Store selection", UX5D-R02).
+ const [manifestState,setManifestState]=useState<{store:StoreId|null;date:string|null;rows:ManifestRow[];cursor:string|null;hasMore:boolean}>({store:null,date:null,rows:[],cursor:null,hasMore:false});
+ const [manifestBusy,setManifestBusy]=useState(false),[manifestMessage,setManifestMessage]=useState('');
  const forActiveStore=manifestState.store===activeStore?manifestState:null;
  const manifestRows=forActiveStore?forActiveStore.rows:null,manifestCursor=forActiveStore?forActiveStore.cursor:null,manifestHasMore=forActiveStore?forActiveStore.hasMore:false;
  // Business-date authority for the whole page: the Manifest server's own inventory_clock()
- // date (UX-5D), never the browser's clock. Null until the first Manifest response arrives.
- const [manifestDate,setManifestDate]=useState<string|null>(null);
+ // date (UX-5D), never the browser's clock. Null until the current context's own response
+ // arrives (see manifestState above for why this is derived, not a separate state slice).
+ const manifestDate=forActiveStore?forActiveStore.date:null;
+ // UX5D-R01: useOperationsRequest's single in-flight lock silently drops a new load() call
+ // while a previous one is still pending, with nothing to retry it later — a store switch
+ // during a slow request could then leave the UI permanently on the old store's (correctly
+ // hidden) rows until a manual refresh. Manifest reads are idempotent GETs, so instead of
+ // sharing that lock, every loadManifest() call here fires its own request immediately and
+ // is tagged with a monotonically increasing generation; only the response matching the
+ // *current* generation is ever applied. A store switch (or any new request) always fires
+ // right away, and a late/superseded response — from the old store, an old load-more page,
+ // or simply an out-of-order same-store reply — is dropped rather than ever being rendered.
+ const manifestGeneration=useRef(0);
  function openBooking(id:string){router.push('/staff/rentals?booking='+id);}
  function loadManifest(store:StoreId,cursor:string|null,append:boolean){
+  const generation=++manifestGeneration.current;
   const qs='/api/operations/manifest?store='+store+'&section=all&pageSize=50'+(cursor?'&cursor='+encodeURIComponent(cursor):'');
-  void manifestReq.load<ManifestResponse>(qs,data=>{
-   setManifestDate(data.date);
-   setManifestState(prev=>{const priorRows=append&&prev.store===store?prev.rows:[],seen=new Set(priorRows.map(r=>r.key));return {store,rows:[...priorRows,...data.rows.filter(r=>!seen.has(r.key))],cursor:data.nextCursor,hasMore:data.hasMore};});
-  });
+  void (async()=>{
+   setManifestBusy(true);
+   try{
+    const r=await fetch(qs,{cache:'no-store',headers:{'x-zao-session':stamp}});
+    const value=await r.json();
+    if(r.status===401||r.status===403||value.error==='SESSION_CHANGED'){invalidateStaffView();return;}
+    if(generation!==manifestGeneration.current)return; // superseded — never apply a stale response
+    if(!r.ok){setManifestMessage(value.error??'OPERATION_FAILED');return;}
+    const data=value as ManifestResponse;
+    setManifestMessage('');
+    setManifestState(prev=>{const priorRows=append&&prev.store===store?prev.rows:[],seen=new Set(priorRows.map(x=>x.key));return {store,date:data.date,rows:[...priorRows,...data.rows.filter(x=>!seen.has(x.key))],cursor:data.nextCursor,hasMore:data.hasMore};});
+   }catch(e){if(generation===manifestGeneration.current)setManifestMessage((e as Error).message);}
+   finally{if(generation===manifestGeneration.current)setManifestBusy(false);}
+  })();
  }
+ // UX5D-R03: the only Refresh button a BOOKING_VIEW-only principal ever sees is this one, and
+ // it depended solely on browser time before — a page left open across the server's own
+ // business-date boundary would keep filtering Today against the old date until a full
+ // reload. Refresh now always restarts the authoritative Manifest date read too, not only
+ // /api/bookings, for every composition.
+ function refreshToday(){void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings);loadManifest(activeStore,null,false);}
  useEffect(()=>{if(canBookingView)void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings);
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[canBookingView]);
@@ -92,17 +122,17 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  {effectivePickup&&<BookingSearchInput onBooking={openBooking}/>}
  {canBookingView&&<section aria-label="本日の予約"><h2>本日</h2>
   {manifestDate?<><p className="staff-secondary">本日が利用期間に含まれる予約（{manifestDate} JST）。完全な入出庫予定表ではありません。</p>
-   <button disabled={bookingsReq.busy} onClick={()=>void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings)}>更新</button>
-   <p role="status">{bookingsReq.message}</p>
+   <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>更新</button>
+   <p role="status">{bookingsReq.message||manifestMessage}</p>
    {bookings&&(todays.length?<div className="staff-card-grid">{todays.map(b=><article className="staff-card" key={b.id}><p><strong>{b.period!.startDate} → {b.period!.endDate}</strong> · {b.period!.slot}</p><p>{b.display_name??'（氏名未取得）'}</p><p>{STATE_LABEL[b.state]??b.state}</p><p>{b.pickup_store}→{b.return_store} · {money(b.total_jpy)}</p>{effectivePickup&&<button className="staff-card-primary" onClick={()=>openBooking(b.id)}>貸出・受付で状態を確認</button>}</article>)}</div>:<p>本日が利用期間に含まれる予約はありません。</p>)}
   </>:<p role="status">業務日付を確認しています…</p>}
  </section>}
  {showManifest&&<section aria-label="本日の業務"><h2>本日の業務</h2><p className="staff-secondary">対象店舗の当日の貸出・返却・検品タスクです。実際の操作は貸出・返却の画面で行います。</p>
   <label>対象店舗<select aria-label="対象店舗" value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{s}</option>)}</select></label>
-  <button disabled={manifestReq.busy} onClick={()=>loadManifest(activeStore,null,false)}>更新</button>
-  <p role="status">{manifestReq.message}</p>
+  <button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>更新</button>
+  <p role="status">{manifestMessage}</p>
   {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:<p>現在対応が必要な項目はありません。</p>)}
-  {manifestHasMore&&<button disabled={manifestReq.busy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
+  {manifestHasMore&&<button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
   <Link href="/staff/rentals">貸出・返却の画面を開く</Link>
  </section>}
  {canOperationsView&&<section aria-label="運用の注意事項"><h2>運用の注意事項</h2><p>本日の業務カードの「要注意」表示、または以下から詳細を確認してください。</p><Link href="/admin/ops">運用例外の画面を開く</Link></section>}

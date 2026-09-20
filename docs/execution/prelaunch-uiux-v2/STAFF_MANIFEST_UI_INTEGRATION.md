@@ -189,3 +189,88 @@ modified in this batch. `git diff --stat` against the UX-5C-accepted HEAD is lim
 `apps/web/src/components/StaffHome.tsx`, `apps/web/src/components/staff-home.css`,
 `tests/staff/home-ui.ts`, this document, and the one corrected paragraph in
 `STAFF_MANIFEST_SERVER_IMPLEMENTATION.md` §2.
+
+## 15. UX-5D Correction Batch 1 (R01/R02/R03)
+
+Authority: PR #26 comment [`5751679611`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5751679611)
+(Technical Director — pre-CI REQUEST_CHANGES against candidate HEAD `fd59e51`). Client-only
+correction; no Manifest server file was touched. Base candidate HEAD `fd59e51` also failed its
+own Foundation CI run (`35528279806`) at test #4 for an unrelated pre-existing test-assertion bug
+(§15.4), fixed in the same pass as these three findings since the same file was already open.
+
+### 15.1 UX5D-R01 (HIGH) — in-flight-request race on active-store switch
+
+`useOperationsRequest`'s single `lock.current` silently dropped the fresh store's request when a
+switch happened while the previous store's request was still in flight, and the same held for a
+load-more request in flight during a switch — leaving the UI showing no Manifest rows for the new
+store until a manual refresh. Fixed by removing `useOperationsRequest` from the Manifest path
+entirely: `loadManifest()` in `StaffHome.tsx` now fires its own `fetch()` unconditionally on every
+call (initial load, store switch, load-more, refresh — never gated by a lock), and increments a
+`useRef` generation counter (`manifestGeneration`) at call start. A response is only applied to
+`manifestState` if its generation still matches `manifestGeneration.current` at resolution time;
+an old, now-superseded response is silently discarded instead of corrupting the new store's state.
+Verified by two new deterministic Playwright tests using `page.route()` with a manually-held
+`Promise` gate: one holds the old store's initial request, switches store via the (never-disabled)
+`<select>`, and asserts the new store's request fires and its row renders before the old response
+is released, and that the old response's row never appears afterward; the second does the same for
+a load-more request in flight during a switch.
+
+### 15.2 UX5D-R02 (MEDIUM) — `manifestDate` not context-tagged
+
+`date` was previously a standalone `useState` updated unconditionally by every Manifest response,
+independent of `manifestState`'s store tag — a late, obsolete response could silently overwrite
+the displayed business date even while its rows were correctly hidden. Fixed by moving `date`
+inside the same store-tagged `manifestState` object and deriving `manifestDate` from
+`forActiveStore` (`manifestState.store===activeStore?manifestState:null`) exactly like
+rows/cursor/hasMore, so an obsolete-generation response can never reach the displayed date either.
+Verified by a new test that holds the old store's response (carrying a deliberately different
+`date`), switches store, and asserts the new store's date is shown immediately and the stale date
+never appears even after the held response is released.
+
+### 15.3 UX5D-R03 (MEDIUM) — BOOKING_VIEW-only Refresh did not refresh the Manifest date
+
+The "本日の予約" section's only Refresh button reloaded `/api/bookings` alone
+(`bookingsReq.load('/api/bookings', setBookings)`), leaving the hidden, authoritative Manifest
+date fetch untouched — a BOOKING_VIEW-only principal's page could keep filtering Today against a
+stale date across a business-date boundary until a full reload. Fixed by adding `refreshToday()`,
+which calls both `bookingsReq.load(...)` and `loadManifest(activeStore,null,false)`, and wiring it
+to the "本日の予約" section's Refresh button for every permission composition (the "本日の業務"
+section's own Refresh/load-more buttons are unchanged, calling `loadManifest` directly). Verified
+by a new test where a `narrowPage`-scoped route returns the business date on its first call and a
+later date on every subsequent call; clicking the only visible Refresh button is asserted to move
+the displayed date to the later value, with "本日の業務" confirmed absent throughout (never
+exposed to this composition).
+
+### 15.4 Retroactive test-assertion fixes (found via manual re-derivation, not new findings)
+
+Three pre-existing assertions in `tests/staff/home-ui.ts` were corrected in the same pass, found by
+manually re-deriving expected server state before trusting untestable-locally Playwright code
+(this worktree cannot run `test:staff-home-ui` locally; see §12/§13):
+
+- The "Today booking card action is gated by RENTAL_CHECKOUT" case asserted `貸出` (CHECKOUT)
+  before the booking had actually been prepared; the true `nextAction` at that point is
+  `PREPARE_EQUIPMENT` (`準備`) — this is what Foundation CI run `35528279806` caught at candidate
+  HEAD `fd59e51`. Corrected to assert/click `準備`/`準備へ進む`.
+- The post-checkout manifest assertion expected `貸出中` (OUT_WAIT_RETURN), but this fixture's
+  booking is a single-day `DAY`-slot rental, whose `dueAt` calendar date (`normalizePeriod()`,
+  `packages/contracts/src/hold.ts`) equals the pickup date itself — so `equipmentReturnDueToday`
+  is already true immediately after checkout, and the server correctly returns `返却受付`
+  (RECEIVE_RETURN), never `貸出中`. Corrected the assertion accordingly.
+- The "switching the active store" test was positioned after the CUSTODY_ONLY test, by which point
+  ONSEN_BASE legitimately holds real data (received there by the owner's ALL-scope account,
+  visible to it as BOOKING_SCOPED) — breaking its "ONSEN_BASE is empty" precondition. Reordered to
+  run immediately before the CUSTODY_ONLY test, while ONSEN_BASE is still genuinely empty for
+  every account.
+
+### 15.5 Verification
+
+`npm run lint` PASS · `npm run typecheck` PASS · `npm run build` PASS · `npm run check:secrets`
+PASS · `npm run test:operations-manifest` **29/29 PASS** (unchanged — no Manifest server file
+touched in this batch) · `npm run test:operations-console` PASS · `npm run test:custody` PASS ·
+`npm run test:wear` PASS. `git diff --stat` against the prior UX-5D HEAD (`fd59e51`) is limited to
+`apps/web/src/components/StaffHome.tsx` and `tests/staff/home-ui.ts`. `test:staff-home-ui` and
+`test:auth` were again not run locally (§12's port-conflict constraint, unchanged); this batch's
+four new race/staleness tests are consequently verified for real only by the one consolidated
+Foundation CI run recorded in the PR submission comment for this correction batch, whose log was
+checked line-by-line (not just its overall conclusion) given this file's history of two prior
+locally-uncaught bugs this session.

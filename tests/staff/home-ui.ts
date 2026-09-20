@@ -117,11 +117,12 @@ try{
   // controls the action, never a client-side allowlist of booking states.
   const pendingCard=todayBooking().locator('.staff-card',{hasText:'SYNTHETIC UX5D Pending'});await expect(pendingCard).toContainText('決済照合待ち');
   await expect(pendingCard.getByRole('button',{name:'貸出・受付で状態を確認'})).toBeVisible();
-  // The prepared-but-not-checked-out row in 本日の業務 must read as server nextAction=CHECKOUT
-  // -> the presentational label 貸出 (UX-5D action mapping), not a client-derived guess.
+  // Not yet prepared: the 本日の業務 row must read as server nextAction=PREPARE_EQUIPMENT ->
+  // the presentational label 準備 (UX-5D action mapping), not a client-derived guess — the
+  // booking is only prepared+checked out in the next check below.
   const manifestCard=dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'});
-  await expect(manifestCard).toContainText('貸出');
-  await manifestCard.getByRole('button',{name:'貸出へ進む'}).click();
+  await expect(manifestCard).toContainText('準備');
+  await manifestCard.getByRole('button',{name:'準備へ進む'}).click();
   await page.waitForURL(new RegExp('/staff/rentals\\?booking='+confirmedId));
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText(confirmedId);
  });
@@ -146,7 +147,12 @@ try{
   const batch=await created.json();
   const scanned=await page.request.post('/api/custody/scan',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:batch.version,assetId,poleLoanId:null}}});assert.equal(scanned.status(),200);
   await page.goto('/staff');
-  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toContainText('貸出中');
+  // Single-day DAY-slot booking: due_at is the same JST calendar date as pickup
+  // (normalizePeriod, packages/contracts/src/hold.ts), so the item is simultaneously "due
+  // today" the moment it's checked out -> RECEIVE_RETURN (返却受付), never OUT_WAIT_RETURN
+  // (Implementation Clarification 1 — the whole due-calendar-day reads RECEIVE_RETURN
+  // regardless of the exact due timestamp).
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toContainText('返却受付');
   const confirmed=await page.request.post('/api/custody/confirm',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:(await scanned.json()).version}}});assert.equal(confirmed.status(),200);
   await page.goto('/staff');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toContainText('検品待ち');
@@ -160,6 +166,20 @@ try{
   const after=dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'});
   await expect(after).toContainText('検品待ち');await expect(after).toContainText('要注意');
   assert.equal((await narrow.request.get('/api/operations/exceptions?store=MOUNTAIN_BASE&ageHours=0&status=UNACKNOWLEDGED')).status(),403);
+ });
+
+ await check('switching the active store discards the previous store\'s task cards immediately, never leaving them visible even transiently',async()=>{
+  // Must run before the CUSTODY_ONLY check below, which is the only step in this suite that
+  // ever puts a real task at ONSEN_BASE — until then it is genuinely empty for every account.
+  await page.goto('/staff');
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
+  await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE');
+  // No equipment stock exists at ONSEN_BASE in this fixture, so a genuine empty page (not a
+  // leftover MOUNTAIN_BASE card) is the only correct outcome here.
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toHaveCount(0);
+  await expect(dailyBusiness()).toContainText('現在対応が必要な項目はありません');
+  await dailyBusiness().getByLabel('対象店舗').selectOption('MOUNTAIN_BASE');
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
  });
 
  await check("CUSTODY_ONLY: a receiving-store-only principal sees the actual-store task with server taskAction only, never the booking's name/id/price/period/state",async()=>{
@@ -226,16 +246,104 @@ try{
   await page.unroute('**/api/operations/manifest*');
  });
 
- await check('switching the active store discards the previous store\'s task cards immediately, never leaving them visible even transiently',async()=>{
-  await page.goto('/staff');
-  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
+ await check('UX5D-R01: an in-flight Manifest request for the old store never becomes visible after switching stores; the new store\'s request is always issued and its response becomes visible without a manual refresh',async()=>{
+  let releaseA:(()=>void)|undefined;
+  const gateA=new Promise<void>(resolve=>{releaseA=resolve;});
+  let bRequested=false;
+  await page.route('**/api/operations/manifest*',async route=>{
+   const url=new URL(route.request().url());
+   if(url.searchParams.get('store')==='MOUNTAIN_BASE'){
+    await gateA; // held until explicitly released below, simulating a slow/delayed response
+    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race MOUNTAIN',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
+   }else{
+    bRequested=true;
+    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'ONSEN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race ONSEN',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'ONSEN_BASE',returnStore:'ONSEN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
+   }
+  });
+  await page.goto('/staff'); // fires the initial MOUNTAIN_BASE request, which is held
+  // A <select> is never disabled by manifestBusy, unlike the Refresh/load-more buttons — this
+  // is what lets the switch actually fire a new request while the old one is still pending.
   await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE');
-  // No equipment stock exists at ONSEN_BASE in this fixture, so a genuine empty page (not a
-  // leftover MOUNTAIN_BASE card) is the only correct outcome here.
-  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toHaveCount(0);
-  await expect(dailyBusiness()).toContainText('現在対応が必要な項目はありません');
-  await dailyBusiness().getByLabel('対象店舗').selectOption('MOUNTAIN_BASE');
-  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
+  await expect.poll(()=>bRequested).toBe(true);
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race ONSEN'})).toBeVisible();
+  releaseA!();
+  await page.waitForTimeout(300); // give the released, now-stale MOUNTAIN_BASE response a chance to (mis)apply
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race MOUNTAIN'})).toHaveCount(0);
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race ONSEN'})).toBeVisible();
+  await page.unroute('**/api/operations/manifest*');
+ });
+
+ await check('UX5D-R01: a load-more request for the old store settling late never corrupts the new store\'s state',async()=>{
+  let releaseMore:(()=>void)|undefined;
+  const gateMore=new Promise<void>(resolve=>{releaseMore=resolve;});
+  let onsenRequested=false;
+  await page.route('**/api/operations/manifest*',async route=>{
+   const url=new URL(route.request().url()),store=url.searchParams.get('store'),cursor=url.searchParams.get('cursor');
+   if(store==='MOUNTAIN_BASE'&&!cursor){
+    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:1,nextCursor:'ux5d-race-cursor',hasMore:true,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race Page1',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
+   }else if(store==='MOUNTAIN_BASE'&&cursor==='ux5d-race-cursor'){
+    await gateMore; // this load-more page is held
+    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:1,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race Page2 Late',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
+   }else{
+    onsenRequested=true;
+    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'ONSEN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:1,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race ONSEN Fresh',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'ONSEN_BASE',returnStore:'ONSEN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
+   }
+  });
+  await page.goto('/staff');
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race Page1'})).toBeVisible();
+  await dailyBusiness().getByRole('button',{name:'さらに読み込む'}).click(); // the first page already settled, so this button is enabled; the load-more it triggers is what gets held
+  await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE'); // switch stores while that load-more is still stuck
+  await expect.poll(()=>onsenRequested).toBe(true);
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race ONSEN Fresh'})).toBeVisible();
+  releaseMore!();
+  await page.waitForTimeout(300);
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race Page2 Late'})).toHaveCount(0);
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race Page1'})).toHaveCount(0);
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race ONSEN Fresh'})).toBeVisible();
+  await page.unroute('**/api/operations/manifest*');
+ });
+
+ await check('UX5D-R02: a stale response carrying a different date never changes the displayed business date',async()=>{
+  let releaseOld:(()=>void)|undefined;
+  const gateOld=new Promise<void>(resolve=>{releaseOld=resolve;});
+  const staleDate='2035-01-01';
+  let onsenRequested=false;
+  await page.route('**/api/operations/manifest*',async route=>{
+   const url=new URL(route.request().url());
+   if(url.searchParams.get('store')==='MOUNTAIN_BASE'){
+    await gateOld; // held; carries a date that must never reach the screen
+    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:staleDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
+   }else{
+    onsenRequested=true;
+    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'ONSEN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
+   }
+  });
+  await page.goto('/staff'); // fires the initial MOUNTAIN_BASE request, held with a stale date
+  await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE');
+  await expect.poll(()=>onsenRequested).toBe(true);
+  await expect(todayBooking()).toContainText(businessDate);
+  releaseOld!();
+  await page.waitForTimeout(300);
+  await expect(todayBooking()).toContainText(businessDate);
+  await expect(todayBooking()).not.toContainText(staleDate);
+  await page.unroute('**/api/operations/manifest*');
+ });
+
+ await check('UX5D-R03: the BOOKING_VIEW-only Today Refresh also restarts the authoritative Manifest date read, not only /api/bookings',async()=>{
+  let calls=0;
+  const laterDate='2035-07-01';
+  await narrowPage.route('**/api/operations/manifest*',async route=>{
+   calls++;
+   const d=calls===1?businessDate:laterDate;
+   await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:d,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
+  });
+  await narrowPage.goto('/staff');
+  await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toContainText(businessDate);
+  await expect(narrowPage.getByRole('region',{name:'本日の業務'})).toHaveCount(0);
+  await narrowPage.getByRole('button',{name:'更新',exact:true}).click(); // the only Refresh a BOOKING_VIEW-only principal ever sees
+  await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toContainText(laterDate);
+  await expect(narrowPage.getByRole('region',{name:'本日の業務'})).toHaveCount(0); // still never exposed to this composition
+  await narrowPage.unroute('**/api/operations/manifest*');
  });
 
  await check('Staff Home is usable at 390 and 1440 with no horizontal overflow',async()=>{

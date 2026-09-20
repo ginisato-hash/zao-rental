@@ -22,8 +22,11 @@ try{
  const now=new Date();
  const root=await bootstrapDevelopmentAdmin(db.pool,{email:'ux5a-root@example.invalid',displayName:'SYNTHETIC Admin',password}),admin=(await loadStaff(db.pool,root))!;
  const base={active:true,role:'ADMIN' as const,password};
- const full=(await writeAccount(roles.authPool,admin,undefined,{...base,email:'ux5a-full@example.invalid',displayName:'SYNTHETIC Full Staff',scope:'ALL',storeIds:[],permissions:{HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true,BOOKING_VIEW:true,BOOKING_CREATE:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,OPERATIONS_VIEW:true,OPERATIONS_ACKNOWLEDGE:true}})).id!;
- await writeAccount(roles.authPool,admin,undefined,{...base,email:'ux5a-narrow@example.invalid',displayName:'SYNTHETIC Narrow Staff',role:'VIEWER',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{BOOKING_VIEW:true}});
+ const full=(await writeAccount(roles.authPool,admin,undefined,{...base,email:'ux5a-full@example.invalid',displayName:'SYNTHETIC Full Staff',scope:'ALL',storeIds:[],permissions:{HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true,BOOKING_VIEW:true,BOOKING_CREATE:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,OPERATIONS_VIEW:true,OPERATIONS_ACKNOWLEDGE:true,INVENTORY_VIEW:true,TRANSFER_VIEW:true}})).id!;
+ // VIEWER carries a baseline INVENTORY_VIEW grant for every staff member (staff_role_permissions);
+ // explicitly revoke it here so this account is genuinely narrow (BOOKING_VIEW only), the same
+ // way an operator would configure a booking-only role in the real staff-management screen.
+ await writeAccount(roles.authPool,admin,undefined,{...base,email:'ux5a-narrow@example.invalid',displayName:'SYNTHETIC Narrow Staff',role:'VIEWER',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{BOOKING_VIEW:true,INVENTORY_VIEW:false}});
  for(let i=0;i<150;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===149)throw Error('LOCAL_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}});c.setDefaultTimeout(15000);return c;}
  async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL('**/staff/ledger');return p;}
@@ -43,23 +46,37 @@ try{
  const confirmedId=await makeBooking('COMPLETED',variants.ski,'SYNTHETIC UX5A Confirmed');await makeBooking('PENDING',variants.skiAlt,'SYNTHETIC UX5A Pending');
  assert.equal((await db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[confirmedId])).rows[0].state,'CONFIRMED_DEV');
 
- await check('operational Staff Home replaces the one-link page; narrow permission hides checkout/return/exceptions but keeps Today',async()=>{
+ await check('operational Staff Home replaces the one-link page; narrow (BOOKING_VIEW-only) permission keeps Today read-only and hides every capability-gated section/link',async()=>{
   await page.goto('/staff');await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
   await expect(page.getByRole('region',{name:'予約QR・検索'})).toBeVisible();
   await expect(page.getByRole('region',{name:'本日の予約'})).toBeVisible();
   await expect(page.getByRole('region',{name:'貸出・受付'})).toBeVisible();
   await expect(page.getByRole('region',{name:'返却の進行状況'})).toBeVisible();
   await expect(page.getByRole('region',{name:'運用の注意事項'})).toBeVisible();
-  await narrowPage.goto('/staff');await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toBeVisible();
-  await expect(narrowPage.getByRole('region',{name:'予約QR・検索'})).toBeVisible();
-  for(const label of ['貸出・受付','返却の進行状況','運用の注意事項'])await expect(narrowPage.getByRole('region',{name:label})).toHaveCount(0);
+  await page.getByText('その他の管理機能').click();
+  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・HOLD','サイズ推薦','ウェアの数量貸出・返却'])await expect(page.getByRole('link',{name})).toBeVisible();
+  await narrowPage.goto('/staff');
+  await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toBeVisible();
+  // UX5R-01: a BOOKING_VIEW-only account cannot actually use pickup, so the search/QR
+  // entry point and every Today card's action must not be offered to it at all.
+  for(const label of ['予約QR・検索','貸出・受付','返却の進行状況','運用の注意事項'])await expect(narrowPage.getByRole('region',{name:label})).toHaveCount(0);
+  await expect(narrowPage.locator('.staff-card',{hasText:'SYNTHETIC UX5A Confirmed'}).getByRole('button')).toHaveCount(0);
+  // UX5R-03: secondary links must match the destination route's own permission gate, not
+  // "every authorized user".
+  await narrowPage.getByText('その他の管理機能').click();
+  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・HOLD','サイズ推薦','ウェアの数量貸出・返却','スタッフ管理'])await expect(narrowPage.getByRole('link',{name})).toHaveCount(0);
+  for(const name of ['変更・返金依頼','パスワード変更'])await expect(narrowPage.getByRole('link',{name})).toBeVisible();
  });
 
- await check('Today booking card shows the real confirmed booking and opens it preselected into the pickup workflow',async()=>{
+ await check('Today booking card action is gated by RENTAL_CHECKOUT, not by the booking state (UX5R-01), and opens the real booking preselected into the pickup workflow',async()=>{
   await page.goto('/staff');
-  const card=page.locator('.staff-card',{hasText:'SYNTHETIC UX5A Confirmed'});await expect(card).toBeVisible();
-  await expect(card).toContainText('確定済み');
-  await card.getByRole('button',{name:'この予約を開く'}).click();
+  const confirmedCard=page.locator('.staff-card',{hasText:'SYNTHETIC UX5A Confirmed'});await expect(confirmedCard).toBeVisible();
+  await expect(confirmedCard).toContainText('確定済み');
+  // The action is offered for a still-PAYMENT_PENDING booking too: the capability check
+  // controls the action, never a client-side allowlist of booking states.
+  const pendingCard=page.locator('.staff-card',{hasText:'SYNTHETIC UX5A Pending'});await expect(pendingCard).toContainText('決済照合待ち');
+  await expect(pendingCard.getByRole('button',{name:'貸出・受付で状態を確認'})).toBeVisible();
+  await confirmedCard.getByRole('button',{name:'貸出・受付で状態を確認'}).click();
   await page.waitForURL(new RegExp('/staff/rentals\\?booking='+confirmedId));
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText(confirmedId);
  });
@@ -84,7 +101,7 @@ try{
   const batch=await created.json();
   const scanned=await page.request.post('/api/custody/scan',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:batch.version,assetId,poleLoanId:null}}});assert.equal(scanned.status(),200);
   await page.goto('/staff');await page.getByRole('button',{name:'更新',exact:true}).nth(1).click();
-  await expect(page.getByRole('region',{name:'返却の進行状況'})).toContainText('進行中の返却バッチ 1件');
+  await expect(page.getByRole('region',{name:'返却の進行状況'})).toContainText('保存済みの返却バッチ 1件');
   await expect(page.getByRole('region',{name:'返却の進行状況'})).toContainText('検品待ち 0件');
   const confirmed=await page.request.post('/api/custody/confirm',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:(await scanned.json()).version}}});assert.equal(confirmed.status(),200);
   await page.reload();await page.getByRole('button',{name:'更新',exact:true}).nth(1).click();

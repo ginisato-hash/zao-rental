@@ -46,7 +46,7 @@ try{
  const page=await c.newPage();page.on('pageerror',()=>fatals.push('PAGE_ERROR'));page.on('console',m=>{if(m.type()==='error'&&/hydration|uncaught|maximum update/i.test(m.text()))fatals.push('CONSOLE_FATAL');});
  await check('BROWSER','normal GuestBooking creates two synthetic member candidates before artwork interactions',async()=>{
   await page.goto('/ja/book');await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-05');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('利用人数',{exact:true}).fill('2');
-  for(const n of [1,2]){await page.getByLabel('身長cm '+n,{exact:true}).fill(n===1?'170':'180');await page.getByLabel('ポールのサイズ '+n,{exact:true}).selectOption('pole-'+variants.pole);}
+  for(const n of [1,2]){if(n===2)await page.getByText('利用者 2').first().click();await page.getByLabel('身長cm '+n,{exact:true}).fill(n===1?'170':'180');await page.getByLabel('ポールのサイズ '+n,{exact:true}).selectOption('pole-'+variants.pole);}
   await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(page.locator('[data-avatar-stage]')).toHaveCount(2);
  });
  const draft=await(await c.request.get('/api/guest/draft')).json();assert.equal(draft.preview.members.length,2);

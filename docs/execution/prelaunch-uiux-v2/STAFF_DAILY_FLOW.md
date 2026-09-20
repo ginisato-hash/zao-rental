@@ -65,3 +65,44 @@ Run from the isolated `prelaunch-uiux-finishing` worktree, never the maintained 
 
 See the `ZAO_UIUX_V2_STAFF_DAILY_FLOW_READY_FOR_TD_REVIEW` report for the run confirmed at this
 candidate HEAD.
+
+## Correction batch — TD comments [`5747586777`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5747586777) / [`5747593599`](https://github.com/ginisato-hash/zao-rental/pull/26#issuecomment-5747593599)
+
+The prior `ZAO_UIUX_V2_STAFF_DAILY_FLOW_READY_FOR_TD_REVIEW` report (comment `5747587898`)
+referenced HEAD `d0923a6` without a corrective commit after the REQUEST_CHANGES review of that
+same HEAD, so it was not a valid resubmission. This batch fixes all three findings, still on the
+same branch/PR, without touching UX-5B.
+
+Commit: `3fb46b5` (code/tests/screenshots).
+
+| Finding | Fix | File(s) |
+| --- | --- | --- |
+| UX5R-01 (HIGH) — pickup eligibility inferred from booking state | Removed the client-side `PICKUP_ELIGIBLE` allowlist entirely. The reservation QR/search entry point and every Today card's action are now gated purely by the existing `RENTAL_CHECKOUT` capability (`canCheckout`), never by `booking.state`. The action label is now the neutral `貸出・受付で状態を確認` ("check status at pickup/reception"); the actual eligibility is decided only by `/api/custody/booking/:id` once the staff member opens it there, exactly as the original UX-5A authorization required. | `components/StaffHome.tsx` |
+| UX5R-02 (MEDIUM) — every saved return batch labelled "in progress" | `GET /api/custody/returns` returns saved batches with no open/closed status, so calling `returns.batches.length` "進行中の返却バッチ" overclaimed workflow state. Relabelled as `保存済みの返却バッチ` (a factual "saved return batches" count). `受領済み・検品待ち` is unchanged — that count is directly backed by `received.filter(!inspection_id)`. | `components/StaffHome.tsx` |
+| UX5R-03 (MEDIUM) — secondary links ignored existing per-route permissions | Each secondary link is now gated on the same permission its destination page already requires: `INVENTORY_VIEW` for 台帳/棚卸/ウェア, `TRANSFER_VIEW` for 店舗間移動, `QUOTE_VIEW` for 見積, `HOLD_VIEW` for 期間在庫・HOLD, `HOLD_VIEW && QUOTE_VIEW` for サイズ推薦, `BOOKING_VIEW` for 変更・返金依頼 (already had it), password change ungated (any authenticated staff, matching the route), and staff management still under the existing `canManage` condition. No route's own permission check changed. | `components/StaffHome.tsx`, `app/staff/page.tsx` |
+
+### Regression tests
+
+`tests/staff/home-ui.ts` now additionally asserts, against a real narrow account:
+- the reservation QR/search section and every capability-gated section (貸出・受付・返却の進行状況・運用の注意事項) are absent for a `BOOKING_VIEW`-only account, and its Today card renders with no action button at all;
+- the still-`PAYMENT_PENDING` booking's Today card *does* show the pickup action for the full-capability account — proving the action is driven by capability, not by booking state;
+- the full-capability account (now also given `INVENTORY_VIEW`/`TRANSFER_VIEW` in the fixture) sees every secondary link, while the narrow account — with `INVENTORY_VIEW` explicitly revoked via a `staff_permission_overrides` row, since `VIEWER` otherwise carries a role-baseline `INVENTORY_VIEW` grant — sees none of the seven capability-gated secondary links, only 変更・返金依頼 and パスワード変更.
+
+### Verification (this batch)
+
+Run from the isolated `prelaunch-uiux-finishing` worktree, never the maintained review server in
+`prelaunch-uiux-audit` (reverified healthy before and after):
+
+- `npm run lint` / `typecheck` / `build` / `check:secrets` — pass
+- `npm run test:unit` — 700/700 pass
+- `npm run test:auth` — 18/18 pass
+- `npm run test:custody` (boundary-counterexample/real-postgres/scenarios) / `test:custody-ui` / `test:late-pickup` — pass
+- `npm run test:operations-console-ui` — pass
+- `npm run test:staff-home-ui` — 6/6 pass, including the corrected assertions above
+- Refreshed `screenshots/ux5a-after/staff-home-{390,1440}.png` and `staff-rentals-preselected-390.png`
+
+### Hard boundaries confirmed (unchanged)
+
+No pricing/recommendation/inventory/HOLD/payment/auth/permission/schema/Production changes. No
+UX-5B manifest API. No route's own server-side permission check was touched — only which links
+`StaffHome` chooses to render were corrected to match those existing checks.

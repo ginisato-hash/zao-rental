@@ -1,8 +1,10 @@
 import {spawn} from 'node:child_process';
 import {createHash, randomUUID} from 'node:crypto';
-import {mkdtemp, readFile, rm, lstat} from 'node:fs/promises';
+import {createReadStream, createWriteStream} from 'node:fs';
+import {mkdtemp, rm, lstat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {Readable, Writable, Transform} from 'node:stream';
 import {Encrypter} from 'age-encryption';
 import {S3Client, PutObjectCommand} from '@aws-sdk/client-s3';
 
@@ -12,10 +14,15 @@ export type BackupClass = 'hourly' | 'daily';
 
 /** Fixed, non-negotiable target — never read from an env var that a stray config could redirect. */
 export const EXPECTED_PRODUCTION_BUCKET = 'zao-rental-prod-backup';
+export const EXPECTED_PRODUCTION_PORT = '5432';
+/** SHA-256 of the accepted Production direct-host name (lowercased/trimmed). Not the hostname itself. */
+export const EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256 = '7ad9939654fde65fa8bf8c4c043e33ca9053036d2137cf7616d365a11876c3fc';
 export const PGAPPNAME = 'zao-rental-production-backup';
 export const LOCK_TIMEOUT_MS = 30_000;
 /** 09:17 UTC / 18:17 JST — a documented low-activity window; the external scheduler dispatches hourly at :17. */
 export const DAILY_PROMOTION_UTC_HOUR = 9;
+/** Ambient env vars a Postgres client tool may legitimately need; never DB/R2/age secrets beyond what's passed explicitly. */
+const ALLOWED_AMBIENT_CHILD_ENV_KEYS = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'TEMP', 'TMP'] as const;
 
 const REQUIRED_ENV_KEYS = [
   'PGHOST', 'PGPORT', 'PGDATABASE', 'PGUSER', 'PGPASSWORD',
@@ -36,6 +43,7 @@ export function redactSecrets(text: string, secrets: readonly string[]): string 
   return out.replace(/postgres(?:ql)?:\/\/[^\s]*@[^\s]+/gi, '[REDACTED_CONNECTION_STRING]');
 }
 
+/** Structural shape only (host name pattern) — safe to test with any synthetic `.neon.tech` host. */
 export function assertProductionHost(host: string): void {
   const h = host.trim().toLowerCase();
   if (!h) throw new Error('BACKUP_HOST_EMPTY');
@@ -44,8 +52,47 @@ export function assertProductionHost(host: string): void {
   if (!h.endsWith('.neon.tech')) throw new Error('BACKUP_HOST_NON_NEON_REJECTED');
 }
 
+export function assertProductionPort(port: string): void {
+  if (port !== EXPECTED_PRODUCTION_PORT) throw new Error('BACKUP_PORT_REJECTED');
+}
+
+export function fingerprintHost(host: string): string {
+  return createHash('sha256').update(host.trim().toLowerCase()).digest('hex');
+}
+
+/**
+ * Binds the backup to one exact accepted Production endpoint identity, not merely "any Neon host".
+ * `expected` defaults to the real committed constant and is never sourced from an env var — only a
+ * caller can override it, and the CLI entrypoint never does, so this cannot be redirected by a
+ * misconfigured secret. Tests pass their own `expected` to exercise both the accept and reject paths
+ * without ever needing to know the real Production hostname.
+ */
+export function assertProductionHostFingerprint(host: string, expected: string = EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256): void {
+  if (fingerprintHost(host) !== expected) throw new Error('BACKUP_HOST_FINGERPRINT_MISMATCH_REJECTED');
+}
+
+export function parseBackupClass(value: string | undefined): BackupClass {
+  if (value !== 'hourly' && value !== 'daily') throw new Error('BACKUP_CLASS_INVALID');
+  return value;
+}
+
+const SCHEDULED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
+/**
+ * The authoritative timestamp for object keys and daily-promotion classification is the scheduler's
+ * own occurrence time, never the local runtime clock — so a delayed/retried run stays classified as
+ * the occurrence it was meant to serve, and a retry of the same occurrence reuses the same object key.
+ */
+export function parseScheduledAt(value: string | undefined): Date {
+  if (!value) throw new Error('BACKUP_SCHEDULED_AT_MISSING');
+  if (!SCHEDULED_AT_PATTERN.test(value)) throw new Error('BACKUP_SCHEDULED_AT_INVALID');
+  const at = new Date(value);
+  if (Number.isNaN(at.getTime())) throw new Error('BACKUP_SCHEDULED_AT_INVALID');
+  return at;
+}
+
 /** Fail closed: every required var must be present, by name only — never a default/fallback. */
-export function readBackupEnv(env: NodeJS.ProcessEnv): BackupEnv {
+export function readBackupEnv(env: NodeJS.ProcessEnv, expectedHostFingerprint: string = EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256): BackupEnv {
   const missing = REQUIRED_ENV_KEYS.filter((k) => !env[k]);
   if (missing.length) throw new Error(`BACKUP_ENV_MISSING:${missing.join(',')}`);
   const out: BackupEnv = {
@@ -54,12 +101,16 @@ export function readBackupEnv(env: NodeJS.ProcessEnv): BackupEnv {
     R2_ACCOUNT_ID: env.R2_ACCOUNT_ID!, R2_ACCESS_KEY_ID: env.R2_ACCESS_KEY_ID!, R2_SECRET_ACCESS_KEY: env.R2_SECRET_ACCESS_KEY!,
   };
   assertProductionHost(out.PGHOST);
+  assertProductionPort(out.PGPORT);
   if (out.PRODUCTION_BACKUP_BUCKET !== EXPECTED_PRODUCTION_BUCKET) throw new Error('BACKUP_BUCKET_MISMATCH_REJECTED');
+  // Fingerprint last: it is the one check a synthetic test host can never satisfy (by design), so
+  // every other validation stays independently testable ahead of it.
+  assertProductionHostFingerprint(out.PGHOST, expectedHostFingerprint);
   return out;
 }
 
 export function objectKey(backupClass: BackupClass, at: Date): string {
-  if (backupClass !== 'hourly' && backupClass !== 'daily') throw new Error('BACKUP_CLASS_INVALID');
+  parseBackupClass(backupClass);
   const y = at.getUTCFullYear();
   const m = String(at.getUTCMonth() + 1).padStart(2, '0');
   const d = String(at.getUTCDate()).padStart(2, '0');
@@ -77,6 +128,13 @@ export async function assertOrdinaryFile(path: string): Promise<void> {
   if (stat.isSymbolicLink() || !stat.isFile()) throw new Error('BACKUP_SPECIAL_FILE_REJECTED');
 }
 
+/** Builds the minimal env for a spawned Postgres client tool: no R2/age/Worker secret ever reaches it. */
+export function minimalPgChildEnv(source: NodeJS.ProcessEnv, extra: Record<string, string>): NodeJS.ProcessEnv {
+  const out: Record<string, string> = {};
+  for (const k of ALLOWED_AMBIENT_CHILD_ENV_KEYS) { const v = source[k]; if (v !== undefined) out[k] = v; }
+  return {...out, ...extra} as NodeJS.ProcessEnv;
+}
+
 // ---- Default adapters: real pg_dump/pg_restore/age/R2 I/O. Tests inject fakes instead. ----
 
 export interface DumpResult { exitCode: number; stderrTail: string }
@@ -84,13 +142,12 @@ export interface DumpResult { exitCode: number; stderrTail: string }
 export async function spawnPgDump(env: BackupEnv, outFile: string): Promise<DumpResult> {
   return new Promise((resolve) => {
     const child = spawn('pg_dump', ['-Fc', '--no-owner', '--no-acl', '-f', outFile], {
-      env: {
-        ...process.env,
+      env: minimalPgChildEnv(process.env, {
         PGHOST: env.PGHOST, PGPORT: env.PGPORT, PGDATABASE: env.PGDATABASE,
         PGUSER: env.PGUSER, PGPASSWORD: env.PGPASSWORD,
         PGSSLMODE: 'verify-full', PGCHANNELBINDING: 'require', PGAPPNAME,
         PGOPTIONS: `-c lock_timeout=${LOCK_TIMEOUT_MS}`,
-      },
+      }),
       stdio: ['ignore', 'ignore', 'pipe'] as const,
     });
     let stderr = '';
@@ -102,7 +159,7 @@ export async function spawnPgDump(env: BackupEnv, outFile: string): Promise<Dump
 
 export async function spawnPgRestoreList(dumpPath: string): Promise<{ok: boolean}> {
   return new Promise((resolve) => {
-    const child = spawn('pg_restore', ['--list', dumpPath], {stdio: ['ignore', 'pipe', 'ignore'] as const});
+    const child = spawn('pg_restore', ['--list', dumpPath], {env: minimalPgChildEnv(process.env, {}), stdio: ['ignore', 'pipe', 'ignore'] as const});
     let out = '';
     child.stdout.on('data', (c: Buffer) => { out += c.toString(); });
     child.on('close', (code) => resolve({ok: code === 0 && out.trim().length > 0}));
@@ -112,7 +169,7 @@ export async function spawnPgRestoreList(dumpPath: string): Promise<{ok: boolean
 
 async function toolVersion(bin: string): Promise<string> {
   return new Promise((resolve) => {
-    const child = spawn(bin, ['--version'], {stdio: ['ignore', 'pipe', 'ignore'] as const});
+    const child = spawn(bin, ['--version'], {env: minimalPgChildEnv(process.env, {}), stdio: ['ignore', 'pipe', 'ignore'] as const});
     let out = '';
     child.stdout.on('data', (c: Buffer) => { out += c.toString(); });
     child.on('close', () => resolve(out.trim() || `${bin}:UNKNOWN`));
@@ -125,10 +182,30 @@ export async function defaultToolVersions(): Promise<{pgDump: string; pgRestore:
   return {pgDump, pgRestore};
 }
 
-export async function encryptWithAge(plaintext: Uint8Array, recipient: string): Promise<Uint8Array> {
-  const e = new Encrypter();
-  e.addRecipient(recipient);
-  return e.encrypt(plaintext);
+/**
+ * Streams plaintext -> age ciphertext file-to-file. Never materializes the full plaintext or full
+ * ciphertext as an in-memory buffer: a hashing Transform computes the plaintext SHA-256 as bytes pass
+ * through on their way into the age Streams API, and the resulting ciphertext stream is piped directly
+ * to a temporary file. This file intentionally does not import `readFile` for the dump/ciphertext path —
+ * a regression back to whole-buffer processing is caught by the "no whole-file read" static test in
+ * tests/readiness/production-backup.ts.
+ */
+export async function encryptFileToFileStreaming(plaintextPath: string, ciphertextPath: string, recipient: string): Promise<{sha256: string; bytes: number}> {
+  const hash = createHash('sha256');
+  const hashing = new Transform({
+    transform(chunk: Buffer, _enc, cb) { hash.update(chunk); cb(null, chunk); },
+  });
+  const nodeReadable = createReadStream(plaintextPath).pipe(hashing);
+  // age-encryption's public types reference the ambient (lib.dom) Streams API; Node's own
+  // node:stream/web types are structurally close but not identical, hence the double cast.
+  const webReadable = Readable.toWeb(nodeReadable) as unknown as ReadableStream<Uint8Array>;
+  const encrypter = new Encrypter();
+  encrypter.addRecipient(recipient);
+  const cipherStream = await encrypter.encrypt(webReadable);
+  const fileWrite = createWriteStream(ciphertextPath);
+  await cipherStream.pipeTo(Writable.toWeb(fileWrite) as unknown as WritableStream<Uint8Array>);
+  const stat = await lstat(ciphertextPath);
+  return {sha256: hash.digest('hex'), bytes: stat.size};
 }
 
 export function createR2Client(env: BackupEnv): S3Client {
@@ -139,10 +216,10 @@ export function createR2Client(env: BackupEnv): S3Client {
   });
 }
 
-/** Only PutObject. No delete/admin operation is implemented anywhere in this module. */
-export async function uploadEncrypted(client: S3Client, bucket: string, key: string, body: Uint8Array): Promise<void> {
+/** Only PutObject, streamed from the already-encrypted temp file. No delete/admin operation exists here. */
+export async function uploadFileStreaming(client: S3Client, bucket: string, key: string, filePath: string, contentLength: number): Promise<void> {
   if (bucket !== EXPECTED_PRODUCTION_BUCKET) throw new Error('BACKUP_BUCKET_MISMATCH_REJECTED');
-  await client.send(new PutObjectCommand({Bucket: bucket, Key: key, Body: body}));
+  await client.send(new PutObjectCommand({Bucket: bucket, Key: key, Body: createReadStream(filePath), ContentLength: contentLength}));
 }
 
 // ---- Orchestrator ----
@@ -150,8 +227,8 @@ export async function uploadEncrypted(client: S3Client, bucket: string, key: str
 export interface BackupAdapters {
   dump: (env: BackupEnv, outFile: string) => Promise<DumpResult>;
   validate: (dumpPath: string) => Promise<{ok: boolean}>;
-  encrypt: (plaintext: Uint8Array, recipient: string) => Promise<Uint8Array>;
-  upload: (bucket: string, key: string, body: Uint8Array) => Promise<void>;
+  encryptToFile: (plaintextPath: string, ciphertextPath: string, recipient: string) => Promise<{sha256: string; bytes: number}>;
+  upload: (bucket: string, key: string, filePath: string, contentLength: number) => Promise<void>;
   toolVersions: () => Promise<{pgDump: string; pgRestore: string}>;
 }
 
@@ -159,8 +236,8 @@ export function defaultAdapters(client: S3Client): BackupAdapters {
   return {
     dump: spawnPgDump,
     validate: spawnPgRestoreList,
-    encrypt: encryptWithAge,
-    upload: (bucket, key, body) => uploadEncrypted(client, bucket, key, body),
+    encryptToFile: encryptFileToFileStreaming,
+    upload: (bucket, key, filePath, contentLength) => uploadFileStreaming(client, bucket, key, filePath, contentLength),
     toolVersions: defaultToolVersions,
   };
 }
@@ -174,40 +251,44 @@ export interface BackupResult {
 export async function runProductionBackup(
   env: BackupEnv,
   adapters: BackupAdapters,
-  opts: {backupClass: BackupClass; now?: Date},
+  opts: {backupClass: BackupClass; scheduledAt: Date},
 ): Promise<BackupResult> {
   assertProductionHost(env.PGHOST);
+  assertProductionPort(env.PGPORT);
   if (env.PRODUCTION_BACKUP_BUCKET !== EXPECTED_PRODUCTION_BUCKET) throw new Error('BACKUP_BUCKET_MISMATCH_REJECTED');
-  if (opts.backupClass !== 'hourly' && opts.backupClass !== 'daily') throw new Error('BACKUP_CLASS_INVALID');
-  const now = opts.now ?? new Date();
+  const backupClass = parseBackupClass(opts.backupClass);
+  const scheduledAt = opts.scheduledAt;
   const dir = await mkdtemp(join(tmpdir(), 'zao-backup-'));
   const plaintextPath = join(dir, `${randomUUID()}.dump`);
+  const ciphertextPath = join(dir, `${randomUUID()}.dump.age`);
   let plaintextWritten = false;
+  let ciphertextWritten = false;
   try {
     const {exitCode, stderrTail} = await adapters.dump(env, plaintextPath);
     if (exitCode !== 0) throw new Error(`BACKUP_PG_DUMP_FAILED:${stderrTail}`);
     plaintextWritten = true;
     await assertOrdinaryFile(plaintextPath);
-    const stat = await lstat(plaintextPath);
-    if (stat.size === 0) throw new Error('BACKUP_EMPTY_ARCHIVE_REJECTED');
+    const plainStat = await lstat(plaintextPath);
+    if (plainStat.size === 0) throw new Error('BACKUP_EMPTY_ARCHIVE_REJECTED');
     const {ok} = await adapters.validate(plaintextPath);
     if (!ok) throw new Error('BACKUP_ARCHIVE_VALIDATION_FAILED');
-    const plaintext = await readFile(plaintextPath);
-    const sha256 = createHash('sha256').update(plaintext).digest('hex');
-    const encrypted = await adapters.encrypt(plaintext, env.AGE_BACKUP_RECIPIENT);
-    if (encrypted.length === 0 || Buffer.compare(Buffer.from(encrypted), plaintext) === 0) throw new Error('BACKUP_ENCRYPTION_INVALID');
-    const key = objectKey(opts.backupClass, now);
-    await adapters.upload(env.PRODUCTION_BACKUP_BUCKET, key, encrypted);
-    const dailyPromoted = opts.backupClass === 'hourly' && isDesignatedDailyRun(now);
+    const {sha256, bytes: cipherBytes} = await adapters.encryptToFile(plaintextPath, ciphertextPath, env.AGE_BACKUP_RECIPIENT);
+    ciphertextWritten = true;
+    await assertOrdinaryFile(ciphertextPath);
+    if (cipherBytes === 0) throw new Error('BACKUP_ENCRYPTION_INVALID');
+    const key = objectKey(backupClass, scheduledAt);
+    await adapters.upload(env.PRODUCTION_BACKUP_BUCKET, key, ciphertextPath, cipherBytes);
+    const dailyPromoted = backupClass === 'hourly' && isDesignatedDailyRun(scheduledAt);
     let dailyKey: string | null = null;
     if (dailyPromoted) {
-      dailyKey = objectKey('daily', now);
-      await adapters.upload(env.PRODUCTION_BACKUP_BUCKET, dailyKey, encrypted);
+      dailyKey = objectKey('daily', scheduledAt);
+      await adapters.upload(env.PRODUCTION_BACKUP_BUCKET, dailyKey, ciphertextPath, cipherBytes);
     }
     const toolVersions = await adapters.toolVersions();
-    return {key, sha256, bytes: stat.size, generatedAt: now.toISOString(), backupClass: opts.backupClass, dailyPromoted, dailyKey, toolVersions};
+    return {key, sha256, bytes: plainStat.size, generatedAt: scheduledAt.toISOString(), backupClass, dailyPromoted, dailyKey, toolVersions};
   } finally {
     if (plaintextWritten) await rm(plaintextPath, {force: true}).catch(() => {});
+    if (ciphertextWritten) await rm(ciphertextPath, {force: true}).catch(() => {});
     await rm(dir, {recursive: true, force: true}).catch(() => {});
   }
 }
@@ -218,9 +299,10 @@ async function main(): Promise<void> {
   if (process.env.BACKUP_MODE !== 'production') throw new Error('BACKUP_MODE_NOT_PRODUCTION');
   if (process.env.PRODUCTION_BACKUP_ACTIVATION !== 'R4_APPROVED') throw new Error('BACKUP_ACTIVATION_GATE_NOT_APPROVED');
   const env = readBackupEnv(process.env);
+  const backupClass = parseBackupClass(process.env.BACKUP_CLASS);
+  const scheduledAt = parseScheduledAt(process.env.SCHEDULED_AT);
   const client = createR2Client(env);
-  const backupClass: BackupClass = process.env.BACKUP_CLASS === 'daily' ? 'daily' : 'hourly';
-  const result = await runProductionBackup(env, defaultAdapters(client), {backupClass});
+  const result = await runProductionBackup(env, defaultAdapters(client), {backupClass, scheduledAt});
   console.log(JSON.stringify({...result, secretsExposed: false}));
 }
 

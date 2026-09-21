@@ -6,6 +6,11 @@ name: Production Backup
 # Production secret is read.
 on:
   workflow_dispatch:
+    inputs:
+      scheduled_at:
+        description: 'Authoritative UTC scheduled-occurrence timestamp (ISO 8601, e.g. 2026-09-22T09:17:00.000Z), sent by the Cloudflare Worker scheduler. Object keys and daily-promotion classification derive from this, never the runner clock.'
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -59,6 +64,7 @@ jobs:
         env:
           BACKUP_MODE: production
           BACKUP_CLASS: hourly
+          SCHEDULED_AT: ${{ inputs.scheduled_at }}
           PRODUCTION_BACKUP_ACTIVATION: ${{ vars.PRODUCTION_BACKUP_ACTIVATION }}
           PRODUCTION_BACKUP_BUCKET: ${{ vars.PRODUCTION_BACKUP_BUCKET }}
           AGE_BACKUP_RECIPIENT: ${{ vars.AGE_BACKUP_RECIPIENT }}

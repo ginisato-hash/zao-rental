@@ -6,9 +6,10 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import * as age from 'age-encryption';
 import {
-  type BackupAdapters, type BackupEnv, EXPECTED_PRODUCTION_BUCKET, EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,
-  assertOrdinaryFile, assertProductionHost, assertProductionHostFingerprint, assertProductionPort,
-  encryptFileToFileStreaming, fingerprintHost, isDesignatedDailyRun, minimalPgChildEnv, objectKey,
+  type BackupAdapters, type BackupEnv, type FsAccessChecker,
+  EXPECTED_PRODUCTION_BUCKET, EXPECTED_PRODUCTION_CA_ROOT, EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,
+  assertCaRootUsable, assertOrdinaryFile, assertProductionHost, assertProductionHostFingerprint, assertProductionPort,
+  buildPgDumpChildEnv, encryptFileToFileStreaming, fingerprintHost, isDesignatedDailyRun, minimalPgChildEnv, objectKey,
   parseBackupClass, parseScheduledAt, readBackupEnv, redactSecrets, runProductionBackup, spawnPgDump,
 } from '../../scripts/production-backup';
 import worker, {TARGET_REF, TARGET_REPO, TARGET_WORKFLOW, dispatchProductionBackup} from '../../apps/backup-scheduler-worker/src/index';
@@ -89,12 +90,14 @@ async function main(): Promise<void> {
     const password = 'REAL_SECRET_' + randomBytes(6).toString('hex');
     await writeFile(fakeBin, `#!/bin/sh\necho "leak of $PGPASSWORD" 1>&2\nexit 1\n`);
     await chmod(fakeBin, 0o755);
+    const usableCaRoot = join(dir, 'ca.crt');
+    await writeFile(usableCaRoot, 'SYNTHETIC CA BUNDLE'); // must exist so the F8 pre-check lets this test reach the fake binary
     const env = baseEnv({PGPASSWORD: password});
     const previousPath = process.env.PATH;
     process.env.PATH = `${dir}:${previousPath}`;
     try {
       const outFile = join(dir, 'out.dump');
-      const result = await spawnPgDump(env, outFile);
+      const result = await spawnPgDump(env, outFile, usableCaRoot);
       assert.equal(result.exitCode, 1);
       assert.ok(!result.stderrTail.includes(password), 'stderrTail must not contain the raw password');
       assert.ok(result.stderrTail.includes('[REDACTED]'));
@@ -372,6 +375,83 @@ async function main(): Promise<void> {
       const decrypted = await decrypter.decrypt(new Uint8Array(cipherStat));
       assert.equal(createHash('sha256').update(decrypted).digest('hex'), sha256);
     } finally { await rm(dir, {recursive: true, force: true}).catch(() => {}); }
+  });
+
+  // ---- F8: explicit libpq CA root for sslmode=verify-full ----
+
+  await check('29 (F8-A). pg_dump child env carries the fixed Production CA root, alongside the existing TLS settings', async () => {
+    const env = buildPgDumpChildEnv(baseEnv(), EXPECTED_PRODUCTION_CA_ROOT);
+    assert.equal(env.PGSSLROOTCERT, EXPECTED_PRODUCTION_CA_ROOT);
+    assert.equal(env.PGSSLMODE, 'verify-full');
+    assert.equal(env.PGCHANNELBINDING, 'require');
+    assert.equal(EXPECTED_PRODUCTION_CA_ROOT, '/etc/ssl/certs/ca-certificates.crt');
+  });
+
+  await check('30 (F8-B). an ambient PGSSLROOTCERT can never override the fixed Production CA path', async () => {
+    const attackerSource = {PATH: '/usr/bin', PGSSLROOTCERT: '/tmp/fake-attacker-cert.pem'} as unknown as NodeJS.ProcessEnv;
+    const env = buildPgDumpChildEnv(baseEnv(), EXPECTED_PRODUCTION_CA_ROOT, attackerSource);
+    assert.equal(env.PGSSLROOTCERT, EXPECTED_PRODUCTION_CA_ROOT);
+    assert.notEqual(env.PGSSLROOTCERT, '/tmp/fake-attacker-cert.pem');
+    // Defense in depth: minimalPgChildEnv's own allow-list never carries PGSSLROOTCERT through at all,
+    // regardless of what buildPgDumpChildEnv does with its extras.
+    const minimal = minimalPgChildEnv(attackerSource, {});
+    assert.equal(minimal.PGSSLROOTCERT, undefined);
+  });
+
+  await check('31 (F8-C). missing CA root fails closed before any pg_dump spawn, upload, or DB connection attempt', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'backup-ca-missing-'));
+    try {
+      await assert.rejects(assertCaRootUsable(join(dir, 'does-not-exist.crt')), /BACKUP_CA_ROOT_MISSING/);
+      // No pg_dump binary reachable at all: if spawnPgDump tried to spawn before checking the CA root,
+      // this would fail with BACKUP_PG_DUMP_SPAWN_ERROR instead — proving the CA check runs first.
+      const previousPath = process.env.PATH;
+      process.env.PATH = dir;
+      try {
+        const captured: Captured = {uploads: []};
+        const adapters = fakeAdapters({dump: (env, outFile) => spawnPgDump(env, outFile, join(dir, 'does-not-exist.crt'))}, captured);
+        await assert.rejects(runProductionBackup(baseEnv(), adapters, {backupClass: 'hourly', scheduledAt: TEST_SCHEDULED_AT}), /BACKUP_CA_ROOT_MISSING/);
+        assert.equal(captured.uploads.length, 0);
+      } finally { process.env.PATH = previousPath; }
+    } finally { await rm(dir, {recursive: true, force: true}).catch(() => {}); }
+  });
+
+  await check('32 (F8-D). a non-file CA root (directory, or a symlink to a valid file) fails closed', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'backup-ca-nonfile-'));
+    try {
+      await assert.rejects(assertCaRootUsable(dir), /BACKUP_CA_ROOT_NOT_ORDINARY_FILE/, 'a directory must be rejected');
+      const realCa = join(dir, 'real-ca.crt');
+      await writeFile(realCa, 'SYNTHETIC CA BUNDLE');
+      const linkedCa = join(dir, 'linked-ca.crt');
+      await symlink(realCa, linkedCa);
+      await assert.rejects(assertCaRootUsable(linkedCa), /BACKUP_CA_ROOT_NOT_ORDINARY_FILE/, 'a symlink must be rejected even when it points at a valid file');
+      await assert.doesNotReject(assertCaRootUsable(realCa), 'sanity: the real ordinary file it points to is accepted directly');
+    } finally { await rm(dir, {recursive: true, force: true}).catch(() => {}); }
+  });
+
+  await check('33 (F8-E). an unreadable CA root fails closed, via a deterministic injected EACCES (not chmod/root-dependent)', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'backup-ca-unreadable-'));
+    try {
+      const caPath = join(dir, 'unreadable-ca.crt');
+      await writeFile(caPath, 'SYNTHETIC CA BUNDLE');
+      const alwaysDenied: FsAccessChecker = async () => { throw Object.assign(new Error('EACCES'), {code: 'EACCES'}); };
+      await assert.rejects(assertCaRootUsable(caPath, alwaysDenied), /BACKUP_CA_ROOT_UNREADABLE/);
+      // Sanity: the same file with the real accessibility checker (default) is accepted.
+      await assert.doesNotReject(assertCaRootUsable(caPath));
+    } finally { await rm(dir, {recursive: true, force: true}).catch(() => {}); }
+  });
+
+  await check('34 (F8-F). unrelated child processes (pg_restore --list, version probes) remain fully secret-free, including a fake ambient CA path', async () => {
+    const source = {
+      PATH: '/usr/bin', HOME: '/home/runner',
+      PGSSLROOTCERT: '/tmp/fake-attacker-cert.pem', SYNTHETIC_R2_SECRET: 'must-not-leak',
+      AGE_BACKUP_RECIPIENT: 'must-not-leak-either', GITHUB_ACTIONS_DISPATCH_TOKEN: 'must-not-leak-either',
+    } as unknown as NodeJS.ProcessEnv;
+    const result = minimalPgChildEnv(source, {});
+    assert.equal(result.PGSSLROOTCERT, undefined);
+    assert.equal(result.SYNTHETIC_R2_SECRET, undefined);
+    assert.equal(result.AGE_BACKUP_RECIPIENT, undefined);
+    assert.equal(result.GITHUB_ACTIONS_DISPATCH_TOKEN, undefined);
+    assert.equal(result.PATH, '/usr/bin');
   });
 
   await goAgeInteroperabilityProof();

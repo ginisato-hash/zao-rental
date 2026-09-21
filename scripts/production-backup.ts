@@ -1,7 +1,7 @@
 import {spawn} from 'node:child_process';
 import {createHash, randomUUID} from 'node:crypto';
-import {createReadStream, createWriteStream} from 'node:fs';
-import {mkdtemp, rm, lstat} from 'node:fs/promises';
+import {constants as fsConstants, createReadStream, createWriteStream} from 'node:fs';
+import {access, mkdtemp, rm, lstat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {Readable, Writable, Transform} from 'node:stream';
@@ -17,6 +17,15 @@ export const EXPECTED_PRODUCTION_BUCKET = 'zao-rental-prod-backup';
 export const EXPECTED_PRODUCTION_PORT = '5432';
 /** SHA-256 of the accepted Production direct-host name (lowercased/trimmed). Not the hostname itself. */
 export const EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256 = '7ad9939654fde65fa8bf8c4c043e33ca9053036d2137cf7616d365a11876c3fc';
+/**
+ * The trusted libpq CA root for `sslmode=verify-full`, per Neon's secure-connection guidance
+ * (https://neon.com/docs/connect/connect-securely): Neon serves the public ISRG Root X1 chain, and a
+ * verify-full client must be given an explicit root path rather than relying on an ambient
+ * `~/.postgresql/root.crt` or another accidental default. Fixed to the pinned Debian-family
+ * `postgres:18` Production Backup runtime's system CA bundle — never sourced from an env var, so an
+ * ambient/attacker-supplied `PGSSLROOTCERT` can never redirect it.
+ */
+export const EXPECTED_PRODUCTION_CA_ROOT = '/etc/ssl/certs/ca-certificates.crt';
 export const PGAPPNAME = 'zao-rental-production-backup';
 export const LOCK_TIMEOUT_MS = 30_000;
 /** 09:17 UTC / 18:17 JST — a documented low-activity window; the external scheduler dispatches hourly at :17. */
@@ -135,19 +144,60 @@ export function minimalPgChildEnv(source: NodeJS.ProcessEnv, extra: Record<strin
   return {...out, ...extra} as NodeJS.ProcessEnv;
 }
 
+/** Injectable so tests can reproduce EACCES deterministically without depending on chmod/root semantics,
+ * which are unreliable across OSes and inside containers that run as root. Production never overrides this. */
+export type FsAccessChecker = (path: string, mode: number) => Promise<void>;
+const realAccessChecker: FsAccessChecker = (path, mode) => access(path, mode);
+
+/**
+ * Fails closed before any Production `pg_dump` (and therefore before any DB connection attempt) if the
+ * trusted CA bundle is missing, not an ordinary file (a directory, device, or symlink — even one that
+ * ultimately points at a valid file), or unreadable. Errors are fixed, credential-free codes only.
+ */
+export async function assertCaRootUsable(path: string, accessCheck: FsAccessChecker = realAccessChecker): Promise<void> {
+  let stat;
+  try {
+    stat = await lstat(path);
+  } catch {
+    throw new Error('BACKUP_CA_ROOT_MISSING');
+  }
+  if (stat.isSymbolicLink() || !stat.isFile()) throw new Error('BACKUP_CA_ROOT_NOT_ORDINARY_FILE');
+  try {
+    await accessCheck(path, fsConstants.R_OK);
+  } catch {
+    throw new Error('BACKUP_CA_ROOT_UNREADABLE');
+  }
+}
+
+/**
+ * The exact env passed to the Production `pg_dump` child, as its own pure/testable unit: `caRootPath`
+ * defaults to the real committed constant and is never sourced from an env var, so `source`'s ambient
+ * `PGSSLROOTCERT` (however it got there) can never reach the child — `minimalPgChildEnv`'s allow-list
+ * does not even carry that key through, and this function only ever sets it from its own parameter.
+ */
+export function buildPgDumpChildEnv(env: BackupEnv, caRootPath: string = EXPECTED_PRODUCTION_CA_ROOT, source: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return minimalPgChildEnv(source, {
+    PGHOST: env.PGHOST, PGPORT: env.PGPORT, PGDATABASE: env.PGDATABASE,
+    PGUSER: env.PGUSER, PGPASSWORD: env.PGPASSWORD,
+    PGSSLMODE: 'verify-full', PGCHANNELBINDING: 'require', PGSSLROOTCERT: caRootPath, PGAPPNAME,
+    PGOPTIONS: `-c lock_timeout=${LOCK_TIMEOUT_MS}`,
+  });
+}
+
 // ---- Default adapters: real pg_dump/pg_restore/age/R2 I/O. Tests inject fakes instead. ----
 
 export interface DumpResult { exitCode: number; stderrTail: string }
 
-export async function spawnPgDump(env: BackupEnv, outFile: string): Promise<DumpResult> {
+export async function spawnPgDump(env: BackupEnv, outFile: string, caRootPath: string = EXPECTED_PRODUCTION_CA_ROOT): Promise<DumpResult> {
+  // Fail closed before ever spawning pg_dump — and therefore before any DB connection attempt.
+  try {
+    await assertCaRootUsable(caRootPath);
+  } catch (error) {
+    return {exitCode: 1, stderrTail: (error as Error).message};
+  }
   return new Promise((resolve) => {
     const child = spawn('pg_dump', ['-Fc', '--no-owner', '--no-acl', '-f', outFile], {
-      env: minimalPgChildEnv(process.env, {
-        PGHOST: env.PGHOST, PGPORT: env.PGPORT, PGDATABASE: env.PGDATABASE,
-        PGUSER: env.PGUSER, PGPASSWORD: env.PGPASSWORD,
-        PGSSLMODE: 'verify-full', PGCHANNELBINDING: 'require', PGAPPNAME,
-        PGOPTIONS: `-c lock_timeout=${LOCK_TIMEOUT_MS}`,
-      }),
+      env: buildPgDumpChildEnv(env, caRootPath),
       stdio: ['ignore', 'ignore', 'pipe'] as const,
     });
     let stderr = '';

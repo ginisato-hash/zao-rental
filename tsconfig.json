@@ -39,7 +39,8 @@
     "tests/**/*.ts",
     "playwright.config.ts",
     "tests/**/*.tsx",
-    "apps/webhook-ingress/**/*.ts"
+    "apps/webhook-ingress/**/*.ts",
+    "apps/backup-scheduler-worker/**/*.ts"
   ],
   "exclude": [
     "node_modules",

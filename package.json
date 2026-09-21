@@ -60,6 +60,8 @@
     "test:readiness-guest": "node --import tsx tests/readiness/guest-security.ts",
     "test:readiness-ui": "node --import tsx tests/readiness/guest-ui.ts",
     "test:integration-p2": "node --import tsx tests/readiness/production-composition.ts && node --import tsx tests/readiness/backup-restore.ts",
+    "backup:production": "node --import tsx scripts/production-backup.ts",
+    "test:production-backup": "node --import tsx tests/readiness/production-backup.ts",
     "test:square-activation": "node scripts/square-activation.mjs",
     "test:staff-diagnostic": "node --import tsx tests/readiness/staff-diagnostic.ts",
     "test:activation-p4": "node --import tsx tests/readiness/booking-access.ts && node --import tsx tests/readiness/sandbox-booking.ts && node --import tsx tests/readiness/booking-access-ui.ts",
@@ -96,6 +98,7 @@
     "@aws-sdk/client-s3": "3.1131.0",
     "@aws-sdk/s3-request-presigner": "3.1131.0",
     "@node-rs/argon2": "2.2.1",
+    "age-encryption": "0.3.1",
     "better-auth": "1.7.4",
     "drizzle-orm": "0.45.2",
     "jsqr": "1.4.0",
@@ -115,10 +118,10 @@
     "@types/react-dom": "19.3.0",
     "ajv": "8.20.0",
     "embedded-postgres": "18.4.0-beta.17",
+    "esbuild": "0.28.2",
     "eslint": "9.39.3",
     "eslint-config-next": "16.3.4",
     "tsx": "4.23.13",
-    "typescript": "5.9.3",
-    "esbuild": "0.28.2"
+    "typescript": "5.9.3"
   }
 }

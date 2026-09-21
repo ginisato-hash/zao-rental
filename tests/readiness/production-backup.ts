@@ -565,6 +565,10 @@ async function syntheticPg18IntegrationProof(): Promise<void> {
     return;
   }
   console.log(`Using ${runner.label} for the PG18 round-trip proof.`);
+  // A worktree's isolated-Postgres port is derived deterministically from its own path (see
+  // scripts/worktree.ts), so two startIsolatedPostgres() instances cannot run concurrently from the
+  // same worktree. The source `db` is fully stopped — and its port freed — before `restoreDb` starts.
+  let sourceStopped = false;
   const db = await startIsolatedPostgres();
   try {
     await db.pool.query('CREATE TABLE synthetic_widgets (id serial primary key, name text not null, created_at timestamptz not null default now())');
@@ -576,6 +580,8 @@ async function syntheticPg18IntegrationProof(): Promise<void> {
     assert.equal(await runner.restoreList(dumpFile), 0, `${runner.label} pg_restore --list failed`);
     const plaintext = await readFile(dumpFile);
     const sha256Before = createHash('sha256').update(plaintext).digest('hex');
+    await db.stop();
+    sourceStopped = true;
     const identity = await age.generateIdentity();
     const recipient = await age.identityToRecipient(identity);
     const ciphertextPath = join(dir, 'synthetic.dump.age');
@@ -597,7 +603,7 @@ async function syntheticPg18IntegrationProof(): Promise<void> {
       console.log(`PASS F3. mandatory PostgreSQL 18 dump -> validate -> encrypt(streaming) -> decrypt -> restore proof via ${runner.label} reproduces identical rows (mechanism proof only, not Production restore acceptance)`);
     } finally { await restoreDb.stop(); }
   } finally {
-    await db.stop();
+    if (!sourceStopped) await db.stop();
     await rm(dir, {recursive: true, force: true}).catch(() => {});
   }
 }

@@ -104,8 +104,15 @@ Run from the isolated `prelaunch-uiux-finishing` worktree, never the maintained 
 
 ## Screenshots
 
-- `screenshots/ux5a-after/staff-home-{390,1440}.png` — full dashboard with a real Today card pair, real returns counters and real exception rows
-- `screenshots/ux5a-after/staff-rentals-preselected-390.png` — `/staff/rentals?booking=<id>` landing already showing that booking's pickup detail
+- `screenshots/ux5a-after/staff-home-{390,1440}.png` — full dashboard with a real Today card pair,
+  real returns counters and real exception rows. **Historical only — stale as of UX-5D.** The
+  separate "Returns in progress" and "Exceptions (compact)" sections shown here no longer exist;
+  see `screenshots/ux5e-final/` (referenced from `STAFF_MANIFEST_UI_INTEGRATION.md`) for the
+  current Manifest-based "本日の業務" section.
+- `screenshots/ux5a-after/staff-rentals-preselected-390.png` — `/staff/rentals?booking=<id>`
+  landing already showing that booking's pickup detail. Still visually representative (this page
+  was not changed by UX-5C/D/E); `screenshots/ux5e-final/staff-rentals-preselected-390.png` is the
+  current-HEAD capture if byte-exact evidence is needed.
 
 ## Foundation CI
 

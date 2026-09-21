@@ -166,6 +166,15 @@ Foundation CI artifact (`.github/workflows/ci.yml`'s `upload-artifact` step alre
 `.local/screenshots/`). No horizontal overflow is asserted (`scrollWidth<=innerWidth+1`) at both
 widths before each screenshot is taken.
 
+**UX-5E git-committed evidence**: `.local/` is gitignored, so none of the above ever reaches git —
+each is only ever visible via that run's CI artifact download. Since `docs/execution/prelaunch-uiux-v2/screenshots/ux5a-after/`
+was the last Staff Home evidence actually committed to git, and it predates the UX-5C/D Manifest
+integration (its "Returns in progress"/"Exceptions" sections no longer exist), UX-5E downloaded
+the Foundation CI `235fcc9` artifact and committed the four PNGs above into
+`docs/execution/prelaunch-uiux-v2/screenshots/ux5e-final/` as the current, non-stale, git-tracked
+evidence set. `STAFF_DAILY_FLOW.md`'s Screenshots section now marks `ux5a-after/staff-home-*` as
+historical and points here.
+
 ## 12. Local test results
 
 `npm run lint` PASS · `npm run typecheck` PASS · `npm run build` PASS · `npm run check:secrets`

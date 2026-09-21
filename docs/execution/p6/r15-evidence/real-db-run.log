@@ -1,0 +1,32 @@
+PASS all migrations 0001-0029 recorded with hashes
+PASS role boundaries: receiver/dispatcher/worker/diagnostic/public forbidden operations
+PASS receiver duplicate/hash conflict and dispatcher link commit barrier
+R14_SQL_FAILURE {"operation":"SELECT square_webhook.receive($1,$2,$3,$4,$5,$6) AS","code":"42501","routine":"aclcheck_error","position":"8"}
+PASS signed receiver ACK awaits real commit; DB role failure gives 503 and no receipt
+PASS lease expiry, interruption and stale finalize fenced by real DB
+PASS real DB attempt cutoff stays DEAD
+PASS real DB deadline cutoff stays DEAD
+PASS real DB sticky AUTH_BLOCKED prevents new-event worker restart
+PASS real DB sticky RATE_LIMITED prevents new-event worker restart
+PASS new event while active preserves signal and terminal creates next generation
+PASS real projection rejects expired HOLD and retains original stock/contract
+PASS real projection rejects due boundary and retains original stock/contract
+PASS real projection rejects missing gear and retains original stock/contract
+PASS real projection rejects missing wear and retains original stock/contract
+PASS real projection rejects transfer attention and retains original stock/contract
+PASS existing immutable amount and snapshot reject direct edits
+PASS real projection rejects synthetic price snapshot mismatch
+PASS stale revision rejected without business writes
+PASS projection SQL failure after writes rolls back business/history/journal
+PASS two dispatchers/workers then R12 truth and two R13 projectors; COMMIT response loss exactly once
+PASS security metadata: function search paths and runtime attributes
+PASS owned receiver connection terminated before COMMIT: 503 and no durable receipt
+PASS ACK is blocked before COMMIT; independent connection sees receipt only after COMMIT
+PASS fixed target composition: foreign event/job untouched, fixture lookup, truth and projection replay
+PASS development scope SQL rejects Production and non-one batch; production composition refuses startup
+PASS real DB distinct DUE_ONLY
+PASS real DB distinct CANCELLED_TRANSFER
+PASS real DB distinct IDENTITY_MISMATCH
+PASS R15 production-build Preview permit uses exact DB role/target; committed replay unchanged
+PASS R15 dedicated ingress to real receiver role: durable insert, duplicate replay and no raw body
+PASS R15 targeted grants deny unscoped dispatch and claim without weakening target access

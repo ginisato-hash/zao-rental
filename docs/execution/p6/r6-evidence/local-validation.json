@@ -1,0 +1,83 @@
+{
+  "recorded_at_utc": "2026-09-14T12:18:34.894736+00:00",
+  "authority_commit": "78d809b42edc346715b77dbee37e85753bce142f",
+  "node": "v24.15.0",
+  "npm": "11.12.1",
+  "tests_pass": 69,
+  "tests_failed": 0,
+  "tests_skipped": 0,
+  "checks": [
+    {
+      "name": "narrow",
+      "args": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/readiness/square-s1-v2.test.ts",
+        "tests/readiness/square-s1.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts"
+      ],
+      "start": "2026-09-14T12:17:13.234355+00:00",
+      "end": "2026-09-14T12:17:13.572308+00:00",
+      "exit_code": 0,
+      "log": "predeploy-narrow.log"
+    },
+    {
+      "name": "secret-scan",
+      "args": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "start": "2026-09-14T12:17:13.572821+00:00",
+      "end": "2026-09-14T12:17:13.905056+00:00",
+      "exit_code": 0,
+      "log": "predeploy-secret-scan.log"
+    },
+    {
+      "name": "lint",
+      "args": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "start": "2026-09-14T12:17:13.905307+00:00",
+      "end": "2026-09-14T12:17:19.084759+00:00",
+      "exit_code": 0,
+      "log": "predeploy-lint.log"
+    },
+    {
+      "name": "typecheck",
+      "args": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "start": "2026-09-14T12:17:19.085128+00:00",
+      "end": "2026-09-14T12:17:22.684387+00:00",
+      "exit_code": 0,
+      "log": "predeploy-typecheck.log"
+    },
+    {
+      "name": "build",
+      "args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "start": "2026-09-14T12:17:22.684667+00:00",
+      "end": "2026-09-14T12:17:33.329264+00:00",
+      "exit_code": 0,
+      "log": "predeploy-build.log"
+    }
+  ],
+  "provider_requests": 0,
+  "s1_posts": 0,
+  "deployments": 0,
+  "external_db": 0,
+  "r2": 0,
+  "secret_exposure": 0
+}

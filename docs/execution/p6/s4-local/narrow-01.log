@@ -1,0 +1,99 @@
+✔ SQL repository commits INSERTED before resolving and binds exact metadata only (0.908792ms)
+✔ SQL repository commits DUPLICATE before resolving and binds exact metadata only (0.094375ms)
+✔ SQL repository commits HASH_CONFLICT before resolving and binds exact metadata only (0.09025ms)
+✔ failure/uncertain BEGIN rolls back/destroys connection, never retries or leaks errors (0.311625ms)
+✔ failure/uncertain SET LOCAL rolls back/destroys connection, never retries or leaks errors (0.075375ms)
+✔ failure/uncertain square_webhook.receive rolls back/destroys connection, never retries or leaks errors (0.082166ms)
+✔ failure/uncertain COMMIT rolls back/destroys connection, never retries or leaks errors (0.086208ms)
+✔ unknown database receipt fails before COMMIT (0.110375ms)
+✔ SQL claim returns only safe signal/lease metadata; settle binds fencing token and bounded failure code (0.222417ms)
+✔ empty queue and successful terminal mark; all transaction paths release (0.121791ms)
+✔ static additive migration: environment-scoped durable dedupe, bounded audit/retries, no business/raw payload storage (0.196084ms)
+✔ static queue fencing/crash recovery: SKIP LOCKED, expired lease reclaim, bounded attempts, DB clock after lock (0.068041ms)
+✔ payment.created signed receipt persists only whitelisted signal metadata (20.655042ms)
+✔ payment.updated signed receipt persists only whitelisted signal metadata (0.377541ms)
+✔ missing/invalid signature 0 never opens inbox or parses malformed JSON (0.252541ms)
+✔ missing/invalid signature 3 never opens inbox or parses malformed JSON (0.232792ms)
+✔ missing/invalid signature 44 never opens inbox or parses malformed JSON (0.261834ms)
+✔ signed malformed UTF8/JSON/envelope 7b rejects before persistence (0.397084ms)
+✔ signed malformed UTF8/JSON/envelope ff rejects before persistence (0.212417ms)
+✔ signed malformed UTF8/JSON/envelope 6e756c6c rejects before persistence (0.169792ms)
+✔ signed malformed UTF8/JSON/envelope 5b5d rejects before persistence (0.16925ms)
+✔ signed malformed UTF8/JSON/envelope 3432 rejects before persistence (0.229ms)
+✔ missing/invalid identity {"type":"payment.updated","merchant_id":"MLKDVEDH1ME21","data":{"objec (0.185ms)
+✔ missing/invalid identity {"event_id":"","type":"payment.updated","merchant_id":"MLKDVEDH1ME21", (0.269291ms)
+✔ missing/invalid identity {"event_id":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (0.225625ms)
+✔ missing/invalid identity {"event_id":"bad\nline","type":"payment.updated","merchant_id":"MLKDVE (0.139416ms)
+✔ missing/invalid identity {"event_id":"fixture-event","type":"payment.updated","merchant_id":"", (0.12175ms)
+✔ missing/invalid identity {"event_id":"fixture-event","merchant_id":"MLKDVEDH1ME21","data":{"obj (0.149667ms)
+✔ missing/invalid identity {"event_id":"fixture-event","type":"payment.updated","merchant_id":"ML (0.207334ms)
+✔ missing/invalid identity {"event_id":"fixture-event","type":"payment.updated","merchant_id":"ML (0.185666ms)
+✔ missing/invalid identity {"event_id":"fixture-event","type":"payment.updated","merchant_id":"ML (1.405875ms)
+✔ signed wrong merchant rejected for supported and unsupported event (0.345958ms)
+✔ unsupported signed correct-merchant envelope is explicitly ignored without a payment ACK/retry loop (0.205833ms)
+✔ raw whitespace/order remain signed exactly; request host/forwarded headers cannot replace configured URL (0.392542ms)
+✔ oversized body actual limit with content-length undefined (0.340291ms)
+✔ oversized body actual limit with content-length 65537 (0.180666ms)
+✔ oversized body actual limit with content-length 1 (0.169708ms)
+✔ stream read once, exact 64KiB allowed; missing content length does not permit excess chunks (0.724708ms)
+✔ stream read failure is redacted and never inserts (0.191625ms)
+✔ 20 concurrent deliveries and same stored key after a lost ACK are deduped by fixture repository (1.557166ms)
+✔ event ID reuse with different raw hash records conflict and preserves original signal (0.277ms)
+✔ out-of-order updated/created events are separate signals; no provider or business state is available to handler (0.4025ms)
+✔ retry headers grant no authority {} (0.19525ms)
+✔ retry headers grant no authority {"square-retry-number":"1","square-retry-reason":"http_timeout"} (0.139625ms)
+✔ retry headers grant no authority {"square-retry-number":"-999"} (0.130333ms)
+✔ ACK waits for successful persistence; DB failure/body details never appear in response or logs (0.380208ms)
+✔ method guard and missing config fail closed without pool factory (0.102208ms)
+✔ explicit Sandbox Preview config only, fixed merchant/version/dedicated TLS receiver identity, no access-token dependency (0.327625ms)
+✖ actual Next route exports GET405 and unconfigured POST503 in isolated Node (no server/browser/DB) (113.938333ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 48
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 572.093458
+
+✖ failing tests:
+
+test at tests/unit/square-webhook-receiver.test.ts:1:11496
+✖ actual Next route exports GET405 and unconfigured POST503 in isolated Node (no server/browser/DB) (113.938333ms)
+  AssertionError [ERR_ASSERTION]: node:internal/modules/package_json_reader:301
+    throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+          ^
+
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'server-only' imported from /Users/gini/Projects/zao-rental/.local/worktrees/production-p6/apps/web/src/lib/square-webhook-runtime.ts
+      at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)
+      at packageResolve (node:internal/modules/esm/resolve:764:81)
+      at moduleResolve (node:internal/modules/esm/resolve:855:18)
+      at defaultResolve (node:internal/modules/esm/resolve:988:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:697:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:714:38)
+      at nextStep (node:internal/modules/customization_hooks:189:26)
+      at resolveBaseSync (file:///Users/gini/Projects/zao-rental/.local/worktrees/production-p6/node_modules/tsx/dist/register-SoqaU4rg.mjs:2:10932)
+      at resolveDirectorySync (file:///Users/gini/Projects/zao-rental/.local/worktrees/production-p6/node_modules/tsx/dist/register-SoqaU4rg.mjs:2:12238)
+      at resolveTsPathsSync (file:///Users/gini/Projects/zao-rental/.local/worktrees/production-p6/node_modules/tsx/dist/register-SoqaU4rg.mjs:2:13445) {
+    code: 'ERR_MODULE_NOT_FOUND'
+  }
+
+  Node.js v24.15.0
+
+
+  1 !== 0
+
+      at TestContext.<anonymous> (/Users/gini/Projects/zao-rental/.local/worktrees/production-p6/tests/unit/square-webhook-receiver.test.ts:115:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

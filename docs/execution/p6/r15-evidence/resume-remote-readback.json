@@ -1,0 +1,27 @@
+{
+  "at": "2026-09-15T07:44:11.179159+00:00",
+  "head": "7a9b4e7836a12de202bf6a91ee6fb404e555c25f",
+  "files": [
+    {
+      "path": "docs/execution/p6/r15-evidence/RESUME_RESULT.md",
+      "sha256": "3ed1bde9e0dcb91e49a500c793d31480a1bed55aac4d8ca6deefd1896427bb02",
+      "exact": true
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/ingress-http-smoke.json",
+      "sha256": "74f98bdb33a95e084d747a2e8afcfefa163ac94b199d00278869e2a0ed2662b9",
+      "exact": true
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/bundle-validation.json",
+      "sha256": "412be2d6005f4365430084966b041d3db87ee2dfca7aa09eaff0530fe58d956c",
+      "exact": true
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_STATUS.json",
+      "sha256": "38d4bded384e56f73799c899d04c7e86456768d61a5828e3671053fbede36fb7",
+      "exact": true
+    }
+  ],
+  "beforeExternalCleanup": true
+}

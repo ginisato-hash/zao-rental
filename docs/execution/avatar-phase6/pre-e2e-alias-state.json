@@ -1,0 +1,13 @@
+{
+  "bootstrapAlias": {
+    "alias": "zao-rental-avatar-preview-zao-food-map.vercel.app",
+    "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+    "uid": "24ccbdf5610cf73d0bffe8c647b883d0f8506ec88810fd6a35ce760597625c5ffb1a3c30f583f305267bd9cc2b3c86585f424a939f1f936e7b73551f1205d62d",
+    "deploymentId": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL"
+  },
+  "previewAliases": [],
+  "historicalProductionDeployments": 2,
+  "historicalProductionAliases": 2,
+  "currentProductionDeployments": 1,
+  "currentProductionAliases": 1
+}

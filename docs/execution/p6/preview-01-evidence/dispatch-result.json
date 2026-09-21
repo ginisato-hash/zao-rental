@@ -1,0 +1,30 @@
+{
+  "exit_code": 0,
+  "at": "2026-09-14T02:05:43.104920+00:00",
+  "raw_output_saved": false,
+  "top_level_keys": [
+    "status",
+    "deployment",
+    "message",
+    "next"
+  ],
+  "id": null,
+  "url": null,
+  "status": "ok",
+  "readyState": null,
+  "state": null,
+  "target": null,
+  "deploymentId": null,
+  "inspectorUrl": null,
+  "dashboardUrl": null,
+  "reason": null,
+  "deployment": {
+    "id": "dpl_93LKqdiYs68WSWjfDPCG5YdpyiBs",
+    "url": "https://zao-rental-qixd46nkq-zao-food-map.vercel.app",
+    "readyState": "INITIALIZING",
+    "target": "production"
+  },
+  "deployment_urls": [
+    "https://zao-rental-qixd46nkq-zao-food-map.vercel.app"
+  ]
+}

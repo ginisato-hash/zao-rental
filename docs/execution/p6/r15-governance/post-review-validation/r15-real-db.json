@@ -1,0 +1,19 @@
+{
+  "kind": "LOCAL_REAL_POSTGRESQL_SYNTHETIC_WEBHOOK",
+  "results": [
+    {
+      "name": "R15 production-build Preview permit uses exact DB role/target; committed replay unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "R15 dedicated ingress to real receiver role: durable insert, duplicate replay and no raw body",
+      "result": "PASS"
+    },
+    {
+      "name": "R15 targeted grants deny unscoped dispatch and claim without weakening target access",
+      "result": "PASS"
+    }
+  ],
+  "hostedDb": false,
+  "actualSquareRequests": 0
+}

@@ -1,0 +1,7 @@
+{
+  "atUtc": "2026-09-15T11:48:35.903430+00:00",
+  "status": "NOT_RUN",
+  "roleProvisionInvocations": 0,
+  "newRuntimeCredentials": 0,
+  "reason": "Stopped under authority section17: provider credential request HTTP200, but local UI-to-RAM handoff did not produce an accepted connection URI. No DB client/config was created; no credential retry."
+}

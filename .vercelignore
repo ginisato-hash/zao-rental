@@ -1,0 +1,16 @@
+.local
+node_modules/
+**/.next/
+.vercel/
+.git/
+.env*
+**/*.tsbuildinfo
+**/__pycache__/
+playwright-report/
+test-results/
+docs/execution/sources/
+docs/execution/avatar-artwork-activation/artwork/*.webp
+docs/execution/avatar-artwork-activation/artwork/*.png
+*.log
+docs/**/*.png
+docs/**/*.webp

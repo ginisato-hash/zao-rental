@@ -1,0 +1,15 @@
+# Notification and recovery core
+
+The immutable `rental_notifications` receipt remains the canonical durable confirmation event. BookingService attempts to enqueue only after committing the business transaction. An enqueue outage cannot roll back that transaction; the explicit notification worker reconciles any missing outbox row from the immutable event. It never calls a mail provider in the booking transaction.
+
+Migration0034 adds the delivery outbox and restricted functions;0001–0033 are unchanged. Recipient is a booking reference, not a copied address. Bodies/codes are materialized only immediately before the server-owned delivery adapter. The worker role cannot directly read contact/proof tables or mutate booking/payment/inventory/custody. Outbox claims precede dispatch. Ambiguous timeout/crash/response loss becomes UNKNOWN and allows only provider lookup. Known NOT_ACCEPTED may retry after delay, at most3 dispatch attempts. A generic preaccept timeout is still UNKNOWN unless the adapter has authoritative nonacceptance proof. No exactly-once claim.
+
+Existing BookingRecovery derives codes with separate purposes; only hashes remain in its existing table. Authenticated queue preparation reuses the original ownership checks. New public booking-reference/email requests return the same generic response for matching,missing,foreign and booking-budget-suppressed inputs. Existing durable GuestSecurity peer/global limits protect the route. Public codes expire after15minutes or the original return deadline, whichever is earlier; exchange and scoped revocation reuse the original functions. This grants read-only booking access, never guest checkout authority. Guest logout and independently saved booking read capability retain their existing distinct purposes.
+
+Staff status is restricted by maintained session, BOOKING_VIEW and store scope. Manual resend additionally requires explicit NOTIFICATION_RESEND (no default role grant), an enumerated reason, audited durable idempotency and per-booking cooldown/day cap. UNKNOWN/SENDING/pending child generations cannot be bypassed by requesting a new manual generation. No email/code/body is in the list or audit.
+
+Normal Production composition exposes the queue but keeps notification provider UNCONNECTED. A separate server integration port validates a later Owner-selected provider binding/credentials; no provider SDK, network transport, scheduler,contract or real credential is supplied. The test-only Loopback adapter stays outside product imports. A queued message is never described as sent. JA/EN templates point to the existing non-bearer reservation/QR page; the recovery proof is entered by POST, never in URLs.
+
+Current commercial checkout gates remain unchanged. Synthetic confirmed bookings are used for all proofs; this is not Production booking or delivery acceptance.
+
+Review corrections: booking notification locale is frozen with the canonical booking and checkout intent. runBatch performs grace-period UNKNOWN lookups only, with a ten-minute durable probe reservation; missing lookup never becomes resend authority. Production provider remains unconnected.

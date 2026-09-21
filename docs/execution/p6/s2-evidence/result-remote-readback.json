@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-14T15:48:15.639560+00:00",
+  "commit": "5feffda000c8bb2ec9bb85f8190f23a338f5d73c",
+  "tree": "0cf748c34e784b20eb362e47a6301b926cca7140",
+  "branch": "codex/external-acceptance-p6",
+  "previous_head": "8ec42146401a4469b55f453ff28867ba5035bbc1",
+  "push_exit_code": 0,
+  "remote_head": "5feffda000c8bb2ec9bb85f8190f23a338f5d73c",
+  "files_sha256": {
+    "docs/execution/p6/s2-evidence/safe-result.json": "6633db85d0503edbab4e6814a3eb9f005d303de5ebed5890db8a861bc3ec4d9d",
+    "docs/execution/p6/s2-evidence/operation-manifest.json": "4fa694c818cdbe332523119e117c9d14de0c1b689322489eeeb3c4bc66f49e41",
+    "docs/execution/PRODUCTION_P6_STATUS.json": "7c6b4126606ced70bdbdace2ef96d22f58e363d2912645aa920107a061260ae5",
+    "docs/execution/PRODUCTION_P6_S3_GATE.md": "acb294db7ea35be9db69a43fb787cdfa2da144c3aba820b4ee71fb253989aef1"
+  },
+  "worktree_clean": true
+}

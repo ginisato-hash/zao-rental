@@ -1,0 +1,19 @@
+{
+  "completed_at": "2026-09-14T13:22:31.679745+00:00",
+  "result_commit": "ea2031ec6e5e1002716ffb38bd028da491181f95",
+  "result_pushed_read_back_before_cleanup": true,
+  "temporary_preflight_route_removed": true,
+  "temporary_s1_route_removed": true,
+  "local_validation": "69 tests pass; secret scan/lint/typecheck/build exit0",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "r7_deployment_deleted": true,
+  "r3_retained_ready": true,
+  "r7_guard_retained": true,
+  "historical_r4_r6_unchanged": true,
+  "browser_closed": true,
+  "owned_upload_staging_removed": true,
+  "merchant_metadata_registration": false,
+  "s2_gate_created": false,
+  "retry_count": 0
+}

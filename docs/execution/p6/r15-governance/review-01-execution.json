@@ -1,0 +1,74 @@
+{
+  "phase": "R15_GOVERNANCE_RESET",
+  "kind": "INITIAL_BEFORE_LIVE",
+  "start": 1,
+  "maximum_total": 3,
+  "head_sha": "902622767cb255685d80ea34da90bb21fc5fce73",
+  "authority_sha256": "fccdea3af3d5909200fad3760cc56e5112c045feb309572c38a3f5e6f32ffe11",
+  "snapshot_sha256": "70052d58e8133e9855a37f77e70ed9b71be25a188965ab80f81e173941c59cf8",
+  "startedAtUtc": "2026-09-15T09:47:03.226099+00:00",
+  "timeoutSeconds": 1200,
+  "state": "RETURNED",
+  "pid": 11319,
+  "instructionsSha256": "d2314478d18c58050f215c7e6ea03b45ccc0e978f64b6e637cc86e41db34a404",
+  "exitCode": 0,
+  "finishedAtUtc": "2026-09-15T09:53:01.635199+00:00",
+  "capabilities": {
+    "tools": [
+      "StructuredOutput"
+    ],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.220",
+    "fast_mode_state": "off"
+  },
+  "hook_events": [],
+  "rate_limit_events": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789482000,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "is_error": false,
+  "result_subtype": "success",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 379667,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 33452,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 379667,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 33452,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 379667,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 379667
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "reported_cost_usd": 2.779788,
+  "permission_denials": []
+}

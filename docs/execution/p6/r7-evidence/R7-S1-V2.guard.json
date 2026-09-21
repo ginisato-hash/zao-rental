@@ -1,0 +1,10 @@
+{
+  "state": "RESERVED_UNKNOWN_DO_NOT_RETRY",
+  "scope": "R7_S1_V2",
+  "deployment": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+  "origin": "https://zao-rental-p7g3j78c0-zao-food-map.vercel.app",
+  "head": "f9468c81144ba6c1db3bade87c6e72d55b8c07a8",
+  "postLimit": 1,
+  "squareGetLimit": 2,
+  "at": "2026-09-14T13:04:17.824Z"
+}

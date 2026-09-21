@@ -1,0 +1,12 @@
+{
+  "id": "dpl_2NcfhWfbzMrMiXLMm9HF7orj4mTQ",
+  "url": "zao-rental-webhook-sandbox-6mb7v1qq9-zao-food-map.vercel.app",
+  "projectId": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+  "target": "production",
+  "state": "READY",
+  "aliases": [
+    "zao-rental-webhook-sandbox.vercel.app",
+    "zao-rental-webhook-sandbox-zao-food-map.vercel.app"
+  ],
+  "sourceHead": "689d1a9d7b7624d6cc36be62161f5cffba829fbe"
+}

@@ -1,0 +1,41 @@
+
+> zao-rental@0.1.0 test:integration
+> node --import tsx scripts/integration.ts && node --import tsx scripts/ledger-integration.ts
+
+{"postgres":"PostgreSQL 18.4 on x86_64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.3.2), 64-bit","database":"zr_d62bfa7e5694","user":"zr_d62bfa7e5694","port":24962}
+PASS fresh migration and concurrent replay are idempotent
+PASS seed is worktree scoped and repeatable
+PASS concurrent duplicate telemetry records one event
+PASS SQL constraints reject unsupported event and foreign seed
+PASS failed transaction leaves no partial event
+PASS migration checksum drift is rejected
+PASS unauthenticated database client is rejected
+Owned PostgreSQL process stopped.
+PASS failed initial migration rolls back DDL and ledger, releases lock, then recovers
+PASS statement timeout cancels queries on two distinct pooled backends
+Owned recovery-test PostgreSQL process stopped.
+Integration: 9 passed; 0 skipped. No booking/payment runtime claims.
+PASS ordered concurrent migrations apply 0001 through 0034 exactly once
+PASS traceable synthetic sample is atomic and concurrent replay creates no duplicates or audit events
+PASS duplicate Asset UUID and duplicate pair source are rejected by PostgreSQL
+PASS two ski labels reference one pair; boards and boot pairs are one Asset each
+PASS product / variant / family / Asset references reject missing or mismatched parents
+PASS set definitions expose exact components without creating any physical stock
+PASS pole quantities count pairs, reject negatives in SQL and reject fractional API input
+PASS unknown ski BSL stays null; recorded BSL needs source; snowboard boots need no alpine BSL
+PASS Asset identity/custody/category cannot be rewritten; initial store history survives updates
+PASS optimistic update concurrency accepts only one writer and audits only committed changes
+PASS store/sport/age/tier/size/state search returns only exact ledger matches without substitution
+PASS real-DB HTTP boundary rejects anonymous, customer, read-only staff and out-of-store access
+PASS HTTP registration, reload and versioned update retain source and full history
+PASS every catalogue resource supports protected read/create/basic update and retains identity fields
+PASS malformed/oversized/origin-forged inputs and protected history writes are rejected
+PASS size format variants collide within one model/age/tier and size filters use the same key
+PASS provenance is unique within a resource and may cite the same source across model and Asset
+PASS HTTP rejects an Asset family that mismatches its variant and leaves no row or audit record
+PASS out-of-store update takes no Asset or pole row lock and cannot block the owning store
+PASS sample checksum mismatch is not silently imported as replacement inventory
+Owned ledger PostgreSQL process stopped.
+PASS failed 0002 upgrade preserves 0001 data, releases lock, then recovers without schema destruction
+Owned ledger-upgrade PostgreSQL process stopped.
+Ledger integration: 21 passed; 0 skipped. Synthetic samples only; no booking/fit/auth-provider claims.

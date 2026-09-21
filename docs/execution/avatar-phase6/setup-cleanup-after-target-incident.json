@@ -1,0 +1,19 @@
+{
+  "profile": "avatar-phase6-v2",
+  "officialProfileRemoveExit": 0,
+  "revocationReported": true,
+  "removalReported": true,
+  "revocationWarning": false,
+  "rawOutputCaptured": false,
+  "localSecretFilesRemoved": [
+    "runtime-config.json",
+    "runtime-roles.json",
+    "r2-read.json"
+  ],
+  "retained": [
+    "Preview-only sensitive Vercel env",
+    "Six least-privilege runtime roles",
+    "Private R2 exact3 objects",
+    "Existing read-only R2 key until expiry"
+  ]
+}

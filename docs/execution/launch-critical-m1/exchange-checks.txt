@@ -1,0 +1,8 @@
+PASS extension shortage protects the next booking and original facts
+PASS wrong-store and overdue in-transit replacement are denied without changing booking or stock location
+PASS prepared length replacement preserves confirmed booking and checks out amended allocation
+PASS OUT boot size exchange records factual receipt and replacement with unknown BSL retained
+PASS ski to board exchange is atomic even if replacement insertion fails after receipts
+PASS wear size exchange preserves total quantity, old receipt remains unavailable for same-day reuse
+PASS revoked maintained session cannot amend or use custody executor
+{"status":"PASS","cases":7,"providerCalls":0}

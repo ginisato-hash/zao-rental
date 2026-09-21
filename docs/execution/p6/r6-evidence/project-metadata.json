@@ -1,0 +1,15 @@
+{
+  "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+  "name": "zao-rental",
+  "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+  "framework": "nextjs",
+  "rootDirectory": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": null,
+  "nodeVersion": "24.x",
+  "ssoProtection": {
+    "deploymentType": "all_except_custom_domains"
+  },
+  "git_connected": false,
+  "checked_at_utc": "2026-09-14T12:23:43.962345+00:00"
+}

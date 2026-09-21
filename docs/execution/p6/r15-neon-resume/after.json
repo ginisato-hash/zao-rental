@@ -1,0 +1,17 @@
+{
+  "atUtc": "2026-09-15T09:25:03.550709+00:00",
+  "exitCode": 0,
+  "team": "zao-food-map",
+  "resourceCount": 1,
+  "resources": [
+    {
+      "id": "store_i5vh0ZEKo2ikcVo9",
+      "name": "zao-rental-sandbox-development",
+      "status": "available",
+      "installationId": "icfg_RDBXEWIHtuzcYNE8TZkFpmFX",
+      "product": "Neon",
+      "projects": []
+    }
+  ],
+  "rawPersisted": false
+}

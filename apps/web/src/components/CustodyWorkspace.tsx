@@ -3,6 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
 import {AssetQrInput} from './AssetQrInput';
 import type {StoreId} from '../../../../packages/contracts/src/ledger';
+import {bookingIdFromInput} from '../../../../packages/contracts/src/reservation-qr';
 import './holds.css';
 type Item={requirement_key:string;asset_id:string|null;pole_id:string|null;family:string;size:string;name:string;bsl_status:string|null};
 type Loan={id:string;family:string;requirement_key:string;state:string;version:number;asset_id:string|null;pole_id:string|null};
@@ -12,10 +13,15 @@ type Work={batches:{id:string}[];received:{loan_item_id:string;family:string;req
 type Pending={path:string;body:{requestKey:string;input:unknown}};
 const storage='zao-custody-pending-v1';
 function recover(stamp:string){try{const data=JSON.parse(sessionStorage.getItem(storage)??'null');if(data?.stamp===stamp&&data.pending)return {pending:data.pending as Pending,blocked:false};sessionStorage.removeItem(storage);return {pending:null,blocked:false};}catch{return {pending:null,blocked:true};}}
-export function CustodyWorkspace(p:{stamp:string;stores:StoreId[];canCheckout:boolean;canReturn:boolean}){return <StaffSessionBoundary stamp={p.stamp}><Workspace {...p}/></StaffSessionBoundary>;}
-function Workspace({stamp,stores,canCheckout,canReturn}:{stamp:string;stores:StoreId[];canCheckout:boolean;canReturn:boolean}){
- const [initial]=useState(()=>recover(stamp)),[pending,setPending]=useState<Pending|null>(initial.pending),[blocked,setBlocked]=useState(initial.blocked),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[booking,setBooking]=useState(''),[view,setView]=useState<View|null>(null),[fit,setFit]=useState(''),[verified,setVerified]=useState(false),[store,setStore]=useState(stores[0]!),[batch,setBatch]=useState<Batch|null>(null),[batchId,setBatchId]=useState(''),[work,setWork]=useState<Work|null>(null),[poleLoan,setPoleLoan]=useState(''),[inspection,setInspection]=useState('');
+export function CustodyWorkspace(p:{stamp:string;stores:StoreId[];canCheckout:boolean;canReturn:boolean;presetBooking?:string}){return <StaffSessionBoundary stamp={p.stamp}><Workspace {...p}/></StaffSessionBoundary>;}
+function Workspace({stamp,stores,canCheckout,canReturn,presetBooking}:{stamp:string;stores:StoreId[];canCheckout:boolean;canReturn:boolean;presetBooking?:string}){
+ // Booking search/QR on Staff Home land here preselected via ?booking=; only ever a
+ // canonical booking ID validated at mount time, never a raw unvalidated query value.
+ const [initial]=useState(()=>recover(stamp)),[pending,setPending]=useState<Pending|null>(initial.pending),[blocked,setBlocked]=useState(initial.blocked),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[booking,setBooking]=useState(()=>canCheckout&&bookingIdFromInput(presetBooking)?presetBooking!:''),[view,setView]=useState<View|null>(null),[fit,setFit]=useState(''),[verified,setVerified]=useState(false),[store,setStore]=useState(stores[0]!),[batch,setBatch]=useState<Batch|null>(null),[batchId,setBatchId]=useState(''),[work,setWork]=useState<Work|null>(null),[poleLoan,setPoleLoan]=useState(''),[inspection,setInspection]=useState('');
  const alive=useRef(true),generation=useRef(0),busyRef=useRef(false);useEffect(()=>{alive.current=true;const tickets=generation;return()=>{alive.current=false;tickets.current++;};},[]);
+ useEffect(()=>{if(!canCheckout)return;const id=bookingIdFromInput(presetBooking);if(!id)return;void load('/booking/'+id,setView);
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[canCheckout,presetBooking]);
  async function call(path:string,body?:unknown){const r=await fetch('/api/custody'+path,{method:body===undefined?'GET':'POST',cache:'no-store',headers:{'content-type':'application/json','x-zao-session':stamp},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await r.json();if([401,403].includes(r.status)||data.error==='SESSION_CHANGED'){invalidateStaffView();throw Object.assign(new Error('SESSION_CHANGED'),{definite:true});}if(!r.ok)throw Object.assign(new Error(data.error),{definite:r.status<500});return data;}
  function openBatch(data:Batch){setBatch(data);setBatchId(data.id);setStore(data.store_id as StoreId);setWork(null);}
  async function load(path:string,apply:(data:never)=>void){if(busyRef.current||pending)return;const g=++generation.current;busyRef.current=true;setBusy(true);try{const data=await call(path);if(alive.current&&g===generation.current)apply(data as never);}catch(e){if(alive.current&&g===generation.current)setMessage((e as Error).message);}finally{busyRef.current=false;if(alive.current)setBusy(false);}}

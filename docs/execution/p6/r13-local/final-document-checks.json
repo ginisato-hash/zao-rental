@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-09-15T01:51:29.592161+00:00",
+  "checkSecrets": {
+    "command": "npm run check:secrets",
+    "exitCode": 0,
+    "filesChecked": 1244,
+    "scope": "includes copied logs and new evidence; pattern scan is not comprehensive"
+  },
+  "diffCheck": {
+    "command": "git diff --check",
+    "exitCode": 0
+  },
+  "manifestSourceHashes": 12,
+  "supportingHashes": 4,
+  "jsonParse": "PASS",
+  "previousR4ThroughR12Status": "UNCHANGED",
+  "subsequentChanges": "This allowlisted summary and final git commit only; no product/test edits"
+}

@@ -1,0 +1,7 @@
+# CI transport isolation
+
+Initial PR18 run35149355808 failed in the pre-existing public browser response-loss test with ECONNRESET from route.fetch. The test used the same API request transport after many earlier page/API operations; its error included a synthetic local guest cookie in Playwright diagnostic text. No live provider or real customer/session credential was involved; the isolated Web/DB was stopped. The value is not reproduced here.
+
+The loss fixture now forwards the one intercepted POST using a fresh isolated local APIRequestContext, with maxRetries0/maxRedirects0, checks HTTP200, and aborts only delivery of that response to the browser. It preserves all exact-one payment/HOLD and unchanged TTL assertions, then disposes the context. It does not issue a second POST after an ambiguous result. Failed browser tests now emit a fixed safe diagnostic category instead of the raw request/cookie-bearing message. Both public guest5 and content5 browser cases passed locally, as did lint/typecheck/secret scan/diff check. CI must run the complete suite on this corrected fixture.
+
+This post-review change is confined to tests/public/normal-ui.ts and evidence. Production/product code, migrations, role provisioning and all files covered by the M1 financial/inventory correction review remain exactly the reviewed57bb77b tree. The bounded review was not rerun for this test transport change. The exact reviewed HEAD and full snapshot hashes remain recorded, not relabeled as a later HEAD.

@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-14T02:03:59.141967+00:00",
+  "head": "763caec75f3257abad6ad6d691637ae138c84cdb",
+  "remote": {
+    "refs/heads/codex/external-acceptance-p6": "763caec75f3257abad6ad6d691637ae138c84cdb",
+    "refs/heads/main": "3061dbbbe00294e5baebba2405028c907d6e6e85"
+  },
+  "worktree_clean": true,
+  "protection": "all_except_custom_domains",
+  "preview_limit": 1,
+  "square_limit": 0,
+  "db_limit": 0,
+  "production_limit": 0,
+  "status": "READY_FOR_DRY_INPUT_INSPECTION"
+}

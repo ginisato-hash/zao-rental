@@ -1,0 +1,42 @@
+{
+  "authority": "P6_R15_COMPLETION",
+  "operationId": "15000000-0000-4000-8000-000000000009",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "database": "zr_852b20c4d4b0",
+  "environment": "SANDBOX",
+  "merchantId": "MLKDVEDH1ME21",
+  "locationId": "LYCHY1VT97DQ3",
+  "country": "JP",
+  "amountJpy": 100,
+  "currency": "JPY",
+  "bookingId": "15000000-0000-4000-8000-000000000001",
+  "attemptId": "15000000-0000-4000-8000-000000000004",
+  "idempotencyKey": "15000000-0000-4000-8000-000000000005",
+  "branch": "codex/external-acceptance-p6",
+  "sourceHead": "689d1a9d7b7624d6cc36be62161f5cffba829fbe",
+  "operatorSourceHead": "023d819ef0ed5b427a2d80a34c68825ca6002f64",
+  "operatorDeployment": "dpl_AVUzH2qBPkmr3V15YefkogYvWKdM",
+  "operatorOrigin": "https://zao-rental-onu3i3rit-zao-food-map.vercel.app",
+  "notificationUrl": "https://zao-rental-webhook-sandbox.vercel.app/api/webhooks/square",
+  "apiVersion": "2026-08-19",
+  "source": "cnon:card-nonce-ok",
+  "autocomplete": true,
+  "syntheticOnly": true,
+  "budgets": {
+    "createPayment": 1,
+    "getPayment": 1,
+    "retry": 0,
+    "refund": 0,
+    "getRefund": 0,
+    "productionSquare": 0,
+    "realCustomer": 0,
+    "realCard": 0
+  },
+  "unknownRule": "UNKNOWN_DO_NOT_RETRY",
+  "prerequisites": [
+    "exact file hash verified locally and matches installed Hosted DB manifest",
+    "manifest commit/push/remote readback",
+    "signed ingress and synthetic fixture ready",
+    "durable CREATE_PAYMENT reservation COMMIT before provider dispatch"
+  ]
+}

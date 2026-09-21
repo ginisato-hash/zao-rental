@@ -1,0 +1,13 @@
+{
+  "historical_r4_r6_status_unchanged": true,
+  "historical_evidence_unchanged": true,
+  "r4_guard_matches_original_evidence": true,
+  "r6_terminal_guard_retained": true,
+  "r7_guard_matches_result_commit": true,
+  "reusable_logic_service_transport_tests_unchanged": true,
+  "guard_sha256": {
+    "r4": "f130b5a588c85842a68722cf9242592d5f39ec877fd3708e20d3fbd896de4f86",
+    "r6": "452fd9e9128a5af3bea47439ff2dcfd6f8441f9398f3eaf60d5b518c0047d90d",
+    "r7": "a97b9122c1eecbaa1bff233ee3af8d1548b72e59ff490adb917012d86d990239"
+  }
+}

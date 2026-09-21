@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-09-14T04:12:49.408844+00:00",
+  "deployment_id": "dpl_3UXKvrNyRp1KpRfpPt7jxAYSF5Bo",
+  "owner_team_browser_start": "ROOT_HTML_RENDERED",
+  "browser_tab": "27",
+  "unauthenticated_get": 302,
+  "redirects_followed": false,
+  "auth_cookie_headers_saved": false,
+  "provider_calls": 0,
+  "post_attempts": 0,
+  "browser_post_capability": "NOT_EXPOSED_READ_ONLY_DOM_EVALUATION_ONLY",
+  "cli_curl": "NOT_USED_SECRET_ARGUMENT_CONFLICT"
+}

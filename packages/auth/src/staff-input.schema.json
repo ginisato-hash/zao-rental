@@ -88,6 +88,27 @@
           },
           "RENTAL_RETURN": {
             "type": "boolean"
+          },
+          "RENTAL_AMEND": {
+            "type": "boolean"
+          },
+          "REFUND_OVERRIDE": {
+            "type": "boolean"
+          },
+          "INVENTORY_RECONCILE": {
+            "type": "boolean"
+          },
+          "NOTIFICATION_RESEND": {
+            "type": "boolean"
+          },
+          "OPERATIONS_VIEW": {
+            "type": "boolean"
+          },
+          "OPERATIONS_ACKNOWLEDGE": {
+            "type": "boolean"
+          },
+          "FIELD_ACCEPTANCE": {
+            "type": "boolean"
           }
         }
       },
@@ -201,6 +222,27 @@
             "type": "boolean"
           },
           "RENTAL_RETURN": {
+            "type": "boolean"
+          },
+          "RENTAL_AMEND": {
+            "type": "boolean"
+          },
+          "REFUND_OVERRIDE": {
+            "type": "boolean"
+          },
+          "INVENTORY_RECONCILE": {
+            "type": "boolean"
+          },
+          "NOTIFICATION_RESEND": {
+            "type": "boolean"
+          },
+          "OPERATIONS_VIEW": {
+            "type": "boolean"
+          },
+          "OPERATIONS_ACKNOWLEDGE": {
+            "type": "boolean"
+          },
+          "FIELD_ACCEPTANCE": {
             "type": "boolean"
           }
         }

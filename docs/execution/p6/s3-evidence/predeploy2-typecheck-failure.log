@@ -1,0 +1,23 @@
+
+> zao-rental@0.1.0 typecheck
+> next typegen apps/web && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+packages/core/src/payment/square-s3.ts(106,55): error TS2379: Argument of type '{ signal: AbortSignal; body?: { idempotency_key: string; payment_id: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }; method: "GET" | "POST"; url: string; version: "2026-08-19"; }' is not assignable to parameter of type 'SquareCall' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'body' are incompatible.
+    Type '{ idempotency_key: string; payment_id: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }' is not assignable to type '{ idempotency_key: string; source_id: string; reference_id: string; location_id: string; amount_money: { amount: number; currency: "JPY"; }; autocomplete: boolean; } | SandboxRefundBody'.
+      Type '{ idempotency_key: string; payment_id: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }' is not assignable to type 'SandboxRefundBody'.
+        Types of property 'reason' are incompatible.
+          Type 'string' is not assignable to type '"SYNTHETIC_P4_SANDBOX_TEST"'.
+tests/readiness/square-s3.test.ts(133,217): error TS2379: Argument of type '{ url: string; method: "GET" | "POST"; version: "2026-08-19"; body?: { idempotency_key: string; source_id: string; reference_id: string; location_id: string; amount_money: { amount: number; currency: "JPY"; }; autocomplete: boolean; } | SandboxRefundBody; signal: AbortSignal; } | { ...; }' is not assignable to parameter of type 'SquareCall' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ url: string; method: "POST"; body: { idempotency_key: string; payment_id: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }; version: typeof SQUARE_VERSION; signal: AbortSignal; }' is not assignable to type 'SquareCall'.
+    Types of property 'body' are incompatible.
+      Type '{ idempotency_key: string; payment_id: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }' is not assignable to type '{ idempotency_key: string; source_id: string; reference_id: string; location_id: string; amount_money: { amount: number; currency: "JPY"; }; autocomplete: boolean; } | SandboxRefundBody'.
+        Type '{ idempotency_key: string; payment_id: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }' is not assignable to type 'SandboxRefundBody'.
+          Types of property 'reason' are incompatible.
+            Type 'string' is not assignable to type '"SYNTHETIC_P4_SANDBOX_TEST"'.
+tests/readiness/square-s3.test.ts(136,328): error TS2322: Type '{ payment_id: string; idempotency_key: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }' is not assignable to type '{ idempotency_key: string; source_id: string; reference_id: string; location_id: string; amount_money: { amount: number; currency: "JPY"; }; autocomplete: boolean; } | SandboxRefundBody'.
+  Type '{ payment_id: string; idempotency_key: string; amount_money: { amount: number; currency: "JPY"; }; reason: string; }' is not assignable to type 'SandboxRefundBody'.
+    Types of property 'reason' are incompatible.
+      Type 'string' is not assignable to type '"SYNTHETIC_P4_SANDBOX_TEST"'.

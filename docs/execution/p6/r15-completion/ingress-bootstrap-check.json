@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "deploymentId": "dpl_4PSnSR7i36FX2KYvGTxtvvDUnUJ4",
+  "stableOrigin": "https://zao-rental-webhook-sandbox.vercel.app",
+  "signatureKeyPresent": false,
+  "results": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "http": 200,
+      "classification": "SANDBOX_WEBHOOK_INGRESS_ONLY",
+      "redirect": false
+    },
+    {
+      "path": "/api/webhooks/square",
+      "method": "POST",
+      "http": 503,
+      "classification": "WEBHOOK_NOT_CONFIGURED",
+      "redirect": false
+    }
+  ],
+  "squareRequests": 0,
+  "mainProtectionChanges": 0
+}

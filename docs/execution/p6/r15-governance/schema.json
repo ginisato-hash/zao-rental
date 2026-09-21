@@ -1,0 +1,141 @@
+{
+  "type": "object",
+  "properties": {
+    "branch": {
+      "type": "string",
+      "enum": [
+        "codex/external-acceptance-p6"
+      ]
+    },
+    "base_sha": {
+      "type": "string",
+      "enum": [
+        "72cee5817da22cd474773c978f9ae95396edea29"
+      ]
+    },
+    "head_sha": {
+      "type": "string",
+      "enum": [
+        "902622767cb255685d80ea34da90bb21fc5fce73"
+      ]
+    },
+    "authority_sha256": {
+      "type": "string",
+      "enum": [
+        "fccdea3af3d5909200fad3760cc56e5112c045feb309572c38a3f5e6f32ffe11"
+      ]
+    },
+    "snapshot_sha256": {
+      "type": "string",
+      "enum": [
+        "70052d58e8133e9855a37f77e70ed9b71be25a188965ab80f81e173941c59cf8"
+      ]
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "REVIEW_PASS",
+        "CHANGES_REQUIRED",
+        "INCOMPLETE"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "file_or_component": {
+            "type": "string"
+          },
+          "counterexample": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          },
+          "test_coverage": {
+            "type": "string"
+          },
+          "minimum_safe_correction": {
+            "type": "string"
+          },
+          "required_proof": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "BLOCKER",
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ]
+          },
+          "reviewed_sha": {
+            "type": "string",
+            "enum": [
+              "902622767cb255685d80ea34da90bb21fc5fce73"
+            ]
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "file_or_component",
+          "counterexample",
+          "impact",
+          "test_coverage",
+          "minimum_safe_correction",
+          "required_proof",
+          "severity",
+          "reviewed_sha",
+          "line"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "insufficient_evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "activation_prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "scope_assessment": {
+      "type": "string"
+    },
+    "tests_executed": {
+      "type": "boolean",
+      "const": false
+    }
+  },
+  "required": [
+    "branch",
+    "base_sha",
+    "head_sha",
+    "authority_sha256",
+    "snapshot_sha256",
+    "verdict",
+    "findings",
+    "insufficient_evidence",
+    "activation_prerequisites",
+    "scope_assessment",
+    "tests_executed"
+  ],
+  "additionalProperties": false
+}

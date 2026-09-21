@@ -1,0 +1,23 @@
+{
+  "atUtc": "2026-09-15T11:11:04.339Z",
+  "status": "COMPLETE",
+  "databaseRetained": "zr_852b20c4d4b0",
+  "newResourceCreated": 0,
+  "ownedDevelopmentDatabaseCreated": 1,
+  "migrationRollbackConfirmed": true,
+  "runtimeTestCredentials": "NONE_CREATED",
+  "runtimeRolesRetained": 0,
+  "temporarySecretStaging": "NONE",
+  "browserContextClosed": true,
+  "postgresPoolsClosed": true,
+  "credentialReferencesCleared": true,
+  "guardRetained": true,
+  "credentialRetry": 0,
+  "providerRetry": 0,
+  "operatorProcessTerminated": true,
+  "operatorExitCode": 1,
+  "operatorExitReason": "SIGINT after successful DB-pool/browser cleanup because imported module lifecycle kept the idle process alive",
+  "temporaryCredentialFilesCreated": 0,
+  "runtimeCredentialInvalidation": "NOT_NEEDED_NONE_CREATED",
+  "setupCredentialPlacedInApplicationEnv": false
+}

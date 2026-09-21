@@ -1,3 +1,4 @@
+import type {AvatarVisualizationV1} from './avatar-visualization';
 import Ajv from 'ajv';
 import schema from './recommendation-input.schema.json';
 import {HoldError,normalizePeriod,variantMatches,type HoldConditions,type Period,type Feasibility} from './hold';
@@ -10,7 +11,7 @@ export type Profile={key:string;sport:'SKI'|'SNOWBOARD'|'WEAR';heightCm:number|n
 export type RecommendationInput={contractVersion?:'INTEGRATED_V1_2';pickupStore:StoreId;returnStore:StoreId;period:Period;members:Profile[]};
 export type Variant={id:string;family:string;age:string;tier:string;size:string;model_id?:string;catalog_season?:string|null;compatible_sports?:string[]|null;model_name?:string};
 export type Candidate={lengthCm:number;member:HoldConditions['members'][number]};
-export type MemberRecommendation={key:string;targetCm:number;minCm:number;maxCm:number;bootCm:number;initialLengthCm:number|null;candidates:Record<Direction,Candidate|null>;checks:{lengthCm:number;result:Feasibility}[];reason:string|null;price:Record<string,unknown>|null;priceError:string|null};
+export type MemberRecommendation={visualization?:AvatarVisualizationV1;key:string;targetCm:number;minCm:number;maxCm:number;bootCm:number;initialLengthCm:number|null;candidates:Record<Direction,Candidate|null>;checks:{lengthCm:number;result:Feasibility}[];reason:string|null;price:Record<string,unknown>|null;priceError:string|null};
 export class RecommendationError extends HoldError{}
 const validate=new Ajv({allErrors:false,multipleOfPrecision:10}).compile(schema);
 export function parseRecommendation(value:unknown):RecommendationInput{

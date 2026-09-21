@@ -1,0 +1,8 @@
+
+> zao-rental@0.1.0 test:notification-ui
+> node --import tsx tests/notification/normal-ui.ts
+
+PASS normal staff UI lists safe status and saves one audited manual resend after lost HTTP response
+PASS notification page fits 390/768/1440; anonymous, store, permission and CSRF are denied
+PASS booking survives notification failure and logout blocks former staff session
+{"status":"PASS","cases":3,"externalRequests":0,"actualMailSmsProviderRequests":0,"normalApp":"apps/web"}

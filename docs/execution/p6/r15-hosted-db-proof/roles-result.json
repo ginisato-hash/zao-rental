@@ -1,0 +1,11 @@
+{
+  "atUtc": "2026-09-15T11:14:05.959090+00:00",
+  "status": "NOT_RUN",
+  "reason": "Migration transaction failed and rolled back before role provisioning",
+  "canonicalMethod": "provisionHostedPaymentRoles",
+  "roleProvisionInvocations": 0,
+  "runtimeRolesCreated": 0,
+  "setupOwner": "EXISTING_NEON_SETUP_OWNER",
+  "runtimeCredentialsCreated": 0,
+  "rolePolicyChanges": 0
+}

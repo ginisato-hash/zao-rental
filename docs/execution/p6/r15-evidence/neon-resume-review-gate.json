@@ -1,0 +1,23 @@
+{
+  "at": "2026-09-15T07:26:30.628917+00:00",
+  "intentExists": false,
+  "resultExists": false,
+  "reviewDenials": [
+    {
+      "reason": "review platform capacity",
+      "executionStarted": false
+    },
+    {
+      "reason": "reviewer suspected same command in progress",
+      "executionStarted": false,
+      "suspectedProcessNotEstablished": true
+    },
+    {
+      "reason": "read-only pgrep review platform capacity",
+      "executionStarted": false
+    }
+  ],
+  "processInspection": "default pgrep unavailable under sandbox; escalated pgrep not executed",
+  "newResourceCreateProcessNotStartedByThisTurn": true,
+  "alternateProvisioningRouteUsed": false
+}

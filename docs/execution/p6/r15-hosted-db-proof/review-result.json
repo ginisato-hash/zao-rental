@@ -1,0 +1,40 @@
+{
+  "status": "NOT_RUN",
+  "reason": "HOSTED_DB_PROOF_FAIL; Owner CASE C stops this gate before Claude",
+  "reviewedHead": null,
+  "budget": {
+    "maximum": 4,
+    "initial": {
+      "limit": 1,
+      "used": 1
+    },
+    "correction": {
+      "limit": 1,
+      "used": 1
+    },
+    "F3_HOSTED_PROOF_REVIEW": {
+      "limit": 1,
+      "used": 0
+    },
+    "finalEvidence": {
+      "limit": 1,
+      "used": 0
+    }
+  },
+  "lastIndependentVerdict": "CHANGES_REQUIRED",
+  "lastIndependentReviewedHead": "b541999163ff129cc588960a2c5bf94da61d0cd9",
+  "F3": "OPEN_HIGH; historical finding preserved; hosted evidence remains incomplete",
+  "currentSeverityCounts": {
+    "BLOCKER": 0,
+    "HIGH": 1,
+    "MEDIUM": 0,
+    "LOW": 2
+  },
+  "initialReviewSeverityCountsPreserved": {
+    "HIGH": 3,
+    "LOW": 1
+  },
+  "F4": "LOW_RETAINED",
+  "NEW1": "LOW_RETAINED",
+  "postReviewTestDriverChanges": "de78cafe changes remain independently unreviewed"
+}

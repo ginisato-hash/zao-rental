@@ -1,0 +1,178 @@
+{
+  "at": "2026-09-15T07:26:21.181300+00:00",
+  "exitCode": 0,
+  "records": [
+    {
+      "level": "info",
+      "timestamp": 1789457024324,
+      "fields": [
+        "id",
+        "timestamp",
+        "deploymentId",
+        "projectId",
+        "level",
+        "message",
+        "source",
+        "domain",
+        "requestMethod",
+        "requestPath",
+        "responseStatusCode",
+        "environment",
+        "branch",
+        "cache",
+        "cacheReason",
+        "pprState",
+        "traceId",
+        "logs"
+      ],
+      "errorCodes": [
+        "ERR_MODULE_NOT_FOUND"
+      ],
+      "moduleErrors": [
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/health.js",
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/health.js"
+      ],
+      "safeRuntimeKinds": [
+        "ERR_MODULE_NOT_FOUND"
+      ]
+    },
+    {
+      "level": "info",
+      "timestamp": 1789457022820,
+      "fields": [
+        "id",
+        "timestamp",
+        "deploymentId",
+        "projectId",
+        "level",
+        "message",
+        "source",
+        "domain",
+        "requestMethod",
+        "requestPath",
+        "responseStatusCode",
+        "environment",
+        "branch",
+        "cache",
+        "cacheReason",
+        "pprState",
+        "traceId",
+        "logs"
+      ],
+      "errorCodes": [
+        "ERR_MODULE_NOT_FOUND"
+      ],
+      "moduleErrors": [
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/health.js",
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/health.js"
+      ],
+      "safeRuntimeKinds": [
+        "ERR_MODULE_NOT_FOUND"
+      ]
+    },
+    {
+      "level": "info",
+      "timestamp": 1789457021984,
+      "fields": [
+        "id",
+        "timestamp",
+        "deploymentId",
+        "projectId",
+        "level",
+        "message",
+        "source",
+        "domain",
+        "requestMethod",
+        "requestPath",
+        "responseStatusCode",
+        "environment",
+        "branch",
+        "cache",
+        "cacheReason",
+        "pprState",
+        "traceId",
+        "logs"
+      ],
+      "errorCodes": [
+        "ERR_MODULE_NOT_FOUND"
+      ],
+      "moduleErrors": [
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/webhooks/square.js",
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/webhooks/square.js"
+      ],
+      "safeRuntimeKinds": [
+        "ERR_MODULE_NOT_FOUND"
+      ]
+    },
+    {
+      "level": "info",
+      "timestamp": 1789457020895,
+      "fields": [
+        "id",
+        "timestamp",
+        "deploymentId",
+        "projectId",
+        "level",
+        "message",
+        "source",
+        "domain",
+        "requestMethod",
+        "requestPath",
+        "responseStatusCode",
+        "environment",
+        "branch",
+        "cache",
+        "cacheReason",
+        "pprState",
+        "traceId",
+        "logs"
+      ],
+      "errorCodes": [
+        "ERR_MODULE_NOT_FOUND"
+      ],
+      "moduleErrors": [
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/webhooks/square.js",
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/webhooks/square.js"
+      ],
+      "safeRuntimeKinds": [
+        "ERR_MODULE_NOT_FOUND"
+      ]
+    },
+    {
+      "level": "info",
+      "timestamp": 1789457020065,
+      "fields": [
+        "id",
+        "timestamp",
+        "deploymentId",
+        "projectId",
+        "level",
+        "message",
+        "source",
+        "domain",
+        "requestMethod",
+        "requestPath",
+        "responseStatusCode",
+        "environment",
+        "branch",
+        "cache",
+        "cacheReason",
+        "pprState",
+        "traceId",
+        "logs"
+      ],
+      "errorCodes": [
+        "ERR_MODULE_NOT_FOUND"
+      ],
+      "moduleErrors": [
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/health.js",
+        "Cannot find module '/var/task/apps/webhook-ingress/src/handler' imported from /var/task/apps/webhook-ingress/api/health.js"
+      ],
+      "safeRuntimeKinds": [
+        "ERR_MODULE_NOT_FOUND"
+      ]
+    }
+  ],
+  "rawLogsRetained": false,
+  "dedicatedProjectHasNoSecrets": true
+}

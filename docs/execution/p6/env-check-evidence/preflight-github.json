@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-14T01:45:37.475Z",
+  "head": "f5e6c2ef7efd413fd9e3e1248bb785eebb142344",
+  "tree": "b9acf216881603ed4a9c10a7227187c7955f3007",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "offline": false,
+  "worktreeClean": true,
+  "ready": false,
+  "productionActivation": false,
+  "externalRequestsPerformed": 0,
+  "gates": [
+    {
+      "id": "MAIN_PROTECTION",
+      "state": "PASS",
+      "reason": "RULESET23161641_CHECKED",
+      "evidenceKind": "GITHUB_READ_ONLY"
+    },
+    {
+      "id": "FOUNDATION_CI",
+      "state": "NOT_RUN",
+      "reason": "EXACT_CI_UNAVAILABLE",
+      "evidenceKind": "GITHUB_READ_ONLY"
+    },
+    {
+      "id": "GUEST_POLICY",
+      "state": "PASS",
+      "reason": "P4_BALANCED_VALUES_ONLY_NOT_RUNTIME_ACTIVATION",
+      "evidenceKind": "OWNER_APPROVAL"
+    },
+    {
+      "id": "TRUSTED_INGRESS",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "BOOKING_RECOVERY",
+      "state": "EXTERNAL_PENDING",
+      "reason": "LOCAL_READ_ONLY_RECOVERY_NOT_EMAIL_OR_IDENTITY_DELIVERY_ACCEPTANCE",
+      "evidenceKind": "LOCAL_ONLY"
+    },
+    {
+      "id": "SQUARE_SANDBOX",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "SQUARE_WEBHOOK",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "SECRET_STORE",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "STORAGE_PROVIDER",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "CATALOG_IMPORT",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "REAL_DEVICE",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "FIELD_CWV",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "BACKUP_PITR",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "BACKUP_RESTORE",
+      "state": "EXTERNAL_PENDING",
+      "reason": "COLD_LOCAL_DRILL_NOT_OFF_HOST_ENCRYPTED_PITR_RESTORE",
+      "evidenceKind": "LOCAL_ONLY"
+    },
+    {
+      "id": "RPO_RTO",
+      "state": "EXTERNAL_PENDING",
+      "reason": "OWNER_SELECTION_TARGETS_NOT_MEASURED_PROVIDER_SLA",
+      "evidenceKind": "OWNER_TARGET"
+    },
+    {
+      "id": "TAX",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "SALES_PERIOD",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "COUPON",
+      "state": "PASS",
+      "reason": "INDEPENDENT_COUPON_DISABLED_EARLY_PAYMENT_RULE_UNCHANGED",
+      "evidenceKind": "OWNER_APPROVAL"
+    },
+    {
+      "id": "CLEANING",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "NAP",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "LEGAL_COPY",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "MEDIA_RIGHTS",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "DOMAIN",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "DEPLOYMENT",
+      "state": "OWNER_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "SEARCH_CONSOLE",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "GBP",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    },
+    {
+      "id": "ZAO_OFFICIAL_LISTING",
+      "state": "EXTERNAL_PENDING",
+      "reason": "EXTERNAL_EVIDENCE_REQUIRED",
+      "evidenceKind": "NONE"
+    }
+  ]
+}

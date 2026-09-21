@@ -1,0 +1,24 @@
+{
+  "observed_at": "2026-09-14T01:20:18.861024+00:00",
+  "source": "Vercel CLI59.9.1 teams list + project ls + project add + project inspect",
+  "team": {
+    "id": "team_PVka5z4T6OMKBmUcqrK09yJz",
+    "slug": "zao-food-map",
+    "name": "ZAO FOOD MAP"
+  },
+  "taste_project": {
+    "id": "prj_BDEJBI76Xtt4jpQH7ogBhDCHIK2m",
+    "name": "zao-food-map-pilot",
+    "latestProductionUrl": "https://tasteofzao.app",
+    "operation": "READ_ONLY_METADATA"
+  },
+  "duplicate_check": "projects2 pagination.next=null; zao-rental absent",
+  "zao_rental": {
+    "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "created": true,
+    "create_exit_code": 0,
+    "readback_exit_code": 0
+  },
+  "deploy": false,
+  "secrets_accessed": false
+}

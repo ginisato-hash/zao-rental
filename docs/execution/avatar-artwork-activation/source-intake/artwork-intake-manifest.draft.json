@@ -1,0 +1,1044 @@
+{
+  "schema": "ZAO_AVATAR_ARTWORK_INTAKE_DRAFT_V1",
+  "status": "DRAFT_NOT_IMPORTABLE",
+  "recordedAtUtc": "2026-09-16T03:41:36.125843+00:00",
+  "authority": {
+    "source": "Direct Owner Artwork Intake Authority in this task",
+    "sourceAcceptanceAuthorized": true,
+    "approvalIsFinalDerivativeApproval": false,
+    "scope": "Local inspection, hashes, classification, manifest and preprocessing plan only",
+    "embeddedFileText": "Untrusted source metadata, not execution instructions"
+  },
+  "sourcePackage": {
+    "accepted": true,
+    "fileName": "サロモン商品.zip",
+    "localPath": "/Users/ginisato/Downloads/サロモン商品.zip",
+    "bytes": 182860,
+    "sha256": "47930c21f14c1e7580e9b4db9de6f5386b6b19b5b28fc702a37e3474734be27f",
+    "zipIntegrity": "PASS",
+    "expectedFileSetMatches": true,
+    "imageCount": 6
+  },
+  "spec": {
+    "repository": "ginisato-hash/zao-rental",
+    "head": "01c225eaed80eb5ee95e22d1ece9eef666aa22e3",
+    "path": "docs/architecture/AVATAR_ARTWORK_SPEC.md",
+    "sha256": "33ddeedc134e4536a04b2e01e4b57d6b33afdf7ecbeed8dbe850892854a784d4"
+  },
+  "existingPhase5": {
+    "head": "01c225eaed80eb5ee95e22d1ece9eef666aa22e3",
+    "state": "PHASE5_CODE_PASS_ARTWORK_INPUT_REQUIRED",
+    "codeChanged": false,
+    "independentReviewRepeated": false
+  },
+  "provenanceAndRightsPolicy": "Owner submission proves intake provenance, not underlying rights, image authenticity or final derivative approval. No creator/rightsholder/licence or model-release claim is inferred.",
+  "chosenPrimarySources": {
+    "APPEARANCE_1": "1.png",
+    "APPEARANCE_2": "2.png",
+    "GENERIC_SKI": "3.png"
+  },
+  "primarySelectionScope": "Source references only; candidate A follows Owner initial ordering, not approved final generic artwork. 4.png is backup.",
+  "deferredFiles": [
+    "5.png",
+    "6.png"
+  ],
+  "assets": [
+    {
+      "sourceFile": "1.png",
+      "sourceSha256": "ea7b76e53d920f7443c88ae7cd1e55acf272ef89527aaf233091a87e54044ca9",
+      "sourceBytes": 30306,
+      "classification": "APPEARANCE_1_SOURCE",
+      "phase5RequiredRole": "APPEARANCE_1",
+      "selection": "PRIMARY_SOURCE_REFERENCE_ONLY",
+      "appearanceMapping": "APPEARANCE_1",
+      "intendedLayer": "AVATAR",
+      "sourceContent": [
+        "Orange jacket and dark trousers displayed against a stone wall.",
+        "Garments only; no visible complete human head-to-sole body or canonical anatomical landmarks.",
+        "Photographic background and hanging/display arrangement are part of the opaque image."
+      ],
+      "genericExact": {
+        "proposed": "GENERIC_REFERENCE",
+        "approved": null,
+        "status": "DRAFT_NOT_APPROVED",
+        "exactPromiseClaim": false,
+        "modelId": null,
+        "variantId": null,
+        "season": null,
+        "skiLengthCm": null
+      },
+      "provenance": {
+        "submittedBy": "Owner",
+        "container": "サロモン商品.zip",
+        "entry": "1.png",
+        "classification": "OWNER_SUPPLIED_SOURCE_MATERIAL",
+        "userDescription": "photo-based source package",
+        "originalPhotographer": null,
+        "copyrightHolder": null,
+        "originalCaptureOrCreationMethod": "NOT_VERIFIED",
+        "sourceMetadataIsProofOfRights": false
+      },
+      "rightsBasis": null,
+      "rightsBasisStatus": "NOT_PROVIDED_DO_NOT_INFER",
+      "intendedPurpose": "AVATAR_VISUALIZATION_V1",
+      "purposeStatus": "PROPOSED_NOT_GRANTED",
+      "sourceAcceptedByOwner": true,
+      "approvedByOwner": false,
+      "approvedByOwnerScope": "FINAL_DERIVATIVE",
+      "finalDerivativeApprovalStatus": "NOT_PROVIDED",
+      "specCompliance": {
+        "sourceDecodable": "PASS",
+        "sizeAndDecodeLimits": "PASS",
+        "animationAbsent": "PASS",
+        "staticAlphaWebP": "FAIL_PNG_RGB_NO_ALPHA",
+        "canonicalDimensions": "FAIL_120x120",
+        "metadataFree": "FAIL_XMP_PRESENT",
+        "physicalCrop": "FAIL_NO_COMPLETE_BODY",
+        "isolatedRequiredLayer": "FAIL_BACKGROUND_AND_UNSEPARATED_SUBJECTS",
+        "rightsApprovalAndReleaseBinding": "MISSING",
+        "existingRasterValidator": false,
+        "overall": "NOT_COMPLIANT_AS_FINAL_DERIVATIVE"
+      },
+      "inspection": {
+        "file": "1.png",
+        "bytes": 30306,
+        "sha256": "ea7b76e53d920f7443c88ae7cd1e55acf272ef89527aaf233091a87e54044ca9",
+        "format": "png",
+        "width": 120,
+        "height": 120,
+        "aspectRatio": 1,
+        "colourSpace": "srgb",
+        "channels": 3,
+        "bitsPerSample": 8,
+        "pages": 1,
+        "alphaChannelPresent": false,
+        "transparentPixels": 0,
+        "partiallyTransparentPixels": 0,
+        "opaquePixels": 14400,
+        "nonTransparentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 120
+        },
+        "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+        "subjectBoundsNormalized": false,
+        "subjectBoundsNumeric": null,
+        "metadata": {
+          "exifPresent": false,
+          "iccPresent": false,
+          "xmpPresent": true,
+          "iptcPresent": false,
+          "xmpBytes": 1207,
+          "xmpPropertyNames": [
+            "x:xmpmeta",
+            "rdf:RDF",
+            "rdf:Description",
+            "Attrib:Ads",
+            "rdf:Seq",
+            "rdf:li",
+            "Attrib:Created",
+            "Attrib:ExtId",
+            "Attrib:FbId",
+            "Attrib:TouchType",
+            "dc:title",
+            "rdf:Alt",
+            "pdf:Author",
+            "xmp:CreatorTool"
+          ],
+          "rawMetadataValuesIncluded": false,
+          "metadataIsRightsEvidence": false
+        },
+        "pngChunks": [
+          {
+            "type": "IHDR",
+            "length": 13
+          },
+          {
+            "type": "pHYs",
+            "length": 9
+          },
+          {
+            "type": "iTXt",
+            "length": 1229
+          },
+          {
+            "type": "IDAT",
+            "length": 28987
+          },
+          {
+            "type": "IEND",
+            "length": 0
+          }
+        ],
+        "animatedPng": false,
+        "withinByteAndPixelLimits": true,
+        "authoredTargetLayer": "AVATAR",
+        "acceptedDerivativeDimensionsMatch": false,
+        "sourceBytesMutated": false
+      },
+      "preprocessingRequired": true,
+      "missingItems": [
+        "Transparent static WebP final derivative",
+        "Explicit derivative-level rights basis and Owner approval",
+        "Provenance beyond package submission; creator/rightsholder and use/derivation permission are not supplied",
+        "Canonical artboard and appropriate higher-resolution source",
+        "Approved GENERIC_REFERENCE versus EXACT_PROMISE classification",
+        "AVATAR_VISUALIZATION_V1 immutable purpose grant / media / visual UUID / revision / release / derivative digest binding",
+        "Rights expiry policy and internal-only/public-use restrictions explicitly recorded",
+        "XMP-free final bytes",
+        "Complete approved body from head to sole; shared body landmarks across both appearances",
+        "Isolated body versus optional jacket/pants/boot layer decision and authoring"
+      ],
+      "derivative": {
+        "file": null,
+        "sha256": null,
+        "approvedByOwner": false,
+        "visualId": null,
+        "mediaId": null,
+        "revisionId": null,
+        "releaseId": null,
+        "purposeGrant": null,
+        "rightsUntil": null,
+        "expiryPolicySpecified": false,
+        "internalOnly": null
+      }
+    },
+    {
+      "sourceFile": "2.png",
+      "sourceSha256": "4c03ae11fc76eac3164d0754bbf45c0aeacf2eac03fb6dc2ab85df5fb84e407d",
+      "sourceBytes": 31142,
+      "classification": "APPEARANCE_2_SOURCE",
+      "phase5RequiredRole": "APPEARANCE_2",
+      "selection": "PRIMARY_SOURCE_REFERENCE_ONLY",
+      "appearanceMapping": "APPEARANCE_2",
+      "intendedLayer": "AVATAR",
+      "sourceContent": [
+        "Light-coloured jacket and dark trousers displayed against a stone wall.",
+        "Garments only; no visible complete human head-to-sole body or canonical anatomical landmarks.",
+        "Photographic background and hanging/display arrangement are part of the opaque image."
+      ],
+      "genericExact": {
+        "proposed": "GENERIC_REFERENCE",
+        "approved": null,
+        "status": "DRAFT_NOT_APPROVED",
+        "exactPromiseClaim": false,
+        "modelId": null,
+        "variantId": null,
+        "season": null,
+        "skiLengthCm": null
+      },
+      "provenance": {
+        "submittedBy": "Owner",
+        "container": "サロモン商品.zip",
+        "entry": "2.png",
+        "classification": "OWNER_SUPPLIED_SOURCE_MATERIAL",
+        "userDescription": "photo-based source package",
+        "originalPhotographer": null,
+        "copyrightHolder": null,
+        "originalCaptureOrCreationMethod": "NOT_VERIFIED",
+        "sourceMetadataIsProofOfRights": false
+      },
+      "rightsBasis": null,
+      "rightsBasisStatus": "NOT_PROVIDED_DO_NOT_INFER",
+      "intendedPurpose": "AVATAR_VISUALIZATION_V1",
+      "purposeStatus": "PROPOSED_NOT_GRANTED",
+      "sourceAcceptedByOwner": true,
+      "approvedByOwner": false,
+      "approvedByOwnerScope": "FINAL_DERIVATIVE",
+      "finalDerivativeApprovalStatus": "NOT_PROVIDED",
+      "specCompliance": {
+        "sourceDecodable": "PASS",
+        "sizeAndDecodeLimits": "PASS",
+        "animationAbsent": "PASS",
+        "staticAlphaWebP": "FAIL_PNG_RGB_NO_ALPHA",
+        "canonicalDimensions": "FAIL_120x120",
+        "metadataFree": "FAIL_XMP_PRESENT",
+        "physicalCrop": "FAIL_NO_COMPLETE_BODY",
+        "isolatedRequiredLayer": "FAIL_BACKGROUND_AND_UNSEPARATED_SUBJECTS",
+        "rightsApprovalAndReleaseBinding": "MISSING",
+        "existingRasterValidator": false,
+        "overall": "NOT_COMPLIANT_AS_FINAL_DERIVATIVE"
+      },
+      "inspection": {
+        "file": "2.png",
+        "bytes": 31142,
+        "sha256": "4c03ae11fc76eac3164d0754bbf45c0aeacf2eac03fb6dc2ab85df5fb84e407d",
+        "format": "png",
+        "width": 120,
+        "height": 120,
+        "aspectRatio": 1,
+        "colourSpace": "srgb",
+        "channels": 3,
+        "bitsPerSample": 8,
+        "pages": 1,
+        "alphaChannelPresent": false,
+        "transparentPixels": 0,
+        "partiallyTransparentPixels": 0,
+        "opaquePixels": 14400,
+        "nonTransparentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 120
+        },
+        "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+        "subjectBoundsNormalized": false,
+        "subjectBoundsNumeric": null,
+        "metadata": {
+          "exifPresent": false,
+          "iccPresent": false,
+          "xmpPresent": true,
+          "iptcPresent": false,
+          "xmpBytes": 1207,
+          "xmpPropertyNames": [
+            "x:xmpmeta",
+            "rdf:RDF",
+            "rdf:Description",
+            "Attrib:Ads",
+            "rdf:Seq",
+            "rdf:li",
+            "Attrib:Created",
+            "Attrib:ExtId",
+            "Attrib:FbId",
+            "Attrib:TouchType",
+            "dc:title",
+            "rdf:Alt",
+            "pdf:Author",
+            "xmp:CreatorTool"
+          ],
+          "rawMetadataValuesIncluded": false,
+          "metadataIsRightsEvidence": false
+        },
+        "pngChunks": [
+          {
+            "type": "IHDR",
+            "length": 13
+          },
+          {
+            "type": "pHYs",
+            "length": 9
+          },
+          {
+            "type": "iTXt",
+            "length": 1229
+          },
+          {
+            "type": "IDAT",
+            "length": 29823
+          },
+          {
+            "type": "IEND",
+            "length": 0
+          }
+        ],
+        "animatedPng": false,
+        "withinByteAndPixelLimits": true,
+        "authoredTargetLayer": "AVATAR",
+        "acceptedDerivativeDimensionsMatch": false,
+        "sourceBytesMutated": false
+      },
+      "preprocessingRequired": true,
+      "missingItems": [
+        "Transparent static WebP final derivative",
+        "Explicit derivative-level rights basis and Owner approval",
+        "Provenance beyond package submission; creator/rightsholder and use/derivation permission are not supplied",
+        "Canonical artboard and appropriate higher-resolution source",
+        "Approved GENERIC_REFERENCE versus EXACT_PROMISE classification",
+        "AVATAR_VISUALIZATION_V1 immutable purpose grant / media / visual UUID / revision / release / derivative digest binding",
+        "Rights expiry policy and internal-only/public-use restrictions explicitly recorded",
+        "XMP-free final bytes",
+        "Complete approved body from head to sole; shared body landmarks across both appearances",
+        "Isolated body versus optional jacket/pants/boot layer decision and authoring"
+      ],
+      "derivative": {
+        "file": null,
+        "sha256": null,
+        "approvedByOwner": false,
+        "visualId": null,
+        "mediaId": null,
+        "revisionId": null,
+        "releaseId": null,
+        "purposeGrant": null,
+        "rightsUntil": null,
+        "expiryPolicySpecified": false,
+        "internalOnly": null
+      }
+    },
+    {
+      "sourceFile": "3.png",
+      "sourceSha256": "5a9ccc7893c91deebea917281783b5ddb7f794581fa5016325edc5f33b0fb120",
+      "sourceBytes": 29869,
+      "classification": "GENERIC_SKI_SOURCE_CANDIDATE_A",
+      "phase5RequiredRole": "GENERIC_SKI",
+      "selection": "PRIMARY_SOURCE_REFERENCE_ONLY",
+      "appearanceMapping": null,
+      "intendedLayer": "SKI",
+      "sourceContent": [
+        "Ski and boots displayed with a counter and stone wall; product lettering is visible.",
+        "The ski reaches the lower image boundary; a complete uncropped physical tail cannot be verified.",
+        "Not an isolated straight, normalized tip-to-tail authored ski view."
+      ],
+      "genericExact": {
+        "proposed": "GENERIC_REFERENCE",
+        "approved": null,
+        "status": "DRAFT_NOT_APPROVED",
+        "exactPromiseClaim": false,
+        "modelId": null,
+        "variantId": null,
+        "season": null,
+        "skiLengthCm": null
+      },
+      "provenance": {
+        "submittedBy": "Owner",
+        "container": "サロモン商品.zip",
+        "entry": "3.png",
+        "classification": "OWNER_SUPPLIED_SOURCE_MATERIAL",
+        "userDescription": "photo-based source package",
+        "originalPhotographer": null,
+        "copyrightHolder": null,
+        "originalCaptureOrCreationMethod": "NOT_VERIFIED",
+        "sourceMetadataIsProofOfRights": false
+      },
+      "rightsBasis": null,
+      "rightsBasisStatus": "NOT_PROVIDED_DO_NOT_INFER",
+      "intendedPurpose": "AVATAR_VISUALIZATION_V1",
+      "purposeStatus": "PROPOSED_NOT_GRANTED",
+      "sourceAcceptedByOwner": true,
+      "approvedByOwner": false,
+      "approvedByOwnerScope": "FINAL_DERIVATIVE",
+      "finalDerivativeApprovalStatus": "NOT_PROVIDED",
+      "specCompliance": {
+        "sourceDecodable": "PASS",
+        "sizeAndDecodeLimits": "PASS",
+        "animationAbsent": "PASS",
+        "staticAlphaWebP": "FAIL_PNG_RGB_NO_ALPHA",
+        "canonicalDimensions": "FAIL_120x120",
+        "metadataFree": "FAIL_XMP_PRESENT",
+        "physicalCrop": "NOT_VERIFIED_UNNORMALIZED_TIP_TAIL",
+        "isolatedRequiredLayer": "FAIL_BACKGROUND_AND_UNSEPARATED_SUBJECTS",
+        "rightsApprovalAndReleaseBinding": "MISSING",
+        "existingRasterValidator": false,
+        "overall": "NOT_COMPLIANT_AS_FINAL_DERIVATIVE"
+      },
+      "inspection": {
+        "file": "3.png",
+        "bytes": 29869,
+        "sha256": "5a9ccc7893c91deebea917281783b5ddb7f794581fa5016325edc5f33b0fb120",
+        "format": "png",
+        "width": 120,
+        "height": 120,
+        "aspectRatio": 1,
+        "colourSpace": "srgb",
+        "channels": 3,
+        "bitsPerSample": 8,
+        "pages": 1,
+        "alphaChannelPresent": false,
+        "transparentPixels": 0,
+        "partiallyTransparentPixels": 0,
+        "opaquePixels": 14400,
+        "nonTransparentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 120
+        },
+        "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+        "subjectBoundsNormalized": false,
+        "subjectBoundsNumeric": null,
+        "metadata": {
+          "exifPresent": false,
+          "iccPresent": false,
+          "xmpPresent": true,
+          "iptcPresent": false,
+          "xmpBytes": 1207,
+          "xmpPropertyNames": [
+            "x:xmpmeta",
+            "rdf:RDF",
+            "rdf:Description",
+            "Attrib:Ads",
+            "rdf:Seq",
+            "rdf:li",
+            "Attrib:Created",
+            "Attrib:ExtId",
+            "Attrib:FbId",
+            "Attrib:TouchType",
+            "dc:title",
+            "rdf:Alt",
+            "pdf:Author",
+            "xmp:CreatorTool"
+          ],
+          "rawMetadataValuesIncluded": false,
+          "metadataIsRightsEvidence": false
+        },
+        "pngChunks": [
+          {
+            "type": "IHDR",
+            "length": 13
+          },
+          {
+            "type": "pHYs",
+            "length": 9
+          },
+          {
+            "type": "iTXt",
+            "length": 1229
+          },
+          {
+            "type": "IDAT",
+            "length": 28550
+          },
+          {
+            "type": "IEND",
+            "length": 0
+          }
+        ],
+        "animatedPng": false,
+        "withinByteAndPixelLimits": true,
+        "authoredTargetLayer": "SKI",
+        "acceptedDerivativeDimensionsMatch": false,
+        "sourceBytesMutated": false
+      },
+      "preprocessingRequired": true,
+      "missingItems": [
+        "Transparent static WebP final derivative",
+        "Explicit derivative-level rights basis and Owner approval",
+        "Provenance beyond package submission; creator/rightsholder and use/derivation permission are not supplied",
+        "Canonical artboard and appropriate higher-resolution source",
+        "Approved GENERIC_REFERENCE versus EXACT_PROMISE classification",
+        "AVATAR_VISUALIZATION_V1 immutable purpose grant / media / visual UUID / revision / release / derivative digest binding",
+        "Rights expiry policy and internal-only/public-use restrictions explicitly recorded",
+        "XMP-free final bytes",
+        "Complete straight tip-to-tail approved ski depiction, physical crop and orientation",
+        "Generic-use approval for the branded/model-specific depiction; do not infer exact model, variant, season or length"
+      ],
+      "derivative": {
+        "file": null,
+        "sha256": null,
+        "approvedByOwner": false,
+        "visualId": null,
+        "mediaId": null,
+        "revisionId": null,
+        "releaseId": null,
+        "purposeGrant": null,
+        "rightsUntil": null,
+        "expiryPolicySpecified": false,
+        "internalOnly": null
+      }
+    },
+    {
+      "sourceFile": "4.png",
+      "sourceSha256": "0fb84d84af77013c71c0e71ac4e1010dc94690faede7447e7815193a3afdc04a",
+      "sourceBytes": 29205,
+      "classification": "GENERIC_SKI_SOURCE_CANDIDATE_B",
+      "phase5RequiredRole": "GENERIC_SKI",
+      "selection": "BACKUP_SOURCE_REFERENCE_ONLY",
+      "appearanceMapping": null,
+      "intendedLayer": "SKI",
+      "sourceContent": [
+        "Ski and boots displayed with a counter and stone wall; product lettering is visible.",
+        "The ski reaches the lower image boundary; a complete uncropped physical tail cannot be verified.",
+        "Not an isolated straight, normalized tip-to-tail authored ski view."
+      ],
+      "genericExact": {
+        "proposed": "GENERIC_REFERENCE",
+        "approved": null,
+        "status": "DRAFT_NOT_APPROVED",
+        "exactPromiseClaim": false,
+        "modelId": null,
+        "variantId": null,
+        "season": null,
+        "skiLengthCm": null
+      },
+      "provenance": {
+        "submittedBy": "Owner",
+        "container": "サロモン商品.zip",
+        "entry": "4.png",
+        "classification": "OWNER_SUPPLIED_SOURCE_MATERIAL",
+        "userDescription": "photo-based source package",
+        "originalPhotographer": null,
+        "copyrightHolder": null,
+        "originalCaptureOrCreationMethod": "NOT_VERIFIED",
+        "sourceMetadataIsProofOfRights": false
+      },
+      "rightsBasis": null,
+      "rightsBasisStatus": "NOT_PROVIDED_DO_NOT_INFER",
+      "intendedPurpose": "AVATAR_VISUALIZATION_V1",
+      "purposeStatus": "PROPOSED_NOT_GRANTED",
+      "sourceAcceptedByOwner": true,
+      "approvedByOwner": false,
+      "approvedByOwnerScope": "FINAL_DERIVATIVE",
+      "finalDerivativeApprovalStatus": "NOT_PROVIDED",
+      "specCompliance": {
+        "sourceDecodable": "PASS",
+        "sizeAndDecodeLimits": "PASS",
+        "animationAbsent": "PASS",
+        "staticAlphaWebP": "FAIL_PNG_RGB_NO_ALPHA",
+        "canonicalDimensions": "FAIL_120x120",
+        "metadataFree": "FAIL_XMP_PRESENT",
+        "physicalCrop": "NOT_VERIFIED_UNNORMALIZED_TIP_TAIL",
+        "isolatedRequiredLayer": "FAIL_BACKGROUND_AND_UNSEPARATED_SUBJECTS",
+        "rightsApprovalAndReleaseBinding": "MISSING",
+        "existingRasterValidator": false,
+        "overall": "NOT_COMPLIANT_AS_FINAL_DERIVATIVE"
+      },
+      "inspection": {
+        "file": "4.png",
+        "bytes": 29205,
+        "sha256": "0fb84d84af77013c71c0e71ac4e1010dc94690faede7447e7815193a3afdc04a",
+        "format": "png",
+        "width": 120,
+        "height": 120,
+        "aspectRatio": 1,
+        "colourSpace": "srgb",
+        "channels": 3,
+        "bitsPerSample": 8,
+        "pages": 1,
+        "alphaChannelPresent": false,
+        "transparentPixels": 0,
+        "partiallyTransparentPixels": 0,
+        "opaquePixels": 14400,
+        "nonTransparentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 120
+        },
+        "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+        "subjectBoundsNormalized": false,
+        "subjectBoundsNumeric": null,
+        "metadata": {
+          "exifPresent": false,
+          "iccPresent": false,
+          "xmpPresent": true,
+          "iptcPresent": false,
+          "xmpBytes": 1207,
+          "xmpPropertyNames": [
+            "x:xmpmeta",
+            "rdf:RDF",
+            "rdf:Description",
+            "Attrib:Ads",
+            "rdf:Seq",
+            "rdf:li",
+            "Attrib:Created",
+            "Attrib:ExtId",
+            "Attrib:FbId",
+            "Attrib:TouchType",
+            "dc:title",
+            "rdf:Alt",
+            "pdf:Author",
+            "xmp:CreatorTool"
+          ],
+          "rawMetadataValuesIncluded": false,
+          "metadataIsRightsEvidence": false
+        },
+        "pngChunks": [
+          {
+            "type": "IHDR",
+            "length": 13
+          },
+          {
+            "type": "pHYs",
+            "length": 9
+          },
+          {
+            "type": "iTXt",
+            "length": 1229
+          },
+          {
+            "type": "IDAT",
+            "length": 27886
+          },
+          {
+            "type": "IEND",
+            "length": 0
+          }
+        ],
+        "animatedPng": false,
+        "withinByteAndPixelLimits": true,
+        "authoredTargetLayer": "SKI",
+        "acceptedDerivativeDimensionsMatch": false,
+        "sourceBytesMutated": false
+      },
+      "preprocessingRequired": true,
+      "missingItems": [
+        "Transparent static WebP final derivative",
+        "Explicit derivative-level rights basis and Owner approval",
+        "Provenance beyond package submission; creator/rightsholder and use/derivation permission are not supplied",
+        "Canonical artboard and appropriate higher-resolution source",
+        "Approved GENERIC_REFERENCE versus EXACT_PROMISE classification",
+        "AVATAR_VISUALIZATION_V1 immutable purpose grant / media / visual UUID / revision / release / derivative digest binding",
+        "Rights expiry policy and internal-only/public-use restrictions explicitly recorded",
+        "XMP-free final bytes",
+        "Complete straight tip-to-tail approved ski depiction, physical crop and orientation",
+        "Generic-use approval for the branded/model-specific depiction; do not infer exact model, variant, season or length"
+      ],
+      "derivative": {
+        "file": null,
+        "sha256": null,
+        "approvedByOwner": false,
+        "visualId": null,
+        "mediaId": null,
+        "revisionId": null,
+        "releaseId": null,
+        "purposeGrant": null,
+        "rightsUntil": null,
+        "expiryPolicySpecified": false,
+        "internalOnly": null
+      }
+    },
+    {
+      "sourceFile": "5.png",
+      "sourceSha256": "5c4485861c80d88bcd8a37dd4394f7cdea63218f163699442c8edd48fe265dca",
+      "sourceBytes": 30869,
+      "classification": "SNOWBOARD_OPTIONAL_FUTURE_SOURCE",
+      "phase5RequiredRole": null,
+      "selection": "DEFERRED_NOT_REQUIRED",
+      "appearanceMapping": null,
+      "intendedLayer": null,
+      "sourceContent": [
+        "Snowboard, bindings and boots in a product display with background and visible lettering.",
+        "Deferred future reference; the current Avatar contract has no snowboard layer or artboard."
+      ],
+      "genericExact": {
+        "proposed": null,
+        "approved": null,
+        "status": "DEFERRED",
+        "exactPromiseClaim": false,
+        "modelId": null,
+        "variantId": null,
+        "season": null,
+        "skiLengthCm": null
+      },
+      "provenance": {
+        "submittedBy": "Owner",
+        "container": "サロモン商品.zip",
+        "entry": "5.png",
+        "classification": "OWNER_SUPPLIED_SOURCE_MATERIAL",
+        "userDescription": "photo-based source package",
+        "originalPhotographer": null,
+        "copyrightHolder": null,
+        "originalCaptureOrCreationMethod": "NOT_VERIFIED",
+        "sourceMetadataIsProofOfRights": false
+      },
+      "rightsBasis": null,
+      "rightsBasisStatus": "NOT_PROVIDED_DO_NOT_INFER",
+      "intendedPurpose": "OPTIONAL_FUTURE_SNOWBOARD_REFERENCE",
+      "purposeStatus": "DEFERRED",
+      "sourceAcceptedByOwner": true,
+      "approvedByOwner": false,
+      "approvedByOwnerScope": "FINAL_DERIVATIVE",
+      "finalDerivativeApprovalStatus": "NOT_PROVIDED",
+      "specCompliance": {
+        "sourceDecodable": "PASS",
+        "sizeAndDecodeLimits": "PASS",
+        "animationAbsent": "PASS",
+        "staticAlphaWebP": "FAIL_PNG_RGB_NO_ALPHA",
+        "canonicalDimensions": "NOT_APPLICABLE_NO_SNOWBOARD_SPEC",
+        "metadataFree": "FAIL_XMP_PRESENT",
+        "physicalCrop": "DEFERRED",
+        "isolatedRequiredLayer": "DEFERRED",
+        "rightsApprovalAndReleaseBinding": "MISSING",
+        "existingRasterValidator": "NOT_RUN_UNSUPPORTED_LAYER",
+        "overall": "DEFERRED_NOT_EVALUATED_AGAINST_UNDEFINED_SNOWBOARD_CONTRACT"
+      },
+      "inspection": {
+        "file": "5.png",
+        "bytes": 30869,
+        "sha256": "5c4485861c80d88bcd8a37dd4394f7cdea63218f163699442c8edd48fe265dca",
+        "format": "png",
+        "width": 120,
+        "height": 120,
+        "aspectRatio": 1,
+        "colourSpace": "srgb",
+        "channels": 3,
+        "bitsPerSample": 8,
+        "pages": 1,
+        "alphaChannelPresent": false,
+        "transparentPixels": 0,
+        "partiallyTransparentPixels": 0,
+        "opaquePixels": 14400,
+        "nonTransparentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 120
+        },
+        "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+        "subjectBoundsNormalized": false,
+        "subjectBoundsNumeric": null,
+        "metadata": {
+          "exifPresent": false,
+          "iccPresent": false,
+          "xmpPresent": true,
+          "iptcPresent": false,
+          "xmpBytes": 1207,
+          "xmpPropertyNames": [
+            "x:xmpmeta",
+            "rdf:RDF",
+            "rdf:Description",
+            "Attrib:Ads",
+            "rdf:Seq",
+            "rdf:li",
+            "Attrib:Created",
+            "Attrib:ExtId",
+            "Attrib:FbId",
+            "Attrib:TouchType",
+            "dc:title",
+            "rdf:Alt",
+            "pdf:Author",
+            "xmp:CreatorTool"
+          ],
+          "rawMetadataValuesIncluded": false,
+          "metadataIsRightsEvidence": false
+        },
+        "pngChunks": [
+          {
+            "type": "IHDR",
+            "length": 13
+          },
+          {
+            "type": "pHYs",
+            "length": 9
+          },
+          {
+            "type": "iTXt",
+            "length": 1229
+          },
+          {
+            "type": "IDAT",
+            "length": 29550
+          },
+          {
+            "type": "IEND",
+            "length": 0
+          }
+        ],
+        "animatedPng": false,
+        "withinByteAndPixelLimits": true,
+        "authoredTargetLayer": null,
+        "acceptedDerivativeDimensionsMatch": null,
+        "sourceBytesMutated": false
+      },
+      "preprocessingRequired": "DEFERRED",
+      "missingItems": [
+        "Transparent static WebP final derivative",
+        "Explicit derivative-level rights basis and Owner approval",
+        "Provenance beyond package submission; creator/rightsholder and use/derivation permission are not supplied",
+        "Future snowboard scope and artwork specification; no current Phase5 core requirement"
+      ],
+      "derivative": {
+        "file": null,
+        "sha256": null,
+        "approvedByOwner": false,
+        "visualId": null,
+        "mediaId": null,
+        "revisionId": null,
+        "releaseId": null,
+        "purposeGrant": null,
+        "rightsUntil": null,
+        "expiryPolicySpecified": false,
+        "internalOnly": null
+      }
+    },
+    {
+      "sourceFile": "6.png",
+      "sourceSha256": "6e13ca996ce652d81b82105568d6ca6ef4d5ad0ad8b26dc0a1789e0a81953c84",
+      "sourceBytes": 30343,
+      "classification": "SNOWBOARD_OPTIONAL_FUTURE_SOURCE",
+      "phase5RequiredRole": null,
+      "selection": "DEFERRED_NOT_REQUIRED",
+      "appearanceMapping": null,
+      "intendedLayer": null,
+      "sourceContent": [
+        "Snowboard, bindings and boots in a product display with background and visible lettering.",
+        "Deferred future reference; the current Avatar contract has no snowboard layer or artboard."
+      ],
+      "genericExact": {
+        "proposed": null,
+        "approved": null,
+        "status": "DEFERRED",
+        "exactPromiseClaim": false,
+        "modelId": null,
+        "variantId": null,
+        "season": null,
+        "skiLengthCm": null
+      },
+      "provenance": {
+        "submittedBy": "Owner",
+        "container": "サロモン商品.zip",
+        "entry": "6.png",
+        "classification": "OWNER_SUPPLIED_SOURCE_MATERIAL",
+        "userDescription": "photo-based source package",
+        "originalPhotographer": null,
+        "copyrightHolder": null,
+        "originalCaptureOrCreationMethod": "NOT_VERIFIED",
+        "sourceMetadataIsProofOfRights": false
+      },
+      "rightsBasis": null,
+      "rightsBasisStatus": "NOT_PROVIDED_DO_NOT_INFER",
+      "intendedPurpose": "OPTIONAL_FUTURE_SNOWBOARD_REFERENCE",
+      "purposeStatus": "DEFERRED",
+      "sourceAcceptedByOwner": true,
+      "approvedByOwner": false,
+      "approvedByOwnerScope": "FINAL_DERIVATIVE",
+      "finalDerivativeApprovalStatus": "NOT_PROVIDED",
+      "specCompliance": {
+        "sourceDecodable": "PASS",
+        "sizeAndDecodeLimits": "PASS",
+        "animationAbsent": "PASS",
+        "staticAlphaWebP": "FAIL_PNG_RGB_NO_ALPHA",
+        "canonicalDimensions": "NOT_APPLICABLE_NO_SNOWBOARD_SPEC",
+        "metadataFree": "FAIL_XMP_PRESENT",
+        "physicalCrop": "DEFERRED",
+        "isolatedRequiredLayer": "DEFERRED",
+        "rightsApprovalAndReleaseBinding": "MISSING",
+        "existingRasterValidator": "NOT_RUN_UNSUPPORTED_LAYER",
+        "overall": "DEFERRED_NOT_EVALUATED_AGAINST_UNDEFINED_SNOWBOARD_CONTRACT"
+      },
+      "inspection": {
+        "file": "6.png",
+        "bytes": 30343,
+        "sha256": "6e13ca996ce652d81b82105568d6ca6ef4d5ad0ad8b26dc0a1789e0a81953c84",
+        "format": "png",
+        "width": 120,
+        "height": 120,
+        "aspectRatio": 1,
+        "colourSpace": "srgb",
+        "channels": 3,
+        "bitsPerSample": 8,
+        "pages": 1,
+        "alphaChannelPresent": false,
+        "transparentPixels": 0,
+        "partiallyTransparentPixels": 0,
+        "opaquePixels": 14400,
+        "nonTransparentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 120
+        },
+        "boundsMeaning": "Opaque source canvas, including photographic background; not isolated subject or physical head/sole/tip/tail bounds",
+        "subjectBoundsNormalized": false,
+        "subjectBoundsNumeric": null,
+        "metadata": {
+          "exifPresent": false,
+          "iccPresent": false,
+          "xmpPresent": true,
+          "iptcPresent": false,
+          "xmpBytes": 1207,
+          "xmpPropertyNames": [
+            "x:xmpmeta",
+            "rdf:RDF",
+            "rdf:Description",
+            "Attrib:Ads",
+            "rdf:Seq",
+            "rdf:li",
+            "Attrib:Created",
+            "Attrib:ExtId",
+            "Attrib:FbId",
+            "Attrib:TouchType",
+            "dc:title",
+            "rdf:Alt",
+            "pdf:Author",
+            "xmp:CreatorTool"
+          ],
+          "rawMetadataValuesIncluded": false,
+          "metadataIsRightsEvidence": false
+        },
+        "pngChunks": [
+          {
+            "type": "IHDR",
+            "length": 13
+          },
+          {
+            "type": "pHYs",
+            "length": 9
+          },
+          {
+            "type": "iTXt",
+            "length": 1229
+          },
+          {
+            "type": "IDAT",
+            "length": 29024
+          },
+          {
+            "type": "IEND",
+            "length": 0
+          }
+        ],
+        "animatedPng": false,
+        "withinByteAndPixelLimits": true,
+        "authoredTargetLayer": null,
+        "acceptedDerivativeDimensionsMatch": null,
+        "sourceBytesMutated": false
+      },
+      "preprocessingRequired": "DEFERRED",
+      "missingItems": [
+        "Transparent static WebP final derivative",
+        "Explicit derivative-level rights basis and Owner approval",
+        "Provenance beyond package submission; creator/rightsholder and use/derivation permission are not supplied",
+        "Future snowboard scope and artwork specification; no current Phase5 core requirement"
+      ],
+      "derivative": {
+        "file": null,
+        "sha256": null,
+        "approvedByOwner": false,
+        "visualId": null,
+        "mediaId": null,
+        "revisionId": null,
+        "releaseId": null,
+        "purposeGrant": null,
+        "rightsUntil": null,
+        "expiryPolicySpecified": false,
+        "internalOnly": null
+      }
+    }
+  ],
+  "approvedFinalDerivativeCount": 0,
+  "preprocessingRequired": true,
+  "activationResumeReadiness": {
+    "ready": false,
+    "localImport": false,
+    "purposeGrantCreated": false,
+    "releaseBindingCreated": false,
+    "localRealArtworkE2E": "NOT_RUN_INPUT_GATE_NOT_MET",
+    "requiredDeliveredFiles": [
+      "appearance-1.webp",
+      "appearance-2.webp",
+      "generic-ski.webp"
+    ],
+    "requiredApproval": "Each final SHA approved by Owner with explicit rights basis, AVATAR_VISUALIZATION_V1 purpose, layer/appearance and generic/exact classification; no invented identity or binding",
+    "conditionalNextScope": [
+      "Local artwork validation",
+      "Local import",
+      "Local immutable purpose grant / release binding",
+      "Local GuestBooking real-artwork E2E"
+    ],
+    "successfulFutureTerminal": "PHASE5_LOCAL_PASS_REAL_ARTWORK_ACTIVE"
+  },
+  "operations": {
+    "localOnly": true,
+    "sourceEdits": 0,
+    "derivativesCreated": 0,
+    "backgroundRemoval": 0,
+    "contentGeneration": 0,
+    "newAiImages": 0,
+    "localDb": 0,
+    "hostedNeon": 0,
+    "vercel": 0,
+    "r2": 0,
+    "square": 0,
+    "production": 0,
+    "mainMerge": 0,
+    "externalBrowser": 0,
+    "webScraping": 0,
+    "googleImages": 0,
+    "gitFetch": 0,
+    "gitPush": 0,
+    "repositoryChanges": 0,
+    "additionalClaudeReviews": 0
+  },
+  "finalClassification": "ARTWORK_SOURCE_ACCEPTED_PREPROCESSING_REQUIRED"
+}

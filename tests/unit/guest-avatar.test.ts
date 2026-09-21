@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {HoldError} from '../../packages/contracts/src/hold';
+import {createHash} from 'node:crypto';
+import {guestAvatarScope,guestAvatarPath} from '../../packages/contracts/src/guest-avatar';
+import {guestAvatarHandler,assertLocalAvatarOrigin,type GuestAvatarBoundary} from '../../apps/web/src/lib/guest-avatar-http';
+import {avatarMediaHandler} from '../../apps/web/src/lib/avatar-media-http';
+import {mapAvatarVisualization} from '../../packages/core/src/avatar/visualization';
+import {syntheticAvatarRaster} from '../avatar/phase4-fixture';
+import {id,visual,recommendation,now} from '../avatar/fixture';
+import type {AvatarPreviewPayloads} from '../../packages/core/src/avatar/preview';
+const scope={draftId:id(500),revision:2,memberKey:'person-1'},path=guestAvatarPath(scope)!;
+const art=await syntheticAvatarRaster('AVATAR'),digest=createHash('sha256').update(art.bytes).digest('hex');
+const metadata=visual(101,{layer:'AVATAR',avatarType:'APPEARANCE_1',derivativeSha256:digest}),source=recommendation();
+const payloads:AvatarPreviewPayloads={APPEARANCE_1:mapAvatarVisualization(source.recommendation,source.profile,[metadata],now,'APPEARANCE_1'),APPEARANCE_2:null};
+const imagePath='/guest-avatar-media/'+path+'/'+metadata.id+'/'+digest;
+function fixture(){let loads=0,reads=0;const b:GuestAvatarBoundary={guard:async()=>{},load:async()=>{loads++;return {payloads,previewId:id(510)};},reader:()=>({findForDelivery:async()=>metadata,readBytes:async()=>{reads++;return art.bytes;}})};return {b,counts:()=>({loads,reads})};}
+const request=(p:string,method='GET')=>new Request('http://127.0.0.1:32111'+p,{method});
+test('strict scope is deterministic and rejects free URL, query and oversized revision',()=>{assert.deepEqual(guestAvatarScope(scope.draftId,'2',scope.memberKey),scope);for(const values of [['bad','2','person-1'],[scope.draftId,'0','person-1'],[scope.draftId,'02','person-1'],[scope.draftId,'1e2','person-1'],[scope.draftId,'99999999999999999','person-1'],[scope.draftId,'2','../x'],[scope.draftId,'2','https://example.invalid']])assert.equal(guestAvatarScope(...values as [string,string,string]),null);});
+for(const p of [imagePath+'?rightsConfirmed=true',imagePath+'/extra',imagePath.replace(metadata.id,'wrong'),imagePath.replace(digest,'BAD'),'/guest-avatar-media/'+id(500)+'/0/person-1/'+metadata.id+'/'+digest])test('invalid guest image shape denies before auth/DB '+p.slice(-16),async()=>{const f=fixture();assert.equal((await guestAvatarHandler(()=>f.b,true)(request(p))).status,404);assert.deepEqual(f.counts(),{loads:0,reads:0});});
+test('POST and absent runtime cannot read bytes',async()=>{const f=fixture();assert.equal((await guestAvatarHandler(()=>f.b,true)(request(imagePath,'POST'))).status,405);assert.equal((await guestAvatarHandler(()=>null,true)(request(imagePath))).status,404);assert.deepEqual(f.counts(),{loads:0,reads:0});});
+test('metadata has only appearance payloads and private cache headers',async()=>{const f=fixture(),r=await guestAvatarHandler(()=>f.b,false)(request('/api/guest/avatar/'+path));assert.equal(r.status,200);assert.deepEqual(await r.json(),payloads);assert.equal(r.headers.get('Cache-Control'),'private, no-store');assert.deepEqual(f.counts(),{loads:1,reads:0});});
+test('offered image reauthorizes owner around byte IO and returns only WebP',async()=>{const f=fixture(),r=await guestAvatarHandler(()=>f.b,true)(request(imagePath));assert.equal(r.status,200);assert.equal(r.headers.get('Content-Type'),'image/webp');assert.equal(r.headers.get('Vary'),'Cookie');assert.equal(createHash('sha256').update(new Uint8Array(await r.arrayBuffer())).digest('hex'),digest);assert.deepEqual(f.counts(),{loads:2,reads:1});});
+test('a currently eligible image outside the member offer is still forbidden',async()=>{const f=fixture();f.b.load=async()=>({payloads:{APPEARANCE_1:null,APPEARANCE_2:null},previewId:id(510)});assert.equal((await guestAvatarHandler(()=>f.b,true)(request(imagePath))).status,404);assert.equal(f.counts().reads,0);});
+for(const condition of ['revoked context','replaced preview','replaced grant'] as const)test('race after bytes: '+condition+' fails closed',async()=>{const f=fixture();let calls=0;f.b.load=async()=>{if(++calls===1)return {payloads,previewId:id(510)};if(condition==='revoked context')throw Error('synthetic expired');const changed=structuredClone(payloads);if(condition==='replaced grant')changed.APPEARANCE_1!.avatar!.releaseId=id(999);return {payloads:changed,previewId:condition==='replaced preview'?id(511):id(510)};};const r=await guestAvatarHandler(()=>f.b,true)(request(imagePath));assert.equal(r.status,404);assert.equal(await r.text(),'');assert.equal(f.counts().reads,1);});
+test('cross-site and failed authentication produce empty private404',async()=>{const f=fixture();f.b.load=async()=>{throw Error('synthetic private detail');};for(const req of [request(imagePath),new Request(request(imagePath),{headers:{'sec-fetch-site':'cross-site'}})]){const r=await guestAvatarHandler(()=>f.b,true)(req);assert.equal(r.status,404);assert.equal(await r.text(),'');assert.equal(r.headers.get('Cache-Control'),'private, no-store');}assert.equal(f.counts().reads,0);});
+for(const missing of ['HOLD_VIEW','QUOTE_VIEW'])test('staff BOOKING_VIEW with missing '+missing+' rejects before bytes',async()=>{let reads=0;const state={status:'authorized',stamp:'synthetic',principal:{permissions:['BOOKING_VIEW',missing==='HOLD_VIEW'?'QUOTE_VIEW':'HOLD_VIEW']}};const handler=avatarMediaHandler(async()=>state as never,()=>{reads++;return {findForDelivery:async()=>metadata,readBytes:async()=>art.bytes};});assert.equal((await handler(request('/avatar-media/'+metadata.id+'/'+digest))).status,404);assert.equal(reads,0);});
+
+for(const media of [false,true])test('Avatar throttle precedes metadata/bytes; private429 '+media,async()=>{const f=fixture();f.b.guard=async()=>{throw new HoldError('GUEST_RATE_LIMITED',429);};const r=await guestAvatarHandler(()=>f.b,media)(request(media?imagePath:'/api/guest/avatar/'+path));assert.equal(r.status,429);assert.equal(await r.text(),'');assert.equal(r.headers.get('Retry-After'),'60');assert.deepEqual(f.counts(),{loads:0,reads:0});});
+
+test('local Avatar accepts Next loopback normalization only with the exact configured Host/port',()=>{
+ const origin='http://127.0.0.1:32111',host='127.0.0.1:32111';
+ for(const name of ['127.0.0.1','localhost'])assertLocalAvatarOrigin(new Request('http://'+name+':32111/api/guest/avatar',{headers:{host}}),origin);
+ for(const [url,actualHost]of [['http://localhost:32112/x',host],['https://localhost:32111/x',host],['http://other.invalid:32111/x',host],['http://127.0.0.2:32111/x',host],['http://localhost:32111/x','localhost:32111'],['http://localhost:32111/x','']] as const)assert.throws(()=>assertLocalAvatarOrigin(new Request(url,{headers:{host:actualHost,'x-forwarded-host':host}}),origin),/LOCAL_ORIGIN_REQUIRED/);
+ assert.throws(()=>assertLocalAvatarOrigin(new Request('https://example.invalid/x',{headers:{host:'example.invalid'}}),'https://example.invalid'),/LOCAL_ORIGIN_REQUIRED/);
+});

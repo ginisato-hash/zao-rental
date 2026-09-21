@@ -1,0 +1,13 @@
+{
+  "status": "READBACK_PASS",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "name": "zao-rental-sandbox-development",
+  "type": "integration",
+  "statusMetadata": "available",
+  "plan": {
+    "id": "free_v3",
+    "name": "Free",
+    "paymentMethodRequired": false
+  },
+  "connectedProjects": 0
+}

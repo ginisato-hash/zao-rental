@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "bundledEntryChecks": 5,
+  "actualProviderRequests": 0,
+  "actualDatabaseConnections": 0,
+  "customerRoutes": 0
+}

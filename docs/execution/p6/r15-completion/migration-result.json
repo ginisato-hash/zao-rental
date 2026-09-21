@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "sourceCommit": "e81a82374de2f551dd8739e8a74da6166c3102e6",
+  "method": "migrateHostedDevelopment",
+  "historicalInvocations": 1,
+  "historicalResult": "FAIL_42501_ROLLED_BACK",
+  "newInvocations": 1,
+  "cumulativeInvocations": 2,
+  "appliedRange": "0001-0030",
+  "appliedCount": 30,
+  "checksumReadback": true,
+  "metadataCounts": {
+    "schemas": 7,
+    "tables": 99,
+    "functions": 70,
+    "indexes": 190
+  },
+  "finalCustodyPolicy": {
+    "database_create": false,
+    "public_create": false,
+    "setup_inherit": false,
+    "setup_set": false,
+    "intended_schema_owner": true
+  },
+  "newResources": 0,
+  "newDatabases": 0,
+  "permanentPrivilegeExpansion": 0,
+  "superuserOrProviderRoleMutation": 0
+}

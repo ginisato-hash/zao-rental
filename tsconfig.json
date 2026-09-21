@@ -38,7 +38,8 @@
     "tools/**/*.ts",
     "tests/**/*.ts",
     "playwright.config.ts",
-    "tests/**/*.tsx"
+    "tests/**/*.tsx",
+    "apps/webhook-ingress/**/*.ts"
   ],
   "exclude": [
     "node_modules",

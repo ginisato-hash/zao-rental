@@ -1,0 +1,3289 @@
+{
+  "kind": "LOCAL_OWNED_SYNTHETIC_ONLY",
+  "database": "zr_16311180e859",
+  "version": "18.4",
+  "migrations": [
+    {
+      "id": "0001",
+      "checksum": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150"
+    },
+    {
+      "id": "0002",
+      "checksum": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246"
+    },
+    {
+      "id": "0003",
+      "checksum": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47"
+    },
+    {
+      "id": "0004",
+      "checksum": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1"
+    },
+    {
+      "id": "0005",
+      "checksum": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7"
+    },
+    {
+      "id": "0006",
+      "checksum": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954"
+    },
+    {
+      "id": "0007",
+      "checksum": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075"
+    },
+    {
+      "id": "0008",
+      "checksum": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11"
+    },
+    {
+      "id": "0009",
+      "checksum": "bdc31ea49660a1edee75fd20dd3c4043090dc0832698f2356f31af219c7f37c0"
+    },
+    {
+      "id": "0010",
+      "checksum": "6d07a0dca17e428fcc43d332c8f87ffc35557f5dd23d56e474b6a2d3e30b8816"
+    },
+    {
+      "id": "0011",
+      "checksum": "5db1b2f9bec8ef4945ccb2065b6e8638d7a8993502adf670bce7fce5a059acf6"
+    },
+    {
+      "id": "0012",
+      "checksum": "a6076dbf78245744b0394bcf5a4a5ced868d5798080da19b1b581ba40ad9239d"
+    },
+    {
+      "id": "0013",
+      "checksum": "ec606b57dc1f27e9b015e6c6cad4e4a26fbfc70479d3a3abc50e5ca54ea8817c"
+    },
+    {
+      "id": "0014",
+      "checksum": "7f19d23b101cc4c795e6cadf6b773e233eb72b3138647d4c0f6953b77c6bd52c"
+    },
+    {
+      "id": "0015",
+      "checksum": "f4885fade5b753e950ea307b47dee5b138d61985a48d09fe9b09f063de6ba095"
+    },
+    {
+      "id": "0016",
+      "checksum": "177f50e10a653ff176c5863a60d221639470fa3471852c119c8b1bdc79f0d57c"
+    },
+    {
+      "id": "0017",
+      "checksum": "a85917af78ced36e347f72b4ab8dfb11aaedff8b542eef6f7299eb4db2358f73"
+    },
+    {
+      "id": "0018",
+      "checksum": "b3d1c1c28b4536c5a4cd81f070da04b297807856c3ff39fd3b0a65ba5470044c"
+    },
+    {
+      "id": "0019",
+      "checksum": "45d39bbc3f9e97956e54e39bcbaa582ab08c75c3165a4b5848b6417334fb8ec7"
+    },
+    {
+      "id": "0020",
+      "checksum": "a1099ed4d97273de8eab2c6ba1b8c074747e381d01158510a5b2c9afdf82e4ab"
+    },
+    {
+      "id": "0021",
+      "checksum": "d3698864619ac5e4bb30bb6e966cb1228cfa71d9fb83f9eb82b1bcea6ff73978"
+    },
+    {
+      "id": "0022",
+      "checksum": "e6abd96536ba285e1bca159b79b0ed20cf83dcdf7af4169f510020f321b2b12b"
+    },
+    {
+      "id": "0023",
+      "checksum": "8b0db6afc0540dce17fb206b0fd5e6f7963a44d6f7e20f0f4f445b1643a441da"
+    },
+    {
+      "id": "0024",
+      "checksum": "c69295df3ec5abdcc5e44b50cdf482efebdbf1d260b83b02a8b7289a9c4e6aec"
+    },
+    {
+      "id": "0025",
+      "checksum": "8ffa1c78e9f10338987a1846741cc05cdc523d99ec8949d1bf6757fe48a8268d"
+    },
+    {
+      "id": "0026",
+      "checksum": "276495dec2116938da4bc0f4f3d3cd742210c2522ab3c3b41c5fefedbf76e605"
+    },
+    {
+      "id": "0027",
+      "checksum": "6b0b9eda78d634e10417e83b8268096b7b46f3778dd4ceea2fa8915413733062"
+    },
+    {
+      "id": "0028",
+      "checksum": "0b9fbafefc9a1e6d939e078f354aca08af7982f7f0db9f8582c0dc5b30f82953"
+    },
+    {
+      "id": "0029",
+      "checksum": "e2e070adadbed9682ff45c41660e8fa2889124af4840e7af274171574e2b7566"
+    }
+  ],
+  "tables": [
+    {
+      "table_schema": "payment_projection",
+      "table_name": "events"
+    },
+    {
+      "table_schema": "payment_projection",
+      "table_name": "heads"
+    },
+    {
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts"
+    },
+    {
+      "table_schema": "payment_reconciliation",
+      "table_name": "audit"
+    },
+    {
+      "table_schema": "payment_reconciliation",
+      "table_name": "events"
+    },
+    {
+      "table_schema": "payment_reconciliation",
+      "table_name": "jobs"
+    },
+    {
+      "table_schema": "payment_reconciliation",
+      "table_name": "provider_stops"
+    },
+    {
+      "table_schema": "payment_reconciliation",
+      "table_name": "streams"
+    },
+    {
+      "table_schema": "square_webhook",
+      "table_name": "inbox"
+    }
+  ],
+  "constraints": [
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_attempt_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (attempt_id) REFERENCES rental_payment_attempts(id)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_attempt_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL attempt_id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_attempt_id_observation_fingerprint_key",
+      "type": "u",
+      "definition": "UNIQUE (attempt_id, observation_fingerprint)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_attempt_id_revision_key",
+      "type": "u",
+      "definition": "UNIQUE (attempt_id, revision)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_booking_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (booking_id) REFERENCES rental_bookings(id)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_booking_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL booking_id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_check",
+      "type": "c",
+      "definition": "CHECK ((operator_required = ((decision ~~ 'BLOCK_%'::text) OR (decision = 'REQUIRES_OPERATOR_RECONCILIATION'::text))))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_check1",
+      "type": "c",
+      "definition": "CHECK (((((result ->> 'bookingId'::text) = (booking_id)::text) AND ((result ->> 'attemptId'::text) = (attempt_id)::text) AND ((result ->> 'revision'::text) = (revision)::text) AND ((result ->> 'decision'::text) = decision) AND ((result -> 'duplicate'::text) = 'false'::jsonb) AND ((result ->> 'decisionFingerprint'::text) = decision_fingerprint) AND ((result ->> 'observationFingerprint'::text) = observation_fingerprint) AND ((result -> 'operatorActionRequired'::text) = to_jsonb(operator_required))) IS TRUE))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_decision_check",
+      "type": "c",
+      "definition": "CHECK ((decision = ANY (ARRAY['NOOP_DUPLICATE'::text, 'NOOP_STALE'::text, 'NOOP_TERMINAL'::text, 'KEEP_PENDING'::text, 'APPLY_COMPLETED'::text, 'APPLY_FAILED'::text, 'APPLY_CANCELED'::text, 'BLOCK_EXPIRED_HOLD'::text, 'BLOCK_INVENTORY_DRIFT'::text, 'BLOCK_TRANSFER_ATTENTION'::text, 'BLOCK_PRICE_INTEGRITY'::text, 'BLOCK_IDENTITY_MISMATCH'::text, 'BLOCK_INVALID_TRANSITION'::text, 'BLOCK_CONFLICT'::text, 'BLOCK_SOURCE'::text, 'REQUIRES_OPERATOR_RECONCILIATION'::text])))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_decision_fingerprint_check",
+      "type": "c",
+      "definition": "CHECK ((decision_fingerprint ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_decision_fingerprint_not_null",
+      "type": "n",
+      "definition": "NOT NULL decision_fingerprint"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_decision_not_null",
+      "type": "n",
+      "definition": "NOT NULL decision"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_job_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (job_id) REFERENCES payment_reconciliation.jobs(id)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_job_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL job_id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_new_state_check",
+      "type": "c",
+      "definition": "CHECK ((((new_state ?& ARRAY['booking'::text, 'attempt'::text, 'hold'::text, 'holdPayment'::text]) AND ((new_state - ARRAY['booking'::text, 'attempt'::text, 'hold'::text, 'holdPayment'::text]) = '{}'::jsonb)) IS TRUE))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_new_state_not_null",
+      "type": "n",
+      "definition": "NOT NULL new_state"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_observation_check",
+      "type": "c",
+      "definition": "CHECK (((observation IS NULL) OR payment_reconciliation.valid_observation(observation)))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_observation_fingerprint_check",
+      "type": "c",
+      "definition": "CHECK ((observation_fingerprint ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_observation_fingerprint_not_null",
+      "type": "n",
+      "definition": "NOT NULL observation_fingerprint"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_occurred_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL occurred_at"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_operator_required_not_null",
+      "type": "n",
+      "definition": "NOT NULL operator_required"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_origin_check",
+      "type": "c",
+      "definition": "CHECK ((origin = 'INTERNAL_LOCAL_PROJECTION'::text))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_origin_not_null",
+      "type": "n",
+      "definition": "NOT NULL origin"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_previous_state_check",
+      "type": "c",
+      "definition": "CHECK ((((previous_state ?& ARRAY['booking'::text, 'attempt'::text, 'hold'::text, 'holdPayment'::text]) AND ((previous_state - ARRAY['booking'::text, 'attempt'::text, 'hold'::text, 'holdPayment'::text]) = '{}'::jsonb)) IS TRUE))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_previous_state_not_null",
+      "type": "n",
+      "definition": "NOT NULL previous_state"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_provider_id_check",
+      "type": "c",
+      "definition": "CHECK ((provider_id ~ '^[A-Za-z0-9_-]{1,100}$'::text))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_provider_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL provider_id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_provider_updated_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL provider_updated_at"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_result_check",
+      "type": "c",
+      "definition": "CHECK ((((result ?& ARRAY['bookingId'::text, 'attemptId'::text, 'revision'::text, 'decision'::text, 'decisionFingerprint'::text, 'observationFingerprint'::text, 'providerStatus'::text, 'bookingState'::text, 'attemptState'::text, 'operatorActionRequired'::text, 'duplicate'::text]) AND ((result - ARRAY['bookingId'::text, 'attemptId'::text, 'revision'::text, 'decision'::text, 'decisionFingerprint'::text, 'observationFingerprint'::text, 'providerStatus'::text, 'bookingState'::text, 'attemptState'::text, 'operatorActionRequired'::text, 'duplicate'::text]) = '{}'::jsonb)) IS TRUE))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_result_not_null",
+      "type": "n",
+      "definition": "NOT NULL result"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_revision_check",
+      "type": "c",
+      "definition": "CHECK ((revision > 0))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_revision_not_null",
+      "type": "n",
+      "definition": "NOT NULL revision"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_truth_fingerprint_check",
+      "type": "c",
+      "definition": "CHECK ((truth_fingerprint ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "name": "events_truth_fingerprint_not_null",
+      "type": "n",
+      "definition": "NOT NULL truth_fingerprint"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "heads",
+      "name": "heads_attempt_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (attempt_id) REFERENCES rental_payment_attempts(id)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "heads",
+      "name": "heads_attempt_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL attempt_id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "heads",
+      "name": "heads_last_observation_check",
+      "type": "c",
+      "definition": "CHECK (((last_observation IS NULL) OR payment_reconciliation.valid_observation(last_observation)))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "heads",
+      "name": "heads_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (attempt_id)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "heads",
+      "name": "heads_revision_check",
+      "type": "c",
+      "definition": "CHECK ((revision > 0))"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "heads",
+      "name": "heads_revision_not_null",
+      "type": "n",
+      "definition": "NOT NULL revision"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "job_receipts",
+      "name": "job_receipts_attempt_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL attempt_id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "job_receipts",
+      "name": "job_receipts_attempt_id_observation_fingerprint_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (attempt_id, observation_fingerprint) REFERENCES payment_projection.events(attempt_id, observation_fingerprint)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "job_receipts",
+      "name": "job_receipts_job_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (job_id) REFERENCES payment_reconciliation.jobs(id)"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "job_receipts",
+      "name": "job_receipts_job_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL job_id"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "job_receipts",
+      "name": "job_receipts_observation_fingerprint_not_null",
+      "type": "n",
+      "definition": "NOT NULL observation_fingerprint"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "job_receipts",
+      "name": "job_receipts_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (job_id, attempt_id, observation_fingerprint)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_action_check",
+      "type": "c",
+      "definition": "CHECK ((action = ANY (ARRAY['CREATED'::text, 'COALESCED'::text, 'CLAIMED'::text, 'FINALIZED'::text, 'EXHAUSTED'::text, 'SECURITY_BLOCKED'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_action_not_null",
+      "type": "n",
+      "definition": "NOT NULL action"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_attempt_check",
+      "type": "c",
+      "definition": "CHECK (((attempt >= 0) AND (attempt <= 5)))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_attempt_not_null",
+      "type": "n",
+      "definition": "NOT NULL attempt"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_job_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (job_id) REFERENCES payment_reconciliation.jobs(id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_job_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL job_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_occurred_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL occurred_at"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "audit",
+      "name": "audit_state_not_null",
+      "type": "n",
+      "definition": "NOT NULL state"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_body_sha256_check",
+      "type": "c",
+      "definition": "CHECK ((body_sha256 ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_body_sha256_not_null",
+      "type": "n",
+      "definition": "NOT NULL body_sha256"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_environment_event_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (environment, event_id) REFERENCES square_webhook.inbox(environment, event_id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_environment_not_null",
+      "type": "n",
+      "definition": "NOT NULL environment"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_event_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL event_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_event_type_check",
+      "type": "c",
+      "definition": "CHECK ((event_type = ANY (ARRAY['payment.created'::text, 'payment.updated'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_event_type_not_null",
+      "type": "n",
+      "definition": "NOT NULL event_type"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_job_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (job_id) REFERENCES payment_reconciliation.jobs(id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_job_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL job_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_linked_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL linked_at"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "events",
+      "name": "events_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (environment, event_id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_attempt_check",
+      "type": "c",
+      "definition": "CHECK (((attempt >= 0) AND (attempt <= 5)))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_attempt_not_null",
+      "type": "n",
+      "definition": "NOT NULL attempt"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_check",
+      "type": "c",
+      "definition": "CHECK (((state = 'CLAIMED'::text) = ((lease_owner IS NOT NULL) AND (lease_token IS NOT NULL) AND (lease_expires_at IS NOT NULL))))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_check1",
+      "type": "c",
+      "definition": "CHECK ((((lease_token IS NULL) = (lease_expires_at IS NULL)) AND ((lease_token IS NULL) = (lease_owner IS NULL))))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_check2",
+      "type": "c",
+      "definition": "CHECK (((state <> 'CLAIMED'::text) OR (claim_after = lease_expires_at)))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_check3",
+      "type": "c",
+      "definition": "CHECK (((state = ANY (ARRAY['RECONCILED'::text, 'BLOCKED'::text, 'DEAD'::text])) = (terminal_at IS NOT NULL)))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_claim_after_not_null",
+      "type": "n",
+      "definition": "NOT NULL claim_after"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_context_fingerprint_check",
+      "type": "c",
+      "definition": "CHECK ((context_fingerprint ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_created_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_deadline_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL deadline_at"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_decision_check",
+      "type": "c",
+      "definition": "CHECK ((decision = ANY (ARRAY['ACCEPT_PENDING'::text, 'ACCEPT_COMPLETED'::text, 'ACCEPT_FAILED'::text, 'ACCEPT_CANCELED'::text, 'NOOP_DUPLICATE'::text, 'NOOP_STALE'::text, 'NOOP_TERMINAL'::text, 'BLOCKED_EVIDENCE_MISMATCH'::text, 'BLOCKED_INVALID_TRANSITION'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_decision_fingerprint_check",
+      "type": "c",
+      "definition": "CHECK ((decision_fingerprint ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_environment_merchant_id_payment_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (environment, merchant_id, payment_id) REFERENCES payment_reconciliation.streams(environment, merchant_id, payment_id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_environment_merchant_id_payment_id_generation_key",
+      "type": "u",
+      "definition": "UNIQUE (environment, merchant_id, payment_id, generation)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_environment_not_null",
+      "type": "n",
+      "definition": "NOT NULL environment"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_environment_source_event_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (environment, source_event_id) REFERENCES square_webhook.inbox(environment, event_id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_generation_check",
+      "type": "c",
+      "definition": "CHECK ((generation > 0))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_generation_not_null",
+      "type": "n",
+      "definition": "NOT NULL generation"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_last_error_check",
+      "type": "c",
+      "definition": "CHECK ((last_error = ANY (ARRAY['AUTH_BLOCKED'::text, 'RATE_LIMITED'::text, 'NETWORK_RETRYABLE'::text, 'PROVIDER_5XX_RETRYABLE'::text, 'NOT_FOUND_BLOCKED'::text, 'INVALID_RESPONSE_BLOCKED'::text, 'EVIDENCE_MISMATCH_BLOCKED'::text, 'PAYMENT_CONTEXT_MISSING'::text, 'ATTEMPTS_EXHAUSTED'::text, 'DEADLINE_EXCEEDED'::text, 'PENDING_OBSERVATION'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_merchant_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL merchant_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_payment_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL payment_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_provider_status_check",
+      "type": "c",
+      "definition": "CHECK ((provider_status = ANY (ARRAY['PENDING'::text, 'COMPLETED'::text, 'FAILED'::text, 'CANCELED'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_security_blocked_not_null",
+      "type": "n",
+      "definition": "NOT NULL security_blocked"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_signal_revision_check",
+      "type": "c",
+      "definition": "CHECK ((signal_revision > 0))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_signal_revision_not_null",
+      "type": "n",
+      "definition": "NOT NULL signal_revision"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_source_event_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL source_event_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_source_fingerprint_check",
+      "type": "c",
+      "definition": "CHECK ((source_fingerprint ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_source_fingerprint_not_null",
+      "type": "n",
+      "definition": "NOT NULL source_fingerprint"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_state_check",
+      "type": "c",
+      "definition": "CHECK ((state = ANY (ARRAY['READY'::text, 'CLAIMED'::text, 'RETRY_WAIT'::text, 'RECONCILED'::text, 'BLOCKED'::text, 'DEAD'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_state_not_null",
+      "type": "n",
+      "definition": "NOT NULL state"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "jobs",
+      "name": "jobs_updated_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL updated_at"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "provider_stops",
+      "name": "provider_stops_code_check",
+      "type": "c",
+      "definition": "CHECK ((code = ANY (ARRAY['AUTH_BLOCKED'::text, 'RATE_LIMITED'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "provider_stops",
+      "name": "provider_stops_code_not_null",
+      "type": "n",
+      "definition": "NOT NULL code"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "provider_stops",
+      "name": "provider_stops_created_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "provider_stops",
+      "name": "provider_stops_environment_check",
+      "type": "c",
+      "definition": "CHECK ((environment = ANY (ARRAY['SANDBOX'::text, 'PRODUCTION'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "provider_stops",
+      "name": "provider_stops_environment_not_null",
+      "type": "n",
+      "definition": "NOT NULL environment"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "provider_stops",
+      "name": "provider_stops_merchant_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL merchant_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "provider_stops",
+      "name": "provider_stops_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (environment, merchant_id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_environment_check",
+      "type": "c",
+      "definition": "CHECK ((environment = ANY (ARRAY['SANDBOX'::text, 'PRODUCTION'::text])))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_environment_not_null",
+      "type": "n",
+      "definition": "NOT NULL environment"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_generation_check",
+      "type": "c",
+      "definition": "CHECK ((generation >= 0))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_generation_not_null",
+      "type": "n",
+      "definition": "NOT NULL generation"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_latest_check",
+      "type": "c",
+      "definition": "CHECK (((latest IS NULL) OR payment_reconciliation.valid_observation(latest)))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_merchant_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL merchant_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_payment_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL payment_id"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (environment, merchant_id, payment_id)"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_truth_revision_check",
+      "type": "c",
+      "definition": "CHECK ((truth_revision >= 0))"
+    },
+    {
+      "schema": "payment_reconciliation",
+      "table": "streams",
+      "name": "streams_truth_revision_not_null",
+      "type": "n",
+      "definition": "NOT NULL truth_revision"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_attempt_check",
+      "type": "c",
+      "definition": "CHECK (((attempt >= 0) AND (attempt <= 5)))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_attempt_not_null",
+      "type": "n",
+      "definition": "NOT NULL attempt"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_body_sha256_check",
+      "type": "c",
+      "definition": "CHECK ((body_sha256 ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_body_sha256_not_null",
+      "type": "n",
+      "definition": "NOT NULL body_sha256"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_check",
+      "type": "c",
+      "definition": "CHECK (((state = 'RECONCILING'::text) = ((claim_token IS NOT NULL) AND (lease_until IS NOT NULL))))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_check1",
+      "type": "c",
+      "definition": "CHECK (((claim_token IS NULL) = (lease_until IS NULL)))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_check2",
+      "type": "c",
+      "definition": "CHECK (((state = 'FAILED_RETRYABLE'::text) = (next_attempt_at IS NOT NULL)))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_check3",
+      "type": "c",
+      "definition": "CHECK (((state = 'RECONCILED'::text) = (reconciled_at IS NOT NULL)))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_check4",
+      "type": "c",
+      "definition": "CHECK (((conflict_count = 0) = ((conflict_at IS NULL) AND (last_conflict_sha256 IS NULL))))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_conflict_count_check",
+      "type": "c",
+      "definition": "CHECK (((conflict_count >= 0) AND (conflict_count <= 65535)))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_conflict_count_not_null",
+      "type": "n",
+      "definition": "NOT NULL conflict_count"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_environment_check",
+      "type": "c",
+      "definition": "CHECK ((environment = ANY (ARRAY['SANDBOX'::text, 'PRODUCTION'::text])))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_environment_not_null",
+      "type": "n",
+      "definition": "NOT NULL environment"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_event_id_check",
+      "type": "c",
+      "definition": "CHECK ((event_id ~ '^[A-Za-z0-9_-]{1,128}$'::text))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_event_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL event_id"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_event_type_check",
+      "type": "c",
+      "definition": "CHECK ((event_type = ANY (ARRAY['payment.created'::text, 'payment.updated'::text])))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_event_type_not_null",
+      "type": "n",
+      "definition": "NOT NULL event_type"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_last_conflict_sha256_check",
+      "type": "c",
+      "definition": "CHECK ((last_conflict_sha256 ~ '^[a-f0-9]{64}$'::text))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_last_error_check",
+      "type": "c",
+      "definition": "CHECK ((last_error = ANY (ARRAY['PROVIDER_UNAVAILABLE'::text, 'IDENTITY_MISMATCH'::text, 'UNSUPPORTED_PAYMENT'::text, 'MANUAL_REVIEW'::text, 'ATTEMPTS_EXHAUSTED'::text, 'EVENT_HASH_CONFLICT'::text])))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_merchant_id_check",
+      "type": "c",
+      "definition": "CHECK ((merchant_id ~ '^[A-Za-z0-9_-]{1,100}$'::text))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_merchant_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL merchant_id"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_payment_id_check",
+      "type": "c",
+      "definition": "CHECK ((payment_id ~ '^[A-Za-z0-9_-]{1,100}$'::text))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_payment_id_not_null",
+      "type": "n",
+      "definition": "NOT NULL payment_id"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (environment, event_id)"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_received_at_not_null",
+      "type": "n",
+      "definition": "NOT NULL received_at"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_state_check",
+      "type": "c",
+      "definition": "CHECK ((state = ANY (ARRAY['RECEIVED'::text, 'RECONCILING'::text, 'RECONCILED'::text, 'FAILED_RETRYABLE'::text, 'BLOCKED'::text])))"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "name": "inbox_state_not_null",
+      "type": "n",
+      "definition": "NOT NULL state"
+    }
+  ],
+  "indexes": [
+    {
+      "schemaname": "payment_projection",
+      "tablename": "events",
+      "indexname": "events_attempt_id_observation_fingerprint_key",
+      "indexdef": "CREATE UNIQUE INDEX events_attempt_id_observation_fingerprint_key ON payment_projection.events USING btree (attempt_id, observation_fingerprint)"
+    },
+    {
+      "schemaname": "payment_projection",
+      "tablename": "events",
+      "indexname": "events_attempt_id_revision_key",
+      "indexdef": "CREATE UNIQUE INDEX events_attempt_id_revision_key ON payment_projection.events USING btree (attempt_id, revision)"
+    },
+    {
+      "schemaname": "payment_projection",
+      "tablename": "events",
+      "indexname": "events_pkey",
+      "indexdef": "CREATE UNIQUE INDEX events_pkey ON payment_projection.events USING btree (id)"
+    },
+    {
+      "schemaname": "payment_projection",
+      "tablename": "events",
+      "indexname": "payment_projection_booking",
+      "indexdef": "CREATE INDEX payment_projection_booking ON payment_projection.events USING btree (booking_id, id)"
+    },
+    {
+      "schemaname": "payment_projection",
+      "tablename": "heads",
+      "indexname": "heads_pkey",
+      "indexdef": "CREATE UNIQUE INDEX heads_pkey ON payment_projection.heads USING btree (attempt_id)"
+    },
+    {
+      "schemaname": "payment_projection",
+      "tablename": "job_receipts",
+      "indexname": "job_receipts_pkey",
+      "indexdef": "CREATE UNIQUE INDEX job_receipts_pkey ON payment_projection.job_receipts USING btree (job_id, attempt_id, observation_fingerprint)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "audit",
+      "indexname": "audit_pkey",
+      "indexdef": "CREATE UNIQUE INDEX audit_pkey ON payment_reconciliation.audit USING btree (id)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "events",
+      "indexname": "events_pkey",
+      "indexdef": "CREATE UNIQUE INDEX events_pkey ON payment_reconciliation.events USING btree (environment, event_id)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "events",
+      "indexname": "reconciliation_event_job",
+      "indexdef": "CREATE INDEX reconciliation_event_job ON payment_reconciliation.events USING btree (job_id)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "jobs",
+      "indexname": "jobs_environment_merchant_id_payment_id_generation_key",
+      "indexdef": "CREATE UNIQUE INDEX jobs_environment_merchant_id_payment_id_generation_key ON payment_reconciliation.jobs USING btree (environment, merchant_id, payment_id, generation)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "jobs",
+      "indexname": "jobs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jobs_pkey ON payment_reconciliation.jobs USING btree (id)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "jobs",
+      "indexname": "one_active_reconciliation",
+      "indexdef": "CREATE UNIQUE INDEX one_active_reconciliation ON payment_reconciliation.jobs USING btree (environment, merchant_id, payment_id) WHERE (state = ANY (ARRAY['READY'::text, 'CLAIMED'::text, 'RETRY_WAIT'::text]))"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "jobs",
+      "indexname": "reconciliation_diagnostics",
+      "indexdef": "CREATE INDEX reconciliation_diagnostics ON payment_reconciliation.jobs USING btree (environment, updated_at DESC, id) WHERE ((state = ANY (ARRAY['BLOCKED'::text, 'DEAD'::text])) OR security_blocked)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "jobs",
+      "indexname": "reconciliation_due",
+      "indexdef": "CREATE INDEX reconciliation_due ON payment_reconciliation.jobs USING btree (environment, claim_after, id) WHERE (state = ANY (ARRAY['READY'::text, 'CLAIMED'::text, 'RETRY_WAIT'::text]))"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "provider_stops",
+      "indexname": "provider_stops_pkey",
+      "indexdef": "CREATE UNIQUE INDEX provider_stops_pkey ON payment_reconciliation.provider_stops USING btree (environment, merchant_id)"
+    },
+    {
+      "schemaname": "payment_reconciliation",
+      "tablename": "streams",
+      "indexname": "streams_pkey",
+      "indexdef": "CREATE UNIQUE INDEX streams_pkey ON payment_reconciliation.streams USING btree (environment, merchant_id, payment_id)"
+    },
+    {
+      "schemaname": "square_webhook",
+      "tablename": "inbox",
+      "indexname": "inbox_pkey",
+      "indexdef": "CREATE UNIQUE INDEX inbox_pkey ON square_webhook.inbox USING btree (environment, event_id)"
+    },
+    {
+      "schemaname": "square_webhook",
+      "tablename": "inbox",
+      "indexname": "webhook_claim_queue",
+      "indexdef": "CREATE INDEX webhook_claim_queue ON square_webhook.inbox USING btree (environment, received_at, event_id) WHERE (state = ANY (ARRAY['RECEIVED'::text, 'FAILED_RETRYABLE'::text, 'RECONCILING'::text]))"
+    },
+    {
+      "schemaname": "square_webhook",
+      "tablename": "inbox",
+      "indexname": "webhook_undispatched",
+      "indexdef": "CREATE INDEX webhook_undispatched ON square_webhook.inbox USING btree (environment, received_at, event_id) WHERE ((job_dispatched_at IS NULL) AND (state = 'RECEIVED'::text) AND (conflict_count = 0))"
+    }
+  ],
+  "triggers": [
+    {
+      "schema": "payment_projection",
+      "table": "events",
+      "trigger": "payment_projection_immutable",
+      "function": "pricing_immutable"
+    },
+    {
+      "schema": "payment_projection",
+      "table": "job_receipts",
+      "trigger": "payment_projection_receipt_immutable",
+      "function": "pricing_immutable"
+    },
+    {
+      "schema": "square_webhook",
+      "table": "inbox",
+      "trigger": "reconciliation_conflict",
+      "function": "conflict"
+    }
+  ],
+  "functions": [
+    {
+      "schema": "payment_projection",
+      "name": "lock_source",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "claim",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "claim_target",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "conflict",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "diagnostics",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "dispatch",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "dispatch_target",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "finalize",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "format_context",
+      "owner": "zr_16311180e859",
+      "security_definer": false,
+      "settings": [
+        "search_path=pg_catalog, pg_temp"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "load_context",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "load_contexts",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp"
+      ]
+    },
+    {
+      "schema": "payment_reconciliation",
+      "name": "valid_observation",
+      "owner": "zr_16311180e859",
+      "security_definer": false,
+      "settings": [
+        "search_path=pg_catalog, pg_temp"
+      ]
+    },
+    {
+      "schema": "square_webhook",
+      "name": "claim",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "square_webhook",
+      "name": "receive",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    },
+    {
+      "schema": "square_webhook",
+      "name": "settle",
+      "owner": "zr_16311180e859",
+      "security_definer": true,
+      "settings": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=2s"
+      ]
+    }
+  ],
+  "grants": [
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "privilege_type": "SELECT"
+    }
+  ],
+  "columns": [
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "attempt_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "attempt_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "booking_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "booking_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "decision",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "decision",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "decision_fingerprint",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "decision_fingerprint",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "job_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "job_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "new_state",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "new_state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "observation",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "observation",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "observation_fingerprint",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "observation_fingerprint",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "occurred_at",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "occurred_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "operator_required",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "operator_required",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "origin",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "origin",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "previous_state",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "previous_state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "provider_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "provider_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "provider_updated_at",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "provider_updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "result",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "result",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "revision",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "revision",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "truth_fingerprint",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "events",
+      "column_name": "truth_fingerprint",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "attempt_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "attempt_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "last_observation",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "last_observation",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "last_observation",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "revision",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "revision",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "heads",
+      "column_name": "revision",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "column_name": "attempt_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "column_name": "attempt_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "column_name": "job_id",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "column_name": "job_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "column_name": "observation_fingerprint",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "payment_projection",
+      "table_name": "job_receipts",
+      "column_name": "observation_fingerprint",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "active",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "asset_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "day",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "hold_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "pole_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "pole_slot",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "requirement_key",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_claims",
+      "column_name": "transfer_piece_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "allocation_stage",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "conditions",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "confirmed_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "confirmed_at",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "due_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "expires_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "occupancy_end",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "occupancy_policy",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "occupancy_start",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "owner_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "payment_state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "payment_state",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "pickup_store",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "reservation_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "return_store",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "starts_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "transfer_attention",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "version",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "inventory_holds",
+      "column_name": "version",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "bsl_evidence",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "bsl_mm",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "bsl_status",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "family",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "initial_store_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "label_code",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "label_copies",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "notes",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "source_document",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "source_kind",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "source_locator",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "status",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "store_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "unit",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "variant_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_assets",
+      "column_name": "version",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "brand",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "catalog_season",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "code",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "family",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "name",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "notes",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "source_document",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "source_kind",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "source_locator",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_models",
+      "column_name": "version",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "family",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "notes",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "quantity",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "source_document",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "source_kind",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "source_locator",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "status",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "store_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "unit",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "variant_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_poles",
+      "column_name": "version",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "age",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "compatible_sports",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "family",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "model_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "notes",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "size",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "size_key",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "source_document",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "source_kind",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "source_locator",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "tier",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "ledger_variants",
+      "column_name": "version",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "price_quotes",
+      "column_name": "actor",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "price_quotes",
+      "column_name": "conditions",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "price_quotes",
+      "column_name": "coupon_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "price_quotes",
+      "column_name": "hold_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "price_quotes",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "price_quotes",
+      "column_name": "snapshot",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "price_quotes",
+      "column_name": "snapshot_sha256",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "conditions",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "confirmed_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "confirmed_at",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "hold_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "mode",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "owner_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "price_sha256",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "price_snapshot",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "quote_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "state",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "version",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_bookings",
+      "column_name": "version",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "actor",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "amount_jpy",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "booking_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "completed_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "completed_at",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "currency",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "idempotency_key",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "location_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "merchant_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "provider_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "provider_id",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "provider_state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "provider_state",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "provider_updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "provider_updated_at",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "state",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "updated_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "rental_payment_attempts",
+      "column_name": "updated_at",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "basis",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "created_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "departed_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "destination_store",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "issue",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "needed_by",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "planned_ready_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "scheduled_date",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "source_store",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_batches",
+      "column_name": "version",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "asset_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "batch_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "destination_pole_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "line_key",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "ordinal",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "ready_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "receipt_pole_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "received_at",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "source_pole_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "transfer_pieces",
+      "column_name": "state",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "column_name": "active",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "column_name": "day",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "column_name": "hold_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "column_name": "pool_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "column_name": "quantity",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_claims",
+      "column_name": "requirement_key",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "cleaning",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "in_transit",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "on_loan",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "ready",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "returned_pending",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "revision",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "store_id",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "today_blocked",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "total",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "unavailable",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "table_schema": "public",
+      "table_name": "wear_pools",
+      "column_name": "variant_id",
+      "privilege_type": "SELECT"
+    }
+  ],
+  "routines": [
+    {
+      "grantee": "zr_16311180e859_pay_diagnostic",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "diagnostics",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_dispatch",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "dispatch",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_dispatch",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "dispatch_target",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "routine_schema": "payment_projection",
+      "routine_name": "lock_source",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "valid_observation",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_projection",
+      "routine_schema": "public",
+      "routine_name": "inventory_clock",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_receipt",
+      "routine_schema": "square_webhook",
+      "routine_name": "receive",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_truth",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "claim",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_truth",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "claim_target",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_truth",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "finalize",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_truth",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "load_context",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "zr_16311180e859_pay_truth",
+      "routine_schema": "payment_reconciliation",
+      "routine_name": "load_contexts",
+      "privilege_type": "EXECUTE"
+    }
+  ],
+  "attributes": [
+    {
+      "rolname": "zr_16311180e859_pay_receipt",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_16311180e859_pay_dispatch",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_16311180e859_pay_truth",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_16311180e859_pay_projection",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_16311180e859_pay_diagnostic",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_16311180e859_pay_public",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    }
+  ],
+  "counts": {
+    "rental_bookings": 1,
+    "ledger_assets": 1,
+    "wear_pools": 2,
+    "rental_notifications": 0,
+    "rental_loan_items": 0,
+    "rental_receipts": 0,
+    "payment_projection.events": 1,
+    "payment_projection.job_receipts": 3
+  }
+}

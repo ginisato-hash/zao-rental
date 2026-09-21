@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-15T02:34:18.981693+00:00",
+  "operation": "GET project metadata",
+  "exitCode": 1,
+  "envValuesRequested": false,
+  "classification": "BLOCKED_VERCEL_LOGIN",
+  "errorTerms": [
+    "error"
+  ]
+}

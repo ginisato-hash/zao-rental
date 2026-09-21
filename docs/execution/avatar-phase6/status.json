@@ -1,0 +1,410 @@
+{
+  "base": "ec420cbd166af0749caecfa654c0a1e362628891",
+  "branch": "codex/avatar-phase6-hosted-preview",
+  "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
+  "phase": "PHASE6_IMPLEMENTATION_COMPLETE_HOSTED_ACCEPTANCE_DEFERRED",
+  "initialWorkingTree": "CLEAN",
+  "budgets": {
+    "migrationLogicalRuns": {
+      "used": 1,
+      "max": 1
+    },
+    "r2NewBuckets": {
+      "used": 1,
+      "max": 1
+    },
+    "r2NewObjects": {
+      "used": 3,
+      "max": 3
+    },
+    "previewDeployments": {
+      "used": 1,
+      "max": 2,
+      "accounting": "Conservative total deployment-attempt usage; actual Preview deployments0, unintended Production deployment1 deleted, remaining1 unused",
+      "supersededBy": "deploymentAttempts under controlled bootstrap amendment; historical field retained"
+    },
+    "claudeInitial": {
+      "used": 1,
+      "max": 1
+    },
+    "claudeCorrection": {
+      "used": 0,
+      "max": 1
+    },
+    "dedicatedVercelProjects": {
+      "used": 1,
+      "max": 1
+    },
+    "resumeV2NeonOAuth": {
+      "used": 1,
+      "max": 1,
+      "revokeAtEnd": true
+    },
+    "deploymentAttempts": {
+      "used": 5,
+      "max": 5,
+      "allocation": {
+        "1": "historical unintended Production, deleted",
+        "2": "controlled static Production bootstrap only",
+        "3": "one actual protected application Preview",
+        "4": "one corrective protected Preview after all local validation PASS",
+        "5": "final protected Preview acceptance after reviewed capability/ingress repair; no attempt6"
+      }
+    }
+  },
+  "forbiddenCalls": {
+    "square": 0,
+    "payment": 0,
+    "refund": 0,
+    "webhook": 0,
+    "production": 1,
+    "mainMerge": 0
+  },
+  "authorityCommit": "78c41cbdc446e7bea3a020b610b2b2af266b1c2d",
+  "independentReview": "PREDEPLOY_PASS_BLOCKER0_HIGH0_MEDIUM0_LOW3",
+  "externalAcceptance": "ATTEMPT5_HOSTED_FAIL_UNEXPECTED_BROWSER_NETWORK_GUARD",
+  "implementation": "FINAL_CAPABILITY_INGRESS_CODE_PASS_PREDEPLOY_REVIEW_PASS",
+  "checkpointValidation": {
+    "targetedTests": {
+      "passed": 61,
+      "failed": 0
+    },
+    "artworkLockPostgres": "PASS",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "repositorySecretPatternScan": "PASS_1870_FILES_NOT_COMPREHENSIVE",
+    "migrationHashes": "0001\u20130032_UNCHANGED",
+    "hostedNeon": "NOT_RUN",
+    "hostedR2": "NOT_RUN",
+    "hostedBrowser": "NOT_RUN",
+    "claude": "NOT_RUN",
+    "scopeNote": "Historical checkpoint only; final-predeploy-validation.json records final656-test validation."
+  },
+  "resumeStartingHead": "71ae7a5bc3d83beecae61d9d35de128dc5018a9c",
+  "resumeAuthoritySha256": "acc82b94606f0d59f58bd2cca9345b0b29f94e865ca9a7f8edf30ecba08a876c",
+  "historicalIncidentClassification": [
+    "HISTORICAL_POTENTIAL_TOOL_METADATA_EXPOSURE",
+    "CONTAINED_NO_REUSE"
+  ],
+  "historicalToolMetadataIncident": "POTENTIAL_EXPOSURE_PRESERVED",
+  "historicalSecretExposureZeroClaim": false,
+  "confirmedProviderCredentialCompromise": "NOT_ESTABLISHED",
+  "knownReplay": 0,
+  "knownExternalDisclosure": 0,
+  "knownCredentialUse": 0,
+  "resumeAuthorityCommit": "d6c445007fb1df0bcda43fee17f89807accbbe50",
+  "nextGate": "Terminal deferred: no repeat readiness, Hosted E2E, deployment attempt6, Phase7 or main merge. Owner/Technical Director may assess the bounded acceptance failure; no further execution is authorized by this completed attempt.",
+  "resumeV2StartingHead": "ae89ebec1a9dfdf07d46e8c3e48ceb9033c65953",
+  "resumeV2AuthoritySha256": "9300da8ebfe89a97c113a33d89f2cf44540060b35cafff0bf6287ea1247af3f1",
+  "publicSearchMetadataEvent": "THIRD_PARTY_PUBLIC_SEARCH_SIGNED_URL_METADATA",
+  "publicSearchMetadataAssessment": [
+    "NON_USER_SECRET",
+    "NO_TASK_CREDENTIAL_LINK_ESTABLISHED"
+  ],
+  "historicalBrowserMetadataIncident": "PRESERVED",
+  "userSecretCompromiseEstablished": false,
+  "taskCredentialCompromiseEstablished": false,
+  "newTaskSecretExposureAfterThisResume": 0,
+  "resumeV2AuthorityCommit": "7c5f3b23450cbeae3be19af19e2bef094b5d8083",
+  "clientTlsPreflight": "PASS_TLS1.3_AUTHORIZED_EXACT_TARGET",
+  "hostedPreflight": "PASS_EXACT30_AVATAR_ABSENT",
+  "hostedMigration": "PASS_EXACT0031_0032",
+  "historicalPreV2Fields": {
+    "secretExposure": "UNKNOWN_NEW_EXTERNAL_SEARCH_TOOL_METADATA",
+    "providerCredentialAcquisitions": 3,
+    "providerMutations": 0,
+    "ownedBrowserTabsClosed": 3,
+    "hostedDatabaseWrites": 0,
+    "neonOAuthSessionsCreated": 1,
+    "neonOAuthSessionsRevoked": 1,
+    "ownedBrowserTabsClosedAfterResume": "NOT_CONFIRMED_NO_OPAQUE_HANDLE",
+    "newSecretExposureObservedAfterResume": "SUSPECTED_NOT_ZERO_CLAIMED",
+    "resumeValidation": {
+      "migrationLocalPostgres": "PASS_7_CASES",
+      "hostedDatabaseIdentity": "MATCH",
+      "hostedOwnerIdentity": "MATCH",
+      "tlsClientConfiguration": "rejectUnauthorized=true",
+      "postgresReportedSsl": false,
+      "tlsVerificationGate": "NOT_RESOLVED",
+      "hostedHistoricalMigrationPreflight": "NOT_REACHED",
+      "hosted0031": "NOT_RUN",
+      "hosted0032": "NOT_RUN",
+      "dbPools": "CLOSED",
+      "neonOAuthProfile": "REVOKED_AND_REMOVED",
+      "globalBrowserInventoryCalls": 0
+    }
+  },
+  "resumeV2Progress": {
+    "hostedRoles": "PASS_6_ROLES",
+    "AV3": "PASS_11_DENIALS",
+    "rateLimiterDatabase": "PASS_ISOLATED_POLICY",
+    "hostedRouteRateProof": "NOT_RUN",
+    "artworkMetadataImport": "PASS_EXACT3",
+    "syntheticFixture": "PASS_EXISTING_ROWS_UNCHANGED",
+    "r2Bucket": "PRIVATE_CREATED",
+    "r2Objects": 3,
+    "r2WriteCredential": "REVOKED_LOCAL_FILE_REMOVED",
+    "r2ReadCredential": "PASS_READ3_PUT403_DELETE403",
+    "dedicatedVercelProject": "CREATED_AUTHENTICATION_ON",
+    "hostedE2E": "NOT_RUN_ATTEMPT4_READINESS_HTTP503",
+    "claude": "NOT_RUN",
+    "setupOAuth": "REVOKED_AND_REMOVED",
+    "cleanup": "OWNED_BROWSER_CLOSED_LOCAL_SECRETS_ABSENT_BOOTSTRAP_RETAINED_PER_PASS_PREREQUISITE",
+    "newTaskSecretExposureAfterThisResume": 0,
+    "vercelEnvironment": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY_FORBIDDEN_KEYS0",
+    "deployArtifactPreflight": "PASS_LOCAL_DRY_RUN_ONLY",
+    "scopeNote": "Historical resume-V2 checkpoint fields retained; finalRepair and top-level phase are the terminal authority/result."
+  },
+  "continuationStartingHead": "e77715d10341a7e12b4a47d584030b8da869ea9d",
+  "continuationAuthoritySha256": "1026587ec4eff33c0ff8cee4fdc42112965dea0714f8ad0839fbf6f5cb3554e2",
+  "vercelDirectOwnerApprovalSha256": "76e3dd93bb62165c374f376d90acee90a077227cb213ea4e14e13458b87bd130",
+  "dedicatedVercelProjectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "vercelSecretTransmissionOwnerApprovalSha256": "068567fecebf9be5d23dc54d86d64f74a79d392e6ef1666164d57ec7c4d080ed",
+  "vercelSecretTransmissionOwnerApprovalCommit": "28d388620a6dd7e1f6b1310553c7fd25a76316cb",
+  "actualProductionAliasCreations": 2,
+  "remainingProductionDeployments": 0,
+  "remainingProductionAliases": 0,
+  "secretTransmission": "PASS_EXACT2_SENSITIVE_PREVIEW_ONLY",
+  "deploymentTargetIncident": {
+    "deployedHead": "33e054594ad281d2acc5335e4e5284c81c56bbff",
+    "id": "dpl_AFGcBTc3zZJSNngvrRoBTygJmeCj",
+    "requestedTarget": "preview",
+    "actualTarget": "production",
+    "deleted": true,
+    "aliasDeleted": true,
+    "record": "UNEXPECTED_PRODUCTION_TARGET_RECORD.md"
+  },
+  "controlledBootstrapStartingHead": "d6736dc68176b8d5a091575ae802d85d2a4867cc",
+  "controlledBootstrapAuthoritySha256": "0a32c4382db281568a5c2e3f9ee756690c3e3ac5280acbfe229e4e0f5a21db95",
+  "historicalProductionDeployments": 2,
+  "historicalProductionAliases": 2,
+  "currentProductionDeployments": 0,
+  "currentProductionAliases": 0,
+  "controlledBootstrapAuthorityCommit": "22806158dabe09d5ebf86577a8fce83ca563adf2",
+  "controlledBootstrap": {
+    "id": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
+    "status": "DELETED_CONFIRMED404",
+    "applicationSecrets": 0,
+    "functionOutputs": 0,
+    "productionEnvCount": 0,
+    "applicationE2E": 0,
+    "retainedUntilPreviewAcceptance": false,
+    "cleanupReason": "ATTEMPT5_TERMINAL_FAILURE_NO_FURTHER_DEPLOYMENTS",
+    "exactAliasDeleted404": true
+  },
+  "actualPreviewDeployments": 3,
+  "acceptedPreview": {
+    "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+    "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+    "head": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+    "status": "READY",
+    "canonicalTarget": "preview",
+    "authentication": "ON",
+    "retained": true,
+    "hostedAcceptance": "FAIL_NOT_FUNCTIONALLY_ACCEPTED",
+    "acceptanceTerminology": "Provider identity/target/protection accepted only; no Hosted PASS."
+  },
+  "humanAuthResumeAuthorityCommit": "ae15dacaa94383dc4d4c387a50187f19945ed035",
+  "hostedReadiness": {
+    "httpStatus": 503,
+    "safeErrorCategory": "GUEST_PREVIEW_UNAVAILABLE",
+    "route": "/api/guest/draft",
+    "explicitProbeRequests": 1,
+    "rawResponseSaved": false,
+    "rootCause": "NOT_ESTABLISHED",
+    "runtimeDatabaseRequestCount": "UNKNOWN_NO_ZERO_CLAIM",
+    "hostedMatrix": "NOT_RUN"
+  },
+  "resumedAcceptance": {
+    "additionalDeployments": 0,
+    "additionalProjects": 0,
+    "additionalAliases": 0,
+    "newNeonOAuthSessions": 0,
+    "operatorDatabaseConnections": 0,
+    "claudeStarts": 0,
+    "ownedBrowser": "CLOSED",
+    "temporaryOAuthDirectory": "EMPTY",
+    "localSecretFiles": "ABSENT"
+  },
+  "correctivePreviewStartingHead": "40a67153fcb203cecc8673cc3b50662c414648eb",
+  "correctivePreviewAuthoritySha256": "877e8ed10a0d606c1a6c4b61f108df5b19048d9a39ce03ac9f0a40d4433daaba",
+  "correctivePreviewAuthorityCommit": "58152d871c5b869f24f2dcdbaae2a23988952b1f",
+  "correctivePreviewLocalValidation": "PASS_630_UNIT_LINT_TYPECHECK_BUILD_SECRET_SCAN_DIFF",
+  "correctivePreview": {
+    "id": "dpl_2HAREDuFGBcRNXyKNbiaU4qkMuZZ",
+    "origin": "https://zao-rental-avatar-preview-dkbmsa00j-zao-food-map.vercel.app",
+    "head": "0122451a4d2e2910bb3219912df922babd5a2cdb",
+    "providerState": "READY",
+    "canonicalTarget": "preview",
+    "authentication": "ON",
+    "readiness": "FAIL_HTTP503_PREVIEW_IDENTITY",
+    "readinessDispatchCount": 1,
+    "readinessRetryCount": 0,
+    "specificIdentityMismatch": "NOT_ESTABLISHED"
+  },
+  "correctivePreviewCleanup": {
+    "ownedBrowser": "CLOSED",
+    "newNeonOAuthSessions": 0,
+    "operatorDatabaseConnections": 0,
+    "temporaryOAuthDirectory": "EMPTY",
+    "localSecretFiles": "ABSENT",
+    "bootstrap": "RETAINED_HOSTED_PASS_PREREQUISITE_UNMET",
+    "claudeStarts": 0
+  },
+  "finalRepair": {
+    "startingHead": "2290e66db551d2ce2a961abbd836c9464b1e97a6",
+    "authoritySha256": "9c4114c2d7c31e426263e8a770f9a73744afa50f8e173d98d2a68f28145b1b11",
+    "record": "FINAL_HOSTED_REPAIR.md",
+    "predeployReview": "PASS",
+    "codeFreeze": true,
+    "readinessMax": 1,
+    "readinessRetry": 0,
+    "sourceTreeSha256": "71123341c45eafc71cc3f934122b9ec54949460b278c7c89d075a87a524a8744",
+    "reviewSnapshotSha256": "3e93d98e6420f7ae7c6133d326c3f5dfdabb250d9a27a9cd1150c2ea9466dc57",
+    "reviewSeverityCounts": {
+      "BLOCKER": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 3
+    },
+    "localValidation": "PASS_656_UNIT_LINT_TYPECHECK_BUILD_SECRET_DIFF",
+    "implementationCommit": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+    "deploymentAttempt": 5,
+    "deployment": {
+      "attempt": 5,
+      "id": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+      "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+      "head": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+      "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+      "rawTarget": null,
+      "target": "preview",
+      "previewFilteredListingContainsExactId": true,
+      "readyState": "READY",
+      "gitCommitSha": "188f9daf465a52cfa168d4af73ed8b1d8d655f41",
+      "gitCommitRef": "codex/avatar-phase6-hosted-preview",
+      "framework": "nextjs",
+      "nodeVersion": "24.x",
+      "buildCommand": "node --version && npx --yes --package=npm@11.12.1 -- npm --version && npx --yes --package=npm@11.12.1 -- npm run build",
+      "outputDirectory": "apps/web/.next",
+      "rawProviderResponseSaved": false,
+      "authentication": "ON",
+      "productionEnvCount": 0,
+      "forbiddenEnvCount": 0,
+      "customDomainCount": 0,
+      "envMetadata": [
+        {
+          "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+          "type": "sensitive",
+          "target": [
+            "preview"
+          ],
+          "secretValue": "NOT_CAPTURED"
+        },
+        {
+          "key": "ZAO_AVATAR_PHASE6",
+          "type": "sensitive",
+          "target": [
+            "preview"
+          ],
+          "secretValue": "NOT_CAPTURED"
+        }
+      ],
+      "status": "PASS_PROTECTED_PREVIEW_READY"
+    },
+    "readiness": {
+      "attempt": 5,
+      "deploymentId": "dpl_41N9fXY2TE31bPNEEjx4XbN8Jy8K",
+      "origin": "https://zao-rental-avatar-preview-3e1ize273-zao-food-map.vercel.app",
+      "method": "GET",
+      "route": "/api/guest/draft",
+      "dispatchCount": 1,
+      "retry": 0,
+      "status": "PASS_GUEST_FLOW_READY",
+      "httpStatus": 401,
+      "startupStage": null,
+      "safeErrorCategory": "GUEST_CONTEXT_REQUIRED",
+      "rawResponseSaved": false
+    },
+    "hardGate": "PASS",
+    "credentialHoursRemainingAtDispatch": 18.49,
+    "vercelHumanAuthentication": "SATISFIED_EXISTING_CONTEXT",
+    "neonHumanAuthentication": "COMPLETE_PROFILE_SUBSEQUENTLY_REVOKED_AND_REMOVED",
+    "neonAuthAttempt1": {
+      "exitCode": 1,
+      "completionConfirmed": false,
+      "taskCredentialFileCount": 0,
+      "rawErrorSaved": false,
+      "failureCause": "NOT_CAPTURED",
+      "installedCliAuthWaitSeconds": 60,
+      "installedCliVersion": "4.18.0",
+      "guardPreserved": true
+    },
+    "neonAuthAttempt2": {
+      "exitCode": 0,
+      "completionConfirmed": true,
+      "profile": "avatar-phase6-final",
+      "rawAuthOutputSaved": false
+    },
+    "hostedAcceptance": {
+      "status": "FAIL",
+      "fixedOperatorStage": "unexpected browser network zero",
+      "passedChecks": 23,
+      "physicalRatioAssertions": 24,
+      "visualBusinessWrites": 0,
+      "crossGuestOwnerWasActive": true,
+      "wholeRunFinalFingerprint": "NOT_REACHED",
+      "unexpectedNetwork": "BLOCKED_ATTEMPTS_PRESENT_DESTINATION_AND_COUNT_NOT_PERSISTED",
+      "repeat": 0,
+      "receipt": "final-hosted-acceptance.json"
+    },
+    "bootstrapCleanup": "PASS_EXACT_DEPLOYMENT_AND_ALIAS404_CURRENT_PRODUCTION0",
+    "temporaryAuthCleanup": "PASS_OAUTH_REVOKED_PROFILE_REMOVED_EMPTY_DIRECTORY",
+    "ownedBrowser": "CLOSED",
+    "dbPools": "CLOSED",
+    "ownedCliAuthBrowserTab": "CLOSURE_NOT_CONFIRMED_NO_OPAQUE_HANDLE_NO_GLOBAL_INVENTORY",
+    "codeChangedAfterReview": false,
+    "reviewedCodeFilesVerified": 598,
+    "postHostedClaudeStarts": 0,
+    "terminalClassification": "PHASE6_IMPLEMENTATION_COMPLETE_HOSTED_ACCEPTANCE_DEFERRED",
+    "productionApplicationOperations": {
+      "secrets": 0,
+      "db": 0,
+      "r2": 0,
+      "e2e": 0
+    },
+    "squarePaymentRefundWebhookRealBookingOperations": 0,
+    "newTaskSecretExposureObserved": 0,
+    "historicalIncidentZeroClaim": false,
+    "technicalDirectorEvidenceAssessment": {
+      "verdict": "DEFER_HOSTED_ACCEPTANCE",
+      "passedChecksRetained": true,
+      "failureNotReclassifiedAsPass": true,
+      "screenshotsInspected": [
+        "390-appearance1.png",
+        "1440-appearance2.png"
+      ],
+      "screenshotCount": 4,
+      "sourceAndHistoricalIncidentFilesUnchanged": true
+    },
+    "finalEvidenceValidation": {
+      "reviewedCode598Files": "UNCHANGED",
+      "historicalIncidentRecords": "UNCHANGED",
+      "secretPatternScan": "PASS_1972_FILES_NOT_COMPREHENSIVE",
+      "gitDiffCheck": "PASS",
+      "applicationCodeChanged": false,
+      "node": "24.15.0",
+      "npm": "11.12.1"
+    }
+  },
+  "historicalAttempt3ProviderAcceptedPreview": {
+    "id": "dpl_3wAJbFjQ85EseBan8kp77iYQSPvF",
+    "origin": "https://zao-rental-avatar-preview-q1c57fxk3-zao-food-map.vercel.app",
+    "head": "3fe31f26fcf555ba4a491058a6857603b6abf926",
+    "status": "READY",
+    "canonicalTarget": "preview",
+    "rawTarget": null,
+    "providerPreviewFilteredListingContainsExactId": true,
+    "authentication": "ON"
+  }
+}

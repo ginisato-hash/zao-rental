@@ -1,0 +1,21 @@
+{
+  "id": "dpl_AFGcBTc3zZJSNngvrRoBTygJmeCj",
+  "readyStateBefore": "READY",
+  "target": "production",
+  "stateAfter": "READY",
+  "delete": {
+    "ok": false,
+    "safeError": {
+      "statusCode": null,
+      "hints": [
+        "delete",
+        "permission"
+      ]
+    }
+  },
+  "final": {
+    "ok": true,
+    "state": "READY",
+    "safeError": null
+  }
+}

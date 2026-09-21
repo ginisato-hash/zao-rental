@@ -1,0 +1,17 @@
+{
+  "method": "PLAYWRIGHT_EXISTING_RESPONSE_BODY_READ_ONLY_NO_REQUEST",
+  "results": [
+    {
+      "action": "test",
+      "cachedResponseUnavailable": true
+    },
+    {
+      "action": "delete-subscription",
+      "operatorHttp": 200,
+      "squareHttp": 200,
+      "classification": "DELETE_UNCONFIRMED",
+      "providerDispatchObserved": null
+    }
+  ],
+  "newRequests": 0
+}

@@ -1,3 +1,43 @@
+import {readdir} from 'node:fs/promises';
+/** Reachable routes of the fixture app, derived from the app directory so the list cannot
+ * drift. A required dynamic segment is skipped; an optional catch-all is reached at its own
+ * base path, which is enough to compile the module. */
+async function fixtureRoutes(directory='tests/flow-app/src/app',prefix=''):Promise<{path:string;api:boolean}[]>{
+ const routes:{path:string;api:boolean}[]=[];
+ for(const entry of await readdir(directory,{withFileTypes:true})){
+  if(entry.isDirectory()){
+   if(entry.name==='.next')continue;
+   // An optional catch-all also matches the path without it; anything else cannot be reached
+   // without inventing a value, so it is left to compile on its own first use.
+   if(entry.name.startsWith('[')&&!/^\[\[\.\.\..+\]\]$/.test(entry.name))continue;
+   const segment=entry.name.startsWith('[')?'':'/'+entry.name;
+   routes.push(...await fixtureRoutes(directory+'/'+entry.name,prefix+segment));
+  }else if(entry.name==='page.tsx')routes.push({path:prefix||'/',api:false});
+  else if(entry.name==='route.ts')routes.push({path:prefix||'/',api:true});
+ }
+ return routes;
+}
+/** Compile every reachable route before the browser opens. Page routes are fetched; API
+ * routes are probed with HEAD so no GET handler runs, because only the compilation matters. */
+/** Waits until one route actually answers. `next dev` compiles lazily, so a live health
+ * endpoint says nothing about the page route a caller is about to open: without this the
+ * browser's navigation timeout silently stands in for server readiness, and fails under load. */
+async function waitForRoute(origin:string,path:string,timeoutMs=120000){
+ const deadline=Date.now()+timeoutMs;
+ for(;;){
+  try{if((await fetch(origin+path,{redirect:'manual'})).status<500)return;}catch{}
+  if(Date.now()>deadline)throw new Error('TEST_ROUTE_NOT_READY '+path);
+  await new Promise(r=>setTimeout(r,100));
+ }
+}
+async function warmPageRoutes(origin:string){
+ let routes:{path:string;api:boolean}[]=[];
+ try{routes=await fixtureRoutes();}catch{return;}
+ const unique=[...new Map(routes.map(r=>[r.path+':'+r.api,r])).values()];
+ for(let i=0;i<unique.length;i+=4)
+  await Promise.all(unique.slice(i,i+4).map(r=>fetch(origin+r.path,{method:r.api?'HEAD':'GET',redirect:'manual'}).catch(()=>undefined)));
+}
+import {provisionAvatarReadRole} from '../../scripts/avatar-read-role';
 import {deriveBookingAccessKeys} from '../../packages/core/src/guest/booking-access-keys';
 import {BookingRecovery,type RecoveryMessage} from '../../packages/core/src/guest/booking-recovery';
 import {GuestContexts} from '../../packages/core/src/guest/context';
@@ -16,7 +56,8 @@ import {assertPortFree} from '../../scripts/worktree';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import type {DevelopmentRuntime} from '../../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
-export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean}={}){
+export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean;avatarPhase5?:boolean;warmRoutes?:boolean}={}){
+ let avatar:Awaited<ReturnType<typeof provisionAvatarReadRole>>|undefined;
  let access:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined;
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
  let guest:Awaited<ReturnType<typeof provisionGuestRole>>|undefined,content:Awaited<ReturnType<typeof provisionContentRole>>|undefined;
@@ -27,6 +68,7 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
   startupPhase='ROLES';
   roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);custody=await provisionCustodyRole(db.pool,db.identity);
   if(options.publicP0){guest=await provisionGuestRole(db.pool,db.identity);content=await provisionContentRole(db.pool,db.identity);}
+  if(options.avatarPhase5)avatar=await provisionAvatarReadRole(db.pool,db.identity);
   if(options.publicP4)access=await provisionBookingAccessRole(db.pool,db.identity);
   startupPhase='WEB';
   const origin=`http://127.0.0.1:${db.identity.webPort}`;
@@ -43,7 +85,7 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
     return service.prepare(await new GuestContexts(guest!.guestPool).resolve(guestToken),bookingId,requestId);
    },code(){if(captured.length!==1)throw new Error('SYNTHETIC_MAIL_COUNT');return captured[0]!.code;}
   }:undefined;
-  const env:NodeJS.ProcessEnv={...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin,ZAO_TEST_PUBLIC_INDEXING:'1'}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
+  const env:NodeJS.ProcessEnv={...(avatar?{ZAO_AVATAR_READ_RUNTIME:JSON.stringify(avatar.avatarDb)}:{}),...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin,ZAO_TEST_PUBLIC_INDEXING:'1'}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
   const args=['node_modules/next/dist/bin/next','dev','tests/flow-app','--webpack','--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   function launch(){
    const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});
@@ -54,17 +96,26 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
    return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){stopRequested=true;web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
   }
   let current=launch(),stopping:Promise<void>|undefined,restarting=false;
-  const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await access?.close();await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();
+  const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await avatar?.close();await access?.close();await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();
   if(options.publicP0){
    // Next dev cold route compilation can reconnect HMR and reload an active form.
    // Compile this catch-all before opening a browser; this anonymous read must stay401.
    try{let ready=false;for(let n=0;n<100;n++){try{if((await fetch(origin+'/api/health')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}if(!ready)throw new Error('TEST_APP_START_TIMEOUT');
     const rejected=await fetch(origin+'/api/custody/booking/00000000-0000-4000-8000-000000000000');if(rejected.status!==401)throw new Error('TEST_ANONYMOUS_CUSTODY_NOT_REJECTED');
+    // Every route compiles on its first request too, so a test's opening navigation can
+    // otherwise spend its whole timeout waiting for webpack. Suites that navigate straight
+    // into a page opt in; warming is not automatic because the requests are real requests and
+    // would consume guest budget in suites that measure it.
+    if(options.warmRoutes)await warmPageRoutes(origin);
    }catch(e){await stop();throw e;}
   }
-  return {origin,db,roles,flow,custody,guest,content,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(){
+  return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(readyPaths:string[]=[]){
    if(stopping||restarting)throw new Error('TEST_RESTART_NOT_ALLOWED');restarting=true;
-   try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();return {oldPid:old,newPid:current.pid};}finally{restarting=false;}
+   try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();
+    // Readiness is proved here rather than left to whoever navigates next.
+    await waitForRoute(origin,'/api/health');
+    for(const path of readyPaths)await waitForRoute(origin,path);
+    return {oldPid:old,newPid:current.pid};}finally{restarting=false;}
   }};
- }catch(error){const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';console.error(JSON.stringify({code:'TEST_APP_START_FAILED',phase:startupPhase,category:/^(23505|23503|23514|40001|40P01|53300|57014|08003|08006|57P01|EADDRINUSE)$/.test(code)?code:'OTHER'}));await access?.close();await guest?.close();await content?.close();await custody?.close();if(flow)await flow.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
+ }catch(error){const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';console.error(JSON.stringify({code:'TEST_APP_START_FAILED',phase:startupPhase,category:/^(23505|23503|23514|40001|40P01|53300|57014|08003|08006|57P01|EADDRINUSE)$/.test(code)?code:'OTHER'}));await avatar?.close();await access?.close();await guest?.close();await content?.close();await custody?.close();if(flow)await flow.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
 }

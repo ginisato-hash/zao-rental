@@ -1,0 +1,33 @@
+{
+  "atUtc": "2026-09-15T11:07:49.031Z",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "hostClassification": "NEON_HOSTED",
+  "hostNonLoopback": true,
+  "hostSha256": "40c8238478bfbd1d93e95910a873dddf528766bf312578bce7480ce21681e35a",
+  "targetDatabase": "zr_852b20c4d4b0",
+  "connectionStringPersisted": false,
+  "status": "PREFLIGHT_PASS",
+  "currentDatabase": "neondb",
+  "setupUserClassification": "NEON_SETUP_OWNER",
+  "setupSuperuser": false,
+  "canCreateDatabase": true,
+  "canCreateRole": true,
+  "schemas": [
+    "public"
+  ],
+  "databases": [
+    "neondb",
+    "postgres"
+  ],
+  "existingZaoRoles": [],
+  "existingUserTables": [],
+  "hostedMigrations": 0,
+  "publicSchemaGrants": [
+    {
+      "nspname": "public",
+      "privilege_type": "USAGE"
+    }
+  ],
+  "targetExists": false,
+  "dbWrites": 0
+}

@@ -1,0 +1,18 @@
+{
+  "atUtc": "2026-09-15T11:48:35.903430+00:00",
+  "status": "COMPLETE",
+  "browserContextClosed": true,
+  "browserClosed": true,
+  "operatorProcessExited": true,
+  "operatorExitCode": 0,
+  "postgresPoolsCreated": 0,
+  "postgresConnections": 0,
+  "temporarySecretStaging": "NONE",
+  "credentialReferencesCleared": true,
+  "reusableTestRuntimeCredentials": "NONE_CREATED",
+  "oneShotGuardRetained": true,
+  "existingDatabaseChanged": false,
+  "newDatabase": 0,
+  "newResource": 0,
+  "credentialRetry": 0
+}

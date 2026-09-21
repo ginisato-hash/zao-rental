@@ -1,0 +1,8 @@
+{
+  "snapshotSha256": "9282642d664e4d02a813f1642a9ca3aa3575ef82dbd0c4997f9b35548c3e3153",
+  "snapshotBytes": 465224,
+  "compressedArtifactSha256": "9d5ae302a1640f71886b133b354772a5507685955cd95c085d029624bf52d289",
+  "compressedBytes": 148191,
+  "notExecutable": true,
+  "inputPatternScan": "PASS_NOT_COMPREHENSIVE"
+}

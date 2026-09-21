@@ -1,0 +1,9 @@
+{
+  "snapshotSha256": "2b6abf6348cec9cb95d9c6aaae4ef39aaa7f4439f2e74b9a2a0ec43aa16fb1df",
+  "snapshotBytes": 814711,
+  "compressedArtifactSha256": "7603e39e3731d736e5a97a2076b24e0a8766fe74313d72e262c92234bd6602f0",
+  "compressedBytes": 224153,
+  "content": "Sanitized static review input only; source and safe evidence. No credential values or auth profile.",
+  "notExecutable": true,
+  "inputPatternScan": "PASS_NOT_COMPREHENSIVE"
+}

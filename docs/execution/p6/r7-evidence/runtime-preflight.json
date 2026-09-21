@@ -1,0 +1,20 @@
+{
+  "classification": "PREFLIGHT_PASS",
+  "httpStatus": 200,
+  "preflight": {
+    "environment": "SANDBOX",
+    "deployment": "preview",
+    "apiVersionMatch": true,
+    "applicationIdConfigured": true,
+    "locationIdConfigured": true,
+    "accessTokenConfigured": true,
+    "accessTokenFormatValid": true,
+    "publicCredentialExposure": false,
+    "readyForS1": true,
+    "result": "PASS",
+    "reason": null
+  },
+  "deployment": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+  "origin": "https://zao-rental-p7g3j78c0-zao-food-map.vercel.app",
+  "at": "2026-09-14T13:04:10.039Z"
+}

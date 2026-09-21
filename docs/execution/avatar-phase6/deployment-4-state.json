@@ -1,0 +1,41 @@
+{
+  "attempt": 4,
+  "id": "dpl_2HAREDuFGBcRNXyKNbiaU4qkMuZZ",
+  "projectId": "prj_EonVxKra8p9txdZ7O2Ko6t1A8biW",
+  "head": "0122451a4d2e2910bb3219912df922babd5a2cdb",
+  "origin": "https://zao-rental-avatar-preview-dkbmsa00j-zao-food-map.vercel.app",
+  "rawTarget": null,
+  "target": "preview",
+  "previewFilteredListingContainsExactId": true,
+  "readyState": "READY",
+  "gitCommitSha": "0122451a4d2e2910bb3219912df922babd5a2cdb",
+  "gitCommitRef": "codex/avatar-phase6-hosted-preview",
+  "framework": "nextjs",
+  "nodeVersion": "24.x",
+  "buildCommand": "node --version && npx --yes --package=npm@11.12.1 -- npm --version && npx --yes --package=npm@11.12.1 -- npm run build",
+  "outputDirectory": "apps/web/.next",
+  "rawProviderResponseSaved": false,
+  "authentication": "ON",
+  "productionEnvCount": 0,
+  "forbiddenEnvCount": 0,
+  "customDomainCount": 0,
+  "envMetadata": [
+    {
+      "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "secretValue": "NOT_CAPTURED"
+    },
+    {
+      "key": "ZAO_AVATAR_PHASE6",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ],
+      "secretValue": "NOT_CAPTURED"
+    }
+  ],
+  "status": "PASS_PROTECTED_PREVIEW_READY"
+}

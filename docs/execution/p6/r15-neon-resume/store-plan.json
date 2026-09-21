@@ -1,0 +1,133 @@
+{
+  "atUtc": "2026-09-15T09:26:32.297989+00:00",
+  "resourceId": "store_i5vh0ZEKo2ikcVo9",
+  "plan": {
+    "id": "free_v3",
+    "type": "subscription",
+    "name": "Free",
+    "paymentMethodRequired": false,
+    "cost": "Free",
+    "scope": "installation"
+  },
+  "metadata": {
+    "region": "sin1",
+    "auth": false
+  },
+  "connectedProjects": 0,
+  "installationId": "icfg_RDBXEWIHtuzcYNE8TZkFpmFX",
+  "secretsShape": [
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_PRISMA_URL"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "PGHOST_UNPOOLED"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_URL_NON_POOLING"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_URL_NO_SSL"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "DATABASE_URL_UNPOOLED"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "DATABASE_URL"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "PGDATABASE"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_PASSWORD"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "PGPASSWORD"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_USER"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "PGHOST"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_HOST"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "PGUSER"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "NEON_PROJECT_ID"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_DATABASE"
+    },
+    {
+      "keys": [
+        "name",
+        "length"
+      ],
+      "name": "POSTGRES_URL"
+    }
+  ],
+  "valuesRetained": false
+}

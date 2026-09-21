@@ -1,3 +1,4 @@
+import {productionRequested,getProductionRuntime} from './production-runtime';
 import 'server-only';
 import {Pool} from 'pg';
 import {createHash} from 'node:crypto';
@@ -14,10 +15,11 @@ function createRuntime(){
  const authPool=new Pool({...config.authDb,max:4,connectionTimeoutMillis:2000}),ledgerPool=new Pool({...config.ledgerDb,max:4,connectionTimeoutMillis:2000}),loginPool=new Pool({...config.authDb,max:2});
  // Never log raw Pool/driver errors; they may contain connection settings.
  authPool.on('error',()=>{});ledgerPool.on('error',()=>{});loginPool.on('error',()=>{});
+ const operationsPool=config.operationsDb?new Pool({...config.operationsDb,max:4,connectionTimeoutMillis:2000}):null;operationsPool?.on('error',()=>{});
  const auth=createStaffAuth(authPool,{origin:config.origin,secret:config.authSecret});
- return {config,recommendationPool,pricingPool,transferPool,holdPool,authPool,ledgerPool,loginPool,auth};
+ return {config,operationsPool,recommendationPool,pricingPool,transferPool,holdPool,authPool,ledgerPool,loginPool,auth};
 }
-export function getRuntime(){if(instance===undefined)instance=createRuntime();return instance;}
+export function getRuntime(){if(productionRequested())return getProductionRuntime()?.staff??null;if(instance===undefined)instance=createRuntime();return instance;}
 export async function staffState(headers:Headers):Promise<StaffState>{
  const runtime=getRuntime();
  if(!runtime?.auth)return {status:'anonymous',principal:null,stamp:null};

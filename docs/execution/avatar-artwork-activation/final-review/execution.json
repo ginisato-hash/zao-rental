@@ -1,0 +1,64 @@
+{
+  "kind": "AVATAR_ARTWORK_ACTIVATION_INITIAL_INDEPENDENT_REVIEW",
+  "head_sha": "e6b97d66598a81c0e26f329e2fd773b954dc746c",
+  "base_sha": "01c225eaed80eb5ee95e22d1ece9eef666aa22e3",
+  "authority_sha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
+  "snapshot_sha256": "78ba2f40d0eecb706b7330f3d5d454f44cd3426d39684ebf18c8f3a7661613fb",
+  "startedAtUtc": "2026-09-16T04:17:06.956Z",
+  "modelProcessStarts": 1,
+  "maximumStarts": 1,
+  "retry": 0,
+  "state": "RETURNED",
+  "capabilities": {
+    "tools": [],
+    "mcp_servers": [],
+    "plugins": [],
+    "skills": [],
+    "apiKeySource": "none",
+    "permissionMode": "dontAsk",
+    "model": "claude-sonnet-5",
+    "claude_code_version": "2.1.270",
+    "fast_mode_state": "off"
+  },
+  "hookEvents": [],
+  "rateLimitEvents": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789536600,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "toolUseCount": 0,
+  "timeoutSeconds": 1200,
+  "finishedAtUtc": "2026-09-16T04:20:31.365Z",
+  "exitCode": 0,
+  "signal": null,
+  "violation": null,
+  "is_error": false,
+  "result_subtype": "success",
+  "permissionDenialCount": 0,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 295716,
+    "cache_read_input_tokens": 3289,
+    "output_tokens": 17711,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard"
+  },
+  "reportedCostUsd": 1.3606357999999998,
+  "reportedCostIsBillingEstimateNotPurchase": true,
+  "stderrClassification": "NONE",
+  "verdict": "PASS",
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 4
+  }
+}

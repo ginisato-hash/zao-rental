@@ -1,0 +1,14 @@
+{
+  "name": "build",
+  "command": [
+    "npm",
+    "run",
+    "build"
+  ],
+  "cwd": "/Users/gini/Projects/zao-rental/.local/worktrees/production-p6",
+  "startedAt": "2026-09-15T03:31:06.040031+00:00",
+  "finishedAt": "2026-09-15T03:31:16.468672+00:00",
+  "exitCode": 0,
+  "log": "build.log",
+  "evidence": "LOCAL_FIXTURE_STATIC_NO_DB_NO_BROWSER"
+}

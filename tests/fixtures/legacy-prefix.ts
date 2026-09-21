@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import assert from 'node:assert/strict';
 import type {Pool} from 'pg';
 import {normalizePeriod,type HoldConditions} from '../../packages/contracts/src/hold';
+import {flowHash,syntheticContact} from '../../packages/contracts/src/rental-flow';
 // Historical migration fixtures only: current operational services require the current schema.
 // Populate real old-schema rows before additive upgrade without disabling new custody checks.
 export async function legacyHold(pool:Pool,actor:string,conditions:HoldConditions,now:Date){
@@ -16,4 +17,15 @@ export async function legacyHold(pool:Pool,actor:string,conditions:HoldCondition
 export async function legacyTransfer(pool:Pool,actor:string,asset:string){
  assert.equal((await pool.query("SELECT to_regclass('public.rental_loan_items') AS table_name")).rows[0].table_name,null);
  const c=await pool.connect(),id=randomUUID();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[actor]);await c.query("INSERT INTO transfer_batches(id,source_store,destination_store,scheduled_date,planned_ready_at,needed_by,basis) VALUES($1,'MOUNTAIN_BASE','ONSEN_BASE','2035-01-03','2035-01-03T19:00:00+09:00','2035-01-04T08:30:00+09:00','SYNTHETIC historical E08 upgrade transfer')",[id]);await c.query('INSERT INTO transfer_pieces(id,batch_id,line_key,ordinal,asset_id) VALUES($1,$2,$3,1,$4)',[randomUUID(),id,randomUUID(),asset]);await c.query('COMMIT');return {id};}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+}
+// The current BookingService always writes the M1.6 notification locale column, so an upgrade
+// prefix that stops before 0034 must insert the historical booking shape directly.
+export async function legacyBooking(pool:Pool,actor:string,quoteId:string,contact:unknown){
+ assert.equal((await pool.query("SELECT to_regclass('public.booking_notification_outbox') AS table_name")).rows[0].table_name,null);
+ const c=await pool.connect(),normalized=syntheticContact(contact);
+ try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','Historical synthetic prefix fixture',true)",[actor]);
+ const q=(await c.query('SELECT id,hold_id,conditions,snapshot,snapshot_sha256 FROM price_quotes WHERE id=$1',[quoteId])).rows[0];assert.ok(q);const id=q.conditions.reservationId as string;
+ await c.query("INSERT INTO rental_bookings(id,owner_id,request_key,fingerprint,hold_id,quote_id,conditions,price_snapshot,price_sha256,contact,mode,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'SIMULATED_DEV','DRAFT')",[id,actor,randomUUID(),flowHash({quoteId,contact:normalized}),q.hold_id,q.id,q.conditions,q.snapshot,q.snapshot_sha256,normalized]);
+ await c.query('COMMIT');return {id};
+ }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
 }

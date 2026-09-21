@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "framework": {
+    "name": "Other",
+    "slug": null
+  },
+  "fileCount": 142,
+  "totalSize": 1485975,
+  "ignored": [
+    ".vercel"
+  ],
+  "deploymentCreated": false
+}

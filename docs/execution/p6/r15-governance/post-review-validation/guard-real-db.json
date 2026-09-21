@@ -1,0 +1,35 @@
+{
+  "kind": "LOCAL_REAL_POSTGRESQL_NOT_HOSTED",
+  "actualExternalRequests": 0,
+  "results": [
+    {
+      "name": "unregistered manifest stops before dispatch",
+      "result": "PASS"
+    },
+    {
+      "name": "wrong manifest or target and public role are refused before dispatch",
+      "result": "PASS"
+    },
+    {
+      "name": "two concurrent CREATE reservations allow exactly one synthetic dispatch; lost result never resets",
+      "result": "PASS"
+    },
+    {
+      "name": "runtime cannot read or rewrite manifest/operations and cannot grant itself reset",
+      "result": "PASS"
+    },
+    {
+      "name": "GET uncertain COMMIT blocks send and a new connection cannot repeat",
+      "result": "PASS"
+    },
+    {
+      "name": "test-only reset then child crash after durable reservation blocks reconstructed process",
+      "result": "PASS"
+    },
+    {
+      "name": "guard SECURITY DEFINER has fixed search path and PUBLIC no execution grant",
+      "result": "PASS"
+    }
+  ],
+  "ownedDatabaseStopped": true
+}

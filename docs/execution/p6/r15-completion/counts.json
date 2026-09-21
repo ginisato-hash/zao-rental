@@ -1,0 +1,48 @@
+{
+  "scope": "CURRENT_P6_R15_COMPLETION_ONLY; all earlier history retained",
+  "neonResourcesCreated": 0,
+  "hostedDatabasesCreated": 0,
+  "canonicalMigrationRuns": {
+    "historicalFailed": 1,
+    "completionSuccessful": 1
+  },
+  "dedicatedDeployments": {
+    "historicalFailedDeleted": 1,
+    "additionalReady": 2,
+    "additionalRemaining": 0,
+    "allThreeDeleted": true
+  },
+  "mainPreviewDeployments": 1,
+  "mainProductionDeployments": 0,
+  "squareRequests": {
+    "subscriptionCreate": 1,
+    "officialTest": 1,
+    "createPayment": 1,
+    "getPayment": 1,
+    "subscriptionDelete": 1,
+    "total": 5,
+    "retry": 0
+  },
+  "incomingWebhooks": {
+    "officialTest": 1,
+    "naturalPayment": 2
+  },
+  "r12Finalizations": 1,
+  "r13ProjectionEvents": 1,
+  "projectionReplaySafe": true,
+  "refund": 0,
+  "getRefund": 0,
+  "productionSquare": 0,
+  "realCustomer": 0,
+  "realCard": 0,
+  "realBooking": 0,
+  "realInventoryCustody": 0,
+  "r2": 0,
+  "emailSms": 0,
+  "mainMerge": 0,
+  "secretExposure": 0,
+  "finalClaudeReviewStarts": 1,
+  "f3DedicatedReview": "RETIRED_UNUSED",
+  "finalClaudeReviewLimit": 1,
+  "finalClaudeReviewVerdict": "PASS"
+}

@@ -1,0 +1,21 @@
+.staff-home{max-width:960px;margin:auto;padding:16px;overflow-wrap:anywhere}
+.staff-home h1{font-size:22px;margin:8px 0}
+.staff-home section{background:#edf4f1;padding:14px;border-radius:10px;margin:14px 0}
+.staff-home h2{font-size:16px;margin:0 0 8px}
+.staff-home input,.staff-home select{max-width:100%;min-width:0;padding:8px;font:inherit;min-height:44px;box-sizing:border-box}
+.staff-home label{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.staff-home button{min-height:44px;min-width:44px;padding:8px 14px;font:inherit}
+.staff-actions{display:flex;flex-wrap:wrap;gap:8px}
+.staff-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.staff-card{background:white;border:1px solid #d4e0da;border-radius:8px;padding:12px;min-width:0}
+.staff-card p{margin:4px 0}
+.staff-card .staff-card-primary{margin-top:8px}
+.staff-card .staff-card-action{font-weight:650}
+.staff-card .staff-card-attention{color:#9a3412}
+.staff-secondary{color:#4a5c54;font-size:13px}
+.staff-home details.staff-secondary-links{background:transparent;padding:0}
+.staff-home details.staff-secondary-links>summary{cursor:pointer;font-weight:650;padding:10px 0;min-height:44px;display:flex;align-items:center}
+.staff-home details.staff-secondary-links nav{display:flex;flex-wrap:wrap;gap:4px 12px}
+.staff-home details.staff-secondary-links nav a{min-height:44px;display:flex;align-items:center}
+.staff-home [role=status]{font-weight:600;min-height:1.5em}
+@media(max-width:500px){.staff-home{padding:10px}.staff-home section{padding:10px}}

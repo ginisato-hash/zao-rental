@@ -1,0 +1,65 @@
+{
+  "reviewResultUnmodified": true,
+  "files": [
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/review.json",
+      "bytes": 16479,
+      "sha256": "d12ec6c3070cba5b310d970ee38b6f5c8f7397c5d9d4a5ab1ede0f0bb5a269a8"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/review.txt",
+      "bytes": 16491,
+      "sha256": "642a28c267c85469175b7704aab827ae18c8926fe7aa906ba754799b85e5f4dc"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/execution.json",
+      "bytes": 1774,
+      "sha256": "f26a3c1998fc3b30057094af47e5d956b8377aae80f297f88e88d2a2b8530c37"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/manifest.json",
+      "bytes": 35390,
+      "sha256": "a2164a86f28200a07ba806dfaf48ab91e31d177637541f24de1962c3db552050"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/launch-contract.json",
+      "bytes": 1444,
+      "sha256": "4e7b987f5656f628fd2f6a438c76cdcd014982cb42ac147a1196fe5c31bd2e4c"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/auth-check.json",
+      "bytes": 563,
+      "sha256": "d73bde79246b72f138d8fee91273a7e4c388ce1b10f643bc8da668de806304c5"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/instructions.txt",
+      "bytes": 3299,
+      "sha256": "bfb77627dfbdc7be309579041ffd0c56592da466241fb38cc8ac8b8a15def792"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/snapshot.txt.gz",
+      "bytes": 191818,
+      "sha256": "a6779fea922a6fd42acda95ba6905a4e2e5eb636e5b2bb5fff30a06a818ce0b6"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/input-integrity.json",
+      "bytes": 318,
+      "sha256": "275c19a0b62f9553c0e259f02647743239fb6968fbc84e523460e17666168b37"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/final-review.guard.json",
+      "bytes": 353,
+      "sha256": "75bca2c3b0a10f69d148d1c51fc54e296ab9f86c616a7934aed21dff48f186e2"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/egress-approval.json",
+      "bytes": 558,
+      "sha256": "9d68518de4b54eccee59cfa724a992c015d0b29a287d9a6f729de2724e10e206"
+    },
+    {
+      "file": "docs/execution/avatar-artwork-activation/final-review/pre-receipt-integrity.json",
+      "bytes": 400,
+      "sha256": "ba84db6723b8c95b4b0388fc40b5045bc9cb99f30200f50d7cba33cbd74ef3ba"
+    }
+  ]
+}

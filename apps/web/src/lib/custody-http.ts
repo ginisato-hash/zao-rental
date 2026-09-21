@@ -6,10 +6,10 @@ import {FlowError,flowId,flowObject} from '../../../../packages/contracts/src/re
 import {LedgerError} from '../../../../packages/contracts/src/ledger';
 import {readJson} from './ledger-http';
 const privateHeaders={'Cache-Control':'private, no-store','Vary':'Cookie','Referrer-Policy':'no-referrer'};
-export function custodyHandler(state:(h:Headers)=>Promise<StaffState>,service:(id:FlowIdentity)=>CustodyService,origin:string,composition:'UNCONNECTED'|'ISOLATED_TEST'='UNCONNECTED'){return async(request:Request)=>{try{
+export function custodyHandler(state:(h:Headers)=>Promise<StaffState>,service:(id:FlowIdentity)=>CustodyService,origin:string,composition:'UNCONNECTED'|'ISOLATED_TEST'|'LOCAL_OPERATIONS'='UNCONNECTED'){return async(request:Request)=>{try{
  const s=await state(request.headers);if(s.status!=='authorized')throw new FlowError('UNAUTHENTICATED',401);if(!s.principal.permissions.includes('BOOKING_VIEW'))throw new FlowError('FORBIDDEN',403);
  const stamp=request.headers.get('x-zao-session');if(stamp&&stamp!==createHash('sha256').update(s.stamp).digest('hex'))throw new FlowError('SESSION_CHANGED',409);
- if(composition!=='ISOLATED_TEST')throw new FlowError('DEVELOPMENT_CUSTODY_NOT_CONNECTED',503);
+ if(composition==='UNCONNECTED')throw new FlowError('DEVELOPMENT_CUSTODY_NOT_CONNECTED',503);
  const [sessionId]=JSON.parse(s.stamp) as [string,unknown],svc=service({subject:s.principal.subject,sessionId}),url=new URL(request.url),path=url.pathname.slice('/api/custody'.length);
  if(request.method==='GET'){
   if(path==='/returns'&&[...url.searchParams.keys()].join() ==='store')return Response.json(await svc.returns(url.searchParams.get('store')!),{headers:privateHeaders});

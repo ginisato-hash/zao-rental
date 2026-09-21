@@ -1,0 +1,17 @@
+{
+  "provider": "Neon",
+  "taskProfileOnly": true,
+  "exitCode": 0,
+  "oauthRevocationConfirmed": true,
+  "localProfileRemovalConfirmed": true,
+  "rawOutputSuppressed": true,
+  "dbPoolsClosed": true,
+  "dbCredentialFilesCreated": 0,
+  "dbCredentialValuesLogged": 0,
+  "browserTabClosure": "NOT_CONFIRMED_TASK_CLI_OPENED_NO_OPAQUE_HANDLE",
+  "unrelatedBrowserOperations": 0,
+  "r2WriteCredentialCreated": 0,
+  "blanketCredentialRotation": 0,
+  "taskAuthFilesRemaining": 0,
+  "taskAuthDirectoryRemoved": true
+}

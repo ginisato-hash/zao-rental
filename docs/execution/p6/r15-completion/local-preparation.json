@@ -1,0 +1,24 @@
+{
+  "atUtc": "2026-09-15T12:16:04.001509+00:00",
+  "manifestHashVerifier": "scripts/r15-operation-manifest.ts",
+  "newTests": 5,
+  "relatedTests": 10,
+  "passed": 10,
+  "failed": 0,
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "secretScan": "PASS",
+  "diffCheck": "PASS",
+  "migrationHashes": {
+    "count": 30,
+    "range": "0001-0030",
+    "result": "PASS"
+  },
+  "NEW1": "Local verifier implemented; actual committed manifest and dispatch wiring still pending before payment. No independent closure claimed.",
+  "hostedDatabaseConnections": 0,
+  "credentialReads": 0,
+  "newResources": 0,
+  "newDatabases": 0,
+  "deployments": 0,
+  "squareRequests": 0
+}

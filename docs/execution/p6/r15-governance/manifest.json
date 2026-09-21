@@ -1,0 +1,1006 @@
+{
+  "createdAtUtc": "2026-09-15T09:44:22.306493+00:00",
+  "branch": "codex/external-acceptance-p6",
+  "base_sha": "72cee5817da22cd474773c978f9ae95396edea29",
+  "main_sha": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "head_sha": "902622767cb255685d80ea34da90bb21fc5fce73",
+  "head_tree": "532d14d841e4d13c13c119b6fff8c29d4ac44658",
+  "authority_sha256": "fccdea3af3d5909200fad3760cc56e5112c045feb309572c38a3f5e6f32ffe11",
+  "snapshot_sha256": "70052d58e8133e9855a37f77e70ed9b71be25a188965ab80f81e173941c59cf8",
+  "snapshot_bytes": 791028,
+  "snapshot_characters": 778338,
+  "file_count": 139,
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 306,
+      "sha256": "d7dc53cd1f49975b6dccf7db1804bafb6397ea8e82b312d5ea9cca06b14f3d46",
+      "selection": "full numbered file",
+      "transmitted_sha256": "d7dc53cd1f49975b6dccf7db1804bafb6397ea8e82b312d5ea9cca06b14f3d46"
+    },
+    {
+      "path": "apps/web/src/app/api/webhooks/square/route.ts",
+      "bytes": 451,
+      "sha256": "df26a5890877172831b84c5614e5c5b8fcbef78fb526692d21d19a69ffc259b2",
+      "selection": "full numbered file",
+      "transmitted_sha256": "df26a5890877172831b84c5614e5c5b8fcbef78fb526692d21d19a69ffc259b2"
+    },
+    {
+      "path": "apps/web/src/lib/square-s1-preflight.ts",
+      "bytes": 3510,
+      "sha256": "1f0abecc27cedc33cc6b29fc0467575a336aed4b56d7b6786c653f7e0918dfcd",
+      "selection": "full numbered file",
+      "transmitted_sha256": "1f0abecc27cedc33cc6b29fc0467575a336aed4b56d7b6786c653f7e0918dfcd"
+    },
+    {
+      "path": "apps/web/src/lib/square-s2-acceptance.ts",
+      "bytes": 3859,
+      "sha256": "4c127e97da0aac39f8643708d9e0fa779869b11749e999784f0c2a1e692a6a3c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "4c127e97da0aac39f8643708d9e0fa779869b11749e999784f0c2a1e692a6a3c"
+    },
+    {
+      "path": "apps/web/src/lib/square-webhook-config.ts",
+      "bytes": 1966,
+      "sha256": "b597a1430d507137995950fc5462e217b3d0cc38dd620be39e21afe698228cfe",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b597a1430d507137995950fc5462e217b3d0cc38dd620be39e21afe698228cfe"
+    },
+    {
+      "path": "apps/web/src/lib/square-webhook-runtime.ts",
+      "bytes": 1284,
+      "sha256": "1d97569a1427451517c211ec45af2f73e83e5342975a7818644fc7b290e58e5b",
+      "selection": "full numbered file",
+      "transmitted_sha256": "1d97569a1427451517c211ec45af2f73e83e5342975a7818644fc7b290e58e5b"
+    },
+    {
+      "path": "apps/webhook-ingress/api/health.ts",
+      "bytes": 102,
+      "sha256": "5e656717a04441d35320a1f51f6e1b6623d65452df7427d98b55166dc7cf8999",
+      "selection": "full numbered file",
+      "transmitted_sha256": "5e656717a04441d35320a1f51f6e1b6623d65452df7427d98b55166dc7cf8999"
+    },
+    {
+      "path": "apps/webhook-ingress/api/webhooks/square.ts",
+      "bytes": 105,
+      "sha256": "8fb121983eafb5ea619c7a457fc54ed66221014e044c4817517b2891ec6a471d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "8fb121983eafb5ea619c7a457fc54ed66221014e044c4817517b2891ec6a471d"
+    },
+    {
+      "path": "apps/webhook-ingress/package.json",
+      "bytes": 149,
+      "sha256": "372fee21fb152ffb394c953702c8291880675d8ed258a627709a03a42a3623c3",
+      "selection": "full numbered file",
+      "transmitted_sha256": "372fee21fb152ffb394c953702c8291880675d8ed258a627709a03a42a3623c3"
+    },
+    {
+      "path": "apps/webhook-ingress/runtime.d.cts",
+      "bytes": 181,
+      "sha256": "4692060a90b4edbf39801d5aa4823ffcb275d23c70498268b936e8b6688a91a1",
+      "selection": "full numbered file",
+      "transmitted_sha256": "4692060a90b4edbf39801d5aa4823ffcb275d23c70498268b936e8b6688a91a1"
+    },
+    {
+      "path": "apps/webhook-ingress/src/config.ts",
+      "bytes": 2377,
+      "sha256": "0520f48fe0037425e1c82b95da57ff6deb88e833268903b3bc11221cc5cdc3ad",
+      "selection": "full numbered file",
+      "transmitted_sha256": "0520f48fe0037425e1c82b95da57ff6deb88e833268903b3bc11221cc5cdc3ad"
+    },
+    {
+      "path": "apps/webhook-ingress/src/handler.ts",
+      "bytes": 1670,
+      "sha256": "d9a3add727fb488e3ffcd7f936a2d3f7789da68defca16c22e9d6124e9f49713",
+      "selection": "full numbered file",
+      "transmitted_sha256": "d9a3add727fb488e3ffcd7f936a2d3f7789da68defca16c22e9d6124e9f49713"
+    },
+    {
+      "path": "apps/webhook-ingress/tsconfig.json",
+      "bytes": 124,
+      "sha256": "82817c05690a4898f2c623390f50d087b7dde81c038162185a3027dc92a1588d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "82817c05690a4898f2c623390f50d087b7dde81c038162185a3027dc92a1588d"
+    },
+    {
+      "path": "apps/webhook-ingress/vercel.json",
+      "bytes": 518,
+      "sha256": "a0d5357e64ed261c30d9bcab3f4bc6f42d6a1712a9b081f48391957bcb60dd75",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a0d5357e64ed261c30d9bcab3f4bc6f42d6a1712a9b081f48391957bcb60dd75"
+    },
+    {
+      "path": "config/pricing/wear-v1.2.proposed.json",
+      "bytes": 3900,
+      "sha256": "6564a9d6e17b5c6c8893b9af18186ef06a1266f11a7279da0c180eec6f75b439",
+      "selection": "full numbered file",
+      "transmitted_sha256": "6564a9d6e17b5c6c8893b9af18186ef06a1266f11a7279da0c180eec6f75b439"
+    },
+    {
+      "path": "config/pricing/zao-2026-27-v1.draft.json",
+      "bytes": 10998,
+      "sha256": "23ce25f237e6e6928669525c10df7f4e0452f7ee617e349f79df2a7cc856eaa7",
+      "selection": "full numbered file",
+      "transmitted_sha256": "23ce25f237e6e6928669525c10df7f4e0452f7ee617e349f79df2a7cc856eaa7"
+    },
+    {
+      "path": "docs/execution/AI_DEVELOPMENT_GOVERNANCE.md",
+      "bytes": 8226,
+      "sha256": "43f66c6b1bab44009b7e88b1ac46f55c4187d0fd586e949ca481378d3e669540",
+      "selection": "full numbered file",
+      "transmitted_sha256": "43f66c6b1bab44009b7e88b1ac46f55c4187d0fd586e949ca481378d3e669540"
+    },
+    {
+      "path": "docs/execution/DEVELOPMENT_PAYMENT_ACTIVATION.md",
+      "bytes": 5228,
+      "sha256": "ed7b1088069cfa5802a0944195a8b1521a0ff261c2b5725785914b4108d85a0b",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ed7b1088069cfa5802a0944195a8b1521a0ff261c2b5725785914b4108d85a0b"
+    },
+    {
+      "path": "docs/execution/PAYMENT_PROJECTION_ARCHITECTURE.md",
+      "bytes": 9512,
+      "sha256": "f61fb3beff146dd1f7df32dee8597499898cbadf30de302e3a0a904fcc581ddb",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f61fb3beff146dd1f7df32dee8597499898cbadf30de302e3a0a904fcc581ddb"
+    },
+    {
+      "path": "docs/execution/PAYMENT_RECONCILIATION_ARCHITECTURE.md",
+      "bytes": 11189,
+      "sha256": "f6ee935b46d28476cce9dcdb1f95a077100a94b3290eb4bfb5a023de5332d33d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f6ee935b46d28476cce9dcdb1f95a077100a94b3290eb4bfb5a023de5332d33d"
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_BUSINESS_PROJECTION_ACTIVATION_GATE.md",
+      "bytes": 3242,
+      "sha256": "1f502c0b7fd9c8f456f107d5055584fa5073b29cf23985c4756a55b6cf481bd4",
+      "selection": "full numbered file",
+      "transmitted_sha256": "1f502c0b7fd9c8f456f107d5055584fa5073b29cf23985c4756a55b6cf481bd4"
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_R15_AUTHORITY.md",
+      "bytes": 22857,
+      "sha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3",
+      "selection": "full numbered file",
+      "transmitted_sha256": "cfc3e6b4bef74a553a02ac8ed9ffe7ed42b3efa23841c19c86abc78d9d22cbe3"
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_RECONCILIATION_ACTIVATION_GATE.md",
+      "bytes": 5898,
+      "sha256": "977f7f6c524c9f6e7cc35ecb75b365af35afde82e375049ead8ed5929843d16f",
+      "selection": "full numbered file",
+      "transmitted_sha256": "977f7f6c524c9f6e7cc35ecb75b365af35afde82e375049ead8ed5929843d16f"
+    },
+    {
+      "path": "docs/execution/PRODUCTION_P6_S4_ACTIVATION_GATE.md",
+      "bytes": 10345,
+      "sha256": "4264693613c6f6b00731a41ea3545761f056460d9b5fe300de1f4b64c7a5a0c6",
+      "selection": "full numbered file",
+      "transmitted_sha256": "4264693613c6f6b00731a41ea3545761f056460d9b5fe300de1f4b64c7a5a0c6"
+    },
+    {
+      "path": "docs/execution/R14_PROTECTED_INGRESS_GATE.md",
+      "bytes": 3075,
+      "sha256": "f7cbcf33a817179d5eebb3bd5dbcd039fc7c8d79e5a16b7b86354c0cd17cb52c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f7cbcf33a817179d5eebb3bd5dbcd039fc7c8d79e5a16b7b86354c0cd17cb52c"
+    },
+    {
+      "path": "docs/execution/R15_DEVELOPMENT_ACTIVATION.md",
+      "bytes": 12635,
+      "sha256": "42fb6f7f3d5117e6b08bcec10d6ffd1d4222a45107ce9653c701a6c7a3b1b572",
+      "selection": "full numbered file",
+      "transmitted_sha256": "42fb6f7f3d5117e6b08bcec10d6ffd1d4222a45107ce9653c701a6c7a3b1b572"
+    },
+    {
+      "path": "docs/execution/p6/r12-local/RESULT.md",
+      "bytes": 4739,
+      "sha256": "9bb6a36b5505cc8bff4e2f44d160ac1e1e81bd106847df1ebe7cb9fb3faa4707",
+      "selection": "full numbered file",
+      "transmitted_sha256": "9bb6a36b5505cc8bff4e2f44d160ac1e1e81bd106847df1ebe7cb9fb3faa4707"
+    },
+    {
+      "path": "docs/execution/p6/r13-local/RESULT.md",
+      "bytes": 3408,
+      "sha256": "ee93531c2c08e5456326cf5fe263edefd05d5e0e5005975f67aee47260b62546",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ee93531c2c08e5456326cf5fe263edefd05d5e0e5005975f67aee47260b62546"
+    },
+    {
+      "path": "docs/execution/p6/r14-evidence/DEVELOPMENT_ISSUES.md",
+      "bytes": 1778,
+      "sha256": "419c21eed21f77791306309b7ec0939fe13a7c5dd03519ba3b5634deb6b0edde",
+      "selection": "full numbered file",
+      "transmitted_sha256": "419c21eed21f77791306309b7ec0939fe13a7c5dd03519ba3b5634deb6b0edde"
+    },
+    {
+      "path": "docs/execution/p6/r14-evidence/FINAL_RESULT.md",
+      "bytes": 4175,
+      "sha256": "1862ad5fce1f95733acb1f3bf004cfa80adc213e0bb9a98bb0162bccb3e789fb",
+      "selection": "full numbered file",
+      "transmitted_sha256": "1862ad5fce1f95733acb1f3bf004cfa80adc213e0bb9a98bb0162bccb3e789fb"
+    },
+    {
+      "path": "docs/execution/p6/r14-evidence/migration-hashes.json",
+      "bytes": 4329,
+      "sha256": "b89525bbdfa7e28fb1a869a7702cbb3bf3f54a91c0a2890262d19bbb60f53744",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b89525bbdfa7e28fb1a869a7702cbb3bf3f54a91c0a2890262d19bbb60f53744"
+    },
+    {
+      "path": "docs/execution/p6/r14-evidence/migration-result.json",
+      "bytes": 3493,
+      "sha256": "f364346d4ff9d0876fc4e696fe3974b2518260a28bccd00f05c8f8ecd37e37ee",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f364346d4ff9d0876fc4e696fe3974b2518260a28bccd00f05c8f8ecd37e37ee"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/RESUME_RESULT.md",
+      "bytes": 5614,
+      "sha256": "963f8c09bb0ce3b0168386e80aac75fc6ef09b6e69fd4f2c6086f636a33ff1af",
+      "selection": "full numbered file",
+      "transmitted_sha256": "963f8c09bb0ce3b0168386e80aac75fc6ef09b6e69fd4f2c6086f636a33ff1af"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/artifact-after.log",
+      "bytes": 720,
+      "sha256": "44eee753663629398a54f2590cfadb98a062973c26f40d3157fe6e75be7d859e",
+      "selection": "full numbered file",
+      "transmitted_sha256": "44eee753663629398a54f2590cfadb98a062973c26f40d3157fe6e75be7d859e"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/artifact-before.log",
+      "bytes": 2127,
+      "sha256": "a08c28337c2d78264f6966545519d9f2a0878d37f52a2e232a1506c8d292e024",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a08c28337c2d78264f6966545519d9f2a0878d37f52a2e232a1506c8d292e024"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/bundle-validation.json",
+      "bytes": 7269,
+      "sha256": "412be2d6005f4365430084966b041d3db87ee2dfca7aa09eaff0530fe58d956c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "412be2d6005f4365430084966b041d3db87ee2dfca7aa09eaff0530fe58d956c"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/ingress-after-cleanup-http.json",
+      "bytes": 250,
+      "sha256": "b0e024df7f39e045b4c268d9ddfbfcc709475fe66c2a43528783c0330588cd6c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b0e024df7f39e045b4c268d9ddfbfcc709475fe66c2a43528783c0330588cd6c"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/ingress-http-smoke.json",
+      "bytes": 3496,
+      "sha256": "74f98bdb33a95e084d747a2e8afcfefa163ac94b199d00278869e2a0ed2662b9",
+      "selection": "full numbered file",
+      "transmitted_sha256": "74f98bdb33a95e084d747a2e8afcfefa163ac94b199d00278869e2a0ed2662b9"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/ingress-runtime-diagnostic.json",
+      "bytes": 4642,
+      "sha256": "4560165f36829a28b7655f4e7b68db6389355676327ba311f68cf61f4a455468",
+      "selection": "full numbered file",
+      "transmitted_sha256": "4560165f36829a28b7655f4e7b68db6389355676327ba311f68cf61f4a455468"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/projects-final-readback.json",
+      "bytes": 2493,
+      "sha256": "3d49b5a1ce4d00b179368250a862ee68793224951acdf53eecc2a93b1678d54e",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3d49b5a1ce4d00b179368250a862ee68793224951acdf53eecc2a93b1678d54e"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/r15-real-db.json",
+      "bytes": 552,
+      "sha256": "2e27989beeb8a90c6db3e22a8f37774f03073d86e9962d985dfd87ff6fe2a0fe",
+      "selection": "full numbered file",
+      "transmitted_sha256": "2e27989beeb8a90c6db3e22a8f37774f03073d86e9962d985dfd87ff6fe2a0fe"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/real-db-additional.json",
+      "bytes": 673,
+      "sha256": "f7d6971e8b5e9d97dd4cab4e3682f90f2ed754172f1d2fba28ddd7977847ff8c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f7d6971e8b5e9d97dd4cab4e3682f90f2ed754172f1d2fba28ddd7977847ff8c"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/real-db-boundaries.json",
+      "bytes": 315,
+      "sha256": "fda2becc3ad356104776c967f0448b096b85548c63f9bddb2728b5985025b91b",
+      "selection": "full numbered file",
+      "transmitted_sha256": "fda2becc3ad356104776c967f0448b096b85548c63f9bddb2728b5985025b91b"
+    },
+    {
+      "path": "docs/execution/p6/r15-evidence/real-db-tests.json",
+      "bytes": 3270,
+      "sha256": "79113b2a72e0d706a58dac2d65b277d670b2bed0e7d46ee8916919945621cc65",
+      "selection": "full numbered file",
+      "transmitted_sha256": "79113b2a72e0d706a58dac2d65b277d670b2bed0e7d46ee8916919945621cc65"
+    },
+    {
+      "path": "docs/execution/p6/r15-neon-resume/OWNER_NOTICE.md",
+      "bytes": 3344,
+      "sha256": "cb8d2652dc8c14745733ea59e6e673abe287481a07356860bae4a0398e570ea4",
+      "selection": "full numbered file",
+      "transmitted_sha256": "cb8d2652dc8c14745733ea59e6e673abe287481a07356860bae4a0398e570ea4"
+    },
+    {
+      "path": "docs/execution/p6/r15-neon-resume/PROVISION_RESULT.md",
+      "bytes": 997,
+      "sha256": "3729eab6cd2a1ce97a74511210bdaee3acc0ff53eec9bc36f7aa1533d2e18550",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3729eab6cd2a1ce97a74511210bdaee3acc0ff53eec9bc36f7aa1533d2e18550"
+    },
+    {
+      "path": "docs/execution/p6/r15-neon-resume/after.json",
+      "bytes": 392,
+      "sha256": "df7c261ca0409fcad18e81c76b6239ec288dc59e282a917e958196b2d716f9d4",
+      "selection": "full numbered file",
+      "transmitted_sha256": "df7c261ca0409fcad18e81c76b6239ec288dc59e282a917e958196b2d716f9d4"
+    },
+    {
+      "path": "docs/execution/p6/r15-neon-resume/provision-result.json",
+      "bytes": 1066,
+      "sha256": "3f70bfd9940964df747287bf3154d7db94d7564181f9c599c98794159587cf56",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3f70bfd9940964df747287bf3154d7db94d7564181f9c599c98794159587cf56"
+    },
+    {
+      "path": "docs/execution/p6/r15-neon-resume/store-plan.json",
+      "bytes": 2090,
+      "sha256": "a5ee15d9aec6fc020bf07a21ef593fe90c559d483f7c31a177337e9fccec0cb7",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a5ee15d9aec6fc020bf07a21ef593fe90c559d483f7c31a177337e9fccec0cb7"
+    },
+    {
+      "path": "docs/execution/p6/s2-evidence/operation-manifest.json",
+      "bytes": 631,
+      "sha256": "4fa694c818cdbe332523119e117c9d14de0c1b689322489eeeb3c4bc66f49e41",
+      "selection": "full numbered file",
+      "transmitted_sha256": "4fa694c818cdbe332523119e117c9d14de0c1b689322489eeeb3c4bc66f49e41"
+    },
+    {
+      "path": "docs/execution/p6/s4-local/RESULT.md",
+      "bytes": 3925,
+      "sha256": "3c78c408283e2a0cb12242c5d15ee3be9b2fa7c9b3f2b5efcbc217025908140d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3c78c408283e2a0cb12242c5d15ee3be9b2fa7c9b3f2b5efcbc217025908140d"
+    },
+    {
+      "path": "package.json",
+      "bytes": 5915,
+      "sha256": "ff4eb5f99844156aab89c949688847a87b5a05a387f579295bec8e6619a0b88c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ff4eb5f99844156aab89c949688847a87b5a05a387f579295bec8e6619a0b88c"
+    },
+    {
+      "path": "packages/auth/src/booking-actor.ts",
+      "bytes": 1745,
+      "sha256": "74e7e2699d4abdf80a9f5f4c7ff4657d09ed577abbb40a1d41f677fa2a3755aa",
+      "selection": "full numbered file",
+      "transmitted_sha256": "74e7e2699d4abdf80a9f5f4c7ff4657d09ed577abbb40a1d41f677fa2a3755aa"
+    },
+    {
+      "path": "packages/auth/src/password.ts",
+      "bytes": 885,
+      "sha256": "ea46af8ed56836cbc8b06ae4f97ed6cb5e7920dc99e8b852c89a16745380abfc",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ea46af8ed56836cbc8b06ae4f97ed6cb5e7920dc99e8b852c89a16745380abfc"
+    },
+    {
+      "path": "packages/auth/src/staff-auth.ts",
+      "bytes": 4651,
+      "sha256": "812d2dcf6e9ad48ffb38652b66178f31406739852ff56f7cc629a531c8b456cf",
+      "selection": "full numbered file",
+      "transmitted_sha256": "812d2dcf6e9ad48ffb38652b66178f31406739852ff56f7cc629a531c8b456cf"
+    },
+    {
+      "path": "packages/contracts/src/hold-input.schema.json",
+      "bytes": 4159,
+      "sha256": "a413287dedff75b5702991cb5eeaca44866d24f342fc6bc26fa035135e624d98",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a413287dedff75b5702991cb5eeaca44866d24f342fc6bc26fa035135e624d98"
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "bytes": 8013,
+      "sha256": "69bb59eb37534fadbadb9f94d7a1c2c4ff1f5ed0ee9e26103784f8ecc83931a8",
+      "selection": "full numbered file",
+      "transmitted_sha256": "69bb59eb37534fadbadb9f94d7a1c2c4ff1f5ed0ee9e26103784f8ecc83931a8"
+    },
+    {
+      "path": "packages/contracts/src/ledger-input.schema.json",
+      "bytes": 12798,
+      "sha256": "fcc2dff1da4ce4dabe80d72058e788bb16b20c94fb2bc075dfe014f0e773ae19",
+      "selection": "full numbered file",
+      "transmitted_sha256": "fcc2dff1da4ce4dabe80d72058e788bb16b20c94fb2bc075dfe014f0e773ae19"
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "bytes": 4618,
+      "sha256": "b33a5bc13b1f1fd1eb024dcc59f220fb62db613b290ca267d2f306df07280401",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b33a5bc13b1f1fd1eb024dcc59f220fb62db613b290ca267d2f306df07280401"
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "bytes": 9951,
+      "sha256": "aa140e45aea391598ded8f90067f2ed877e5d428a5b5a2827b58b00f6521401d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "aa140e45aea391598ded8f90067f2ed877e5d428a5b5a2827b58b00f6521401d"
+    },
+    {
+      "path": "packages/contracts/src/rental-flow.ts",
+      "bytes": 3796,
+      "sha256": "88f74c2aa298bb62f0e98b3cc49c9a3be64042258cba8d146d6d17af977c768d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "88f74c2aa298bb62f0e98b3cc49c9a3be64042258cba8d146d6d17af977c768d"
+    },
+    {
+      "path": "packages/core/src/payment/booking-service.ts",
+      "bytes": 19786,
+      "sha256": "69d6de1fef6311d24222d43e6fd8d84d725b635a52677db62643cf56813f0ed7",
+      "selection": "full numbered file",
+      "transmitted_sha256": "69d6de1fef6311d24222d43e6fd8d84d725b635a52677db62643cf56813f0ed7"
+    },
+    {
+      "path": "packages/core/src/payment/payment-projection.ts",
+      "bytes": 15317,
+      "sha256": "d492520b1b7ff324886d64deaa3785fb7f7adad8f0375147807a1e419449c04d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "d492520b1b7ff324886d64deaa3785fb7f7adad8f0375147807a1e419449c04d"
+    },
+    {
+      "path": "packages/core/src/payment/payment-reconciliation.ts",
+      "bytes": 6859,
+      "sha256": "e987bd91572eefc9c965293bb05a3e1e956a28100a9d5c37b22d97097927d5ec",
+      "selection": "full numbered file",
+      "transmitted_sha256": "e987bd91572eefc9c965293bb05a3e1e956a28100a9d5c37b22d97097927d5ec"
+    },
+    {
+      "path": "packages/core/src/payment/payment-truth.ts",
+      "bytes": 5281,
+      "sha256": "9d0073c6aee008f8ccfedb8ab71cbf57587741825ae13ed8a62be93b1956e592",
+      "selection": "full numbered file",
+      "transmitted_sha256": "9d0073c6aee008f8ccfedb8ab71cbf57587741825ae13ed8a62be93b1956e592"
+    },
+    {
+      "path": "packages/core/src/payment/r15-projection-authority.ts",
+      "bytes": 1302,
+      "sha256": "b2f4c08ce3a03bc20a971dacf7da0d0e1af57330ac795fdc0076651408556eae",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b2f4c08ce3a03bc20a971dacf7da0d0e1af57330ac795fdc0076651408556eae"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-environment.ts",
+      "bytes": 3266,
+      "sha256": "75052d3205e6ff658489dadb7c83c34679e0b6ff8c3896fa28be6aa495255a70",
+      "selection": "full numbered file",
+      "transmitted_sha256": "75052d3205e6ff658489dadb7c83c34679e0b6ff8c3896fa28be6aa495255a70"
+    },
+    {
+      "path": "packages/core/src/payment/square-boundary.ts",
+      "bytes": 3508,
+      "sha256": "89ac1d70b71ef7169a44385ec3df300199c838671666795a2fc9e8aa442f6063",
+      "selection": "full numbered file",
+      "transmitted_sha256": "89ac1d70b71ef7169a44385ec3df300199c838671666795a2fc9e8aa442f6063"
+    },
+    {
+      "path": "packages/core/src/payment/square-payment-truth.ts",
+      "bytes": 2132,
+      "sha256": "391ee34e3a9d529359ac79a25aa253f0c3fddf977f16251997c512db334edc73",
+      "selection": "full numbered file",
+      "transmitted_sha256": "391ee34e3a9d529359ac79a25aa253f0c3fddf977f16251997c512db334edc73"
+    },
+    {
+      "path": "packages/core/src/payment/square-s2.ts",
+      "bytes": 9052,
+      "sha256": "b9686c18fbdc16afc167ed587bee02d98af0c64ea8574f70d9456862d15aa9f3",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b9686c18fbdc16afc167ed587bee02d98af0c64ea8574f70d9456862d15aa9f3"
+    },
+    {
+      "path": "packages/core/src/payment/square-sandbox.ts",
+      "bytes": 4424,
+      "sha256": "b25e9264977c473895006da32dee78b4b8403b67470662d080efaf45f0198e5c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b25e9264977c473895006da32dee78b4b8403b67470662d080efaf45f0198e5c"
+    },
+    {
+      "path": "packages/core/src/payment/square-transport.ts",
+      "bytes": 6203,
+      "sha256": "dcd059eb00e7e6dd9c923afda3bedbbfe19992c177b442560844f466b392fa9a",
+      "selection": "full numbered file",
+      "transmitted_sha256": "dcd059eb00e7e6dd9c923afda3bedbbfe19992c177b442560844f466b392fa9a"
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-inbox.ts",
+      "bytes": 1089,
+      "sha256": "344ca520371a5f937a0fcf54eaad928bfe4010a5297f0fe666fb54c96422bf4a",
+      "selection": "full numbered file",
+      "transmitted_sha256": "344ca520371a5f937a0fcf54eaad928bfe4010a5297f0fe666fb54c96422bf4a"
+    },
+    {
+      "path": "packages/core/src/payment/square-webhook-receiver.ts",
+      "bytes": 3988,
+      "sha256": "44369ed107c2e98051b64e6ae4560d48536b065e4f600729b32f669ea21948aa",
+      "selection": "full numbered file",
+      "transmitted_sha256": "44369ed107c2e98051b64e6ae4560d48536b065e4f600729b32f669ea21948aa"
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "bytes": 530,
+      "sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150"
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "bytes": 14076,
+      "sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246"
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "bytes": 7226,
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47"
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "bytes": 8294,
+      "sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1",
+      "selection": "full numbered file",
+      "transmitted_sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1"
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "bytes": 17126,
+      "sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7",
+      "selection": "full numbered file",
+      "transmitted_sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7"
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "bytes": 7743,
+      "sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954",
+      "selection": "full numbered file",
+      "transmitted_sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954"
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "bytes": 3459,
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075"
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "bytes": 1309,
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11"
+    },
+    {
+      "path": "packages/db/migrations/0009_development_booking.sql",
+      "bytes": 5827,
+      "sha256": "bdc31ea49660a1edee75fd20dd3c4043090dc0832698f2356f31af219c7f37c0",
+      "selection": "full numbered file",
+      "transmitted_sha256": "bdc31ea49660a1edee75fd20dd3c4043090dc0832698f2356f31af219c7f37c0"
+    },
+    {
+      "path": "packages/db/migrations/0012_integrated_wear_catalog.sql",
+      "bytes": 5596,
+      "sha256": "a6076dbf78245744b0394bcf5a4a5ced868d5798080da19b1b581ba40ad9239d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a6076dbf78245744b0394bcf5a4a5ced868d5798080da19b1b581ba40ad9239d"
+    },
+    {
+      "path": "packages/db/migrations/0013_wear_quantity.sql",
+      "bytes": 12391,
+      "sha256": "ec606b57dc1f27e9b015e6c6cad4e4a26fbfc70479d3a3abc50e5ca54ea8817c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ec606b57dc1f27e9b015e6c6cad4e4a26fbfc70479d3a3abc50e5ca54ea8817c"
+    },
+    {
+      "path": "packages/db/migrations/0018_guest_actor.sql",
+      "bytes": 4550,
+      "sha256": "b3d1c1c28b4536c5a4cd81f070da04b297807856c3ff39fd3b0a65ba5470044c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b3d1c1c28b4536c5a4cd81f070da04b297807856c3ff39fd3b0a65ba5470044c"
+    },
+    {
+      "path": "packages/db/migrations/0023_sandbox_activation.sql",
+      "bytes": 2159,
+      "sha256": "8b0db6afc0540dce17fb206b0fd5e6f7963a44d6f7e20f0f4f445b1643a441da",
+      "selection": "full numbered file",
+      "transmitted_sha256": "8b0db6afc0540dce17fb206b0fd5e6f7963a44d6f7e20f0f4f445b1643a441da"
+    },
+    {
+      "path": "packages/db/migrations/0025_square_webhook_inbox.sql",
+      "bytes": 7069,
+      "sha256": "8ffa1c78e9f10338987a1846741cc05cdc523d99ec8949d1bf6757fe48a8268d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "8ffa1c78e9f10338987a1846741cc05cdc523d99ec8949d1bf6757fe48a8268d"
+    },
+    {
+      "path": "packages/db/migrations/0026_payment_reconciliation.sql",
+      "bytes": 22053,
+      "sha256": "276495dec2116938da4bc0f4f3d3cd742210c2522ab3c3b41c5fefedbf76e605",
+      "selection": "full numbered file",
+      "transmitted_sha256": "276495dec2116938da4bc0f4f3d3cd742210c2522ab3c3b41c5fefedbf76e605"
+    },
+    {
+      "path": "packages/db/migrations/0027_payment_projection.sql",
+      "bytes": 4254,
+      "sha256": "6b0b9eda78d634e10417e83b8268096b7b46f3778dd4ceea2fa8915413733062",
+      "selection": "full numbered file",
+      "transmitted_sha256": "6b0b9eda78d634e10417e83b8268096b7b46f3778dd4ceea2fa8915413733062"
+    },
+    {
+      "path": "packages/db/migrations/0028_development_projection_source.sql",
+      "bytes": 1446,
+      "sha256": "0b9fbafefc9a1e6d939e078f354aca08af7982f7f0db9f8582c0dc5b30f82953",
+      "selection": "full numbered file",
+      "transmitted_sha256": "0b9fbafefc9a1e6d939e078f354aca08af7982f7f0db9f8582c0dc5b30f82953"
+    },
+    {
+      "path": "packages/db/migrations/0029_development_payment_scope.sql",
+      "bytes": 6829,
+      "sha256": "e2e070adadbed9682ff45c41660e8fa2889124af4840e7af274171574e2b7566",
+      "selection": "full numbered file",
+      "transmitted_sha256": "e2e070adadbed9682ff45c41660e8fa2889124af4840e7af274171574e2b7566"
+    },
+    {
+      "path": "packages/db/src/development-payment-composition.ts",
+      "bytes": 2897,
+      "sha256": "e0736af0b4a95dab72b5edbc1f6fe683b6efe9b364155cbb3f7c5c6ac0164f97",
+      "selection": "full numbered file",
+      "transmitted_sha256": "e0736af0b4a95dab72b5edbc1f6fe683b6efe9b364155cbb3f7c5c6ac0164f97"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "bytes": 3537,
+      "sha256": "27a5ec62665344a3d5284e4133da10a40585a81cd46c11fe547d263e370d8dc3",
+      "selection": "full numbered file",
+      "transmitted_sha256": "27a5ec62665344a3d5284e4133da10a40585a81cd46c11fe547d263e370d8dc3"
+    },
+    {
+      "path": "packages/db/src/payment-projection.ts",
+      "bytes": 12366,
+      "sha256": "3cf48235fd56099f772ecf329b456887848d4e573038f85bef11aebea7be6259",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3cf48235fd56099f772ecf329b456887848d4e573038f85bef11aebea7be6259"
+    },
+    {
+      "path": "packages/db/src/payment-reconciliation.ts",
+      "bytes": 3624,
+      "sha256": "b5fb45c7046a0a82328885fb911aa66cbbccd7782d10ff81995e42cfdf1dffed",
+      "selection": "full numbered file",
+      "transmitted_sha256": "b5fb45c7046a0a82328885fb911aa66cbbccd7782d10ff81995e42cfdf1dffed"
+    },
+    {
+      "path": "packages/db/src/r15-hosted-composition.ts",
+      "bytes": 2862,
+      "sha256": "d9a1fbe40af875298a9e6bcb7f5ecb7e983435e7bf6f70050bb1dce73865c705",
+      "selection": "full numbered file",
+      "transmitted_sha256": "d9a1fbe40af875298a9e6bcb7f5ecb7e983435e7bf6f70050bb1dce73865c705"
+    },
+    {
+      "path": "packages/db/src/schema.ts",
+      "bytes": 542,
+      "sha256": "85ab193a5c1ff92377009525da2b14684dda63e1769a30247546c98478650e5a",
+      "selection": "full numbered file",
+      "transmitted_sha256": "85ab193a5c1ff92377009525da2b14684dda63e1769a30247546c98478650e5a"
+    },
+    {
+      "path": "packages/db/src/square-webhook-inbox.ts",
+      "bytes": 2628,
+      "sha256": "ee463d57e7116c356e02d1d6beb5be0faef39e8485e2f9694579e97958579550",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ee463d57e7116c356e02d1d6beb5be0faef39e8485e2f9694579e97958579550"
+    },
+    {
+      "path": "scripts/build-ingress.d.mts",
+      "bytes": 135,
+      "sha256": "a6e257d86d594f0e20d05be2d23d9ee6f766f94fa4768ccb0ab6530bab1309cc",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a6e257d86d594f0e20d05be2d23d9ee6f766f94fa4768ccb0ab6530bab1309cc"
+    },
+    {
+      "path": "scripts/build-ingress.mjs",
+      "bytes": 1064,
+      "sha256": "ade32282d8e825bcfb6fc81f9a93f3b9d0b14894dc45580151f75b3f7a665a3e",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ade32282d8e825bcfb6fc81f9a93f3b9d0b14894dc45580151f75b3f7a665a3e"
+    },
+    {
+      "path": "scripts/hosted-payment-activation.ts",
+      "bytes": 3760,
+      "sha256": "c2ba0a7f2633bc3de507ac89a5eeb3275bcfba64043fd279d15bad38acfc5792",
+      "selection": "full numbered file",
+      "transmitted_sha256": "c2ba0a7f2633bc3de507ac89a5eeb3275bcfba64043fd279d15bad38acfc5792"
+    },
+    {
+      "path": "scripts/hosted-payment-migrations.ts",
+      "bytes": 2044,
+      "sha256": "c6b348a1522ff321c5eaf912d70973f3f3f8d401d4f982f574fd638fdeee8f1e",
+      "selection": "full numbered file",
+      "transmitted_sha256": "c6b348a1522ff321c5eaf912d70973f3f3f8d401d4f982f574fd638fdeee8f1e"
+    },
+    {
+      "path": "scripts/payment-activation-grants.ts",
+      "bytes": 2988,
+      "sha256": "7840fb3af5891e36213b81680f18f339a84882218fac8c6a11ddf482695a6399",
+      "selection": "full numbered file",
+      "transmitted_sha256": "7840fb3af5891e36213b81680f18f339a84882218fac8c6a11ddf482695a6399"
+    },
+    {
+      "path": "scripts/payment-activation-roles.ts",
+      "bytes": 1793,
+      "sha256": "f22b2206d361307ae2bcf6168d361a6965647b0b82110cc8b994c73c56daba7f",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f22b2206d361307ae2bcf6168d361a6965647b0b82110cc8b994c73c56daba7f"
+    },
+    {
+      "path": "scripts/pool-lifecycle.ts",
+      "bytes": 1031,
+      "sha256": "1c6156710ab9be19f8fcd8b0d71482374b039c7e1560261ec7731ed3cfc774d3",
+      "selection": "full numbered file",
+      "transmitted_sha256": "1c6156710ab9be19f8fcd8b0d71482374b039c7e1560261ec7731ed3cfc774d3"
+    },
+    {
+      "path": "scripts/postgres.ts",
+      "bytes": 2485,
+      "sha256": "fc9a1df9223c5d8d4a494d7c8d64c774ba3a03ce39933ac33aa8e44b4b2aa453",
+      "selection": "full numbered file",
+      "transmitted_sha256": "fc9a1df9223c5d8d4a494d7c8d64c774ba3a03ce39933ac33aa8e44b4b2aa453"
+    },
+    {
+      "path": "scripts/test-hygiene.ts",
+      "bytes": 5763,
+      "sha256": "ed3dd11c1fdc2fba23f9612741ec1158f0b1c21fc1bb18f249ecf95300342fce",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ed3dd11c1fdc2fba23f9612741ec1158f0b1c21fc1bb18f249ecf95300342fce"
+    },
+    {
+      "path": "scripts/test-payment-activation.ts",
+      "bytes": 999,
+      "sha256": "764f1101f8fe1d28442ba64784bc8bda1f478f806e246bda174b912e74905b78",
+      "selection": "full numbered file",
+      "transmitted_sha256": "764f1101f8fe1d28442ba64784bc8bda1f478f806e246bda174b912e74905b78"
+    },
+    {
+      "path": "scripts/test-r15-ingress.ts",
+      "bytes": 6548,
+      "sha256": "fb731b112f2d304ae1038c1f4219333abfb28a1ddfc37cfef692ce6fbc1f7d25",
+      "selection": "full numbered file",
+      "transmitted_sha256": "fb731b112f2d304ae1038c1f4219333abfb28a1ddfc37cfef692ce6fbc1f7d25"
+    },
+    {
+      "path": "scripts/worktree.ts",
+      "bytes": 1361,
+      "sha256": "54dc049297f7fc446d5dcf473aaa7017a952b401115dbb73562cc57895801c88",
+      "selection": "full numbered file",
+      "transmitted_sha256": "54dc049297f7fc446d5dcf473aaa7017a952b401115dbb73562cc57895801c88"
+    },
+    {
+      "path": "tests/fixtures/payment-projection.ts",
+      "bytes": 12687,
+      "sha256": "a7ae4b85059c82343ea17e1ac0a5105486cb8862ce8c8e113838d7de331689e0",
+      "selection": "full numbered file",
+      "transmitted_sha256": "a7ae4b85059c82343ea17e1ac0a5105486cb8862ce8c8e113838d7de331689e0"
+    },
+    {
+      "path": "tests/fixtures/payment-reconciliation.ts",
+      "bytes": 5696,
+      "sha256": "74c7abbe0717946fa7ef4aa19543893ec2eeeeec5c41c9be9b74b355e58ab138",
+      "selection": "full numbered file",
+      "transmitted_sha256": "74c7abbe0717946fa7ef4aa19543893ec2eeeeec5c41c9be9b74b355e58ab138"
+    },
+    {
+      "path": "tests/readiness/r14-additional.ts",
+      "bytes": 8456,
+      "sha256": "c28b8b523814d0170b0d771d6165818ba8fcf0d362a874db5a5bbc21e017806c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "c28b8b523814d0170b0d771d6165818ba8fcf0d362a874db5a5bbc21e017806c"
+    },
+    {
+      "path": "tests/readiness/r14-boundaries.ts",
+      "bytes": 6937,
+      "sha256": "fccbee95e4e48ef128e9a4c11ea5132e536b80a911ef144f1e00ffa0e8d58e6c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "fccbee95e4e48ef128e9a4c11ea5132e536b80a911ef144f1e00ffa0e8d58e6c"
+    },
+    {
+      "path": "tests/readiness/r14-evidence.ts",
+      "bytes": 3943,
+      "sha256": "e360e20cb5eb4918a845359a70f1e6606ead86dd6cc1a51fdfe960874eeea6f1",
+      "selection": "full numbered file",
+      "transmitted_sha256": "e360e20cb5eb4918a845359a70f1e6606ead86dd6cc1a51fdfe960874eeea6f1"
+    },
+    {
+      "path": "tests/readiness/r14-fresh-child.ts",
+      "bytes": 1219,
+      "sha256": "f80b93f5e7ea1bc01af939d376dec802db1a5c5be8529feb8cf4f7967d72ccde",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f80b93f5e7ea1bc01af939d376dec802db1a5c5be8529feb8cf4f7967d72ccde"
+    },
+    {
+      "path": "tests/readiness/r14-postgres.ts",
+      "bytes": 27385,
+      "sha256": "3d745d0acac4f7c87c682a2a7d12e3c3e286014648f52ab0a5d9c31f9d636198",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3d745d0acac4f7c87c682a2a7d12e3c3e286014648f52ab0a5d9c31f9d636198"
+    },
+    {
+      "path": "tests/readiness/s2-operator-guard.test.mjs",
+      "bytes": 1873,
+      "sha256": "1c9868e50027efebc2d6525f3393e4fd804388135d61f866b606042b8d840388",
+      "selection": "full numbered file",
+      "transmitted_sha256": "1c9868e50027efebc2d6525f3393e4fd804388135d61f866b606042b8d840388"
+    },
+    {
+      "path": "tests/readiness/square-s2.test.ts",
+      "bytes": 11962,
+      "sha256": "6dd5f8d2f4e312260dcaa447b96610eaaca033c0ad7833fa22d9e0fc34d6379e",
+      "selection": "full numbered file",
+      "transmitted_sha256": "6dd5f8d2f4e312260dcaa447b96610eaaca033c0ad7833fa22d9e0fc34d6379e"
+    },
+    {
+      "path": "tests/unit/booking-reconciliation-compatibility.test.ts",
+      "bytes": 6475,
+      "sha256": "77bad5c94c89438f0ab1f50c2f173bc5022fa1cfeb21ea825c93177f1b04b913",
+      "selection": "full numbered file",
+      "transmitted_sha256": "77bad5c94c89438f0ab1f50c2f173bc5022fa1cfeb21ea825c93177f1b04b913"
+    },
+    {
+      "path": "tests/unit/payment-activation.test.ts",
+      "bytes": 3035,
+      "sha256": "2b31439c5c92e0cc69383e61bd9e4c713dbe375eadc847f43fd588c03b36d1c6",
+      "selection": "full numbered file",
+      "transmitted_sha256": "2b31439c5c92e0cc69383e61bd9e4c713dbe375eadc847f43fd588c03b36d1c6"
+    },
+    {
+      "path": "tests/unit/payment-projection-booking.test.ts",
+      "bytes": 5102,
+      "sha256": "27f8c83fb4185084d884063ea259ffd36bd1866bc3e3e06a5bcb9d205ff23ada",
+      "selection": "full numbered file",
+      "transmitted_sha256": "27f8c83fb4185084d884063ea259ffd36bd1866bc3e3e06a5bcb9d205ff23ada"
+    },
+    {
+      "path": "tests/unit/payment-projection-db.test.ts",
+      "bytes": 2874,
+      "sha256": "d8035a2919e441c80e229d1f615e1351fb98e638e104d24b9ecf3ffec93b44df",
+      "selection": "full numbered file",
+      "transmitted_sha256": "d8035a2919e441c80e229d1f615e1351fb98e638e104d24b9ecf3ffec93b44df"
+    },
+    {
+      "path": "tests/unit/payment-projection-recovery.test.ts",
+      "bytes": 5014,
+      "sha256": "e006f5d15b79d61c63b8df08c7a593d68abc0e89fcfddb96f3aca704543344a1",
+      "selection": "full numbered file",
+      "transmitted_sha256": "e006f5d15b79d61c63b8df08c7a593d68abc0e89fcfddb96f3aca704543344a1"
+    },
+    {
+      "path": "tests/unit/payment-projection.test.ts",
+      "bytes": 17767,
+      "sha256": "3004ba554ab19e88cf9f360830ca0bbfe16f72fa190b7722e1362084f8f78332",
+      "selection": "full numbered file",
+      "transmitted_sha256": "3004ba554ab19e88cf9f360830ca0bbfe16f72fa190b7722e1362084f8f78332"
+    },
+    {
+      "path": "tests/unit/payment-reconciliation-db.test.ts",
+      "bytes": 7703,
+      "sha256": "5edb3c0ae6da6fd4cfe3e177934bdb5f30dde0aef84ff4694dcd4370c7753861",
+      "selection": "full numbered file",
+      "transmitted_sha256": "5edb3c0ae6da6fd4cfe3e177934bdb5f30dde0aef84ff4694dcd4370c7753861"
+    },
+    {
+      "path": "tests/unit/payment-reconciliation.test.ts",
+      "bytes": 19670,
+      "sha256": "dd4708e23047e1af775dc5c0b2417b94950e642891b72398b9a33225917e6040",
+      "selection": "full numbered file",
+      "transmitted_sha256": "dd4708e23047e1af775dc5c0b2417b94950e642891b72398b9a33225917e6040"
+    },
+    {
+      "path": "tests/unit/r15-artifact.test.ts",
+      "bytes": 2375,
+      "sha256": "ab7dbe4f2aa181bef56c79b848f5e9853a079e0f6ad7855d2e41c7407149a71d",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ab7dbe4f2aa181bef56c79b848f5e9853a079e0f6ad7855d2e41c7407149a71d"
+    },
+    {
+      "path": "tests/unit/r15-composition.test.ts",
+      "bytes": 3324,
+      "sha256": "235c3420d7c6bec8e77a8986fb14b38cb4eb0a9ba501e24af23b9038631118d3",
+      "selection": "full numbered file",
+      "transmitted_sha256": "235c3420d7c6bec8e77a8986fb14b38cb4eb0a9ba501e24af23b9038631118d3"
+    },
+    {
+      "path": "tests/unit/r15-hosted.test.ts",
+      "bytes": 2177,
+      "sha256": "ee0455bb9ea6418ff745e461c591183b17496939f43ea21c8b8a639daf4e1c2c",
+      "selection": "full numbered file",
+      "transmitted_sha256": "ee0455bb9ea6418ff745e461c591183b17496939f43ea21c8b8a639daf4e1c2c"
+    },
+    {
+      "path": "tests/unit/r15-ingress.test.ts",
+      "bytes": 6278,
+      "sha256": "c231c313f4c3431619559e3540b4d9e9102a7c510407c9f4978619c855aa0cf9",
+      "selection": "full numbered file",
+      "transmitted_sha256": "c231c313f4c3431619559e3540b4d9e9102a7c510407c9f4978619c855aa0cf9"
+    },
+    {
+      "path": "tests/unit/r15-migrations.test.ts",
+      "bytes": 391,
+      "sha256": "2958291ea13b8765e1ce41ed9c5e4af90d830b35b861ee1505889a312eecf9b1",
+      "selection": "full numbered file",
+      "transmitted_sha256": "2958291ea13b8765e1ce41ed9c5e4af90d830b35b861ee1505889a312eecf9b1"
+    },
+    {
+      "path": "tests/unit/r15-projection-authority.test.ts",
+      "bytes": 2700,
+      "sha256": "7e4aa960d78dc494c8a7d7fcf7b22b8ec6592a1c2c9b43cf75bf94cade856f41",
+      "selection": "full numbered file",
+      "transmitted_sha256": "7e4aa960d78dc494c8a7d7fcf7b22b8ec6592a1c2c9b43cf75bf94cade856f41"
+    },
+    {
+      "path": "tests/unit/square-webhook-inbox.test.ts",
+      "bytes": 6419,
+      "sha256": "38925bf84886bb106de1212d54973d2df0629f1d63fbab2c2b6e1e7e5b87d3bb",
+      "selection": "full numbered file",
+      "transmitted_sha256": "38925bf84886bb106de1212d54973d2df0629f1d63fbab2c2b6e1e7e5b87d3bb"
+    },
+    {
+      "path": "tests/unit/square-webhook-receiver.test.ts",
+      "bytes": 13421,
+      "sha256": "93b4a3cffdae4e1b5c5cd2d7505f6e8f2ee98beb6532d2abeffc061c4161f91b",
+      "selection": "full numbered file",
+      "transmitted_sha256": "93b4a3cffdae4e1b5c5cd2d7505f6e8f2ee98beb6532d2abeffc061c4161f91b"
+    },
+    {
+      "path": "tools/acceptance/s2-operator-guard.mjs",
+      "bytes": 854,
+      "sha256": "6c801e93dcc02a377b5f11b26342754f6f643f38fd0e7431af9d7b17d305107b",
+      "selection": "full numbered file",
+      "transmitted_sha256": "6c801e93dcc02a377b5f11b26342754f6f643f38fd0e7431af9d7b17d305107b"
+    },
+    {
+      "path": "tools/automation/review-contract.ts",
+      "bytes": 932,
+      "sha256": "f32456b0cb00c80cd2ae9d48afa5d32837cfcf9447b03517723172536cdb55e0",
+      "selection": "full numbered file",
+      "transmitted_sha256": "f32456b0cb00c80cd2ae9d48afa5d32837cfcf9447b03517723172536cdb55e0"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 1009,
+      "sha256": "d1e3321f878d39417eb703e9cab3aa1a8f00cb0c91bc8be93b930cd5b1a1fdea",
+      "selection": "full numbered file",
+      "transmitted_sha256": "d1e3321f878d39417eb703e9cab3aa1a8f00cb0c91bc8be93b930cd5b1a1fdea"
+    }
+  ],
+  "redactions": [],
+  "scan": {
+    "provider_tokens": 0,
+    "private_keys": 0,
+    "credential_urls": 0,
+    "nonSyntheticEmails": 0
+  },
+  "source": "exact git HEAD plus explicit current authority and sanitized non-secret operation classification",
+  "excluded": "Unrelated old logs, main credentials/auth info, synthetic credential URI values; original versions retained locally/repository. All new executable source supplied full. Migrations0025–0029 and relevant prior ledger/HOLD/transfer/quote/booking/wear/actor/activation DDL supplied in full. Unchanged custody, return, content, guest/recovery and late-pickup migrations omitted; their hashes/order remain in migration-hashes.json. No source from those unrelated runtime paths is changed.",
+  "destination": "Anthropic Claude Code, existing Team, extra credits OFF",
+  "phase_budget": {
+    "initial": 1,
+    "correction": 1,
+    "finalEvidence": 1,
+    "usedBeforeThisRun": 0
+  },
+  "liveAcceptance": "not claimed; Neo free metadata only; new external operations suspended",
+  "reviewTools": "StructuredOutput formatting only; no code/file/provider tools"
+}

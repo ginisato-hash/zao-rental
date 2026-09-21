@@ -1,0 +1,72 @@
+{
+  "commands": [
+    {
+      "name": "square-tests",
+      "args": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/readiness/square-s1.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T04:03:37.719828+00:00",
+      "end": "2026-09-14T04:03:38.199321+00:00",
+      "log": "square-tests.log"
+    },
+    {
+      "name": "secret-scan",
+      "args": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T04:03:38.199665+00:00",
+      "end": "2026-09-14T04:03:38.565520+00:00",
+      "log": "secret-scan.log"
+    },
+    {
+      "name": "lint",
+      "args": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T04:03:38.565843+00:00",
+      "end": "2026-09-14T04:03:44.843323+00:00",
+      "log": "lint.log"
+    },
+    {
+      "name": "typecheck",
+      "args": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T04:03:44.843818+00:00",
+      "end": "2026-09-14T04:03:49.364871+00:00",
+      "log": "typecheck.log"
+    },
+    {
+      "name": "build",
+      "args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "start": "2026-09-14T04:03:49.365129+00:00",
+      "end": "2026-09-14T04:04:02.291385+00:00",
+      "log": "build.log"
+    }
+  ],
+  "square_actual_requests": 0,
+  "external_db": 0,
+  "full_verify": "NOT_SELECTED_S1_BOUNDARY_ONLY"
+}

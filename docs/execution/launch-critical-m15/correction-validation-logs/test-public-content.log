@@ -1,0 +1,11 @@
+
+> zao-rental@0.1.0 test:public-content
+> node --import tsx tests/public/content-postgres.ts
+
+PASS CMS real PostgreSQL role cannot mutate price, inventory, staff, audit or DDL; unpublished model stays hidden
+PASS CSV dry run/save/replay are durable and cannot change price columns; stale revision and release reject atomically
+PASS release checks current revisions, rights, translation and physical model lengths; revocation withdraws projection immediately
+PASS photo job and stripped derivatives persist to PG; replay is one job and originals cannot be public model paths
+PASS content permission revoked while waiting for workspace lock prevents write, retaining old revisions
+Content PG 5 cases passed; synthetic rights/media only.
+Owned content PostgreSQL stopped.

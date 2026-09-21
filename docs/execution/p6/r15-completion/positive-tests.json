@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "count": 6,
+  "results": [
+    {
+      "name": "receiver durable insert and duplicate",
+      "status": "PASS"
+    },
+    {
+      "name": "dispatcher targeted interface",
+      "status": "PASS"
+    },
+    {
+      "name": "worker claim/load/finalize interfaces",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnostic read interface",
+      "status": "PASS"
+    },
+    {
+      "name": "projector approved locked synthetic state and source reads",
+      "status": "PASS"
+    },
+    {
+      "name": "SECURITY DEFINER fixed paths and PUBLIC denied privileged functions",
+      "status": "PASS"
+    }
+  ],
+  "actualProviderRequests": 0
+}

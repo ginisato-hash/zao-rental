@@ -1,7 +1,8 @@
+import type {AvatarVisualUse} from '../../../contracts/src/avatar-visualization';
 import {createHash} from 'node:crypto';
 import {canonical} from '../../../contracts/src/hold';
 import {ContentInputError,type Content} from './bulk-plan';
-export type ContentRevision={id:string;offerCode:string;locale:'ja'|'en';content:Content;sourceRevision:string|null;translationApproved:boolean;mediaIds:string[];commercialRevision:string};
+export type ContentRevision={avatarVisualUses?:AvatarVisualUse[];id:string;offerCode:string;locale:'ja'|'en';content:Content;sourceRevision:string|null;translationApproved:boolean;mediaIds:string[];commercialRevision:string};
 export type MediaReadiness={id:string;processed:boolean;rightsConfirmed:boolean;rightsUntil:string|null;alt:string;immutableSha256:string;internalOnly:boolean};
 export type ReleaseInput={id:string;entries:string[];expectedCurrent:string|null;restoreOf:string|null};
 export type CatalogReleaseState={current:string|null;draftIds:Record<string,string>;revisions:ContentRevision[];media:MediaReadiness[];commercialRevisions:Record<string,string>;releases:{id:string;entries:string[];manifestSha256:string;restoreOf:string|null}[]};

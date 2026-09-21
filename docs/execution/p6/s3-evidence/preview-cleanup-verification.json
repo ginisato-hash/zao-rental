@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-14T16:45:55.684884+00:00",
+  "exact_s3_deleted": "dpl_2K5o4MK53GBc4mz5qobLfRNswSPU",
+  "deployment_list_contains_s3": false,
+  "remaining_deployments": [
+    {
+      "id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "state": "READY"
+    }
+  ],
+  "r3_retained": true,
+  "protection": "all_except_custom_domains",
+  "env_metadata_unchanged": true,
+  "production_square_env": 0,
+  "square_requests_for_cleanup": 0,
+  "provider_objects_retained_no_additional_refund": true,
+  "source_routes_removed": true,
+  "local_guard_retained": true,
+  "result_was_remotely_verified_before_cleanup": "b68fd7b48a3187ebf173775671fc55cc16357ba2"
+}

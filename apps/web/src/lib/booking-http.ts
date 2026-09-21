@@ -5,11 +5,11 @@ import {FlowError,flowId,flowObject} from '../../../../packages/contracts/src/re
 import {LedgerError} from '../../../../packages/contracts/src/ledger';
 import {readJson} from './ledger-http';
 const privateHeaders={'Cache-Control':'private, no-store','Vary':'Cookie','Referrer-Policy':'no-referrer'};
-export function bookingHandler(state:(h:Headers)=>Promise<StaffState>,service:(identity:FlowIdentity)=>BookingService,origin:string,composition:'UNCONNECTED'|'ISOLATED_TEST'='UNCONNECTED'){return async(request:Request)=>{try{
+export function bookingHandler(state:(h:Headers)=>Promise<StaffState>,service:(identity:FlowIdentity)=>BookingService,origin:string,composition:'UNCONNECTED'|'ISOLATED_TEST'|'LOCAL_OPERATIONS'='UNCONNECTED'){return async(request:Request)=>{try{
  const s=await state(request.headers);if(s.status!=='authorized')throw new FlowError('UNAUTHENTICATED',401);if(!s.principal.permissions.includes('BOOKING_VIEW'))throw new FlowError('FORBIDDEN',403);const stamp=request.headers.get('x-zao-session');if(stamp&&stamp!==createHash('sha256').update(s.stamp).digest('hex'))throw new FlowError('SESSION_CHANGED',409);
  const url=new URL(request.url),path=url.pathname.slice('/api/bookings'.length);if(url.search)throw new FlowError('INVALID_QUERY',422);
- if(request.method==='GET'&&path==='/capabilities')return Response.json({mode:composition,chargeReady:false,simulated:composition==='ISOLATED_TEST',rental:composition==='ISOLATED_TEST'?'SYNTHETIC_CUSTODY':'UNCONNECTED'}, {headers:privateHeaders});
- if(composition!=='ISOLATED_TEST')throw new FlowError('PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',503);
+ if(request.method==='GET'&&path==='/capabilities')return Response.json({mode:composition,chargeReady:false,simulated:composition==='ISOLATED_TEST',rental:composition==='UNCONNECTED'?'UNCONNECTED':'LOCAL_CUSTODY'}, {headers:privateHeaders});
+ if(composition==='UNCONNECTED'||composition==='LOCAL_OPERATIONS'&&request.method!=='GET')throw new FlowError('PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',503);
  // stamp was obtained from the server-verified session, never from a submitted subject/role/store.
  const [sessionId]=JSON.parse(s.stamp) as [string,unknown];const svc=service({subject:s.principal.subject,sessionId});
  if(request.method==='GET')return Response.json(path===''?await svc.list():await svc.get(path.slice(1)),{headers:privateHeaders});

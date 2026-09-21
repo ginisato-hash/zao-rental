@@ -1,0 +1,29 @@
+{
+  "classification": "R15_PASS",
+  "implementation_validation": "SELF_VERIFIED_PASS",
+  "external_acceptance": "SANDBOX_E2E_PASS",
+  "independent_review": "PASS",
+  "reviewed_head": "ba90acf0b1bff9f937474ff85cf033d12a9c70a3",
+  "base_sha": "b541999163ff129cc588960a2c5bf94da61d0cd9",
+  "authority_sha256": "a71b71e976cb7be4942837e4e4c0ae07e295fcfb78353a72770dbc2a446ba4f0",
+  "snapshot_sha256": "2b6abf6348cec9cb95d9c6aaae4ef39aaa7f4439f2e74b9a2a0ec43aa16fb1df",
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 2
+  },
+  "final_review_starts": 1,
+  "final_review_limit": 1,
+  "retry": 0,
+  "F3_dedicated_review": "RETIRED_UNUSED_0",
+  "initial_review_starts_historical": 1,
+  "correction_review_starts_historical": 1,
+  "receipt_commit": "Containing commit; descendant of reviewed_head with documentation/evidence changes only. No product source/test changes after review.",
+  "next_gate": "ChatGPT Technical Director terminal cross-system assessment; Owner main merge/Production GO remain ungranted.",
+  "main_merge": 0,
+  "production_go": false,
+  "runtime_and_secret_cleanup": "PASS",
+  "temporary_secret_file_absent": true,
+  "recorded_at": "2026-09-15T14:27:57.525083+00:00"
+}

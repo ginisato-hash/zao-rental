@@ -1,0 +1,1127 @@
+{
+  "head": "dbfbb4a220abb757a0f3bd1f92708e8112fb6067",
+  "tree": "e78e28a259214d9555d497c15cc93c86fdd95fd0",
+  "validated_files": "validated-files.json",
+  "tracked_file_count": 223,
+  "tracked_bytes": 1243142,
+  "files": [
+    {
+      "path": ".npmrc",
+      "bytes": 69,
+      "sha256": "1fcbcc5dcdf0f89336419b38f660486730b823556c17bd84002f8a3c4c5a7c60"
+    },
+    {
+      "path": ".nvmrc",
+      "bytes": 8,
+      "sha256": "b911698dc3cf3227d34d0ad6727f1c4408791203c9665de99ab959331a1fb07d"
+    },
+    {
+      "path": "apps/web/next-env.d.ts",
+      "bytes": 288,
+      "sha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+    },
+    {
+      "path": "apps/web/next.config.ts",
+      "bytes": 706,
+      "sha256": "b0b92ba3c44d9d14f3890463eb63436214486f74fd1e7ce69c317f30240b8658"
+    },
+    {
+      "path": "apps/web/src/app/[locale]/[[...page]]/page.tsx",
+      "bytes": 1255,
+      "sha256": "1e0d5d7d61ed4107e5a34c4ca6ad706831022c0d82dfeadbc0c11db42e594df3"
+    },
+    {
+      "path": "apps/web/src/app/[locale]/book/page.tsx",
+      "bytes": 494,
+      "sha256": "932b4d6ab1166250928dde2d0bbaebe01e29db4cd41b93275d3d355d024bf093"
+    },
+    {
+      "path": "apps/web/src/app/[locale]/rental/premium/[slug]/page.tsx",
+      "bytes": 3013,
+      "sha256": "c96ef263c044c12b021f516d76549f645850a31dcef565d5d61bbc2979d77c54"
+    },
+    {
+      "path": "apps/web/src/app/[locale]/reservation/page.tsx",
+      "bytes": 504,
+      "sha256": "88afbe56033675617cde7ed54e945df2f2f0fe69389306b8157943944168bcee"
+    },
+    {
+      "path": "apps/web/src/app/[locale]/retired/[slug]/route.ts",
+      "bytes": 590,
+      "sha256": "1fdafed319f874e642f4580223f8b907b0e555c45770b045b4b59a815a698759"
+    },
+    {
+      "path": "apps/web/src/app/admin/page.tsx",
+      "bytes": 461,
+      "sha256": "c30b99295d88d6280e40ac43fa4fe547d77dce22b03c431c1fa0b8af697f6f1f"
+    },
+    {
+      "path": "apps/web/src/app/api/admin/route.ts",
+      "bytes": 448,
+      "sha256": "91169b0a938c769d6a38321fccc81bfeddb6a4fc5266c9f0c3deba0d2d60d65f"
+    },
+    {
+      "path": "apps/web/src/app/api/auth/[...all]/route.ts",
+      "bytes": 397,
+      "sha256": "c9bbfc7eed5fe2760c69730a71e396b03f28bd98efe7b56dadbf596418fcad83"
+    },
+    {
+      "path": "apps/web/src/app/api/booking-access/[[...record]]/route.ts",
+      "bytes": 586,
+      "sha256": "6b6c4930173515ffee4f4198de6f5d2e26a3c83e50979798825630ff8d6c2bc1"
+    },
+    {
+      "path": "apps/web/src/app/api/bookings/[[...record]]/route.ts",
+      "bytes": 593,
+      "sha256": "bbb6abe26a945b656524b4e2712c7d78c9596f0b899f043d5011fe481d1fcb84"
+    },
+    {
+      "path": "apps/web/src/app/api/content-photos/[[...record]]/route.ts",
+      "bytes": 164,
+      "sha256": "901f1ac67263cc46fa700639dcfeb22987e760243f85802505e49a9642e13a3b"
+    },
+    {
+      "path": "apps/web/src/app/api/content/[[...record]]/route.ts",
+      "bytes": 164,
+      "sha256": "968cfe654a45c1f0882cdb307f30e031de56f17e9c4ed57498bed7ac60809df1"
+    },
+    {
+      "path": "apps/web/src/app/api/guest/[[...record]]/route.ts",
+      "bytes": 471,
+      "sha256": "a5964ac104c620d14bdc2e1ae39eefa88fabd2a973440bba33e319dafa60c2bf"
+    },
+    {
+      "path": "apps/web/src/app/api/health/route.ts",
+      "bytes": 192,
+      "sha256": "cfe10e7cd15d12b2434b538f31e199b684d9decd5848a870321ee4270a0fc021"
+    },
+    {
+      "path": "apps/web/src/app/api/holds/[[...record]]/route.ts",
+      "bytes": 153,
+      "sha256": "34c8e3e142eaa6f61bcc46cdafa7489db4e5bfa7f4e488e5cc4a97544364cd51"
+    },
+    {
+      "path": "apps/web/src/app/api/internal/acceptance/square-s1/route.ts",
+      "bytes": 392,
+      "sha256": "999294a903316b6616ecb0a735d6bbc5f34e62d7118fce783d8e42ca626bb25c"
+    },
+    {
+      "path": "apps/web/src/app/api/ledger/[resource]/[[...record]]/route.ts",
+      "bytes": 198,
+      "sha256": "a89bb5fd9f8ec9cfe55f5b219fd1f50acce59d7fe50adeca10ddfd328dd76992"
+    },
+    {
+      "path": "apps/web/src/app/api/quotes/[[...record]]/route.ts",
+      "bytes": 523,
+      "sha256": "147656695fb4721565b3b0b935627cfcb0e63b1aae07c00a4a383c04e3d4062d"
+    },
+    {
+      "path": "apps/web/src/app/api/recommendations/[[...record]]/route.ts",
+      "bytes": 951,
+      "sha256": "6f67594dce01ef3b491c550b89030d56cc63880d4292f5b5254adcb1d0dc86ac"
+    },
+    {
+      "path": "apps/web/src/app/api/session/route.ts",
+      "bytes": 585,
+      "sha256": "0952376be52666f88b75cceecc7f3e2e6e2c4d3ce78cdf05b1ebd1081b86e009"
+    },
+    {
+      "path": "apps/web/src/app/api/staff-users/[[...record]]/route.ts",
+      "bytes": 2184,
+      "sha256": "f078367cf12e784abcea8bc5b43c88202024afed031e9b2ab8d147f1ea19dc90"
+    },
+    {
+      "path": "apps/web/src/app/api/staff/route.ts",
+      "bytes": 478,
+      "sha256": "59dfdbc8dbcbdb3315b2e09aefa10feca05baab89f47cc784223c712821fe26b"
+    },
+    {
+      "path": "apps/web/src/app/api/transfers/[[...record]]/route.ts",
+      "bytes": 543,
+      "sha256": "18cf970b0e6a7f0879541edac244039ff4b567f63dd0172dc3c9bdcc5bc88bf8"
+    },
+    {
+      "path": "apps/web/src/app/api/wear/[[...record]]/route.ts",
+      "bytes": 366,
+      "sha256": "eae9afe6381eb1ce5233e963f65aaab8367ae1db18dbe9048badce399f0d62f9"
+    },
+    {
+      "path": "apps/web/src/app/customer/page.tsx",
+      "bytes": 213,
+      "sha256": "5eb6662afa9cbd3ec8f8ad2997907f01970bf2585d7697d45eb3570340b8c2ec"
+    },
+    {
+      "path": "apps/web/src/app/globals.css",
+      "bytes": 2872,
+      "sha256": "9f91abaac98dfeed9d95fa4bdf09728eb80433845a2776e9cc5cc34334647331"
+    },
+    {
+      "path": "apps/web/src/app/layout.tsx",
+      "bytes": 452,
+      "sha256": "cd6d7a745cff46e6a0cf87a3f91a8c5139aaf08f84d5fbdae4fbf00b8c36fdde"
+    },
+    {
+      "path": "apps/web/src/app/media/[hash]/[file]/route.ts",
+      "bytes": 1253,
+      "sha256": "3f50b51d2a23e286bbac987594e306076161ae501bbf24ff8beb37be1d39b84c"
+    },
+    {
+      "path": "apps/web/src/app/page.tsx",
+      "bytes": 861,
+      "sha256": "cb42d7ed4bd190eb359c52ed8c5edffa8bfed02e10b444c0b8cc6cad07082823"
+    },
+    {
+      "path": "apps/web/src/app/preview/integrated/page.tsx",
+      "bytes": 768,
+      "sha256": "367fc7ade0dec4bbd22cfa48aeda175fe3d3492e1ca154ec0dbf27e1b5ffba20"
+    },
+    {
+      "path": "apps/web/src/app/preview/rental/page.tsx",
+      "bytes": 848,
+      "sha256": "ea4cce3a776120b2652b23fe659991a4b8cb457e47c43e5d10420f601e079835"
+    },
+    {
+      "path": "apps/web/src/app/robots.ts",
+      "bytes": 483,
+      "sha256": "8607d4f49f87cb9bd186a62f93444577e4b17cadc22932b27589bc6367a0ac6e"
+    },
+    {
+      "path": "apps/web/src/app/sitemap.ts",
+      "bytes": 640,
+      "sha256": "e79f50d149b26d5331006f2cb6d9fbbb528f7625c42dd66b5f181a19c07ead4d"
+    },
+    {
+      "path": "apps/web/src/app/staff/content/page.tsx",
+      "bytes": 445,
+      "sha256": "59336923d14338bcac9de7fa8039db20b4061923cce775fc2e66e5f15660f4d7"
+    },
+    {
+      "path": "apps/web/src/app/staff/holds/page.tsx",
+      "bytes": 674,
+      "sha256": "1a8131490c5c067dc5bc776fa23824d5a180ad0f921678e77475a9c8369e288e"
+    },
+    {
+      "path": "apps/web/src/app/staff/ledger/page.tsx",
+      "bytes": 1027,
+      "sha256": "bee9d055b312c854d4033ba4475d985dc56bf51bd3bfc30d4cb0d4cc5c8f3d75"
+    },
+    {
+      "path": "apps/web/src/app/staff/login/page.tsx",
+      "bytes": 444,
+      "sha256": "9a02f34eb1430f5fc74ea0b7c5c014e7c046a7d0a6c75a3104d44873b2d29abf"
+    },
+    {
+      "path": "apps/web/src/app/staff/logout/page.tsx",
+      "bytes": 116,
+      "sha256": "4c79acf45dc920e7499e6403502f67f8b00449bd1641be3b50443ca4139fcc56"
+    },
+    {
+      "path": "apps/web/src/app/staff/page.tsx",
+      "bytes": 587,
+      "sha256": "5e578f2c2252b2d683bf333db8aba6c6b31e83b705678347102c56723370fdad"
+    },
+    {
+      "path": "apps/web/src/app/staff/password/page.tsx",
+      "bytes": 488,
+      "sha256": "28bbbaed78387a6e93cd25cbcbc7bf36a1b41605b7062122aa10c1e319b91f95"
+    },
+    {
+      "path": "apps/web/src/app/staff/quotes/page.tsx",
+      "bytes": 762,
+      "sha256": "ff9c949f592f83cb1426d4850df002a3f31cb522f440b6a491877c65442a9e54"
+    },
+    {
+      "path": "apps/web/src/app/staff/recommendations/page.tsx",
+      "bytes": 757,
+      "sha256": "bb8714b44e812cafa6a65e13e60ae016d2ea14d5f322ca6d7616b40a48e8a4b4"
+    },
+    {
+      "path": "apps/web/src/app/staff/transfers/page.tsx",
+      "bytes": 643,
+      "sha256": "e505a0336d4a48e002981ab9712b35d4e28b0112296b50a0bb38b20d6abdf790"
+    },
+    {
+      "path": "apps/web/src/app/staff/users/page.tsx",
+      "bytes": 777,
+      "sha256": "1e5520812c79bfcda6ea840ed25448784902b6aa8364b56640f919dd64931c8a"
+    },
+    {
+      "path": "apps/web/src/app/staff/wear/page.tsx",
+      "bytes": 594,
+      "sha256": "b6ccc0f3e3695f42288911380ab345583280edbc8445db96b54062800c247856"
+    },
+    {
+      "path": "apps/web/src/components/AssetQrInput.tsx",
+      "bytes": 5939,
+      "sha256": "be99ccd1eb834519817dfd5a2f634c23de7d5f4af99b78904e2e949aef44af63"
+    },
+    {
+      "path": "apps/web/src/components/BookingAccess.tsx",
+      "bytes": 6051,
+      "sha256": "6b917e3c3b482d5e8bae2995456554a4581dc134e2ba3262cbd63fd9d0038d3a"
+    },
+    {
+      "path": "apps/web/src/components/BookingRecovery.tsx",
+      "bytes": 3942,
+      "sha256": "977b743d51dff5980919db216c4539cdaf1a7a6be549921a62ffe9b67e7e6648"
+    },
+    {
+      "path": "apps/web/src/components/BookingWorkspace.tsx",
+      "bytes": 7943,
+      "sha256": "ca37d9d8fa26bde00d09dbddf4f61bea8aaee842ee8eb1c40c4fe6cf5ac33b34"
+    },
+    {
+      "path": "apps/web/src/components/ContentPhotoWorkspace.tsx",
+      "bytes": 6540,
+      "sha256": "a16fa07c7dcb956562d7ea09d0b92d28fc26db5c90089fa8a01d9cb9062d772d"
+    },
+    {
+      "path": "apps/web/src/components/ContentWorkspace.tsx",
+      "bytes": 7735,
+      "sha256": "759165183acc2496fa30eacb4eb47bbeac24f0b8439ceccb7d2ca14ea7cad993"
+    },
+    {
+      "path": "apps/web/src/components/CustodyWorkspace.tsx",
+      "bytes": 11336,
+      "sha256": "da22ec19a10c48c7996f63d4a7aa0cf9e4221a79801fd95e27fffdebcdbc4f6d"
+    },
+    {
+      "path": "apps/web/src/components/GuestBooking.tsx",
+      "bytes": 20361,
+      "sha256": "69048e51b5997df9bbf5917ba3ee8417704372beea36b7dd7259e974e9db36e8"
+    },
+    {
+      "path": "apps/web/src/components/GuestRecovery.tsx",
+      "bytes": 3231,
+      "sha256": "59772833b50749d8fadddc4283d7b3f1d996c5883f27bf651a27fee6c437cad3"
+    },
+    {
+      "path": "apps/web/src/components/HoldWorkspace.tsx",
+      "bytes": 13686,
+      "sha256": "a67ab7d7011d0f985eeda7676c7063d347bb8baf2d664e5769627da06c900bfd"
+    },
+    {
+      "path": "apps/web/src/components/PasswordChange.tsx",
+      "bytes": 1418,
+      "sha256": "ebd670cabafa0691dbf3c316adb4e1639e243053ecaf836ab9639f4af913eea7"
+    },
+    {
+      "path": "apps/web/src/components/PublicPage.tsx",
+      "bytes": 3722,
+      "sha256": "283894c4bd879d44ffc65a844c38400378121627f888114ec4f14a55812cd296"
+    },
+    {
+      "path": "apps/web/src/components/QuoteWorkspace.tsx",
+      "bytes": 14548,
+      "sha256": "c63dc9716bacfbd35a8ce8e0e6f0acb6331073aa29a2736d049f37a5461efcbb"
+    },
+    {
+      "path": "apps/web/src/components/RecommendationWorkspace.tsx",
+      "bytes": 22208,
+      "sha256": "a6d5986315ab38eddc4b66941426da9af36c793108cf045b65e97738f33b3202"
+    },
+    {
+      "path": "apps/web/src/components/StaffLedger.tsx",
+      "bytes": 1513,
+      "sha256": "71d1ff4afbf27c0852f5d1d42862523dae5ba252b49bd6b20f8b19ad219c6f73"
+    },
+    {
+      "path": "apps/web/src/components/StaffLogin.tsx",
+      "bytes": 1976,
+      "sha256": "e5bc622b22c4385ca2b3f4855ea1b7297627e126d0b3fb62df1808f2618953e0"
+    },
+    {
+      "path": "apps/web/src/components/StaffLogout.tsx",
+      "bytes": 690,
+      "sha256": "1434bbcab5a4e9db27ef0efb0c5ec6b31ebe8c5014420c8e3df3c096d6801606"
+    },
+    {
+      "path": "apps/web/src/components/StaffManagement.tsx",
+      "bytes": 7677,
+      "sha256": "cc2d0e1e29b15b8ca4c21bde8f4e110545ad6d50d2a05ea9b8e1a430099f0318"
+    },
+    {
+      "path": "apps/web/src/components/StaffSessionBoundary.tsx",
+      "bytes": 2388,
+      "sha256": "c239d658f506e47cabe02c585baa372319895c2278184c20627c6c7389787eb3"
+    },
+    {
+      "path": "apps/web/src/components/TransferWorkspace.tsx",
+      "bytes": 13216,
+      "sha256": "6989ff563891caadd6c3c56216c65077ea220b1e97b34c2fee7757c76b10bda4"
+    },
+    {
+      "path": "apps/web/src/components/WearWorkspace.tsx",
+      "bytes": 17711,
+      "sha256": "4f1db696741afbad8d3732e0dcf0dc893ab2af1f7959a27edc6eeda9062660d4"
+    },
+    {
+      "path": "apps/web/src/components/guest.css",
+      "bytes": 1945,
+      "sha256": "1b3ff473ee8e72c73bfa800364b0533a699840f552e07755fac62f074b97005d"
+    },
+    {
+      "path": "apps/web/src/components/holds.css",
+      "bytes": 785,
+      "sha256": "25f7ce842470ed3402a12b94d33f3bd48e35778d7fc8d27399fb141a8ae92933"
+    },
+    {
+      "path": "apps/web/src/components/ledger/LedgerWorkspace.tsx",
+      "bytes": 19842,
+      "sha256": "0caae19ef9c62bd0b0a8b60176048a9a1324ede4c849be28eeb31e519ed9a762"
+    },
+    {
+      "path": "apps/web/src/components/ledger/client.ts",
+      "bytes": 1455,
+      "sha256": "936a8bf2d0a27d63c66ca3ba8f5a2b0978b765c19e8b9ae37b056de7c550b63e"
+    },
+    {
+      "path": "apps/web/src/components/ledger/ledger.css",
+      "bytes": 6071,
+      "sha256": "3039ce0eee33ed362e4ab21e35bd48100dc6fcfccd675f32acc2f9f50110b057"
+    },
+    {
+      "path": "apps/web/src/components/public.css",
+      "bytes": 3665,
+      "sha256": "42d025851b4bb33c8fcac7200a1d121eae39336364c3de9c6d4b14f20063c480"
+    },
+    {
+      "path": "apps/web/src/components/recommendation.css",
+      "bytes": 640,
+      "sha256": "e05fcdad4f4eee99eaf7b3d6490b84c6d4a89e05f2ff81cda5a46273db6f37f5"
+    },
+    {
+      "path": "apps/web/src/lib/auth-http.ts",
+      "bytes": 6267,
+      "sha256": "794af4ca2c794a3c17b0b8fbe29028ae2e7075ada4bf614fd5881a800debd208"
+    },
+    {
+      "path": "apps/web/src/lib/auth.ts",
+      "bytes": 209,
+      "sha256": "4ab116d693b15dbbb32d57901ff1b9e5c8c77e187bbada9e82b9c8fc294c282d"
+    },
+    {
+      "path": "apps/web/src/lib/booking-access-http.ts",
+      "bytes": 3606,
+      "sha256": "83d89c91375b8c554963f5f11670b8f179087cf38d131fc0ab8a73b853e7f57e"
+    },
+    {
+      "path": "apps/web/src/lib/booking-access-runtime.ts",
+      "bytes": 1263,
+      "sha256": "26da616d118ecd0eea816c7311bc20d4a63f8e59347d8ae88754ac8cd5329eb7"
+    },
+    {
+      "path": "apps/web/src/lib/booking-http.ts",
+      "bytes": 3030,
+      "sha256": "f10cfc4d25cfd5f28d053db6feb968ca488cbeeed2daadaa8a53fc3fe52e957f"
+    },
+    {
+      "path": "apps/web/src/lib/content-http.ts",
+      "bytes": 5926,
+      "sha256": "aee8608d79ce1ad613cb183c1b6d90c2ee2b8b045ebd18994b031bb80fc61208"
+    },
+    {
+      "path": "apps/web/src/lib/content-photo-http.ts",
+      "bytes": 3452,
+      "sha256": "c131bf4034d9e31f372639aeabcce5090579f51e132b8510101972df0d15f8a7"
+    },
+    {
+      "path": "apps/web/src/lib/content-session.ts",
+      "bytes": 2647,
+      "sha256": "9d3523409bc8bb8347adca7f328f7e5953406b47d9f50ee05c853a0e011364ee"
+    },
+    {
+      "path": "apps/web/src/lib/custody-http.ts",
+      "bytes": 3266,
+      "sha256": "733a8a2b6dfd2578490f1a7d853a9b4c20dcf9e66f05663f2be55de69f7804df"
+    },
+    {
+      "path": "apps/web/src/lib/guest-http.ts",
+      "bytes": 4788,
+      "sha256": "d103c96188989e54b11bfffabf86cd957700e46921d237eff6dd133a45d17c71"
+    },
+    {
+      "path": "apps/web/src/lib/hold-runtime.ts",
+      "bytes": 3310,
+      "sha256": "1de9158eebc618840313be6e8e8017a65acb9febbb8a64392b3c3244b0f76dce"
+    },
+    {
+      "path": "apps/web/src/lib/ledger-http.ts",
+      "bytes": 3263,
+      "sha256": "b3c82d5beb2cb5a625b6843980ab847e495fee4c7ed1e66dd3d850946425cb50"
+    },
+    {
+      "path": "apps/web/src/lib/ledger-runtime.ts",
+      "bytes": 2443,
+      "sha256": "63bb04c36c289a699553a055c4677a43664796055bc36ed179602989c9b597ae"
+    },
+    {
+      "path": "apps/web/src/lib/public-content.ts",
+      "bytes": 1543,
+      "sha256": "9678b51c3858eff9051964f49cbdc6153433d91cc7e94dc06511fb2351e4a8c2"
+    },
+    {
+      "path": "apps/web/src/lib/public-runtime.ts",
+      "bytes": 2532,
+      "sha256": "d1c2820f8b4f85b475b40172ced84bede23741a4bb51e321a763bf4f82f8cace"
+    },
+    {
+      "path": "apps/web/src/lib/public-seo.ts",
+      "bytes": 686,
+      "sha256": "3f608a814175ed9620bf1a7b6a86b208a15a4ac5b1393166776d9d39c5289c4a"
+    },
+    {
+      "path": "apps/web/src/lib/quote-http.ts",
+      "bytes": 2300,
+      "sha256": "013104753ddfd9c3c415c1e19eada00934c6b343cdb178bf1308a9c6e55c2f31"
+    },
+    {
+      "path": "apps/web/src/lib/recommendation-http.ts",
+      "bytes": 2700,
+      "sha256": "aab945ea39eb7396bff76518f9a48690312640d0b075af2975e84c4a0ef90e57"
+    },
+    {
+      "path": "apps/web/src/lib/square-s1-acceptance.ts",
+      "bytes": 3240,
+      "sha256": "e285467fee75118ebe58e15e04bc19b7a66826f3d0de53215d91fdb08717a6cf"
+    },
+    {
+      "path": "apps/web/src/lib/staff-operation-diagnostic.ts",
+      "bytes": 776,
+      "sha256": "4f9a1ecb32aebaaf4fc656dd7233b335c0d02e4ff8b19ebabfaa814ccb1a7a82"
+    },
+    {
+      "path": "apps/web/src/lib/staff-runtime.ts",
+      "bytes": 1913,
+      "sha256": "018e3b68529e948f7aa0089021851dc93e602c07345fa045c638c94e60f973a3"
+    },
+    {
+      "path": "apps/web/src/lib/transfer-http.ts",
+      "bytes": 2319,
+      "sha256": "aba60e2c2ef041fc94bde3103c0648fce3b4c829fcfc19064b83316d2a41d8de"
+    },
+    {
+      "path": "apps/web/src/lib/wear-http.ts",
+      "bytes": 3811,
+      "sha256": "e047259b7dda17f9aa9e06ee095120a7de37b38840f064e47fce6bb7f1fbd456"
+    },
+    {
+      "path": "apps/web/src/proxy.ts",
+      "bytes": 1014,
+      "sha256": "2261a2cb3af4c0cc6993b934770d7ea56f4469936bea3decc157fb807e05c9f4"
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "bytes": 330,
+      "sha256": "e05f60dadc2d6d1470e2ea4270bf97854f08c9b15de95b8716e8038c7c6a14cd"
+    },
+    {
+      "path": "config/content/public-p0-pages.json",
+      "bytes": 12721,
+      "sha256": "1af5bdec8884fcc7cc1ea43b4198b94bc5dbfa3626878e2c24447079f1e3f0fd"
+    },
+    {
+      "path": "config/content/public-policies.draft.json",
+      "bytes": 664,
+      "sha256": "ec9fe6031755cbb9dba491b59fc5e8c36eb1d69148eb8077b6530f39aa1f45c6"
+    },
+    {
+      "path": "config/operations/zao-ops-v1.draft.json",
+      "bytes": 4313,
+      "sha256": "65ec93f12c5c11792a3ddbc772f26eeeea20eced64924eede8a07b241c0cc389"
+    },
+    {
+      "path": "config/pricing/wear-v1.2.proposed.json",
+      "bytes": 3900,
+      "sha256": "6564a9d6e17b5c6c8893b9af18186ef06a1266f11a7279da0c180eec6f75b439"
+    },
+    {
+      "path": "config/pricing/zao-2026-27-v1.draft.json",
+      "bytes": 10998,
+      "sha256": "23ce25f237e6e6928669525c10df7f4e0452f7ee617e349f79df2a7cc856eaa7"
+    },
+    {
+      "path": "config/production/guest.p4-approved-policy.json",
+      "bytes": 449,
+      "sha256": "a95b794164ceacbeed9b0fb83c6f9def2d85b3a6a431913f576a588db36c5208"
+    },
+    {
+      "path": "config/production/guest.pending.json",
+      "bytes": 162,
+      "sha256": "39e67560577ac074087d36136e2c9caca71b9052b87266d1374ef1caf5a8de24"
+    },
+    {
+      "path": "config/production/guest.schema.json",
+      "bytes": 2032,
+      "sha256": "2d659b04071a0451aacd0ac276f25994ad445548b5a173fd354c036713c8fb2d"
+    },
+    {
+      "path": "config/production/launch-gates.json",
+      "bytes": 5011,
+      "sha256": "7d5532ca96b040e30070a5c5abe2e645064a9d4696ea05dd8e868bf4ce817083"
+    },
+    {
+      "path": "config/production/operations.pending.json",
+      "bytes": 572,
+      "sha256": "880abfaf65e3422daa0ab4ac3701cce77b394ffcf90942a8682258d02a806d55"
+    },
+    {
+      "path": "config/production/p4-owner-decisions.json",
+      "bytes": 950,
+      "sha256": "97d6ed6659b7f441ad9059f61b42bdcd75fedb30fa04f8c7735224b1800654e9"
+    },
+    {
+      "path": "config/production/secret-metadata.schema.json",
+      "bytes": 1080,
+      "sha256": "075e374c5cfb7bb46c874ff55540edbfcf95f65265dc526ebdac9ff512663679"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 301741,
+      "sha256": "927666d793e396802a611f47b641fb414121f6f371d14afff54a79abbe1377cf"
+    },
+    {
+      "path": "package.json",
+      "bytes": 5597,
+      "sha256": "39d89a84ec6008345edebe915efb50cdebacb7ba6ac93220972783b6aa7b9769"
+    },
+    {
+      "path": "packages/auth/src/accounts.ts",
+      "bytes": 5786,
+      "sha256": "161c3e6336d5f06de736e38fed9b95c2a504a3cc45e92c2b76f4d866f152c1dc"
+    },
+    {
+      "path": "packages/auth/src/booking-actor.ts",
+      "bytes": 1745,
+      "sha256": "74e7e2699d4abdf80a9f5f4c7ff4657d09ed577abbb40a1d41f677fa2a3755aa"
+    },
+    {
+      "path": "packages/auth/src/config.ts",
+      "bytes": 1471,
+      "sha256": "a49092841e3102f5b24b7dd2737dfe01c550a8cdffa4df86b326b0aad09f9a4c"
+    },
+    {
+      "path": "packages/auth/src/ledger-write-authority.ts",
+      "bytes": 1283,
+      "sha256": "1bfa4155c1cea0b7c19726b871c86c894321cb5af07525415d6a8aede6be6263"
+    },
+    {
+      "path": "packages/auth/src/password.ts",
+      "bytes": 885,
+      "sha256": "ea46af8ed56836cbc8b06ae4f97ed6cb5e7920dc99e8b852c89a16745380abfc"
+    },
+    {
+      "path": "packages/auth/src/staff-auth.ts",
+      "bytes": 4651,
+      "sha256": "812d2dcf6e9ad48ffb38652b66178f31406739852ff56f7cc629a531c8b456cf"
+    },
+    {
+      "path": "packages/auth/src/staff-input.schema.json",
+      "bytes": 4664,
+      "sha256": "18baf3464cbda63faf8ca8c82061e62741d6b566e8135b5da16f085af219c169"
+    },
+    {
+      "path": "packages/contracts/src/asset-qr.ts",
+      "bytes": 309,
+      "sha256": "43afaa36335208004731ece6e258a1d8a29217a915059fa85f598bb7e50849ba"
+    },
+    {
+      "path": "packages/contracts/src/guest-security.ts",
+      "bytes": 1331,
+      "sha256": "f956ddd59278cde9c930681c49e91c95c7a1518c1b46b526d8c10526d3ac9f19"
+    },
+    {
+      "path": "packages/contracts/src/hold-input.schema.json",
+      "bytes": 4159,
+      "sha256": "a413287dedff75b5702991cb5eeaca44866d24f342fc6bc26fa035135e624d98"
+    },
+    {
+      "path": "packages/contracts/src/hold-intake.ts",
+      "bytes": 4614,
+      "sha256": "8d8f3181616b2c2c36868cf138bcf69e869e2f5b169f8e0331c31a7bb1d6958b"
+    },
+    {
+      "path": "packages/contracts/src/hold.ts",
+      "bytes": 8013,
+      "sha256": "69bb59eb37534fadbadb9f94d7a1c2c4ff1f5ed0ee9e26103784f8ecc83931a8"
+    },
+    {
+      "path": "packages/contracts/src/http-body-limits.ts",
+      "bytes": 360,
+      "sha256": "7ff4756dd1b537c606fca5a7b7b5a0d613bfea168a48b798aea25b51b6a0a838"
+    },
+    {
+      "path": "packages/contracts/src/index.ts",
+      "bytes": 322,
+      "sha256": "9f9f3a348587bb10f7b80b5d7bff305892ce5c437e83b294612307f835e7c7b2"
+    },
+    {
+      "path": "packages/contracts/src/ledger-input.schema.json",
+      "bytes": 12798,
+      "sha256": "fcc2dff1da4ce4dabe80d72058e788bb16b20c94fb2bc075dfe014f0e773ae19"
+    },
+    {
+      "path": "packages/contracts/src/ledger.ts",
+      "bytes": 4618,
+      "sha256": "b33a5bc13b1f1fd1eb024dcc59f220fb62db613b290ca267d2f306df07280401"
+    },
+    {
+      "path": "packages/contracts/src/pickup.ts",
+      "bytes": 994,
+      "sha256": "feb192ddbdff904d041ca20bb02d620dae5df1c09f7275d52398722be42b94a0"
+    },
+    {
+      "path": "packages/contracts/src/pricing.ts",
+      "bytes": 9951,
+      "sha256": "aa140e45aea391598ded8f90067f2ed877e5d428a5b5a2827b58b00f6521401d"
+    },
+    {
+      "path": "packages/contracts/src/production-guest.ts",
+      "bytes": 2067,
+      "sha256": "a4efbbaabd6a6d87fdc97d04c3b6fa6e47ae89b1c9cad05d03313421e4a73033"
+    },
+    {
+      "path": "packages/contracts/src/production-operations.ts",
+      "bytes": 5450,
+      "sha256": "5b4f11cbd4c9b57c5e89e8051fb5c2bfd224e6105e502e2349099eae27377386"
+    },
+    {
+      "path": "packages/contracts/src/production-preflight.ts",
+      "bytes": 3788,
+      "sha256": "9829256f202b8b8592bb62620fd261e98060810a406279a97f14abb6d5c30c3e"
+    },
+    {
+      "path": "packages/contracts/src/production-readiness.ts",
+      "bytes": 2735,
+      "sha256": "294085db186d45ebdff4d7555269f3f8046dadb8f0ff6aa2886ba06d63c0172f"
+    },
+    {
+      "path": "packages/contracts/src/public-analytics.ts",
+      "bytes": 1215,
+      "sha256": "d04514de9eb07192cd330e2e48e37f2b07241208ab47df26bc0071cbd723d9c5"
+    },
+    {
+      "path": "packages/contracts/src/recommendation-input.schema.json",
+      "bytes": 4971,
+      "sha256": "7cd89c9b5c71bc880a1c5b8e8b4128026376696f1bfc99673859ea079863ab8d"
+    },
+    {
+      "path": "packages/contracts/src/recommendation.ts",
+      "bytes": 7007,
+      "sha256": "ba1b208c5b72246daa16d3a1c834b14396eb1c2ae7c7967e4b13582eeb95a709"
+    },
+    {
+      "path": "packages/contracts/src/rental-flow.ts",
+      "bytes": 3796,
+      "sha256": "88f74c2aa298bb62f0e98b3cc49c9a3be64042258cba8d146d6d17af977c768d"
+    },
+    {
+      "path": "packages/contracts/src/return-cycle.ts",
+      "bytes": 1928,
+      "sha256": "70fcfcfc490ea194209ee631f8d10a4aae1f6878cecd4ce3c94c84a2fcc5a444"
+    },
+    {
+      "path": "packages/contracts/src/transfer.ts",
+      "bytes": 2844,
+      "sha256": "b53ecebb5a9309136f7fa9effa45aff6528a7983747fb10ee0580928a3f111bd"
+    },
+    {
+      "path": "packages/core/src/catalog/ledger-service.ts",
+      "bytes": 8868,
+      "sha256": "e4d4aa73999196b6ce5fbc46d8754a2945e13466b488b20b5ed6ede62eca1d0c"
+    },
+    {
+      "path": "packages/core/src/catalog/reconcile-protection.ts",
+      "bytes": 3229,
+      "sha256": "3631b85200f62b9ee78ff13f9db3b4c7f8968e05b4794f83361b1830d5e95dbe"
+    },
+    {
+      "path": "packages/core/src/content/bulk-plan.ts",
+      "bytes": 5807,
+      "sha256": "34cabb2724d5c7813e975d42a90c73217de19b1f3785ab8b01f963f53cebbede"
+    },
+    {
+      "path": "packages/core/src/content/catalog-source.ts",
+      "bytes": 3140,
+      "sha256": "f9d951ca1d9bcdf54a105cc9e964616bc45e56f4e03f7f4aaba7bda3595444f8"
+    },
+    {
+      "path": "packages/core/src/content/import-staging.ts",
+      "bytes": 4296,
+      "sha256": "6a85d40374f4f0f8e158abe12c0c5032f3a73ffd6a7cfaa6a73d51e28b2f0759"
+    },
+    {
+      "path": "packages/core/src/content/media-backup.ts",
+      "bytes": 2494,
+      "sha256": "7bb8a56a84909753be33cb17fd42810f9c753a7e7b54056a47e6e8b116968a4d"
+    },
+    {
+      "path": "packages/core/src/content/media-plan.ts",
+      "bytes": 4248,
+      "sha256": "0c1b9868ff64030674b4b524c85e3138fb9f82977b4b4e89c7a08f43cb26bd94"
+    },
+    {
+      "path": "packages/core/src/content/photo-input.ts",
+      "bytes": 806,
+      "sha256": "5b8f4ca8cc9e338b9117de8f775d4cb3233466847396cc6c86f8d3eaaac6e6bc"
+    },
+    {
+      "path": "packages/core/src/content/photo-job.ts",
+      "bytes": 5577,
+      "sha256": "3f3a934d940bc6b2e0c4411857dbc6de4ee543e6a35eda005e6ecc26b0fe41f7"
+    },
+    {
+      "path": "packages/core/src/content/postgres.ts",
+      "bytes": 5376,
+      "sha256": "a75281c53752f03fbf1f4dd2bf11c08ce3100beb8fac33848bb75bfe1282f04e"
+    },
+    {
+      "path": "packages/core/src/content/provider-media.ts",
+      "bytes": 5917,
+      "sha256": "f25d177c5694ec406a320f60bcf83e46e3a6352a16f931a0a0881f49ab0ca918"
+    },
+    {
+      "path": "packages/core/src/content/public-catalog.ts",
+      "bytes": 4313,
+      "sha256": "be215a5d357df018ff44370617ded16076dca34d1a0f2f6a08f0ce1577c163e4"
+    },
+    {
+      "path": "packages/core/src/content/public-pages.ts",
+      "bytes": 2151,
+      "sha256": "31d370be8a36e009df2e9fbe8681427962929a493f29ad5c9fe15c2b78de4803"
+    },
+    {
+      "path": "packages/core/src/content/r2-media.ts",
+      "bytes": 5838,
+      "sha256": "2f2139c5c9d51b074d3a602f1a02bce444bd7bfcad807b74776ce5360b35dff1"
+    },
+    {
+      "path": "packages/core/src/content/release-plan.ts",
+      "bytes": 5311,
+      "sha256": "65e6c95d6f1a386fa92b0ef23287d84ad1e28cc3a20c8a58a4a7bd80343b8593"
+    },
+    {
+      "path": "packages/core/src/content/stock-import-plan.ts",
+      "bytes": 3726,
+      "sha256": "c1d37e966ba1b4729ad2426c3c1c6bf85acc9f92d33ffb0f190230ce039fcd2b"
+    },
+    {
+      "path": "packages/core/src/content/storage-port.ts",
+      "bytes": 1435,
+      "sha256": "a6b98c36a7dd785c707003e61c1ebc235a754860baab4b33d0a7d912048228ba"
+    },
+    {
+      "path": "packages/core/src/content/workflow.ts",
+      "bytes": 7436,
+      "sha256": "2bedbe7300d05684f380247bc3d22d10014a34b89b3675c4790aaf585e566965"
+    },
+    {
+      "path": "packages/core/src/guest/booking-access-keys.ts",
+      "bytes": 645,
+      "sha256": "41b1e5d10ad24650112afbff77087b92d71afb0c7e8b3ed0053404c0e866e49a"
+    },
+    {
+      "path": "packages/core/src/guest/booking-access.ts",
+      "bytes": 3241,
+      "sha256": "36456b1b4ca9d2c27a02c900ff85ad83c06130648a3d6ca9c5c97be0efb05e51"
+    },
+    {
+      "path": "packages/core/src/guest/booking-recovery.ts",
+      "bytes": 4261,
+      "sha256": "798c134473886c7422f139aa8d7edacfca7d5c8cc733fd6674c906013277dfb5"
+    },
+    {
+      "path": "packages/core/src/guest/context.ts",
+      "bytes": 3947,
+      "sha256": "4133c5c4a31006dfacd64457eb0bf3121ee298ebc1d881346d980f7c60f5218e"
+    },
+    {
+      "path": "packages/core/src/guest/production-composition.ts",
+      "bytes": 1618,
+      "sha256": "385df91a71f86f549a07748f4bc5ae2aa71959ed2f40c05a3685b5916cb51e0f"
+    },
+    {
+      "path": "packages/core/src/guest/request-peer-boundary.ts",
+      "bytes": 1234,
+      "sha256": "1d6f79f4da9eccf9d7b2bc0206431757687058da4c3a8a41ccc14b17ee880fc5"
+    },
+    {
+      "path": "packages/core/src/guest/security.ts",
+      "bytes": 8498,
+      "sha256": "2990745a79388d41cdcdd2b31e7b900e06f02b53934ab77776ba1798f2bac5cb"
+    },
+    {
+      "path": "packages/core/src/guest/service.ts",
+      "bytes": 11613,
+      "sha256": "0926e0958a2eb0e968435e28f26d30730b2f03b68a1964460bb6090387ec6d1a"
+    },
+    {
+      "path": "packages/core/src/guest/trusted-ingress.ts",
+      "bytes": 1472,
+      "sha256": "a3f96e470c7e668b73cc92c15a4adda8ee32f979fbdbc09609e06f41abf138e9"
+    },
+    {
+      "path": "packages/core/src/index.ts",
+      "bytes": 751,
+      "sha256": "f37a1af3192cf32f4fc416d1cce9c9ea13730c909a52cd4256c42f6620a66363"
+    },
+    {
+      "path": "packages/core/src/inventory/allocation.ts",
+      "bytes": 13306,
+      "sha256": "daeadf1f865410c1b5ee6427f7f9285228e5372265d76cd9be7c2e2cfb656ba8"
+    },
+    {
+      "path": "packages/core/src/inventory/dependency-scope.ts",
+      "bytes": 1117,
+      "sha256": "be9c0ef1a37c44e4a5d0146f4e32cb72f55201c82a9af324e312872f133a6fdc"
+    },
+    {
+      "path": "packages/core/src/inventory/expiry.ts",
+      "bytes": 563,
+      "sha256": "a9375787d5f50e2ea4ad0c16ec5a7979c2fd6db3bea2d205bbb9112f5a763baa"
+    },
+    {
+      "path": "packages/core/src/inventory/hold-service.ts",
+      "bytes": 15077,
+      "sha256": "dac699e15e5f3a18761cf240bbe2380c47d402a9d82c6744994bdede8ae1e32b"
+    },
+    {
+      "path": "packages/core/src/inventory/intake-context.ts",
+      "bytes": 971,
+      "sha256": "0ce6ec0c858fce5fad1bc9492339a7c296b645d4e808052fce63547c913cdccd"
+    },
+    {
+      "path": "packages/core/src/inventory/period-matching.ts",
+      "bytes": 3028,
+      "sha256": "41eab490c1c4dfdf1c2961ac0c050048a1692da646e2843fb7f0d93e97b20069"
+    },
+    {
+      "path": "packages/core/src/inventory/wear-capacity.ts",
+      "bytes": 2679,
+      "sha256": "4b724331f6f3a426158a39c1def9f40b85ff4c0562ec11be98fc16bf9cafa45f"
+    },
+    {
+      "path": "packages/core/src/payment/booking-service.ts",
+      "bytes": 19786,
+      "sha256": "69d6de1fef6311d24222d43e6fd8d84d725b635a52677db62643cf56813f0ed7"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-activation.ts",
+      "bytes": 9371,
+      "sha256": "bc58d0d30d8b6bf4ae2a20e9e9dccf9e87f3f0e97e35c1df2eceb825133fb2d3"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-environment.ts",
+      "bytes": 3266,
+      "sha256": "75052d3205e6ff658489dadb7c83c34679e0b6ff8c3896fa28be6aa495255a70"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-preflight.ts",
+      "bytes": 5010,
+      "sha256": "117e7e7e7c4fe35118346fab7db20f694aecfd1b59420cce0d5aa3c5a55e38db"
+    },
+    {
+      "path": "packages/core/src/payment/sandbox-refund.ts",
+      "bytes": 2893,
+      "sha256": "0546bf05e1c645576107787340bdc2094e7153fd1bfecd2c14ca003ccaf95fcb"
+    },
+    {
+      "path": "packages/core/src/payment/square-boundary.ts",
+      "bytes": 3508,
+      "sha256": "89ac1d70b71ef7169a44385ec3df300199c838671666795a2fc9e8aa442f6063"
+    },
+    {
+      "path": "packages/core/src/payment/square-s1.ts",
+      "bytes": 6150,
+      "sha256": "f6be7fab44209224fe6a2af3a52c2221e7c575dafad8525cebae2e5d33cdaa6a"
+    },
+    {
+      "path": "packages/core/src/payment/square-sandbox.ts",
+      "bytes": 4424,
+      "sha256": "b25e9264977c473895006da32dee78b4b8403b67470662d080efaf45f0198e5c"
+    },
+    {
+      "path": "packages/core/src/payment/square-transport.ts",
+      "bytes": 6203,
+      "sha256": "dcd059eb00e7e6dd9c923afda3bedbbfe19992c177b442560844f466b392fa9a"
+    },
+    {
+      "path": "packages/core/src/pricing/quote-service.ts",
+      "bytes": 20603,
+      "sha256": "6533641cce9c224f78c37068e3d0a7f85f88fb0b00be33a819f5f577ee924eec"
+    },
+    {
+      "path": "packages/core/src/recommendation/recommendation-service.ts",
+      "bytes": 15610,
+      "sha256": "cdb933721e4fea28432fb7d20a6c44efc690fcec762885326a0a84f9a4e24eed"
+    },
+    {
+      "path": "packages/core/src/rental/custody-service.ts",
+      "bytes": 15471,
+      "sha256": "913ff27e677c122dea8678d49a8e19afde2b35e7f53b68d24809c028b2ab9245"
+    },
+    {
+      "path": "packages/core/src/transfer/completion.ts",
+      "bytes": 873,
+      "sha256": "94defd72f8733872e5a620cf584c5466aa1add372833fad49412743b49fda203"
+    },
+    {
+      "path": "packages/core/src/transfer/projection.ts",
+      "bytes": 2056,
+      "sha256": "ec59785dba5822226bfcd9873e5435001ccd857107952f87c4a2ef9427839734"
+    },
+    {
+      "path": "packages/core/src/transfer/transfer-service.ts",
+      "bytes": 19354,
+      "sha256": "7bb70fa2edad06c3214634665005d961ef6d13c89ff5f26d6c2aa1f653b95ca3"
+    },
+    {
+      "path": "packages/core/src/wear/service.ts",
+      "bytes": 27836,
+      "sha256": "0d4a44fba98821c32294fc7d1b9a5126fe51f8695a9b3db503e031129abaa305"
+    },
+    {
+      "path": "packages/db/migrations/0001_foundation.sql",
+      "bytes": 530,
+      "sha256": "ca3800404dadaca2108c0180a575aa252fdca331d48cc2dab9d6a73d576b2150"
+    },
+    {
+      "path": "packages/db/migrations/0002_ledger.sql",
+      "bytes": 14076,
+      "sha256": "a01f04c6b9b4767c833a8133bc009641f18c2b36c4656d572bc7ff7df9d5e246"
+    },
+    {
+      "path": "packages/db/migrations/0003_staff_auth.sql",
+      "bytes": 7226,
+      "sha256": "3ec969cbf42cc43b2e3c43379636f973798c47800cf1ae0210edfe11e3bcad47"
+    },
+    {
+      "path": "packages/db/migrations/0004_period_hold.sql",
+      "bytes": 8294,
+      "sha256": "598c095400f7aff73b970e96a9c3218abf0efcd2836150988e2706b510e6d2e1"
+    },
+    {
+      "path": "packages/db/migrations/0005_store_transfer.sql",
+      "bytes": 17126,
+      "sha256": "7c41ca6df82f1ef7cc4e223bc7dc8118bca309c9c614ea21621772c1c65ac2a7"
+    },
+    {
+      "path": "packages/db/migrations/0006_pricing_quote.sql",
+      "bytes": 7743,
+      "sha256": "2af5751ecb6007d4bce929e1fa67620fbe5eb9b5c34f449842d02f582d3dd954"
+    },
+    {
+      "path": "packages/db/migrations/0007_recommendation.sql",
+      "bytes": 3459,
+      "sha256": "a6b090f6bc82946020e3956efcbb19a10a1cf193681533c278b4affe52015075"
+    },
+    {
+      "path": "packages/db/migrations/0008_staff_settings_boundary.sql",
+      "bytes": 1309,
+      "sha256": "a8e9b8ae54d8c4a378445b83aa829adbeaac9396083ec186d332b08f101b9f11"
+    },
+    {
+      "path": "packages/db/migrations/0009_development_booking.sql",
+      "bytes": 5827,
+      "sha256": "bdc31ea49660a1edee75fd20dd3c4043090dc0832698f2356f31af219c7f37c0"
+    },
+    {
+      "path": "packages/db/migrations/0010_rental_custody.sql",
+      "bytes": 8045,
+      "sha256": "6d07a0dca17e428fcc43d332c8f87ffc35557f5dd23d56e474b6a2d3e30b8816"
+    },
+    {
+      "path": "packages/db/migrations/0011_receipt_timeline.sql",
+      "bytes": 313,
+      "sha256": "5db1b2f9bec8ef4945ccb2065b6e8638d7a8993502adf670bce7fce5a059acf6"
+    },
+    {
+      "path": "packages/db/migrations/0012_integrated_wear_catalog.sql",
+      "bytes": 5596,
+      "sha256": "a6076dbf78245744b0394bcf5a4a5ced868d5798080da19b1b581ba40ad9239d"
+    },
+    {
+      "path": "packages/db/migrations/0013_wear_quantity.sql",
+      "bytes": 12391,
+      "sha256": "ec606b57dc1f27e9b015e6c6cad4e4a26fbfc70479d3a3abc50e5ca54ea8817c"
+    },
+    {
+      "path": "packages/db/migrations/0014_wear_return_batch.sql",
+      "bytes": 1875,
+      "sha256": "7f19d23b101cc4c795e6cadf6b773e233eb72b3138647d4c0f6953b77c6bd52c"
+    },
+    {
+      "path": "packages/db/migrations/0015_custody_boundary.sql",
+      "bytes": 31418,
+      "sha256": "f4885fade5b753e950ea307b47dee5b138d61985a48d09fe9b09f063de6ba095"
+    },
+    {
+      "path": "packages/db/migrations/0016_delayed_pickup.sql",
+      "bytes": 5255,
+      "sha256": "177f50e10a653ff176c5863a60d221639470fa3471852c119c8b1bdc79f0d57c"
+    },
+    {
+      "path": "packages/db/migrations/0017_no_pickup_completion.sql",
+      "bytes": 3335,
+      "sha256": "a85917af78ced36e347f72b4ab8dfb11aaedff8b542eef6f7299eb4db2358f73"
+    },
+    {
+      "path": "packages/db/migrations/0018_guest_actor.sql",
+      "bytes": 4550,
+      "sha256": "b3d1c1c28b4536c5a4cd81f070da04b297807856c3ff39fd3b0a65ba5470044c"
+    },
+    {
+      "path": "packages/db/migrations/0019_content_workspace.sql",
+      "bytes": 2475,
+      "sha256": "45d39bbc3f9e97956e54e39bcbaa582ab08c75c3165a4b5848b6417334fb8ec7"
+    },
+    {
+      "path": "packages/db/migrations/0020_content_media.sql",
+      "bytes": 940,
+      "sha256": "a1099ed4d97273de8eab2c6ba1b8c074747e381d01158510a5b2c9afdf82e4ab"
+    },
+    {
+      "path": "packages/db/migrations/0021_guest_security.sql",
+      "bytes": 1428,
+      "sha256": "d3698864619ac5e4bb30bb6e966cb1228cfa71d9fb83f9eb82b1bcea6ff73978"
+    },
+    {
+      "path": "packages/db/migrations/0022_booking_access.sql",
+      "bytes": 5464,
+      "sha256": "e6abd96536ba285e1bca159b79b0ed20cf83dcdf7af4169f510020f321b2b12b"
+    },
+    {
+      "path": "packages/db/migrations/0023_sandbox_activation.sql",
+      "bytes": 2159,
+      "sha256": "8b0db6afc0540dce17fb206b0fd5e6f7963a44d6f7e20f0f4f445b1643a441da"
+    },
+    {
+      "path": "packages/db/migrations/0024_booking_recovery.sql",
+      "bytes": 9475,
+      "sha256": "c69295df3ec5abdcc5e44b50cdf482efebdbf1d260b83b02a8b7289a9c4e6aec"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "bytes": 3275,
+      "sha256": "fd37133fecf7c3184ac9e7255f579eb621144283ddb7a3b7f0a35668207a83ba"
+    },
+    {
+      "path": "packages/db/src/schema.ts",
+      "bytes": 542,
+      "sha256": "85ab193a5c1ff92377009525da2b14684dda63e1769a30247546c98478650e5a"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 973,
+      "sha256": "16a66ca90b396ea5da2b7a2f7397f2e4ab6db1793922ff60cb3bdae703327c07"
+    },
+    {
+      "path": "vercel.json",
+      "bytes": 347,
+      "sha256": "796173f1aaf7f1826311dd29fcdab92d38d5b911e48f2ddd5868580211a5fbb5"
+    }
+  ],
+  "additional_transport_file": ".vercelignore",
+  "secret_paths": 0,
+  "secret_pattern_scan": "PASS"
+}

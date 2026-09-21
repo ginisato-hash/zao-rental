@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-09-15T01:50:19.528717+00:00",
+  "base": "49f0a50e79b7b53d9a13fd66c334bc168b5beea7",
+  "migrations0001Through0026": "BYTE_IDENTICAL",
+  "legacyBookingService": "BYTE_IDENTICAL",
+  "R12WorkerTruth": "BYTE_IDENTICAL",
+  "R11Receiver": "BYTE_IDENTICAL",
+  "priorStatusR4ThroughR12": "UNCHANGED",
+  "R10": "LAST_OBSERVED_PENDING / S3_NONTERMINAL_DO_NOT_RETRY",
+  "authoritySha256": "3a131b36a56cdd13aa5f2a27a1b42224f39d09aefc561f8480727094816447ed",
+  "existingMigrationExpectations": "Only append 0027 to integration script expectations; R12 unit assertion locates 0026 rather than requiring it to remain last."
+}

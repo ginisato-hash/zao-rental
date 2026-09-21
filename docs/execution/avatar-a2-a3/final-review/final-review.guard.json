@@ -1,0 +1,9 @@
+{
+  "kind": "POST_R15_AVATAR_A2_A3_FINAL_REVIEW_ONE_SHOT",
+  "head_sha": "950e7e0aa414d4d55ba9ae4ce1f92eab6425899a",
+  "snapshot_sha256": "1bb20ee64fc71f3f83fed3f53fb8a468148a87af0cc2fa2229fc1b4546897a38",
+  "startedAtUtc": "2026-09-15T15:13:31.271Z",
+  "startsConsumed": 1,
+  "maximumStarts": 1,
+  "state": "RESERVED_POSSIBLY_STARTED_NO_RETRY"
+}

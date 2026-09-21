@@ -1,0 +1,15 @@
+{
+  "status": "PASS_LOCAL_DRY_RUN_ONLY",
+  "fileCount": 1499,
+  "bytes": 8242465,
+  "forbiddenFileCount": 0,
+  "runtimeArtworkManifestIncluded": true,
+  "localPostgresIncluded": false,
+  "operatorCredentialsIncluded": false,
+  "sourcePhotosIncluded": false,
+  "artworkBytesIncluded": false,
+  "rawCredentialValuesRead": false,
+  "uploadedFiles": 0,
+  "previewDeployments": 0,
+  "manifestSha256": "d42d2fdf4b7bf00de9d03e77d827f679bef0df12d7d3e7a0bea67279312b4827"
+}

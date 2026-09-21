@@ -1,0 +1,62 @@
+{
+  "status": "PASS",
+  "freshRuntimeCredentialsInvalidated": 5,
+  "publicProbeDisabled": true,
+  "roles": [
+    {
+      "rolname": "zr_852b20c4d4b0_pay_diagnostic",
+      "rolcanlogin": false,
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_dispatch",
+      "rolcanlogin": false,
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_projection",
+      "rolcanlogin": false,
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_public",
+      "rolcanlogin": false,
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_receipt",
+      "rolcanlogin": false,
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    {
+      "rolname": "zr_852b20c4d4b0_pay_truth",
+      "rolcanlogin": false,
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    }
+  ],
+  "runtimePoolsClosed": true,
+  "browserClosed": true,
+  "temporarySecretFileDeleted": true,
+  "secretExposure": 0,
+  "ownerPoolClose": "CONFIRMED_PROCESS_EXIT_0",
+  "retainedData": "Synthetic DB proof and one accepted synthetic payment, minimal audit evidence; no live runtime login",
+  "operatorClosedAt": "2026-09-15T14:05:32.954Z"
+}

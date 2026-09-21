@@ -1,0 +1,67 @@
+{
+  "branch": "codex/launch-critical-ops-m1",
+  "reviewed_head": "40f6be236d883083d5ae64aa5294a4a693d0593e",
+  "base_sha": "cda7e53ee162db96cbb28add3fbb29fff0009617",
+  "source_tree_sha256": "7c16527064bd54f57efb410c4bc4d2df277f2d0e80a3923228856676829abc15",
+  "authority_sha256": "1d35cf5034ce0498ef55d7cc3d3d7e504a34c6a145510eb4ddb3fd34f9c1cbda",
+  "snapshot_sha256": "05fbeba7dca1ff5d53593803860364f105ea6671b124d1d0fb76b787bf050ebf",
+  "verdict": "CHANGES_REQUIRED",
+  "tests_executed": false,
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "HIGH",
+      "title": "Pole stocktake reconciliation unconditionally fails when the pole variant has any active OUT loan",
+      "file_or_component": "packages/core/src/operations/inventory-service.ts (InventoryOperations.reconcile, POLES branch) interacting with packages/db/migrations/0015_custody_boundary.sql inventory_stock_guard()",
+      "line": "~26 of the new reconcile() body (`if(q.kind==='POLES')await c.query('UPDATE ledger_poles SET quantity=$2 WHERE id=$1',...)`)",
+      "counterexample": "A pole variant has ledger_poles.quantity=10 with 3 pairs currently checked out (protected_count=3, so ledger-derived physical=7). Staff scan 6 present and reconcile: differences.quantities computes counted=6, difference=-1, and reconcile() issues UPDATE ledger_poles SET quantity=6+3=9. The pre-existing inventory_stock_guard trigger (unrelated to this PR) blocks any UPDATE that changes ledger_poles.quantity while an active state='OUT' rental_loan_items row references that pole id and the caller is neither the table owner in a 'controlled' transfer operation nor the custody executor performing a recorded effect — raising 'Custody protected stock' (SQLSTATE 23514). OperationsContext.transaction maps this to a generic OPERATION_CONFLICT(409).",
+      "impact": "The INVENTORY_RECONCILE feature — explicitly named launch-critical scope ('stocktake observation versus explicit audited reconciliation') — cannot complete for poles whenever any pair of that pole variant is currently checked out, which is the normal state during business hours at a ski/pole rental counter. Staff performing an authorized, audited reconciliation receive an opaque conflict instead of a corrected count; the wear-pool path has an analogous safety check (ready<0 guard) but no equivalent handling exists for poles, so this is an asymmetric, untested gap rather than an intentional restriction.",
+      "minimum_safe_correction": "Either (a) route the pole quantity adjustment through a narrow SECURITY DEFINER function (owned like rental_apply_receipt) that validates NEW.quantity-protected_count stays consistent with the reconciled physical count while the OUT-loan count is unchanged, then permits the guard to pass for that specific validated transaction, or (b) extend inventory_stock_guard to allow the operations role's reconciliation UPDATEs when the resulting quantity still covers all active OUT loans, mirroring the wear_pools approach; add the missing JS-side guard (like wear's ready<0 check) so a bad reconciliation is rejected with a clear, specific error rather than falling through to the generic conflict.",
+      "required_proof": "A reconcile test for a pole/POLE variant where at least one pair is currently state='OUT' at the time of stocktake, asserting the reconciliation commits, ledger_poles.quantity updates correctly, and the active OUT loan count is unaffected."
+    },
+    {
+      "id": "F2",
+      "severity": "MEDIUM",
+      "title": "FinancialOperations dispatch/reconcile omit store-scoped authorization for 'charge' requests",
+      "file_or_component": "packages/core/src/operations/financial.ts (private row()/tx() helpers); packages/db/migrations/0033_launch_operations.sql (ops_charge_requests has no acting_store column)",
+      "line": "~59-61 of financial.ts (`private async row(...){...await this.booking(c,r.booking_id,r.acting_store);await this.ctx.authorize(kind==='refund'?'REFUND_OVERRIDE':'RENTAL_AMEND',r.acting_store?[r.acting_store]:[]);...}`)",
+      "counterexample": "ops_charge_requests (migration0033) has no acting_store column, unlike ops_refund_requests. For kind='charge', r.acting_store is always undefined, so booking() falls back to requiring BOOKING_VIEW at BOTH the booking's pickup and return store (over-restrictive for legitimate use) and authorize('RENTAL_AMEND', []) is called with an EMPTY store array — meaning any staff member holding RENTAL_AMEND anywhere (not necessarily assigned to the charge's booking store) passes the store check for dispatch('charge',id)/reconcile('charge',id), unlike the refund path which is correctly bound to acting_store.",
+      "impact": "This is dead code in the reviewed normal runtime — operations-http.ts never constructs FinancialOperations with a payment gateway, so dispatch/reconcile are unreachable from any exposed route, and the constructor itself refuses non-SIMULATED_DEV gateways outside test/development. No exploitable path exists today. However, the class is explicitly documented as a 'trusted adapter' intended for reuse (e.g., a future reconciliation job), and the asymmetry with the correctly-scoped refund path is a latent authorization defect that would silently under-restrict store scope the moment this surface is wired up elsewhere.",
+      "minimum_safe_correction": "Add an acting_store column to ops_charge_requests populated at insert time from the amendment's booking pickup store (mirroring ops_refund_requests), and use it symmetrically for both kinds in row()/tx() so RENTAL_AMEND is always scoped to the charge's actual store before dispatch/reconcile can act.",
+      "required_proof": "A unit test asserting dispatch/reconcile for kind='charge' reject an actor lacking store access to the charge's booking store, parallel to the existing refund-side store-scope coverage."
+    },
+    {
+      "id": "F3",
+      "severity": "LOW",
+      "title": "Boot QR label sheet does not default to the same paired-ID printing used for skis",
+      "file_or_component": "apps/web/src/components/AssetLabelSheet.tsx",
+      "line": "6",
+      "counterexample": "For family SKI, copies is always 2 (same ID printed on both skis). For *_BOOT families, copies defaults to 1 unless the operator manually checks '両側に同じIDを印刷', even though the ledger models a boot pair as one Asset the same way a ski pair is.",
+      "impact": "Minor operational inconsistency; not a security or data-integrity issue, and the checkbox provides a correct manual override.",
+      "minimum_safe_correction": "If boots are intended to always be tagged as a pair like skis, default bootsBoth to true; otherwise document the asymmetry as intentional.",
+      "required_proof": "None required for this review; note for product follow-up."
+    },
+    {
+      "id": "F4",
+      "severity": "LOW",
+      "title": "Operations DB role is granted UPDATE on inventory_holds.allocation_stage that the shipped code path never uses",
+      "file_or_component": "scripts/operations-roles.ts",
+      "line": "13",
+      "counterexample": "GRANT UPDATE(...,allocation_stage,...) ON inventory_holds TO ${user} is issued, but AmendmentService.accept()'s only inventory_holds UPDATE sets conditions/starts_at/due_at/occupancy_start/occupancy_end/version, never allocation_stage; the actual stage transition is performed through the SECURITY DEFINER ops_checkout_amendment/rental_stage_guard path.",
+      "impact": "Minor least-privilege over-grant; does not by itself enable any bypass since the paid-contract and stage guards remain independently enforced.",
+      "minimum_safe_correction": "Drop allocation_stage from the operations role's inventory_holds column grant unless a concrete near-term use is planned.",
+      "required_proof": "None required for this review; hygiene follow-up."
+    }
+  ],
+  "severity_counts": {
+    "BLOCKER": 0,
+    "HIGH": 1,
+    "MEDIUM": 1,
+    "LOW": 2
+  },
+  "scope_assessment": "Reviewed the full M1 diff: immutable original booking/payment/price snapshots with explicit amendment quoting against the original price book plus full inventory revalidation; extension/full-period/next-booking protection via planAllocation pinning; atomic prepared/OUT exchange (receive-then-loan in one transaction, DB-level ops_checkout_amendment re-validation); early return without automatic refund; durable-UNKNOWN-before-create pattern for both additional charges and staff-initiated refunds with cap/identity/idempotency checks; stocktake observe-vs-reconcile separation with explicit INVENTORY_RECONCILE permission; CSV dry-run/source-dedupe/atomic commit; paired QR labels; private price draft/edit/activate with original snapshot retention; response-loss/replay handling in the shared operations request hook; and the additive 0033 migration with unchanged 0001-0032 hashes and no default role grants for the three new permissions. Stacked-base authorization (M1.5 owner note) accepted as given; PR17/main-merge status not re-litigated.",
+  "security_boundary_assessment": "Authorization is generally layered correctly (JS permission/store check → transaction-time re-check via ops_assert_actor → row-level SECURITY DEFINER triggers for physical custody/financial mutation), matching the existing custody-boundary pattern. Sessions are re-verified against auth_session inside the same transaction, closing the revoked/stale-session TOCTOU window. The one clear gap (F2) is confined to an adapter class not wired into any HTTP route in this diff, so no request reachable in the reviewed normal runtime currently bypasses store scope. The pole-reconciliation defect (F1) is a functional/DB-guard interaction bug, not an authorization bypass: it fails closed (blocks the operation) rather than corrupting state or granting excess access.",
+  "validation_assessment": "No tests were executed by this reviewer; the supplied validation JSON and referenced logs are treated as parent evidence only, per instructions, and were not independently re-run. The described test suite (amendment.ts, exchange.ts, inventory.ts, upgrade.ts, normal-ui.ts) appears to cover the scenarios claimed, but none of the reviewed test files exercise stocktake reconciliation for a pole/POLE variant with an active OUT loan, which is consistent with F1 going undetected; none exercise store-scoped denial for charge dispatch/reconcile, consistent with F2.",
+  "insufficient_evidence": "commitImportDryRun (packages/core/src/content/import-staging.ts) was referenced with an updated signature (existing:Set<string>) but its body was not included in the diff, so its handling of V2 metadata rows and existing-asset conflict detection could not be independently verified from the supplied snapshot; treated as unchanged and out of scope absent contrary evidence.",
+  "next_gate": "CHANGES_REQUIRED. One correction review is permitted after concrete fixes to (1) the pole-reconciliation/inventory_stock_guard interaction in packages/core/src/operations/inventory-service.ts (plus any necessary migration/trigger adjustment), and (2) store-scoping of FinancialOperations.row()/tx() for kind='charge' in packages/core/src/operations/financial.ts (plus the acting_store column addition). Resubmit limited to those files, the corresponding migration delta, and new/updated tests demonstrating both fixes; do not bundle unrelated changes."
+}

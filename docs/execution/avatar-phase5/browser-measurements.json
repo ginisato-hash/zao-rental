@@ -1,0 +1,137 @@
+{
+  "engine": "Chromium desktop/mobile viewports, not Safari",
+  "measurements": [
+    {
+      "width": 320,
+      "direction": "SHORTER",
+      "lengthCm": 145,
+      "expectedRatio": 0.8529411764705882,
+      "bodyHeight": 181.9375,
+      "skiHeight": 155.1875,
+      "bodyBottom": 1170.9375,
+      "skiBottom": 1170.953125,
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "direction": "RECOMMENDED",
+      "lengthCm": 150,
+      "expectedRatio": 0.8823529411764706,
+      "bodyHeight": 180.78125,
+      "skiHeight": 159.515625,
+      "bodyBottom": 1169.734375,
+      "skiBottom": 1169.75,
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "direction": "LONGER",
+      "lengthCm": 155,
+      "expectedRatio": 0.9117647058823529,
+      "bodyHeight": 179.640625,
+      "skiHeight": 163.78125,
+      "bodyBottom": 1168.546875,
+      "skiBottom": 1168.546875,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "direction": "SHORTER",
+      "lengthCm": 145,
+      "expectedRatio": 0.8529411764705882,
+      "bodyHeight": 276.984375,
+      "skiHeight": 236.25,
+      "bodyBottom": 1220.40625,
+      "skiBottom": 1220.40625,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "direction": "RECOMMENDED",
+      "lengthCm": 150,
+      "expectedRatio": 0.8823529411764706,
+      "bodyHeight": 275.21875,
+      "skiHeight": 242.84375,
+      "bodyBottom": 1218.5625,
+      "skiBottom": 1218.5625,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "direction": "LONGER",
+      "lengthCm": 155,
+      "expectedRatio": 0.9117647058823529,
+      "bodyHeight": 273.484375,
+      "skiHeight": 249.359375,
+      "bodyBottom": 1216.765625,
+      "skiBottom": 1216.765625,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "direction": "SHORTER",
+      "lengthCm": 145,
+      "expectedRatio": 0.8529411764705882,
+      "bodyHeight": 477.9375,
+      "skiHeight": 407.65625,
+      "bodyBottom": 1313.40625,
+      "skiBottom": 1313.40625,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "direction": "RECOMMENDED",
+      "lengthCm": 150,
+      "expectedRatio": 0.8823529411764706,
+      "bodyHeight": 474.90625,
+      "skiHeight": 419.03125,
+      "bodyBottom": 1310.25,
+      "skiBottom": 1310.25,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "direction": "LONGER",
+      "lengthCm": 155,
+      "expectedRatio": 0.9117647058823529,
+      "bodyHeight": 471.90625,
+      "skiHeight": 430.265625,
+      "bodyBottom": 1307.140625,
+      "skiBottom": 1307.140625,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "direction": "SHORTER",
+      "lengthCm": 145,
+      "expectedRatio": 0.8529411764705882,
+      "bodyHeight": 477.9375,
+      "skiHeight": 407.65625,
+      "bodyBottom": 1314,
+      "skiBottom": 1314,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "direction": "RECOMMENDED",
+      "lengthCm": 150,
+      "expectedRatio": 0.8823529411764706,
+      "bodyHeight": 474.90625,
+      "skiHeight": 419.03125,
+      "bodyBottom": 1310.84375,
+      "skiBottom": 1310.84375,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "direction": "LONGER",
+      "lengthCm": 155,
+      "expectedRatio": 0.9117647058823529,
+      "bodyHeight": 471.90625,
+      "skiHeight": 430.265625,
+      "bodyBottom": 1307.734375,
+      "skiBottom": 1307.734375,
+      "overflow": false
+    }
+  ]
+}

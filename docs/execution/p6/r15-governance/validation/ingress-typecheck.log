@@ -1,0 +1,4 @@
+
+> zao-rental@0.1.0 typecheck:ingress
+> tsc --noEmit --project apps/webhook-ingress/tsconfig.json
+

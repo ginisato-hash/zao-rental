@@ -9,12 +9,13 @@ import {LedgerError} from '../../../../packages/contracts/src/ledger';
 import {GROUP_JSON_BYTES} from '../../../../packages/contracts/src/http-body-limits';
 import {readJson} from './ledger-http';
 const privateHeaders={'Cache-Control':'private, no-store','Vary':'Cookie','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'};
-export function guestHandler(contexts:GuestContexts,service:(a:GuestActor)=>GuestBookingService,origin:string,simulation=false,security?:{service:GuestSecurity;peer:(r:Request)=>string|undefined}){return async(req:Request)=>{try{
+export function guestHandler(contexts:GuestContexts,service:(a:GuestActor)=>GuestBookingService,origin:string,simulation=false,security?:{service:GuestSecurity;peer:(r:Request)=>string|undefined},recoveryEnabled=true){return async(req:Request)=>{try{
  if(process.env.NODE_ENV==='production'&&(!security||simulation||!origin.startsWith('https:')))throw new HoldError('GUEST_SECURITY_UNCONFIGURED',503);
  const url=new URL(req.url),path=url.pathname.slice('/api/guest'.length);if(url.search)throw new HoldError('INVALID_QUERY',422);
  if(!['GET','POST'].includes(req.method))throw new HoldError('METHOD_NOT_ALLOWED',405);
  if(req.method==='POST'&&(req.headers.get('origin')!==origin||req.headers.get('sec-fetch-site')==='cross-site'))throw new HoldError('ORIGIN_REJECTED',403);
  if(security)await security.service.guard(security.peer(req));
+ if(!recoveryEnabled&&['/recover','/recovery-code'].includes(path))throw new HoldError('RECOVERY_UNCONNECTED',503);
  if(req.method==='POST'&&path==='/recover'){if(!security)throw new HoldError('RECOVERY_UNCONNECTED',503);const v=exact(await readJson(req),['code','requestId']);const c=await security.service.recover(v.code,v.requestId);return Response.json({recovered:true,replayed:c.replayed},{headers:{...privateHeaders,'Set-Cookie':guestCookie(c.token,origin.startsWith('https:'),false,c.maxAgeSeconds)}});}
  if(req.method==='POST'&&path==='/context'){const body=await readJson(req);if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).length)throw new HoldError('INVALID_INPUT');
   const existing=guestToken(req.headers);if(existing){try{const actor=await contexts.resolve(existing);return Response.json({created:false,draft:await service(actor).get(),simulation},{headers:privateHeaders});}catch(e){if(!(e instanceof HoldError)||e.status!==401)throw e;}}

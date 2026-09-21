@@ -1,0 +1,11 @@
+
+> zao-rental@0.1.0 typecheck
+> next typegen apps/web && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+tools/acceptance/r15-signature-handoff.ts(28,79): error TS2769: No overload matches this call.
+  Overload 3 of 8, '(file: string, args: readonly string[] | null | undefined, options: ExecFileOptions | null | undefined, callback: ((error: ExecFileException | null, stdout: string | NonSharedBuffer, stderr: string | NonSharedBuffer) => void) | null | undefined): ChildProcess', gave the following error.
+    Property 'NODE_ENV' is missing in type '{ [k: string]: string; }' but required in type 'ProcessEnv'.
+tools/acceptance/r15-signature-handoff.ts(28,132): error TS7006: Parameter 'error' implicitly has an 'any' type.
+tools/acceptance/r15-signature-handoff.ts(28,138): error TS7006: Parameter 'stdout' implicitly has an 'any' type.

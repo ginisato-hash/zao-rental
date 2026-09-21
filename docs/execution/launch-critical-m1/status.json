@@ -1,0 +1,22 @@
+{
+  "phase": "M1",
+  "implementation": "PASS",
+  "localValidation": "PASS",
+  "review": {
+    "initial": 1,
+    "correction": 1,
+    "reviewedHead": "57bb77b01c4046e62e8a41cdacbc1704b22bbfee",
+    "BLOCKER": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 3
+  },
+  "ci": "PASS",
+  "draftPr": 18,
+  "mainMerged": false,
+  "stackedBase": "codex/avatar-phase7-rc",
+  "next": "M1.5 stacked continuation authorized; PR17/main merge not performed",
+  "externalProviderOperations": 0,
+  "ciHead": "1b640da842471167b4e1ecf6a04b06e4a1aa33e4",
+  "ciRun": 35151515844
+}

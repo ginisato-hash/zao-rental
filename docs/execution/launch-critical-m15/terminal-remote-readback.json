@@ -1,0 +1,31 @@
+{
+  "head": "d2348566c6361ee1332de7214e608acd0d664c08",
+  "main": "3061dbbbe00294e5baebba2405028c907d6e6e85",
+  "pr": {
+    "number": 19,
+    "url": "https://github.com/ginisato-hash/zao-rental/pull/19",
+    "draft": true,
+    "head": "d2348566c6361ee1332de7214e608acd0d664c08",
+    "base": "codex/launch-critical-ops-m1",
+    "state": "open",
+    "merged": false
+  },
+  "runs": [
+    {
+      "id": 35156788352,
+      "headSha": "d2348566c6361ee1332de7214e608acd0d664c08",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35156788352"
+    },
+    {
+      "id": 35155592058,
+      "headSha": "15cf6c2ba9d9152f639a5eb6ae62acbc5ef02f3d",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/ginisato-hash/zao-rental/actions/runs/35155592058"
+    }
+  ]
+}

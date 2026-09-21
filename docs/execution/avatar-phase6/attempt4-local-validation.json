@@ -1,0 +1,38 @@
+{
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "unitTests": {
+    "command": "npm run test:unit",
+    "passed": 630,
+    "failed": 0
+  },
+  "focusedIdentityDiagnosticsTests": 53,
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS",
+  "secretPatternScan": "PASS_1943_FILES_NOT_COMPREHENSIVE",
+  "gitDiffCheck": "PASS",
+  "identity": {
+    "correctGitRef": "PASS",
+    "absentGitRef": "PASS",
+    "wrongGitRef": "DENY",
+    "emptyPresentGitRef": "DENY",
+    "production": "DENY",
+    "wrongProject": "DENY",
+    "wrongTarget": "DENY",
+    "forbiddenEnv": "DENY"
+  },
+  "startupDiagnosticProperty": "Fixed allowlisted stage only; raw exception/cause/stack/properties never serialized",
+  "historicalSuiteAdjustments": [
+    "Initial sandbox run:14 process/socket permission failures and2 stale migration expectation failures; preserved in local log",
+    "Rerun unsandboxed local-only test doubles; all630 PASS",
+    "Migration count expectation updated30→32; frozen R15 verifier remains unchanged and must reject expanded plan; archived0001–0030 byte hashes checked"
+  ],
+  "migrationSqlChanged": false,
+  "frozenR15VerifierChanged": false,
+  "providerCallsDuringValidation": 0,
+  "modelStartsDuringValidation": 0,
+  "frozenR15VerifierSha256": "b3773dce73780dab5a0220e5d5c4ed5513766bc4500c75c8e182e58786dd63f9",
+  "historicalStopRecordSha256": "14f7018afc1bd7983d671f0ce68d1ea39bc8a4d86ce1290c0543bfdee936d3f8",
+  "historicalResumeStopRecordSha256": "a2dcf95ef1b362569db43dc716634560b583e7b0192b649e415bc0a2e1afaf40"
+}

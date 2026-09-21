@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.15.x",
+    "node": "24.x",
     "npm": "11.12.x"
   },
   "packageManager": "npm@11.12.1",
@@ -52,6 +52,7 @@
     "test:custody": "node --import tsx tests/custody/boundary-counterexample.ts && node --import tsx tests/custody/real-postgres.ts && node --import tsx tests/custody/scenarios.ts",
     "test:custody-ui": "node --import tsx tests/custody/normal-ui.ts",
     "test:late-pickup": "node --import tsx tests/custody/late-pickup.ts",
+    "test:staff-home-ui": "node --import tsx tests/staff/home-ui.ts",
     "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts",
     "test:public-content": "node --import tsx tests/public/content-postgres.ts",
     "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",
@@ -65,7 +66,31 @@
     "test:booking-recovery": "node --import tsx tests/readiness/booking-recovery.ts",
     "test:booking-recovery-ui": "node --import tsx tests/readiness/booking-recovery-ui.ts",
     "production:preflight": "node --import tsx scripts/production-preflight.ts",
-    "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts"
+    "test:production-rehearsal": "node --import tsx tests/readiness/production-rehearsal.ts",
+    "test:payment-activation": "node --import tsx scripts/test-payment-activation.ts",
+    "test:r15": "node --import tsx scripts/test-r15-ingress.ts",
+    "typecheck:ingress": "tsc --noEmit --project apps/webhook-ingress/tsconfig.json",
+    "build:ingress": "node scripts/build-ingress.mjs",
+    "test:avatar": "node --import tsx tests/avatar/phase5-upgrade.ts && node --import tsx tests/avatar/phase5-e2e.ts && node --import tsx tests/avatar/artwork-activation.ts && node --import tsx tests/avatar/phase6-migrations.ts && node --import tsx tests/avatar/phase6-roles.ts && node --import tsx tests/avatar/phase6-guest.ts && node --import tsx tests/avatar/phase6-import.ts && node --import tsx tests/avatar/phase6-lock.ts && node --import tsx tests/avatar/tier2-rate.ts",
+    "test:r15-regression": "npm run test:r15 && node --import tsx tests/readiness/r15-guard-postgres.ts && node --import tsx tests/readiness/r15-preview-local.ts",
+    "test:operations": "node --import tsx tests/operations/upgrade.ts && node --import tsx tests/operations/migration.ts && node --import tsx tests/operations/amendment.ts && node --import tsx tests/operations/exchange.ts && node --import tsx tests/operations/inventory.ts",
+    "test:operations-ui": "node --import tsx tests/operations/normal-ui.ts",
+    "test:operations-console": "node --import tsx tests/operations/console.ts && node --import tsx tests/operations/failure-injection.ts",
+    "test:operations-console-ui": "node --import tsx tests/operations/console-ui.ts",
+    "test:operations-manifest": "node --import tsx tests/operations/manifest.ts && node --import tsx tests/operations/manifest-http.ts",
+    "test:operations-restore": "node --import tsx tests/operations/restore.ts",
+    "test:operations-baseline": "node --import tsx tests/operations/baseline.ts",
+    "test:m2a-import": "node --import tsx tests/operations/import-rehearsal.ts",
+    "test:m2a-connection": "node --import tsx tests/operations/connection-harness.ts",
+    "test:m2a-rehearsal": "node --import tsx tests/operations/two-store-rehearsal.ts",
+    "test:m2a-launch": "node --import tsx tests/operations/launch-gate.ts",
+    "test:m2a-launch-ui": "node --import tsx tests/operations/launch-ui.ts",
+    "test:m2b-security": "node --import tsx tests/operations/production-security.ts",
+    "test:m2b-bootstrap": "node --import tsx tests/operations/production-bootstrap.ts",
+    "test:production-runtime": "node --import tsx tests/readiness/normal-production.ts",
+    "test:production-runtime-ui": "node --import tsx tests/readiness/normal-production-ui.ts",
+    "test:notification": "node --import tsx tests/notification/postgres.ts",
+    "test:notification-ui": "node --import tsx tests/notification/normal-ui.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",
@@ -93,6 +118,7 @@
     "eslint": "9.39.3",
     "eslint-config-next": "16.3.4",
     "tsx": "4.23.13",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "esbuild": "0.28.2"
   }
 }

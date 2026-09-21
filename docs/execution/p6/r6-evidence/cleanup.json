@@ -1,0 +1,118 @@
+{
+  "at": "2026-09-14T12:38:34.539874+00:00",
+  "result": "COMPLETE",
+  "evidence_commit_before_cleanup": "d4a02fa04bcff2f4463de384d44397df5dcc1eee",
+  "removed_routes": [
+    "apps/web/src/app/api/internal/acceptance/square-s1-v2/route.ts",
+    "apps/web/src/app/api/internal/acceptance/square-s1-v2/preflight/route.ts"
+  ],
+  "tests_pass": 69,
+  "tests_failed": 0,
+  "tests_skipped": 0,
+  "validation": [
+    {
+      "name": "narrow",
+      "args": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/readiness/square-s1-v2.test.ts",
+        "tests/readiness/square-s1.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts"
+      ],
+      "start": "2026-09-14T12:35:23.743033+00:00",
+      "end": "2026-09-14T12:35:24.018629+00:00",
+      "exit_code": 0,
+      "log": "cleanup-narrow.log"
+    },
+    {
+      "name": "secret-scan",
+      "args": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "start": "2026-09-14T12:35:24.019032+00:00",
+      "end": "2026-09-14T12:35:24.334195+00:00",
+      "exit_code": 0,
+      "log": "cleanup-secret-scan.log"
+    },
+    {
+      "name": "lint",
+      "args": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "start": "2026-09-14T12:35:24.334442+00:00",
+      "end": "2026-09-14T12:35:29.476618+00:00",
+      "exit_code": 0,
+      "log": "cleanup-lint.log"
+    },
+    {
+      "name": "typecheck",
+      "args": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "start": "2026-09-14T12:35:29.477009+00:00",
+      "end": "2026-09-14T12:35:34.696191+00:00",
+      "exit_code": 0,
+      "log": "cleanup-typecheck.log"
+    },
+    {
+      "name": "build",
+      "args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "start": "2026-09-14T12:35:34.696653+00:00",
+      "end": "2026-09-14T12:35:47.796562+00:00",
+      "exit_code": 0,
+      "log": "cleanup-build.log"
+    }
+  ],
+  "deployment_deletion": {
+    "at": "2026-09-14T12:36:50.388954+00:00",
+    "deployment": "dpl_CRdTexvvKm7NRtkas5ewSW6AFQdG",
+    "remove_exit_code": 0,
+    "raw_output_saved": false
+  },
+  "deployment_readback": {
+    "at": "2026-09-14T12:37:23.576293+00:00",
+    "r6_deployment_absent": true,
+    "r3_retained_ready": true,
+    "remaining_deployments": [
+      {
+        "uid": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+        "url": "zao-rental-cfswundgr-zao-food-map.vercel.app",
+        "state": "READY",
+        "target": null
+      }
+    ],
+    "new_production_deployments": 0
+  },
+  "r6_guard_retained": true,
+  "r6_guard_state": "CLOSED_PREFLIGHT_BLOCKED_NO_POST",
+  "r4_guard_matches_original_evidence": true,
+  "r6_browser_closed": true,
+  "owned_upload_staging_removed": true,
+  "s1_posts": 0,
+  "square_requests": 0,
+  "env_mutations": 0,
+  "merchant_metadata_registered": false,
+  "s2_gate_created": false,
+  "secret_exposure": 0,
+  "production_square": 0,
+  "payments": 0,
+  "refunds": 0,
+  "webhooks": 0,
+  "db": 0,
+  "r2": 0,
+  "s2": 0
+}

@@ -1,0 +1,46 @@
+{
+  "atUtc": "2026-09-15T09:22:35.384303+00:00",
+  "sourceHead": "543d4fc6a5f7ebb102fdb1faffee6be5f9cb6d8b",
+  "authoritySha256": "cb8d2652dc8c14745733ea59e6e673abe287481a07356860bae4a0398e570ea4",
+  "cliVersion": "59.17.0",
+  "latestRegistryVersionObserved": "59.17.0",
+  "priorCliVersion": "59.9.1",
+  "plan": "free_v3",
+  "freeLabel": "Free (Free)",
+  "resourceName": "zao-rental-sandbox-development",
+  "region": "sin1",
+  "auth": false,
+  "noConnect": true,
+  "noEnvPull": true,
+  "scope": "zao-food-map",
+  "production": false,
+  "realData": false,
+  "oneNewLogicalAttemptMaximum": 1,
+  "priorR15CompletedAddCommands": 2,
+  "beforeCounts": {
+    "cliVersion": "59.17.0",
+    "team": "zao-food-map",
+    "ownerHumanAcceptance": "ACCEPTED_FROM_OWNER_DIRECT_NOTICE",
+    "emptyReadbackDoesNotInvalidateOwnerAcceptance": true,
+    "before": [
+      {
+        "kind": "installations",
+        "atUtc": "2026-09-15T09:22:13.875346+00:00",
+        "exitCode": 0,
+        "count": 0,
+        "items": []
+      },
+      {
+        "kind": "resources",
+        "atUtc": "2026-09-15T09:22:15.543279+00:00",
+        "exitCode": 0,
+        "count": 0,
+        "items": []
+      }
+    ],
+    "secretsRetrieved": false,
+    "providerMutation": 0
+  },
+  "firstRegistryRead": "Default npm cache write denied; task-specific temporary cache used; no chown/global config change",
+  "guards": "Exclusive fsynced local intent before dispatch; no retry after unknown/terms"
+}

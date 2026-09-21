@@ -1,0 +1,6 @@
+
+> zao-rental@0.1.0 typecheck
+> next typegen apps/web && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully

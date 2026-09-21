@@ -1,0 +1,64 @@
+{
+  "cliVersion": "2.1.270",
+  "flags": [
+    "--safe-mode",
+    "-p",
+    "--tools",
+    "",
+    "--strict-mcp-config",
+    "--mcp-config",
+    "{\"mcpServers\":{}}",
+    "--setting-sources",
+    "",
+    "--disable-slash-commands",
+    "--no-session-persistence",
+    "--no-chrome",
+    "--permission-mode",
+    "dontAsk",
+    "--max-turns",
+    "3",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--include-hook-events"
+  ],
+  "cwd": "fresh empty directory",
+  "environmentNames": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "LOGNAME",
+    "PATH",
+    "SHELL",
+    "TERM",
+    "TMPDIR",
+    "USER"
+  ],
+  "authOverrides": false,
+  "currentAuth": "team",
+  "billingEvidence": {
+    "checked_at": "2026-09-13T14:43:42.648228+00:00",
+    "source": "read-only Team admin and personal usage UI",
+    "extra_usage_enabled": false,
+    "automatic_recharge": false,
+    "confirmed_within_approved_billing_scope": true,
+    "settings_changed": false,
+    "session_used_percent": 20,
+    "weekly_used_percent": 55,
+    "owned_browser_tab_closed": true,
+    "no_model_probe": true
+  },
+  "priorServerOverage": [
+    {
+      "status": "allowed",
+      "resetsAt": 1789536600,
+      "rateLimitType": "five_hour",
+      "overageStatus": "rejected",
+      "overageDisabledReason": "org_level_disabled",
+      "isUsingOverage": false
+    }
+  ],
+  "currentOwnerRequiresExtraOff": true,
+  "noAdditionalConnectivityProbe": true,
+  "retry": 0
+}

@@ -1,0 +1,66 @@
+{
+  "operations": [
+    {
+      "operation": "git status/rev-parse/log15/ls-remote",
+      "exit_code": 0
+    },
+    {
+      "operation": "R3 original+runtime/config edit",
+      "result": "Auto-review initially rejected attachment adoption; same action approved after explicit user pasted-request and R3 clause evidence. No workaround."
+    },
+    {
+      "operation": "node --version / npm --version",
+      "exit_code": 0,
+      "versions": [
+        "v24.15.0",
+        "11.12.1"
+      ]
+    },
+    {
+      "operation": "Spark pure toolchain tests after one correction",
+      "exit_code": 0,
+      "pass": 4
+    },
+    {
+      "operation": "bootstrap deploy --dry --format=json --prebuilt --prod --skip-domain",
+      "exit_code": 0,
+      "files": 2,
+      "bytes": 370
+    },
+    {
+      "operation": "bootstrap deploy --prebuilt --prod --skip-domain --no-wait --format=json",
+      "exit_code": 0
+    },
+    {
+      "operation": "bootstrap alias gate",
+      "exit_code": 1,
+      "reason": "unexpected alias; R3 stop condition"
+    },
+    {
+      "operation": "alias rm exact owned generated alias",
+      "exit_code": 0
+    },
+    {
+      "operation": "metadata readback+unauthenticated GET",
+      "exit_code": 0,
+      "live_aliases": 0,
+      "http_status": 302
+    },
+    {
+      "operation": "git diff --check and business/config unchanged paths",
+      "exit_code": 0
+    }
+  ],
+  "not_run": [
+    "npm ci",
+    "npm run lint",
+    "npm run typecheck",
+    "npm run build",
+    "full verify",
+    "CI",
+    "actual app Preview",
+    "app runtime health/readiness",
+    "Claude review"
+  ],
+  "not_run_reason": "R3 explicit immediate-stop clause after bootstrap alias assignment."
+}

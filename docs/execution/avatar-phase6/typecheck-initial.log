@@ -1,0 +1,26 @@
+
+> zao-rental@0.1.0 typecheck
+> next typegen apps/web && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+tests/unit/avatar-phase6.test.ts(11,428): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(12,118): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(13,794): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(15,161): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(15,333): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(15,432): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(16,208): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(17,167): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(17,269): error TS2345: Argument of type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{ VERCEL: string; VERCEL_ENV: string; VERCEL_TARGET_ENV: string; ZAO_AVATAR_PHASE6: string; VERCEL_PROJECT_ID: string; VERCEL_GIT_COMMIT_REF: string; VERCEL_URL: string; }' but required in type 'ProcessEnv'.
+tests/unit/avatar-phase6.test.ts(17,336): error TS2345: Argument of type '{}' is not assignable to parameter of type 'ProcessEnv'.
+  Property 'NODE_ENV' is missing in type '{}' but required in type 'ProcessEnv'.

@@ -1,0 +1,112 @@
+{
+  "results": [
+    {
+      "name": "all migrations 0001-0028 recorded with hashes",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "role boundaries: receiver/dispatcher/worker/diagnostic/public forbidden operations",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "receiver duplicate/hash conflict and dispatcher link commit barrier",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "signed receiver ACK awaits real commit; DB role failure gives 503 and no receipt",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "lease expiry, interruption and stale finalize fenced by real DB",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real DB attempt cutoff stays DEAD",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real DB deadline cutoff stays DEAD",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real DB sticky AUTH_BLOCKED prevents new-event worker restart",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real DB sticky RATE_LIMITED prevents new-event worker restart",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "new event while active preserves signal and terminal creates next generation",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real projection rejects expired HOLD and retains original stock/contract",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real projection rejects due boundary and retains original stock/contract",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real projection rejects missing gear and retains original stock/contract",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real projection rejects missing wear and retains original stock/contract",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real projection rejects transfer attention and retains original stock/contract",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "existing immutable amount and snapshot reject direct edits",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "real projection rejects synthetic price snapshot mismatch",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "stale revision rejected without business writes",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "projection SQL failure after writes rolls back business/history/journal",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "two dispatchers/workers then R12 truth and two R13 projectors; COMMIT response loss exactly once",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    },
+    {
+      "name": "security metadata: function search paths and runtime attributes",
+      "result": "PASS",
+      "kind": "REAL_POSTGRESQL"
+    }
+  ],
+  "passed": 21,
+  "failed": 0,
+  "actualProviderRequests": 0
+}

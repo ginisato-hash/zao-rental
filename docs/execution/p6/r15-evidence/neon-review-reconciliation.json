@@ -1,0 +1,11 @@
+{
+  "ownerExplicitR15Adoption": true,
+  "ownerTermsAccepted": true,
+  "intentFileExists": false,
+  "resultFileExists": false,
+  "metadataResources": 0,
+  "metadataEvidence": "neon-resources-after-review-denial.json",
+  "noNeonProvisionSessionReturnedByTool": true,
+  "previousRefusalWasBeforeExecution": true,
+  "noBlindRetryOfDispatchedWrite": true
+}

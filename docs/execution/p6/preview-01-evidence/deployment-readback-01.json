@@ -1,0 +1,20 @@
+{
+  "id": "dpl_93LKqdiYs68WSWjfDPCG5YdpyiBs",
+  "url": "zao-rental-qixd46nkq-zao-food-map.vercel.app",
+  "target": "production",
+  "readyState": "ERROR",
+  "status": "ERROR",
+  "alias": [
+    "zao-rental-zao-food-map.vercel.app"
+  ],
+  "createdAt": 1789351542740,
+  "buildingAt": 1789351543680,
+  "ready": 1789351552126,
+  "errorCode": "invalid_engines_value",
+  "errorMessage": "Command \"npm install\" exited with 1",
+  "meta": {
+    "zaoCommitSha": "763caec75f3257abad6ad6d691637ae138c84cdb",
+    "zaoSourceTree": "a929d1e3012e16a611557c0364c1b90708c54b7b",
+    "zaoAcceptance": "preview-01-no-provider-no-db"
+  }
+}

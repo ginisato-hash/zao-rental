@@ -1,0 +1,39 @@
+{
+  "classification": "S1_PASS",
+  "httpStatus": 200,
+  "outcome": {
+    "stage": "LOCATION",
+    "providerDispatched": true,
+    "requestCount": 2,
+    "result": "S1_PASS",
+    "reason": null,
+    "summary": {
+      "environment": "SANDBOX",
+      "apiVersion": "2026-08-19",
+      "merchantId": "MLKDVEDH1ME21",
+      "merchantStatus": "ACTIVE",
+      "merchantCountry": "JP",
+      "merchantCurrency": "JPY",
+      "mainLocationMatch": true,
+      "locationCount": 1,
+      "configuredLocationMatch": true,
+      "locationStatus": "ACTIVE",
+      "locationCountry": "JP",
+      "locationCurrency": "JPY",
+      "merchantMatch": true,
+      "cardProcessingCapability": true,
+      "requestCount": 2,
+      "httpResults": {
+        "merchant": 200,
+        "locations": 200
+      },
+      "result": "S1_PASS",
+      "reason": null
+    }
+  },
+  "deployment": "dpl_J8Dpxh5mogQR4Mo6xvqNUDMSwv8m",
+  "origin": "https://zao-rental-p7g3j78c0-zao-food-map.vercel.app",
+  "postDispatchCount": 1,
+  "squareFetchDispatchCount": 2,
+  "at": "2026-09-14T13:04:18.663Z"
+}

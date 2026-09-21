@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "kind": "OWNER_APPROVED_LOCAL_DERIVATIVE_PACKAGE",
+  "createdAt": "2026-09-16T03:58:48.991Z",
+  "authoritySha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
+  "sourcePackage": {
+    "file": "サロモン商品.zip",
+    "sha256": "47930c21f14c1e7580e9b4db9de6f5386b6b19b5b28fc702a37e3474734be27f",
+    "files": [
+      {
+        "file": "1.png",
+        "sha256": "ea7b76e53d920f7443c88ae7cd1e55acf272ef89527aaf233091a87e54044ca9"
+      },
+      {
+        "file": "2.png",
+        "sha256": "4c03ae11fc76eac3164d0754bbf45c0aeacf2eac03fb6dc2ab85df5fb84e407d"
+      },
+      {
+        "file": "3.png",
+        "sha256": "5a9ccc7893c91deebea917281783b5ddb7f794581fa5016325edc5f33b0fb120"
+      },
+      {
+        "file": "4.png",
+        "sha256": "0fb84d84af77013c71c0e71ac4e1010dc94690faede7447e7815193a3afdc04a"
+      },
+      {
+        "file": "5.png",
+        "sha256": "5c4485861c80d88bcd8a37dd4394f7cdea63218f163699442c8edd48fe265dca"
+      },
+      {
+        "file": "6.png",
+        "sha256": "6e13ca996ce652d81b82105568d6ca6ef4d5ad0ad8b26dc0a1789e0a81953c84"
+      }
+    ]
+  },
+  "derivation": "Locally authored original vector-to-raster illustration using source clothing palettes and outdoor styling, and generic ski palette. Identical neutral body geometry; no exact product marks, external assets, image model or source photo reconstruction.",
+  "rightsScope": "Owner delegated derivative creation and approval for local development/acceptance only; no independent claim to source copyright or Production licensing.",
+  "optionalLayers": {
+    "BOOT": null,
+    "JACKET": null,
+    "PANTS": null
+  },
+  "deferredSources": [
+    "5.png",
+    "6.png"
+  ],
+  "files": [
+    {
+      "file": "appearance-1.webp",
+      "layer": "AVATAR",
+      "appearance": "APPEARANCE_1",
+      "match": "GENERIC_REFERENCE",
+      "sourceFilesUsed": [
+        "1.png"
+      ],
+      "sourcePackage": "サロモン商品.zip",
+      "intendedPurpose": "AVATAR_VISUALIZATION_V1",
+      "approvedByOwner": true,
+      "approvalBasis": "OWNER_AUTHORITY_THIS_DOCUMENT",
+      "approvalAuthoritySha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
+      "localActivationApproved": true,
+      "productionApproved": false,
+      "rightsBasis": "OWNER_SUPPLIED_SOURCE_DERIVATIVE_LOCAL_USE_ONLY",
+      "width": 800,
+      "height": 2000,
+      "sha256": "6673481fbb876be97ebec2b2957709fdbad53f4686983c11e61319f601600e8e",
+      "bytes": 67716,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "position": {
+        "x": 0.5,
+        "y": 1
+      },
+      "exactProductPromise": false
+    },
+    {
+      "file": "appearance-2.webp",
+      "layer": "AVATAR",
+      "appearance": "APPEARANCE_2",
+      "match": "GENERIC_REFERENCE",
+      "sourceFilesUsed": [
+        "2.png"
+      ],
+      "sourcePackage": "サロモン商品.zip",
+      "intendedPurpose": "AVATAR_VISUALIZATION_V1",
+      "approvedByOwner": true,
+      "approvalBasis": "OWNER_AUTHORITY_THIS_DOCUMENT",
+      "approvalAuthoritySha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
+      "localActivationApproved": true,
+      "productionApproved": false,
+      "rightsBasis": "OWNER_SUPPLIED_SOURCE_DERIVATIVE_LOCAL_USE_ONLY",
+      "width": 800,
+      "height": 2000,
+      "sha256": "caf166774ab4a615aeaa93bfc31bce41d2d64756fee0117665f68f71b99aecfa",
+      "bytes": 65816,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "position": {
+        "x": 0.5,
+        "y": 1
+      },
+      "exactProductPromise": false
+    },
+    {
+      "file": "generic-ski.webp",
+      "layer": "SKI",
+      "appearance": null,
+      "match": "GENERIC_REFERENCE",
+      "sourceFilesUsed": [
+        "3.png",
+        "4.png"
+      ],
+      "sourcePackage": "サロモン商品.zip",
+      "intendedPurpose": "AVATAR_VISUALIZATION_V1",
+      "approvedByOwner": true,
+      "approvalBasis": "OWNER_AUTHORITY_THIS_DOCUMENT",
+      "approvalAuthoritySha256": "f99a96733aedf0214f31d5c02502e60909835a577248d1922caf71449a1edaab",
+      "localActivationApproved": true,
+      "productionApproved": false,
+      "rightsBasis": "OWNER_SUPPLIED_SOURCE_DERIVATIVE_LOCAL_USE_ONLY",
+      "width": 160,
+      "height": 2000,
+      "sha256": "54a9d50c0f161714c8b168ecc59c9335f02a03b8f7cd700c0e656c24649e0b48",
+      "bytes": 25164,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "position": {
+        "x": 0.5,
+        "y": 1
+      },
+      "exactProductPromise": false
+    }
+  ]
+}

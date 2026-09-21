@@ -1,0 +1,122 @@
+{
+  "at": "2026-09-15T07:23:46.702690+00:00",
+  "deployment": "dpl_G7dFJ6e6bNk9i3VKeGBpfskvA26V",
+  "results": [
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/health",
+      "status": 500,
+      "expected": 200,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/api/webhooks/square",
+      "status": 500,
+      "expected": 503,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/api/webhooks/square",
+      "status": 500,
+      "expected": 405,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/health",
+      "status": 500,
+      "expected": 405,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/",
+      "status": 404,
+      "expected": 404,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/staff/login",
+      "status": 404,
+      "expected": 404,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/api/health",
+      "status": 500,
+      "expected": 404,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/package.json",
+      "status": 404,
+      "expected": 404,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox.vercel.app/src/handler.ts",
+      "status": 404,
+      "expected": 404,
+      "redirectFollowed": false,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "robots": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-webhook-sandbox-ku4k6hicf-zao-food-map.vercel.app/health",
+      "status": 302,
+      "expected": 302,
+      "redirectFollowed": false,
+      "cacheControl": "no-store, max-age=0",
+      "robots": "noindex",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "https://zao-rental-cfswundgr-zao-food-map.vercel.app/",
+      "status": 302,
+      "expected": 302,
+      "redirectFollowed": false,
+      "cacheControl": "no-store, max-age=0",
+      "robots": "noindex",
+      "passed": true
+    }
+  ],
+  "allPassed": false,
+  "authCookieOrTokenUsed": false,
+  "squareRequests": 0,
+  "validWebhookDeliveries": 0,
+  "dbConfigured": false,
+  "responseBodiesOrRedirectLocationsRetained": false
+}

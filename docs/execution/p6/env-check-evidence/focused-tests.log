@@ -1,0 +1,17 @@
+✔ P5 preflight never promotes documentation/fixtures/Owner targets to external PASS (0.56225ms)
+✔ P5 exact CI requires repository/workflow/event/head/base/integration tree/run attempt/job success (0.25625ms)
+✔ P5 offline preflight command emits JSON/human summary and exits2 with pending gates (237.769708ms)
+✔ P6 one acceptance location is metadata only; it does not map or activate either internal store (0.636333ms)
+✔ P6 metadata parser never reads credential values, including during error handling (0.330084ms)
+✔ P6 rejects production/development, omitted mode/version, aliases and public settings (0.15075ms)
+✔ P6 URL is exact non-secret HTTPS metadata, not inferred from request headers or aliases (0.17825ms)
+✔ P5 activation metadata rejects production, missing/mixed mapping, credentials and automatic enablement (0.907959ms)
+✔ P5 dual webhook keys verify exact URL/raw bytes, retire exactly at grace and never expose secret (1.346916ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 341.252834

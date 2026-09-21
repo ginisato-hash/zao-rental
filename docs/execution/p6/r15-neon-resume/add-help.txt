@@ -1,0 +1,120 @@
+
+  ▲ vercel integration add integration [options]
+
+  Installs a marketplace integration                                            
+
+  Options:
+
+       --claim                 If the new resource is a sandbox (e.g. Stripe,   
+                               Shopify), claim it immediately without prompting 
+  -e,  --environment <ENV>     Environment to connect (can be repeated:         
+                               production, preview, development). Defaults to   
+                               all.                                             
+  -F,  --format <FORMAT>       Specify the output format (json)                 
+       --installation-id <ID>  Installation ID to use when multiple             
+                               installations exist for the integration          
+       --json                  Output as JSON                                   
+  -m,  --metadata <KEY=VALUE>  Metadata for the resource as KEY=VALUE (can be   
+                               repeated). Run `vercel integration add <name>    
+                               --help` to see available keys.                   
+  -n,  --name <NAME>           Custom name for the resource (auto-generated if  
+                               not provided)                                    
+       --no-claim              If the new resource is a sandbox, skip the offer 
+                               to claim it (only print a hint)                  
+       --no-connect            Skip connecting the resource to the current      
+                               project (also skips env pull)                    
+       --no-env-pull           Skip running env pull after provisioning         
+  -p,  --plan <PLAN_ID>        Billing plan ID to use for the resource          
+       --prefix <PREFIX>       Prefix for environment variable names (e.g.,     
+                               --prefix NEON2_ creates NEON2_DATABASE_URL       
+                               instead of DATABASE_URL)                         
+
+
+  Global Options:
+
+       --cwd <DIR>            Sets the current working directory for a single   
+                              run of a command                                  
+  -d,  --debug                Debug mode (default off)                          
+  -Q,  --global-config <DIR>  Path to the global `.vercel` directory            
+  -h,  --help                 Output usage information                          
+  -A,  --local-config <FILE>  Path to the local `vercel.json` file              
+       --no-color             No color mode (default off)                       
+       --non-interactive      Run without interactive prompts; when an agent is 
+                              detected this is the default                      
+  -S,  --scope                Set a custom scope                                
+  -t,  --token <TOKEN>        Login token                                       
+  -v,  --version              Output the version number                         
+
+
+
+  Examples:
+
+  - Install neon
+
+    $ vercel integration add neon
+
+  - Install with a custom resource name
+
+    $ vercel integration add neon --name my-resource
+
+  - Install with metadata
+
+    $ vercel integration add neon -m region=cle1 -m auth=true
+
+  - Install with a specific billing plan
+
+    $ vercel integration add neon --plan pro
+
+  - Install and connect to specific environments only
+
+    $ vercel integration add neon -e production -e preview
+
+  - Install without connecting to the current project
+
+    $ vercel integration add neon --no-connect
+
+  - Install without pulling environment variables
+
+    $ vercel integration add neon --no-env-pull
+
+  - Install with a prefix for environment variable names
+
+    $ vercel integration add neon --prefix NEON2_
+
+  - Output as JSON
+    $ vercel integration add neon --json
+    $ vercel integration add neon --format json
+
+  - Install using a specific installation
+
+    $ vercel integration add neon --installation-id <id>
+
+  - Claim a sandbox resource immediately after provisioning
+
+    $ vercel integration add neon --claim
+
+  - Skip the offer to claim a sandbox resource
+
+    $ vercel integration add neon --no-claim
+
+  Metadata options for "neon":
+
+    region
+      Choose your database region
+      Options: cle1, iad1, pdx1, fra1, lhr1, syd1, sin1, gru1
+      Example: -m region=cle1
+
+    auth (true/false)
+      Provide built-in authentication for app users, with profiles synced to Postgres.
+      Default: true
+      Example: -m auth=true
+
+  Available billing plans for "Neon":
+
+    free_v3    Free (Free)
+    launch_v3  Launch
+    scale_v3   Scale
+
+  Usage:
+
+    --plan free_v3

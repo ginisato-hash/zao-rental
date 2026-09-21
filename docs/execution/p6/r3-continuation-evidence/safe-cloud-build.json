@@ -1,0 +1,78 @@
+{
+  "deployment_id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+  "raw_logs_saved": false,
+  "selected": [
+    {
+      "created": 1789354182871,
+      "text": "Running build in Cleveland, USA (East) \u2013 cle1"
+    },
+    {
+      "created": 1789354182871,
+      "text": "Build machine configuration: 4 cores, 8 GB"
+    },
+    {
+      "created": 1789354184010,
+      "text": "Running \"vercel build\""
+    },
+    {
+      "created": 1789354184255,
+      "text": "Running \"install\" command: `npx --yes --package=npm@11.12.1 -- npm ci --no-audit --no-fund`..."
+    },
+    {
+      "created": 1789354202948,
+      "text": "Detected Next.js version: 16.3.4"
+    },
+    {
+      "created": 1789354202950,
+      "text": "Running \"node --version && npx --yes --package=npm@11.12.1 -- npm --version && npx --yes --package=npm@11.12.1 -- npm run build\""
+    },
+    {
+      "created": 1789354202958,
+      "text": "v24.19.0"
+    },
+    {
+      "created": 1789354203655,
+      "text": "11.12.1"
+    },
+    {
+      "created": 1789354222723,
+      "text": "\u2713 Compiled successfully in 14.5s"
+    },
+    {
+      "created": 1789354230705,
+      "text": "  Collecting page data using 3 workers ..."
+    },
+    {
+      "created": 1789354234178,
+      "text": "  Generating static pages using 3 workers (0/8) ..."
+    },
+    {
+      "created": 1789354234384,
+      "text": "  Generating static pages using 3 workers (2/8) \r"
+    },
+    {
+      "created": 1789354234385,
+      "text": "  Generating static pages using 3 workers (4/8) \r"
+    },
+    {
+      "created": 1789354234385,
+      "text": "  Generating static pages using 3 workers (6/8) \r"
+    },
+    {
+      "created": 1789354234683,
+      "text": "\u2713 Generating static pages using 3 workers (8/8) in 505ms"
+    },
+    {
+      "created": 1789354235152,
+      "text": "  Finalizing page optimization ..."
+    },
+    {
+      "created": 1789354245858,
+      "text": "Build Completed in /vercel/output [1m]"
+    },
+    {
+      "created": 1789354254672,
+      "text": "Deployment completed"
+    }
+  ]
+}

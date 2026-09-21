@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-09-15T01:50:19.528717+00:00",
+  "externalCounts": {
+    "square": 0,
+    "provider": 0,
+    "refund": 0,
+    "webhook": 0,
+    "postgres": 0,
+    "vercel": 0,
+    "browser": 0,
+    "playwright": 0,
+    "production": 0,
+    "claude": 0,
+    "spark": 0,
+    "runner": 0,
+    "notifications": 0,
+    "credentialChanges": 0,
+    "privilegeChanges": 0,
+    "billingChanges": 0,
+    "newPR": 0,
+    "mainMerge": 0,
+    "githubWritesExecuted": 0
+  },
+  "resourcesStarted": {
+    "db": 0,
+    "webServer": 0,
+    "browser": 0,
+    "claude": 0,
+    "spark": 0
+  },
+  "finiteValidationChildren": "ALL_COMPLETED_EXIT_CODES_RECORDED",
+  "remainingOwnedProcesses": 0,
+  "basis": "Synchronous finite subprocess validation/build exited; no detached process, service, DB, browser or model was launched. No existing project process was stopped. GitHub was read-only; push was rejected before execution."
+}

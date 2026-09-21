@@ -1,0 +1,53 @@
+{
+  "status": "STOPPED_EXISTING_PREVIEW_RUNTIME_503",
+  "previewId": "dpl_3wAJbFjQ85EseBan8kp77iYQSPvF",
+  "previewReadyState": "READY",
+  "bootstrapId": "dpl_FmHZxnaaBjADU7at9ezZLd9CETqL",
+  "bootstrapRetained": "Hosted acceptance PASS prerequisite unmet; deletion not authorized at this gate",
+  "historicalProductionDeployments": 2,
+  "historicalProductionAliases": 2,
+  "currentProductionDeployments": 1,
+  "currentProductionAliases": 1,
+  "productionEnvCount": 0,
+  "envMetadata": [
+    {
+      "key": "ZAO_HOSTED_PREVIEW_RUNTIME",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    },
+    {
+      "key": "ZAO_AVATAR_PHASE6",
+      "type": "sensitive",
+      "target": [
+        "preview"
+      ]
+    }
+  ],
+  "authentication": "ON",
+  "additionalDeployments": 0,
+  "additionalAliases": 0,
+  "resumedNeonOAuthCreated": 0,
+  "resumedOperatorDatabaseConnections": 0,
+  "temporaryOAuthDirectoryEmpty": true,
+  "localSecretFiles": [
+    {
+      "file": "runtime-config.json",
+      "present": false
+    },
+    {
+      "file": "runtime-roles.json",
+      "present": false
+    },
+    {
+      "file": "r2-read.json",
+      "present": false
+    },
+    {
+      "file": "r2-write.json",
+      "present": false
+    }
+  ],
+  "rawProviderResponseSaved": false
+}

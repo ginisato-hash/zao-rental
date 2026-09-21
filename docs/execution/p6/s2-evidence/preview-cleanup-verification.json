@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-14T15:50:15.695629+00:00",
+  "exact_s2_deleted": "dpl_29v9tPtTicL5GDhY9YZmy7YRDX61",
+  "deployment_list_contains_s2": false,
+  "remaining_deployments": [
+    {
+      "id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+      "state": "READY"
+    }
+  ],
+  "r3_retained": true,
+  "protection": "all_except_custom_domains",
+  "env_metadata_unchanged": true,
+  "production_square_env": 0,
+  "square_requests_for_cleanup": 0,
+  "payment_kept_no_refund": true,
+  "source_routes_removed": true,
+  "local_guard_retained": true,
+  "result_was_remotely_verified_before_cleanup": "5feffda000c8bb2ec9bb85f8190f23a338f5d73c"
+}

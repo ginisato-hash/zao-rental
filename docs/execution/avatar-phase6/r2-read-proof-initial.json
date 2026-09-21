@@ -1,0 +1,8 @@
+{
+  "status": "READ_PROOF_FAILED",
+  "firstOperatorVersion": "EXPECTED_HTTP403_ONLY",
+  "failureStage": "NOT_CAPTURED",
+  "rawErrorSuppressed": true,
+  "uploadNotRepeated": true,
+  "followup": "EXACT3_READ_ONLY_RECONCILIATION_BEFORE_INSTRUMENTED_BOUNDARY_PROOF"
+}

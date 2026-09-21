@@ -1,0 +1,22 @@
+{
+  "P6-SPARK-RUNTIME-01": {
+    "model_requested": "gpt-5.3-codex-spark",
+    "mode": "READ_ONLY",
+    "files_changed": [],
+    "result": "Inventory returned manifest/lock root/npmrc/nvmrc/setup/CI pin references; parent checked sources."
+  },
+  "P6-SPARK-RUNTIME-TEST-02": {
+    "model_requested": "gpt-5.3-codex-spark",
+    "allowed_file": "tests/readiness/toolchain-runtime.test.ts",
+    "corrections_used": 1,
+    "parent_finding": "Initial matcher hardcoded two Node versions, not actual24.x manifest. Parent rejected this test design. Corrected to bundled semver evaluation of actual manifest, including24.15.1/24.20.2 acceptance.",
+    "command": "node --import tsx --test tests/readiness/toolchain-runtime.test.ts",
+    "reported_exit_code": 0,
+    "reported_pass": 4,
+    "reported_fail": 0,
+    "evidence_kind": "Spark execution report; parent inspected corrected file, did not repeat after stop gate."
+  },
+  "authority_decisions_delegated": false,
+  "red_scope_changes": false,
+  "new_claude_starts": 0
+}

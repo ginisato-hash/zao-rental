@@ -1,0 +1,30 @@
+PASS 0001–0031 original hashes unchanged; exactly one additive0032
+PASS populated0031 upgrades without rewriting existing visual/content/business rows
+PASS binding immutable: id
+PASS binding immutable: layer
+PASS binding immutable: avatar_type
+PASS binding immutable: match_kind
+PASS binding immutable: model_id
+PASS binding immutable: variant_id
+PASS binding immutable: season
+PASS binding immutable: ski_length_cm
+PASS binding immutable: media_id
+PASS binding immutable: derivative_sha256
+PASS binding immutable: revision_id
+PASS binding immutable: release_id
+PASS binding immutable: created_at
+PASS state and normalized presentation remain editable
+PASS dedicated narrow reader resolves current metadata and only granted bytes
+PASS narrow role rejects workspace JSON
+PASS narrow role rejects raw media bytes
+PASS narrow role rejects immutable revisions
+PASS narrow role rejects unfiltered visual metadata
+PASS narrow role rejects guest credentials
+PASS narrow role rejects saved business preview
+PASS narrow role rejects visual update
+PHASE5_UPGRADE_FAILED narrow role rejects view update ERR_ASSERTION
+{"actual":{"length":322,"name":"error","severity":"ERROR","code":"55000","detail":"Views that do not select from a single table or view are not automatically updatable.","hint":"To enable updating the view, provide an INSTEAD OF UPDATE trigger or an unconditional ON UPDATE DO INSTEAD rule.","file":"rewriteHandler.c","line":"3209","routine":"error_view_not_updatable"},"expected":{"code":"42501"}}
+    at async <anonymous> (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-upgrade.ts:39:63)
+    at async check (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-upgrade.ts:13:66)
+    at async <anonymous> (/Users/ginisato/Documents/Codex/2026-09-14/zao-rental-p6-mac-github-repo/work/avatar-phase5/tests/avatar/phase5-upgrade.ts:39:13)
+Owned upgrade PostgreSQL closed.

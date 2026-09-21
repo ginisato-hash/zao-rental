@@ -1,0 +1,34 @@
+✔ Owner local package has three approved generic derivatives with correct alpha/physical artboards (113.310125ms)
+✔ both appearance alpha silhouettes are identical: no body-size/eligibility encoding (109.777959ms)
+✔ unapproved manifest mutation fails: Production approval (0.948417ms)
+✔ unapproved manifest mutation fails: self-declared replacement rights (0.331541ms)
+✔ unapproved manifest mutation fails: path traversal (0.276667ms)
+✔ unapproved manifest mutation fails: exact product promise (0.260667ms)
+✔ altered derivative bytes cannot retain original approval or import (804.891708ms)
+✔ hosted/unowned connection is rejected before any pool connection (1.620916ms)
+✔ strict scope is deterministic and rejects free URL, query and oversized revision (0.594458ms)
+✔ invalid guest image shape denies before auth/DB tsConfirmed=true (9.02475ms)
+✔ invalid guest image shape denies before auth/DB cac1c162ac/extra (0.213125ms)
+✔ invalid guest image shape denies before auth/DB f49babcac1c162ac (0.132ms)
+✔ invalid guest image shape denies before auth/DB 000000000101/BAD (0.111625ms)
+✔ invalid guest image shape denies before auth/DB f49babcac1c162ac (0.121959ms)
+✔ POST and absent runtime cannot read bytes (0.19725ms)
+✔ metadata has only appearance payloads and private cache headers (1.108375ms)
+✔ offered image reauthorizes owner around byte IO and returns only WebP (13.389375ms)
+✔ a currently eligible image outside the member offer is still forbidden (0.22375ms)
+✔ race after bytes: revoked context fails closed (4.751042ms)
+✔ race after bytes: replaced preview fails closed (4.665083ms)
+✔ race after bytes: replaced grant fails closed (5.209875ms)
+✔ cross-site and failed authentication produce empty private404 (0.27425ms)
+✔ staff BOOKING_VIEW with missing HOLD_VIEW rejects before bytes (0.151459ms)
+✔ staff BOOKING_VIEW with missing QUOTE_VIEW rejects before bytes (0.046625ms)
+✔ Avatar throttle precedes metadata/bytes; private429 false (0.088792ms)
+✔ Avatar throttle precedes metadata/bytes; private429 true (0.049667ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4160.858291

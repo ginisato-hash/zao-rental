@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-14T02:49:42.516659+00:00",
+  "exit_code": 0,
+  "deployment": {
+    "id": "dpl_2tskZombWNMhwEKB6NG96FxkzmhL",
+    "url": "https://zao-rental-cfswundgr-zao-food-map.vercel.app",
+    "target": null,
+    "readyState": "INITIALIZING"
+  },
+  "raw_output_saved": false
+}

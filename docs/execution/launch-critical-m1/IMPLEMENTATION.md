@@ -1,0 +1,13 @@
+# M1 implementation
+
+Stacked base: `cda7e53ee162db96cbb28add3fbb29fff0009617`. PR17 was not merged. This branch supplies the completed-code prerequisite for the later M1.5 authority; it does not claim the original M1 main-integration terminal condition.
+
+- `/staff/amendments` freezes an original-book amendment quote, then accepts it with expected version, fresh inventory allocation and an audit reason. Prepared or physically exchanged equipment requires fit evidence and checkout/return permissions. Old receipt/loan generations, original booking, price and payment remain immutable. Partial returns and ambiguous promotions require review. Early return creates no automatic refund.
+- Additional collection and explicit `REFUND_OVERRIDE` requests have separate immutable amounts, canonical keys, caps and safe statuses. Normal HTTP never dispatches a provider call or accepts browser payment observations. The test adapter commits UNKNOWN before one create call; only lookup can resolve a lost response. Contradictory terminal evidence is recorded separately and blocks further refund requests.
+- `/admin/assets` reuses the canonical ledger and prints Asset-only QR labels: two identical labels for ski pairs, one for a board, optional duplicate boot labels. Poles remain PAIR quantity and garments remain quantity pools.
+- `/admin/inventory` records observations separately from stock. Reconciliation requires `INVENTORY_RECONCILE` plus inventory-edit authority and an unchanged baseline. Unknown location is never silently moved; use canonical transfer/receipt. The existing CSV planner now accepts an explicit V2 receipt template and commits validated rows atomically with immutable source dedupe. Unknown BSL stays NULL. No real stock was imported.
+- `/admin/prices` copies a draft, displays changes and explicitly applies a private price version. Existing snapshots remain fixed; response loss uses the same persisted request key. No actual commercial price publication is authorized.
+
+Migration0033 preserves0001–0032 bytes. It adds operation records, explicit permissions (no role defaults), immutable loan generations and effective-period receipt protection. Failed migration DDL is rolled back transactionally; this is not a destructive down-migration or a Production rollback claim. A separate purpose-scoped local operations role is provisioned by the owned development launcher. Hosted roles/credentials are unchanged.
+
+Local proof uses synthetic PostgreSQL and the ordinary Next application, with external browser requests blocked in the new UI test. All provider calls are test adapters. Physical labels/devices, real stock, commercial policy and Production connection remain later acceptance gates.

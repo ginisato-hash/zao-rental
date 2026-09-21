@@ -1,0 +1,41 @@
+{
+  "base": "ec420cbd166af0749caecfa654c0a1e362628891",
+  "branch": "codex/avatar-phase6-hosted-preview",
+  "authoritySha256": "75c44bd480fdbda12b9aafbea7d2ef2a53206c79830c3e1f93774cbb3118013b",
+  "phase": "IMPLEMENTING",
+  "initialWorkingTree": "CLEAN",
+  "budgets": {
+    "migrationLogicalRuns": {
+      "used": 0,
+      "max": 1
+    },
+    "r2NewBuckets": {
+      "used": 0,
+      "max": 1
+    },
+    "r2NewObjects": {
+      "used": 0,
+      "max": 3
+    },
+    "previewDeployments": {
+      "used": 0,
+      "max": 2
+    },
+    "claudeInitial": {
+      "used": 0,
+      "max": 1
+    },
+    "claudeCorrection": {
+      "used": 0,
+      "max": 1
+    }
+  },
+  "forbiddenCalls": {
+    "square": 0,
+    "payment": 0,
+    "refund": 0,
+    "webhook": 0,
+    "production": 0,
+    "mainMerge": 0
+  }
+}

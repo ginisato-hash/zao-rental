@@ -1,0 +1,20 @@
+
+> zao-rental@0.1.0 test:public-guest
+> node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts
+
+PASS real guest cookie identity is not a staff row, role or session; no forbidden DB rights
+PASS cross-guest drafts, forged staff flags, Asset IDs, model/size/amount/expiry inputs refused
+PASS guest input/preview/explicit choice persist in DB and create NO HOLD before final confirmation
+PASS ordinary unconnected guest HTTP cannot start simulated payment or mutate HOLD even with a valid context
+PASS final step reuses actual HOLD/quote/payment services; reload and response replay never duplicate charge/TTL/booking
+PASS staff handoff remains scoped; other guest cannot read booking/preview/HOLD or invoke custody permission
+PASS revocation and expiration reject same saved guest capability without reviving inventory
+Guest real PostgreSQL 7 passed; no staff impersonation or real payment.
+Owned guest PostgreSQL stopped.
+PASS 20-person guest group fits HTTP contract, server total and atomic HOLD/quote, without client price authority
+PASS wear-only guest quote and size quantity protection; no physical wear Asset is created
+PASS Premium exact approved length and same-person gear/wear 20% adjustment are preserved in mixed group snapshot
+PASS price version changes after review require explicit new snapshot acceptance, with original HOLD/quote retained
+PASS analytics accepts only categorical events and drops no sensitive values silently
+Integrated guest 5 cases passed; synthetic stock/pricing only.
+Owned integrated guest PostgreSQL stopped.

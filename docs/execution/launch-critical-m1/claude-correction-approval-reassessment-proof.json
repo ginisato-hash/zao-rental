@@ -1,0 +1,12 @@
+{
+  "reviewedHead": "57bb77b01c4046e62e8a41cdacbc1704b22bbfee",
+  "snapshotSha256": "08906a673ec19b5f67efab1c77ba7e73ae1e235330a34d847f5b06f3f6442e84",
+  "snapshotBytes": 184656,
+  "allSourceInputsExactlyMatchCommittedGitBlobs": true,
+  "sourceInputs": 13,
+  "dispatchGuardAbsent": true,
+  "modelStarts": 0,
+  "authority": "docs/execution/launch-critical-m1/OWNER_AUTHORITY.md §13",
+  "authorityText": "修正後の再reviewはB/H/Mの修正を確認する場合のみ1回。個別payload承認をOwnerへ再要求しない。",
+  "initialReview": "HIGH1 MEDIUM1; actual fixes with targeted PASS"
+}

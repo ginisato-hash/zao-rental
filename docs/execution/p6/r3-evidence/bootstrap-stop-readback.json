@@ -1,0 +1,29 @@
+{
+  "deployment": {
+    "id": "dpl_C44zbkSu1uu4WbPNj9uCLA8zDJWP",
+    "url": "zao-rental-el6qaeh49-zao-food-map.vercel.app",
+    "target": "production",
+    "readyState": "READY",
+    "alias": [
+      "zao-rental-zao-food-map.vercel.app"
+    ],
+    "autoAssignCustomDomains": false
+  },
+  "alias_remove_exit": 0,
+  "live_aliases": [],
+  "project": {
+    "id": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+    "framework": "nextjs",
+    "rootDirectory": null,
+    "buildCommand": "npm run build",
+    "installCommand": null,
+    "outputDirectory": null,
+    "nodeVersion": "24.x",
+    "protection": "all_except_custom_domains",
+    "git_connected": false
+  },
+  "custom_domains": [],
+  "app_preview_attempts": 0,
+  "unauthenticated_status": 302
+}

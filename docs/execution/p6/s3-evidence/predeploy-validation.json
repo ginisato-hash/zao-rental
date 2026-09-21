@@ -1,0 +1,77 @@
+{
+  "commands": [
+    {
+      "name": "square-tests",
+      "args": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/readiness/square-s3.test.ts",
+        "tests/readiness/s3-operator-guard.test.mjs",
+        "tests/readiness/square-s2.test.ts",
+        "tests/readiness/s2-operator-guard.test.mjs",
+        "tests/readiness/square-s1.test.ts",
+        "tests/readiness/square-s1-v2.test.ts",
+        "tests/unit/production-integration.test.ts",
+        "tests/unit/production-readiness.test.ts",
+        "tests/unit/sandbox-environment.test.ts",
+        "tests/unit/sandbox-preflight.test.ts"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-09-14T16:25:35.026909+00:00",
+      "finished_at": "2026-09-14T16:25:35.419100+00:00",
+      "log": "square-tests.log"
+    },
+    {
+      "name": "secret-scan",
+      "args": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-09-14T16:25:35.419337+00:00",
+      "finished_at": "2026-09-14T16:25:35.799911+00:00",
+      "log": "secret-scan.log"
+    },
+    {
+      "name": "lint",
+      "args": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-09-14T16:25:35.800090+00:00",
+      "finished_at": "2026-09-14T16:25:42.086520+00:00",
+      "log": "lint.log"
+    },
+    {
+      "name": "typecheck",
+      "args": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-09-14T16:25:42.086956+00:00",
+      "finished_at": "2026-09-14T16:25:46.574091+00:00",
+      "log": "typecheck.log"
+    },
+    {
+      "name": "build",
+      "args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-09-14T16:25:46.574409+00:00",
+      "finished_at": "2026-09-14T16:25:59.069118+00:00",
+      "log": "build.log"
+    }
+  ],
+  "square_requests": 0,
+  "db": 0,
+  "fixture_only": true
+}

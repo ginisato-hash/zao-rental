@@ -1,0 +1,19 @@
+PASS populated E08 DB -> additive 0007 preserves password session, HOLD and immutable quote
+PASS 170cm -> 150/145/155, 25.5 ->26.5; candidates record full input/rule/variants but consume nothing
+PASS selected mixed group -> single atomic HOLD -> E08 quote; repeated selection does not create duplicates
+PASS no boot-size fallback or age/class fallback, and unoffered directions cannot be selected
+PASS two members individually see last150 but group cannot double-count; reselection stays explicit
+PASS inventory taken after preview fails without silent substitution; fresh feasible fallback is real
+PASS failed HOLD amendment preserves previous active hold, expiry and valid quote
+PASS two concurrent amendments from same version: exactly one succeeds, no TTL extension or double claims
+PASS committed HOLD response loss recovers same keys; no duplicate reservation or domain command
+PASS quote-only response loss after real commit recovers saved HOLD/quote without renewing either expiry
+PASS read-only half-day /10day /year-crossing use existing time contracts and no global stock counts
+PASS E07 committed transfer is reused for future destination; no automatic dispatch/receipt
+PASS bounded solver reports indeterminate rather than shortage
+PASS internal physical reassignment with unchanged selected variants does not alter selected price
+PASS 600-second HOLD expiry survives preview/reload without extending or recreating claims
+PASS ordinary password/session/API rejects anonymous, CSRF, spoofing and actor/store overreach before locks
+PASS recommendation app role cannot read secrets, mutate stock/quotes or audit; saved selections immutable
+E09 real PostgreSQL: 17 passed; 0 skipped. Synthetic profiles only. Lost-response adapters throw AFTER actual domain commits; normal services used for recovery. No live payment, transfer dispatch or production publication.
+Owned E09 PostgreSQL stopped.

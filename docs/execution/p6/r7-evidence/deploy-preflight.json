@@ -1,0 +1,18 @@
+{
+  "at": "2026-09-14T13:01:29.471859+00:00",
+  "source_commit": "f9468c81144ba6c1db3bade87c6e72d55b8c07a8",
+  "source_tree": "39b9f85c972cdc01e64c3a4d72ac6f4aa2243025",
+  "dry_file_count": 1040,
+  "dry_total_size": 9199136,
+  "all_runtime_files_match_commit": true,
+  "excluded_local_auth_metadata": true,
+  "require_login_ui": true,
+  "standard_protection_ui": true,
+  "custom_domains": 0,
+  "production_square_entries": 0,
+  "r3_retained_ready": true,
+  "local_green": true,
+  "square_requests": 0,
+  "s1_posts": 0,
+  "preview_created": 0
+}

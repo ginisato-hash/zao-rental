@@ -1,0 +1,18 @@
+{
+  "at": "2026-09-15T07:11:10.418237+00:00",
+  "operation": "dedicated-project-create",
+  "requestsDispatched": 1,
+  "exitCode": 0,
+  "id": "prj_whzxwR1vj0CBBnm1UD6dz5ALPMbA",
+  "name": "zao-rental-webhook-sandbox",
+  "accountId": "team_PVka5z4T6OMKBmUcqrK09yJz",
+  "rootDirectory": "apps/webhook-ingress",
+  "nodeVersion": "24.x",
+  "sourceFilesOutsideRootDirectory": true,
+  "buildCommand": null,
+  "installCommand": "npm ci --prefix ../.. --ignore-scripts",
+  "publicSource": null,
+  "protection": "all_except_custom_domains",
+  "gitConnected": false,
+  "classification": "CREATED"
+}

@@ -1,0 +1,73 @@
+name: Production Backup
+# R2B mechanism only. This workflow is inert until a separate R4 authority sets
+# the PRODUCTION_BACKUP_ACTIVATION repository/environment variable and injects
+# the production-backup GitHub Environment secrets referenced below — none of
+# which exist yet. A dispatch before that activation fails/skips before any
+# Production secret is read.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production-backup
+    # postgres:18 (18.6), resolved from registry-1.docker.io on 2026-09-21;
+    # provides pinned PostgreSQL 18 pg_dump/pg_restore, not whatever happens
+    # to be preinstalled on the runner.
+    container:
+      image: postgres:18@sha256:86c951e05bf56c93d95d397747fb8820ac76cc3bedb78f43abd83eedbe3666ae
+    steps:
+      - name: Activation gate (must run before any secret is referenced)
+        id: gate
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "::error::Production backup refused: ref is not refs/heads/main"
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          if [ "${{ vars.PRODUCTION_BACKUP_ACTIVATION }}" != "R4_APPROVED" ]; then
+            echo "Production backup activation gate not approved (PRODUCTION_BACKUP_ACTIVATION != R4_APPROVED)."
+            echo "Skipping before any Production secret is accessed. This is expected until a separate R4 authority."
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "passed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.gate.outputs.passed == 'true'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, verified upstream
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        if: steps.gate.outputs.passed == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4, verified upstream
+        with:
+          node-version: '24.15.0'
+
+      - name: Install dependencies
+        if: steps.gate.outputs.passed == 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Run production backup
+        if: steps.gate.outputs.passed == 'true'
+        env:
+          BACKUP_MODE: production
+          BACKUP_CLASS: hourly
+          PRODUCTION_BACKUP_ACTIVATION: ${{ vars.PRODUCTION_BACKUP_ACTIVATION }}
+          PRODUCTION_BACKUP_BUCKET: ${{ vars.PRODUCTION_BACKUP_BUCKET }}
+          AGE_BACKUP_RECIPIENT: ${{ vars.AGE_BACKUP_RECIPIENT }}
+          PGHOST: ${{ secrets.PRODUCTION_BACKUP_PGHOST }}
+          PGPORT: ${{ secrets.PRODUCTION_BACKUP_PGPORT }}
+          PGDATABASE: ${{ secrets.PRODUCTION_BACKUP_PGDATABASE }}
+          PGUSER: ${{ secrets.PRODUCTION_BACKUP_PGUSER }}
+          PGPASSWORD: ${{ secrets.PRODUCTION_BACKUP_PGPASSWORD }}
+          R2_ACCOUNT_ID: ${{ secrets.PRODUCTION_BACKUP_R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_BACKUP_R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_BACKUP_R2_SECRET_ACCESS_KEY }}
+        run: npm run backup:production

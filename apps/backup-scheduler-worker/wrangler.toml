@@ -1,0 +1,17 @@
+# R2B: source and config only. Not deployed in this phase — no `wrangler deploy`
+# has been run against this file, no Cron Trigger is active, and no Worker secret
+# exists. Activation is a separate R4-authorized step.
+name = "zao-rental-production-backup-scheduler"
+main = "src/index.ts"
+compatibility_date = "2026-09-21"
+
+# Target future schedule (documented, not registered): dispatches once per hour
+# at :17 UTC. Uncommenting this block and running `wrangler deploy` is the R4
+# activation step, not part of R2B.
+# [triggers]
+# crons = ["17 * * * *"]
+
+# Future Worker secret (created only at R4 activation, never in R2B):
+#   wrangler secret put GITHUB_ACTIONS_DISPATCH_TOKEN
+# Fine-grained GitHub token: this exact repository only, Actions:write, no
+# Contents write, no Administration, no Secrets write, no org-wide scope.

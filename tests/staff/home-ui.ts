@@ -348,6 +348,61 @@ try{
   await narrowPage.unroute('**/api/operations/manifest*');
  });
 
+ await check('UX5E-01: a BOOKING_VIEW-only principal whose very first Manifest read fails (503) is never trapped on 業務日付を確認しています…; the visible Refresh recovers it without exposing 本日の業務',async()=>{
+  let calls=0;
+  await narrowPage.route('**/api/operations/manifest*',async route=>{
+   calls++;
+   if(calls===1){await route.fulfill({status:503,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'OPERATIONS_UNCONNECTED'})});return;}
+   await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
+  });
+  await narrowPage.goto('/staff');
+  const today=narrowPage.getByRole('region',{name:'本日の予約'});
+  // Either the pre-response "checking" text or the settled error message is acceptable here --
+  // what matters is the status line is never blank and never claims a successful empty day.
+  await expect(today.getByRole('status')).not.toHaveText('');
+  await expect(today).not.toContainText('予約はありません');
+  // The bug this guards: the Refresh button must never be gated behind a successful date read,
+  // or a BOOKING_VIEW-only principal (no 本日の業務 section, so no other retry control exists
+  // anywhere on the page) would be stuck here permanently after any non-401/403 failure.
+  const refresh=today.getByRole('button',{name:'更新',exact:true});
+  await expect(refresh).toBeVisible();
+  await expect(refresh).toBeEnabled();
+  await expect(narrowPage.getByRole('region',{name:'本日の業務'})).toHaveCount(0);
+  await refresh.click();
+  await expect(today).toContainText(businessDate);
+  await expect(narrowPage.getByRole('region',{name:'本日の業務'})).toHaveCount(0);
+  await narrowPage.unroute('**/api/operations/manifest*');
+ });
+
+ await check('UX5E-02: Manifest 409/503/network-failure on 本日の業務 never fabricate a successful empty day, surface an error, and preserve the last confirmed rows across a failed same-context refresh',async()=>{
+  await page.goto('/staff');
+  await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible(); // the real, already-confirmed row from earlier in this suite
+  for(const mode of ['409','503','network'] as const){
+   await page.route('**/api/operations/manifest*',async route=>{
+    if(mode==='network'){await route.abort('failed');return;}
+    await route.fulfill({status:Number(mode),contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:mode==='409'?'SESSION_STALE':'OPERATIONS_UNCONNECTED'})});
+   });
+   await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
+   await expect(dailyBusiness().getByRole('status')).not.toHaveText('');
+   // The previously confirmed row must still be visible -- a failed refresh must never wipe
+   // real, already-confirmed state, and must never render the empty-day message either.
+   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
+   await expect(dailyBusiness()).not.toContainText('現在対応が必要な項目はありません');
+   await page.unroute('**/api/operations/manifest*');
+  }
+ });
+
+ await check('UX5E-03: Manifest 401/403 ends the Staff Home session view the same as any other endpoint, rather than being swallowed as a generic Manifest error message',async()=>{
+  await page.goto('/staff');
+  await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  await page.route('**/api/operations/manifest*',async route=>{await route.fulfill({status:403,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'FORBIDDEN'})});});
+  await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();
+  await page.unroute('**/api/operations/manifest*');
+  await page.goto('/staff'); // restore a normal session view for whatever runs next
+  await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+ });
+
  await check('Staff Home is usable at 390 and 1440 with no horizontal overflow',async()=>{
   await mkdir('.local/screenshots',{recursive:true});
   for(const width of [390,1440]){

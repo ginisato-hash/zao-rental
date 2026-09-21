@@ -7,6 +7,15 @@ Correction batch 1 closes [comment `5751235980`](https://github.com/ginisato-has
 `5751199806`; findings UX5C-R01 through UX5C-R04). See §12 for what changed and why.
 Design source: `docs/execution/prelaunch-uiux-v2/STAFF_MANIFEST_DESIGN.md`.
 
+## Current final state (as of UX-5E, HEAD `999d1fd`)
+
+`packages/core/src/operations/manifest-service.ts` and `GET /api/operations/manifest` are
+**unchanged since correction batch 1** (§12) — no later UX-5D/UX-5D-correction/UX-5E batch
+touched this file. §2's architecture description (the two-snapshot `businessSnapshot()` +
+conditional `mergeExceptions()`/`exceptionSnapshot()` design) and §12's R01–R04 corrections are
+both current and accurate. `npm run test:operations-manifest` remains 17 service + 12 HTTP cases,
+re-verified passing at every later HEAD through UX-5E without modification to this suite.
+
 ## 1. Scope delivered
 
 - Read-only `ManifestService` (`packages/core/src/operations/manifest-service.ts`).

@@ -121,11 +121,16 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  return <main className="holds staff-home"><header><p>ZAO Rental · 合成データ専用</p><h1>スタッフホーム</h1><nav><a href="/staff/logout">ログアウト</a></nav></header>
  {effectivePickup&&<BookingSearchInput onBooking={openBooking}/>}
  {canBookingView&&<section aria-label="本日の予約"><h2>本日</h2>
-  {manifestDate?<><p className="staff-secondary">本日が利用期間に含まれる予約（{manifestDate} JST）。完全な入出庫予定表ではありません。</p>
-   <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>更新</button>
-   <p role="status">{bookingsReq.message||manifestMessage}</p>
+  {/* UX-5E: the Refresh button and status line must never be gated behind manifestDate itself
+      -- a BOOKING_VIEW-only principal has no "本日の業務" section and therefore no other retry
+      control anywhere on the page, so if the very first Manifest date read fails (401/403 is
+      handled separately by StaffSessionBoundary; this covers 409/503/network failure), this
+      button is the only way to recover without a full page reload. */}
+  <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>更新</button>
+  <p role="status">{bookingsReq.message||manifestMessage||(manifestDate?'':'業務日付を確認しています…')}</p>
+  {manifestDate&&<><p className="staff-secondary">本日が利用期間に含まれる予約（{manifestDate} JST）。完全な入出庫予定表ではありません。</p>
    {bookings&&(todays.length?<div className="staff-card-grid">{todays.map(b=><article className="staff-card" key={b.id}><p><strong>{b.period!.startDate} → {b.period!.endDate}</strong> · {b.period!.slot}</p><p>{b.display_name??'（氏名未取得）'}</p><p>{STATE_LABEL[b.state]??b.state}</p><p>{b.pickup_store}→{b.return_store} · {money(b.total_jpy)}</p>{effectivePickup&&<button className="staff-card-primary" onClick={()=>openBooking(b.id)}>貸出・受付で状態を確認</button>}</article>)}</div>:<p>本日が利用期間に含まれる予約はありません。</p>)}
-  </>:<p role="status">業務日付を確認しています…</p>}
+  </>}
  </section>}
  {showManifest&&<section aria-label="本日の業務"><h2>本日の業務</h2><p className="staff-secondary">対象店舗の当日の貸出・返却・検品タスクです。実際の操作は貸出・返却の画面で行います。</p>
   <label>対象店舗<select aria-label="対象店舗" value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{s}</option>)}</select></label>

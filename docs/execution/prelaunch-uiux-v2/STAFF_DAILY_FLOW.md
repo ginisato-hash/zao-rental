@@ -6,6 +6,28 @@ UX-5A implementation batch, UX-5B DESIGN_GATE).
 
 Commit: `0facf8c` (code/tests/screenshots).
 
+## Current final state (as of UX-5E, HEAD `999d1fd`)
+
+This document's design is **partially superseded**. Search/QR gating
+(`effectivePickup = canBookingView && canCheckout`, `effectiveReturn = canBookingView && canReturn`)
+and the secondary-link permission gating (UX5R-03/UX5R-04) described below remain exactly as
+implemented here and are still current.
+
+The **Returns in progress** and **Exceptions (compact)** sections described in the UX-5A table
+below — each reading its own separate endpoint (`GET /api/custody/returns`,
+`GET /api/operations/exceptions`) — no longer exist as distinct Staff Home sections. UX-5C/UX-5D
+replaced both with a single unified "本日の業務" (Daily Manifest) section backed by
+`GET /api/operations/manifest`, which supersedes their purpose with a real cross-domain,
+permission/store-scoped operational view (the joined read model this document's own UX-5B section
+below explicitly deferred as future work). Staff Home no longer issues either retired request at
+all — see `STAFF_MANIFEST_UI_INTEGRATION.md` for the current Staff Home structure and
+`STAFF_MANIFEST_SERVER_IMPLEMENTATION.md` for the Manifest server this section is built on.
+
+The "Today" section (booking cards filtered to the current business date) remains, but its
+business-date authority changed from the browser clock to the Manifest server's own
+`inventory_clock()` date (UX-5D) — the UX-5A rows below still describe the original browser-time
+version accurately as a historical record, not the current behavior.
+
 ## Current final UX-5A state (read this first)
 
 The tables below record the *as-authored* HEAD `0facf8c` and each subsequent correction batch as

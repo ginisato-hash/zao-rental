@@ -6,6 +6,17 @@ This batch is UI/integration only: no Manifest server business semantics, Branch
 `nextAction`/`taskAction` classification, custody/wear mutation logic, schema, permission, or
 pricing/HOLD/payment change is made anywhere in this diff.
 
+## Current final state (as of UX-5E, HEAD `999d1fd`)
+
+`apps/web/src/components/StaffHome.tsx` has three layers of correction on top of the §1–§14
+UX-5D baseline below, each closing findings from an independent TD review:
+§15 (UX-5D correction batch 1 — R01/R02/R03 store-switch/staleness races, TD comment
+`5751679611`) and §16 (UX-5E — the initial-Manifest-failure retry trap, TD comment `5754989874`).
+§1–§14 remain the accurate description of the overall integration (Manifest as the sole
+operational data source, `activeStore`, server-date authority, action-label mapping,
+CUSTODY_ONLY rendering, pagination) — §15 and §16 only change *how failures and races during
+that integration are handled*, never what the Manifest server returns or how it is interpreted.
+
 ## 1. Scope delivered
 
 - `apps/web/src/components/StaffHome.tsx` now consumes `GET /api/operations/manifest` as the
@@ -274,3 +285,55 @@ four new race/staleness tests are consequently verified for real only by the one
 Foundation CI run recorded in the PR submission comment for this correction batch, whose log was
 checked line-by-line (not just its overall conclusion) given this file's history of two prior
 locally-uncaught bugs this session.
+
+## 16. UX-5E — final acceptance: initial-Manifest-failure trap fixed for BOOKING_VIEW-only
+
+Authority: PR #26 comment `5754989874` (Technical Director — UX-5D UI PASS / UX-5E final
+integrated acceptance authorization). UX-5E's own explicit failure-state acceptance check (item 4
+of that authorization) found one concrete current-head UI regression, fixed here in UI/test scope
+only; no Manifest server file was touched.
+
+### 16.1 The bug
+
+In "本日の予約" (Today), the Refresh button and all of its content were nested inside
+`{manifestDate?<>...</>:<p role="status">業務日付を確認しています…</p>}`. If the very first
+Manifest read ever failed for any reason other than 401/403 (409/503/a network failure —
+401/403 already end the session view via `invalidateStaffView`, which is unaffected by this bug),
+`manifestState.store` stayed `null` forever, so `manifestDate` stayed `null` forever, so the
+branch rendering the Refresh button never rendered at all. For a BOOKING_VIEW-only principal —
+`showManifest` is false, so "本日の業務" (the section with its own, always-visible Refresh
+button) never renders either — this left the "業務日付を確認しています…" text as a dead end
+with **no control anywhere on the page** that could ever retry the read. A full page reload was
+the only escape.
+
+### 16.2 The fix
+
+`apps/web/src/components/StaffHome.tsx`: moved the Refresh button and its status line out from
+behind the `manifestDate` gate so they render unconditionally for every `canBookingView`
+principal; the date-dependent booking list/secondary text remain gated on `manifestDate` so a
+failed read still never fabricates a successful empty day. The status line now shows the real
+error message when one exists, falling back to "業務日付を確認しています…" only while nothing —
+success or failure — has resolved yet.
+
+### 16.3 Verification of the four failure-state acceptance requirements
+
+- **Never present a failed Manifest fetch as a successful empty operational day** — confirmed
+  already correct pre-fix (rows/date only ever come from a successful response) and unaffected by
+  the fix; both sections render nothing date/row-dependent while `manifestDate` is null.
+- **BOOKING_VIEW-only must not be trapped indefinitely on 業務日付を確認しています…** — fixed;
+  see 16.1/16.2.
+- **A recoverable visible retry path must exist without exposing hidden operational sections** —
+  fixed; the "本日の予約" Refresh button is now always visible for this composition, and
+  "本日の業務" is never rendered for it (unchanged `showManifest` gating).
+- **Same-context refresh may preserve previously confirmed rows; context changes must not** —
+  confirmed already correct pre-fix (a failed refresh never calls `setManifestState`, so the last
+  confirmed rows/date stay visible; a store switch is still governed by the UX5D-R01/R02
+  generation-and-tagging mechanism, untouched here) and unaffected by the fix.
+
+Three new deterministic Playwright tests added to `tests/staff/home-ui.ts`:
+`UX5E-01` (the exact bug above: initial 503 on a BOOKING_VIEW-only page, Refresh visible/enabled
+throughout, recovers on click), `UX5E-02` (409/503/network-failure on the full-capability page's
+"本日の業務" Refresh each surface a non-empty status, never fabricate the empty-day message, and
+never remove the real already-confirmed row), `UX5E-03` (a Manifest 401/403 still ends the session
+view via the existing `StaffSessionBoundary` mechanism, confirming the new unconditional status
+line never swallows or shadows that path).

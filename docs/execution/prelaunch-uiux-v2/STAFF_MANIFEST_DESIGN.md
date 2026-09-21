@@ -16,6 +16,23 @@ were addressed in place.
 R01-R05 confirmed materially closed; new findings UX5B-R06 through UX5B-R10). R06-R10 are addressed
 in place below. This is the same document throughout, corrected in place each time, never restarted.
 
+## Current final state (as of UX-5E, HEAD `999d1fd`)
+
+This entire document is a **DESIGN_GATE artifact — historical design input, not a description of
+current behavior**. Everything proposed here was subsequently PASSed and implemented:
+
+- The server (`ManifestService`, `GET /api/operations/manifest`) — implemented in UX-5C. Current
+  server behavior, including two corrections made after this design was written (R01/R02/R03/R04
+  in the correction batch), is authoritative in
+  `STAFF_MANIFEST_SERVER_IMPLEMENTATION.md`, not here.
+- The Staff Home client integration — implemented in UX-5D, corrected for three client-side race
+  conditions in a UX-5D correction batch, and re-verified for a failure-state gap in UX-5E. Current
+  client behavior is authoritative in `STAFF_MANIFEST_UI_INTEGRATION.md`, not here.
+
+Where any proposal below (field shape, branch logic, an open question, an explicitly deferred
+item) differs from those two documents, the two implementation documents are correct and this
+design document is preserved only as the historical record of what was proposed and why.
+
 This document is design/research only. No schema, migration, endpoint or Staff Home change is
 made in this phase. Every field below was read directly from the migration or service source
 cited next to it; nothing about current schema/behavior is inferred. Anything that cannot be

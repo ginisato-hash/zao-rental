@@ -6,6 +6,20 @@ Authority: PR #26 comment [`5746076048`](https://github.com/ginisato-hash/zao-re
 Commits: `6a3300d` (Batch UX-3A), `25d0a6d` (Batch UX-4A), `5637752` (candidate-card CSS fix
 found during this batch's own screenshot verification).
 
+## Current final state (as of UX-5E, HEAD `999d1fd`)
+
+This batch (UX-3A/UX-4A plus its UX3R/UX4R correction batch below) was TD-reviewed and PASSed;
+no later batch in PR #26 touched customer-facing files again. Everything below — including the
+correction batch — remains the accurate, current description of `GuestBooking.tsx`,
+`BookingAccess.tsx`, `PublicPage.tsx` and their CSS as of the current HEAD. UX-5E's own final
+customer-flow regression re-ran the covering suites (`tests/public/normal-ui.ts`,
+`tests/readiness/guest-ui.ts`, `tests/readiness/booking-access-ui.ts`,
+`tests/readiness/booking-recovery-ui.ts`), unchanged since this batch, via the consolidated
+Foundation CI run recorded in the UX-5E submission comment — this worktree's single deterministic
+web port (shared by every `startDevelopmentApp`/`startFlowApp`-based Playwright suite) is held by
+its long-running maintained UI review server, so these suites cannot run locally here; see §13 of
+`STAFF_MANIFEST_UI_INTEGRATION.md` for the same constraint and its Foundation CI workaround.
+
 ## Batch UX-3A — customer copy and hierarchy
 
 | Item | Change | File(s) |

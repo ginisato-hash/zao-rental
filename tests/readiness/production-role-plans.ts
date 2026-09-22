@@ -12,6 +12,8 @@ import {bootstrapProductionSchema} from '../../scripts/production-bootstrap';
 import {productionBackupRoleSql} from '../../scripts/production-backup-role';
 import {productionPaymentRoleNames, productionPaymentRoleCreateSql, productionPaymentActivationGrants} from '../../scripts/production-payment-roles';
 import {productionAppRoleNames, productionAppRoleCreateSql, productionAppRoleGrantSql} from '../../scripts/production-app-roles';
+import {verifyProductionDatabase} from '../../packages/db/src/production-connection';
+import {productionServices, type ProductionConfiguration} from '../../packages/auth/src/production-config';
 
 const TARGET = 'zao_rental_role_plan_test';
 let passed = 0;
@@ -84,9 +86,10 @@ try {
   const worker = await loginRole(production, db.identity.dbPort, TARGET, names.worker); opened.push(worker);
   const diagnostic = await loginRole(production, db.identity.dbPort, TARGET, names.diagnostic); opened.push(diagnostic);
 
-  await check('_pay_receipt can receive() (Sandbox and Production alike; the function is already environment-agnostic) but not dispatch/claim/finalize/context-load', async () => {
-    const r = await receiver.pool.query("SELECT square_webhook.receive('PRODUCTION','evt-p-1','payment.created','merchant-1','pay-1',repeat('a',64)) AS v");
+  await check('_pay_receipt (F4): can receive_production() but not the generic Sandbox-capable receive(), nor dispatch/claim/finalize/context-load', async () => {
+    const r = await receiver.pool.query("SELECT square_webhook.receive_production('evt-p-1','payment.created','merchant-1','pay-1',repeat('a',64)) AS v");
     assert.equal(r.rows[0].v, 'INSERTED');
+    await denied(() => receiver.pool.query("SELECT square_webhook.receive('PRODUCTION','evt-p-1b','payment.created','merchant-1','pay-1b',repeat('f',64))"));
     await denied(() => receiver.pool.query("SELECT payment_reconciliation.dispatch_production('merchant-1',10)"));
     await denied(() => receiver.pool.query("SELECT payment_reconciliation.claim_production('owner-1',10,'merchant-1')"));
     await denied(() => receiver.pool.query("SELECT payment_reconciliation.load_context_production('PRODUCTION','merchant-1','pay-1')"));
@@ -106,16 +109,18 @@ try {
     await denied(() => worker.pool.query("SELECT payment_reconciliation.dispatch_production('merchant-1',10)"));
     await denied(() => worker.pool.query("SELECT square_webhook.receive('PRODUCTION','evt-p-3','payment.created','merchant-1','pay-3',repeat('c',64))"));
   });
-  await check('_pay_diagnostic is read-only diagnostics only', async () => {
-    await diagnostic.pool.query("SELECT payment_reconciliation.diagnostics('PRODUCTION',10)");
+  await check('_pay_diagnostic (F4): read-only diagnostics_production only, never the generic diagnostics()', async () => {
+    await diagnostic.pool.query("SELECT payment_reconciliation.diagnostics_production(10)");
+    await denied(() => diagnostic.pool.query("SELECT payment_reconciliation.diagnostics('PRODUCTION',10)"));
     await denied(() => diagnostic.pool.query("SELECT payment_reconciliation.dispatch_production('merchant-1',10)"));
     await denied(() => diagnostic.pool.query("SELECT payment_reconciliation.claim_production('owner-1',10,'merchant-1')"));
   });
   await check('R6-B merchant boundary: dispatch_production for one merchant never dispatches another merchant\'s row', async () => {
-    // _pay_dispatch also keeps its existing generic dispatch()/dispatch_target() grants (matching
-    // the established R14/R15 pattern) — dispatch_production is an additional narrow capability,
-    // not a replacement, so no denial is expected on the generic function itself here.
-    await receiver.pool.query("SELECT square_webhook.receive('PRODUCTION','evt-p-4','payment.created','merchant-2','pay-4',repeat('e',64))");
+    // F4 (TD correction): unlike the local-only R14/R15 dev roles, _pay_dispatch here is granted
+    // EXECUTE only on dispatch_production, never the generic dispatch()/dispatch_target() —
+    // structurally unreachable, not merely undemonstrated.
+    await denied(() => dispatcher.pool.query("SELECT payment_reconciliation.dispatch('PRODUCTION',10)"));
+    await receiver.pool.query("SELECT square_webhook.receive_production('evt-p-4','payment.created','merchant-2','pay-4',repeat('e',64))");
     const zero = await dispatcher.pool.query("SELECT payment_reconciliation.dispatch_production('merchant-1',10) AS n");
     assert.equal(zero.rows[0].n, 0); // merchant-1 has nothing left undispatched; merchant-2's row must not have been swept in
     const one = await dispatcher.pool.query("SELECT payment_reconciliation.dispatch_production('merchant-2',10) AS n");
@@ -130,13 +135,22 @@ try {
     await worker.pool.query("SELECT payment_reconciliation.claim_production('owner-1',10,'merchant-2') AS claim");
   });
 
-  // ---- R3: application role plan (11 productionServices, reusing the local scripts' grants) ----
+  // ---- R3/F9: application role plan (all 11 productionServices, reusing the local scripts' grants) ----
   const appNames = productionAppRoleNames(TARGET);
   for (const sql of productionAppRoleCreateSql(TARGET)) await production.query(sql);
   for (const sql of productionAppRoleGrantSql(TARGET)) await production.query(sql);
   const auth = await loginRole(production, db.identity.dbPort, TARGET, appNames.auth); opened.push(auth);
+  const ledger = await loginRole(production, db.identity.dbPort, TARGET, appNames.ledger); opened.push(ledger);
   const hold = await loginRole(production, db.identity.dbPort, TARGET, appNames.hold); opened.push(hold);
+  const transfer = await loginRole(production, db.identity.dbPort, TARGET, appNames.transfer); opened.push(transfer);
+  const pricing = await loginRole(production, db.identity.dbPort, TARGET, appNames.pricing); opened.push(pricing);
+  const recommendation = await loginRole(production, db.identity.dbPort, TARGET, appNames.recommendation); opened.push(recommendation);
+  const operations = await loginRole(production, db.identity.dbPort, TARGET, appNames.operations); opened.push(operations);
+  const guest = await loginRole(production, db.identity.dbPort, TARGET, appNames.guest); opened.push(guest);
+  const contentRead = await loginRole(production, db.identity.dbPort, TARGET, appNames.content_read); opened.push(contentRead);
+  const avatarRead = await loginRole(production, db.identity.dbPort, TARGET, appNames.avatar_read); opened.push(avatarRead);
   const bookingAccess = await loginRole(production, db.identity.dbPort, TARGET, appNames.booking_access); opened.push(bookingAccess);
+  const appRoles = { auth, ledger, hold, transfer, pricing, recommendation, operations, guest, content_read: contentRead, avatar_read: avatarRead, booking_access: bookingAccess } as const;
 
   await check('R3 app roles: auth can read/write its own tables but not another service\'s schema', async () => {
     await auth.pool.query('SELECT count(*) FROM staff_members');
@@ -144,10 +158,53 @@ try {
     await denied(() => auth.pool.query('SELECT * FROM booking_access.read($1)', ['x']));
     await denied(() => auth.pool.query('SELECT count(*) FROM guest_contexts'));
   });
+  await check('R3 app roles: ledger can read/write its own tables but not staff/auth data', async () => {
+    await ledger.pool.query('SELECT count(*) FROM ledger_models');
+    await ledger.pool.query('SELECT count(*) FROM transfer_pieces');
+    await denied(() => ledger.pool.query('SELECT count(*) FROM staff_members'));
+    await denied(() => ledger.pool.query('UPDATE inventory_holds SET version=version'));
+  });
   await check('R3 app roles: hold can read/write its own tables but cannot touch booking_access', async () => {
     await hold.pool.query('SELECT count(*) FROM inventory_holds');
     await hold.pool.query("SELECT inventory_clock()");
     await denied(() => hold.pool.query('SELECT * FROM booking_access.read($1)', ['x']));
+  });
+  await check('R3 app roles: transfer can read/write its own tables but not auth credentials or guest data', async () => {
+    await transfer.pool.query('SELECT count(*) FROM transfer_batches');
+    await denied(() => transfer.pool.query('SELECT count(*) FROM auth_user'));
+    await denied(() => transfer.pool.query('SELECT count(*) FROM guest_contexts'));
+  });
+  await check('R3 app roles: pricing can read/write its own tables but has no ledger asset access', async () => {
+    await pricing.pool.query('SELECT count(*) FROM price_books');
+    await pricing.pool.query('SELECT count(*) FROM price_admin_requests');
+    await denied(() => pricing.pool.query('SELECT count(*) FROM ledger_assets'));
+  });
+  await check('R3 app roles: recommendation can read/write its own tables but has no pricing access', async () => {
+    await recommendation.pool.query('SELECT count(*) FROM recommendation_previews');
+    await denied(() => recommendation.pool.query('SELECT count(*) FROM price_books'));
+  });
+  await check('R3 app roles: operations has the broad read surface its console needs but no staff/auth access', async () => {
+    await operations.pool.query('SELECT count(*) FROM rental_bookings');
+    await operations.pool.query("SELECT inventory_clock()");
+    await denied(() => operations.pool.query('SELECT count(*) FROM staff_members'));
+    await denied(() => operations.pool.query('SELECT count(*) FROM auth_user'));
+  });
+  await check('R3 app roles: guest can read/write its own tables but has no staff/auth access', async () => {
+    await guest.pool.query('SELECT count(*) FROM guest_contexts');
+    await guest.pool.query('SELECT count(*) FROM guest_drafts');
+    await denied(() => guest.pool.query('SELECT count(*) FROM staff_members'));
+  });
+  await check('R3 app roles: content_read is read-only and cannot see ledger_poles', async () => {
+    await contentRead.pool.query('SELECT count(*) FROM content_workspace');
+    await denied(() => contentRead.pool.query('UPDATE content_workspace SET revision=revision'));
+    await denied(() => contentRead.pool.query('SELECT count(*) FROM ledger_poles'));
+  });
+  await check('R3 app roles: avatar_read is read-only and cannot see content tables', async () => {
+    await avatarRead.pool.query('SELECT count(*) FROM avatar_current_visuals');
+    // avatar_current_visuals is a non-updatable join view; the meaningful write-boundary proof
+    // is that avatar_read has no grant at all on the underlying base table.
+    await denied(() => avatarRead.pool.query('INSERT INTO avatar_visuals DEFAULT VALUES'));
+    await denied(() => avatarRead.pool.query('SELECT count(*) FROM content_workspace'));
   });
   await check('R3 app roles: booking_access can call its own schema\'s functions but has no direct table access anywhere', async () => {
     await bookingAccess.pool.query("SELECT booking_access.read('nonexistent')"); // callable; a not-found token is a normal (non-error) result
@@ -160,6 +217,102 @@ try {
     await production!.query(`GRANT SELECT ON inventory_holds TO ${appNames.hold}`);
     await hold.pool.query('SELECT count(*) FROM inventory_holds');
   });
+
+  // F9 (TD correction): 3/11 roles proven is not sufficient — every one of the 11
+  // productionServices roles must pass verifyProductionDatabase(), the same real, negative-only
+  // privilege check (rolsuper/rolcreatedb/rolcreaterole/rolinherit/rolreplication/rolbypassrls/
+  // membership/database_owner/object_owner/database CREATE/public schema CREATE all false) the
+  // production runtime itself relies on before ever trusting a connected role.
+  const roleConfig = { database: { name: TARGET, roles: appNames } } as unknown as ProductionConfiguration;
+  await check('F9: verifyProductionDatabase() passes for all 11 Production app roles (rolsuper/rolcreatedb/rolcreaterole/rolinherit/rolreplication/rolbypassrls/membership/database_owner/object_owner/CREATE all false)', async () => {
+    for (const service of productionServices) await verifyProductionDatabase(appRoles[service].pool, roleConfig, service);
+  });
+  await check('F9 mutation test: a role granted rolinherit=true fails verifyProductionDatabase(); reverting to NOINHERIT restores it', async () => {
+    await production!.query(`ALTER ROLE ${appNames.auth} INHERIT`);
+    await assert.rejects(() => verifyProductionDatabase(auth.pool, roleConfig, 'auth'));
+    await production!.query(`ALTER ROLE ${appNames.auth} NOINHERIT`);
+    await verifyProductionDatabase(auth.pool, roleConfig, 'auth');
+  });
+
+  // ---- F1: probeProductionDatabaseReadiness against the real Production content_read role ----
+  // (production-db-readiness.ts connects as content_read specifically — reusing it here, rather
+  // than a separate ad-hoc credential, is the actual real-world wiring this proves.)
+  await check('F1: probeProductionDatabaseReadiness proves real DB connectivity/identity independent of the dark hosting composition (which never opens a connection at all); a wrong credential fails closed, never CONNECTED; no write of any kind occurs', async () => {
+    const { probeProductionDatabaseReadiness } = await import('../../packages/db/src/production-db-readiness');
+    const { migrationPlan } = await import('../../packages/db/src/index');
+    const probePassword = randomBytes(24).toString('hex');
+    await production!.query(`ALTER ROLE ${appNames.content_read} LOGIN PASSWORD '${probePassword}'`);
+    const before = (await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n as number;
+    const connect = async (_c: unknown, _service: unknown, credential: { password: string }) => {
+      if (credential.password !== probePassword) throw new Error('SYNTHETIC_WRONG_CREDENTIAL');
+      return new Pool({ host: '127.0.0.1', port: db.identity.dbPort, database: TARGET, user: appNames.content_read, password: credential.password, max: 2, connectionTimeoutMillis: 2000 });
+    };
+    const credential = { provider: 'NEON' as const, environment: 'PRODUCTION' as const, host: 'ep-f1-fixture.neon.tech', port: 5432 as const, database: TARGET, user: appNames.content_read, password: probePassword, revoked: false as const };
+    const good = await probeProductionDatabaseReadiness(roleConfig, credential, connect as never);
+    assert.deepEqual(good, { status: 'CONNECTED', migrationsApplied: migrationPlan.length, migrationsExpected: migrationPlan.length, schemaComplete: true });
+    const bad = await probeProductionDatabaseReadiness(roleConfig, { ...credential, password: 'wrong-password' }, connect as never);
+    assert.equal(bad.status, 'FAILED');
+    // Read-only proof: the migration count (and every table this role can otherwise see) is unchanged.
+    assert.equal((await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n, before);
+  });
+
+  // ---- F5: ProductionReconciliationAuthority + PgPaymentReconciliation against the real
+  // _pay_dispatch/_pay_truth/_pay_diagnostic Production roles created above (§R7/R6-A) ----
+  {
+    const { PgPaymentReconciliation } = await import('../../packages/db/src/payment-reconciliation');
+    const { issueProductionReconciliationAuthority } = await import('../../packages/core/src/payment/production-reconciliation-authority');
+    const { issueExactProductionIdentity } = await import('../../packages/auth/src/production-identity');
+    const { productionConfiguration } = await import('../../packages/auth/src/production-config');
+    const { productionGuestConfiguration, guestConfigurationHash } = await import('../../packages/contracts/src/production-guest');
+    const { createHash } = await import('node:crypto');
+
+    const f5Guest = productionGuestConfiguration({ schemaVersion: 1, revision: 'F5-FIXTURE', ingressAdapterId: 'f5-fixture-dispatcher', policy: { version: 'F5-FIXTURE', contextSeconds: 3600, absoluteSeconds: 7200, recoverySeconds: 3600, replaySeconds: 30, retentionSeconds: 60, windowSeconds: 10, peerRequests: 1000, globalRequests: 2000 } });
+    const f5Host = 'ep-f5-fixture.neon.tech', f5Project = 'f5-fixture-project';
+    const f5Expected = { hostFingerprintSha256: createHash('sha256').update(f5Host.trim().toLowerCase()).digest('hex'), databaseName: TARGET, vercelProjectFingerprintSha256: createHash('sha256').update(f5Project).digest('hex') };
+    const f5Config = productionConfiguration({
+      schemaVersion: 1, capability: 'ZAO_PRODUCTION_RUNTIME_V1',
+      deployment: { provider: 'VERCEL', environment: 'production', projectId: f5Project, releaseId: 'f5-release', origin: 'https://f5-fixture.invalid' },
+      database: { provider: 'NEON', environment: 'production', host: f5Host, name: TARGET, roles: appNames },
+      flags: { booking: true, guestRecovery: false, payment: true, media: false, avatar: false, staffOperations: false },
+      guest: f5Guest, approvedGuestSha256: guestConfigurationHash(f5Guest),
+      payment: { provider: 'SQUARE', environment: 'PRODUCTION', merchantId: 'merchant-1', locations: { MOUNTAIN_BASE: 'f5-loc-1', ONSEN_BASE: 'f5-loc-2' } },
+      media: null,
+    });
+    const f5Identity = issueExactProductionIdentity(f5Config, f5Expected);
+    const f5Authority = issueProductionReconciliationAuthority(f5Identity);
+    const dispatchRepo = new PgPaymentReconciliation(dispatcher.pool, undefined, f5Authority);
+    const workerRepo = new PgPaymentReconciliation(worker.pool, undefined, f5Authority);
+    const diagnosticRepo = new PgPaymentReconciliation(diagnostic.pool, undefined, f5Authority);
+
+    await check('F5: PgPaymentReconciliation with a real ProductionReconciliationAuthority operates end to end against the real _pay_dispatch/_pay_truth/_pay_diagnostic Production roles (not a fakePool)', async () => {
+      await receiver.pool.query("SELECT square_webhook.receive_production('evt-f5-1','payment.created','merchant-1','pay-f5-1',repeat('1',64))");
+      assert.ok((await dispatchRepo.dispatch('PRODUCTION', 10)) >= 1);
+      const claims = await workerRepo.claimBatch('PRODUCTION', 'f5-worker', 10);
+      const claim = claims.find(c => c.paymentId === 'pay-f5-1');
+      assert.ok(claim);
+      assert.equal(await workerRepo.load(claim!), null); // no matching rental_payment_attempts row in this fixture; a real not-found path, not a permission error
+      assert.equal((await workerRepo.loadBatch([claim!])).size, 0);
+      // BLOCKED + a valid code needs no `truth` payload at all (the DB function's own
+      // INVALID_TRUTH/INVALID_DECISION checks are gated on `p_truth IS NOT NULL`) — sufficient
+      // to prove finalize_production's own real end-to-end wiring without fabricating a
+      // synthetic-but-shaped-like-real payment observation this fixture never actually saw.
+      assert.equal(await workerRepo.finalize(claim!, { state: 'BLOCKED', code: 'PAYMENT_CONTEXT_MISSING', retrySeconds: null, truth: null }), true);
+      assert.ok(Array.isArray(await diagnosticRepo.diagnostics('PRODUCTION', 10)));
+    });
+    await check('F5: without an authority, PgPaymentReconciliation refuses PRODUCTION even on a real Production-role connection pool (fail closed before any SQL is issued)', async () => {
+      const unauthorized = new PgPaymentReconciliation(dispatcher.pool);
+      await assert.rejects(() => unauthorized.dispatch('PRODUCTION', 10), { message: 'PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED' });
+    });
+    await check('F5: merchant boundary — a merchant-1-bound authority never dispatches or claims merchant-2\'s row through the real repository', async () => {
+      await receiver.pool.query("SELECT square_webhook.receive_production('evt-f5-2','payment.created','merchant-2','pay-f5-2',repeat('2',64))");
+      await dispatchRepo.dispatch('PRODUCTION', 10);
+      const claims = await workerRepo.claimBatch('PRODUCTION', 'f5-worker-2', 10);
+      assert.ok(!claims.some(c => c.paymentId === 'pay-f5-2'));
+    });
+    await check('F5: a Production authority never lets the repository fall back to the generic Sandbox-capable SQL surface (SANDBOX refused while holding it)', async () => {
+      await assert.rejects(() => dispatchRepo.dispatch('SANDBOX', 10), { message: 'PRODUCTION_RECONCILIATION_AUTHORITY_MISUSE' });
+    });
+  }
 
   console.log(JSON.stringify({ status: 'PASS', cases: passed }));
 } finally {

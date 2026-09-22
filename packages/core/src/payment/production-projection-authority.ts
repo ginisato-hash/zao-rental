@@ -1,30 +1,29 @@
 import {flowId} from '../../../contracts/src/rental-flow';
-import {isValidatedProductionConfiguration,type ProductionConfiguration} from '../../../auth/src/production-config';
+import {exactProductionIdentityConfiguration,type ExactProductionIdentity} from '../../../auth/src/production-identity';
 export type ProductionProjectionTarget={bookingId:string;attemptId:string;database:string;merchantId:string};
 export type ProductionProjectionPermit=Readonly<{kind:'SQUARE_PRODUCTION_PROJECTION'}>;
 const issued=new WeakMap<ProductionProjectionPermit,Readonly<ProductionProjectionTarget>>();
 
 /**
- * PROD-R6-C (integration-corrected): only the private server composition may issue this
- * capability, and only from a `ProductionConfiguration` that has already survived
- * `productionConfiguration()`'s own strict parsing (real `.neon.tech` host, deployment-owned
- * origin, digest-approved shape — see packages/auth/src/production-config.ts). There is no raw
- * env record and no caller-supplied database string here anymore: the database identity and
- * merchant come only from that validated object, never from an arbitrary object shaped like one.
- * Request objects/flags/browser input are not inputs to this function at all. This deliberately
- * does not itself reject a `zr_*`-shaped `config.database.name`: this project's own established
- * fully-local integration-test convention (tests/readiness/normal-production-fixture.ts) uses a
- * disposable cluster's own database name as the stand-in "Production" identity precisely so the
- * full runtime can be proven against a real PostgreSQL without live Neon credentials — the
- * evidence this function actually requires is a `ProductionConfiguration` that already passed
- * strict structural validation, not a naming convention on top of it. The DB-connection layer
- * (packages/db/src/payment-projection.ts) separately still requires the *connected* role/database
- * to exactly equal what this permit was issued for, which is the real enforcement point.
+ * PROD-R6-C/F2 (integration-corrected): a merely-*validated* `ProductionConfiguration` is not
+ * evidence of Production — a misconfigured-but-syntactically-valid other Neon/Vercel target would
+ * pass `productionConfiguration()`'s own parsing too. This now requires an `ExactProductionIdentity`
+ * — issued only after `packages/auth/src/production-identity.ts`'s `issueExactProductionIdentity`
+ * additionally confirms the pinned Neon host fingerprint, the pinned database name, and the
+ * pinned Vercel project fingerprint (a Preview `deployment.environment` or any other project/host/
+ * database, even if otherwise well-formed, is rejected there before this function is ever
+ * reached). There is no raw env record and no caller-supplied database string here at all: the
+ * database identity and merchant come only from the configuration bound to that capability.
+ * Request objects/flags/browser input are not inputs to this function.
+ *
+ * The DB-connection layer (packages/db/src/payment-projection.ts) separately still requires the
+ * *connected* role/database to exactly equal what this permit was issued for — that remains the
+ * final enforcement point regardless of what identity evidence was checked to get here.
  */
-export function productionProjectionPermit(config:Readonly<ProductionConfiguration>,ref:{bookingId:string;attemptId:string}):ProductionProjectionPermit{
+export function productionProjectionPermit(identity:ExactProductionIdentity,ref:{bookingId:string;attemptId:string}):ProductionProjectionPermit{
+ const config=exactProductionIdentityConfiguration(identity);
  if(
-  !isValidatedProductionConfiguration(config)||
-  config.deployment.provider!=='VERCEL'||config.deployment.environment!=='production'||
+  !config||
   !config.payment||config.payment.provider!=='SQUARE'||config.payment.environment!=='PRODUCTION'||
   !config.database?.name
  )throw new Error('PRODUCTION_PROJECTION_AUTHORITY_REQUIRED');

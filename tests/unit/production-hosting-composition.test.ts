@@ -37,9 +37,8 @@ test('wrong/missing DB host or database name is rejected', () => {
   // A host not shaped like a real Neon endpoint fails productionConfiguration()'s own parsing (ProductionStartupError).
   assert.throws(() => installProductionHostingComposition(validEnv({ PRODUCTION_DB_HOST: 'not-a-neon-host.example.com' })));
 });
-test('a missing role/password for any one of the 11 production services is rejected', () => {
-  assert.throws(() => installProductionHostingComposition(validEnv({ [`PRODUCTION_DB_ROLE_${productionServices[0]!.toUpperCase()}`]: undefined })), { message: 'PRODUCTION_HOSTING_ROLE_CREDENTIAL_MISSING' });
-  assert.throws(() => installProductionHostingComposition(validEnv({ [`PRODUCTION_DB_PASSWORD_${productionServices[0]!.toUpperCase()}`]: undefined })), { message: 'PRODUCTION_HOSTING_ROLE_CREDENTIAL_MISSING' });
+test('a missing role name for any one of the 11 production services is rejected', () => {
+  assert.throws(() => installProductionHostingComposition(validEnv({ [`PRODUCTION_DB_ROLE_${productionServices[0]!.toUpperCase()}`]: undefined })), { message: 'PRODUCTION_HOSTING_ROLE_NAME_MISSING' });
 });
 test('an owner/admin/superuser-shaped role name fails productionConfiguration()\'s own forbidden-substring check', () => {
   assert.throws(() => installProductionHostingComposition(validEnv({ [`PRODUCTION_DB_ROLE_${productionServices[0]!.toUpperCase()}`]: 'zao_owner_role' })));
@@ -65,7 +64,11 @@ test('payment/media stay OFF in the dark profile regardless of env — there is 
 });
 test('the actual dark composition reaches READY with payment/media/notification OFF and zero provider IO — no real PostgreSQL is needed for this proof, since every business flag is false, so composeProductionRuntime never opens a connection or calls Square/R2 at all', async () => {
   const {bootstrapProductionRuntime, productionStartupState} = await import('../../packages/core/src/guest/production-bootstrap');
-  const result = installProductionHostingComposition(validEnv());
+  // F1 (TD correction): no PRODUCTION_DB_PASSWORD_* env var for any of the 11 services — the
+  // dark profile no longer reads or requires them at all — proving activation succeeds without them.
+  const env = validEnv();
+  for (const s of productionServices) delete env[`PRODUCTION_DB_PASSWORD_${s.toUpperCase()}`];
+  const result = installProductionHostingComposition(env);
   assert.deepEqual(result, { status: 'INSTALLED' });
   const runtime = await bootstrapProductionRuntime();
   assert.equal(productionStartupState().ready, true);
@@ -73,6 +76,9 @@ test('the actual dark composition reaches READY with payment/media/notification 
   assert.equal(runtime!.safeStatus().PAYMENT_ADAPTER, 'OFF');
   assert.equal(runtime!.safeStatus().MEDIA, 'OFF');
   assert.equal(runtime!.safeStatus().NOTIFICATION, 'UNCONNECTED');
+  // F1 (TD correction): zero pools are ever opened in this dark profile, so DB must never claim
+  // READY — it must report the same "never turned on" OFF semantics as PAYMENT_ADAPTER/MEDIA.
+  assert.equal(runtime!.safeStatus().DB, 'OFF');
   assert.equal(runtime!.payment, null);
   assert.equal(runtime!.guest, null);
   // Duplicate installation: a second attempt anywhere else in this process is rejected.

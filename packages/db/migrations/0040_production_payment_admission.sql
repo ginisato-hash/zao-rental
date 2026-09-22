@@ -12,6 +12,16 @@ ALTER TABLE rental_bookings DROP CONSTRAINT rental_bookings_state_check;
 ALTER TABLE rental_bookings ADD CONSTRAINT rental_bookings_state_check CHECK(state IN ('DRAFT','PAYMENT_PENDING','PAYMENT_REVIEW','CONFIRMED_DEV','COMPLETED_DEV','CONFIRMED'));
 ALTER TABLE rental_bookings DROP CONSTRAINT rental_bookings_check;
 ALTER TABLE rental_bookings ADD CHECK((state IN ('CONFIRMED_DEV','COMPLETED_DEV','CONFIRMED'))=(confirmed_at IS NOT NULL));
+-- F6 (TD correction): the enum widening above is necessary but not sufficient — it would let a
+-- SQUARE_PRODUCTION row sit in CONFIRMED_DEV, or a SIMULATED_DEV/SQUARE_SANDBOX row sit in
+-- CONFIRMED. This additional, fully additive CHECK binds mode to its own legal state set,
+-- fail-closed: a Production row can never be CONFIRMED_DEV/COMPLETED_DEV, and a DEV/Sandbox row
+-- can never be CONFIRMED. No existing row can violate this (every row has DEV/Sandbox mode paired
+-- with a DEV/Sandbox state, or is not yet in a terminal state at all).
+ALTER TABLE rental_bookings ADD CONSTRAINT rental_bookings_mode_state_check CHECK(
+ (mode IN ('SIMULATED_DEV','SQUARE_SANDBOX') AND state IN ('DRAFT','PAYMENT_PENDING','PAYMENT_REVIEW','CONFIRMED_DEV','COMPLETED_DEV'))
+ OR (mode='SQUARE_PRODUCTION' AND state IN ('DRAFT','PAYMENT_PENDING','PAYMENT_REVIEW','CONFIRMED'))
+);
 
 -- chargeReady='false' is a structural marker meaning "not yet reviewed for real charging" that
 -- the entire pricing/quote pipeline (packages/core/src/pricing, packages/contracts/src/pricing.ts,
@@ -22,12 +32,14 @@ ALTER TABLE rental_bookings ADD CHECK((state IN ('CONFIRMED_DEV','COMPLETED_DEV'
 ALTER TABLE rental_bookings DROP CONSTRAINT rental_bookings_price_snapshot_check;
 ALTER TABLE rental_bookings ADD CONSTRAINT rental_bookings_price_snapshot_check CHECK(price_snapshot->>'chargeReady'='false' OR (mode='SQUARE_PRODUCTION' AND price_snapshot->>'chargeReady'='true'));
 
--- Real commercial notification: a genuine email address and a non-test captured state. The
--- original synthetic-only shape/state remain independently satisfiable, unchanged.
-ALTER TABLE rental_notifications DROP CONSTRAINT rental_notifications_destination_check;
-ALTER TABLE rental_notifications ADD CONSTRAINT rental_notifications_destination_check CHECK(destination ~ '^synthetic-[a-z0-9-]{1,64}@example\.invalid$' OR destination ~ '^[^@[:space:]]{1,200}@[^@[:space:]]{1,200}\.[^@[:space:]]{2,24}$');
-ALTER TABLE rental_notifications DROP CONSTRAINT rental_notifications_state_check;
-ALTER TABLE rental_notifications ADD CONSTRAINT rental_notifications_state_check CHECK(state IN ('CAPTURED_TEST_ONLY','CAPTURED'));
+-- F6 (TD correction): the real-email/CAPTURED widening for rental_notifications is deliberately
+-- NOT part of this migration. No Production Booking/Notification path exists yet (R6-D is
+-- explicitly fail-closed — see production-projection-authority.ts's PRODUCTION_BOOKING_PATH_NOT_ACTIVATED),
+-- so there is nothing yet that would ever write a real notification row, and widening the table
+-- ahead of that path existing would be schema surface with no corresponding enforcement. When a
+-- real Production notification path is actually built, its migration should widen this table
+-- alongside a DB-level enforcement that a DEV/Sandbox notification can never carry a real email
+-- (the mirror of rental_bookings_mode_state_check above), not as an isolated, unenforced widening.
 
 -- Mirrors payment_reconciliation.load_context (0026) exactly, substituting PRODUCTION/SQUARE_PRODUCTION
 -- for SANDBOX/SQUARE_SANDBOX. No other predicate, join, or return shape differs.
@@ -106,3 +118,31 @@ BEGIN
  END LOOP;
 END$$;
 REVOKE ALL ON FUNCTION payment_reconciliation.dispatch_production(text,integer),payment_reconciliation.claim_production(text,integer,text) FROM PUBLIC;
+
+-- F4 (TD correction): a Production credential must never be reachable to a generic,
+-- Sandbox-capable function. receive()/finalize()/diagnostics() (0025/0026) already accept an
+-- environment value or operate on a job that already carries one — these three thin
+-- SECURITY DEFINER wrappers hardcode 'PRODUCTION' as a literal (receive_production/
+-- diagnostics_production) or verify it against the referenced job before delegating
+-- (finalize_production), so a role granted EXECUTE only on the wrapper can never reach a
+-- SANDBOX-environment row through it, structurally, not by caller discipline. The wrapped
+-- functions are entirely unchanged; only new, additive callers are added here.
+CREATE FUNCTION square_webhook.receive_production(p_event text,p_type text,p_merchant text,p_payment text,p_hash text) RETURNS text
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
+BEGIN RETURN square_webhook.receive('PRODUCTION',p_event,p_type,p_merchant,p_payment,p_hash);END$$;
+REVOKE ALL ON FUNCTION square_webhook.receive_production(text,text,text,text,text) FROM PUBLIC;
+
+CREATE FUNCTION payment_reconciliation.finalize_production(p_id uuid,p_token uuid,p_revision bigint,p_state text,p_code text,p_retry integer,p_truth jsonb) RETURNS boolean
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
+DECLARE env text;
+BEGIN
+ SELECT environment INTO env FROM payment_reconciliation.jobs WHERE id=p_id;
+ IF env IS DISTINCT FROM 'PRODUCTION' THEN RETURN false;END IF;
+ RETURN payment_reconciliation.finalize(p_id,p_token,p_revision,p_state,p_code,p_retry,p_truth);
+END$$;
+REVOKE ALL ON FUNCTION payment_reconciliation.finalize_production(uuid,uuid,bigint,text,text,integer,jsonb) FROM PUBLIC;
+
+CREATE FUNCTION payment_reconciliation.diagnostics_production(p_limit integer) RETURNS SETOF jsonb
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
+BEGIN RETURN QUERY SELECT * FROM payment_reconciliation.diagnostics('PRODUCTION',p_limit);END$$;
+REVOKE ALL ON FUNCTION payment_reconciliation.diagnostics_production(integer) FROM PUBLIC;

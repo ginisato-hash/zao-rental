@@ -14,19 +14,29 @@
 import type {ProductionService} from '../packages/auth/src/production-config';
 const IDENTIFIER=/^[a-z][a-z0-9_]{2,62}$/;
 const ZR_PATTERN=/^zr_[a-f0-9]{12}$/;
+// F10 (TD correction): see scripts/production-payment-roles.ts's identical comment — every
+// generated (suffixed) role name is validated against the real 63-byte Postgres identifier
+// limit, not just the caller-supplied base database name.
+const MAX_IDENTIFIER_BYTES=63;
 export function assertProductionDatabaseName(databaseName:string):void{if(!IDENTIFIER.test(databaseName)||ZR_PATTERN.test(databaseName))throw new Error('PRODUCTION_DATABASE_NAME_INVALID');}
+function assertIdentifierLength(name:string):void{if(Buffer.byteLength(name,'utf8')>MAX_IDENTIFIER_BYTES)throw new Error('PRODUCTION_ROLE_NAME_TOO_LONG');}
 
 export function productionAppRoleNames(databaseName:string):Record<ProductionService,string>{
  assertProductionDatabaseName(databaseName);
- return {
+ const names={
   auth:databaseName+'_auth',ledger:databaseName+'_ledger',hold:databaseName+'_hold',transfer:databaseName+'_transfer',
   pricing:databaseName+'_pricing',recommendation:databaseName+'_recommendation',operations:databaseName+'_operations',
   guest:databaseName+'_guest',content_read:databaseName+'_content_read',avatar_read:databaseName+'_avatar_read',booking_access:databaseName+'_booking_access',
  };
+ for(const name of Object.values(names))assertIdentifierLength(name);
+ return names;
 }
+// F11 (TD correction): NOINHERIT, matching this project's existing canonical local role design
+// (scripts/application-roles.ts etc. all use NOINHERIT locally) — see production-payment-roles.ts's
+// identical comment for why this is safe (no role here is ever granted membership in another).
 export function productionAppRoleCreateSql(databaseName:string):string[]{
  const names=productionAppRoleNames(databaseName);
- return Object.values(names).map(role=>`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOREPLICATION NOBYPASSRLS`);
+ return Object.values(names).map(role=>`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
 }
 
 export function productionAppRoleGrantSql(databaseName:string):string[]{
@@ -113,6 +123,12 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
  // scope) ----
  sql.push(
   `GRANT SELECT ON content_workspace,content_model_previews,content_public_policies,ledger_models,ledger_variants,ledger_assets,content_staff_access,content_media_objects TO ${n.content_read}`,
+  // F1 (TD correction): packages/db/src/production-db-readiness.ts's probeProductionDatabaseReadiness
+  // connects as content_read (the least-privilege role picked for that new, Production-only
+  // read-only DB proof) and reads this table's row count as its schema-completeness evidence.
+  // Schema metadata, not business data — additive beyond the local scripts/content-roles.ts grant
+  // list this block otherwise reuses verbatim, because the local dev role never needed this probe.
+  `GRANT SELECT ON foundation_migrations TO ${n.content_read}`,
  );
  // ---- avatar_read (scripts/avatar-read-role.ts) ----
  sql.push(

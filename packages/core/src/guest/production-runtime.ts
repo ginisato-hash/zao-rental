@@ -76,7 +76,12 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   stage='READY';await input.audit(stage);let closed=false;
   return Object.freeze({configuration:c,staff,guest,service,access,recovery,avatar,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
    public:guest?{r:base!,guestPool:required('guest'),readPool:required('content_read'),contexts:guest.contexts}:null,
-   safeStatus:()=>({APP:closed?'UNAVAILABLE':'READY',DB:closed?'UNAVAILABLE':'READY',GUEST:guest?'READY':'OFF',PAYMENT_ADAPTER:c.flags.payment?'CONFIGURED_ACTIVATION_PENDING':'OFF',WEBHOOK:!c.flags.payment?'OFF':c.payment?.webhookNotificationUrl?'CONFIGURED_ACTIVATION_PENDING':'UNCONNECTED',MEDIA:c.flags.media?'CONFIGURED':'OFF',NOTIFICATION:'UNCONNECTED'} as const),
+   // F1 (TD correction): DB must never report READY without at least one actually-open pool —
+   // a dark profile with every flag false opens zero connections (`active` stays empty, `pools`
+   // stays `{}`), and previously reported READY anyway just because the runtime object existed
+   // and wasn't closed. 'OFF' matches the same semantics PAYMENT_ADAPTER/MEDIA already use for
+   // "this capability was never turned on," not a fabricated connectivity claim.
+   safeStatus:()=>({APP:closed?'UNAVAILABLE':'READY',DB:closed?'UNAVAILABLE':Object.keys(pools).length>0?'READY':'OFF',GUEST:guest?'READY':'OFF',PAYMENT_ADAPTER:c.flags.payment?'CONFIGURED_ACTIVATION_PENDING':'OFF',WEBHOOK:!c.flags.payment?'OFF':c.payment?.webhookNotificationUrl?'CONFIGURED_ACTIVATION_PENDING':'UNCONNECTED',MEDIA:c.flags.media?'CONFIGURED':'OFF',NOTIFICATION:'UNCONNECTED'} as const),
    async close(){if(closed)return;closed=true;r2?.close();await Promise.all(Object.values(pools).map(p=>p.end().catch(()=>{})));}
   });
  }catch(error){r2?.close();await Promise.all(Object.values(pools).map(p=>p.end().catch(()=>{})));throw error instanceof ProductionStartupError?error:new ProductionStartupError(stage);}

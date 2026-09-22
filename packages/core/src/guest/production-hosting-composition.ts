@@ -20,15 +20,23 @@ export const HOSTING_ACTIVATION_TOKEN='R3_DARK_PRODUCTION_COMPOSITION';
 
 /** The fixed, explicit allowlist this module ever reads. No other env key is ever inspected —
  * there is no generic env dump anywhere in this file, so an unrelated secret sitting in the
- * process environment is never at risk of being picked up by accident. */
+ * process environment is never at risk of being picked up by accident.
+ *
+ * F1 (TD correction): this no longer reads any `PRODUCTION_DB_PASSWORD_*` key at all. With every
+ * business flag hardcoded false, `composeProductionRuntime`'s `active` set stays empty and it
+ * never opens a single database connection — so a real password for any of the 11 services was
+ * always unused secret surface in the dark profile, not a real requirement. Only the 11 role
+ * *names* remain (non-secret identifiers `productionConfiguration()`'s own parsing requires as
+ * part of the config shape), and `secrets.database` is now supplied empty. DB connectivity is
+ * proved by a wholly separate, explicit probe instead — see production-db-readiness.ts — never
+ * by this dark composition reaching READY. */
 const ALLOWLISTED_KEYS=[
  'ZAO_PRODUCTION_HOSTING_ACTIVATION','VERCEL_ENV','VERCEL_PROJECT_ID','VERCEL_DEPLOYMENT_ID','VERCEL_URL',
  'PRODUCTION_DB_HOST','PRODUCTION_DB_NAME',
  'PRODUCTION_GUEST_KEY','PRODUCTION_STAFF_KEY','PRODUCTION_ACCESS_KEY','PRODUCTION_RECOVERY_KEY','PRODUCTION_ACCESS_KEY_VERSION','PRODUCTION_RECOVERY_KEY_VERSION',
- ...productionServices.flatMap(s=>[roleKey(s),passwordKey(s)] as const),
+ ...productionServices.map(s=>roleKey(s)),
 ] as const;
 function roleKey(s:ProductionService){return `PRODUCTION_DB_ROLE_${s.toUpperCase()}`;}
-function passwordKey(s:ProductionService){return `PRODUCTION_DB_PASSWORD_${s.toUpperCase()}`;}
 type AllowlistedEnv=Partial<Record<typeof ALLOWLISTED_KEYS[number],string>>;
 function readAllowlistedEnv(env:Readonly<Record<string,string|undefined>>):AllowlistedEnv{
  const out:AllowlistedEnv={};
@@ -55,11 +63,11 @@ export function installProductionHostingComposition(env:Readonly<Record<string,s
  if(e.VERCEL_ENV!=='production')throw new Error('PRODUCTION_HOSTING_WRONG_VERCEL_ENVIRONMENT');
  if(!e.VERCEL_PROJECT_ID||!e.VERCEL_DEPLOYMENT_ID||!e.VERCEL_URL)throw new Error('PRODUCTION_HOSTING_DEPLOYMENT_IDENTITY_MISSING');
  if(!e.PRODUCTION_DB_HOST||!e.PRODUCTION_DB_NAME)throw new Error('PRODUCTION_HOSTING_DB_IDENTITY_MISSING');
- const roles={} as Record<ProductionService,string>,passwords={} as Record<ProductionService,string>;
+ const roles={} as Record<ProductionService,string>;
  for(const s of productionServices){
-  const role=e[roleKey(s)],password=e[passwordKey(s)];
-  if(!role||!password)throw new Error('PRODUCTION_HOSTING_ROLE_CREDENTIAL_MISSING');
-  roles[s]=role;passwords[s]=password;
+  const role=e[roleKey(s)];
+  if(!role)throw new Error('PRODUCTION_HOSTING_ROLE_NAME_MISSING');
+  roles[s]=role;
  }
  for(const k of ['PRODUCTION_GUEST_KEY','PRODUCTION_STAFF_KEY','PRODUCTION_ACCESS_KEY','PRODUCTION_RECOVERY_KEY'] as const)if(!e[k]||!/^[a-f0-9]{64}$/.test(e[k]!))throw new Error('PRODUCTION_HOSTING_SIGNING_KEY_INVALID');
  for(const k of ['PRODUCTION_ACCESS_KEY_VERSION','PRODUCTION_RECOVERY_KEY_VERSION'] as const)if(!e[k]||!/^[-A-Za-z0-9_]{1,64}$/.test(e[k]!))throw new Error('PRODUCTION_HOSTING_KEY_VERSION_INVALID');
@@ -77,7 +85,10 @@ export function installProductionHostingComposition(env:Readonly<Record<string,s
   secrets:{
    guestKey:e.PRODUCTION_GUEST_KEY!,staffKey:e.PRODUCTION_STAFF_KEY!,accessKey:e.PRODUCTION_ACCESS_KEY!,recoveryKey:e.PRODUCTION_RECOVERY_KEY!,
    accessKeyVersion:e.PRODUCTION_ACCESS_KEY_VERSION!,recoveryKeyVersion:e.PRODUCTION_RECOVERY_KEY_VERSION!,
-   database:Object.fromEntries(productionServices.map(s=>[s,{provider:'NEON' as const,environment:'PRODUCTION' as const,host:e.PRODUCTION_DB_HOST!,port:5432 as const,database:e.PRODUCTION_DB_NAME!,user:roles[s],password:passwords[s],revoked:false as const}])) as ProductionRuntimeInput['secrets']['database'],
+   // Empty: no service is ever active with every flag false, so no password is ever needed —
+   // composeProductionRuntime's own validateProductionCredential/connect loop only runs for a
+   // service that is either active or has a credential supplied; neither is true for any service here.
+   database:{},
   },
   // No guest traffic is ever admitted with flags.booking=false; this is never invoked.
   verifiedPeer:()=>undefined,

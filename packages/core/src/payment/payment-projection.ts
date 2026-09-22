@@ -138,6 +138,14 @@ export class TransactionalPaymentProjection implements PaymentProjectionPort{
    if(state.booking.mode!==expectedMode)throw new ProjectionError('PROJECTION_MODE_MISMATCH');
    const source=await tx.source();const now=await tx.time();const observation=verifyProjectionSource(ref,source,now,expectedEnvironment);
    const plan=decidePaymentProjection(state,observation,now);
+   // F7 (TD correction): R6-D's commercial booking path does not exist yet (see
+   // production-projection-authority.ts and BookingService — nothing produces a real,
+   // reviewed SQUARE_PRODUCTION booking today). A Production permit reaching this point with
+   // genuine Production evidence must never silently write CONFIRMED_DEV (or any other
+   // mutation) as if that path were live — fail closed instead, before persist() ever runs.
+   // A no-mutation outcome (already-terminal/blocked/duplicate) is unaffected; there is no
+   // commercial state to protect in that case.
+   if(productionTarget&&plan.mutation!=='NONE')throw new ProjectionError('PRODUCTION_BOOKING_PATH_NOT_ACTIVATED');
    return tx.persist(state,plan,ref,now);
   });
  }

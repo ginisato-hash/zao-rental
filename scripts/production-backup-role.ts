@@ -5,12 +5,16 @@
 // a real password, out of band, never in git.
 const IDENTIFIER = /^[a-z][a-z0-9_]{2,62}$/;
 const ZR_PATTERN = /^zr_[a-f0-9]{12}$/;
+// F10 (TD correction): explicit 63-byte Postgres identifier contract, checked directly rather
+// than relying only on the regex's own length bound, so the intent is unambiguous and testable
+// the same way across all three role-plan generators in this integration.
+const MAX_IDENTIFIER_BYTES = 63;
 
 export function assertProductionDatabaseName(databaseName: string): void {
   if (!IDENTIFIER.test(databaseName) || ZR_PATTERN.test(databaseName)) throw new Error('PRODUCTION_DATABASE_NAME_INVALID');
 }
 export function assertProductionRoleName(roleName: string): void {
-  if (!IDENTIFIER.test(roleName)) throw new Error('PRODUCTION_ROLE_NAME_INVALID');
+  if (!IDENTIFIER.test(roleName) || Buffer.byteLength(roleName, 'utf8') > MAX_IDENTIFIER_BYTES) throw new Error('PRODUCTION_ROLE_NAME_INVALID');
 }
 
 /** Least-privilege read-only role for a Production logical backup (pg_dump -Fc --no-owner

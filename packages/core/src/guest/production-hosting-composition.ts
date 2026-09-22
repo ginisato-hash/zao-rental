@@ -12,10 +12,10 @@
 // zero guest/staff traffic accepted — not a general-purpose "turn on everything" composer. A
 // later, separately-reviewed change turns specific flags on once their own secrets/paths exist.
 import {installProductionBootstrap} from './production-bootstrap';
-import {productionConfiguration,productionServices,type ProductionConfiguration,type ProductionService} from '../../../auth/src/production-config';
+import {productionConfiguration,productionServices,type ProductionService} from '../../../auth/src/production-config';
 import {productionConfigurationDigest,type ProductionRuntimeInput} from './production-runtime';
 import {productionGuestConfiguration,guestConfigurationHash} from '../../../contracts/src/production-guest';
-import {issueExactProductionIdentity,type ExactProductionIdentity} from '../../../auth/src/production-identity';
+import {issueExactProductionIdentity} from '../../../auth/src/production-identity';
 
 export const HOSTING_ACTIVATION_TOKEN='R3_DARK_PRODUCTION_COMPOSITION';
 
@@ -58,15 +58,13 @@ export type HostingCompositionResult={status:'INSTALLED'}|{status:'NOT_ACTIVATED
  * same process (see production-bootstrap.ts), so calling this twice surfaces that existing
  * duplicate-installation guard rather than silently succeeding twice.
  *
- * V3-B (TD correction): `issueIdentity` defaults to the real, override-free
- * `issueExactProductionIdentity` — production callers never pass it, so this always enforces the
- * genuine pinned Production target before `installProductionBootstrap` is ever reached. It exists
- * only so a test can substitute `issueExactProductionIdentityForTesting` bound to its own
- * synthetic fixture identity, the same injectable-dependency-with-a-real-default shape
- * `probeProductionDatabaseReadiness`'s own `connect` parameter already establishes — never a raw
- * `expected` fingerprint value threaded through as ordinary data.
+ * V4 (TD correction): always calls the real, override-free `issueExactProductionIdentity`
+ * directly — no injectable parameter of any kind. A test can only prove the reject paths (missing
+ * activation/env fields, or a synthetic-but-wrong host/project reaching the identity gate and
+ * being refused); the accept path is provable only in the real Production environment, the same
+ * disclosed trade-off `issueExactProductionIdentity` itself carries.
  */
-export function installProductionHostingComposition(env:Readonly<Record<string,string|undefined>> = process.env,issueIdentity:(c:Readonly<ProductionConfiguration>)=>ExactProductionIdentity = issueExactProductionIdentity):HostingCompositionResult{
+export function installProductionHostingComposition(env:Readonly<Record<string,string|undefined>> = process.env):HostingCompositionResult{
  const e=readAllowlistedEnv(env);
  if(e.ZAO_PRODUCTION_HOSTING_ACTIVATION!==HOSTING_ACTIVATION_TOKEN)return {status:'NOT_ACTIVATED'}; // default OFF; anything else is inert, not an error
  if(e.VERCEL_ENV!=='production')throw new Error('PRODUCTION_HOSTING_WRONG_VERCEL_ENVIRONMENT');
@@ -89,11 +87,11 @@ export function installProductionHostingComposition(env:Readonly<Record<string,s
   guest:DARK_GUEST_POLICY,approvedGuestSha256:guestConfigurationHash(DARK_GUEST_POLICY),
   payment:null,media:null,
  });
- // V3-B (TD correction): a syntactically-valid Production-shaped config is not proof it is *the*
- // real Production target (wrong Neon branch, wrong Vercel project, right-shaped-but-wrong DB
- // name all parse fine). This throws before any bootstrap install is attempted, exactly as
+ // V3-B/V4 (TD correction): a syntactically-valid Production-shaped config is not proof it is
+ // *the* real Production target (wrong Neon branch, wrong Vercel project, right-shaped-but-wrong
+ // DB name all parse fine). This throws before any bootstrap install is attempted, exactly as
  // production-projection-authority.ts already requires for payment projection.
- issueIdentity(c);
+ issueExactProductionIdentity(c);
  const input:ProductionRuntimeInput={
   configuration:c,approvedConfigurationSha256:productionConfigurationDigest(c),deployment:c.deployment,
   secrets:{

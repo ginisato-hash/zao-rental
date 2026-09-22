@@ -234,16 +234,21 @@ try {
     await verifyProductionDatabase(auth.pool, roleConfig, 'auth');
   });
 
-  // ---- F1: probeProductionDatabaseReadiness against the real Production content_read role ----
+  // ---- F1: production-db-readiness.ts against the real Production content_read role ----
   // (production-db-readiness.ts connects as content_read specifically — reusing it here, rather
   // than a separate ad-hoc credential, is the actual real-world wiring this proves.)
-  await check('F1: probeProductionDatabaseReadiness proves real DB connectivity/identity independent of the dark hosting composition (which never opens a connection at all); a wrong credential fails closed, never CONNECTED; no write of any kind occurs; and it structurally requires an already-issued ExactProductionIdentity, not an arbitrary config (V3-C)', async () => {
-    const { probeProductionDatabaseReadiness } = await import('../../packages/db/src/production-db-readiness');
+  //
+  // V4 (TD correction): exercises the pure `probeConfiguredDatabaseReadiness` work function
+  // directly, on a plain ProductionConfiguration — no ExactProductionIdentity needed. This proves
+  // the real connect/verify/migration-count logic against real PostgreSQL exactly as before; only
+  // the now-impossible-to-fake identity-minting step is no longer part of this proof (see the
+  // separate reject-path check below and RESULT.md's R3_ATTENDED_ACCEPTANCE_REQUIRED disposition
+  // for the real identity-gated `probeProductionDatabaseReadiness` accept path).
+  await check('F1: probeConfiguredDatabaseReadiness proves real DB connectivity/identity independent of the dark hosting composition (which never opens a connection at all); a wrong credential fails closed, never CONNECTED; no write of any kind occurs', async () => {
+    const { probeConfiguredDatabaseReadiness } = await import('../../packages/db/src/production-db-readiness');
     const { migrationPlan } = await import('../../packages/db/src/index');
     const { productionConfiguration } = await import('../../packages/auth/src/production-config');
-    const { issueExactProductionIdentityForTesting } = await import('../../packages/auth/src/production-identity');
     const { productionGuestConfiguration, guestConfigurationHash } = await import('../../packages/contracts/src/production-guest');
-    const { createHash } = await import('node:crypto');
     const probePassword = randomBytes(24).toString('hex');
     await production!.query(`ALTER ROLE ${appNames.content_read} LOGIN PASSWORD '${probePassword}'`);
     const before = (await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n as number;
@@ -252,85 +257,51 @@ try {
       return new Pool({ host: '127.0.0.1', port: db.identity.dbPort, database: TARGET, user: appNames.content_read, password: credential.password, max: 2, connectionTimeoutMillis: 2000 });
     };
     const credential = { provider: 'NEON' as const, environment: 'PRODUCTION' as const, host: 'ep-f1-fixture.neon.tech', port: 5432 as const, database: TARGET, user: appNames.content_read, password: probePassword, revoked: false as const };
-    // A real, fully-validated config (not the F9 block's hand-cast `roleConfig`) — only this can
-    // ever pass isValidatedProductionConfiguration and be issued a genuine ExactProductionIdentity.
+    // A real, fully-validated config (not the F9 block's hand-cast `roleConfig`) — required by
+    // probeConfiguredDatabaseReadiness's own ProductionConfiguration type, though no identity
+    // capability is minted from it here.
     const f1Guest = productionGuestConfiguration({ schemaVersion: 1, revision: 'F1-FIXTURE', ingressAdapterId: 'f1-fixture-dispatcher', policy: { version: 'F1-FIXTURE', contextSeconds: 3600, absoluteSeconds: 7200, recoverySeconds: 3600, replaySeconds: 30, retentionSeconds: 60, windowSeconds: 10, peerRequests: 1000, globalRequests: 2000 } });
-    const f1Host = 'ep-f1-fixture.neon.tech', f1Project = 'f1-fixture-project';
-    const f1Expected = { hostFingerprintSha256: createHash('sha256').update(f1Host.trim().toLowerCase()).digest('hex'), databaseName: TARGET, vercelProjectFingerprintSha256: createHash('sha256').update(f1Project).digest('hex') };
     const f1Config = productionConfiguration({
       schemaVersion: 1, capability: 'ZAO_PRODUCTION_RUNTIME_V1',
-      deployment: { provider: 'VERCEL', environment: 'production', projectId: f1Project, releaseId: 'f1-release', origin: 'https://f1-fixture.invalid' },
-      database: { provider: 'NEON', environment: 'production', host: f1Host, name: TARGET, roles: appNames },
+      deployment: { provider: 'VERCEL', environment: 'production', projectId: 'f1-fixture-project', releaseId: 'f1-release', origin: 'https://f1-fixture.invalid' },
+      database: { provider: 'NEON', environment: 'production', host: 'ep-f1-fixture.neon.tech', name: TARGET, roles: appNames },
       flags: { booking: false, guestRecovery: false, payment: false, media: false, avatar: false, staffOperations: false },
       guest: f1Guest, approvedGuestSha256: guestConfigurationHash(f1Guest),
       payment: null, media: null,
     });
-    const f1Identity = issueExactProductionIdentityForTesting(f1Config, f1Expected);
-    const good = await probeProductionDatabaseReadiness(f1Identity, credential, connect as never);
+    const good = await probeConfiguredDatabaseReadiness(f1Config, credential, connect as never);
     assert.deepEqual(good, { status: 'CONNECTED', migrationsApplied: migrationPlan.length, migrationsExpected: migrationPlan.length, schemaComplete: true });
-    const bad = await probeProductionDatabaseReadiness(f1Identity, { ...credential, password: 'wrong-password' }, connect as never);
+    const bad = await probeConfiguredDatabaseReadiness(f1Config, { ...credential, password: 'wrong-password' }, connect as never);
     assert.equal(bad.status, 'FAILED');
     // Read-only proof: the migration count (and every table this role can otherwise see) is unchanged.
     assert.equal((await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n, before);
   });
+  await check('F1: the real identity-gated probeProductionDatabaseReadiness rejects a forged/unregistered ExactProductionIdentity before ever touching the connector', async () => {
+    const { probeProductionDatabaseReadiness } = await import('../../packages/db/src/production-db-readiness');
+    const forged = { kind: 'EXACT_PRODUCTION_IDENTITY' } as never;
+    const unreachableConnect = async () => { throw new Error('CONNECTOR_MUST_NOT_BE_CALLED'); };
+    const credential = { provider: 'NEON' as const, environment: 'PRODUCTION' as const, host: 'ep-f1-fixture.neon.tech', port: 5432 as const, database: TARGET, user: appNames.content_read, password: 'unused', revoked: false as const };
+    const result = await probeProductionDatabaseReadiness(forged, credential, unreachableConnect as never);
+    assert.deepEqual(result, { status: 'FAILED', reason: 'PRODUCTION_IDENTITY_REQUIRED' });
+  });
 
-  // ---- F5: ProductionReconciliationAuthority + PgPaymentReconciliation against the real
-  // _pay_dispatch/_pay_truth/_pay_diagnostic Production roles created above (§R7/R6-A) ----
-  {
+  // ---- F5: _pay_dispatch/_pay_truth/_pay_diagnostic Production roles (§R7/R6-A above already
+  // proves the SQL-level dispatch/claim/finalize/diagnostics grants and the merchant boundary at
+  // the raw-role level). This block only additionally proves PgPaymentReconciliation's own
+  // fail-closed behavior when it holds no ProductionReconciliationAuthority.
+  //
+  // V4 (TD correction): the previous end-to-end proof here (real ProductionReconciliationAuthority
+  // minted via a test-only identity, driving PgPaymentReconciliation.dispatch/claimBatch/load/
+  // finalize/diagnostics against these same real roles, plus the merchant-boundary and
+  // SANDBOX-misuse checks while holding that authority) required issueExactProductionIdentityForTesting,
+  // which no longer exists — there is deliberately no way to mint a working
+  // ProductionReconciliationAuthority offline. That TS-repository-class wiring proof, on top of the
+  // SQL-level grants R7/R6-A above already covers, is R3_ATTENDED_ACCEPTANCE_REQUIRED (see RESULT.md).
+  await check('F5: without an authority, PgPaymentReconciliation refuses PRODUCTION even on a real Production-role connection pool (fail closed before any SQL is issued)', async () => {
     const { PgPaymentReconciliation } = await import('../../packages/db/src/payment-reconciliation');
-    const { issueProductionReconciliationAuthority } = await import('../../packages/core/src/payment/production-reconciliation-authority');
-    const { issueExactProductionIdentityForTesting } = await import('../../packages/auth/src/production-identity');
-    const { productionConfiguration } = await import('../../packages/auth/src/production-config');
-    const { productionGuestConfiguration, guestConfigurationHash } = await import('../../packages/contracts/src/production-guest');
-    const { createHash } = await import('node:crypto');
-
-    const f5Guest = productionGuestConfiguration({ schemaVersion: 1, revision: 'F5-FIXTURE', ingressAdapterId: 'f5-fixture-dispatcher', policy: { version: 'F5-FIXTURE', contextSeconds: 3600, absoluteSeconds: 7200, recoverySeconds: 3600, replaySeconds: 30, retentionSeconds: 60, windowSeconds: 10, peerRequests: 1000, globalRequests: 2000 } });
-    const f5Host = 'ep-f5-fixture.neon.tech', f5Project = 'f5-fixture-project';
-    const f5Expected = { hostFingerprintSha256: createHash('sha256').update(f5Host.trim().toLowerCase()).digest('hex'), databaseName: TARGET, vercelProjectFingerprintSha256: createHash('sha256').update(f5Project).digest('hex') };
-    const f5Config = productionConfiguration({
-      schemaVersion: 1, capability: 'ZAO_PRODUCTION_RUNTIME_V1',
-      deployment: { provider: 'VERCEL', environment: 'production', projectId: f5Project, releaseId: 'f5-release', origin: 'https://f5-fixture.invalid' },
-      database: { provider: 'NEON', environment: 'production', host: f5Host, name: TARGET, roles: appNames },
-      flags: { booking: true, guestRecovery: false, payment: true, media: false, avatar: false, staffOperations: false },
-      guest: f5Guest, approvedGuestSha256: guestConfigurationHash(f5Guest),
-      payment: { provider: 'SQUARE', environment: 'PRODUCTION', merchantId: 'merchant-1', locations: { MOUNTAIN_BASE: 'f5-loc-1', ONSEN_BASE: 'f5-loc-2' } },
-      media: null,
-    });
-    const f5Identity = issueExactProductionIdentityForTesting(f5Config, f5Expected);
-    const f5Authority = issueProductionReconciliationAuthority(f5Identity);
-    const dispatchRepo = new PgPaymentReconciliation(dispatcher.pool, undefined, f5Authority);
-    const workerRepo = new PgPaymentReconciliation(worker.pool, undefined, f5Authority);
-    const diagnosticRepo = new PgPaymentReconciliation(diagnostic.pool, undefined, f5Authority);
-
-    await check('F5: PgPaymentReconciliation with a real ProductionReconciliationAuthority operates end to end against the real _pay_dispatch/_pay_truth/_pay_diagnostic Production roles (not a fakePool)', async () => {
-      await receiver.pool.query("SELECT square_webhook.receive_production('evt-f5-1','payment.created','merchant-1','pay-f5-1',repeat('1',64))");
-      assert.ok((await dispatchRepo.dispatch('PRODUCTION', 10)) >= 1);
-      const claims = await workerRepo.claimBatch('PRODUCTION', 'f5-worker', 10);
-      const claim = claims.find(c => c.paymentId === 'pay-f5-1');
-      assert.ok(claim);
-      assert.equal(await workerRepo.load(claim!), null); // no matching rental_payment_attempts row in this fixture; a real not-found path, not a permission error
-      assert.equal((await workerRepo.loadBatch([claim!])).size, 0);
-      // BLOCKED + a valid code needs no `truth` payload at all (the DB function's own
-      // INVALID_TRUTH/INVALID_DECISION checks are gated on `p_truth IS NOT NULL`) — sufficient
-      // to prove finalize_production's own real end-to-end wiring without fabricating a
-      // synthetic-but-shaped-like-real payment observation this fixture never actually saw.
-      assert.equal(await workerRepo.finalize(claim!, { state: 'BLOCKED', code: 'PAYMENT_CONTEXT_MISSING', retrySeconds: null, truth: null }), true);
-      assert.ok(Array.isArray(await diagnosticRepo.diagnostics('PRODUCTION', 10)));
-    });
-    await check('F5: without an authority, PgPaymentReconciliation refuses PRODUCTION even on a real Production-role connection pool (fail closed before any SQL is issued)', async () => {
-      const unauthorized = new PgPaymentReconciliation(dispatcher.pool);
-      await assert.rejects(() => unauthorized.dispatch('PRODUCTION', 10), { message: 'PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED' });
-    });
-    await check('F5: merchant boundary — a merchant-1-bound authority never dispatches or claims merchant-2\'s row through the real repository', async () => {
-      await receiver.pool.query("SELECT square_webhook.receive_production('evt-f5-2','payment.created','merchant-2','pay-f5-2',repeat('2',64))");
-      await dispatchRepo.dispatch('PRODUCTION', 10);
-      const claims = await workerRepo.claimBatch('PRODUCTION', 'f5-worker-2', 10);
-      assert.ok(!claims.some(c => c.paymentId === 'pay-f5-2'));
-    });
-    await check('F5: a Production authority never lets the repository fall back to the generic Sandbox-capable SQL surface (SANDBOX refused while holding it)', async () => {
-      await assert.rejects(() => dispatchRepo.dispatch('SANDBOX', 10), { message: 'PRODUCTION_RECONCILIATION_AUTHORITY_MISUSE' });
-    });
-  }
+    const unauthorized = new PgPaymentReconciliation(dispatcher.pool);
+    await assert.rejects(() => unauthorized.dispatch('PRODUCTION', 10), { message: 'PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED' });
+  });
 
   console.log(JSON.stringify({ status: 'PASS', cases: passed }));
 } finally {

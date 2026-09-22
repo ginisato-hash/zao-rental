@@ -1,8 +1,20 @@
 import {flowId} from '../../../contracts/src/rental-flow';
 import {exactProductionIdentityConfiguration,type ExactProductionIdentity} from '../../../auth/src/production-identity';
+import type {ProductionConfiguration} from '../../../auth/src/production-config';
 export type ProductionProjectionTarget={bookingId:string;attemptId:string;database:string;merchantId:string};
 export type ProductionProjectionPermit=Readonly<{kind:'SQUARE_PRODUCTION_PROJECTION'}>;
 const issued=new WeakMap<ProductionProjectionPermit,Readonly<ProductionProjectionTarget>>();
+
+/** V4 (TD correction): pure — operates on a plain ProductionConfiguration directly, no
+ * ExactProductionIdentity capability needed. Proves the validation rule itself (a Square
+ * PRODUCTION payment binding with a database name) without needing a real, capability-minted
+ * identity, which — with no test-only issuer anywhere — would otherwise be impossible to
+ * construct in a test. Returns the target fields it would bind, or null if the config doesn't
+ * qualify at all. */
+export function deriveProductionProjectionTarget(config:Readonly<ProductionConfiguration>):{database:string;merchantId:string}|null{
+ if(!config.payment||config.payment.provider!=='SQUARE'||config.payment.environment!=='PRODUCTION'||!config.database?.name)return null;
+ return {database:config.database.name,merchantId:config.payment.merchantId};
+}
 
 /**
  * PROD-R6-C/F2 (integration-corrected): a merely-*validated* `ProductionConfiguration` is not
@@ -22,13 +34,10 @@ const issued=new WeakMap<ProductionProjectionPermit,Readonly<ProductionProjectio
  */
 export function productionProjectionPermit(identity:ExactProductionIdentity,ref:{bookingId:string;attemptId:string}):ProductionProjectionPermit{
  const config=exactProductionIdentityConfiguration(identity);
- if(
-  !config||
-  !config.payment||config.payment.provider!=='SQUARE'||config.payment.environment!=='PRODUCTION'||
-  !config.database?.name
- )throw new Error('PRODUCTION_PROJECTION_AUTHORITY_REQUIRED');
+ const derived=config&&deriveProductionProjectionTarget(config);
+ if(!derived)throw new Error('PRODUCTION_PROJECTION_AUTHORITY_REQUIRED');
  flowId(ref.bookingId);flowId(ref.attemptId);
- const target:ProductionProjectionTarget={bookingId:ref.bookingId,attemptId:ref.attemptId,database:config.database.name,merchantId:config.payment.merchantId};
+ const target:ProductionProjectionTarget={bookingId:ref.bookingId,attemptId:ref.attemptId,...derived};
  const permit=Object.freeze({kind:'SQUARE_PRODUCTION_PROJECTION' as const});issued.set(permit,Object.freeze(target));return permit;
 }
 export function productionProjectionTarget(permit?:ProductionProjectionPermit,ref?:{bookingId:string;attemptId:string}):Readonly<ProductionProjectionTarget>|null{

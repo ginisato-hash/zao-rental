@@ -239,10 +239,12 @@ try {
     assert.equal((await x.db.pool.query('SELECT provisional_capacity_effective_quantity($1) n', [bucketId])).rows[0].n, 1);
   });
 
-  // ---- J: materialization — partial, evidence-tied, never auto-converts active claims ----
+  // ---- J: materialization is NOT ACTIVATED for this booking-intake release (P4 correction) ----
   // A real real_data_acceptance row (the actual real-import evidence chain, not a fabricated
   // pointer): one tiny synthetic SKU staged, committed and accepted as real stock, exactly the
-  // same path tests/operations/import-rehearsal.ts already exercises at larger scale.
+  // same path tests/operations/import-rehearsal.ts already exercises at larger scale — kept here
+  // specifically to prove NOT_ACTIVATED fires even given genuine evidence, not merely missing
+  // evidence (a strictly stronger proof that this is unconditionally refused).
   async function realDataAcceptanceId(sourceLocatorTag: string, quantity: number): Promise<string> {
     const codeTag = sourceLocatorTag.toUpperCase().replace(/[^A-Z0-9_-]/g, '-');
     const model = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity materialization evidence', sourceLocator: 'model-' + sourceLocatorTag, code: 'PBCEV-' + codeTag, name: 'PBC materialization ' + sourceLocatorTag, brand: 'SYNTHETIC', family: 'SKI', notes: '', catalogSeason: '2026/27'});
@@ -259,49 +261,33 @@ try {
     await inventoryOps.acceptRealData(randomUUID(), {commitId: committed.id, expectedStores: ['MOUNTAIN_BASE']});
     return (await x.db.pool.query('SELECT id FROM real_data_acceptance WHERE commit_id=$1', [committed.id])).rows[0].id;
   }
-  await check('J: materialization requires real import evidence — a random/non-existent real_data_acceptance id is refused before any bucket or claim mutation', async () => {
+  await check('J: materialization is NOT_ACTIVATED even given a random/non-existent real_data_acceptance id — refused before any bucket or claim mutation', async () => {
     const result = await src.register(randomUUID(), {
-      sourceSha256: '4'.repeat(64), originalFilename: 'materialize-evidence-probe.xlsx',
-      buckets: [{family: 'WEAR_PANTS', age: 'KIDS', sourceSize: 'M', bookingSize: 'M', quantity: 4, provenance: 'materialize evidence probe'}],
+      sourceSha256: '4'.repeat(64), originalFilename: 'materialize-not-activated-probe.xlsx',
+      buckets: [{family: 'WEAR_PANTS', age: 'KIDS', sourceSize: 'M', bookingSize: 'M', quantity: 4, provenance: 'materialize NOT_ACTIVATED probe'}],
     });
     const bucketId = (await x.db.pool.query('SELECT id FROM provisional_capacity_buckets WHERE source_id=$1', [result.sourceId])).rows[0].id;
-    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,1,$2)', [bucketId, randomUUID()])), {code: '23503'});
+    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,1,$2)', [bucketId, randomUUID()])), {message: 'PROVISIONAL_MATERIALIZATION_NOT_ACTIVATED'});
     assert.equal((await x.db.pool.query('SELECT active FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].active, true);
   });
-  await check('J: partial materialization — provisional 6 -> real 4 leaves 2 still bookable, never double-counted, and never auto-converts an existing ACTIVE claim; the bucket only fully retires once cumulative materialized quantity reaches effective quantity', async () => {
+  await check('J: materialization is NOT_ACTIVATED even given genuine, valid real-import evidence — the disabled guard fires before the evidence/quantity checks run at all, an ACTIVE claim is untouched, and PUBLIC/every runtime role (hold, transfer, operations) has no EXECUTE on this function regardless', async () => {
     const result = await src.register(randomUUID(), {
-      sourceSha256: '4'.repeat(63) + '5', originalFilename: 'materialize-partial-probe.xlsx',
-      buckets: [{family: 'WEAR_PANTS', age: 'KIDS', sourceSize: 'S', bookingSize: 'S', quantity: 6, provenance: 'materialize partial probe'}],
+      sourceSha256: '4'.repeat(63) + '5', originalFilename: 'materialize-not-activated-genuine-probe.xlsx',
+      buckets: [{family: 'WEAR_PANTS', age: 'KIDS', sourceSize: 'S', bookingSize: 'S', quantity: 6, provenance: 'materialize NOT_ACTIVATED genuine-evidence probe'}],
     });
     const bucketId = (await x.db.pool.query('SELECT id FROM provisional_capacity_buckets WHERE source_id=$1', [result.sourceId])).rows[0].id;
     const req: ProvisionalRequirement[] = [{key: 'm:WEAR_PANTS', family: 'WEAR_PANTS', age: 'KIDS', bookingSize: 'S'}];
     const holdA = await makeHold('2035-09-01', '2035-09-01');
     await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-09-01', 1), now);
-    const evidence1 = await realDataAcceptanceId('partial-1', 4);
-    await asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,4,$2)', [bucketId, evidence1]));
-    assert.equal((await x.db.pool.query('SELECT provisional_capacity_effective_quantity($1) n', [bucketId])).rows[0].n, 2); // 6 - 4 materialized
-    assert.equal((await x.db.pool.query('SELECT active FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].active, true); // not yet fully retired
-    const claimAfterPartial = (await x.db.pool.query('SELECT state FROM provisional_capacity_claims WHERE hold_id=$1', [holdA])).rows[0];
-    assert.equal(claimAfterPartial.state, 'ACTIVE'); // preserved exactly as it was — never auto-converted
-    // Over-materializing beyond what remains is refused, not silently clamped.
-    const evidenceOver = await realDataAcceptanceId('partial-over', 5);
-    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,3,$2)', [bucketId, evidenceOver])), {code: '23514'});
-    const evidence2 = await realDataAcceptanceId('partial-2', 2);
-    await asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,2,$2)', [bucketId, evidence2])); // exactly retires the bucket
-    assert.deepEqual((await x.db.pool.query('SELECT active,materialized_at IS NOT NULL AS has_materialized_at FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0], {active: false, has_materialized_at: true});
-  });
-  await check('J: a fully-retired bucket refuses any further materialization, and its base quantity column never changed throughout', async () => {
-    const result = await src.register(randomUUID(), {
-      sourceSha256: '4'.repeat(62) + '66', originalFilename: 'materialize-full-probe.xlsx',
-      buckets: [{family: 'WEAR_PANTS', age: 'ADULT', sourceSize: 'M', bookingSize: 'M', quantity: 3, provenance: 'materialize full probe'}],
-    });
-    const bucketId = (await x.db.pool.query('SELECT id FROM provisional_capacity_buckets WHERE source_id=$1', [result.sourceId])).rows[0].id;
-    const baseQuantity = (await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity;
-    const evidence = await realDataAcceptanceId('full', 3);
-    await asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,3,$2)', [bucketId, evidence]));
-    const b = (await x.db.pool.query('SELECT active,materialized_at IS NOT NULL AS has_materialized_at,quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0];
-    assert.deepEqual(b, {active: false, has_materialized_at: true, quantity: baseQuantity}); // fully retired; base column untouched
-    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,1,$2)', [bucketId, evidence])), {code: '23514'});
+    const evidence = await realDataAcceptanceId('genuine', 4);
+    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,4,$2)', [bucketId, evidence])), {message: 'PROVISIONAL_MATERIALIZATION_NOT_ACTIVATED'});
+    assert.equal((await x.db.pool.query('SELECT provisional_capacity_effective_quantity($1) n', [bucketId])).rows[0].n, 6); // untouched
+    assert.equal((await x.db.pool.query('SELECT active FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].active, true);
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM provisional_capacity_materializations WHERE bucket_id=$1', [bucketId])).rows[0].n, 0);
+    assert.equal((await x.db.pool.query("SELECT state FROM provisional_capacity_claims WHERE hold_id=$1", [holdA])).rows[0].state, 'ACTIVE');
+    const grants = (await x.db.pool.query(`SELECT has_function_privilege('public','provisional_capacity_materialize_bucket(uuid,integer,uuid)','EXECUTE') pub`)).rows[0];
+    assert.equal(grants.pub, false);
+    for (const pool of [x.roles.holdPool, x.roles.transferPool, role!.operationsPool]) await assert.rejects(pool.query(`SELECT provisional_capacity_materialize_bucket('${bucketId}'::uuid,1,'${evidence}'::uuid)`), {code: '42501'});
   });
 
   // ---- K: wear — jacket/pants set capacity uses min() ----
@@ -591,6 +577,87 @@ try {
     // input-shape check — verifyPhysicalHandoff fails closed before selections are ever compared
     // against real assignment.
     await assert.rejects(custody.prepare(randomUUID(), {bookingId: built.booking.id, expectedBookingVersion: view.bookingVersion, expectedHoldVersion: view.holdVersion, selections: [{requirementKey: 'p:SKI', assetId: randomUUID(), poleId: null}], fitEvidence: 'SYNTHETIC fit note'}), {code: 'PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED'});
+  });
+
+  await check('P12: the handoff gate actually clears — an explicit reassign() to a newly-available real Asset, done before payment (a paid hold cannot be reassigned through this path at all — PAYMENT_RECONCILIATION_REQUIRED), converts a provisional-backed hold to a real physical claim, releases the provisional claim, and CustodyService.prepare() then succeeds with no PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED', async () => {
+    const {variant, size} = await physicalSkuFor('p12', 0); // zero physical stock at first
+    await provisionalFor('SKI', size, 1, 'p12');
+    const conditions = singleSkiCondition('2035-06-16', variant.id);
+    const created = await x.holds.command('create', randomUUID(), conditions);
+    assert.equal(created.result, 'CREATED');
+    const holdId = created.holdId!;
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [holdId])).rows[0].n, 0);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [holdId])).rows[0].n, 1);
+    // A real physical Asset for the exact same variant now becomes available (the operator's
+    // explicit workflow this correction proves — no automatic replan moves it; see P2).
+    const assetId = randomUUID();
+    const c = await x.db.pool.connect();
+    try {
+      await c.query('BEGIN');
+      await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC provisional-capacity product-path fixture',true)", [x.actor]);
+      await c.query(
+        `INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,'SKI','MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE','NOT_APPLICABLE','','','SYNTHETIC','provisional-capacity product-path fixture','p12-real')`,
+        [assetId, variant.id],
+      );
+      await c.query('COMMIT');
+    } catch (e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); }
+    // Explicit reassign, before any payment: HoldService.command()'s own payment-reconciliation
+    // gate refuses amend/reassign entirely once payment_state='SUCCESS' (paymentDecision() never
+    // returns MAY_CHANGE for a paid hold) — this is the actual operator sequencing the gate allows.
+    const reassigned = await x.holds.command('reassign', randomUUID(), {assetId, requirementKey: 'p:SKI'}, holdId);
+    assert.equal(reassigned.result, 'AMENDED');
+    assert.equal((await x.db.pool.query('SELECT asset_id FROM inventory_claims WHERE hold_id=$1 AND active', [holdId])).rows[0].asset_id, assetId);
+    assert.equal((await x.db.pool.query("SELECT state FROM provisional_capacity_claims WHERE hold_id=$1", [holdId])).rows[0].state, 'RELEASED');
+    // Exactly one witness for the requirement/day, never two (P3's own guard, re-checked here at
+    // the product-path level): the released provisional row does not count, only the ACTIVE one.
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active UNION ALL SELECT count(*)::int FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [holdId])).rows.reduce((sum: number, r: {n: number}) => sum + r.n, 0), 1);
+    // Pay against a fresh quote reflecting the post-reassign hold version (the quote draft() would
+    // have built is for the pre-reassign version and would fail QUOTE_HOLD_MISMATCH).
+    const quote = (await x.quotes.create(randomUUID(), {conditions, holdId, couponCode: null, wantAdvance: false})).quote;
+    const booking = await x.service.create(randomUUID(), quote.id, {displayName: 'SYNTHETIC Guest', email: 'synthetic-guest-p12@example.invalid', termsAccepted: true});
+    const paid = await x.service.startPayment(booking.id, randomUUID());
+    assert.equal(paid.state, 'CONFIRMED_DEV');
+    const custody = new CustodyService(role!.operationsPool, x.roles.authPool, x.signed.identity);
+    const view = await custody.checkoutView(booking.id);
+    assert.deepEqual(view.items.map((i: {requirement_key: string; asset_id: string | null}) => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: null})), [{requirementKey: 'p:SKI', assetId, poleId: null}]);
+    const prepared = await custody.prepare(randomUUID(), {bookingId: booking.id, expectedBookingVersion: paid.version, expectedHoldVersion: view.holdVersion, selections: view.items.map((i: {requirement_key: string; asset_id: string | null}) => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: null})), fitEvidence: 'SYNTHETIC P12 fit note; no DIN certification'});
+    assert.ok(prepared.preparation); // succeeded — no PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED, no other rejection
+  });
+
+  // ---- P13/P14: adversarial multi-item competition (P7 correction) — the greedy re-inclusion
+  // simplification must stay conservative: a false negative (routing more to provisional than a
+  // perfect solver would) is accepted, but never a false FEASIBLE (oversell). Two members compete
+  // for the exact same physical variant, with only 1 real unit + a 1-unit provisional bucket. ----
+  function twoMemberSameVariant(day: string, variantId: string): HoldConditions {
+    return {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: day, endDate: day, slot: 'DAY'}, members: [
+      {key: 'person-a', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'SKI', variantIds: [variantId]}]},
+      {key: 'person-b', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'SKI', variantIds: [variantId]}]},
+    ]};
+  }
+  function threeMemberSameVariant(day: string, variantId: string): HoldConditions {
+    return {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: day, endDate: day, slot: 'DAY'}, members: [
+      {key: 'person-a', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'SKI', variantIds: [variantId]}]},
+      {key: 'person-b', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'SKI', variantIds: [variantId]}]},
+      {key: 'person-c', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'SKI', variantIds: [variantId]}]},
+    ]};
+  }
+  await check('P13: adversarial competition, exact capacity — 2 members demand the same variant, exactly 1 physical unit + 1 provisional unit exist: CREATED with exactly one physical claim and exactly one provisional claim, never two of either (no oversell of the single physical Asset, no oversell of the single-unit provisional bucket)', async () => {
+    const {variant, size} = await physicalSkuFor('p13', 1); // exactly 1 physical unit
+    await provisionalFor('SKI', size, 1, 'p13'); // exactly 1 provisional unit
+    const outcome = await x.holds.command('create', randomUUID(), twoMemberSameVariant('2036-03-13', variant.id));
+    assert.equal(outcome.result, 'CREATED');
+    const physical = (await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n;
+    const provisional = (await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n;
+    assert.equal(physical, 1); // never 2 — only 1 real Asset exists, a second physical claim on it would be a structural oversell
+    assert.equal(provisional, 1); // never 2 — only 1 provisional unit was registered
+  });
+  await check('P14: adversarial competition, insufficient capacity — 3 members demand the same variant, only 1 physical + 1 provisional unit exist (capacity 2, demand 3): INSUFFICIENT, never a false FEASIBLE that would leave one member with no witness at all', async () => {
+    const {variant, size} = await physicalSkuFor('p14', 1);
+    await provisionalFor('SKI', size, 1, 'p14');
+    const conditions = threeMemberSameVariant('2036-03-14', variant.id);
+    const outcome = await x.holds.command('create', randomUUID(), conditions);
+    assert.equal(outcome.result, 'INSUFFICIENT');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_holds WHERE reservation_id=$1', [conditions.reservationId])).rows[0].n, 0); // no partial hold was created either
   });
 
   console.log(JSON.stringify({status: 'PASS', cases: count, realDataImports: 3, realAssetIdsGenerated: 9, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));

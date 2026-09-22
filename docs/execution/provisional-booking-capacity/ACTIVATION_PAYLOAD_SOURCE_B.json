@@ -1,0 +1,710 @@
+{
+  "sourceSha256": "c85997f464e59c616c6afb18ce03a34f6a73371d1aebeba2a6b8229bfd9c2257",
+  "originalFilename": "樹林更新板25_26サロモンステーション蔵王 在庫数 (1).xlsx",
+  "buckets": [
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "125 cm",
+      "bookingSize": "125 cm",
+      "quantity": 5,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "139 cm",
+      "bookingSize": "139 cm",
+      "quantity": 4,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "140 cm",
+      "bookingSize": "140 cm",
+      "quantity": 3,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "145 cm",
+      "bookingSize": "145 cm",
+      "quantity": 5,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "146 cm",
+      "bookingSize": "146 cm",
+      "quantity": 9,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "150 cm",
+      "bookingSize": "150 cm",
+      "quantity": 7,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "153 cm",
+      "bookingSize": "153 cm",
+      "quantity": 9,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "155 cm",
+      "bookingSize": "155 cm",
+      "quantity": 5,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "160 cm",
+      "bookingSize": "160 cm",
+      "quantity": 17,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "167 cm",
+      "bookingSize": "167 cm",
+      "quantity": 5,
+      "provenance": "main/EXP + S/MAX6 combined length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "70 cm",
+      "bookingSize": "70 cm",
+      "quantity": 2,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "80 cm",
+      "bookingSize": "80 cm",
+      "quantity": 5,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "90 cm",
+      "bookingSize": "90 cm",
+      "quantity": 2,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "100 cm",
+      "bookingSize": "100 cm",
+      "quantity": 6,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "110 cm",
+      "bookingSize": "110 cm",
+      "quantity": 3,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "120 cm",
+      "bookingSize": "120 cm",
+      "quantity": 6,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "130 cm",
+      "bookingSize": "130 cm",
+      "quantity": 3,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "140 cm",
+      "bookingSize": "140 cm",
+      "quantity": 2,
+      "provenance": "kids ski length aggregate"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "22X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "23X",
+      "bookingSize": null,
+      "quantity": 4,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "24X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "25X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "26X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "27X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "28X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "29X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "30X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "31X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "adult ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "15X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "16X",
+      "bookingSize": null,
+      "quantity": 4,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "17X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "18X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "19X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "20X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "21X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "22X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "23X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "24X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "kids ski boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "135 cm",
+      "bookingSize": "135 cm",
+      "quantity": 3,
+      "provenance": "adult snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "140 cm",
+      "bookingSize": "140 cm",
+      "quantity": 7,
+      "provenance": "adult snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "145 cm",
+      "bookingSize": "145 cm",
+      "quantity": 5,
+      "provenance": "adult snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "150 cm",
+      "bookingSize": "150 cm",
+      "quantity": 7,
+      "provenance": "adult snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "155 cm",
+      "bookingSize": "155 cm",
+      "quantity": 5,
+      "provenance": "adult snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "160 cm",
+      "bookingSize": "160 cm",
+      "quantity": 7,
+      "provenance": "adult snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "165 cm",
+      "bookingSize": "165 cm",
+      "quantity": 3,
+      "provenance": "adult snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "90 cm",
+      "bookingSize": "90 cm",
+      "quantity": 2,
+      "provenance": "kids snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "100 cm",
+      "bookingSize": "100 cm",
+      "quantity": 3,
+      "provenance": "kids snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "110 cm",
+      "bookingSize": "110 cm",
+      "quantity": 3,
+      "provenance": "kids snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "120 cm",
+      "bookingSize": "120 cm",
+      "quantity": 5,
+      "provenance": "kids snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "130 cm",
+      "bookingSize": "130 cm",
+      "quantity": 5,
+      "provenance": "kids snowboard length aggregate"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "22X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "23X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "24X",
+      "bookingSize": null,
+      "quantity": 4,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "25X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "26X",
+      "bookingSize": null,
+      "quantity": 6,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "27X",
+      "bookingSize": null,
+      "quantity": 6,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "28X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "29X",
+      "bookingSize": null,
+      "quantity": 3,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "30X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "31X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "adult snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "17X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "18X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "19X",
+      "bookingSize": null,
+      "quantity": 2,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "20X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "21X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "22X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "23X",
+      "bookingSize": null,
+      "quantity": 5,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "24X",
+      "bookingSize": null,
+      "quantity": 4,
+      "provenance": "kids snowboard boot X-token aggregate; no reviewed alias exists for this token format"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "ADULT",
+      "sourceSize": "XS",
+      "bookingSize": "XS",
+      "quantity": 10,
+      "provenance": "adult jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "ADULT",
+      "sourceSize": "S",
+      "bookingSize": "S",
+      "quantity": 15,
+      "provenance": "adult jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "ADULT",
+      "sourceSize": "M",
+      "bookingSize": "M",
+      "quantity": 20,
+      "provenance": "adult jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "ADULT",
+      "sourceSize": "L",
+      "bookingSize": "L",
+      "quantity": 20,
+      "provenance": "adult jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "ADULT",
+      "sourceSize": "XL",
+      "bookingSize": "XL",
+      "quantity": 15,
+      "provenance": "adult jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "ADULT",
+      "sourceSize": "2XL",
+      "bookingSize": "2XL",
+      "quantity": 5,
+      "provenance": "adult jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "KIDS",
+      "sourceSize": "XS",
+      "bookingSize": "XS",
+      "quantity": 8,
+      "provenance": "kids jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "KIDS",
+      "sourceSize": "S",
+      "bookingSize": "S",
+      "quantity": 6,
+      "provenance": "kids jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "KIDS",
+      "sourceSize": "M",
+      "bookingSize": "M",
+      "quantity": 8,
+      "provenance": "kids jacket size aggregate"
+    },
+    {
+      "family": "WEAR_JACKET",
+      "age": "KIDS",
+      "sourceSize": "L",
+      "bookingSize": "L",
+      "quantity": 8,
+      "provenance": "kids jacket size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "ADULT",
+      "sourceSize": "XS",
+      "bookingSize": "XS",
+      "quantity": 10,
+      "provenance": "adult pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "ADULT",
+      "sourceSize": "S",
+      "bookingSize": "S",
+      "quantity": 15,
+      "provenance": "adult pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "ADULT",
+      "sourceSize": "M",
+      "bookingSize": "M",
+      "quantity": 20,
+      "provenance": "adult pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "ADULT",
+      "sourceSize": "L",
+      "bookingSize": "L",
+      "quantity": 20,
+      "provenance": "adult pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "ADULT",
+      "sourceSize": "XL",
+      "bookingSize": "XL",
+      "quantity": 15,
+      "provenance": "adult pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "ADULT",
+      "sourceSize": "2XL",
+      "bookingSize": "2XL",
+      "quantity": 5,
+      "provenance": "adult pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "KIDS",
+      "sourceSize": "XS",
+      "bookingSize": "XS",
+      "quantity": 8,
+      "provenance": "kids pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "KIDS",
+      "sourceSize": "S",
+      "bookingSize": "S",
+      "quantity": 6,
+      "provenance": "kids pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "KIDS",
+      "sourceSize": "M",
+      "bookingSize": "M",
+      "quantity": 8,
+      "provenance": "kids pants size aggregate"
+    },
+    {
+      "family": "WEAR_PANTS",
+      "age": "KIDS",
+      "sourceSize": "L",
+      "bookingSize": "L",
+      "quantity": 8,
+      "provenance": "kids pants size aggregate"
+    }
+  ]
+}

@@ -23,7 +23,15 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   let scope:string[];try{scope=dependencyScope({id:'candidate',start:conditions.period.startDate,end:conditions.pickupStore===conditions.returnStore?conditions.period.endDate:'9999-12-31',variants:conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).flatMap(i=>i.variantIds))},nodes);}catch(e){if(e instanceof HoldError&&e.code==='INDETERMINATE')return {result:'INDETERMINATE',witness:[],replanned:[]};throw e;}
   const live=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=ANY($1::uuid[]) ORDER BY id',[scope])).rows;
   const pinned=(await c.query<{hold_id:string}>(`SELECT DISTINCT cl.hold_id FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.active AND cl.hold_id=ANY($2::uuid[]) AND (p.state<>'PLANNED' OR b.issue IS NOT NULL OR b.planned_ready_at<$1)`,[now,scope])).rows.map(r=>r.hold_id);
-  const mutable=live.filter(h=>h.due_at>now&&!h.transfer_attention&&!pinned.includes(h.id)&&h.allocation_stage==='PROVISIONAL'&&(['NONE','FAILURE'].includes(h.payment_state)||h.payment_state==='SUCCESS'&&h.confirmed_at instanceof Date));
+  // V3 (TD correction, P2): a live hold with any ACTIVE provisional_capacity_claims row is treated
+  // as fixed for another candidate's automatic physical replan — exactly like a pinned in-flight
+  // transfer above — never silently given a NEW physical claim by someone else's replan while its
+  // own provisional claim stays active (which would leave two witnesses, one physical one
+  // provisional, for the same requirement). That hold may move from provisional to physical only
+  // via its own explicit amend/reassign command, which replans through this same function for
+  // itself as the candidate, not as another hold's automatic replan target.
+  const provisionalBacked=(await c.query<{hold_id:string}>(`SELECT DISTINCT hold_id FROM provisional_capacity_claims WHERE state='ACTIVE' AND hold_id=ANY($1::uuid[])`,[scope])).rows.map(r=>r.hold_id);
+  const mutable=live.filter(h=>h.due_at>now&&!h.transfer_attention&&!pinned.includes(h.id)&&!provisionalBacked.includes(h.id)&&h.allocation_stage==='PROVISIONAL'&&(['NONE','FAILURE'].includes(h.payment_state)||h.payment_state==='SUCCESS'&&h.confirmed_at instanceof Date));
   // All non-replanned live promises remain fixed, including outside the closure.
   const fixedIds=nodes.filter(h=>!mutable.some(m=>m.id===h.id)).map(h=>h.id);
   const jobs=[...mutable.map(h=>({id:h.id,c:h.conditions})),{id:'candidate',c:conditions}];

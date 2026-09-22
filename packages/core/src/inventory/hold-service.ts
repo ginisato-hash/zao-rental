@@ -1,5 +1,5 @@
 import {writeWearClaims} from './wear-capacity';
-import {planAllocation,planMixedAllocation,writeAllocationClaims} from './allocation';
+import {planMixedAllocation,writeAllocationClaims} from './allocation';
 import {writeProvisionalClaims,releaseProvisionalClaims} from './provisional-capacity';
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
@@ -78,7 +78,13 @@ export class HoldService {
  async options(){return this.read(async c=>(await c.query("SELECT v.id,v.family,v.age,v.tier,v.size,m.name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.family,v.size,v.id LIMIT 500")).rows);}
  async availability(input:unknown,replaceHoldId?:string,context?:CandidateContext){const conditions=parseConditions(input);return this.transaction(false,async c=>{
   await this.authorize(c,false,[conditions.pickupStore,conditions.returnStore]);if(replaceHoldId){const old=await this.owned(c,replaceHoldId,false);if(old.reservation_id!==conditions.reservationId)throw new HoldError('IMMUTABLE_RESERVATION');if(old.allocation_stage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(old.payment_state))throw new HoldError('ALLOCATION_FIXED',409);}
- },async(c,now)=>{const h=replaceHoldId?await this.owned(c,replaceHoldId,false):null;await heldIntake(c,conditions,now,h,context);return {result:(await planAllocation(c,conditions,now,replaceHoldId??null)).result,period:normalizePeriod(conditions.period),advisory:true};});}
+ // V3 (TD correction, P1): mixed planning, not physical-only — a provisional-backed variant that
+ // command() would genuinely accept must not appear unavailable during advisory preview (the
+ // actual Guest/Recommendation flow calls availability() before ever reaching command()). Still
+ // read-only: planMixedAllocation itself never writes anything (only writeProvisionalClaims/
+ // writeAllocationClaims/writeWearClaims, called separately by command(), do), so no provisional
+ // claim is created here, only the same advisory-only feasibility result as before.
+ },async(c,now)=>{const h=replaceHoldId?await this.owned(c,replaceHoldId,false):null;await heldIntake(c,conditions,now,h,context);return {result:(await planMixedAllocation(c,conditions,now,replaceHoldId??null)).result,period:normalizePeriod(conditions.period),advisory:true};});}
  async command(op:'create'|'amend'|'cancel'|'expire'|'reassign',key:string,input?:unknown,holdId?:string,expectedVersion?:number){
   if(expectedVersion!==undefined&&(!Number.isInteger(expectedVersion)||expectedVersion<1))throw new HoldError('INVALID_VERSION');
   id(key);if(op!=='create'&&!holdId)throw new HoldError('INVALID_ID');

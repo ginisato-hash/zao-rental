@@ -233,9 +233,22 @@ END$$;
 -- reallocation (hold amend/replan) gives it a real inventory_claims/wear_claims row instead.
 -- V2 (TD correction, items I/J/L): SECURITY DEFINER, actor from current_setting('zao.actor'), no
 -- p_actor parameter; requires a real, existing real_data_acceptance row as evidence.
+--
+-- V3 (TD correction, P4): NOT ACTIVATED for this booking-intake release. Proving a
+-- real_data_acceptance row merely EXISTS is not proof its family/age/size/quantity actually
+-- matches this bucket, and this function can reduce provisional backing while ACTIVE provisional
+-- promises against it still exist. Neither gap is safe to carry into activation, and closing them
+-- properly is a physical-reconciliation subsystem this release deliberately does not build (the
+-- Owner's immediate goal — source registration, additive sources, the immutable correction ledger,
+-- and provisional claims — does not need it). The table/function shape is kept, unreachable by
+-- design, for that later attended phase; unconditionally refusing here (before touching any row)
+-- is the fail-closed choice over leaving it reachable-but-untested. No EXECUTE grant exists for
+-- this function anywhere in this repository, for any runtime role — this guard additionally fails
+-- closed even for the DB owner/migration connection that could otherwise call it directly.
 CREATE FUNCTION provisional_capacity_materialize_bucket(p_bucket_id uuid,p_quantity integer,p_real_data_acceptance_id uuid) RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
 DECLARE v_actor text;b provisional_capacity_buckets;already integer;effective integer;BEGIN
+ RAISE EXCEPTION 'PROVISIONAL_MATERIALIZATION_NOT_ACTIVATED' USING ERRCODE='0A000';
  v_actor:=current_setting('zao.actor');
  IF p_quantity<1 THEN RAISE EXCEPTION 'PROVISIONAL_QUANTITY_INVALID' USING ERRCODE='22023';END IF;
  SELECT * INTO STRICT b FROM provisional_capacity_buckets WHERE id=p_bucket_id FOR UPDATE;

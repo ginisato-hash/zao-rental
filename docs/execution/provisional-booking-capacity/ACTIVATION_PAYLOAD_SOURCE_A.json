@@ -1,0 +1,510 @@
+{
+  "sourceSha256": "5ff5ce67c8ec1afbfab6bc5beeab0a2a725b73db0e1958a02860a0db39fbe1f4",
+  "originalFilename": "【(株)Yuge 山形蔵王】新店舗投入予定明細_20260914.xlsx",
+  "buckets": [
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "139 cm",
+      "bookingSize": "139 cm",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 3"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "146 cm",
+      "bookingSize": "146 cm",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 4"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "153 cm",
+      "bookingSize": "153 cm",
+      "quantity": 30,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 5"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "160 cm",
+      "bookingSize": "160 cm",
+      "quantity": 30,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 6"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "167 cm",
+      "bookingSize": "167 cm",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 7"
+    },
+    {
+      "family": "SKI",
+      "age": "ADULT",
+      "sourceSize": "174 cm",
+      "bookingSize": "174 cm",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 8"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "130 cm",
+      "bookingSize": "130 cm",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 9"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "140 cm",
+      "bookingSize": "140 cm",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 10"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "100 cm",
+      "bookingSize": "100 cm",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 11,12"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "110 cm",
+      "bookingSize": "110 cm",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 13,14"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "120 cm",
+      "bookingSize": "120 cm",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 15,16,17"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "70 cm",
+      "bookingSize": "70 cm",
+      "quantity": 3,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 18"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "80 cm",
+      "bookingSize": "80 cm",
+      "quantity": 5,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 19"
+    },
+    {
+      "family": "SKI",
+      "age": "KIDS",
+      "sourceSize": "90 cm",
+      "bookingSize": "90 cm",
+      "quantity": 5,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 20"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "22/22.5",
+      "bookingSize": "22/22.5",
+      "quantity": 8,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 21"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "23/23.5",
+      "bookingSize": "23/23.5",
+      "quantity": 12,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 22"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "24/24.5",
+      "bookingSize": "24/24.5",
+      "quantity": 16,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 23"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "25/25.5",
+      "bookingSize": "25/25.5",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 24"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "26/26.5",
+      "bookingSize": "26/26.5",
+      "quantity": 24,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 25"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "27/27.5",
+      "bookingSize": "27/27.5",
+      "quantity": 24,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 26"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "28/28.5",
+      "bookingSize": "28/28.5",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 27"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "29/29.5",
+      "bookingSize": "29/29.5",
+      "quantity": 8,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 28"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "ADULT",
+      "sourceSize": "30/30.5",
+      "bookingSize": "30/30.5",
+      "quantity": 4,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 29"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "22/22.5",
+      "bookingSize": "22/22.5",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 30"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "23/23.5",
+      "bookingSize": "23/23.5",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 31"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "24/24.5",
+      "bookingSize": "24/24.5",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 32"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "20",
+      "bookingSize": "20",
+      "quantity": 12,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 33"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "21",
+      "bookingSize": "21",
+      "quantity": 12,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 34"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "18",
+      "bookingSize": "18",
+      "quantity": 12,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 35"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "19",
+      "bookingSize": "19",
+      "quantity": 12,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 36"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "15",
+      "bookingSize": "15",
+      "quantity": 3,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 37"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "16",
+      "bookingSize": "16",
+      "quantity": 5,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 38"
+    },
+    {
+      "family": "SKI_BOOT",
+      "age": "KIDS",
+      "sourceSize": "17",
+      "bookingSize": "17",
+      "quantity": 5,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 39"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "145",
+      "bookingSize": "145",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 53"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "150",
+      "bookingSize": "150",
+      "quantity": 30,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 54"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "155",
+      "bookingSize": "155",
+      "quantity": 30,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 55"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "160",
+      "bookingSize": "160",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 56"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "165",
+      "bookingSize": "165",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 57"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "135",
+      "bookingSize": "135",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 58"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "ADULT",
+      "sourceSize": "140",
+      "bookingSize": "140",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 59"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "22.5",
+      "bookingSize": "22.5",
+      "quantity": 5,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 60"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "23.5",
+      "bookingSize": "23.5",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 61"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "24.5",
+      "bookingSize": "24.5",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 62"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "25.5",
+      "bookingSize": "25.5",
+      "quantity": 25,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 63"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "26.5",
+      "bookingSize": "26.5",
+      "quantity": 25,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 64"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "27.5",
+      "bookingSize": "27.5",
+      "quantity": 25,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 65"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "28.5",
+      "bookingSize": "28.5",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 66"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "29.5",
+      "bookingSize": "29.5",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 67"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "30.5",
+      "bookingSize": "30.5",
+      "quantity": 5,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 68"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "ADULT",
+      "sourceSize": "31.5",
+      "bookingSize": "31.5",
+      "quantity": 3,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 69"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "100",
+      "bookingSize": "100",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 73"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "110",
+      "bookingSize": "110",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 74"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "120",
+      "bookingSize": "120",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 75"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "130",
+      "bookingSize": "130",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 76"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "19.5",
+      "bookingSize": "19.5",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 77"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "20.5",
+      "bookingSize": "20.5",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 78"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "21.5",
+      "bookingSize": "21.5",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 79"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "22.5",
+      "bookingSize": "22.5",
+      "quantity": 20,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 80"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "23.5",
+      "bookingSize": "23.5",
+      "quantity": 15,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 81"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "24.5",
+      "bookingSize": "24.5",
+      "quantity": 10,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 82"
+    },
+    {
+      "family": "SNOWBOARD",
+      "age": "KIDS",
+      "sourceSize": "90",
+      "bookingSize": "90",
+      "quantity": 5,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 84"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "17",
+      "bookingSize": "17",
+      "quantity": 4,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 85"
+    },
+    {
+      "family": "SNOWBOARD_BOOT",
+      "age": "KIDS",
+      "sourceSize": "18",
+      "bookingSize": "18",
+      "quantity": 4,
+      "provenance": "PROVISIONAL_CATALOG_MAPPING.csv rows 86"
+    }
+  ]
+}

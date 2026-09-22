@@ -88,6 +88,7 @@
     "test:m2a-launch": "node --import tsx tests/operations/launch-gate.ts",
     "test:m2a-launch-ui": "node --import tsx tests/operations/launch-ui.ts",
     "test:m2b-security": "node --import tsx tests/operations/production-security.ts",
+    "test:square-webhook-roles": "node --import tsx tests/readiness/square-webhook-roles.ts",
     "test:m2b-bootstrap": "node --import tsx tests/operations/production-bootstrap.ts",
     "test:production-runtime": "node --import tsx tests/readiness/normal-production.ts",
     "test:production-runtime-ui": "node --import tsx tests/readiness/normal-production-ui.ts",

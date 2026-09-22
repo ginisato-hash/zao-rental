@@ -322,6 +322,17 @@
     "offset": 160,
     "fragment": "current_database() !~ '^zr_[a-f0-9]{12}$'"
    }
+  },
+  {
+   "id": "0040",
+   "file": "0040_square_webhook_roles.sql",
+   "sha256": "c718ef2ca2259a3c6ee40766ae165c151f8b1f6cbb4049e95250ae938c032288",
+   "runtimeGuards": 0,
+   "guard": {
+    "subject": "current_database()",
+    "offset": 438,
+    "fragment": "current_database() !~ '^zr_[a-f0-9]{12}$'"
+   }
   }
  ]
 }

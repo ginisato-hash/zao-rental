@@ -9,7 +9,7 @@ import {bootstrapProductionSchema,bootstrapPlan,schemaFingerprint,securityFinger
  sourceManifest,mustBeEmpty,GUARD_MIGRATIONS,TRANSFORMER_VERSION,TRANSFORMATION_CLASS} from '../../scripts/production-bootstrap';
 const TARGET='zao_rental_production_test';
 const CANONICAL='zr_'+randomBytes(6).toString('hex');
-const GUARDED=['0015','0016','0017','0018','0019','0033','0034','0035','0036','0037','0038','0039'];
+const GUARDED=['0015','0016','0017','0018','0019','0033','0034','0035','0036','0037','0038','0039','0040'];
 const file=(name:string)=>readFile(migrationsDirectory+'/'+name,'utf8');
 const digest=(v:string)=>createHash('sha256').update(v).digest('hex');
 const notRun:Array<{case:string;reason:string}>=[];

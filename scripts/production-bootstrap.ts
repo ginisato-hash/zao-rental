@@ -32,7 +32,7 @@ import {migrationPlan,migrationsDirectory} from '../packages/db/src/index';
  */
 export const TRANSFORMER_VERSION='production-bootstrap/3';
 export const TRANSFORMATION_CLASS='MIGRATION_TIME_DATABASE_IDENTITY_PREDICATE';
-export const GUARD_MIGRATIONS=12;
+export const GUARD_MIGRATIONS=13;
 export const SOURCE_MANIFEST_PATH='config/production/bootstrap-source-manifest.json';
 const ZR_PATTERN=/^zr_[a-f0-9]{12}$/;
 const IDENTIFIER=/^[a-z][a-z0-9_]{2,62}$/;
@@ -46,6 +46,7 @@ const GUARDED:Record<string,string>={
  '0015':'n','0016':'current_database()','0017':'current_database()','0018':'current_database()',
  '0019':'current_database()','0033':'current_database()','0034':'current_database()','0035':'current_database()',
  '0036':'current_database()','0037':'current_database()','0038':'current_database()','0039':'current_database()',
+ '0040':'current_database()',
 };
 /** Development/Sandbox payment functions carry the same identity test inside their bodies as a
  * runtime guard. Those are never rewritten, and the counts are pinned so a new runtime guard,

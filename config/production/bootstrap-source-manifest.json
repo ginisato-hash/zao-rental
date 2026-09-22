@@ -322,6 +322,17 @@
     "offset": 160,
     "fragment": "current_database() !~ '^zr_[a-f0-9]{12}$'"
    }
+  },
+  {
+   "id": "0040",
+   "file": "0040_production_backup_role.sql",
+   "sha256": "eb3718ec9d20f24c5753bda95f807607a2fa2266f6a5357964d1d015390eac4a",
+   "runtimeGuards": 0,
+   "guard": {
+    "subject": "current_database()",
+    "offset": 441,
+    "fragment": "current_database() !~ '^zr_[a-f0-9]{12}$'"
+   }
   }
  ]
 }

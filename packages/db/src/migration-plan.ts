@@ -13,4 +13,5 @@ export const migrationPlan = [
   {id:'0037',file:'0037_field_acceptance_scope.sql'},
   {id:'0038',file:'0038_real_inventory_provenance.sql'},
   {id:'0039',file:'0039_real_data_quantity.sql'},
+  {id:'0040',file:'0040_production_backup_role.sql'},
 ] as const;

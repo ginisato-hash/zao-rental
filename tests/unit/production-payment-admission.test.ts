@@ -7,7 +7,7 @@ import {PgPaymentProjection} from '../../packages/db/src/payment-projection';
 import {clock,id,stateFixture,observation,reference,sourceFixture,ProjectionSqlFixture} from '../fixtures/payment-projection';
 import {productionConfiguration,productionServices,type ProductionConfiguration} from '../../packages/auth/src/production-config';
 import {productionGuestConfiguration,guestConfigurationHash} from '../../packages/contracts/src/production-guest';
-import {issueExactProductionIdentity,exactProductionIdentityConfiguration,type ExpectedProductionIdentity} from '../../packages/auth/src/production-identity';
+import {issueExactProductionIdentityForTesting,exactProductionIdentityConfiguration,type ExpectedProductionIdentity} from '../../packages/auth/src/production-identity';
 
 const productionTarget={bookingId:id(1),attemptId:id(4),database:'zao_rental_production'};
 const guestPolicy=productionGuestConfiguration({schemaVersion:1,revision:'R6C-FIXTURE',ingressAdapterId:'r6c-fixture-dispatcher',policy:{version:'R6C-FIXTURE',contextSeconds:3600,absoluteSeconds:7200,recoverySeconds:3600,replaySeconds:30,retentionSeconds:60,windowSeconds:10,peerRequests:1000,globalRequests:2000}});
@@ -24,7 +24,7 @@ function testExpectedIdentity(overrides: Partial<ExpectedProductionIdentity> = {
  };
 }
 // A fully validated ProductionConfiguration — the raw material productionProjectionPermit no
-// longer accepts directly (PROD-R6-C/F2); it must first pass issueExactProductionIdentity.
+// longer accepts directly (PROD-R6-C/F2); it must first pass issueExactProductionIdentityForTesting.
 // Every unit test below constructs its own self-consistent one; none of this requires a real
 // Neon host or Square credential to exist.
 function validConfig(overrides: Partial<{database:Partial<ProductionConfiguration['database']>;payment:Partial<NonNullable<ProductionConfiguration['payment']>>|null;deployment:Partial<ProductionConfiguration['deployment']>}> = {}): ProductionConfiguration {
@@ -39,33 +39,33 @@ function validConfig(overrides: Partial<{database:Partial<ProductionConfiguratio
  });
 }
 function permitFor(config: ProductionConfiguration, ref: {bookingId: string; attemptId: string} = productionTarget) {
- return productionProjectionPermit(issueExactProductionIdentity(config, testExpectedIdentity()), ref);
+ return productionProjectionPermit(issueExactProductionIdentityForTesting(config, testExpectedIdentity()), ref);
 }
 
 // ---- production-identity.ts: exact identity gate (F2) ----
 
 test('F2: a valid Neon shape but a different host is rejected',()=>{
  const config=validConfig({database:{host:'ep-some-other-host.neon.tech'}});
- assert.throws(()=>issueExactProductionIdentity(config,testExpectedIdentity()),{message:'PRODUCTION_IDENTITY_WRONG_HOST'});
+ assert.throws(()=>issueExactProductionIdentityForTesting(config,testExpectedIdentity()),{message:'PRODUCTION_IDENTITY_WRONG_HOST'});
 });
 test('F2: the right host but a different database name is rejected',()=>{
  const config=validConfig({database:{name:'some_other_database'}});
- assert.throws(()=>issueExactProductionIdentity(config,testExpectedIdentity()),{message:'PRODUCTION_IDENTITY_WRONG_DATABASE_NAME'});
+ assert.throws(()=>issueExactProductionIdentityForTesting(config,testExpectedIdentity()),{message:'PRODUCTION_IDENTITY_WRONG_DATABASE_NAME'});
 });
 test('F2: a valid Vercel-project-shaped ID but a different project is rejected',()=>{
  const config=validConfig({deployment:{projectId:'a-different-but-validly-shaped-project-id'}});
- assert.throws(()=>issueExactProductionIdentity(config,testExpectedIdentity()),{message:'PRODUCTION_IDENTITY_WRONG_VERCEL_PROJECT'});
+ assert.throws(()=>issueExactProductionIdentityForTesting(config,testExpectedIdentity()),{message:'PRODUCTION_IDENTITY_WRONG_VERCEL_PROJECT'});
 });
 test('F2: Preview cannot satisfy the identity gate even with every other field correct',()=>{
  // productionConfiguration() itself only accepts deployment.environment==='production', so a
  // literal 'preview' value never survives that far; this proves defense-in-depth explicitly.
  const config=validConfig();
  const forged={...config,deployment:{...config.deployment,environment:'preview' as never}};
- assert.throws(()=>issueExactProductionIdentity(forged,testExpectedIdentity()));
+ assert.throws(()=>issueExactProductionIdentityForTesting(forged,testExpectedIdentity()));
 });
 test('F2: releaseId (deployment identity, changes every deploy) is deliberately NOT pinned — a different releaseId with everything else correct is accepted',()=>{
  const config=validConfig({deployment:{releaseId:'a-completely-different-release-id'}});
- assert.doesNotThrow(()=>issueExactProductionIdentity(config,testExpectedIdentity()));
+ assert.doesNotThrow(()=>issueExactProductionIdentityForTesting(config,testExpectedIdentity()));
 });
 test('F2: the exact-identity capability is itself WeakMap-backed — a hand-built object shaped like one resolves to null, never a real configuration',()=>{
  assert.equal(exactProductionIdentityConfiguration(undefined),null);
@@ -174,7 +174,7 @@ test('production constructor gate: NODE_ENV=production requires either an R15 or
 
 import {issueProductionReconciliationAuthority,productionReconciliationTarget} from '../../packages/core/src/payment/production-reconciliation-authority';
 
-function reconciliationAuthorityFor(config:ProductionConfiguration){return issueProductionReconciliationAuthority(issueExactProductionIdentity(config,testExpectedIdentity()));}
+function reconciliationAuthorityFor(config:ProductionConfiguration){return issueProductionReconciliationAuthority(issueExactProductionIdentityForTesting(config,testExpectedIdentity()));}
 
 test('F5: issueProductionReconciliationAuthority requires a validated Square PRODUCTION payment binding on the identity',()=>{
  // A genuinely validated identity for the dark/inert profile (flags.payment=false, so
@@ -187,7 +187,7 @@ test('F5: issueProductionReconciliationAuthority requires a validated Square PRO
   flags:{booking:false,guestRecovery:false,payment:false,media:false,avatar:false,staffOperations:false},
   guest:guestPolicy,approvedGuestSha256:guestConfigurationHash(guestPolicy),payment:null,media:null,
  });
- assert.throws(()=>issueProductionReconciliationAuthority(issueExactProductionIdentity(dark,testExpectedIdentity())),{message:'PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED'});
+ assert.throws(()=>issueProductionReconciliationAuthority(issueExactProductionIdentityForTesting(dark,testExpectedIdentity())),{message:'PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED'});
 });
 test('F5: issueProductionReconciliationAuthority binds exactly the merchant/database already on the identity, never a caller-supplied value',()=>{
  const authority=reconciliationAuthorityFor(validConfig());

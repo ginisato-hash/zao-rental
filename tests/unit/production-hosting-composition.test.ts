@@ -1,7 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {installProductionHostingComposition,HOSTING_ACTIVATION_TOKEN} from '../../packages/core/src/guest/production-hosting-composition';
 import {productionServices} from '../../packages/auth/src/production-config';
+import {issueExactProductionIdentityForTesting,type ExactProductionIdentity} from '../../packages/auth/src/production-identity';
+import type {ProductionConfiguration} from '../../packages/auth/src/production-config';
+
+// V3-B (TD correction): this fixture's own self-consistent identity — computed from the same
+// synthetic VERCEL_PROJECT_ID/PRODUCTION_DB_HOST/PRODUCTION_DB_NAME validEnv() below uses, never
+// the real pinned Production values. installProductionHostingComposition now hard-gates on
+// issueExactProductionIdentity by default (no override); this test-only issuer function is the
+// one substitution point, exactly like probeProductionDatabaseReadiness's own `connect` parameter.
+function testIssueIdentity(c: Readonly<ProductionConfiguration>): ExactProductionIdentity {
+  return issueExactProductionIdentityForTesting(c, {
+    hostFingerprintSha256: createHash('sha256').update('ep-r3-fixture.neon.tech').digest('hex'),
+    databaseName: 'zao_rental_production',
+    vercelProjectFingerprintSha256: createHash('sha256').update('r3-fixture-project').digest('hex'),
+  });
+}
 
 function validEnv(overrides: Record<string, string | undefined> = {}) {
   const env: Record<string, string | undefined> = {
@@ -68,7 +84,7 @@ test('the actual dark composition reaches READY with payment/media/notification 
   // dark profile no longer reads or requires them at all — proving activation succeeds without them.
   const env = validEnv();
   for (const s of productionServices) delete env[`PRODUCTION_DB_PASSWORD_${s.toUpperCase()}`];
-  const result = installProductionHostingComposition(env);
+  const result = installProductionHostingComposition(env, testIssueIdentity);
   assert.deepEqual(result, { status: 'INSTALLED' });
   const runtime = await bootstrapProductionRuntime();
   assert.equal(productionStartupState().ready, true);
@@ -81,6 +97,8 @@ test('the actual dark composition reaches READY with payment/media/notification 
   assert.equal(runtime!.safeStatus().DB, 'OFF');
   assert.equal(runtime!.payment, null);
   assert.equal(runtime!.guest, null);
-  // Duplicate installation: a second attempt anywhere else in this process is rejected.
-  assert.throws(() => installProductionHostingComposition(validEnv()));
+  // Duplicate installation: a second attempt anywhere else in this process is rejected — still
+  // exercising that guard specifically (not merely the identity gate) by passing the same test
+  // issuer. installProductionBootstrap's own guard throws ProductionStartupError('FEATURE_FLAGS').
+  assert.throws(() => installProductionHostingComposition(validEnv(), testIssueIdentity), { message: 'FEATURE_FLAGS' });
 });

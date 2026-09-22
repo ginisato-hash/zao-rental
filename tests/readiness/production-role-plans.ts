@@ -237,9 +237,13 @@ try {
   // ---- F1: probeProductionDatabaseReadiness against the real Production content_read role ----
   // (production-db-readiness.ts connects as content_read specifically — reusing it here, rather
   // than a separate ad-hoc credential, is the actual real-world wiring this proves.)
-  await check('F1: probeProductionDatabaseReadiness proves real DB connectivity/identity independent of the dark hosting composition (which never opens a connection at all); a wrong credential fails closed, never CONNECTED; no write of any kind occurs', async () => {
+  await check('F1: probeProductionDatabaseReadiness proves real DB connectivity/identity independent of the dark hosting composition (which never opens a connection at all); a wrong credential fails closed, never CONNECTED; no write of any kind occurs; and it structurally requires an already-issued ExactProductionIdentity, not an arbitrary config (V3-C)', async () => {
     const { probeProductionDatabaseReadiness } = await import('../../packages/db/src/production-db-readiness');
     const { migrationPlan } = await import('../../packages/db/src/index');
+    const { productionConfiguration } = await import('../../packages/auth/src/production-config');
+    const { issueExactProductionIdentityForTesting } = await import('../../packages/auth/src/production-identity');
+    const { productionGuestConfiguration, guestConfigurationHash } = await import('../../packages/contracts/src/production-guest');
+    const { createHash } = await import('node:crypto');
     const probePassword = randomBytes(24).toString('hex');
     await production!.query(`ALTER ROLE ${appNames.content_read} LOGIN PASSWORD '${probePassword}'`);
     const before = (await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n as number;
@@ -248,9 +252,23 @@ try {
       return new Pool({ host: '127.0.0.1', port: db.identity.dbPort, database: TARGET, user: appNames.content_read, password: credential.password, max: 2, connectionTimeoutMillis: 2000 });
     };
     const credential = { provider: 'NEON' as const, environment: 'PRODUCTION' as const, host: 'ep-f1-fixture.neon.tech', port: 5432 as const, database: TARGET, user: appNames.content_read, password: probePassword, revoked: false as const };
-    const good = await probeProductionDatabaseReadiness(roleConfig, credential, connect as never);
+    // A real, fully-validated config (not the F9 block's hand-cast `roleConfig`) — only this can
+    // ever pass isValidatedProductionConfiguration and be issued a genuine ExactProductionIdentity.
+    const f1Guest = productionGuestConfiguration({ schemaVersion: 1, revision: 'F1-FIXTURE', ingressAdapterId: 'f1-fixture-dispatcher', policy: { version: 'F1-FIXTURE', contextSeconds: 3600, absoluteSeconds: 7200, recoverySeconds: 3600, replaySeconds: 30, retentionSeconds: 60, windowSeconds: 10, peerRequests: 1000, globalRequests: 2000 } });
+    const f1Host = 'ep-f1-fixture.neon.tech', f1Project = 'f1-fixture-project';
+    const f1Expected = { hostFingerprintSha256: createHash('sha256').update(f1Host.trim().toLowerCase()).digest('hex'), databaseName: TARGET, vercelProjectFingerprintSha256: createHash('sha256').update(f1Project).digest('hex') };
+    const f1Config = productionConfiguration({
+      schemaVersion: 1, capability: 'ZAO_PRODUCTION_RUNTIME_V1',
+      deployment: { provider: 'VERCEL', environment: 'production', projectId: f1Project, releaseId: 'f1-release', origin: 'https://f1-fixture.invalid' },
+      database: { provider: 'NEON', environment: 'production', host: f1Host, name: TARGET, roles: appNames },
+      flags: { booking: false, guestRecovery: false, payment: false, media: false, avatar: false, staffOperations: false },
+      guest: f1Guest, approvedGuestSha256: guestConfigurationHash(f1Guest),
+      payment: null, media: null,
+    });
+    const f1Identity = issueExactProductionIdentityForTesting(f1Config, f1Expected);
+    const good = await probeProductionDatabaseReadiness(f1Identity, credential, connect as never);
     assert.deepEqual(good, { status: 'CONNECTED', migrationsApplied: migrationPlan.length, migrationsExpected: migrationPlan.length, schemaComplete: true });
-    const bad = await probeProductionDatabaseReadiness(roleConfig, { ...credential, password: 'wrong-password' }, connect as never);
+    const bad = await probeProductionDatabaseReadiness(f1Identity, { ...credential, password: 'wrong-password' }, connect as never);
     assert.equal(bad.status, 'FAILED');
     // Read-only proof: the migration count (and every table this role can otherwise see) is unchanged.
     assert.equal((await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n, before);
@@ -261,7 +279,7 @@ try {
   {
     const { PgPaymentReconciliation } = await import('../../packages/db/src/payment-reconciliation');
     const { issueProductionReconciliationAuthority } = await import('../../packages/core/src/payment/production-reconciliation-authority');
-    const { issueExactProductionIdentity } = await import('../../packages/auth/src/production-identity');
+    const { issueExactProductionIdentityForTesting } = await import('../../packages/auth/src/production-identity');
     const { productionConfiguration } = await import('../../packages/auth/src/production-config');
     const { productionGuestConfiguration, guestConfigurationHash } = await import('../../packages/contracts/src/production-guest');
     const { createHash } = await import('node:crypto');
@@ -278,7 +296,7 @@ try {
       payment: { provider: 'SQUARE', environment: 'PRODUCTION', merchantId: 'merchant-1', locations: { MOUNTAIN_BASE: 'f5-loc-1', ONSEN_BASE: 'f5-loc-2' } },
       media: null,
     });
-    const f5Identity = issueExactProductionIdentity(f5Config, f5Expected);
+    const f5Identity = issueExactProductionIdentityForTesting(f5Config, f5Expected);
     const f5Authority = issueProductionReconciliationAuthority(f5Identity);
     const dispatchRepo = new PgPaymentReconciliation(dispatcher.pool, undefined, f5Authority);
     const workerRepo = new PgPaymentReconciliation(worker.pool, undefined, f5Authority);

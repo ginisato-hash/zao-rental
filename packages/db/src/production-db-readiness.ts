@@ -8,7 +8,7 @@
 import type {Pool} from 'pg';
 import {migrationPlan} from './index';
 import {connectProductionDatabase, verifyProductionDatabase, type ProductionDatabaseCredential} from './production-connection';
-import type {ProductionConfiguration} from '../../auth/src/production-config';
+import {exactProductionIdentityConfiguration, type ExactProductionIdentity} from '../../auth/src/production-identity';
 
 export type ProductionDbReadiness =
   | { status: 'CONNECTED'; migrationsApplied: number; migrationsExpected: number; schemaComplete: boolean }
@@ -17,16 +17,25 @@ export type ProductionDbReadiness =
 /** Never called from bootstrapProductionRuntime()/instrumentation.ts — this is its own,
  * independently-invoked operational check, exactly like Phase D's bootstrap runbook.
  *
+ * V3-C (TD correction): takes an already-issued `ExactProductionIdentity` rather than an
+ * arbitrary `ProductionConfiguration` — the same capability-parameter shape
+ * `productionProjectionPermit`/`issueProductionReconciliationAuthority` already require, so this
+ * can never be pointed at an unverified target; only a config that already passed
+ * `issueExactProductionIdentity` (or, in a test, `issueExactProductionIdentityForTesting`) reaches
+ * the connection attempt at all.
+ *
  * `connect` defaults to the real, TLS-enforcing `connectProductionDatabase` — production callers
  * never pass it. It exists only so a local real-PostgreSQL test can substitute a plain `Pool`
  * (no real Neon TLS certificate exists to test against locally), exactly the same injectable-
  * connect pattern `ProductionRuntimeInput.connect`/`composeProductionRuntime` already establish
  * for the identical problem — see tests/readiness/normal-production-fixture.ts. */
 export async function probeProductionDatabaseReadiness(
-  c: Readonly<ProductionConfiguration>,
+  identity: ExactProductionIdentity,
   credential: ProductionDatabaseCredential,
   connect: typeof connectProductionDatabase = connectProductionDatabase,
 ): Promise<ProductionDbReadiness> {
+  const c = exactProductionIdentityConfiguration(identity);
+  if (!c) return { status: 'FAILED', reason: 'PRODUCTION_IDENTITY_REQUIRED' };
   let pool: Pool | undefined;
   try {
     pool = await connect(c, 'content_read', credential);

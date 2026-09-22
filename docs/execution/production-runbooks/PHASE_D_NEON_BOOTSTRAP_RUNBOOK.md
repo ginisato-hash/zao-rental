@@ -1,0 +1,51 @@
+# Phase D runbook — live Neon Production schema bootstrap
+
+**Status: written, not executed.** No live Neon connection was made while writing this. Every command below is documented for a future, explicitly-authorized Owner session to run — it is not run here.
+
+## What this does
+
+Applies the canonical migration set (`packages/db/src/migration-plan.ts`, currently `0001`–`0039`, or `0040` once PROD-R4/R6/R7 merge and are renumbered) to a real, empty Neon Production database, using the existing `bootstrapProductionSchema()` in [scripts/production-bootstrap.ts](../../../scripts/production-bootstrap.ts) — the same mechanism `npm run test:m2b-bootstrap` already proves locally against a disposable cluster (see PROD-R4/R6/R7's `RESULT.md` files for that local proof). This runbook does not add any new code; it documents how to invoke the existing, already-tested function against a real target.
+
+## Preconditions (verify all of these before connecting to anything real)
+
+1. **A real Neon Production database/branch already exists** and is empty (no tables, views, or materialized views outside `pg_catalog`/`information_schema` — `bootstrapProductionSchema` checks this itself and refuses with `PRODUCTION_DATABASE_NOT_EMPTY` if not, but confirm this is the intended fresh target before connecting at all).
+2. **You know the real database name** (the `target` argument). It must match `IDENTIFIER = /^[a-z][a-z0-9_]{2,62}$/` and must **not** match the disposable `zr_[a-f0-9]{12}` pattern — `assertProductionTarget()` enforces this, but confirm by inspection first; a mistaken disposable-shaped name would simply fail closed, not connect to the wrong database.
+3. **Host identity confirmation** — this bootstrap path (unlike the R2B backup mechanism) has no built-in host-fingerprint check, because it's invoked with a caller-supplied `Pool`, not through the backup CLI's env-var pipeline. Before connecting, independently compute `sha256(lowercase(trim(PGHOST)))` and compare it by eye against the value you separately know is the real Production Neon endpoint — do **not** trust an env var alone. (R2B's backup mechanism pins this as `EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256 = '7ad9939654fde65fa8bf8c4c043e33ca9053036d2137cf7616d365a11876c3fc'` in [scripts/production-backup.ts](../../../scripts/production-backup.ts) — if this is the same Production database R2B backs up, that same fingerprint should match.)
+4. **TLS**: connect with `sslmode=verify-full` and a real CA root (R2B uses `/etc/ssl/certs/ca-certificates.crt` on its pinned `postgres:18` runner — use the equivalent trusted root for whatever machine actually runs this).
+5. **Nobody else is mid-migration** — this is a one-time bootstrap of an empty database; there is no concurrent-writer scenario to worry about beyond the advisory lock (`pg_advisory_xact_lock(71820401)`) the function itself takes.
+6. **A rollback plan exists** — since this runs inside one transaction (`BEGIN`/`COMMIT`/`ROLLBACK` on any error), a failure partway through leaves the database exactly as empty as before. No manual rollback procedure is needed for a failed attempt; only a *successful* bootstrap that later needs to be undone would require `DROP SCHEMA public CASCADE` (and every other created schema) — which is destructive and must be its own separately-authorized decision, not assumed here.
+
+## Exact invocation
+
+There is currently no permanent CLI wrapper around `bootstrapProductionSchema` — it's only ever called from the test suite today. Do not add one as part of running this; a one-off invocation is safer and leaves no permanent script pointing at Production. From the repository root, with `pg` already a dependency:
+
+```bash
+node --import tsx -e "
+import {Pool} from 'pg';
+import {bootstrapProductionSchema} from './scripts/production-bootstrap.ts';
+const pool = new Pool({
+  host: process.env.PGHOST, port: Number(process.env.PGPORT ?? 5432),
+  database: process.env.PGDATABASE, user: process.env.PGUSER, password: process.env.PGPASSWORD,
+  ssl: { rejectUnauthorized: true, ca: (await import('node:fs')).readFileSync(process.env.PGSSLROOTCERT ?? '/etc/ssl/certs/ca-certificates.crt', 'utf8') },
+});
+try {
+  const result = await bootstrapProductionSchema(pool, process.env.PGDATABASE);
+  console.log(JSON.stringify(result, null, 2));
+} finally { await pool.end(); }
+"
+```
+
+Set `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD`/`PGSSLROOTCERT` in the shell environment immediately before running this, from a source only the Owner controls (never committed, never pasted into chat/logs) — the same operational discipline already established for the R2B backup credential.
+
+## Expected result and what to verify after
+
+`bootstrapProductionSchema` returns `{applied, guardsRewritten, target, transformerVersion, planSha256, manifestSha256, provenance}`. Compare `guardsRewritten` against the current `GUARD_MIGRATIONS` constant in `scripts/production-bootstrap.ts` at the time this actually runs (13 as of PROD-R7; re-check after any further merge) — a mismatch means the manifest and code have drifted and the run would already have thrown before reaching this point, so this is really a sanity check on the returned value matching what you expect, not a live risk.
+
+After a successful run, before treating the database as ready for any other Production activity:
+1. Run the same `schemaFingerprint()`/`securityFingerprint()` comparison `test:m2b-bootstrap` runs locally, but pointed at this real database vs. a freshly-migrated local reference, to independently confirm structural/security equivalence (this needs a small adaptation of the existing test, not new production logic — write that adaptation when this runbook is actually executed, not before).
+2. Confirm `SELECT count(*) FROM foundation_migrations` equals the migration count you expect.
+3. Do **not** yet provision any LOGIN credential (payment, backup, webhook receiver/reconciler) against this database — those are each their own separately-authorized, out-of-band step (see PROD-R4's and PROD-R7's `RESULT.md` for exactly which roles exist as NOLOGIN templates at this point, ready to be flipped to LOGIN by the Owner when each is actually needed).
+
+## What this explicitly does NOT do
+
+No Square/payment/webhook LOGIN credential is created or activated by this step. No real customer data is written. No Vercel deploy is triggered by this (see the companion Phase E runbook — the two are independent; this can run before or after Phase E). No DNS/public launch changes.

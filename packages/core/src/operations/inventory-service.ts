@@ -7,9 +7,14 @@ import {OperationsContext,operationalReason,type OpsConnection} from './context'
 // PROD-R5 (integration-corrected): the current real-data Owner scope. The generic
 // importer/planStockImport still supports all 7 ImportVariant families for future
 // architecture — this constant is what actually narrows the current Production real-import
-// package. Widening it (e.g. to admit POLE/WEAR_JACKET/WEAR_PANTS) is a deliberate,
-// separately-reviewed Owner-approved code change, never a runtime flag.
-export const REAL_DATA_APPROVED_FAMILY_SCOPE=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT'] as const satisfies readonly ImportVariant['family'][];
+// package. Widening it (e.g. to admit POLE) is a deliberate, separately-reviewed
+// Owner-approved code change, never a runtime flag.
+//
+// Owner decision (docs/execution/launch-critical-m2b/INVENTORY_SOURCE_AUDIT.md,
+// INVENTORY_OWNER_DECISIONS.md): WEAR_JACKET/WEAR_PANTS admitted alongside the original 4
+// asset-backed families now that an Owner-approved wear quantity source exists. POLE stays
+// excluded — see the same audit's ski-set pole-capacity note.
+export const REAL_DATA_APPROVED_FAMILY_SCOPE=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'] as const satisfies readonly ImportVariant['family'][];
 type Asset={id:string;store_id:string;status:string;version:number;present_expected:boolean};
 type Quantity={id:string;kind:'POLES'|'WEAR';physical:number;version:number;protected_count:number};
 type Snapshot={assets:Asset[];quantities:Quantity[]};

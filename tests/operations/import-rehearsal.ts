@@ -215,28 +215,29 @@ try{
   assert.equal(plan.report.committable,false);
  });
 
- await check('F3 (HTTP level): the actual POST /api/operations/import-stage route — not just the InventoryOperations class — enforces the approved family scope: SKI clean, POLE/WEAR_JACKET/WEAR_PANTS each reported FAMILY_NOT_IN_APPROVED_SCOPE, and a mixed SKI+POLE batch is not ready (no partial admission)',async()=>{
+ await check('F3 (HTTP level, Owner 6-family scope): the actual POST /api/operations/import-stage route — not just the InventoryOperations class — enforces the approved family scope: SKI/SNOWBOARD/SKI_BOOT/SNOWBOARD_BOOT/WEAR_JACKET/WEAR_PANTS all clean, POLE reported FAMILY_NOT_IN_APPROVED_SCOPE, and a mixed SKI+POLE batch is not ready (no partial admission)',async()=>{
   const state=(headers:Headers)=>resolveStaff(x.auth,x.roles.authPool,headers);
   const handler=operationsHandler(state,id=>new OperationsContext(role!.operationsPool,x.roles.authPool,id),x.origin);
   const stage=(csv:string,sheet:string)=>handler(new Request(x.origin+'/api/operations/import-stage',{method:'POST',headers:{cookie:x.signed.cookie,origin:x.origin,'content-type':'application/json'},body:JSON.stringify({requestKey:randomUUID(),input:{csv,sheet}})}));
   const skiKind=KINDS.find(k=>k.family==='SKI')!;
-  const skiCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(skiKind,'MOUNTAIN_BASE','r3 http probe','-r3http-ski')+'\n';
-  const skiRes=await stage(skiCsv,'r3-http-ski');
-  assert.equal(skiRes.status,200);
-  const skiBody=await skiRes.json() as {ready:boolean;rows:{issues:string[]}[]};
-  assert.deepEqual(skiBody.rows[0]!.issues,[]);
 
-  for(const family of ['POLE','WEAR_JACKET','WEAR_PANTS'] as const){
+  for(const family of ['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'] as const){
    const kind=KINDS.find(k=>k.family===family)!;
    const csv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(kind,'MOUNTAIN_BASE','r3 http probe','-r3http-'+family)+'\n';
    const res=await stage(csv,'r3-http-'+family);
    assert.equal(res.status,200);
    const body=await res.json() as {ready:boolean;rows:{issues:string[]}[]};
-   assert.ok(body.rows[0]!.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE'));
-   assert.equal(body.ready,false);
+   assert.deepEqual(body.rows[0]!.issues,[],family);
   }
 
   const poleKind=KINDS.find(k=>k.family==='POLE')!;
+  const poleCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(poleKind,'MOUNTAIN_BASE','r3 http probe','-r3http-pole')+'\n';
+  const poleRes=await stage(poleCsv,'r3-http-pole');
+  assert.equal(poleRes.status,200);
+  const poleBody=await poleRes.json() as {ready:boolean;rows:{issues:string[]}[]};
+  assert.ok(poleBody.rows[0]!.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE'));
+  assert.equal(poleBody.ready,false);
+
   const mixedCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(skiKind,'MOUNTAIN_BASE','r3 http probe','-r3http-mixed-ski')+'\n'+row(poleKind,'MOUNTAIN_BASE','r3 http probe','-r3http-mixed-pole')+'\n';
   const mixedRes=await stage(mixedCsv,'r3-http-mixed');
   const mixedBody=await mixedRes.json() as {ready:boolean;rows:{issues:string[]}[]};

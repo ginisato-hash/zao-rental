@@ -18,10 +18,10 @@ const headers={'Cache-Control':'private, no-store','Vary':'Cookie','Referrer-Pol
 export function operationsHandler(state:(headers:Headers)=>Promise<StaffState>,factory:((id:OpsIdentity)=>OperationsContext)|null,origin:string){return async(request:Request)=>{try{
  const s=await state(request.headers);if(s.status!=='authorized')throw new FlowError('UNAUTHENTICATED',401);const stamp=request.headers.get('x-zao-session');if(stamp&&stamp!==createHash('sha256').update(s.stamp).digest('hex'))throw new FlowError('SESSION_CHANGED',409);
  // F3 (TD correction): the real staff HTTP route must always import within the Owner-approved
- // 4-family real-data scope (inventory-service.ts's REAL_DATA_APPROVED_FAMILY_SCOPE), never the
- // unrestricted 7-family importer — POLE/WEAR_JACKET/WEAR_PANTS stay excluded until separately
- // approved. The generic importer itself is unchanged and still supports all 7 families for
- // other (non-HTTP) callers.
+ // real-data scope (inventory-service.ts's REAL_DATA_APPROVED_FAMILY_SCOPE — SKI/SNOWBOARD/
+ // SKI_BOOT/SNOWBOARD_BOOT/WEAR_JACKET/WEAR_PANTS), never the unrestricted 7-family importer —
+ // POLE stays excluded until separately approved. The generic importer itself is unchanged and
+ // still supports all 7 families for other (non-HTTP) callers.
  if(!factory)throw new FlowError('OPERATIONS_UNCONNECTED',503);const [sessionId]=JSON.parse(s.stamp) as [string];const ctx=factory({subject:s.principal.subject,sessionId}),amend=new AmendmentService(ctx),money=new FinancialOperations(ctx),inventory=new InventoryOperations(ctx,REAL_DATA_APPROVED_FAMILY_SCOPE),url=new URL(request.url),path=url.pathname.slice('/api/operations'.length);
  let result:unknown;
  if(request.method==='GET'){

@@ -15,9 +15,11 @@ function csvFor(v: ImportVariant, assetIds: string[]) {
   return csvHeader + ['SHOP_RECEIPT', 'ADD', v.modelId, v.season, v.id, v.manufacturerSku, quantity, unit, unit.startsWith('ASSET_') ? assetIds.join('|') : '', 'MOUNTAIN_BASE'].join(',');
 }
 
-test('each of the 4 currently-approved families passes the real-data scope', () => {
+test('each of the 6 currently-approved families passes the real-data scope', () => {
   for (const family of REAL_DATA_APPROVED_FAMILY_SCOPE) {
-    // Every currently-approved family (SKI/SNOWBOARD/SKI_BOOT/SNOWBOARD_BOOT) is asset-backed.
+    // SKI/SNOWBOARD/SKI_BOOT/SNOWBOARD_BOOT are asset-backed; WEAR_JACKET/WEAR_PANTS are
+    // quantity-backed (Owner-approved wear source, docs/execution/launch-critical-m2b) — csvFor
+    // already produces the right unit/quantity shape for either kind from the same call.
     const v = variantFor(family), ids = [randomUUID()];
     const p = stageStockImport(csvFor(v, ids), 'Sheet1', [v], {}, 'r1', REAL_DATA_APPROVED_FAMILY_SCOPE);
     assert.equal(p.unresolved.length, 0, family);
@@ -26,8 +28,8 @@ test('each of the 4 currently-approved families passes the real-data scope', () 
   }
 });
 
-test('each currently-excluded family (POLE, WEAR_JACKET, WEAR_PANTS) fails the real-data scope, even though the generic importer still accepts it unscoped', () => {
-  for (const family of ['POLE', 'WEAR_JACKET', 'WEAR_PANTS'] as const) {
+test('the currently-excluded family (POLE) fails the real-data scope, even though the generic importer still accepts it unscoped', () => {
+  for (const family of ['POLE'] as const) {
     const v = variantFor(family);
     const scoped = stageStockImport(csvFor(v, []), 'Sheet1', [v], {}, 'r1', REAL_DATA_APPROVED_FAMILY_SCOPE);
     assert.ok(scoped.plan!.entries[0]!.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE'), family);
@@ -56,9 +58,9 @@ test('the stage digest includes the approved scope: staging the same file under 
   const v = variantFor('SKI');
   const withScope = stageStockImport(csvFor(v, [randomUUID()]), 'Sheet1', [v], {}, 'r1', REAL_DATA_APPROVED_FAMILY_SCOPE);
   const withoutScope = stageStockImport(csvFor(v, [randomUUID()]), 'Sheet1', [v], {}, 'r1');
-  const widerScope = stageStockImport(csvFor(v, [randomUUID()]), 'Sheet1', [v], {}, 'r1', ['SKI', 'SNOWBOARD', 'SKI_BOOT', 'SNOWBOARD_BOOT', 'POLE'] as const);
+  const differentScope = stageStockImport(csvFor(v, [randomUUID()]), 'Sheet1', [v], {}, 'r1', ['SKI', 'SNOWBOARD', 'SKI_BOOT', 'SNOWBOARD_BOOT', 'POLE'] as const);
   assert.notEqual(withScope.stageSha256, withoutScope.stageSha256);
-  assert.notEqual(withScope.stageSha256, widerScope.stageSha256);
+  assert.notEqual(withScope.stageSha256, differentScope.stageSha256);
 });
 
 test('commit cannot widen the scope supplied at stage time: commitImportDryRun always reuses the staged scope, never a fresh caller-supplied one', () => {

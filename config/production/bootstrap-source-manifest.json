@@ -329,6 +329,13 @@
    "sha256": "b86407e16ab06f226d2bf2bd538c81146897d41c2c3dbb21c5f34963ce04df73",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0041",
+   "file": "0041_provisional_booking_capacity.sql",
+   "sha256": "07afc97675c9e0a379c37150d4a2acced0c6119d9b3f0e474ed86cedc3165eb7",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

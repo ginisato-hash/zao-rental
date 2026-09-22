@@ -1,9 +1,11 @@
-import {wearCapacity} from './wear-capacity';
+import {wearCapacity,wearCapacityDetailed} from './wear-capacity';
 import type {PoolClient} from 'pg';
 import {HoldError,normalizePeriod,variantMatches,isWear,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {transferProjection,destinationFeasible,sourceReservations} from '../transfer/projection';
 import {dependencyScope,type ScopeNode} from './dependency-scope';
 import {matchPeriods,type Demand,type Placement} from './period-matching';
+import {provisionalCapacity,type ProvisionalRequirement} from './provisional-capacity';
+import type {ProvisionalFamily} from '../operations/provisional-capacity-source';
 // Internal repository functions: caller must hold inventory lock and establish authorization.
 // Shared by HOLD and authenticated booking operations; no HTTP or principal bypass API.
 type Conn=Pick<PoolClient,'query'>;
@@ -11,7 +13,7 @@ type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:strin
 type Unit={id:string;variant_id:string;family:string;age:string;tier:string;store_id:string;quantity:number;status:string;transfer_piece_id?:string;physical_pole_id?:string};
 type Claim={transfer_piece_id:string|null;hold_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;day:string;start:string;end:string;pickup_store:string;return_store:string};
 type Witness={transferPiece:string|null;holdId:string;key:string;asset:string|null;pole:string|null;slots:Record<string,number>};
-export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
+export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,excludeKeys?:ReadonlySet<string>,wearFeasible?:boolean):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
   if(new Date(normalizePeriod(conditions.period).dueAt)<=now)throw new HoldError('PERIOD_ENDED');
   // Bounded metadata scan, not a LIMIT that silently discards existing promises.
   const nodes=(await c.query<ScopeNode>(`SELECT id,occupancy_start::text AS start,CASE WHEN pickup_store<>return_store THEN '9999-12-31' ELSE occupancy_end::text END AS end,
@@ -25,14 +27,23 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   // All non-replanned live promises remain fixed, including outside the closure.
   const fixedIds=nodes.filter(h=>!mutable.some(m=>m.id===h.id)).map(h=>h.id);
   const jobs=[...mutable.map(h=>({id:h.id,c:h.conditions})),{id:'candidate',c:conditions}];
-  const requirements=jobs.flatMap(j=>j.c.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).map(item=>({...item,member:m,key:j.id+'/'+m.key+':'+item.family,memberKey:m.key+':'+item.family,job:j}))));
+  const requirements=jobs.flatMap(j=>j.c.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).map(item=>({...item,member:m,key:j.id+'/'+m.key+':'+item.family,memberKey:m.key+':'+item.family,job:j}))))
+   // Provisional-capacity fallback (candidate side only): a requirement here is entirely removed
+   // from the physical bipartite match — never merely deprioritized — so planMixedAllocation's
+   // physical retry genuinely solves only for what remains, and the excluded requirement's own
+   // period is satisfied exclusively from the separate provisional pool, never double-claimed.
+   .filter(r=>!excludeKeys?.has(r.key));
   if(requirements.length>240)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const checkedRequirements=[...requirements,...conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(item=>({...item,member:m})))];
   const variantIds=[...new Set(checkedRequirements.flatMap(r=>r.variantIds))];
   const transfers=await transferProjection(c,variantIds);if(transfers.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  const variants=(await c.query<import('../../../contracts/src/hold').PromiseVariant>(`SELECT v.id,v.family,v.age,v.tier,v.model_id,to_jsonb(v)->'compatible_sports' AS compatible_sports,to_jsonb(m)->>'catalog_season' AS catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[variantIds])).rows;
+  const variants=(await c.query<import('../../../contracts/src/hold').PromiseVariant&{size:string}>(`SELECT v.id,v.family,v.age,v.tier,v.size,v.model_id,to_jsonb(v)->'compatible_sports' AS compatible_sports,to_jsonb(m)->>'catalog_season' AS catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[variantIds])).rows;
   for(const r of checkedRequirements)for(const variantId of r.variantIds){const v=variants.find(v=>v.id===variantId);if(!variantMatches(r.member,r,v))throw new HoldError('VARIANT_MISMATCH');}
-  const wear=await wearCapacity(c,conditions,now,ignore);if(!wear.feasible)return {result:'INSUFFICIENT',witness:[],replanned:[]};
+  // wearFeasible===undefined (every existing caller): computed here exactly as before, unchanged
+  // behavior. planMixedAllocation passes an already-computed value instead, since it resolves wear
+  // feasibility itself (with its own provisional-capacity fallback) before calling this function.
+  const wear=wearFeasible===undefined?await wearCapacity(c,conditions,now,ignore):{feasible:wearFeasible};
+  if(!wear.feasible)return {result:'INSUFFICIENT',witness:[],replanned:[]};
   const units=(await c.query<Unit>(`SELECT a.id,a.variant_id,a.family,v.age,v.tier,a.store_id,1 AS quantity,a.status FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=ANY($1::uuid[]) UNION ALL SELECT p.id,p.variant_id,p.family,v.age,v.tier,p.store_id,p.quantity,p.status FROM ledger_poles p JOIN ledger_variants v ON v.id=p.variant_id WHERE p.variant_id=ANY($1::uuid[]) ORDER BY id LIMIT 3001`,[variantIds])).rows;
   for(const u of [...units])if(u.family==='POLE'){u.quantity-=transfers.filter(p=>p.destination_pole_id===u.id&&p.state==='READY').length;for(const p of transfers.filter(p=>p.destination_pole_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state)))units.push({...u,id:p.id,quantity:1,transfer_piece_id:p.id,physical_pole_id:u.id});}
   if(units.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
@@ -85,3 +96,55 @@ export async function writeAllocationClaims(c:Conn,holdId:string,conditions:Hold
   const rows=witness.flatMap(w=>normalizePeriod(conditions.period).dates.map(day=>({hold_id:holdId,requirement_key:w.key,asset_id:w.asset,pole_id:w.pole,pole_slot:w.slots[day]??null,transfer_piece_id:w.transferPiece,day})));
   await c.query(`INSERT INTO inventory_claims(hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day) SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day FROM jsonb_to_recordset($1::jsonb) AS x(hold_id uuid,requirement_key text,asset_id uuid,pole_id uuid,pole_slot integer,transfer_piece_id uuid,day date)`,[JSON.stringify(rows)]);
  }
+
+const PROVISIONAL_FAMILIES:readonly ProvisionalFamily[]=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'];
+type MixedResult={result:Feasibility;witness:Witness[];replanned:string[];provisional:ProvisionalRequirement[];wearExcludeKeys:ReadonlySet<string>};
+const NONE:MixedResult['provisional']=[],NO_KEYS:ReadonlySet<string>=new Set();
+
+/** Candidate-side only (never retroactively reallocates another hold's own physical claims to
+ * provisional capacity): physical inventory is attempted first, in full, exactly as
+ * `planAllocation` already does — a request that is fully satisfiable physically never touches
+ * provisional capacity at all ("physical preferred"). Only when that full attempt is
+ * `INSUFFICIENT` do the candidate's *eligible* requirements (ordinary tier, no modelPromise,
+ * exactly one requested variant, a family the provisional pool actually covers — POLE and any
+ * PREMIUM/modelPromise item are structurally never eligible) become candidates for the fallback.
+ * Structural eligibility alone does not mean an item is *moved* to provisional: every eligible item
+ * is first excluded (proving the remainder is physically feasible without it), then greedily
+ * re-included one at a time — if the physical retry stays FEASIBLE with an item back in, it keeps
+ * its real physical claim; only items that genuinely cannot be re-included stay routed to
+ * provisional. This is what keeps "physical preferred" true even in a mixed request (e.g. a
+ * SKI_SET member whose SKI has real stock but whose SKI_BOOT does not) instead of gratuitously
+ * routing every eligible item to provisional the moment any one of them is short. This remains a
+ * disclosed simplification, not a fully joint physical+provisional optimizer: the greedy
+ * re-inclusion order can matter when several eligible items genuinely compete for the same scarce
+ * unit (see RESULT.md) — but whenever provisional is not needed at all, the first full physical
+ * attempt already succeeds, so the common case is unaffected. */
+export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>):Promise<MixedResult>{
+ const wear=await wearCapacityDetailed(c,conditions,now,ignore);
+ const primary=await planAllocation(c,conditions,now,ignore,pin,undefined,wear.feasible?undefined:false);
+ if(primary.result!=='INSUFFICIENT')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
+ const eligiblePhysical=conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)&&m.tier!=='PREMIUM'&&!i.modelPromise&&PROVISIONAL_FAMILIES.includes(i.family as ProvisionalFamily)&&i.variantIds.length===1).map(i=>({memberKey:m.key+':'+i.family,age:m.age,family:i.family as ProvisionalFamily,variantId:i.variantIds[0]!})));
+ const eligibleWear=wear.infeasible.map(w=>({memberKey:w.key,age:w.age,family:w.family as ProvisionalFamily,variantId:w.variant}));
+ const eligible=[...eligiblePhysical,...eligibleWear];
+ if(!eligible.length)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
+ // Canonical booking size from the ledger variant itself, never the raw request string.
+ const variantRows=(await c.query<{id:string;size:string}>('SELECT id,size FROM ledger_variants WHERE id=ANY($1::uuid[])',[eligible.map(e=>e.variantId)])).rows;
+ const withSize=eligible.map(e=>({...e,bookingSize:variantRows.find(v=>v.id===e.variantId)?.size})).filter((e):e is typeof e&{bookingSize:string}=>!!e.bookingSize);
+ if(withSize.length!==eligible.length)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS}; // an eligible item whose variant can't be resolved is not silently dropped from the demand — no fallback, original INSUFFICIENT stands
+ const excludeKeys=new Set(eligiblePhysical.map(e=>'candidate/'+e.memberKey));
+ let retry=await planAllocation(c,conditions,now,ignore,pin,excludeKeys,true);
+ if(retry.result!=='FEASIBLE')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS}; // even the physical items provisional could ever cover aren't enough — some other requirement is short
+ // Greedy re-inclusion: prefer physical for every eligible item the remaining physical stock can
+ // actually still cover, one at a time, so "physical preferred" holds per item, not just overall.
+ for(const e of eligiblePhysical){
+  const candidateExclude=new Set(excludeKeys);candidateExclude.delete('candidate/'+e.memberKey);
+  const attempt=await planAllocation(c,conditions,now,ignore,pin,candidateExclude,true);
+  if(attempt.result==='FEASIBLE'){excludeKeys.delete('candidate/'+e.memberKey);retry=attempt;}
+ }
+ const stillProvisionalPhysical=eligiblePhysical.filter(e=>excludeKeys.has('candidate/'+e.memberKey));
+ const requirements:ProvisionalRequirement[]=[...stillProvisionalPhysical,...eligibleWear].map(e=>({key:e.memberKey,family:e.family,age:e.age,bookingSize:withSize.find(w=>w.memberKey===e.memberKey)!.bookingSize}));
+ const days=normalizePeriod(conditions.period).dates;
+ const plan=await provisionalCapacity(c,requirements,days,now,ignore);
+ if(!plan.feasible)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
+ return {...retry,provisional:requirements,wearExcludeKeys:new Set(eligibleWear.map(e=>e.memberKey))};
+}

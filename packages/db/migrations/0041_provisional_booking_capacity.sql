@@ -27,7 +27,13 @@ CREATE TABLE provisional_capacity_sources(
 -- structurally, not merely by caller discipline. booking_size is NULL exactly when
 -- size_mapping_status='UNRESOLVED' (no reviewed source-size alias exists yet, e.g. the SKI_BOOT/
 -- SNOWBOARD_BOOT "NNX" tokens) — an unresolved bucket's quantity still counts toward the family
--- total but can never satisfy a size-specific booking request (see provisional_capacity_available()).
+-- total but can never satisfy a size-specific booking request (see provisional_capacity_available_on()).
+--
+-- V2 (TD correction): `quantity` is the immutable AS-REGISTERED base count — never updated after
+-- insert (no UPDATE grant on this table exists anywhere in this migration or any role script).
+-- The actual bookable quantity is always DERIVED: base + provisional_capacity_adjustments (signed
+-- corrections) - provisional_capacity_materializations (confirmed-real deductions) — see
+-- provisional_capacity_effective_quantity() below, the one place that arithmetic lives.
 CREATE TABLE provisional_capacity_buckets(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  source_id uuid NOT NULL REFERENCES provisional_capacity_sources(id),
@@ -45,6 +51,39 @@ CREATE TABLE provisional_capacity_buckets(
  CHECK((materialized_at IS NOT NULL)=(active=false) OR materialized_at IS NULL),
  UNIQUE(source_id,family,age,source_size)
 );
+
+-- V2 (TD correction, item H): immutable corrections ledger — replaces the V1 design's direct
+-- `UPDATE provisional_capacity_buckets SET quantity=...`. A correction (e.g. the Owner supplies a
+-- smaller confirmed count than the original registration) is a new signed delta row, never an edit
+-- to the original bucket. `delta` may be negative (reduction) or positive (upward correction not
+-- already covered by registering a whole new source); zero is meaningless and rejected.
+CREATE TABLE provisional_capacity_adjustments(
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ bucket_id uuid NOT NULL REFERENCES provisional_capacity_buckets(id),
+ delta integer NOT NULL CHECK(delta<>0),
+ reason text NOT NULL CHECK(length(reason) BETWEEN 1 AND 300),
+ actor text NOT NULL REFERENCES staff_members(id),
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE INDEX provisional_capacity_adjustments_bucket ON provisional_capacity_adjustments(bucket_id);
+
+-- V2 (TD correction, items I/J): partial, evidence-tied materialization — replaces the V1 design's
+-- whole-bucket-only `active=false` flip. Each row is one confirmed conversion of provisional
+-- quantity into real stock, tied to an actual real_data_acceptance row (never an arbitrary operator
+-- claim that "this became real"): provisional 10 -> real 4 leaves 3 more materialization rows of up
+-- to 6 remaining before the bucket is fully retired, never double-counted against
+-- provisional_capacity_effective_quantity(). Materializing does NOT touch provisional_capacity_claims
+-- — an ACTIVE claim is preserved exactly as it was; converting it to a real claim is a separate,
+-- explicit reallocation (a hold amend/replan), never implied by capacity becoming real underneath it.
+CREATE TABLE provisional_capacity_materializations(
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ bucket_id uuid NOT NULL REFERENCES provisional_capacity_buckets(id),
+ quantity integer NOT NULL CHECK(quantity BETWEEN 1 AND 100000),
+ real_data_acceptance_id uuid NOT NULL REFERENCES real_data_acceptance(id),
+ actor text NOT NULL REFERENCES staff_members(id),
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE INDEX provisional_capacity_materializations_bucket ON provisional_capacity_materializations(bucket_id);
 
 -- The provisional analogue of wear_claims: one row per (hold, requirement, day). A hold/period
 -- consumes quantity from the shared bucket total, never from a physical unit. `state` (not a
@@ -71,61 +110,108 @@ CREATE INDEX provisional_capacity_claims_bucket_day ON provisional_capacity_clai
 CREATE FUNCTION provisional_capacity_lock() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN PERFORM pg_advisory_xact_lock(71820600);RETURN NULL;END$$;
 CREATE TRIGGER provisional_capacity_sources_lock BEFORE INSERT OR UPDATE ON provisional_capacity_sources FOR EACH STATEMENT EXECUTE FUNCTION provisional_capacity_lock();
 CREATE TRIGGER provisional_capacity_buckets_lock BEFORE INSERT OR UPDATE ON provisional_capacity_buckets FOR EACH STATEMENT EXECUTE FUNCTION provisional_capacity_lock();
+CREATE TRIGGER provisional_capacity_adjustments_lock BEFORE INSERT ON provisional_capacity_adjustments FOR EACH STATEMENT EXECUTE FUNCTION provisional_capacity_lock();
+CREATE TRIGGER provisional_capacity_materializations_lock BEFORE INSERT ON provisional_capacity_materializations FOR EACH STATEMENT EXECUTE FUNCTION provisional_capacity_lock();
 CREATE TRIGGER provisional_capacity_claims_lock BEFORE INSERT OR UPDATE ON provisional_capacity_claims FOR EACH STATEMENT EXECUTE FUNCTION provisional_capacity_lock();
 REVOKE ALL ON FUNCTION provisional_capacity_lock() FROM PUBLIC;
+
+-- V2 (TD correction): the single place the base/adjustments/materializations arithmetic lives —
+-- every other function and the TS planner (provisionalCapacity() in
+-- packages/core/src/inventory/provisional-capacity.ts) reads bookable quantity through this, never
+-- the raw `quantity` column directly. Never negative by construction: materializations can never
+-- exceed effective quantity at insert time (provisional_capacity_materialize_bucket enforces it).
+-- SECURITY DEFINER: the HOLD role (and the provisional_capacity_claim_guard trigger, which fires
+-- under whatever role is writing claims) needs to call this, but should never need direct SELECT
+-- on provisional_capacity_adjustments/_materializations themselves — this function is the one
+-- narrow, read-only window onto that arithmetic, not a new source/bucket authority.
+CREATE FUNCTION provisional_capacity_effective_quantity(p_bucket_id uuid) RETURNS integer
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+ SELECT b.quantity
+  + coalesce((SELECT sum(a.delta)::int FROM provisional_capacity_adjustments a WHERE a.bucket_id=p_bucket_id),0)
+  - coalesce((SELECT sum(m.quantity)::int FROM provisional_capacity_materializations m WHERE m.bucket_id=p_bucket_id),0)
+ FROM provisional_capacity_buckets b WHERE b.id=p_bucket_id;
+$$;
 
 -- Row-level invariant, independent of the application path (mirrors wear_claim_guard,
 -- 0013_wear_quantity.sql). No SECURITY DEFINER needed: this only ever runs as the owning table's
 -- own trigger, invoked under whatever role already has INSERT/UPDATE on these tables.
 CREATE FUNCTION provisional_capacity_claim_guard() RETURNS trigger LANGUAGE plpgsql AS $$
-DECLARE h inventory_holds;b provisional_capacity_buckets;used integer;BEGIN
+DECLARE h inventory_holds;b provisional_capacity_buckets;used integer;bookable integer;BEGIN
  IF NEW.state<>'ACTIVE' THEN RETURN NEW;END IF;
  SELECT * INTO STRICT h FROM inventory_holds WHERE id=NEW.hold_id;
  SELECT * INTO STRICT b FROM provisional_capacity_buckets WHERE id=NEW.bucket_id;
  IF NOT b.active THEN RAISE EXCEPTION 'PROVISIONAL_BUCKET_INACTIVE' USING ERRCODE='23514';END IF;
  IF h.state<>'ACTIVE' OR NEW.day<h.occupancy_start OR NEW.day>h.occupancy_end THEN RAISE EXCEPTION 'INVALID_PROVISIONAL_CLAIM' USING ERRCODE='23514';END IF;
+ bookable:=provisional_capacity_effective_quantity(NEW.bucket_id);
  SELECT coalesce(sum(c.quantity),0) INTO used FROM provisional_capacity_claims c JOIN inventory_holds x ON x.id=c.hold_id
   WHERE c.state='ACTIVE' AND c.bucket_id=NEW.bucket_id AND c.day=NEW.day AND c.id<>NEW.id AND x.state='ACTIVE'
    AND (x.expires_at>inventory_clock() OR x.payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR x.allocation_stage<>'PROVISIONAL');
- IF used+NEW.quantity>b.quantity THEN RAISE EXCEPTION 'PROVISIONAL_CAPACITY_EXCEEDED' USING ERRCODE='23514';END IF;
+ IF used+NEW.quantity>bookable THEN RAISE EXCEPTION 'PROVISIONAL_CAPACITY_EXCEEDED' USING ERRCODE='23514';END IF;
  RETURN NEW;
 END$$;
 CREATE TRIGGER provisional_capacity_claim_guard BEFORE INSERT OR UPDATE ON provisional_capacity_claims FOR EACH ROW EXECUTE FUNCTION provisional_capacity_claim_guard();
 
+-- V2 (TD correction, item L): SECURITY DEFINER with a fixed search_path, actor taken from the
+-- already-authenticated `zao.actor` session setting (set by OperationsContext.transaction() before
+-- any caller function runs — packages/core/src/operations/context.ts) — never a caller-supplied
+-- p_actor parameter. This is the same shape real_data_accept() (0038_real_inventory_provenance.sql)
+-- already establishes. Because the function itself now carries the INSERT rights, the operations
+-- role needs only EXECUTE here, never direct INSERT on provisional_capacity_sources/_buckets — see
+-- scripts/operations-roles.ts's negative-privilege proof in
+-- tests/readiness/provisional-booking-capacity.ts.
+--
 -- Registers one immutable source plus its bucket rows in one statement-locked transaction (the
 -- STATEMENT-level lock trigger above already serializes this against concurrent claims). Pure
--- INSERT, no update/delete path — later counts are new sources, never edits to this one
--- (see provisional_capacity_reduce_bucket for the one narrow, fail-closed exception).
-CREATE FUNCTION provisional_capacity_register_source(p_sha256 text,p_filename text,p_actor text,p_buckets jsonb) RETURNS uuid
-LANGUAGE plpgsql AS $$
-DECLARE v_source_id uuid;BEGIN
+-- INSERT, no update/delete path — later counts are new sources, never edits to this one (see
+-- provisional_capacity_reduce_bucket for the one narrow, fail-closed exception).
+CREATE FUNCTION provisional_capacity_register_source(p_sha256 text,p_filename text,p_buckets jsonb) RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+DECLARE v_source_id uuid;v_actor text;BEGIN
+ v_actor:=current_setting('zao.actor');
  IF jsonb_typeof(p_buckets)<>'array' OR jsonb_array_length(p_buckets)=0 THEN RAISE EXCEPTION 'PROVISIONAL_SOURCE_EMPTY' USING ERRCODE='22023';END IF;
- INSERT INTO provisional_capacity_sources(source_sha256,original_filename,actor) VALUES(p_sha256,p_filename,p_actor) RETURNING id INTO v_source_id;
+ INSERT INTO provisional_capacity_sources(source_sha256,original_filename,actor) VALUES(p_sha256,p_filename,v_actor) RETURNING id INTO v_source_id;
  INSERT INTO provisional_capacity_buckets(source_id,family,age,source_size,booking_size,size_mapping_status,quantity,provenance)
  SELECT v_source_id,x.family,x.age,x.source_size,x.booking_size,x.size_mapping_status,x.quantity,x.provenance
  FROM jsonb_to_recordset(p_buckets) AS x(family text,age text,source_size text,booking_size text,size_mapping_status text,quantity integer,provenance text);
  RETURN v_source_id;
 END$$;
 
--- Available (bookable) quantity for one family/age/booking_size, summed across every ACTIVE
--- bucket from every ACTIVE source that resolved to that exact catalogue size — this is how a
--- later source (test I: future delta) raises capacity without touching the original source's
--- rows, and how UNRESOLVED buckets are structurally excluded from size-specific booking (their
--- quantity is visible in provisional_capacity_family_totals, never here).
-CREATE FUNCTION provisional_capacity_available(p_family text,p_age text,p_booking_size text) RETURNS integer
+-- V2 (TD correction, item K): truthful, date-scoped NET availability — replaces the V1 design's
+-- misleadingly-named provisional_capacity_available(), which returned gross bucket quantity with no
+-- claims subtracted at all (no product code ever called it; only this migration's own test file
+-- did). This is the real "how many of this family/age/booking_size are actually free on this one
+-- day" answer: effective (bookable) quantity minus every other hold's ACTIVE claim for that exact
+-- day, summed across every ACTIVE MAPPED bucket for that size — the same per-bucket, per-day
+-- liveness predicate provisional_capacity_claim_guard and the TS planner already use.
+CREATE FUNCTION provisional_capacity_available_on(p_family text,p_age text,p_booking_size text,p_day date) RETURNS integer
 LANGUAGE sql STABLE AS $$
- SELECT coalesce(sum(quantity),0)::int FROM provisional_capacity_buckets
- WHERE active AND size_mapping_status='MAPPED' AND family=p_family AND age=p_age AND booking_size=p_booking_size;
+ SELECT coalesce(sum(GREATEST(provisional_capacity_effective_quantity(b.id)-coalesce(used.quantity,0),0)),0)::int
+ FROM provisional_capacity_buckets b
+ LEFT JOIN LATERAL (
+  SELECT sum(c.quantity)::int AS quantity FROM provisional_capacity_claims c JOIN inventory_holds h ON h.id=c.hold_id
+  WHERE c.state='ACTIVE' AND c.bucket_id=b.id AND c.day=p_day AND h.state='ACTIVE'
+   AND (h.expires_at>inventory_clock() OR h.payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR h.allocation_stage<>'PROVISIONAL')
+ ) used ON true
+ WHERE b.active AND b.size_mapping_status='MAPPED' AND b.family=p_family AND b.age=p_age AND b.booking_size=p_booking_size;
 $$;
 
--- Fail-closed reduction: a later, smaller confirmed count can never silently shrink capacity out
+-- Fail-closed correction: a later, smaller confirmed count can never silently shrink capacity out
 -- from under an already-promised active claim. Checks the single worst (highest-usage) day, since
 -- that is the binding constraint the bucket's own claim_guard would otherwise enforce day-by-day.
-CREATE FUNCTION provisional_capacity_reduce_bucket(p_bucket_id uuid,p_new_quantity integer,p_actor text) RETURNS provisional_capacity_buckets
-LANGUAGE plpgsql AS $$
-DECLARE b provisional_capacity_buckets;worst integer;BEGIN
- IF p_new_quantity<1 THEN RAISE EXCEPTION 'PROVISIONAL_QUANTITY_INVALID' USING ERRCODE='22023';END IF;
- SELECT * INTO STRICT b FROM provisional_capacity_buckets WHERE id=p_bucket_id FOR UPDATE;
+-- V2 (TD correction, items H/L): records an immutable signed delta (provisional_capacity_adjustments)
+-- instead of updating provisional_capacity_buckets.quantity directly; SECURITY DEFINER, actor from
+-- current_setting('zao.actor'), no p_actor parameter (see provisional_capacity_register_source
+-- above for the identical rationale). `p_new_quantity` is the caller's target effective quantity,
+-- not a raw delta — this function computes and stores the delta itself.
+CREATE FUNCTION provisional_capacity_reduce_bucket(p_bucket_id uuid,p_new_quantity integer) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+DECLARE v_actor text;current_effective integer;delta integer;worst integer;BEGIN
+ v_actor:=current_setting('zao.actor');
+ IF p_new_quantity<0 THEN RAISE EXCEPTION 'PROVISIONAL_QUANTITY_INVALID' USING ERRCODE='22023';END IF;
+ PERFORM 1 FROM provisional_capacity_buckets WHERE id=p_bucket_id FOR UPDATE;
+ current_effective:=provisional_capacity_effective_quantity(p_bucket_id);
+ IF p_new_quantity=current_effective THEN RETURN current_effective;END IF;
+ delta:=p_new_quantity-current_effective;
  SELECT coalesce(max(daily.used),0) INTO worst FROM (
   SELECT sum(c.quantity)::int AS used FROM provisional_capacity_claims c JOIN inventory_holds h ON h.id=c.hold_id
   WHERE c.state='ACTIVE' AND c.bucket_id=p_bucket_id AND h.state='ACTIVE'
@@ -133,26 +219,41 @@ DECLARE b provisional_capacity_buckets;worst integer;BEGIN
   GROUP BY c.day
  ) daily;
  IF p_new_quantity<worst THEN RAISE EXCEPTION 'PROVISIONAL_CAPACITY_BELOW_ACTIVE_CLAIMS' USING ERRCODE='23514';END IF;
- UPDATE provisional_capacity_buckets SET quantity=p_new_quantity WHERE id=p_bucket_id RETURNING * INTO b;
- INSERT INTO ops_history(resource,entity_id,actor,event,after_data) VALUES('provisional_capacity_bucket',b.id,p_actor,'PROVISIONAL_CAPACITY_REDUCED',jsonb_build_object('bucketId',b.id,'newQuantity',p_new_quantity,'worstActiveDay',worst));
- RETURN b;
+ INSERT INTO provisional_capacity_adjustments(bucket_id,delta,reason,actor) VALUES(p_bucket_id,delta,'CORRECTION',v_actor);
+ INSERT INTO ops_history(resource,entity_id,actor,event,after_data) VALUES('provisional_capacity_bucket',p_bucket_id,v_actor,'PROVISIONAL_CAPACITY_ADJUSTED',jsonb_build_object('bucketId',p_bucket_id,'delta',delta,'newEffectiveQuantity',p_new_quantity,'worstActiveDay',worst));
+ RETURN p_new_quantity;
 END$$;
 
--- Atomically retires a bucket once its quantity is confirmed as real physical stock: the bucket
--- stops counting toward availability, and every still-ACTIVE claim against it converts to
--- MATERIALIZED (the guest's provisional promise is preserved, not deleted, but it no longer
--- double-counts once real stock exists for it). This function alone never creates a real Asset —
--- pairing a materialization call with the actual real-data admission is an operational sequencing
--- decision made by the caller, not enforced here.
-CREATE FUNCTION provisional_capacity_materialize_bucket(p_bucket_id uuid,p_actor text) RETURNS provisional_capacity_buckets
-LANGUAGE plpgsql AS $$
-DECLARE b provisional_capacity_buckets;BEGIN
+-- Converts confirmed-real quantity out of the provisional pool, tied to real import evidence, never
+-- an arbitrary operator claim. Partial: provisional 10 -> real 4 records exactly 4, leaving 6
+-- bookable; the bucket is only fully retired (active=false) once cumulative materialized quantity
+-- reaches the bucket's effective quantity. Never touches provisional_capacity_claims — an existing
+-- ACTIVE claim is neither deleted nor auto-converted; it still blocks physical handoff
+-- (packages/core/src/payment/booking-service.ts's verifyPhysicalHandoff) until an explicit
+-- reallocation (hold amend/replan) gives it a real inventory_claims/wear_claims row instead.
+-- V2 (TD correction, items I/J/L): SECURITY DEFINER, actor from current_setting('zao.actor'), no
+-- p_actor parameter; requires a real, existing real_data_acceptance row as evidence.
+CREATE FUNCTION provisional_capacity_materialize_bucket(p_bucket_id uuid,p_quantity integer,p_real_data_acceptance_id uuid) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+DECLARE v_actor text;b provisional_capacity_buckets;already integer;effective integer;BEGIN
+ v_actor:=current_setting('zao.actor');
+ IF p_quantity<1 THEN RAISE EXCEPTION 'PROVISIONAL_QUANTITY_INVALID' USING ERRCODE='22023';END IF;
  SELECT * INTO STRICT b FROM provisional_capacity_buckets WHERE id=p_bucket_id FOR UPDATE;
  IF NOT b.active THEN RAISE EXCEPTION 'PROVISIONAL_BUCKET_ALREADY_INACTIVE' USING ERRCODE='23514';END IF;
- UPDATE provisional_capacity_buckets SET active=false,materialized_at=clock_timestamp() WHERE id=p_bucket_id RETURNING * INTO b;
- UPDATE provisional_capacity_claims SET state='MATERIALIZED',materialized_at=clock_timestamp() WHERE bucket_id=p_bucket_id AND state='ACTIVE';
- INSERT INTO ops_history(resource,entity_id,actor,event,after_data) VALUES('provisional_capacity_bucket',b.id,p_actor,'PROVISIONAL_CAPACITY_MATERIALIZED',jsonb_build_object('bucketId',b.id,'quantity',b.quantity));
- RETURN b;
+ PERFORM 1 FROM real_data_acceptance WHERE id=p_real_data_acceptance_id;
+ IF NOT FOUND THEN RAISE EXCEPTION 'PROVISIONAL_MATERIALIZATION_EVIDENCE_REQUIRED' USING ERRCODE='23503';END IF;
+ -- provisional_capacity_effective_quantity() already nets out every PRIOR materialization (it
+ -- subtracts the full provisional_capacity_materializations sum for this bucket) — it IS the
+ -- current remaining bookable quantity. Subtracting `already` a second time here would double
+ -- count every prior materialization and make `remaining` go negative after the very first partial
+ -- call, rejecting every subsequent one even when real quantity clearly remains.
+ effective:=provisional_capacity_effective_quantity(p_bucket_id);
+ IF p_quantity>effective THEN RAISE EXCEPTION 'PROVISIONAL_MATERIALIZATION_EXCEEDS_QUANTITY' USING ERRCODE='23514';END IF;
+ SELECT coalesce(sum(quantity),0) INTO already FROM provisional_capacity_materializations WHERE bucket_id=p_bucket_id;
+ INSERT INTO provisional_capacity_materializations(bucket_id,quantity,real_data_acceptance_id,actor) VALUES(p_bucket_id,p_quantity,p_real_data_acceptance_id,v_actor);
+ IF p_quantity=effective THEN UPDATE provisional_capacity_buckets SET active=false,materialized_at=clock_timestamp() WHERE id=p_bucket_id;END IF;
+ INSERT INTO ops_history(resource,entity_id,actor,event,after_data) VALUES('provisional_capacity_bucket',p_bucket_id,v_actor,'PROVISIONAL_CAPACITY_MATERIALIZED',jsonb_build_object('bucketId',p_bucket_id,'quantity',p_quantity,'cumulativeMaterialized',already+p_quantity,'effectiveQuantity',effective,'realDataAcceptanceId',p_real_data_acceptance_id));
+ RETURN already+p_quantity;
 END$$;
 
-REVOKE ALL ON FUNCTION provisional_capacity_register_source(text,text,text,jsonb),provisional_capacity_reduce_bucket(uuid,integer,text),provisional_capacity_materialize_bucket(uuid,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION provisional_capacity_register_source(text,text,jsonb),provisional_capacity_reduce_bucket(uuid,integer),provisional_capacity_materialize_bucket(uuid,integer,uuid),provisional_capacity_available_on(text,text,text,date),provisional_capacity_effective_quantity(uuid) FROM PUBLIC;

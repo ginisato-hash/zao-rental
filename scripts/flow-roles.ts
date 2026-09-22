@@ -17,6 +17,9 @@ export async function provisionFlowRole(owner:Pool,identity:{namespace:string;da
  await owner.query(`GRANT SELECT,INSERT,UPDATE ON wear_pools,wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts,wear_return_batches TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT ON wear_requests,wear_history TO ${user}`);
  await owner.query(`GRANT SELECT ON wear_claims TO ${user}`);
+ // verifyClaims()/verifyPhysicalHandoff() (booking-service.ts) read provisional_capacity_claims
+ // to accept a provisional-backed reservation at booking time and fail closed at handoff.
+ if((await owner.query("SELECT to_regclass('public.provisional_capacity_claims') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT SELECT ON provisional_capacity_claims TO ${user}`);
  await owner.query(`GRANT USAGE ON SEQUENCE wear_history_id_seq TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('notification_enqueue_confirmed(uuid)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid) TO ${user}`);

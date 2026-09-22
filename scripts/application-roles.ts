@@ -6,6 +6,7 @@ import {trackPoolLifecycle} from './pool-lifecycle';
 export async function provisionApplicationRoles(owner:Pool,identity:{namespace:string;database:string;dbPort:number}) {
  if(!/^zr_[a-f0-9]{12}$/.test(identity.namespace)||identity.database!==identity.namespace)throw new Error('INVALID_OWNED_DATABASE');
  const hasWear=(await owner.query("SELECT to_regclass('public.wear_pools') IS NOT NULL AND to_regclass('public.wear_claims') IS NOT NULL AS present")).rows[0].present;
+ const hasProvisional=(await owner.query("SELECT to_regclass('public.provisional_capacity_buckets') IS NOT NULL AND to_regclass('public.provisional_capacity_claims') IS NOT NULL AS present")).rows[0].present;
  const connections:Connection[]=[];
  for(const suffix of ['auth','ledger','hold','transfer','pricing','recommendation']) {
   const user=`${identity.namespace}_${suffix}`,password=randomBytes(24).toString('hex');
@@ -37,6 +38,12 @@ export async function provisionApplicationRoles(owner:Pool,identity:{namespace:s
   // Existing table privileges, user permissions and all role defaults stay unchanged.
   if(hasWear&&(suffix==='hold'||suffix==='transfer')){await owner.query(`GRANT SELECT ON wear_pools,wear_claims,wear_loans,wear_receipts,wear_transfers TO ${user}`);}
   if(hasWear&&suffix==='hold'){await owner.query(`GRANT INSERT,UPDATE(active) ON wear_claims TO ${user}`);await owner.query(`GRANT USAGE ON SEQUENCE wear_claims_id_seq TO ${user}`);}
+  // Provisional booking-capacity: HoldService reads bucket capacity and writes/releases its own
+  // candidate's claims (create/amend/cancel/expiry); TransferService/reconcileLedgerProtection
+  // only ever release claims for already-expired holds via expireInventoryHolds, never plan or
+  // insert new ones — narrower than hold's own grant, matching the existing wear_claims split.
+  if(hasProvisional&&(suffix==='hold'||suffix==='transfer')){await owner.query(`GRANT SELECT,UPDATE(state,released_at) ON provisional_capacity_claims TO ${user}`);}
+  if(hasProvisional&&suffix==='hold'){await owner.query(`GRANT SELECT ON provisional_capacity_buckets TO ${user}`);await owner.query(`GRANT INSERT ON provisional_capacity_claims TO ${user}`);await owner.query(`GRANT USAGE ON SEQUENCE provisional_capacity_claims_id_seq TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) TO ${user}`);}
   if(suffix==='pricing'){if((await owner.query("SELECT to_regclass('price_admin_requests') AS t")).rows[0].t)await owner.query(`GRANT SELECT,INSERT ON price_admin_requests TO ${user}`);await owner.query(`GRANT SELECT ON staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,ledger_stores,ledger_models,ledger_variants,inventory_holds,inventory_claims,transfer_pieces,transfer_batches,pricing_history TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE ON price_books TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON price_activations,coupon_versions,price_quotes,coupon_reservations TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);}
   if(suffix==='recommendation'){await owner.query(`GRANT SELECT ON staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,ledger_stores,ledger_variants,recommendation_history TO ${user}`);await owner.query(`GRANT SELECT,INSERT ON recommendation_previews TO ${user}`);await owner.query(`GRANT SELECT,INSERT,UPDATE ON recommendation_selections TO ${user}`);}
   if((await owner.query("SELECT to_regclass('public.rental_inspection_events') IS NOT NULL AS present")).rows[0].present&&['ledger','hold','transfer'].includes(suffix))await owner.query(`GRANT SELECT ON rental_inventory_blocks,rental_loan_items,rental_inspection_events TO ${user}`);

@@ -31,9 +31,12 @@ export class ProvisionalCapacitySourceOperations {
     const p = await this.ctx.authorize('INVENTORY_EDIT');
     if (p.scope !== 'ALL') throw new FlowError('FORBIDDEN', 403);
     return this.ctx.transaction('INVENTORY_EDIT', [], 'PROVISIONAL_CAPACITY_SOURCE_REGISTER', (c) => this.ctx.idempotent(c, key, v, async () => {
+      // V2 (TD correction): the function is now SECURITY DEFINER and reads the actor from the
+      // already-authenticated zao.actor session setting (set by ctx.transaction() below) — no
+      // caller-supplied actor parameter exists anymore.
       const row = (await c.query<{provisional_capacity_register_source: string}>(
-        'SELECT provisional_capacity_register_source($1,$2,$3,$4::jsonb) AS provisional_capacity_register_source',
-        [v.sourceSha256, v.originalFilename, this.ctx.identity.subject, JSON.stringify(buckets.map((b) => ({family: b.family, age: b.age, source_size: b.sourceSize, booking_size: b.bookingSize, size_mapping_status: b.bookingSize ? 'MAPPED' : 'UNRESOLVED', quantity: b.quantity, provenance: b.provenance})))],
+        'SELECT provisional_capacity_register_source($1,$2,$3::jsonb) AS provisional_capacity_register_source',
+        [v.sourceSha256, v.originalFilename, JSON.stringify(buckets.map((b) => ({family: b.family, age: b.age, source_size: b.sourceSize, booking_size: b.bookingSize, size_mapping_status: b.bookingSize ? 'MAPPED' : 'UNRESOLVED', quantity: b.quantity, provenance: b.provenance})))],
       )).rows[0]!;
       return {sourceId: row.provisional_capacity_register_source, buckets: buckets.length, totalQuantity: buckets.reduce((sum, b) => sum + b.quantity, 0)};
     }));

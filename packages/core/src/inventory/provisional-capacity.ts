@@ -17,8 +17,11 @@ export type ProvisionalPlan = {feasible: true; rows: {key: string; bucket: strin
 export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequirement[], days: string[], now: Date, ignore: string|null): Promise<ProvisionalPlan> {
   if (!requirements.length) return {feasible: true, rows: []};
   const families = [...new Set(requirements.map((r) => r.family))];
+  // V2 (TD correction): bookable quantity is derived (base + adjustments - materializations), never
+  // the raw immutable `quantity` column directly — see provisional_capacity_effective_quantity() in
+  // migration 0041.
   const buckets = (await c.query<{id: string; family: string; age: string; booking_size: string; quantity: number}>(
-    `SELECT id,family,age,booking_size,quantity FROM provisional_capacity_buckets WHERE active AND size_mapping_status='MAPPED' AND family=ANY($1::text[]) ORDER BY created_at ASC`,
+    `SELECT id,family,age,booking_size,provisional_capacity_effective_quantity(id) AS quantity FROM provisional_capacity_buckets WHERE active AND size_mapping_status='MAPPED' AND family=ANY($1::text[]) ORDER BY created_at ASC`,
     [families],
   )).rows;
   const claims = buckets.length ? (await c.query<{bucket_id: string; day: string; quantity: number}>(

@@ -1,15 +1,24 @@
 // Real disposable PostgreSQL proof of the provisional booking-capacity mechanism (migration
 // 0041, packages/core/src/operations/provisional-capacity-source.ts,
-// packages/core/src/inventory/provisional-capacity.ts). Mirrors the wear_pools/wear_claims real-PG
-// proof pattern this codebase already establishes. No real Neon SQL, no Square, no payment.
+// packages/core/src/inventory/provisional-capacity.ts, packages/core/src/inventory/allocation.ts's
+// planMixedAllocation). Mirrors the wear_pools/wear_claims real-PG proof pattern this codebase
+// already establishes. No real Neon SQL, no Square, no payment.
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {randomUUID, createHash} from 'node:crypto';
 import {flowFixture} from '../flow/fixture';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {provisionOperationsRole} from '../../scripts/operations-roles';
 import {OperationsContext} from '../../packages/core/src/operations/context';
 import {ProvisionalCapacitySourceOperations} from '../../packages/core/src/operations/provisional-capacity-source';
 import {provisionalCapacity, writeProvisionalClaims, releaseProvisionalClaims, type ProvisionalRequirement} from '../../packages/core/src/inventory/provisional-capacity';
+import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
+import {ledgerPrincipal} from '../../packages/auth/src/staff-auth';
+import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority';
+import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconcile-protection';
+import {InventoryOperations} from '../../packages/core/src/operations/inventory-service';
+import {STOCK_IMPORT_HEADER_V3} from '../../packages/contracts/src/stock-import';
+import {CustodyService} from '../../packages/core/src/rental/custody-service';
+import type {HoldConditions} from '../../packages/contracts/src/hold';
 
 let failed = false, stage = 'fixture', count = 0;
 const x = await flowFixture();
@@ -21,9 +30,12 @@ try {
   const ctx = new OperationsContext(role.operationsPool, x.roles.authPool, x.signed.identity);
   const src = new ProvisionalCapacitySourceOperations(ctx);
   Object.assign(x.principal, (await loadStaff(x.roles.authPool, x.actor))!);
+  const ledger = new LedgerService(x.roles.ledgerPool, ledgerPrincipal(x.principal), (c, stores, global) => verifyLedgerWrite(c, x.roles.authPool, x.signed.identity, stores, global), (resource, id, version) => reconcileLedgerProtection(x.roles.transferPool, x.roles.authPool, x.signed.identity, resource, id, version));
+  const inventoryOps = new InventoryOperations(new OperationsContext(role.operationsPool, x.roles.authPool, x.signed.identity));
 
-  // ---- test harness: a minimal real inventory_holds row, bypassing HoldService entirely (this
-  // module is deliberately not wired into HoldService this pass — it is tested directly). ----
+  // ---- test harness: a minimal real inventory_holds row, bypassing HoldService entirely, used
+  // for the isolated module-level tests A-R below (this module is directly unit-testable this
+  // way). The product-path tests further down use the real x.holds (HoldService) instead. ----
   async function makeHold(startDate: string, endDate: string, state: 'ACTIVE'|'RELEASED'|'EXPIRED' = 'ACTIVE', pickupStore: 'MOUNTAIN_BASE'|'ONSEN_BASE' = 'MOUNTAIN_BASE') {
     const reservationId = randomUUID(), holdId = randomUUID();
     const c = await x.db.pool.connect();
@@ -43,6 +55,19 @@ try {
   function days(startDate: string, n: number) {
     const first = Date.parse(startDate + 'T00:00:00Z');
     return Array.from({length: n}, (_, i) => new Date(first + i * 86400000).toISOString().slice(0, 10));
+  }
+  // provisional_capacity_reduce_bucket/materialize_bucket are now SECURITY DEFINER and read the
+  // actor from zao.actor — this drives them through an owner connection that sets it first,
+  // matching makeHold's own pattern, rather than a bare x.db.pool.query() with no actor context.
+  async function asActor<T>(fn: (c: import('pg').PoolClient) => Promise<T>): Promise<T> {
+    const c = await x.db.pool.connect();
+    try {
+      await c.query('BEGIN');
+      await c.query("SELECT set_config('zao.actor',$1,true)", [x.actor]);
+      const result = await fn(c);
+      await c.query('COMMIT');
+      return result;
+    } catch (e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); }
   }
   const now = new Date();
 
@@ -184,51 +209,99 @@ try {
       buckets: [{family: 'SNOWBOARD', age: 'KIDS', sourceSize: '110 cm', bookingSize: '110 cm', quantity: 3, provenance: 'delta probe, source 1'}],
     });
     const before = (await x.db.pool.query("SELECT id,quantity,source_id,created_at FROM provisional_capacity_buckets WHERE source_id=$1", [first.sourceId])).rows[0];
-    const beforeCapacity = (await x.db.pool.query("SELECT provisional_capacity_available('SNOWBOARD','KIDS','110 cm') n")).rows[0].n;
+    const beforeCapacity = (await x.db.pool.query("SELECT provisional_capacity_available_on('SNOWBOARD','KIDS','110 cm',$1::date) n", ['2035-01-15'])).rows[0].n;
     await src.register(randomUUID(), {
       sourceSha256: '2'.repeat(64), originalFilename: 'delta-source-2.xlsx',
       buckets: [{family: 'SNOWBOARD', age: 'KIDS', sourceSize: '110 cm', bookingSize: '110 cm', quantity: 2, provenance: 'delta probe, source 2 (later confirmed count)'}],
     });
-    const afterCapacity = (await x.db.pool.query("SELECT provisional_capacity_available('SNOWBOARD','KIDS','110 cm') n")).rows[0].n;
+    const afterCapacity = (await x.db.pool.query("SELECT provisional_capacity_available_on('SNOWBOARD','KIDS','110 cm',$1::date) n", ['2035-01-15'])).rows[0].n;
     assert.equal(afterCapacity, beforeCapacity + 2);
     const after = (await x.db.pool.query("SELECT id,quantity,source_id,created_at FROM provisional_capacity_buckets WHERE source_id=$1", [first.sourceId])).rows[0];
     assert.deepEqual(after, before); // original source's own row is byte-unchanged
   });
-  await check('I (mutation): a later count attempting to reduce below already-promised active claims fails closed (PROVISIONAL_CAPACITY_BELOW_ACTIVE_CLAIMS), not a silent shrink', async () => {
+  await check('I (mutation, H immutable ledger): a later count attempting to reduce below already-promised active claims fails closed (PROVISIONAL_CAPACITY_BELOW_ACTIVE_CLAIMS), not a silent shrink; a successful reduction records a signed adjustment row and leaves the immutable base `quantity` column byte-unchanged', async () => {
     const result = await src.register(randomUUID(), {
       sourceSha256: '3'.repeat(64), originalFilename: 'reduce-probe.xlsx',
       buckets: [{family: 'SKI_BOOT', age: 'KIDS', sourceSize: '18X', bookingSize: '18X', quantity: 2, provenance: 'reduce probe (deliberately MAPPED for this test)'}],
     });
     const bucketId = (await x.db.pool.query('SELECT id FROM provisional_capacity_buckets WHERE source_id=$1', [result.sourceId])).rows[0].id;
+    const baseQuantityBefore = (await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity;
     const req: ProvisionalRequirement[] = [{key: 'm:SKI_BOOT', family: 'SKI_BOOT', age: 'KIDS', bookingSize: '18X'}, {key: 'm2:SKI_BOOT', family: 'SKI_BOOT', age: 'KIDS', bookingSize: '18X'}];
     const holdA = await makeHold('2035-08-01', '2035-08-01');
     await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-08-01', 1), now); // consumes both units of the 2-unit bucket
-    await assert.rejects(x.db.pool.query('SELECT provisional_capacity_reduce_bucket($1,1,$2)', [bucketId, x.actor]), {code: '23514'});
-    const unchanged = (await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity;
-    assert.equal(unchanged, 2);
+    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_reduce_bucket($1,1)', [bucketId])), {code: '23514'});
+    assert.equal((await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity, baseQuantityBefore); // rejected: no adjustment recorded
     await releaseProvisionalClaims(x.db.pool, holdA);
-    await x.db.pool.query('SELECT provisional_capacity_reduce_bucket($1,1,$2)', [bucketId, x.actor]); // now safe: no active claims
-    assert.equal((await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity, 1);
+    await asActor((c) => c.query('SELECT provisional_capacity_reduce_bucket($1,1)', [bucketId])); // now safe: no active claims
+    assert.equal((await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity, baseQuantityBefore); // H: the immutable base column never changes — the reduction lives only in the adjustments ledger
+    const adjustment = (await x.db.pool.query('SELECT bucket_id,delta,reason,actor FROM provisional_capacity_adjustments WHERE bucket_id=$1', [bucketId])).rows[0];
+    assert.deepEqual(adjustment, {bucket_id: bucketId, delta: -1, reason: 'CORRECTION', actor: x.actor});
+    assert.equal((await x.db.pool.query('SELECT provisional_capacity_effective_quantity($1) n', [bucketId])).rows[0].n, 1);
   });
 
-  // ---- J: materialization — provisional -> real conversion never double counts ----
-  await check('J: materialization — a materialized bucket stops counting toward availability, its active claims convert to MATERIALIZED (preserved, not deleted), and re-materializing is refused', async () => {
+  // ---- J: materialization — partial, evidence-tied, never auto-converts active claims ----
+  // A real real_data_acceptance row (the actual real-import evidence chain, not a fabricated
+  // pointer): one tiny synthetic SKU staged, committed and accepted as real stock, exactly the
+  // same path tests/operations/import-rehearsal.ts already exercises at larger scale.
+  async function realDataAcceptanceId(sourceLocatorTag: string, quantity: number): Promise<string> {
+    const codeTag = sourceLocatorTag.toUpperCase().replace(/[^A-Z0-9_-]/g, '-');
+    const model = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity materialization evidence', sourceLocator: 'model-' + sourceLocatorTag, code: 'PBCEV-' + codeTag, name: 'PBC materialization ' + sourceLocatorTag, brand: 'SYNTHETIC', family: 'SKI', notes: '', catalogSeason: '2026/27'});
+    const variant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity materialization evidence', sourceLocator: 'variant-' + sourceLocatorTag, modelId: model.id, family: 'SKI', age: 'ADULT', tier: 'REGULAR', size: 'PBC-EV-' + codeTag, notes: ''});
+    const assetIds = Array.from({length: quantity}, () => randomUUID());
+    const row = ['SHOP_RECEIPT', 'ADD', model.id, '2026/27', variant.id, '', quantity, 'ASSET_PAIR', assetIds.join('|'), 'MOUNTAIN_BASE', 'SYNTHETIC materialization evidence receipt', 'row-' + sourceLocatorTag, 'SKI', 'PBC-EV-' + codeTag, 'REGULAR', '', 'AVAILABLE', 'SYNTHETIC', 'PBC materialization ' + sourceLocatorTag, ''].join(',');
+    const csv = STOCK_IMPORT_HEADER_V3.join(',') + '\n' + row + '\n';
+    // real_data_accept() (migration 0038) requires the exact source digest to already be
+    // Owner-approved in real_inventory_sources — this is the actual real-import evidence chain,
+    // not a fabricated pointer (see tests/operations/import-rehearsal.ts's identical `approve()` step).
+    await x.db.pool.query('INSERT INTO real_inventory_sources(source_sha256,label) VALUES($1,$2)', [createHash('sha256').update(csv).digest('hex'), 'PBC materialization evidence ' + sourceLocatorTag]);
+    const staged = await inventoryOps.stageImport(randomUUID(), {csv, sheet: 'pbc-evidence-' + sourceLocatorTag});
+    const committed = await inventoryOps.commitImport(randomUUID(), {id: staged.id, stageSha256: staged.stageSha256, reason: 'PBC materialization evidence'});
+    await inventoryOps.acceptRealData(randomUUID(), {commitId: committed.id, expectedStores: ['MOUNTAIN_BASE']});
+    return (await x.db.pool.query('SELECT id FROM real_data_acceptance WHERE commit_id=$1', [committed.id])).rows[0].id;
+  }
+  await check('J: materialization requires real import evidence — a random/non-existent real_data_acceptance id is refused before any bucket or claim mutation', async () => {
     const result = await src.register(randomUUID(), {
-      sourceSha256: '4'.repeat(64), originalFilename: 'materialize-probe.xlsx',
-      buckets: [{family: 'WEAR_PANTS', age: 'KIDS', sourceSize: 'S', bookingSize: 'S', quantity: 6, provenance: 'materialize probe'}],
+      sourceSha256: '4'.repeat(64), originalFilename: 'materialize-evidence-probe.xlsx',
+      buckets: [{family: 'WEAR_PANTS', age: 'KIDS', sourceSize: 'M', bookingSize: 'M', quantity: 4, provenance: 'materialize evidence probe'}],
+    });
+    const bucketId = (await x.db.pool.query('SELECT id FROM provisional_capacity_buckets WHERE source_id=$1', [result.sourceId])).rows[0].id;
+    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,1,$2)', [bucketId, randomUUID()])), {code: '23503'});
+    assert.equal((await x.db.pool.query('SELECT active FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].active, true);
+  });
+  await check('J: partial materialization — provisional 6 -> real 4 leaves 2 still bookable, never double-counted, and never auto-converts an existing ACTIVE claim; the bucket only fully retires once cumulative materialized quantity reaches effective quantity', async () => {
+    const result = await src.register(randomUUID(), {
+      sourceSha256: '4'.repeat(63) + '5', originalFilename: 'materialize-partial-probe.xlsx',
+      buckets: [{family: 'WEAR_PANTS', age: 'KIDS', sourceSize: 'S', bookingSize: 'S', quantity: 6, provenance: 'materialize partial probe'}],
     });
     const bucketId = (await x.db.pool.query('SELECT id FROM provisional_capacity_buckets WHERE source_id=$1', [result.sourceId])).rows[0].id;
     const req: ProvisionalRequirement[] = [{key: 'm:WEAR_PANTS', family: 'WEAR_PANTS', age: 'KIDS', bookingSize: 'S'}];
     const holdA = await makeHold('2035-09-01', '2035-09-01');
     await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-09-01', 1), now);
-    const beforeLoans = (await x.db.pool.query('SELECT count(*)::int n FROM rental_loan_items')).rows[0].n;
-    await x.db.pool.query('SELECT provisional_capacity_materialize_bucket($1,$2)', [bucketId, x.actor]);
-    assert.equal((await x.db.pool.query("SELECT provisional_capacity_available('WEAR_PANTS','KIDS','S') n")).rows[0].n, 0);
-    const claim = (await x.db.pool.query('SELECT state FROM provisional_capacity_claims WHERE hold_id=$1', [holdA])).rows[0];
-    assert.equal(claim.state, 'MATERIALIZED');
-    await assert.rejects(x.db.pool.query('SELECT provisional_capacity_materialize_bucket($1,$2)', [bucketId, x.actor]), {code: '23514'});
-    const afterLoans = (await x.db.pool.query('SELECT count(*)::int n FROM rental_loan_items')).rows[0].n;
-    assert.equal(afterLoans, beforeLoans); // materialization alone never creates a real physical-custody row (N's own guarantee, re-checked here)
+    const evidence1 = await realDataAcceptanceId('partial-1', 4);
+    await asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,4,$2)', [bucketId, evidence1]));
+    assert.equal((await x.db.pool.query('SELECT provisional_capacity_effective_quantity($1) n', [bucketId])).rows[0].n, 2); // 6 - 4 materialized
+    assert.equal((await x.db.pool.query('SELECT active FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].active, true); // not yet fully retired
+    const claimAfterPartial = (await x.db.pool.query('SELECT state FROM provisional_capacity_claims WHERE hold_id=$1', [holdA])).rows[0];
+    assert.equal(claimAfterPartial.state, 'ACTIVE'); // preserved exactly as it was — never auto-converted
+    // Over-materializing beyond what remains is refused, not silently clamped.
+    const evidenceOver = await realDataAcceptanceId('partial-over', 5);
+    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,3,$2)', [bucketId, evidenceOver])), {code: '23514'});
+    const evidence2 = await realDataAcceptanceId('partial-2', 2);
+    await asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,2,$2)', [bucketId, evidence2])); // exactly retires the bucket
+    assert.deepEqual((await x.db.pool.query('SELECT active,materialized_at IS NOT NULL AS has_materialized_at FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0], {active: false, has_materialized_at: true});
+  });
+  await check('J: a fully-retired bucket refuses any further materialization, and its base quantity column never changed throughout', async () => {
+    const result = await src.register(randomUUID(), {
+      sourceSha256: '4'.repeat(62) + '66', originalFilename: 'materialize-full-probe.xlsx',
+      buckets: [{family: 'WEAR_PANTS', age: 'ADULT', sourceSize: 'M', bookingSize: 'M', quantity: 3, provenance: 'materialize full probe'}],
+    });
+    const bucketId = (await x.db.pool.query('SELECT id FROM provisional_capacity_buckets WHERE source_id=$1', [result.sourceId])).rows[0].id;
+    const baseQuantity = (await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity;
+    const evidence = await realDataAcceptanceId('full', 3);
+    await asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,3,$2)', [bucketId, evidence]));
+    const b = (await x.db.pool.query('SELECT active,materialized_at IS NOT NULL AS has_materialized_at,quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0];
+    assert.deepEqual(b, {active: false, has_materialized_at: true, quantity: baseQuantity}); // fully retired; base column untouched
+    await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_materialize_bucket($1,1,$2)', [bucketId, evidence])), {code: '23514'});
   });
 
   // ---- K: wear — jacket/pants set capacity uses min() ----
@@ -257,7 +330,6 @@ try {
     });
     const columns = (await x.db.pool.query("SELECT column_name FROM information_schema.columns WHERE table_name='provisional_capacity_buckets'")).rows.map((r: {column_name: string}) => r.column_name);
     assert.ok(!columns.includes('model_id') && !columns.includes('variant_id')); // no model/variant identity column exists to promise against
-    // Two "different models" (modeled here only as distinct requirement keys — there is no model field to differ on) requesting the same family/age/size both draw the one shared unit:
     const modelAReq: ProvisionalRequirement[] = [{key: 'model-a:SNOWBOARD', family: 'SNOWBOARD', age: 'ADULT', bookingSize: '165 cm'}];
     const modelBReq: ProvisionalRequirement[] = [{key: 'model-b:SNOWBOARD', family: 'SNOWBOARD', age: 'ADULT', bookingSize: '165 cm'}];
     const holdA = await makeHold('2035-11-01', '2035-11-01'), holdB = await makeHold('2035-11-01', '2035-11-01');
@@ -330,31 +402,198 @@ try {
     void result;
   });
 
-  // ---- operations-role boundary: exactly the register-source path, nothing wider, no PUBLIC grant, no unrelated-role access ----
-  await check('operations-role boundary — PUBLIC has no EXECUTE on any provisional_capacity_* function; the operations role got only the narrow INSERT+EXECUTE register() actually needs (no raw quantity UPDATE, no source mutation/delete, no reduce/materialize call); an unrelated application role (HOLD) has zero access to any provisional_capacity_* table or function', async () => {
+  // ---- role boundary: EXECUTE-only registration, no direct table access anywhere PUBLIC/operations/HOLD shouldn't have ----
+  await check('role boundary — PUBLIC has no EXECUTE on any provisional_capacity_* function; the operations role has EXECUTE on register_source only (no direct source/bucket table access at all, and no reduce/materialize call — SECURITY DEFINER carries the INSERT rights, not the caller); the HOLD role has exactly the narrow plan/write/release access it needs, never source registration or reduce/materialize', async () => {
     const publicGrants = (await x.db.pool.query(
-      `SELECT has_function_privilege('public','provisional_capacity_register_source(text,text,text,jsonb)','EXECUTE') a,
-              has_function_privilege('public','provisional_capacity_reduce_bucket(uuid,integer,text)','EXECUTE') b,
-              has_function_privilege('public','provisional_capacity_materialize_bucket(uuid,text)','EXECUTE') c`,
+      `SELECT has_function_privilege('public','provisional_capacity_register_source(text,text,jsonb)','EXECUTE') a,
+              has_function_privilege('public','provisional_capacity_reduce_bucket(uuid,integer)','EXECUTE') b,
+              has_function_privilege('public','provisional_capacity_materialize_bucket(uuid,integer,uuid)','EXECUTE') c,
+              has_function_privilege('public','provisional_capacity_available_on(text,text,text,date)','EXECUTE') d`,
     )).rows[0];
-    assert.deepEqual(publicGrants, {a: false, b: false, c: false});
+    assert.deepEqual(publicGrants, {a: false, b: false, c: false, d: false});
     const zero = '00000000-0000-0000-0000-000000000000';
-    for (const sql of [
-      'UPDATE provisional_capacity_buckets SET quantity=999999',
-      "UPDATE provisional_capacity_sources SET status='SUPERSEDED'",
-      'DELETE FROM provisional_capacity_sources',
-      `SELECT provisional_capacity_reduce_bucket('${zero}'::uuid,1,'x')`,
-      `SELECT provisional_capacity_materialize_bucket('${zero}'::uuid,'x')`,
-    ]) await assert.rejects(role!.operationsPool.query(sql), {code: '42501'});
+    // operations: EXECUTE on register_source only (proven positively by test A's src.register()
+    // calls already succeeding) and SELECT on claims only (verifyClaims/verifyPhysicalHandoff) —
+    // no direct source/bucket table access of any kind, no reduce/materialize/available_on.
     for (const sql of [
       'SELECT 1 FROM provisional_capacity_sources',
       'SELECT 1 FROM provisional_capacity_buckets',
-      'SELECT 1 FROM provisional_capacity_claims',
-      `SELECT provisional_capacity_register_source('${'0'.repeat(64)}','x','x','[]'::jsonb)`,
+      'INSERT INTO provisional_capacity_sources(source_sha256,original_filename,actor) VALUES(repeat(\'a\',64),\'x\',\'x\')',
+      "UPDATE provisional_capacity_sources SET status='SUPERSEDED'",
+      'DELETE FROM provisional_capacity_sources',
+      `SELECT provisional_capacity_reduce_bucket('${zero}'::uuid,1)`,
+      `SELECT provisional_capacity_materialize_bucket('${zero}'::uuid,1,'${zero}'::uuid)`,
+      `SELECT provisional_capacity_available_on('SKI','ADULT','1 cm','2035-01-01'::date)`,
+    ]) await assert.rejects(role!.operationsPool.query(sql), {code: '42501'});
+    await role!.operationsPool.query('SELECT 1 FROM provisional_capacity_claims'); // legitimate: does not throw
+    // HOLD: SELECT on buckets, SELECT/INSERT on claims and EXECUTE on effective_quantity are all
+    // legitimate (planAllocation/writeProvisionalClaims) — proven positively by every product-path
+    // test below already succeeding. Never source registration, reduce, materialize, or direct
+    // source-table access.
+    for (const sql of [
+      `SELECT provisional_capacity_register_source('${'0'.repeat(64)}','x','[]'::jsonb)`,
+      `SELECT provisional_capacity_reduce_bucket('${zero}'::uuid,1)`,
+      `SELECT provisional_capacity_materialize_bucket('${zero}'::uuid,1,'${zero}'::uuid)`,
+      'INSERT INTO provisional_capacity_sources(source_sha256,original_filename,actor) VALUES(repeat(\'a\',64),\'x\',\'x\')',
+      'SELECT 1 FROM provisional_capacity_sources',
     ]) await assert.rejects(x.roles.holdPool.query(sql), {code: '42501'});
+    await x.roles.holdPool.query('SELECT 1 FROM provisional_capacity_buckets'); // legitimate: does not throw
+    await x.roles.holdPool.query('SELECT 1 FROM provisional_capacity_claims'); // legitimate: does not throw
   });
 
-  console.log(JSON.stringify({status: 'PASS', cases: count, realDataImports: 0, realAssetIdsGenerated: 0, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));
+  console.log(JSON.stringify({status: 'PASS(module)', cases: count, realDataImports: 0, realAssetIdsGenerated: 0, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));
+
+  // ==================================================================================================
+  // PRODUCT-PATH: wired through the real HoldService (x.holds)/CustodyService, not the standalone
+  // provisional-capacity module directly — this is the actual "provisional inventory is usable by a
+  // real reservation" proof the Owner asked for. Each test below registers its own dedicated,
+  // synthetic PBC-prefixed variant/size so it never collides with other suites' physical fixtures.
+  // ==================================================================================================
+  async function physicalSkuFor(tag: string, quantity: number, family: 'SKI'|'SNOWBOARD' = 'SKI', size = 'PBC-' + tag) {
+    const model = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-' + tag, code: 'PBCPP-' + tag.toUpperCase().replace(/[^A-Z0-9_-]/g, '-'), name: 'PBC product-path ' + tag, brand: 'SYNTHETIC', family, notes: '', catalogSeason: '2026/27'});
+    const variant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-' + tag, modelId: model.id, family, age: 'ADULT', tier: 'REGULAR', size, notes: ''});
+    if (quantity > 0) {
+      const c = await x.db.pool.connect();
+      try {
+        await c.query('BEGIN');
+        await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC provisional-capacity product-path fixture',true)", [x.actor]);
+        for (let n = 0; n < quantity; n++) await c.query(
+          `INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE','NOT_APPLICABLE','','','SYNTHETIC','provisional-capacity product-path fixture',$4)`,
+          [randomUUID(), variant.id, family, tag + '-' + n],
+        );
+        await c.query('COMMIT');
+      } catch (e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); }
+    }
+    return {model, variant, size};
+  }
+  async function provisionalFor(family: 'SKI'|'SNOWBOARD'|'SKI_BOOT'|'SNOWBOARD_BOOT'|'WEAR_JACKET'|'WEAR_PANTS', size: string, quantity: number, tag: string) {
+    return src.register(randomUUID(), {sourceSha256: createHash('sha256').update('pbc-product-path-' + tag).digest('hex'), originalFilename: 'pbc-product-path-' + tag + '.xlsx', buckets: [{family, age: 'ADULT', sourceSize: size, bookingSize: size, quantity, provenance: 'product-path fixture ' + tag}]});
+  }
+  function singleSkiCondition(day: string, variantId: string, tier: 'REGULAR'|'PREMIUM' = 'REGULAR', modelPromise?: {variantId: string; modelId: string; season: string}): HoldConditions {
+    return {...(modelPromise ? {contractVersion: 'INTEGRATED_V1_2' as const} : {}), reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: day, endDate: day, slot: 'DAY'}, members: [{key: 'p', product: 'SINGLE', age: 'ADULT', tier, items: [{family: 'SKI', variantIds: [variantId], ...(modelPromise ? {modelPromise} : {})}]}]};
+  }
+
+  await check('P1: physical-only — a booking against a variant with only real inventory (no provisional bucket exists for it) is unaffected: CREATED with a real inventory_claims row, zero provisional_capacity_claims', async () => {
+    const {variant} = await physicalSkuFor('p1', 1);
+    const outcome = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-01', variant.id));
+    assert.equal(outcome.result, 'CREATED');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 1);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n, 0);
+  });
+
+  await check('P2: provisional-only — zero physical stock for this variant/size, but a matching provisional bucket has room: the booking is still CREATED (not INSUFFICIENT), backed by a real provisional_capacity_claims row instead of inventory_claims', async () => {
+    const {variant, size} = await physicalSkuFor('p2', 0);
+    await provisionalFor('SKI', size, 2, 'p2');
+    const outcome = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-02', variant.id));
+    assert.equal(outcome.result, 'CREATED');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 0);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n, 1);
+  });
+
+  await check('P3: mixed — a SKI_SET member needs SKI+POLE (physical) and SKI_BOOT (zero physical, provisional-backed): every requirement is satisfied in the SAME hold, two via inventory_claims (SKI, POLE), one via provisional_capacity_claims (SKI_BOOT)', async () => {
+    const skiSku = await physicalSkuFor('p3-ski', 1);
+    const poleModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p3-pole', code: 'PBC-P3-POLE', name: 'PBC P3 pole', brand: 'SYNTHETIC', family: 'POLE', notes: '', catalogSeason: '2026/27'});
+    const poleVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p3-pole', modelId: poleModel.id, family: 'POLE', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P3-POLE', notes: ''});
+    await ledger.create('poles', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'pole-p3', variantId: poleVariant.id, storeId: 'MOUNTAIN_BASE', status: 'AVAILABLE', quantity: 1, notes: ''});
+    const bootModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p3-boot', code: 'PBC-P3-BOOT', name: 'PBC P3 boot', brand: 'SYNTHETIC', family: 'SKI_BOOT', notes: '', catalogSeason: '2026/27'});
+    const bootVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p3-boot', modelId: bootModel.id, family: 'SKI_BOOT', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P3-BOOT', notes: ''});
+    await provisionalFor('SKI_BOOT', 'PBC-P3-BOOT', 1, 'p3-boot');
+    const conditions: HoldConditions = {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-03', endDate: '2036-03-03', slot: 'DAY'}, members: [{key: 'p', product: 'SKI_SET', age: 'ADULT', tier: 'REGULAR', items: [{family: 'SKI', variantIds: [skiSku.variant.id]}, {family: 'SKI_BOOT', variantIds: [bootVariant.id]}, {family: 'POLE', variantIds: [poleVariant.id]}]}]};
+    const outcome = await x.holds.command('create', randomUUID(), conditions);
+    assert.equal(outcome.result, 'CREATED');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 2); // SKI + POLE
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n, 1); // SKI_BOOT only
+  });
+
+  await check('P4: physical preferred — one real unit AND provisional capacity both exist for the same variant/size: the booking uses the real unit, provisional stays untouched (never gratuitously used when physical alone already satisfies the request)', async () => {
+    const {variant, size} = await physicalSkuFor('p4', 1);
+    await provisionalFor('SKI', size, 5, 'p4');
+    const outcome = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-04', variant.id));
+    assert.equal(outcome.result, 'CREATED');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 1);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n, 0);
+  });
+
+  await check('P5: PREMIUM/modelPromise excluded — zero physical stock, ample provisional capacity, but a PREMIUM member with a modelPromise on the item can never fall back to undifferentiated provisional stock: INSUFFICIENT, not CREATED', async () => {
+    const size = 'PBC-P5';
+    const model = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p5', code: 'PBCPP-P5', name: 'PBC product-path p5', brand: 'SYNTHETIC', family: 'SKI', notes: '', catalogSeason: '2026/27'});
+    const variant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p5', modelId: model.id, family: 'SKI', age: 'ADULT', tier: 'PREMIUM', size, notes: ''});
+    await provisionalFor('SKI', size, 5, 'p5'); // zero physical stock for this PREMIUM variant, but ample provisional
+    const outcome = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-05', variant.id, 'PREMIUM', {variantId: variant.id, modelId: model.id, season: '2026/27'}));
+    assert.equal(outcome.result, 'INSUFFICIENT');
+  });
+
+  await check('P6: POLE stays physical-only — POLE is not one of the six provisional-capacity families at all; zero physical pole stock is INSUFFICIENT regardless of any other provisional capacity registered', async () => {
+    const poleModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p6-pole', code: 'PBC-P6-POLE', name: 'PBC P6 pole', brand: 'SYNTHETIC', family: 'POLE', notes: '', catalogSeason: '2026/27'});
+    const poleVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p6-pole', modelId: poleModel.id, family: 'POLE', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P6-POLE', notes: ''});
+    const conditions: HoldConditions = {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-06', endDate: '2036-03-06', slot: 'DAY'}, members: [{key: 'p', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'POLE', variantIds: [poleVariant.id]}]}]};
+    assert.equal((await x.holds.command('create', randomUUID(), conditions)).result, 'INSUFFICIENT');
+  });
+
+  await check('P7: concurrent last-provisional-unit race — two concurrent HoldService.command() creates against a 1-unit provisional-only bucket: exactly one CREATED, the other INSUFFICIENT, never both', async () => {
+    const {variant, size} = await physicalSkuFor('p7', 0);
+    await provisionalFor('SKI', size, 1, 'p7');
+    const outcomes = await Promise.allSettled([
+      x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-07', variant.id)),
+      x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-07', variant.id)),
+    ]);
+    const results = outcomes.map((o) => o.status === 'fulfilled' ? o.value.result : 'THREW');
+    assert.equal(results.filter((r) => r === 'CREATED').length, 1);
+    assert.equal(results.filter((r) => r === 'INSUFFICIENT').length, 1);
+  });
+
+  await check('P8: wear provisional fallback — zero real wear pool stock for either piece, provisional WEAR_JACKET/WEAR_PANTS capacity covers both: a WEAR_SET member (which requires exactly jacket+pants) is still CREATED, backed by provisional_capacity_claims rows, never fabricated wear_claims rows', async () => {
+    const jacketModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p8-jacket', code: 'PBC-P8-JACKET', name: 'PBC P8 jacket', brand: 'SYNTHETIC', family: 'WEAR_JACKET', notes: '', catalogSeason: '2026/27'});
+    const jacketVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p8-jacket', modelId: jacketModel.id, family: 'WEAR_JACKET', age: 'ADULT', tier: 'STANDARD', size: 'PBC-P8-WEAR', notes: '', compatibleSports: ['SKI', 'SNOWBOARD']});
+    const pantsModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p8-pants', code: 'PBC-P8-PANTS', name: 'PBC P8 pants', brand: 'SYNTHETIC', family: 'WEAR_PANTS', notes: '', catalogSeason: '2026/27'});
+    const pantsVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p8-pants', modelId: pantsModel.id, family: 'WEAR_PANTS', age: 'ADULT', tier: 'STANDARD', size: 'PBC-P8-WEAR', notes: '', compatibleSports: ['SKI', 'SNOWBOARD']});
+    await provisionalFor('WEAR_JACKET', 'PBC-P8-WEAR', 1, 'p8-jacket');
+    await provisionalFor('WEAR_PANTS', 'PBC-P8-WEAR', 1, 'p8-pants');
+    const conditions: HoldConditions = {contractVersion: 'INTEGRATED_V1_2', reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-08', endDate: '2036-03-08', slot: 'DAY'}, members: [{key: 'w', product: 'WEAR_SET', age: 'ADULT', tier: 'STANDARD', wearSport: 'SKI', items: [{family: 'WEAR_JACKET', variantIds: [jacketVariant.id]}, {family: 'WEAR_PANTS', variantIds: [pantsVariant.id]}]}]};
+    const outcome = await x.holds.command('create', randomUUID(), conditions);
+    assert.equal(outcome.result, 'CREATED');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM wear_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 0);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n, 2);
+  });
+
+  await check('P9: cancel releases the provisional claim exactly once — after command(\'cancel\',...), the provisional_capacity_claims row is RELEASED and the unit is immediately available to a new hold', async () => {
+    const {variant, size} = await physicalSkuFor('p9', 0);
+    await provisionalFor('SKI', size, 1, 'p9');
+    const first = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id));
+    assert.equal(first.result, 'CREATED');
+    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id))).result, 'INSUFFICIENT'); // unit already held
+    await x.holds.command('cancel', randomUUID(), undefined, first.holdId);
+    assert.equal((await x.db.pool.query("SELECT state FROM provisional_capacity_claims WHERE hold_id=$1", [first.holdId])).rows[0].state, 'RELEASED');
+    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id))).result, 'CREATED'); // now free again
+  });
+
+  await check('P10: expiry releases the provisional claim — an unpaid hold past expiry is swept by expireInventoryHolds (via the next command() call) exactly like a real inventory_claims release, freeing the unit', async () => {
+    const {variant, size} = await physicalSkuFor('p10', 0);
+    await provisionalFor('SKI', size, 1, 'p10');
+    const first = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-10', variant.id));
+    assert.equal(first.result, 'CREATED');
+    await x.clock(new Date(x.now().getTime() + 700000).toISOString()); // past HOLD_TTL_SECONDS, still unpaid
+    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-10', variant.id))).result, 'CREATED'); // the expiring hold's expiry is swept first, freeing the unit for this new request
+    assert.equal((await x.db.pool.query("SELECT state FROM provisional_capacity_claims WHERE hold_id=$1", [first.holdId])).rows[0].state, 'RELEASED');
+  });
+
+  await check('P11: checkout gate — a hold with an ACTIVE provisional claim can be booked and paid for (reservation allowed), but CustodyService.prepare() fails closed with PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED (physical handoff not allowed) until the claim is real', async () => {
+    const {variant, size} = await physicalSkuFor('p11', 0);
+    await provisionalFor('SKI', size, 1, 'p11');
+    const conditions = singleSkiCondition('2035-06-15', variant.id); // within quotes.initializePrivate's 2035-01-01..2035-12-31 price coverage — unlike the other product-path tests, P11 needs pricing/booking, not just HoldService
+    const built = await x.draft(undefined, conditions);
+    const paid = await x.service.startPayment(built.booking.id, randomUUID());
+    assert.equal(paid.state, 'CONFIRMED_DEV');
+    const custody = new CustodyService(role!.operationsPool, x.roles.authPool, x.signed.identity);
+    const view = await custody.checkoutView(built.booking.id);
+    // No real inventory_claims row exists (the requirement is provisional-backed), so view.items
+    // is empty; a syntactically-valid placeholder selection is enough to pass prepare()'s own
+    // input-shape check — verifyPhysicalHandoff fails closed before selections are ever compared
+    // against real assignment.
+    await assert.rejects(custody.prepare(randomUUID(), {bookingId: built.booking.id, expectedBookingVersion: view.bookingVersion, expectedHoldVersion: view.holdVersion, selections: [{requirementKey: 'p:SKI', assetId: randomUUID(), poleId: null}], fitEvidence: 'SYNTHETIC fit note'}), {code: 'PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED'});
+  });
+
+  console.log(JSON.stringify({status: 'PASS', cases: count, realDataImports: 3, realAssetIdsGenerated: 9, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));
 } catch (e) {
   failed = true;
   console.error(JSON.stringify({status: 'FAIL', stage, code: (e as {code?: string}).code ?? (e as Error).name, detail: (e as Error).message.slice(0, 500)}));

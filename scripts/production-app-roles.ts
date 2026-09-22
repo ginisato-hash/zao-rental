@@ -72,6 +72,11 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT INSERT,UPDATE(active) ON wear_claims TO ${n.hold}`,
   `GRANT USAGE ON SEQUENCE wear_claims_id_seq TO ${n.hold}`,
   `GRANT SELECT ON guest_contexts,booking_actors TO ${n.hold}`,
+  // Provisional booking-capacity (packages/core/src/inventory/hold-service.ts, allocation.ts):
+  // same split as wear above — hold plans/reads buckets and writes/releases its own claims.
+  `GRANT SELECT ON provisional_capacity_buckets TO ${n.hold}`,
+  `GRANT SELECT,INSERT,UPDATE(state,released_at) ON provisional_capacity_claims TO ${n.hold}`,
+  `GRANT USAGE ON SEQUENCE provisional_capacity_claims_id_seq TO ${n.hold}`,
  );
  // ---- transfer ----
  sql.push(
@@ -87,6 +92,9 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT EXECUTE ON FUNCTION transfer_pool(uuid,text,text),transfer_move_stock(uuid,text,timestamptz) TO ${n.transfer}`,
   `GRANT SELECT ON rental_inventory_blocks,rental_loan_items,rental_inspection_events TO ${n.transfer}`,
   `GRANT SELECT ON wear_pools,wear_claims,wear_loans,wear_receipts,wear_transfers TO ${n.transfer}`,
+  // expireInventoryHolds() (packages/core/src/inventory/expiry.ts) releases provisional claims
+  // for holds it expires — release-only, never plans or inserts (matches hold's narrower peer).
+  `GRANT SELECT,UPDATE(state,released_at) ON provisional_capacity_claims TO ${n.transfer}`,
  );
  // ---- pricing ----
  sql.push(
@@ -151,6 +159,10 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT SELECT ON wear_claims TO ${n.operations}`,
   `GRANT SELECT,INSERT,UPDATE ON wear_pools,wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts,wear_return_batches TO ${n.operations}`,
   `GRANT SELECT,INSERT ON wear_requests,wear_history TO ${n.operations}`,
+  // BookingService/CustodyService (apps/web's booking/custody routes both run under this role)
+  // read-only: verifyClaims()/verifyPhysicalHandoff(). No source/bucket registration authority
+  // here — that is a separate, not-yet-authorized production operational decision.
+  `GRANT SELECT ON provisional_capacity_claims TO ${n.operations}`,
   `GRANT INSERT ON ledger_assets,ledger_poles TO ${n.operations}`,
   `GRANT UPDATE(status) ON ledger_assets TO ${n.operations}`,
   `GRANT UPDATE(quantity,status) ON ledger_poles TO ${n.operations}`,

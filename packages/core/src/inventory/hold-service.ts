@@ -1,5 +1,6 @@
 import {writeWearClaims} from './wear-capacity';
-import {planAllocation,writeAllocationClaims} from './allocation';
+import {planAllocation,planMixedAllocation,writeAllocationClaims} from './allocation';
+import {writeProvisionalClaims,releaseProvisionalClaims} from './provisional-capacity';
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
 import {authorizeBookingActor,type BookingActor} from '../../../auth/src/booking-actor';
@@ -97,7 +98,7 @@ export class HoldService {
    else if(old&&old.allocation_stage!=='PROVISIONAL')throw new HoldError('ALLOCATION_FIXED',409);
    else if(old&&paymentDecision(old.payment_state,true,old.expires_at<=now,false)!=='MAY_CHANGE')throw new HoldError('PAYMENT_RECONCILIATION_REQUIRED',409);
    else if(op==='cancel'){
-    await c.query("UPDATE inventory_holds SET state='RELEASED',version=version+1 WHERE id=$1",[holdId]);await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=$1 AND active',[holdId]);outcome={result:'RELEASED',holdId:holdId!};
+    await c.query("UPDATE inventory_holds SET state='RELEASED',version=version+1 WHERE id=$1",[holdId]);await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=$1 AND active',[holdId]);await releaseProvisionalClaims(c,holdId!);outcome={result:'RELEASED',holdId:holdId!};
    }else if(op==='expire')outcome={result:'UNCHANGED',holdId:holdId!};
    else{
     if(!conditions)throw new HoldError('INVALID_CONDITIONS');
@@ -105,7 +106,7 @@ export class HoldService {
     // Same-key reconciliation above is distinct from permission to start new work.
     const admit=async(at:Date)=>{const intake=await heldIntake(c,conditions!,at,old);if(op==='amend'&&intake.mode==='HOLD_CONTINUATION'&&expectedVersion===undefined)throw new HoldError('EXPECTED_VERSION_REQUIRED',409);};
     await admit(now);
-    const plan=await planAllocation(c,conditions,now,old?.id??null,pin);
+    const plan=await planMixedAllocation(c,conditions,now,old?.id??null,pin);
     if(plan.result!=='FEASIBLE')outcome={result:plan.result,...(old?{holdId:old.id}:{})};
     else {
      // Recheck at the write boundary too, after planning and any awaited SQL.
@@ -123,7 +124,8 @@ export class HoldService {
      await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=ANY($1::uuid[]) AND active',[replanIds]);
      for(const otherId of plan.replanned){const other=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=$1',[otherId])).rows[0]!;await writeAllocationClaims(c,otherId,other.conditions,plan.witness.filter(w=>w.holdId===otherId));}
      await writeAllocationClaims(c,target,conditions,plan.witness.filter(w=>w.holdId==='candidate'));
-     if([conditions,old?.conditions].some(value=>value?.members.some(m=>m.items.some(i=>i.family.startsWith('WEAR_')))))await writeWearClaims(c,target,conditions,now);
+     await writeProvisionalClaims(c,target,plan.provisional,normalizePeriod(conditions.period).dates,now);
+     if([conditions,old?.conditions].some(value=>value?.members.some(m=>m.items.some(i=>i.family.startsWith('WEAR_')))))await writeWearClaims(c,target,conditions,now,plan.wearExcludeKeys);
      const after=(await c.query('SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,day FROM inventory_claims WHERE hold_id=ANY($1::uuid[]) AND active ORDER BY id',[[...replanIds,target]])).rows;
      await c.query('SELECT inventory_record_replan($1::jsonb,$2::jsonb)',[JSON.stringify(before),JSON.stringify(after)]);
      outcome={result:old?'AMENDED':'CREATED',holdId:target};

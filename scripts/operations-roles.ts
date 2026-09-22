@@ -25,12 +25,17 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  await owner.query(`GRANT USAGE ON SEQUENCE inventory_claims_id_seq,wear_claims_id_seq,wear_history_id_seq TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock(),inventory_record_replan(jsonb,jsonb),ops_assert_actor(text,text[],text),rental_apply_receipt(uuid),rental_apply_inspection(uuid),rental_complete_no_pickup(uuid),ops_checkout_amendment(uuid),ops_reconcile_poles(uuid,uuid,integer) TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('notification_status(text)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION notification_status(text),notification_resend(uuid,uuid,text,text) TO ${user}`);
- // provisional_capacity_register_source is invoker-rights (mirrors wear_pools/wear_claims,
- // not SECURITY DEFINER), so the operations role needs direct INSERT on its two tables plus
- // the narrow EXECUTE the migration's REVOKE ALL FROM PUBLIC otherwise withholds.
- if((await owner.query("SELECT to_regprocedure('provisional_capacity_register_source(text,text,text,jsonb)') v")).rows[0].v){
-  await owner.query(`GRANT SELECT,INSERT ON provisional_capacity_sources,provisional_capacity_buckets TO ${user}`);
-  await owner.query(`GRANT EXECUTE ON FUNCTION provisional_capacity_register_source(text,text,text,jsonb) TO ${user}`);
+ // V2 (TD correction): provisional_capacity_register_source is now SECURITY DEFINER (fixed
+ // search_path, actor from current_setting('zao.actor')) — the function itself carries the INSERT
+ // rights, so the operations role needs only the narrow EXECUTE the migration's REVOKE ALL FROM
+ // PUBLIC otherwise withholds, never direct INSERT on provisional_capacity_sources/_buckets.
+ if((await owner.query("SELECT to_regprocedure('provisional_capacity_register_source(text,text,jsonb)') v")).rows[0].v){
+  await owner.query(`GRANT EXECUTE ON FUNCTION provisional_capacity_register_source(text,text,jsonb) TO ${user}`);
+  // BookingService/CustodyService (packages/core/src/payment/booking-service.ts) run under this
+  // role too: verifyClaims()/verifyPhysicalHandoff() read provisional_capacity_claims to accept a
+  // provisional-backed reservation at booking time and to fail closed at physical handoff — a
+  // read-only need, never a write, so no INSERT/UPDATE here.
+  await owner.query(`GRANT SELECT ON provisional_capacity_claims TO ${user}`);
  }
  // The console functions are SECURITY DEFINER, so the role needs execute rights only
  // and never direct access to ops_exceptions or the source projection.

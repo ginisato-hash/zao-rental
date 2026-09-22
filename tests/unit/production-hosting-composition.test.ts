@@ -1,23 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
 import {installProductionHostingComposition,HOSTING_ACTIVATION_TOKEN} from '../../packages/core/src/guest/production-hosting-composition';
 import {productionServices} from '../../packages/auth/src/production-config';
-import {issueExactProductionIdentityForTesting,type ExactProductionIdentity} from '../../packages/auth/src/production-identity';
-import type {ProductionConfiguration} from '../../packages/auth/src/production-config';
-
-// V3-B (TD correction): this fixture's own self-consistent identity — computed from the same
-// synthetic VERCEL_PROJECT_ID/PRODUCTION_DB_HOST/PRODUCTION_DB_NAME validEnv() below uses, never
-// the real pinned Production values. installProductionHostingComposition now hard-gates on
-// issueExactProductionIdentity by default (no override); this test-only issuer function is the
-// one substitution point, exactly like probeProductionDatabaseReadiness's own `connect` parameter.
-function testIssueIdentity(c: Readonly<ProductionConfiguration>): ExactProductionIdentity {
-  return issueExactProductionIdentityForTesting(c, {
-    hostFingerprintSha256: createHash('sha256').update('ep-r3-fixture.neon.tech').digest('hex'),
-    databaseName: 'zao_rental_production',
-    vercelProjectFingerprintSha256: createHash('sha256').update('r3-fixture-project').digest('hex'),
-  });
-}
 
 function validEnv(overrides: Record<string, string | undefined> = {}) {
   const env: Record<string, string | undefined> = {
@@ -78,27 +62,21 @@ test('payment/media stay OFF in the dark profile regardless of env — there is 
   const source = installProductionHostingComposition.toString();
   assert.ok(!/payment:\s*true/.test(source) && !/media:\s*true/.test(source));
 });
-test('the actual dark composition reaches READY with payment/media/notification OFF and zero provider IO — no real PostgreSQL is needed for this proof, since every business flag is false, so composeProductionRuntime never opens a connection or calls Square/R2 at all', async () => {
-  const {bootstrapProductionRuntime, productionStartupState} = await import('../../packages/core/src/guest/production-bootstrap');
-  // F1 (TD correction): no PRODUCTION_DB_PASSWORD_* env var for any of the 11 services — the
-  // dark profile no longer reads or requires them at all — proving activation succeeds without them.
+// V4 (TD correction): installProductionHostingComposition now always calls the real, override-free
+// issueExactProductionIdentity — there is no injectable issuer anywhere, in product code or in any
+// test. A fully valid-shaped (structurally correct) env still fails here, because its synthetic
+// host/project/db can never match the real pinned Production identity, and no test can construct
+// one that does. This proves the two things that remain provable offline: (1) a structurally-valid
+// env is refused for the right reason (identity, not a shape defect already covered above), and
+// (2) installProductionBootstrap is never reached — no partial/dark install happens — before that
+// identity check passes. The full accept path (reaches INSTALLED/READY with a genuine identity) is
+// R3_ATTENDED_ACCEPTANCE_REQUIRED — see docs/execution/production-integration/RESULT.md.
+test('a structurally-valid env (every shape/key check above would pass) is still refused at the real identity gate, and installProductionBootstrap is never reached — no dark install occurs before identity failure', async () => {
+  const {productionStartupState} = await import('../../packages/core/src/guest/production-bootstrap');
+  const before = productionStartupState();
   const env = validEnv();
   for (const s of productionServices) delete env[`PRODUCTION_DB_PASSWORD_${s.toUpperCase()}`];
-  const result = installProductionHostingComposition(env, testIssueIdentity);
-  assert.deepEqual(result, { status: 'INSTALLED' });
-  const runtime = await bootstrapProductionRuntime();
-  assert.equal(productionStartupState().ready, true);
-  assert.equal(productionStartupState().stage, 'READY');
-  assert.equal(runtime!.safeStatus().PAYMENT_ADAPTER, 'OFF');
-  assert.equal(runtime!.safeStatus().MEDIA, 'OFF');
-  assert.equal(runtime!.safeStatus().NOTIFICATION, 'UNCONNECTED');
-  // F1 (TD correction): zero pools are ever opened in this dark profile, so DB must never claim
-  // READY — it must report the same "never turned on" OFF semantics as PAYMENT_ADAPTER/MEDIA.
-  assert.equal(runtime!.safeStatus().DB, 'OFF');
-  assert.equal(runtime!.payment, null);
-  assert.equal(runtime!.guest, null);
-  // Duplicate installation: a second attempt anywhere else in this process is rejected — still
-  // exercising that guard specifically (not merely the identity gate) by passing the same test
-  // issuer. installProductionBootstrap's own guard throws ProductionStartupError('FEATURE_FLAGS').
-  assert.throws(() => installProductionHostingComposition(validEnv(), testIssueIdentity), { message: 'FEATURE_FLAGS' });
+  assert.throws(() => installProductionHostingComposition(env), { message: /^PRODUCTION_IDENTITY_WRONG_/ });
+  // No side effect: bootstrap state is byte-identical to before the (failed) install attempt.
+  assert.deepEqual(productionStartupState(), before);
 });

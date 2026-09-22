@@ -6,10 +6,20 @@
 // can mint it, and only for the exact merchant already bound to that identity's own validated
 // Square payment configuration, never a caller-supplied merchant string.
 import {exactProductionIdentityConfiguration, type ExactProductionIdentity} from '../../../auth/src/production-identity';
+import type {ProductionConfiguration} from '../../../auth/src/production-config';
 
 export type ProductionReconciliationTarget = Readonly<{merchantId: string; database: string}>;
 export type ProductionReconciliationAuthority = Readonly<{kind: 'PRODUCTION_RECONCILIATION_AUTHORITY'}>;
 const issued = new WeakMap<ProductionReconciliationAuthority, ProductionReconciliationTarget>();
+
+/** V4 (TD correction): pure — operates on a plain ProductionConfiguration directly, no
+ * ExactProductionIdentity capability needed. Proves the validation rule itself without needing a
+ * real, capability-minted identity (impossible to construct in a test with no test-only issuer
+ * anywhere). Returns the target fields it would bind, or null if the config doesn't qualify. */
+export function deriveProductionReconciliationTarget(config: Readonly<ProductionConfiguration>): ProductionReconciliationTarget | null {
+  if (!config.payment || config.payment.provider !== 'SQUARE' || config.payment.environment !== 'PRODUCTION' || !config.payment.merchantId || !config.database?.name) return null;
+  return {merchantId: config.payment.merchantId, database: config.database.name};
+}
 
 /** The only way to obtain this capability: a genuine ExactProductionIdentity whose bound
  * configuration carries a validated Square PRODUCTION payment binding. Without it,
@@ -18,11 +28,10 @@ const issued = new WeakMap<ProductionReconciliationAuthority, ProductionReconcil
  * payment role (scripts/production-payment-roles.ts) is granted EXECUTE on and nothing else. */
 export function issueProductionReconciliationAuthority(identity: ExactProductionIdentity): ProductionReconciliationAuthority {
   const config = exactProductionIdentityConfiguration(identity);
-  if (!config || !config.payment || config.payment.provider !== 'SQUARE' || config.payment.environment !== 'PRODUCTION' || !config.payment.merchantId || !config.database?.name) {
-    throw new Error('PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED');
-  }
+  const derived = config && deriveProductionReconciliationTarget(config);
+  if (!derived) throw new Error('PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED');
   const authority: ProductionReconciliationAuthority = Object.freeze({kind: 'PRODUCTION_RECONCILIATION_AUTHORITY'});
-  issued.set(authority, Object.freeze({merchantId: config.payment.merchantId, database: config.database.name}));
+  issued.set(authority, Object.freeze(derived));
   return authority;
 }
 export function productionReconciliationTarget(authority?: ProductionReconciliationAuthority): ProductionReconciliationTarget | null {

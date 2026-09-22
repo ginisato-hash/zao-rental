@@ -30,7 +30,7 @@ export type ProjectionWorld=ReturnType<typeof worldFixture>;
 /** Scripted SQL/transaction model, not a PostgreSQL lock, isolation, trigger, durability or privilege proof. */
 export class ProjectionSqlFixture{
  world=worldFixture();now=new Date(clock);calls:{sql:string;values:unknown[];connection:number}[]=[];released:boolean[]=[];
- failAt:string|null=null;loseCommitResponse=false;staleHeadWrite=false;database='zr_012345abcdef';
+ failAt:string|null=null;loseCommitResponse=false;staleHeadWrite=false;database='zr_012345abcdef';role='zr_012345abcdef_pay_projection';
  onQuery:((sql:string)=>Promise<void>)|null=null;private chain=Promise.resolve();private serial=0;
  async lock(){const previous=this.chain;let unlock=()=>{};this.chain=new Promise<void>(r=>{unlock=r;});await previous;return unlock;}
  async connect():Promise<InboxConnection>{
@@ -44,7 +44,7 @@ export class ProjectionSqlFixture{
    if(sql==='ROLLBACK'){tx=null;unlock?.();unlock=null;return {rows:[],rowCount:0};}
    const w=tx??this.world,v=values;let rows:unknown[]=[],count=0;
    if(sql.startsWith('SET ')||sql.includes("set_config('zao.actor'")||sql.includes('pg_advisory_xact_lock_shared'))return {rows,rowCount:count};
-   if(sql.includes('current_database()'))rows=[{name:this.database}];
+   if(sql.includes('current_database()'))rows=[{name:this.database,role:this.role}];
    else if(sql.startsWith('SELECT inventory_clock()'))rows=[{now:new Date(this.now)}];
    else if(sql.startsWith('SELECT')&&sql.includes('FROM rental_bookings'))rows=sql.includes('WHERE owner_id=$1 AND request_key=$2')?[]:(w.b&&String(v[0])===w.b.id||sql.includes('ORDER BY created_at')?[w.b]:[]);
    else if(sql.startsWith('SELECT')&&sql.includes('FROM rental_payment_attempts'))rows=w.a&&(String(v[0])===w.a.id||String(v[0])===w.a.booking_id)&&(!v[1]||v[1]===w.a.booking_id)?[w.a]:[];

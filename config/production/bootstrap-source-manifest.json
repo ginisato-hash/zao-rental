@@ -322,6 +322,13 @@
     "offset": 160,
     "fragment": "current_database() !~ '^zr_[a-f0-9]{12}$'"
    }
+  },
+  {
+   "id": "0040",
+   "file": "0040_production_payment_admission.sql",
+   "sha256": "41951745d1c6edd2fbe0fb1170e0fbd5e33922d28a96c16a580150b63fbdc2e0",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

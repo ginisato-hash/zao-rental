@@ -18,8 +18,14 @@ export class PgPaymentReconciliation implements PaymentReconciliationRepository,
  finalize(claim:ReconciliationClaim,outcome:JobOutcome){return this.tx(async c=>(await c.query<{ok:boolean}>('SELECT payment_reconciliation.finalize($1,$2,$3,$4,$5,$6,$7::jsonb) AS ok',[claim.id,claim.leaseToken,claim.truthRevision,outcome.state,outcome.code,outcome.retrySeconds,outcome.truth?JSON.stringify(outcome.truth):null])).rows[0]?.ok===true);}
  async loadBatch(claims:ReconciliationClaim[]):Promise<ReadonlyMap<string,PaymentContext>>{
   if(claims.length===0)return new Map();if(claims.length>20||claims.some(c=>c.environment!==claims[0]!.environment))throw new Error('INVALID_CONTEXT_BATCH');
-  return this.tx(async c=>new Map((await c.query<{entry:{jobId:string;context:PaymentContext}}>('SELECT payment_reconciliation.load_contexts($1,$2::uuid[]) AS entry',[claims[0]!.environment,claims.map(c=>c.id)])).rows.map(({entry})=>[entry.jobId,entry.context])));
+  // load_contexts_production mirrors load_contexts exactly for mode='SQUARE_PRODUCTION'; the
+  // SANDBOX-shaped function is never called with a PRODUCTION environment value, and vice versa.
+  const production=claims[0]!.environment==='PRODUCTION';
+  return this.tx(async c=>new Map((await c.query<{entry:{jobId:string;context:PaymentContext}}>(production?'SELECT payment_reconciliation.load_contexts_production($1,$2::uuid[]) AS entry':'SELECT payment_reconciliation.load_contexts($1,$2::uuid[]) AS entry',[claims[0]!.environment,claims.map(c=>c.id)])).rows.map(({entry})=>[entry.jobId,entry.context])));
  }
- load(claim:ReconciliationClaim){return this.tx(async c=>(await c.query<{context:PaymentContext|null}>('SELECT payment_reconciliation.load_context($1,$2,$3) AS context',[claim.environment,claim.merchantId,claim.paymentId])).rows[0]?.context??null);}
+ load(claim:ReconciliationClaim){
+  const production=claim.environment==='PRODUCTION';
+  return this.tx(async c=>(await c.query<{context:PaymentContext|null}>(production?'SELECT payment_reconciliation.load_context_production($1,$2,$3) AS context':'SELECT payment_reconciliation.load_context($1,$2,$3) AS context',[claim.environment,claim.merchantId,claim.paymentId])).rows[0]?.context??null);
+ }
  diagnostics(environment:WebhookEnvironment,limit:number){return this.tx(async c=>(await c.query<{summary:JobSummary}>('SELECT payment_reconciliation.diagnostics($1,$2) AS summary',[environment,limit])).rows.map(({summary})=>({...summary,updatedAt:new Date(summary.updatedAt)})));}
 }

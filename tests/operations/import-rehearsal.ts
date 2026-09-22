@@ -204,6 +204,16 @@ try{
   assert.ok(/^[a-f0-9-]{36}$/.test(labelled.id));
  });
 
+ await check('PROD-R5: the real-data production entry point (constructed with the approved family scope) refuses POLE, even though the generic service above admitted it freely',async()=>{
+  const {REAL_DATA_APPROVED_FAMILY_SCOPE}=await import('../../packages/core/src/operations/inventory-service');
+  const scopedSvc=new InventoryOperations(ctx,REAL_DATA_APPROVED_FAMILY_SCOPE);
+  const poleKindForProbe=KINDS.find(k=>k.family==='POLE')!;
+  const csv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(poleKindForProbe,'MOUNTAIN_BASE','r5 scope probe','-r5probe')+'\n';
+  const plan=await scopedSvc.stageImport(randomUUID(),{csv,sheet:'r5-scope-probe'});
+  assert.ok(plan.rows[0]!.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE'));
+  assert.equal(plan.report.committable,false);
+ });
+
  console.log(JSON.stringify({status:'PASS',cases:count,syntheticSets:PER_STORE*2*STORES.length,stores:STORES.length,assetsCreated:PER_STORE*4*STORES.length,realInventoryImports:0,productionGuarantee:false,hostedDb:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??(e as Error).name,detail:(e as Error).message.slice(0,500)}));}
 finally{await role?.close();await x.close();}

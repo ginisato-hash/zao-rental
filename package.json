@@ -62,6 +62,7 @@
     "test:integration-p2": "node --import tsx tests/readiness/production-composition.ts && node --import tsx tests/readiness/backup-restore.ts",
     "backup:production": "node --import tsx scripts/production-backup.ts",
     "test:production-backup": "node --import tsx tests/readiness/production-backup.ts",
+    "test:production-role-plans": "node --import tsx tests/readiness/production-role-plans.ts",
     "test:square-activation": "node scripts/square-activation.mjs",
     "test:staff-diagnostic": "node --import tsx tests/readiness/staff-diagnostic.ts",
     "test:activation-p4": "node --import tsx tests/readiness/booking-access.ts && node --import tsx tests/readiness/sandbox-booking.ts && node --import tsx tests/readiness/booking-access-ui.ts",

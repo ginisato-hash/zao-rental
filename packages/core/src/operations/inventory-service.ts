@@ -4,13 +4,23 @@ import {ContentInputError} from '../content/bulk-plan';
 import {stageStockImport,commitImportDryRun,importDryRunReport,type ImportStage} from '../content/import-staging';
 import type {ImportVariant} from '../content/stock-import-plan';
 import {OperationsContext,operationalReason,type OpsConnection} from './context';
+// PROD-R5 (integration-corrected): the current real-data Owner scope. The generic
+// importer/planStockImport still supports all 7 ImportVariant families for future
+// architecture — this constant is what actually narrows the current Production real-import
+// package. Widening it (e.g. to admit POLE/WEAR_JACKET/WEAR_PANTS) is a deliberate,
+// separately-reviewed Owner-approved code change, never a runtime flag.
+export const REAL_DATA_APPROVED_FAMILY_SCOPE=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT'] as const satisfies readonly ImportVariant['family'][];
 type Asset={id:string;store_id:string;status:string;version:number;present_expected:boolean};
 type Quantity={id:string;kind:'POLES'|'WEAR';physical:number;version:number;protected_count:number};
 type Snapshot={assets:Asset[];quantities:Quantity[]};
 type Observations={assets:string[];quantities:Record<string,number>};
 type Stocktake={id:string;store_id:string;revision:number;state:string;baseline:Snapshot;observations:Observations};
 export class InventoryOperations{
- constructor(private ctx:OperationsContext){}
+ // PROD-R5 (integration-corrected): optional, defaults to unrestricted (every existing
+ // caller/test — which exercises all 7 families for generic infrastructure testing — is
+ // unaffected). The real-data production import entry point is the one expected to
+ // construct this with REAL_DATA_APPROVED_FAMILY_SCOPE explicitly.
+ constructor(private ctx:OperationsContext,private approvedFamilyScope?:readonly ImportVariant['family'][]){}
  private async snapshot(c:OpsConnection,store:string):Promise<Snapshot>{return {
   assets:(await c.query<Asset>(`SELECT a.id,a.store_id,a.status,a.version,NOT EXISTS(SELECT 1 FROM rental_loan_items l WHERE l.asset_id=a.id AND l.state='OUT') AND NOT EXISTS(SELECT 1 FROM transfer_pieces p WHERE p.asset_id=a.id AND p.state IN ('IN_TRANSIT','RECEIVED')) AS present_expected FROM ledger_assets a WHERE a.store_id=$1 ORDER BY a.id`,[store])).rows,
   quantities:(await c.query<Quantity>(`SELECT p.id,'POLES'::text AS kind,(p.quantity-(SELECT count(*)::int FROM rental_loan_items l WHERE l.pole_id=p.id AND l.state='OUT')) AS physical,p.version,(SELECT count(*)::int FROM rental_loan_items l WHERE l.pole_id=p.id AND l.state='OUT') AS protected_count FROM ledger_poles p WHERE p.store_id=$1 UNION ALL SELECT id,'WEAR',total-on_loan-in_transit,revision,returned_pending+cleaning+today_blocked+unavailable FROM wear_pools WHERE store_id=$1 ORDER BY id`,[store])).rows
@@ -51,7 +61,7 @@ export class InventoryOperations{
  }
  async importCatalog(){await this.ctx.authorize('INVENTORY_EDIT');const c=await this.catalog(this.ctx.pool);return {variants:c.variants,revision:c.revision,manufacturerSkuPolicy:'EMPTY_WHEN_NOT_IN_AUTHORITATIVE_CATALOG'};}
  async stageImport(key:string,value:unknown){const v=flowObject(value,['csv','sheet']);if(typeof v.csv!=='string'||Buffer.byteLength(v.csv)>2*1024*1024||typeof v.sheet!=='string')throw new FlowError('IMPORT_INPUT_INVALID',422);
-  return this.ctx.transaction('INVENTORY_EDIT',[],'IMPORT_DRY_RUN',(c)=>this.ctx.idempotent(c,key,{op:'stageImport',v},async()=>{const catalog=await this.catalog(c),stage=stageStockImport(v.csv as string,v.sheet as string,catalog.variants,catalog.prior,catalog.revision);
+  return this.ctx.transaction('INVENTORY_EDIT',[],'IMPORT_DRY_RUN',(c)=>this.ctx.idempotent(c,key,{op:'stageImport',v},async()=>{const catalog=await this.catalog(c),stage=stageStockImport(v.csv as string,v.sheet as string,catalog.variants,catalog.prior,catalog.revision,this.approvedFamilyScope);
    const stores=[...new Set(stage.staged.flatMap(r=>r.normalized.storeId?[r.normalized.storeId]:[]))];await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['INVENTORY_EDIT',stores,this.ctx.identity.subject]);
    const exists=new Set((await c.query<{id:string}>('SELECT id FROM ledger_assets WHERE id=ANY($1::uuid[])',[stage.staged.flatMap(r=>r.normalized.assetIds).filter(x=>/^[0-9a-f-]{36}$/.test(x))])).rows.map(r=>r.id));
    const conflicts=stage.plan?.entries.filter(e=>e.disposition!=='ALREADY_IMPORTED'&&e.source.assetIds.some(id=>exists.has(id))).map(e=>e.source.locator)??[];

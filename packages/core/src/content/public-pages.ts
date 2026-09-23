@@ -9,6 +9,8 @@ export function publicPage(locale:string,path:string){return pages.find(p=>p.loc
 export function canonicalPath(locale:Locale,path:string){return '/'+locale+(path?'/'+path:'');}
 export function publicOrigin(raw:string|undefined){if(publicationApproved())return PUBLICATION_ORIGIN;if(!raw)return 'http://127.0.0.1';const u=new URL(raw);if(u.origin!==raw||u.username||u.password||!(u.protocol==='https:'||u.protocol==='http:'&&['127.0.0.1','localhost'].includes(u.hostname)))throw new Error('INVALID_PUBLIC_ORIGIN');return u.origin;}
 export function indexingEnabled(){return publicationApproved();}
+/** robots.txt rules for the same authority the proxy and page metadata use. */
+export function robotsRules(indexing:boolean){return indexing?{allow:['/ja','/en'],disallow:['/api/','/staff/','/admin/','/preview/','/ja/book','/en/book','/ja/booking/','/en/booking/','/*?*']}:{disallow:'/'};}
 export function languages(origin:string,path:string){return {ja:origin+canonicalPath('ja',path),en:origin+canonicalPath('en',path),'x-default':origin+canonicalPath('ja',path)};}
 export function safeJsonLd(value:unknown){return JSON.stringify(value).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');}
 export type LocationContent={store:'MOUNTAIN_BASE'|'ONSEN_BASE';name:string;address:string|null;telephone:string|null;verified:boolean;openingHours:string};

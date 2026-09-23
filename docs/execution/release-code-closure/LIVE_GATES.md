@@ -21,6 +21,12 @@ The existing empty-target bootstrap and role plans remain the actual mechanisms:
 
 Trusted server composition (bindings are provided in memory, never by an HTTP request):
 
+> production-activation-readiness: this sketch is now implemented as
+> `installProductionCommercialComposition()` (packages/core/src/guest/production-commercial-composition.ts).
+> "The same transport" is corrected there: each store gets its own strict single-location transport,
+> selected by `RoutedSquareProductionGateway` / `RoutedSquareProductionRefundGateway` from the durable
+> row's location. See docs/execution/production-activation-readiness/RESULT.md.
+
 ```ts
 const runtime = await composeProductionRuntime({
   ...approvedRuntimeInput,

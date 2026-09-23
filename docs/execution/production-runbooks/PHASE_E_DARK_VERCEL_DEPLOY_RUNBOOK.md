@@ -51,3 +51,19 @@ Per the integration-correction directive, a bare "readiness stays false with zer
 ## What this explicitly does NOT do
 
 No DNS change, no custom domain, no public launch, no marketing/customer-facing announcement. No Square/payment/webhook credential is set. No real guest booking, inventory, or notification traffic. Turning any business flag on for real, or building the corresponding non-dark hosting profile, is a separate, later, explicitly-authorized runbook this document does not attempt to write yet, since it depends on which Production secrets (Square, backup, webhook roles) are ready and which Owner decisions (go-live date, real inventory import, first real payment) haven't been made.
+
+## Current-code corrections (production-activation-readiness, from merged main `2843540` code)
+
+The R3 acceptance list above predates two later code changes; where it disagrees, the code wins:
+
+- **Dark profile reads no DB passwords.** `production-hosting-composition.ts` (F1) reads only the 11
+  `PRODUCTION_DB_ROLE_<SERVICE>` names and supplies `secrets.database:{}`; items 1–2's
+  `PRODUCTION_DB_PASSWORD_<SERVICE>` / "22 role+password vars" are not read by the dark profile.
+- **Vercel project identity is pinned, not shape-only.** `issueExactProductionIdentity` compares
+  `sha256(VERCEL_PROJECT_ID)` with `EXPECTED_PRODUCTION_VERCEL_PROJECT_FINGERPRINT_SHA256`, and the Neon
+  host/database likewise, before any bootstrap is installed (item 3).
+- **A separate commercial profile now exists.** `ZAO_PRODUCTION_HOSTING_ACTIVATION=R5_COMMERCIAL_PRODUCTION_COMPOSITION`
+  selects `installProductionCommercialComposition()` instead of the dark profile (never both). Its exact
+  environment names, which are secret, and the no-write plan are printed by `npm run production:activation-plan`;
+  see `docs/execution/production-activation-readiness/RESULT.md`. Deploying it is a later attended gate,
+  after the Phase D bootstrap, role LOGIN provisioning and credential installation.

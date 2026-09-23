@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {flowFixture,simulation} from '../flow/fixture';
-import {skiSet} from '../inventory/fixture';
+import {skiSet,variants} from '../inventory/fixture';
 import {provisionGuestRole} from '../../scripts/guest-roles';
 import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
 import {GuestContexts} from '../../packages/core/src/guest/context';
@@ -18,6 +18,24 @@ try{
  g=await provisionGuestRole(x.db.pool,x.db.identity);r=await provisionBookingAccessRole(x.db.pool,x.db.identity);const contexts=new GuestContexts(g.guestPool),session=await contexts.create(),actor=await contexts.resolve(session.token),other=await contexts.resolve((await contexts.create()).token),keys=deriveBookingAccessKeys(randomBytes(32)),key=keys.recoveryKey,messages=new Map<string,RecoveryMessage>();let sends=0,lose=false;
  const delivery={async deliver(m:RecoveryMessage){sends++;assert.ok(m.recipient.endsWith('@example.invalid'));messages.set(m.messageId,m);if(lose){lose=false;throw new Error('SYNTHETIC_DELIVERY_RESPONSE_LOST');}return {messageId:m.messageId,state:'DELIVERED' as const};},async lookup(messageId:string){return {messageId,state:messages.has(messageId)?'DELIVERED' as const:'UNKNOWN' as const};}};
  const recovery=new BookingRecovery(r.accessPool,key,'fixture-v1',delivery),access=new BookingAccess(r.accessPool,keys.accessKey,'fixture-v1'),holds=new HoldService(x.roles.holdPool,actor),quotes=new QuoteService(x.roles.pricingPool,actor),bookings=new BookingService(x.flow.flowPool,g.guestPool,actor,x.fake,simulation);
+ // PUBLIC BOOKING POLICY test (genuine guest actor — structurally can never request
+ // bufferOverride): the shared seedInventory fixture's SKI/SKI_BOOT/POLE variants get an ample
+ // local top-up (this file's own isolated database only, not the shared fixture module) purely so
+ // an ordinary guest booking — the actual thing under test — isn't incidentally blocked by the
+ // public capacity ceiling on a 1-unit variant.
+ {
+  // A dedicated held connection, not x.db.pool.query() per call: set_config(...,true) is
+  // transaction/connection-local, and separate pool.query() calls are not guaranteed the same
+  // underlying connection (matching seedInventory's own established pool.connect()/BEGIN pattern).
+  const c=await x.db.pool.connect();
+  try{
+   await c.query('BEGIN');
+   await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC P5 recovery fixture top-up',true)",[x.actor]);
+   for(const [family,variant] of [['SKI',variants.ski],['SKI_BOOT',variants.boot]] as const)for(let n=0;n<20;n++)await c.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE',$4,NULL,'','','SYNTHETIC','tests/readiness/booking-recovery.ts',$5) ON CONFLICT DO NOTHING`,[randomUUID(),variant,family,family==='SKI_BOOT'?'UNVERIFIED':'NOT_APPLICABLE','asset-p5-'+family+'-'+n]);
+   await c.query('UPDATE ledger_poles SET quantity=20 WHERE variant_id=$1',[variants.pole]);
+   await c.query('COMMIT');
+  }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+ }
  const conditions=skiSet('2035-02-05'),h=await holds.command('create',randomUUID(),conditions),q=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote,b=await bookings.create(randomUUID(),q.id,{displayName:'SYNTHETIC Recovery',email:'synthetic-recovery@example.invalid',termsAccepted:true});
  await check('unconfirmed/foreign enrollment and unconnected delivery rejected before sending',async()=>{await assert.rejects(recovery.prepare(actor,b.id,randomUUID()),{code:'BOOKING_RECOVERY_DENIED'});await bookings.startPayment(b.id,randomUUID());await assert.rejects(recovery.prepare(other,b.id,randomUUID()),{code:'BOOKING_RECOVERY_DENIED'});await assert.rejects(new BookingRecovery(r!.accessPool,key,'fixture-v1').prepare(actor,b.id,randomUUID()),{code:'BOOKING_RECOVERY_DELIVERY_UNCONNECTED'});assert.equal(sends,0);});
  const baseline=(await x.db.pool.query('SELECT b.conditions,b.price_snapshot,b.price_sha256,b.state,h.expires_at,h.due_at,h.confirmed_at FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1',[b.id])).rows[0];let code='',token='';

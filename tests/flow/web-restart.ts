@@ -7,7 +7,7 @@ import {seedRecommendation} from '../recommendation/fixture';
 import {skiSet} from '../inventory/fixture';
 let stage='startup',failed=false,app:Awaited<ReturnType<typeof startFlowApp>>|undefined;const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');
 try{
- app=await startFlowApp({paymentFault:'SAVE_THEN_LOSE'});await seedRecommendation(app.db.pool);await bootstrapDevelopmentAdmin(app.db.pool,{email:'restart-root@example.invalid',displayName:'SYNTHETIC Root',password});const {origin}=app;
+ app=await startFlowApp({paymentFault:'SAVE_THEN_LOSE'});await seedRecommendation(app.db.pool,true);await bootstrapDevelopmentAdmin(app.db.pool,{email:'restart-root@example.invalid',displayName:'SYNTHETIC Root',password});const {origin}=app;
  await app.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:00Z'::timestamptz$$");
  async function ready(){for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw new Error('APP_START_TIMEOUT');}await ready();
  stage='unhydrated login safety';const noJs=await browser.newContext({baseURL:origin,javaScriptEnabled:false});const noJsPage=await noJs.newPage();await noJsPage.goto('/staff/login');await expect(noJsPage.getByLabel('メールアドレス',{exact:true})).toBeDisabled();await expect(noJsPage.getByLabel('パスワード',{exact:true})).toBeDisabled();await expect(noJsPage.getByRole('button',{name:'ログイン',exact:true})).toBeDisabled();assert.equal(await noJsPage.locator('form').getAttribute('method'),'post');await noJs.close();console.log('PASS unhydrated login cannot submit credentials; native form transport is POST');

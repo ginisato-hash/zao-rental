@@ -4,7 +4,7 @@ import {FlowError,flowId,flowHash} from '../../../contracts/src/rental-flow';
 import type {BookingRecovery} from '../guest/booking-recovery';
 import {renderBookingNotification,safeDeliveryResult,type BookingNotificationDelivery,type DeliveryResult,type NotificationEvent,type NotificationLocale} from './contracts';
 type Claim={id:string;claimId:string;dedupeKey:string};
-type Material={eventType:NotificationEvent;locale:NotificationLocale;bookingId:string;recipient:string;conditions:{pickupStore:string;returnStore:string;period:{startDate:string;endDate:string}};priceSnapshot:{totalJpy:number};priceSha256:string;paymentStatus:string;recovery:Parameters<BookingRecovery['notificationProof']>[1]|null};
+type Material={eventType:NotificationEvent;locale:NotificationLocale;bookingId:string;recipient:string;conditions:{pickupStore:string;returnStore:string;period:{startDate:string;endDate:string}};priceSnapshot:{totalJpy:number};priceSha256:string;paymentStatus:string;cancellation?:{refundStatus:string;refundAmountJpy:number;maximumRefundJpy:number};recovery:Parameters<BookingRecovery['notificationProof']>[1]|null};
 /** Server operator entry point. No scheduler, environment lookup or default provider.
  * SQL reserves dispatch durably. Only authoritative NOT_ACCEPTED is retried. */
 export class BookingNotificationWorker{
@@ -25,13 +25,14 @@ export class BookingNotificationWorker{
   let body:{subject:string;text:string};try{
    if(flowHash(m.priceSnapshot)!==m.priceSha256)throw Error();
    const proof=m.recovery?this.recovery.notificationProof(m.bookingId,m.recovery):undefined;
-   body=renderBookingNotification(m.eventType,m.locale,{bookingId:m.bookingId,pickupStore:m.conditions.pickupStore,returnStore:m.conditions.returnStore,...m.conditions.period,totalJpy:m.priceSnapshot.totalJpy,paymentStatus:m.paymentStatus},this.origin,proof);
+   body=renderBookingNotification(m.eventType,m.locale,{bookingId:m.bookingId,pickupStore:m.conditions.pickupStore,returnStore:m.conditions.returnStore,...m.conditions.period,totalJpy:m.priceSnapshot.totalJpy,paymentStatus:m.paymentStatus,...(m.cancellation?{cancellation:m.cancellation}:{})},this.origin,proof);
   }catch{return settle({state:'SUPPRESSED',code:'TEMPLATE_UNAVAILABLE'});}
   const result=await this.bounded(signal=>this.adapter!.send({idempotencyKey:createHash('sha256').update(claim.dedupeKey).digest('hex'),eventType:m.eventType,recipient:m.recipient,locale:m.locale,...body},signal));
   return settle(result);
  }
  async reconcile(id:string){flowId(id);if(!this.adapter)return {state:'UNCONNECTED' as const};const key=(await this.pool.query('SELECT notification_unknown($1) v',[id])).rows[0].v as string|null;if(!key)return {state:'NOT_UNKNOWN' as const};
-  const result=await this.bounded(signal=>this.adapter!.lookup(createHash('sha256').update(key).digest('hex'),signal));
+  if(!this.adapter.lookup)return {state:'UNKNOWN' as const};
+  const result=await this.bounded(signal=>this.adapter!.lookup!(createHash('sha256').update(key).digest('hex'),signal));
   // No missing-result lookup or operator action can silently authorize another send.
   if(result.state==='ACCEPTED')await this.pool.query('SELECT notification_reconciled($1,$2)',[id,result.providerMessageId]);return {state:result.state==='ACCEPTED'?'SENT':'UNKNOWN'};
  }

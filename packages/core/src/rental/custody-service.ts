@@ -1,9 +1,10 @@
+import {bookingConfirmed} from '../../../contracts/src/booking-state';
 import {randomUUID} from 'node:crypto';
 import {pickupTiming} from '../../../contracts/src/pickup';
 import type {PoolClient} from 'pg';
 import {BookingService} from '../payment/booking-service';
 import {FlowError,flowHash,flowId,flowObject,flowStore,flowVersion} from '../../../contracts/src/rental-flow';
-import {isWear,normalizePeriod,variantMatches,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
+import {isWear,isPole,normalizePeriod,variantMatches,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
 type Conn=Pick<PoolClient,'query'>;
 type Loan={id:string;cycle_id:string;booking_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;variant_id:string;family:string;state:string;version:number};
 type Candidate={id:string;batch_id:string;loan_item_id:string|null;cycle_id:string|null;asset_id:string|null;pole_id:string|null;loan_version:number|null;scanned_at:Date;state:string;outcome:string};
@@ -36,12 +37,17 @@ export class CustodyService extends BookingService{
   return this.tx('RENTAL_CHECKOUT',[],key,{operation:'prepare',v},async c=>{await this.pickup(c,v.bookingId as string);},async(c,now)=>{
    const b=await this.pickup(c,v.bookingId as string),h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];
    if(b.version!==v.expectedBookingVersion||h.version!==v.expectedHoldVersion)throw new FlowError('STALE_VERSION');
-   if(b.state!=='CONFIRMED_DEV'||h.state!=='ACTIVE'||h.payment_state!=='SUCCESS'||!h.confirmed_at||h.transfer_attention||h.allocation_stage!=='PROVISIONAL')throw new FlowError('PREPARATION_NOT_ALLOWED');
-   await this.verifyClaims(c,h,now);const a=await this.assignment(c,b.id);
+   if(!bookingConfirmed(b.mode,b.state)||h.state!=='ACTIVE'||h.payment_state!=='SUCCESS'||!h.confirmed_at||h.transfer_attention||h.allocation_stage!=='PROVISIONAL')throw new FlowError('PREPARATION_NOT_ALLOWED');
+   await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);const a=await this.assignment(c,b.id);
    const expected=a.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})).sort((a,b)=>a.requirementKey.localeCompare(b.requirementKey));
    if(flowHash([...selections].sort((a,b)=>String(a.requirementKey).localeCompare(String(b.requirementKey))))!==flowHash(expected))throw new FlowError('EXACT_FULL_PERIOD_ASSIGNMENT_REQUIRED');
+   // POLE is optional here (Owner decision, see isPole()'s own comment): a SKI_SET whose real
+   // pole inventory does not exist was never claimed for it (see planAllocation's own
+   // POLE-availability probe), so `a.items` legitimately omits it — every non-POLE requirement
+   // must still be present exactly once, and any item present must be a known requirement.
    const wanted=b.conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).map(i=>({key:m.key+':'+i.family,m,i})));
-   if(wanted.length!==a.items.length)throw new FlowError('INCOMPLETE_EQUIPMENT_GROUP');
+   const wantedByKey=new Map(wanted.map(w=>[w.key,w]));
+   if(a.items.some((i:{requirement_key:string})=>!wantedByKey.has(i.requirement_key))||wanted.some(w=>!isPole(w.i.family)&&!a.items.some((i:{requirement_key:string})=>i.requirement_key===w.key)))throw new FlowError('INCOMPLETE_EQUIPMENT_GROUP');
    const variants=(await c.query<PromiseVariant>(`SELECT v.*,m.catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[a.items.map(i=>i.variant_id)])).rows;
    for(const i of a.items){const req=wanted.find(r=>r.key===i.requirement_key);if(!req||!variantMatches(req.m,req.i,variants.find(v=>v.id===i.variant_id)))throw new FlowError('PROMISE_MISMATCH');}
    await c.query('INSERT INTO rental_preparations(id,store_id,checked_in_at,checked_in_by,prepared_at,prepared_by,fit_evidence) VALUES($1,$2,$3,$4,$3,$4,$5)',[b.id,b.conditions.pickupStore,now,this.identity.subject,JSON.stringify({selections:expected,evidence,meaning:'HUMAN_RECORDED_SYNTHETIC_CHECK_NOT_AUTOMATIC_DIN_OR_SAFETY_CERTIFICATION'})]);
@@ -51,9 +57,10 @@ export class CustodyService extends BookingService{
  async checkout(key:string,value:unknown){const v=flowObject(value,['bookingId','expectedPreparationVersion']);flowId(v.bookingId);flowVersion(v.expectedPreparationVersion);
   return this.tx('RENTAL_CHECKOUT',[],key,{operation:'checkout',v},async c=>{await this.pickup(c,v.bookingId as string);},async(c,now)=>{
    const b=await this.pickup(c,v.bookingId as string),p=(await c.query('SELECT * FROM rental_preparations WHERE id=$1',[b.id])).rows[0];
+   if(!bookingConfirmed(b.mode,b.state))throw new FlowError('CHECKOUT_NOT_ALLOWED');
    if(!p||p.version!==v.expectedPreparationVersion||!p.prepared_at)throw new FlowError('STALE_PREPARATION');
    if((await c.query('SELECT 1 FROM rental_loan_items WHERE booking_id=$1',[b.id])).rowCount)throw new FlowError('ALREADY_CHECKED_OUT');
-   const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];await this.verifyClaims(c,h,now);
+   const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);
    if(h.allocation_stage!=='PREPARATION_FIXED')throw new FlowError('PREPARATION_NOT_FIXED');
    const rows=(await c.query(`SELECT DISTINCT ON(requirement_key) cl.*,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) WHERE cl.hold_id=$1 AND cl.active ORDER BY requirement_key,day`,[b.hold_id])).rows;
    if(flowHash(rows.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})))!==flowHash(p.fit_evidence.selections)){const amendment=(await c.query("SELECT q.assignment FROM ops_amendments a JOIN ops_amendment_quotes q ON q.id=a.id WHERE a.booking_id=$1 AND q.expected_hold_version+1=$2 AND length(btrim(a.fit_evidence))>0",[b.id,h.version])).rows[0];if(!amendment||flowHash(rows.map(i=>({key:i.requirement_key,asset:i.asset_id,pole:i.pole_id})))!==flowHash(amendment.assignment.equipment.map((i:{key:string;asset:string|null;pole:string|null})=>({key:i.key,asset:i.asset,pole:i.pole}))))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');}

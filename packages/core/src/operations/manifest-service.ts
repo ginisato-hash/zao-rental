@@ -1,3 +1,4 @@
+import {bookingConfirmed,bookingStateValid} from '../../../contracts/src/booking-state';
 import type {Pool,PoolClient} from 'pg';
 import {loadStaff,type Permission,type StaffPrincipal} from '../../../auth/src/staff-auth';
 import {FlowError,flowObject,flowStore} from '../../../contracts/src/rental-flow';
@@ -28,7 +29,7 @@ const jstDate=(d:Date)=>new Date(d.getTime()+9*3600000).toISOString().slice(0,10
 const severityRank={INFO:0,WARN:1,ERROR:2} as const;
 function equipmentRequirementKeys(conditions:HoldConditions){return new Set(conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).map(i=>m.key+':'+i.family)));}
 function bookingWearRequired(conditions:HoldConditions){return conditions.members.some(m=>m.items.some(i=>isWear(i.family)));}
-type BookingRow={id:string;conditions:HoldConditions;contact:{displayName:string};price_snapshot:{totalJpy?:number}|null;state:string;version:number};
+type BookingRow={id:string;conditions:HoldConditions;contact:{displayName:string};price_snapshot:{totalJpy?:number}|null;state:string;mode:string;version:number};
 type HoldRow={booking_id:string;pickup_store:string;due_at:Date;transfer_attention:string|null};
 type LoanItemRow={id:string;booking_id:string;requirement_key:string;family:string;state:'OUT'|'RECEIVED';due_at:Date};
 type CustodyRow={loan_item_id:string;receipt_id:string;source_store:string;actual_store:string;applied_at:Date;inspected:boolean;requirement_key:string;family:string;version:number;asset_id:string|null;pole_id:string|null;booking_id:string};
@@ -134,7 +135,7 @@ export class ManifestService{
   const pageBookingIds=page.filter(k=>keys.get(k)!.kind==='B').map(k=>keys.get(k)!.bookingId!);
   const pageLoanItemIds=page.filter(k=>keys.get(k)!.kind==='E').map(k=>keys.get(k)!.loanItemId!);
   const pageWearReceiptIds=page.filter(k=>keys.get(k)!.kind==='W').map(k=>keys.get(k)!.wearReceiptId!);
-  const bookingsById=new Map((pageBookingIds.length?(await c.query<BookingRow>('SELECT id,conditions,contact,price_snapshot,state,version FROM rental_bookings WHERE id=ANY($1)',[pageBookingIds])).rows:[]).map(b=>[b.id,b]));
+  const bookingsById=new Map((pageBookingIds.length?(await c.query<BookingRow>('SELECT id,conditions,contact,price_snapshot,state,mode,version FROM rental_bookings WHERE id=ANY($1)',[pageBookingIds])).rows:[]).map(b=>[b.id,b]));
   const holdsByBooking=new Map((pageBookingIds.length?(await c.query<HoldRow>('SELECT b.id AS booking_id,h.pickup_store,h.due_at,h.transfer_attention FROM inventory_holds h JOIN rental_bookings b ON b.hold_id=h.id WHERE b.id=ANY($1)',[pageBookingIds])).rows:[]).map(h=>[h.booking_id,h]));
   const preparedByBooking=new Map((pageBookingIds.length?(await c.query<{id:string;prepared_at:Date|null}>('SELECT id,prepared_at FROM rental_preparations WHERE id=ANY($1)',[pageBookingIds])).rows:[]).map(r=>[r.id,r.prepared_at!==null]));
   const loanItems=pageBookingIds.length?(await c.query<LoanItemRow>('SELECT id,booking_id,requirement_key,family,state,due_at FROM rental_loan_items WHERE booking_id=ANY($1)',[pageBookingIds])).rows:[];
@@ -221,7 +222,7 @@ export class ManifestService{
   // classify() needs a signal that stays true after a full cycle, so CHECKOUT never wins
   // back over COMPLETE for an already-returned-and-inspected booking.
   const equipmentEverCheckedOut=loans.length>0;
-  const nextAction=this.classify(b.state,ctx.checkout,ctx.ret,pickupObj,returnObj,hold?.transfer_attention??null,equipmentDone,wearDone,equipmentEverCheckedOut);
+  const nextAction=this.classify(b.mode,b.state,ctx.checkout,ctx.ret,pickupObj,returnObj,hold?.transfer_attention??null,equipmentDone,wearDone,equipmentEverCheckedOut);
   const row:Record<string,unknown>={rowKind:'BOOKING_SCOPED',key:bookingKey(bookingId),bookingId,displayName:b.contact.displayName,period:conditions.period,pickupStore:conditions.pickupStore,returnStore:conditions.returnStore,bookingState:b.state,equipmentCount:equipmentReq.size,nextAction};
   if(totalJpy!==undefined)row.totalJpy=totalJpy;
   if(pickupObj)row.pickup=pickupObj;if(returnObj)row.return=returnObj;
@@ -229,16 +230,18 @@ export class ManifestService{
  }
  // First-match-wins, in the exact §7.1 order. Each class is only ever reachable through
  // the composition it requires; a composition missing that requirement falls through.
- private classify(bookingState:string,checkout:boolean,ret:boolean,
+ private classify(mode:string,bookingState:string,checkout:boolean,ret:boolean,
   pickup:{equipmentRequired:boolean;equipmentPrepared:boolean;equipmentCheckedOut:boolean;noPickup:boolean;timing:string;wearRequired:boolean;wearCheckedOut:boolean}|undefined,
   r:{equipmentReturnDueToday:boolean;outCount:number;inspectionPendingHereCount:number;wearReturnDueToday:boolean;wearOutstandingQuantity:number;wearReturnedPendingQuantity:number;wearCleaningQuantity:number;wearTodayBlockedQuantity:number;wearUnavailableQuantity:number}|undefined,
   transferAttention:string|null,equipmentDone:boolean,wearDone:boolean,equipmentEverCheckedOut:boolean){
+  if(!bookingStateValid(mode,bookingState))return 'CHECK_PAYMENT_OR_EXCEPTION';
+  if(bookingState==='CANCELLED')return 'NO_ACTION';
   if(bookingState==='DRAFT')return 'NO_ACTION';
   if(bookingState==='PAYMENT_PENDING'||bookingState==='PAYMENT_REVIEW')return 'CHECK_PAYMENT_OR_EXCEPTION';
   if(checkout&&transferAttention)return 'CHECK_PAYMENT_OR_EXCEPTION';
   const timingOk=!!pickup&&(pickup.timing==='PICKUP_WINDOW'||pickup.timing==='LATE_PICKUP_ELIGIBLE');
-  if(checkout&&pickup&&bookingState==='CONFIRMED_DEV'&&pickup.equipmentRequired&&!pickup.equipmentPrepared&&timingOk)return 'PREPARE_EQUIPMENT';
-  if(checkout&&pickup&&bookingState==='CONFIRMED_DEV'&&(!pickup.equipmentRequired||pickup.equipmentPrepared)&&((pickup.equipmentRequired&&!equipmentEverCheckedOut)||(pickup.wearRequired&&!pickup.wearCheckedOut))&&timingOk)return 'CHECKOUT';
+  if(checkout&&pickup&&bookingConfirmed(mode,bookingState)&&pickup.equipmentRequired&&!pickup.equipmentPrepared&&timingOk)return 'PREPARE_EQUIPMENT';
+  if(checkout&&pickup&&bookingConfirmed(mode,bookingState)&&(!pickup.equipmentRequired||pickup.equipmentPrepared)&&((pickup.equipmentRequired&&!equipmentEverCheckedOut)||(pickup.wearRequired&&!pickup.wearCheckedOut))&&timingOk)return 'CHECKOUT';
   if(checkout&&ret&&pickup&&r){
    const eqWait=!r.equipmentReturnDueToday&&(pickup.equipmentCheckedOut||!pickup.equipmentRequired)&&r.outCount>0;
    const wearWait=!r.wearReturnDueToday&&(pickup.wearCheckedOut||!pickup.wearRequired)&&r.wearOutstandingQuantity>0;

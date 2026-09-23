@@ -1,6 +1,8 @@
+import {bookingStateValid,bookingConfirmed,bookingCompleted} from '../../../contracts/src/booking-state';
 import {r15ProjectionTarget,type R15ProjectionPermit} from './r15-projection-authority';
+import {productionProjectionTarget,type ProductionProjectionPermit} from './production-projection-authority';
 import {flowHash,flowId,matchPayment,type PaymentObservation,type PaymentRequest} from '../../../contracts/src/rental-flow';
-import {parseConditions,normalizePeriod,variantMatches,isWear,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
+import {parseConditions,normalizePeriod,variantMatches,isWear,isPole,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
 import {advanceQualification,timestamp} from '../../../contracts/src/pricing';
 import {cleanObservation} from './payment-truth';
 
@@ -11,9 +13,9 @@ export type ProjectionSource={jobId:string;environment:string;merchantId:string;
 export type ProjectionBooking={id:string;ownerId:string;holdId:string;quoteId:string;mode:string;state:string;confirmedAt:string|null;version:number;conditions:HoldConditions;priceSnapshot:Record<string,unknown>;priceHash:string};
 export type ProjectionAttempt={expected:PaymentRequest;actor:string;state:string;providerId:string|null;providerState:string|null;providerUpdatedAt:string|null;completedAt:string|null};
 export type ProjectionHold={id:string;ownerId:string;reservationId:string;state:string;paymentState:string;allocationStage:string;transferAttention:string|null;expiresAt:string;dueAt:string;confirmedAt:string|null;version:number;conditions:HoldConditions};
-export type ProjectionQuote={id:string;actor:string;holdId:string|null;conditions:HoldConditions;snapshot:Record<string,unknown>;snapshotHash:string;couponId:string|null};
+export type ProjectionQuote={id:string;actor:string;holdId:string|null;conditions:HoldConditions;snapshot:Record<string,unknown>;snapshotHash:string;couponId:string|null;commercialPriceValid?:boolean};
 export type ProjectionState={booking:ProjectionBooking;attempt:ProjectionAttempt;hold:ProjectionHold|null;quote:ProjectionQuote|null;gearClaimsIntact:boolean;wearClaimsIntact:boolean;forbiddenTransfer:boolean;unreadyTransferAt:string|null;revision:number;previous:PaymentObservation|null};
-export type ProjectionPlan={decision:ProjectionDecision;fingerprint:string;observationFingerprint:string;observation:PaymentObservation|null;operatorActionRequired:boolean;mutation:'NONE'|'PENDING'|'COMPLETED'|'FAILED'|'REVIEW_COMPLETED'};
+export type ProjectionPlan={decision:ProjectionDecision;fingerprint:string;observationFingerprint:string;observation:PaymentObservation|null;operatorActionRequired:boolean;mutation:'NONE'|'PENDING'|'COMPLETED'|'FAILED'|'REVIEW_COMPLETED'|'CANCELLED_PAYMENT'};
 export type ProjectionResult={bookingId:string;attemptId:string;revision:number;decision:ProjectionDecision;decisionFingerprint:string;observationFingerprint:string;providerStatus:string|null;bookingState:string;attemptState:string;operatorActionRequired:boolean;duplicate:boolean};
 export class ProjectionError extends Error{constructor(public code:string){super(code);}}
 const hash=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
@@ -29,10 +31,12 @@ function normalized(o:PaymentObservation,now:Date){
  if(Date.parse(o.updatedAt)>now.getTime()||(o.status==='COMPLETED')!==(o.completedAt!==null)||o.completedAt!==null&&Date.parse(o.completedAt)>Date.parse(o.updatedAt))throw new Error();
  return cleanObservation(o);
 }
-/** R12 persisted evidence only; fingerprints are integrity checks, not browser authentication. */
-export function verifyProjectionSource(ref:ProjectionReference,source:ProjectionSource|null,now:Date):PaymentObservation{
+/** R12 persisted evidence only; fingerprints are integrity checks, not browser authentication.
+ * `expectedEnvironment` defaults to 'SANDBOX' so every existing caller is unaffected; only a
+ * Production-permitted projection call ever passes 'PRODUCTION'. */
+export function verifyProjectionSource(ref:ProjectionReference,source:ProjectionSource|null,now:Date,expectedEnvironment:'SANDBOX'|'PRODUCTION'='SANDBOX'):PaymentObservation{
  try{
-  if(!source||source.jobId!==ref.jobId||source.environment!=='SANDBOX'||source.securityBlocked||!['RECONCILED','RETRY_WAIT'].includes(source.state)||source.truthRevision!==ref.truthRevision||source.decisionFingerprint!==ref.truthFingerprint||!hash(source.contextFingerprint)||!source.observation)throw new Error();
+  if(!source||source.jobId!==ref.jobId||source.environment!==expectedEnvironment||source.securityBlocked||!['RECONCILED','RETRY_WAIT'].includes(source.state)||source.truthRevision!==ref.truthRevision||source.decisionFingerprint!==ref.truthFingerprint||!hash(source.contextFingerprint)||!source.observation)throw new Error();
   const o=normalized(source.observation,now);
   if(source.merchantId!==o.merchantId||source.paymentId!==o.providerId||!['ACCEPT_'+o.status,'NOOP_DUPLICATE'].includes(source.decision)||flowHash(o)!==ref.observationFingerprint)throw new Error();
   if(flowHash({engine:'payment-truth-v1',contextFingerprint:source.contextFingerprint,paymentId:source.paymentId,decision:source.decision,observation:o})!==source.decisionFingerprint)throw new Error();
@@ -49,7 +53,7 @@ export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,n
  try{
   if(!Number.isFinite(now.getTime()))throw new Error();accepted=normalized(o,now);
   const {booking:b,attempt:a}=s;flowId(b.id);flowId(a.expected.attemptId);flowId(a.expected.idempotencyKey);
-  if(!Number.isSafeInteger(s.revision)||s.revision<0||!Number.isSafeInteger(b.version)||b.version<1||b.id!==a.expected.bookingId||a.actor!==b.ownerId||a.providerId!==accepted.providerId||!['SQUARE_SANDBOX','SIMULATED_DEV'].includes(b.mode))throw new Error();
+  if(!Number.isSafeInteger(s.revision)||s.revision<0||!Number.isSafeInteger(b.version)||b.version<1||b.id!==a.expected.bookingId||a.actor!==b.ownerId||a.providerId!==accepted.providerId||!bookingStateValid(b.mode,b.state))throw new Error();
   matchPayment(a.expected,accepted);
  }catch{return finish('BLOCK_IDENTITY_MISMATCH','NONE',null);}
  o=accepted;
@@ -70,7 +74,11 @@ export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,n
    return finish('NOOP_DUPLICATE');
   }
  }
- if(a.state==='COMPLETED'||b.confirmedAt||['CONFIRMED_DEV','COMPLETED_DEV'].includes(b.state))return finish('NOOP_TERMINAL');
+ if(b.state==='CANCELLED'&&a.state!=='COMPLETED'&&!['FAILED','CANCELED'].includes(a.providerState??'')){
+  if(!q||q.id!==b.quoteId||q.snapshotHash!==b.priceHash||flowHash(b.priceSnapshot)!==b.priceHash||flowHash(q.snapshot)!==b.priceHash||b.priceSnapshot.totalJpy!==a.expected.amountJpy||b.priceSnapshot.currency!=='JPY'||b.mode==='SQUARE_PRODUCTION'&&(b.priceSnapshot.chargeReady!==true||q.commercialPriceValid!==true))return finish('BLOCK_PRICE_INTEGRITY');
+  return finish(o.status==='COMPLETED'?'APPLY_COMPLETED':o.status==='PENDING'?'KEEP_PENDING':o.status==='FAILED'?'APPLY_FAILED':'APPLY_CANCELED','CANCELLED_PAYMENT');
+ }
+ if(a.state==='COMPLETED'||b.confirmedAt||bookingConfirmed(b.mode,b.state)||bookingCompleted(b.mode,b.state))return finish('NOOP_TERMINAL');
  if(['FAILED','CANCELED'].includes(a.providerState??'')||a.state==='FAILED')return finish(o.status==='COMPLETED'?'BLOCK_INVALID_TRANSITION':'NOOP_TERMINAL');
  if(!['SUBMITTING','UNKNOWN','PENDING','REVIEW'].includes(a.state)||!['PAYMENT_PENDING','PAYMENT_REVIEW'].includes(b.state)||!h||h.ownerId!==b.ownerId||h.id!==b.holdId||h.reservationId!==b.id)return finish('BLOCK_INVALID_TRANSITION');
  const block=(decision:ProjectionDecision)=>finish(decision,o.status==='COMPLETED'?'REVIEW_COMPLETED':'NONE');
@@ -79,7 +87,7 @@ export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,n
   if(b.conditions.reservationId!==b.id||flowHash(b.conditions)!==flowHash(h.conditions)||h.dueAt!==normalizePeriod(h.conditions.period).dueAt)throw new Error();
   if(!q||q.id!==b.quoteId||q.holdId!==h.id||q.actor!==b.ownerId||flowHash(q.conditions)!==flowHash(b.conditions)||q.couponId!==null)throw new Error();
   if(!hash(b.priceHash)||flowHash(b.priceSnapshot)!==b.priceHash||q.snapshotHash!==b.priceHash||flowHash(q.snapshot)!==q.snapshotHash||flowHash(q.snapshot.conditions)!==flowHash(b.conditions))throw new Error();
-  if(b.priceSnapshot.chargeReady!==false||b.priceSnapshot.currency!=='JPY'||b.priceSnapshot.totalJpy!==a.expected.amountJpy)throw new Error();
+  if(b.priceSnapshot.chargeReady!==(b.mode==='SQUARE_PRODUCTION')||b.mode==='SQUARE_PRODUCTION'&&q.commercialPriceValid!==true||b.priceSnapshot.currency!=='JPY'||b.priceSnapshot.totalJpy!==a.expected.amountJpy)throw new Error();
   const discount=b.priceSnapshot.advanceDiscountJpy;if(!Number.isSafeInteger(discount)||Number(discount)<0||Number(discount)>a.expected.amountJpy)throw new Error();
   if(o.status==='COMPLETED'&&Number(discount)>0&&advanceQualification(b.conditions.period.startDate,o.completedAt?new Date(o.completedAt):null)!=='QUALIFIED')throw new Error();
  }catch{return block('BLOCK_PRICE_INTEGRITY');}
@@ -102,46 +110,70 @@ export interface PaymentProjectionTransaction{
 }
 export interface PaymentProjectionRepository{transaction<T>(reference:ProjectionReference,run:(tx:PaymentProjectionTransaction)=>Promise<T>):Promise<T>}
 export interface PaymentProjectionPort{project(reference:ProjectionReference):Promise<ProjectionResult>}
-/** Unconnected internal port: no request body, credential, gateway, schedule or business runtime import. */
+/**
+ * Unconnected internal port: no request body, credential, gateway, schedule or business runtime import.
+ * At most one of `permit` (R15 hosted-Sandbox capability) or `productionPermit` (Production capability)
+ * may ever be meaningfully active for a given instance — they gate mutually exclusive database
+ * identities (`zr_*` vs explicitly non-`zr_*`), so a single instance can never straddle both.
+ */
 export class TransactionalPaymentProjection implements PaymentProjectionPort{
- constructor(private repository:PaymentProjectionRepository,private permit?:R15ProjectionPermit){if(process.env.NODE_ENV==='production'&&!r15ProjectionTarget(permit))throw new ProjectionError('PROJECTION_NOT_ACTIVATED');}
+ constructor(private repository:PaymentProjectionRepository,private permit?:R15ProjectionPermit,private productionPermit?:ProductionProjectionPermit){
+  if(process.env.NODE_ENV==='production'&&!r15ProjectionTarget(permit)&&!productionProjectionTarget(productionPermit))throw new ProjectionError('PROJECTION_NOT_ACTIVATED');
+ }
  async project(ref:ProjectionReference){
-  if((process.env.NODE_ENV==='production'||this.permit)&&!r15ProjectionTarget(this.permit,ref))throw new ProjectionError('PROJECTION_NOT_ACTIVATED');validateProjectionReference(ref);
+  const productionTarget=productionProjectionTarget(this.productionPermit,ref);
+  if((process.env.NODE_ENV==='production'||this.permit||this.productionPermit)&&!r15ProjectionTarget(this.permit,ref)&&!productionTarget)throw new ProjectionError('PROJECTION_NOT_ACTIVATED');
+  validateProjectionReference(ref);
+  // The only two recognized modes for live payment admission; SIMULATED_DEV never reaches this port.
+  const expectedMode=productionTarget?'SQUARE_PRODUCTION':'SQUARE_SANDBOX';
+  const expectedEnvironment=productionTarget?'PRODUCTION':'SANDBOX';
   return this.repository.transaction(ref,async tx=>{
    const state=await tx.load();
    if(state.booking.id!==ref.bookingId||state.attempt.expected.attemptId!==ref.attemptId||state.attempt.expected.bookingId!==ref.bookingId)throw new ProjectionError('PROJECTION_TARGET_MISMATCH');
+   if(state.booking.mode!==expectedMode||!bookingStateValid(state.booking.mode,state.booking.state))throw new ProjectionError('PROJECTION_MODE_MISMATCH');
    const prior=await tx.prior(ref.observationFingerprint);
-   if(prior)validateSavedProjection(prior.result,ref);
+   if(prior)validateSavedProjection(prior.result,ref,state.booking.mode);
    if(prior){
     if(prior.jobId!==ref.jobId||prior.truthFingerprint!==ref.truthFingerprint){
-     if(state.booking.mode!=='SQUARE_SANDBOX')throw new ProjectionError('PROJECTION_MODE_MISMATCH');
-     verifyProjectionSource(ref,await tx.source(),await tx.time());await tx.linkReplay(ref);
+     if(state.booking.mode!==expectedMode)throw new ProjectionError('PROJECTION_MODE_MISMATCH');
+     verifyProjectionSource(ref,await tx.source(),await tx.time(),expectedEnvironment);await tx.linkReplay(ref);
     }
     return {...prior.result,duplicate:true}; // saved replay never reapplies business state or extends a HOLD
    }
    if(state.revision!==ref.expectedRevision)throw new ProjectionError('STALE_PROJECTION_REVISION');
-   if(state.booking.mode!=='SQUARE_SANDBOX')throw new ProjectionError('PROJECTION_MODE_MISMATCH');
-   const source=await tx.source();const now=await tx.time();const observation=verifyProjectionSource(ref,source,now);
+   if(state.booking.mode!==expectedMode)throw new ProjectionError('PROJECTION_MODE_MISMATCH');
+   const source=await tx.source();const now=await tx.time();const observation=verifyProjectionSource(ref,source,now,expectedEnvironment);
    const plan=decidePaymentProjection(state,observation,now);
+   if(productionTarget&&observation.merchantId!==productionTarget.merchantId)throw new ProjectionError('PROJECTION_TARGET_MISMATCH');
    return tx.persist(state,plan,ref,now);
   });
  }
 }
 
-export type ProjectionClaim=PromiseVariant&{requirement_key:string;day:string;kind:'GEAR'|'WEAR';quantity:number};
+export type ProjectionClaim=
+ |(PromiseVariant&{requirement_key:string;day:string;kind:'GEAR'|'WEAR';quantity:number})
+ |{requirement_key:string;day:string;kind:'PROVISIONAL';quantity:number;family:string;age:'ADULT'|'KIDS';booking_size:string;requestedVariant:(PromiseVariant&{size:string})|null}
+ |{requirement_key:string;day:string;kind:'POLE_EXEMPT';quantity:number;store_id:string;variant_ids:string[]};
 export function projectionClaims(conditions:HoldConditions,claims:ProjectionClaim[]){
  try{
   parseConditions(conditions);const dates=normalizePeriod(conditions.period).dates;
   const expected=conditions.members.flatMap(member=>member.items.flatMap(item=>dates.map(day=>({key:member.key+':'+item.family+'/'+day,member,item}))));
-  const match=(wear:boolean)=>{
-   const requirements=expected.filter(e=>isWear(e.item.family)===wear),rows=claims.filter(c=>(c.kind==='WEAR')===wear);
-   if(rows.length!==requirements.length)return false;const seen=new Set<string>(),byKey=new Map(requirements.map(e=>[e.key,e]));
-   return rows.every(c=>{const key=c.requirement_key+'/'+c.day,e=byKey.get(key);if(!e||seen.has(key)||c.quantity!==1||!e.item.variantIds.includes(c.id)||!variantMatches(e.member,e.item,c))return false;seen.add(key);return true;});
-  };return {gear:match(false),wear:match(true)};
+  const byKey=new Map(expected.map(e=>[e.key,e])),seen=new Set<string>();let gear=true,wear=true;
+  for(const c of claims){
+   const key=c.requirement_key+'/'+c.day,e=byKey.get(key);
+   if(!e)return {gear:false,wear:false};
+   let ok=!seen.has(key)&&c.quantity===1;seen.add(key);
+   if(c.kind==='POLE_EXEMPT')ok=ok&&isPole(e.item.family)&&c.store_id===conditions.pickupStore&&flowHash([...c.variant_ids].sort())===flowHash([...e.item.variantIds].sort());
+   else if(c.kind==='PROVISIONAL')ok=ok&&!isPole(e.item.family)&&e.member.tier!=='PREMIUM'&&!e.item.modelPromise&&e.item.variantIds.length===1&&e.item.family===c.family&&e.member.age===c.age&&!!c.requestedVariant&&e.item.variantIds[0]===c.requestedVariant.id&&c.requestedVariant.size===c.booking_size&&variantMatches(e.member,e.item,c.requestedVariant);
+   else ok=ok&&(c.kind==='WEAR')===isWear(e.item.family)&&e.item.variantIds.includes(c.id)&&variantMatches(e.member,e.item,c);
+   if(!ok){if(isWear(e.item.family))wear=false;else gear=false;}
+  }
+  for(const e of expected)if(!seen.has(e.key)){if(isWear(e.item.family))wear=false;else gear=false;}
+  return {gear,wear};
  }catch{return {gear:false,wear:false};}
 }
 
-export function validateSavedProjection(value:ProjectionResult,ref:ProjectionReference){
+export function validateSavedProjection(value:ProjectionResult,ref:ProjectionReference,mode:string){
  const keys=['bookingId','attemptId','revision','decision','decisionFingerprint','observationFingerprint','providerStatus','bookingState','attemptState','operatorActionRequired','duplicate'];
- if(!value||Object.keys(value).sort().join()!==keys.sort().join()||value.bookingId!==ref.bookingId||value.attemptId!==ref.attemptId||value.observationFingerprint!==ref.observationFingerprint||!hash(value.decisionFingerprint)||!Number.isSafeInteger(value.revision)||value.revision<1||!projectionDecisions.includes(value.decision)||value.duplicate!==false||typeof value.operatorActionRequired!=='boolean'||value.operatorActionRequired!==(value.decision.startsWith('BLOCK_')||value.decision==='REQUIRES_OPERATOR_RECONCILIATION')||!(value.providerStatus===null||['PENDING','COMPLETED','FAILED','CANCELED'].includes(value.providerStatus))||!['DRAFT','PAYMENT_PENDING','PAYMENT_REVIEW','CONFIRMED_DEV','COMPLETED_DEV'].includes(value.bookingState)||!['SUBMITTING','UNKNOWN','PENDING','COMPLETED','FAILED','REVIEW'].includes(value.attemptState))throw new ProjectionError('INVALID_SAVED_PROJECTION');
+ if(!value||Object.keys(value).sort().join()!==keys.sort().join()||value.bookingId!==ref.bookingId||value.attemptId!==ref.attemptId||value.observationFingerprint!==ref.observationFingerprint||!hash(value.decisionFingerprint)||!Number.isSafeInteger(value.revision)||value.revision<1||!projectionDecisions.includes(value.decision)||value.duplicate!==false||typeof value.operatorActionRequired!=='boolean'||value.operatorActionRequired!==(value.decision.startsWith('BLOCK_')||value.decision==='REQUIRES_OPERATOR_RECONCILIATION')||!(value.providerStatus===null||['PENDING','COMPLETED','FAILED','CANCELED'].includes(value.providerStatus))||!bookingStateValid(mode,value.bookingState)||!['SUBMITTING','UNKNOWN','PENDING','COMPLETED','FAILED','REVIEW'].includes(value.attemptState))throw new ProjectionError('INVALID_SAVED_PROJECTION');
 }

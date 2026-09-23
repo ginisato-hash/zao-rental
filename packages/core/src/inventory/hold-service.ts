@@ -1,14 +1,16 @@
+import {capacitySummary} from './capacity-summary';
 import {writeWearClaims} from './wear-capacity';
-import {planAllocation,writeAllocationClaims} from './allocation';
+import {planMixedAllocation,writeAllocationClaims} from './allocation';
+import {writeProvisionalClaims,releaseProvisionalClaims} from './provisional-capacity';
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
-import {authorizeBookingActor,type BookingActor} from '../../../auth/src/booking-actor';
+import {authorizeBookingActor,isGuest,type BookingActor} from '../../../auth/src/booking-actor';
 import {HoldError,parseConditions,normalizePeriod,canonical,HOLD_TTL_SECONDS,paymentDecision,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {heldIntake} from './intake-context';
 import type {CandidateContext} from '../../../contracts/src/hold-intake';
 import {expireInventoryHolds} from './expiry';
 type Conn=Pick<PoolClient,'query'>;
-type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:string;return_store:string;conditions:HoldConditions;expires_at:Date;due_at:Date;state:'ACTIVE'|'EXPIRED'|'RELEASED';payment_state:PaymentBoundary;allocation_stage:string;version:number;transfer_attention:string|null};
+type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:string;return_store:string;conditions:HoldConditions;expires_at:Date;due_at:Date;state:'ACTIVE'|'EXPIRED'|'RELEASED';payment_state:PaymentBoundary;allocation_stage:string;version:number;transfer_attention:string|null;buffer_override:boolean};
 type Outcome={result:Feasibility|'CREATED'|'AMENDED'|'RELEASED'|'EXPIRED'|'UNCHANGED';holdId?:string};
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 function id(value:string){if(!UUID.test(value))throw new HoldError('INVALID_ID');}
@@ -17,8 +19,19 @@ export class HoldService {
  // Clock is a dependency for controlled tests only. Normal runtime always obtains database time.
  constructor(private pool:Pool,private principal:BookingActor,private clock?:()=>Date){}
  private async now(c:Conn){return this.clock?this.clock():(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;}
- private async authorize(c:Conn,edit:boolean,stores:string[]=[]){
-  return authorizeBookingActor(c,this.principal,['HOLD_VIEW',...(edit?['HOLD_EDIT']:[])],stores);
+ private async authorize(c:Conn,edit:boolean,stores:string[]=[],extra:readonly string[]=[]){
+  return authorizeBookingActor(c,this.principal,['HOLD_VIEW',...(edit?['HOLD_EDIT']:[]),...extra],stores);
+ }
+ // 95% public / staff INVENTORY_BUFFER_OVERRIDE (release-code-closure): overrideBuffer:true is
+ // only ever a *request* to use reserved capacity, never authority by itself — this independently
+ // re-verifies an authenticated staff principal with INVENTORY_BUFFER_OVERRIDE and the applicable
+ // store scope on every call (guestOperations in booking-actor.ts structurally never includes
+ // INVENTORY_BUFFER_OVERRIDE, so a guest actor is rejected here regardless of what it passes).
+ // A reason is required and durably logged (inventory_buffer_override_record, 0042) — this is
+ // never a silent capability, and never downgraded to "as if false" on missing permission.
+ private overrideReason(value:unknown):string{if(typeof value!=='string'||!value.trim()||value.length>300)throw new HoldError('INVENTORY_BUFFER_OVERRIDE_REASON_REQUIRED',422);return value.trim();}
+ private async authorizeBufferOverride(c:Conn,stores:string[]){
+  await this.authorize(c,true,stores,['INVENTORY_BUFFER_OVERRIDE']);
  }
  private async owned(c:Conn,holdId:string,edit:boolean){
   id(holdId);await this.authorize(c,edit);
@@ -55,7 +68,7 @@ export class HoldService {
   }catch(e){await c?.query('ROLLBACK').catch(()=>{});return this.normalizeError(e);}finally{c?.release();}
  }
  private summary(h:HoldRow,now:Date,history:Record<string,unknown>[]){
-  return {id:h.id,reservationId:h.reservation_id,conditions:h.conditions,state:effective(h,now),paymentState:h.payment_state,expiresAt:h.expires_at.toISOString(),version:h.version,allocationStage:h.allocation_stage,transferAttention:h.transfer_attention,period:normalizePeriod(h.conditions.period),history,meaning:'TEMPORARY_HOLD_NOT_BOOKING_PAYMENT_OR_HANDOFF'};
+  return {bufferOverride:h.buffer_override,id:h.id,reservationId:h.reservation_id,conditions:h.conditions,state:effective(h,now),paymentState:h.payment_state,expiresAt:h.expires_at.toISOString(),version:h.version,allocationStage:h.allocation_stage,transferAttention:h.transfer_attention,period:normalizePeriod(h.conditions.period),history,meaning:'TEMPORARY_HOLD_NOT_BOOKING_PAYMENT_OR_HANDOFF'};
  }
  private async attention(c:Conn,ids:string[],now:Date){return (await c.query<{hold_id:string}>(`SELECT DISTINCT cl.hold_id FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.active AND cl.hold_id=ANY($1::uuid[]) AND (b.issue IS NOT NULL OR (b.planned_ready_at<$2 AND p.state NOT IN ('READY','CLOSED')))`,[ids,now])).rows.map(x=>x.hold_id);}
  private async view(c:Conn,h:HoldRow,now:Date){
@@ -74,18 +87,36 @@ export class HoldService {
  // Narrow catalog read through the existing authorized inventory reader. Recommendation
  // has no model-table grants; never broaden its DB role to obtain display metadata.
  async recommendationCatalog(){return this.read(async c=>{const rows=(await c.query<import('../../../contracts/src/recommendation').Variant>('SELECT v.id,v.family,v.age,v.tier,v.size,v.model_id,v.compatible_sports,m.catalog_season,m.name AS model_name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.id LIMIT 2001')).rows;if(rows.length>2000)throw new HoldError('INDETERMINATE_CATALOG_LIMIT',503);return rows;});}
+ async managementCapacity(input:unknown){if(isGuest(this.principal))throw new HoldError('FORBIDDEN',403);const conditions=parseConditions(input);return this.read(async(c,now)=>{await this.authorize(c,false,[conditions.pickupStore,conditions.returnStore]);return capacitySummary(c,conditions,now);});}
  async options(){return this.read(async c=>(await c.query("SELECT v.id,v.family,v.age,v.tier,v.size,m.name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.family,v.size,v.id LIMIT 500")).rows);}
- async availability(input:unknown,replaceHoldId?:string,context?:CandidateContext){const conditions=parseConditions(input);return this.transaction(false,async c=>{
-  await this.authorize(c,false,[conditions.pickupStore,conditions.returnStore]);if(replaceHoldId){const old=await this.owned(c,replaceHoldId,false);if(old.reservation_id!==conditions.reservationId)throw new HoldError('IMMUTABLE_RESERVATION');if(old.allocation_stage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(old.payment_state))throw new HoldError('ALLOCATION_FIXED',409);}
- },async(c,now)=>{const h=replaceHoldId?await this.owned(c,replaceHoldId,false):null;await heldIntake(c,conditions,now,h,context);return {result:(await planAllocation(c,conditions,now,replaceHoldId??null)).result,period:normalizePeriod(conditions.period),advisory:true};});}
- async command(op:'create'|'amend'|'cancel'|'expire'|'reassign',key:string,input?:unknown,holdId?:string,expectedVersion?:number){
+ // `bufferOverride` here is read-only "management inventory visibility": a staff preview of true
+ // (100%) capacity before deciding whether to actually invoke the override on command(). It
+ // writes nothing (no hold, no claim, no audit log — audit only records an actual invocation),
+ // so unlike command() it needs no reason, but is authorized exactly as strictly.
+ async availability(input:unknown,replaceHoldId?:string,context?:CandidateContext,bufferOverride?:boolean){const conditions=parseConditions(input);return this.transaction(false,async c=>{
+  await this.authorize(c,false,[conditions.pickupStore,conditions.returnStore]);if(bufferOverride)await this.authorizeBufferOverride(c,[conditions.pickupStore,conditions.returnStore]);if(replaceHoldId){const old=await this.owned(c,replaceHoldId,false);if(old.buffer_override)await this.authorizeBufferOverride(c,[old.pickup_store,old.return_store,conditions.pickupStore,conditions.returnStore]);if(old.reservation_id!==conditions.reservationId)throw new HoldError('IMMUTABLE_RESERVATION');if(old.allocation_stage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(old.payment_state))throw new HoldError('ALLOCATION_FIXED',409);}
+ // V3 (TD correction, P1): mixed planning, not physical-only — a provisional-backed variant that
+ // command() would genuinely accept must not appear unavailable during advisory preview (the
+ // actual Guest/Recommendation flow calls availability() before ever reaching command()). Still
+ // read-only: planMixedAllocation itself never writes anything (only writeProvisionalClaims/
+ // writeAllocationClaims/writeWearClaims, called separately by command(), do), so no provisional
+ // claim is created here, only the same advisory-only feasibility result as before.
+ },async(c,now)=>{const h=replaceHoldId?await this.owned(c,replaceHoldId,false):null;await heldIntake(c,conditions,now,h,context);return {result:(await planMixedAllocation(c,conditions,now,replaceHoldId??null,undefined,bufferOverride??h?.buffer_override??false)).result,period:normalizePeriod(conditions.period),advisory:true};});}
+ // `bufferOverride` (release-code-closure, staff-only, explicit per-booking): a request to draw
+ // on the reserved 5% of physical/wear/provisional capacity, never authority by itself — see
+ // authorizeBufferOverride()'s own comment. Guest/public routes must never construct a
+ // FlowIdentity/BookingActor capable of satisfying this; the structural guarantee lives in
+ // booking-actor.ts's guestOperations allow-list, not here.
+ async command(op:'create'|'amend'|'cancel'|'expire'|'reassign',key:string,input?:unknown,holdId?:string,expectedVersion?:number,bufferOverride?:{reason:string;useReserve?:boolean}){
   if(expectedVersion!==undefined&&(!Number.isInteger(expectedVersion)||expectedVersion<1))throw new HoldError('INVALID_VERSION');
   id(key);if(op!=='create'&&!holdId)throw new HoldError('INVALID_ID');
+  const overrideReason=bufferOverride?this.overrideReason(bufferOverride.reason):undefined;
+  if(bufferOverride?.useReserve!==undefined&&typeof bufferOverride.useReserve!=='boolean')throw new HoldError('INVALID_INPUT');
   let conditions=op==='create'||op==='amend'?parseConditions(input):null;
   let pin:{requirementKey:string;assetId:string}|undefined;
   if(op==='reassign'){if(!input||typeof input!=='object'||Object.keys(input).sort().join(',')!=='assetId,requirementKey')throw new HoldError('INVALID_INPUT');pin=input as typeof pin;if(!pin||typeof pin.requirementKey!=='string'||typeof pin.assetId!=='string')throw new HoldError('INVALID_INPUT');id(pin.assetId);}
-  const fingerprint=createHash('sha256').update(canonical({op,holdId:holdId??null,conditions,pin:pin??null,...(expectedVersion===undefined?{}:{expectedVersion})})).digest('hex');
-  const preflight=async(c:Conn)=>{if(conditions)await this.authorize(c,true,[conditions.pickupStore,conditions.returnStore]);if(holdId){const old=await this.owned(c,holdId,true);if(pin){conditions=old.conditions;if(!conditions.members.some(m=>m.items.some(i=>i.family!=='POLE'&&!i.family.startsWith('WEAR_')&&m.key+':'+i.family===pin!.requirementKey)))throw new HoldError('INVALID_REQUIREMENT');}if(conditions&&conditions.reservationId!==old.reservation_id)throw new HoldError('IMMUTABLE_RESERVATION');}if(conditions){const r=(await c.query('SELECT owner_id FROM inventory_reservations WHERE id=$1',[conditions.reservationId])).rows[0];if(r&&r.owner_id!==this.principal.subject)throw new HoldError('FORBIDDEN',403);}};
+  const fingerprint=createHash('sha256').update(canonical({op,holdId:holdId??null,conditions,pin:pin??null,...(expectedVersion===undefined?{}:{expectedVersion}),...(overrideReason===undefined?{}:{bufferOverride:overrideReason,...(bufferOverride?.useReserve===false?{useReserve:false}:{})})})).digest('hex');
+  const preflight=async(c:Conn)=>{if(conditions)await this.authorize(c,true,[conditions.pickupStore,conditions.returnStore]);if(holdId){const old=await this.owned(c,holdId,true);if(old.buffer_override&&['amend','reassign'].includes(op))await this.authorizeBufferOverride(c,[old.pickup_store,old.return_store,...(conditions?[conditions.pickupStore,conditions.returnStore]:[])]);if(pin){conditions=old.conditions;if(!conditions.members.some(m=>m.items.some(i=>i.family!=='POLE'&&!i.family.startsWith('WEAR_')&&m.key+':'+i.family===pin!.requirementKey)))throw new HoldError('INVALID_REQUIREMENT');}if(conditions&&conditions.reservationId!==old.reservation_id)throw new HoldError('IMMUTABLE_RESERVATION');}if(conditions){const r=(await c.query('SELECT owner_id FROM inventory_reservations WHERE id=$1',[conditions.reservationId])).rows[0];if(r&&r.owner_id!==this.principal.subject)throw new HoldError('FORBIDDEN',403);}if(conditions&&overrideReason!==undefined)await this.authorizeBufferOverride(c,[conditions.pickupStore,conditions.returnStore]);};
   return this.transaction(true,preflight,async(c,now)=>{
    const previous=(await c.query<{fingerprint:string;result:Outcome}>('SELECT fingerprint,result FROM inventory_requests WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,key])).rows[0];
    if(previous&&previous.fingerprint!==fingerprint)throw new HoldError('IDEMPOTENCY_MISMATCH',409);
@@ -97,7 +128,7 @@ export class HoldService {
    else if(old&&old.allocation_stage!=='PROVISIONAL')throw new HoldError('ALLOCATION_FIXED',409);
    else if(old&&paymentDecision(old.payment_state,true,old.expires_at<=now,false)!=='MAY_CHANGE')throw new HoldError('PAYMENT_RECONCILIATION_REQUIRED',409);
    else if(op==='cancel'){
-    await c.query("UPDATE inventory_holds SET state='RELEASED',version=version+1 WHERE id=$1",[holdId]);await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=$1 AND active',[holdId]);outcome={result:'RELEASED',holdId:holdId!};
+    await c.query("UPDATE inventory_holds SET state='RELEASED',version=version+1 WHERE id=$1",[holdId]);await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=$1 AND active',[holdId]);await releaseProvisionalClaims(c,holdId!);outcome={result:'RELEASED',holdId:holdId!};
    }else if(op==='expire')outcome={result:'UNCHANGED',holdId:holdId!};
    else{
     if(!conditions)throw new HoldError('INVALID_CONDITIONS');
@@ -105,25 +136,31 @@ export class HoldService {
     // Same-key reconciliation above is distinct from permission to start new work.
     const admit=async(at:Date)=>{const intake=await heldIntake(c,conditions!,at,old);if(op==='amend'&&intake.mode==='HOLD_CONTINUATION'&&expectedVersion===undefined)throw new HoldError('EXPECTED_VERSION_REQUIRED',409);};
     await admit(now);
-    const plan=await planAllocation(c,conditions,now,old?.id??null,pin);
+    const useReserve=bufferOverride?bufferOverride.useReserve!==false:old?.buffer_override??false;
+    const auditReason=overrideReason??(useReserve?'PRESERVE_EXISTING_OVERRIDE_'+op.toUpperCase():undefined);
+    const plan=await planMixedAllocation(c,conditions,now,old?.id??null,pin,useReserve);
     if(plan.result!=='FEASIBLE')outcome={result:plan.result,...(old?{holdId:old.id}:{})};
     else {
      // Recheck at the write boundary too, after planning and any awaited SQL.
      await admit(await this.now(c));
      const period=normalizePeriod(conditions.period);const target=old?.id??randomUUID();
+     // Classification belongs to the booking. Omission preserves it; explicit removal has
+     // already re-authorized the actor and must pass the ordinary public ceiling.
      if(old){
-      await c.query('UPDATE inventory_holds SET conditions=$2,pickup_store=$3,return_store=$4,starts_at=$5,due_at=$6,occupancy_start=$7,occupancy_end=$8,version=version+1 WHERE id=$1',[old.id,conditions,conditions.pickupStore,conditions.returnStore,period.startsAt,period.dueAt,conditions.period.startDate,conditions.period.endDate]);
+      await c.query('UPDATE inventory_holds SET conditions=$2,pickup_store=$3,return_store=$4,starts_at=$5,due_at=$6,occupancy_start=$7,occupancy_end=$8,version=version+1,buffer_override=$9 WHERE id=$1',[old.id,conditions,conditions.pickupStore,conditions.returnStore,period.startsAt,period.dueAt,conditions.period.startDate,conditions.period.endDate,useReserve]);
      }else{
       await c.query('INSERT INTO inventory_reservations VALUES($1,$2) ON CONFLICT DO NOTHING',[conditions.reservationId,this.principal.subject]);
-      await c.query(`INSERT INTO inventory_holds(id,reservation_id,owner_id,pickup_store,return_store,conditions,starts_at,due_at,occupancy_start,occupancy_end,expires_at,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'ACTIVE')`,[target,conditions.reservationId,this.principal.subject,conditions.pickupStore,conditions.returnStore,conditions,period.startsAt,period.dueAt,conditions.period.startDate,conditions.period.endDate,new Date(now.getTime()+HOLD_TTL_SECONDS*1000)]);
+      await c.query(`INSERT INTO inventory_holds(id,reservation_id,owner_id,pickup_store,return_store,conditions,starts_at,due_at,occupancy_start,occupancy_end,expires_at,state,buffer_override) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'ACTIVE',$12)`,[target,conditions.reservationId,this.principal.subject,conditions.pickupStore,conditions.returnStore,conditions,period.startsAt,period.dueAt,conditions.period.startDate,conditions.period.endDate,new Date(now.getTime()+HOLD_TTL_SECONDS*1000),useReserve]);
      }
+     if(auditReason!==undefined)await c.query('SELECT inventory_buffer_override_record($1,$2)',[target,(useReserve?'':'REMOVE_OVERRIDE: ')+auditReason]);
      // Replan every affected provisional witness atomically, preserving each original promise/TTL.
      const replanIds=[...plan.replanned,...(old?[old.id]:[])];
      const before=(await c.query('SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,day FROM inventory_claims WHERE hold_id=ANY($1::uuid[]) AND active ORDER BY id',[replanIds])).rows;
      await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=ANY($1::uuid[]) AND active',[replanIds]);
-     for(const otherId of plan.replanned){const other=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=$1',[otherId])).rows[0]!;await writeAllocationClaims(c,otherId,other.conditions,plan.witness.filter(w=>w.holdId===otherId));}
+     for(const otherId of plan.replanned){const other=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=$1',[otherId])).rows[0]!;if(other.buffer_override){await this.authorizeBufferOverride(c,[other.pickup_store,other.return_store]);await c.query('SELECT inventory_buffer_override_record($1,$2)',[otherId,'PRESERVE_EXISTING_OVERRIDE_AUTOMATIC_REPLAN']);}await writeAllocationClaims(c,otherId,other.conditions,plan.witness.filter(w=>w.holdId===otherId));}
      await writeAllocationClaims(c,target,conditions,plan.witness.filter(w=>w.holdId==='candidate'));
-     if([conditions,old?.conditions].some(value=>value?.members.some(m=>m.items.some(i=>i.family.startsWith('WEAR_')))))await writeWearClaims(c,target,conditions,now);
+     await writeProvisionalClaims(c,target,plan.provisional,normalizePeriod(conditions.period).dates,now,useReserve);
+     if([conditions,old?.conditions].some(value=>value?.members.some(m=>m.items.some(i=>i.family.startsWith('WEAR_')))))await writeWearClaims(c,target,conditions,now,plan.wearExcludeKeys,useReserve);
      const after=(await c.query('SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,day FROM inventory_claims WHERE hold_id=ANY($1::uuid[]) AND active ORDER BY id',[[...replanIds,target]])).rows;
      await c.query('SELECT inventory_record_replan($1::jsonb,$2::jsonb)',[JSON.stringify(before),JSON.stringify(after)]);
      outcome={result:old?'AMENDED':'CREATED',holdId:target};

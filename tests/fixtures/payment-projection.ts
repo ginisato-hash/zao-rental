@@ -30,7 +30,7 @@ export type ProjectionWorld=ReturnType<typeof worldFixture>;
 /** Scripted SQL/transaction model, not a PostgreSQL lock, isolation, trigger, durability or privilege proof. */
 export class ProjectionSqlFixture{
  world=worldFixture();now=new Date(clock);calls:{sql:string;values:unknown[];connection:number}[]=[];released:boolean[]=[];
- failAt:string|null=null;loseCommitResponse=false;staleHeadWrite=false;database='zr_012345abcdef';
+ failAt:string|null=null;loseCommitResponse=false;staleHeadWrite=false;database='zr_012345abcdef';role='zr_012345abcdef_pay_projection';
  onQuery:((sql:string)=>Promise<void>)|null=null;private chain=Promise.resolve();private serial=0;
  async lock(){const previous=this.chain;let unlock=()=>{};this.chain=new Promise<void>(r=>{unlock=r;});await previous;return unlock;}
  async connect():Promise<InboxConnection>{
@@ -44,7 +44,7 @@ export class ProjectionSqlFixture{
    if(sql==='ROLLBACK'){tx=null;unlock?.();unlock=null;return {rows:[],rowCount:0};}
    const w=tx??this.world,v=values;let rows:unknown[]=[],count=0;
    if(sql.startsWith('SET ')||sql.includes("set_config('zao.actor'")||sql.includes('pg_advisory_xact_lock_shared'))return {rows,rowCount:count};
-   if(sql.includes('current_database()'))rows=[{name:this.database}];
+   if(sql.includes('current_database()'))rows=[{name:this.database,role:this.role}];
    else if(sql.startsWith('SELECT inventory_clock()'))rows=[{now:new Date(this.now)}];
    else if(sql.startsWith('SELECT')&&sql.includes('FROM rental_bookings'))rows=sql.includes('WHERE owner_id=$1 AND request_key=$2')?[]:(w.b&&String(v[0])===w.b.id||sql.includes('ORDER BY created_at')?[w.b]:[]);
    else if(sql.startsWith('SELECT')&&sql.includes('FROM rental_payment_attempts'))rows=w.a&&(String(v[0])===w.a.id||String(v[0])===w.a.booking_id)&&(!v[1]||v[1]===w.a.booking_id)?[w.a]:[];
@@ -54,6 +54,7 @@ export class ProjectionSqlFixture{
    else if(sql.startsWith('SELECT')&&sql.includes('FROM payment_projection.events'))rows=w.events.filter(e=>e.observation_fingerprint===v[2]).map(e=>({result:e.result,jobId:e.job_id,truthFingerprint:e.truth_fingerprint}));
    else if(sql.startsWith('SELECT')&&sql.includes('FROM payment_reconciliation.streams'))rows=[{truth_revision:w.src.truthRevision,latest:w.src.observation}];
    else if(sql.startsWith('SELECT')&&sql.includes('FROM payment_reconciliation.jobs'))rows=[{id:w.src.jobId,environment:w.src.environment,merchant_id:w.src.merchantId,payment_id:w.src.paymentId,state:w.src.state,security_blocked:w.src.securityBlocked,decision:w.src.decision,decision_fingerprint:w.src.decisionFingerprint,context_fingerprint:w.src.contextFingerprint}];
+   else if(sql.includes('booking_cancellation_status'))rows=[{v:null}];
    else if(sql.includes('bool_or'))rows=[w.transfer];
    else if(sql.startsWith('SELECT 1 FROM inventory_claims'))rows=w.transfer.forbidden?[{found:1}]:[];
    else if(sql.startsWith('SELECT')&&sql.includes('FROM inventory_claims'))rows=w.claims;
@@ -66,7 +67,7 @@ export class ProjectionSqlFixture{
    else if(sql.startsWith('INSERT INTO rental_payment_attempts')){w.a={id:String(v[0]),booking_id:String(v[1]),actor:String(v[2]),idempotency_key:String(v[3]),merchant_id:String(v[4]),location_id:String(v[5]),amount_jpy:String(v[6]),currency:'JPY',state:'SUBMITTING',provider_id:null,provider_state:null,provider_updated_at:null,completed_at:null};w.history.push('attempt-create');count=1;}
    else if(sql.startsWith("UPDATE rental_payment_attempts SET state='UNKNOWN'")){if(w.a.state==='SUBMITTING'){w.a.state='UNKNOWN';w.history.push('attempt-unknown');count=1;}}
    else if(sql.startsWith('UPDATE rental_payment_attempts SET state=$2')){Object.assign(w.a,{state:v[1],provider_id:v[2],provider_state:v[3],provider_updated_at:v[4],completed_at:v[5]});w.history.push('attempt');count=1;}
-   else if(sql.startsWith('UPDATE rental_bookings')){w.b.state=sql.includes("state='CONFIRMED_DEV'")?'CONFIRMED_DEV':sql.includes("state='PAYMENT_PENDING'")?'PAYMENT_PENDING':'PAYMENT_REVIEW';w.b.version++;if(w.b.state==='CONFIRMED_DEV')w.b.confirmed_at=(v[1] as Date).toISOString();w.history.push('booking');count=1;}
+   else if(sql.startsWith('UPDATE rental_bookings')){w.b.state=sql.includes('state=$3')?String(v[2]):sql.includes("state='CONFIRMED_DEV'")?'CONFIRMED_DEV':sql.includes("state='PAYMENT_PENDING'")?'PAYMENT_PENDING':'PAYMENT_REVIEW';w.b.version++;if(['CONFIRMED_DEV','CONFIRMED'].includes(w.b.state))w.b.confirmed_at=(v[1] as Date).toISOString();w.history.push('booking');count=1;}
    else if(sql.startsWith('UPDATE inventory_holds')){if(sql.includes('expires_at>inventory_clock()')&&(w.h.expires_at<=this.now||w.h.due_at<=this.now))return {rows:[],rowCount:0};w.h.payment_state=sql.includes("payment_state='SUCCESS'")?'SUCCESS':sql.includes("payment_state='UNKNOWN'")?'UNKNOWN':sql.includes("payment_state='PENDING'")?'PENDING':String(v[1]);w.h.version++;if(w.h.payment_state==='SUCCESS')w.h.confirmed_at=v[1] as Date;w.history.push('hold');count=1;}
    else if(sql.startsWith('INSERT INTO rental_provider_events')){w.providerEvents.push({event_id:String(v[0]),attempt_id:String(v[1]),payload_sha256:String(v[2]),outcome:String(v[3])});count=1;}
    else if(sql.startsWith('INSERT INTO rental_notifications')){w.notifications.push(v);count=1;}

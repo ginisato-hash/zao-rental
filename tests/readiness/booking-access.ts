@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {flowFixture,simulation} from '../flow/fixture';
-import {skiSet} from '../inventory/fixture';
+import {skiSet,variants} from '../inventory/fixture';
 import {provisionGuestRole} from '../../scripts/guest-roles';
 import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
 import {GuestContexts,guestCookie} from '../../packages/core/src/guest/context';
@@ -16,6 +16,22 @@ try{
  guest=await provisionGuestRole(x.db.pool,x.db.identity);role=await provisionBookingAccessRole(x.db.pool,x.db.identity);
  const contexts=new GuestContexts(guest.guestPool),session=await contexts.create(),actor=await contexts.resolve(session.token),other=await contexts.resolve((await contexts.create()).token),access=new BookingAccess(role.accessPool,randomBytes(32),'test-v1');
  const holds=new HoldService(x.roles.holdPool,actor),quotes=new QuoteService(x.roles.pricingPool,actor),bookings=new BookingService(x.flow.flowPool,guest.guestPool,actor,x.fake,simulation);
+ // PUBLIC BOOKING POLICY test (genuine guest actor — structurally can never request
+ // bufferOverride): the shared seedInventory fixture's SKI/SKI_BOOT/POLE variants get an ample
+ // local top-up (this file's own isolated database only, not the shared fixture module) purely so
+ // an ordinary guest booking — the actual thing under test — isn't incidentally blocked by the
+ // public capacity ceiling on a 1-unit variant. A dedicated held connection is required: set_config
+ // is connection-local and separate pool.query() calls are not guaranteed the same connection.
+ {
+  const c=await x.db.pool.connect();
+  try{
+   await c.query('BEGIN');
+   await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC P4 booking-access fixture top-up',true)",[x.actor]);
+   for(const [family,variant] of [['SKI',variants.ski],['SKI_BOOT',variants.boot]] as const)for(let n=0;n<20;n++)await c.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE',$4,NULL,'','','SYNTHETIC','tests/readiness/booking-access.ts',$5) ON CONFLICT DO NOTHING`,[randomUUID(),variant,family,family==='SKI_BOOT'?'UNVERIFIED':'NOT_APPLICABLE','asset-p4-'+family+'-'+n]);
+   await c.query('UPDATE ledger_poles SET quantity=20 WHERE variant_id=$1',[variants.pole]);
+   await c.query('COMMIT');
+  }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+ }
  const conditions=skiSet('2035-02-05'),h=await holds.command('create',randomUUID(),conditions),quote=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote;
  const booking=await bookings.create(randomUUID(),quote.id,{displayName:'SYNTHETIC Capability',email:'synthetic-capability@example.invalid',termsAccepted:true});
  await check('unconfirmed and foreign owner cannot issue capability',async()=>{await assert.rejects(access.issue(actor,booking.id,randomUUID()),{code:'BOOKING_ACCESS_DENIED'});await bookings.startPayment(booking.id,randomUUID());await assert.rejects(access.issue(other,booking.id,randomUUID()),{code:'BOOKING_ACCESS_DENIED'});});

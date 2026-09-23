@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
 import {flowFixture} from '../flow/fixture';
-import {loadStaff} from '../../packages/auth/src/staff-auth';
+import {loadStaff,resolveStaff} from '../../packages/auth/src/staff-auth';
 import {provisionOperationsRole} from '../../scripts/operations-roles';
 import {OperationsContext} from '../../packages/core/src/operations/context';
 import {InventoryOperations} from '../../packages/core/src/operations/inventory-service';
 import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
 import {STOCK_IMPORT_HEADER_V3} from '../../packages/contracts/src/stock-import';
 import {LaunchGate} from '../../packages/core/src/operations/launch-gate';
+import {operationsHandler} from '../../apps/web/src/lib/operations-http';
 const SEASON='2026/27',STORES=['MOUNTAIN_BASE','ONSEN_BASE'] as const,PER_STORE=125;
 // 500 equipment sets: 125 ski + 125 board per store, each with matching boots, plus pole
 // pairs and wear pieces. Synthetic only; this is never observed inventory.
@@ -202,6 +203,52 @@ try{
   assert.equal(listed,PER_STORE*4);
   const labelled=(await x.db.pool.query("SELECT id,family FROM ledger_assets WHERE source_document='SYNTHETIC M2A receipt' AND family='SKI' LIMIT 1")).rows[0];
   assert.ok(/^[a-f0-9-]{36}$/.test(labelled.id));
+ });
+
+ await check('PROD-R5: the real-data production entry point (constructed with the approved family scope) refuses POLE, even though the generic service above admitted it freely',async()=>{
+  const {REAL_DATA_APPROVED_FAMILY_SCOPE}=await import('../../packages/core/src/operations/inventory-service');
+  const scopedSvc=new InventoryOperations(ctx,REAL_DATA_APPROVED_FAMILY_SCOPE);
+  const poleKindForProbe=KINDS.find(k=>k.family==='POLE')!;
+  const csv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(poleKindForProbe,'MOUNTAIN_BASE','r5 scope probe','-r5probe')+'\n';
+  const plan=await scopedSvc.stageImport(randomUUID(),{csv,sheet:'r5-scope-probe'});
+  assert.ok(plan.rows[0]!.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE'));
+  assert.equal(plan.report.committable,false);
+ });
+
+ await check('F3 (HTTP level, Owner 6-family scope): the actual POST /api/operations/import-stage route — not just the InventoryOperations class — enforces the approved family scope: SKI/SNOWBOARD/SKI_BOOT/SNOWBOARD_BOOT/WEAR_JACKET/WEAR_PANTS all clean, POLE reported FAMILY_NOT_IN_APPROVED_SCOPE, and a mixed SKI+POLE batch is not ready (no partial admission)',async()=>{
+  const state=(headers:Headers)=>resolveStaff(x.auth,x.roles.authPool,headers);
+  const handler=operationsHandler(state,id=>new OperationsContext(role!.operationsPool,x.roles.authPool,id),x.origin);
+  const stage=(csv:string,sheet:string)=>handler(new Request(x.origin+'/api/operations/import-stage',{method:'POST',headers:{cookie:x.signed.cookie,origin:x.origin,'content-type':'application/json'},body:JSON.stringify({requestKey:randomUUID(),input:{csv,sheet}})}));
+  const skiKind=KINDS.find(k=>k.family==='SKI')!;
+
+  for(const family of ['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'] as const){
+   const kind=KINDS.find(k=>k.family===family)!;
+   const csv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(kind,'MOUNTAIN_BASE','r3 http probe','-r3http-'+family)+'\n';
+   const res=await stage(csv,'r3-http-'+family);
+   assert.equal(res.status,200);
+   const body=await res.json() as {ready:boolean;rows:{issues:string[]}[]};
+   assert.deepEqual(body.rows[0]!.issues,[],family);
+  }
+
+  const poleKind=KINDS.find(k=>k.family==='POLE')!;
+  const poleCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(poleKind,'MOUNTAIN_BASE','r3 http probe','-r3http-pole')+'\n';
+  const poleRes=await stage(poleCsv,'r3-http-pole');
+  assert.equal(poleRes.status,200);
+  const poleBody=await poleRes.json() as {ready:boolean;rows:{issues:string[]}[]};
+  assert.ok(poleBody.rows[0]!.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE'));
+  assert.equal(poleBody.ready,false);
+
+  const mixedCsv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(skiKind,'MOUNTAIN_BASE','r3 http probe','-r3http-mixed-ski')+'\n'+row(poleKind,'MOUNTAIN_BASE','r3 http probe','-r3http-mixed-pole')+'\n';
+  const mixedRes=await stage(mixedCsv,'r3-http-mixed');
+  const mixedBody=await mixedRes.json() as {ready:boolean;rows:{issues:string[]}[]};
+  assert.equal(mixedBody.ready,false);
+  assert.ok(mixedBody.rows.some(r=>r.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE')));
+
+  // Converse of the whole check: the generic (non-HTTP) importer used elsewhere in this file
+  // still admits all 7 families — this route's scoping is additive, not a change to
+  // InventoryOperations/stageStockImport's own default-unrestricted behavior.
+  const genericPlan=await svc.stageImport(randomUUID(),{csv:STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row(poleKind,'MOUNTAIN_BASE','r3 http probe','-r3http-generic-pole')+'\n',sheet:'r3-http-generic'});
+  assert.ok(!genericPlan.rows[0]!.issues.includes('FAMILY_NOT_IN_APPROVED_SCOPE'));
  });
 
  console.log(JSON.stringify({status:'PASS',cases:count,syntheticSets:PER_STORE*2*STORES.length,stores:STORES.length,assetsCreated:PER_STORE*4*STORES.length,realInventoryImports:0,productionGuarantee:false,hostedDb:0}));

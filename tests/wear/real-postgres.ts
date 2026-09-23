@@ -25,9 +25,15 @@ try{
  });
  let premiumBookingId='',premiumBookingVersion=0;let first:Awaited<ReturnType<typeof recs.get>>;
  await check('mixed equipment+wear and wear-only preview -> explicit selection -> atomic7 claims -> immutable quote',async()=>{
-  const p=await recs.preview(randomUUID(),integrated('2035-02-10'),null);assert.equal(p.preview.offered.length,2);assert.equal(p.preview.offered[1]!.price?.totalJpy,5000);assert.equal(p.preview.offered[0]!.price?.totalJpy,11500);
+  // LOWER-LEVEL MECHANICS: both members share fixtures.selection's 2-unit wear pools (jacket+pants),
+  // so this booking is a deliberate exact-capacity/exhaustion scenario (the next check below depends
+  // on the pool then reading as fully consumed) — not a test of the 95% public-capacity policy
+  // itself. bufferOverride (authorized staff principal, valid audit reason) lets the group consume
+  // both units of the 2-unit operational pool; the coupled shortage check afterward observes the
+  // same pool with no override, since it is genuinely exhausted, not merely publicly capped.
+  const p=await recs.preview(randomUUID(),integrated('2035-02-10'),null,true);assert.equal(p.preview.offered.length,2);assert.equal(p.preview.offered[1]!.price?.totalJpy,5000);assert.equal(p.preview.offered[0]!.price?.totalJpy,11500);
   assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);
-  first=await recs.select(p.preview.id,randomUUID(),{...selection(),directions:{'ski-a':'RECOMMENDED','wear-b':'RECOMMENDED'}});assert.equal(first.selection?.stage,'COMPLETE');assert.equal(first.quote?.snapshot.totalJpy,16500);assert.equal(first.quote?.snapshot.chargeReady,false);
+  first=await recs.select(p.preview.id,randomUUID(),{...selection(),directions:{'ski-a':'RECOMMENDED','wear-b':'RECOMMENDED'}},{reason:'SYNTHETIC wear-pool exhaustion mechanics test'});assert.equal(first.selection?.stage,'COMPLETE');assert.equal(first.quote?.snapshot.totalJpy,16500);assert.equal(first.quote?.snapshot.chargeReady,false);
   const claims=(await x.db.pool.query('SELECT asset_id,requirement_key FROM inventory_claims WHERE hold_id=$1 AND active UNION ALL SELECT NULL AS asset_id,requirement_key FROM wear_claims WHERE hold_id=$1 AND active',[first.hold!.id])).rows;assert.equal(claims.length,7);assert.equal(new Set(claims.filter(r=>r.asset_id).map(r=>r.asset_id)).size,2);
   assert.equal((first.quote?.snapshot.items as unknown[]).length,3);assert.equal(first.quote?.snapshot.wearPriceVersion,'ZAO-WEAR-CATALOG-UX-20260913-V1_2');
  });
@@ -47,7 +53,11 @@ try{
  });
  await check('two parallel last-pool HOLDs succeed once; no cross-store pool mixing or partial claims',async()=>{
   await x.clock('2035-01-01T10:20:00+09:00');const pools=(await wearService.overview('MOUNTAIN_BASE')).pools;for(const pool of pools)await wearService.adjust(randomUUID(),{poolId:pool.id,expectedRevision:pool.revision,ready:1,reason:'SYNTHETIC capacity test'});
-  const c=parseConditions({...first!.hold!.conditions,reservationId:randomUUID(),period:{startDate:'2035-02-15',endDate:'2035-02-15',slot:'DAY'},members:[first!.hold!.conditions.members[1]!]});const result=await Promise.all([x.holds.command('create',randomUUID(),c),x.holds.command('create',randomUUID(),{...c,reservationId:randomUUID()})]);assert.deepEqual(result.map(r=>r.result).sort(),['CREATED','INSUFFICIENT']);
+  // LOWER-LEVEL MECHANICS: a deliberate 1-unit-pool concurrency race (exactly the scenario the
+  // user's own classification names); bufferOverride (authorized) exercises true capacity so the
+  // 95% ceiling (floor(1*0.95)=0, which would otherwise fail BOTH attempts) stays incidental.
+  const reason={reason:'SYNTHETIC last-pool-unit concurrency mechanics test'};
+  const c=parseConditions({...first!.hold!.conditions,reservationId:randomUUID(),period:{startDate:'2035-02-15',endDate:'2035-02-15',slot:'DAY'},members:[first!.hold!.conditions.members[1]!]});const result=await Promise.all([x.holds.command('create',randomUUID(),c,undefined,undefined,reason),x.holds.command('create',randomUUID(),{...c,reservationId:randomUUID()},undefined,undefined,reason)]);assert.deepEqual(result.map(r=>r.result).sort(),['CREATED','INSUFFICIENT']);
   const before=(await wearService.overview('MOUNTAIN_BASE')).pools;await assert.rejects(wearService.adjust(randomUUID(),{poolId:before.find(p=>p.variant_id===fixtures.selection.jacketVariantId)!.id,expectedRevision:before.find(p=>p.variant_id===fixtures.selection.jacketVariantId)!.revision,ready:0,reason:'must preserve HOLD'}),{code:'WEAR_CONFLICT'});
   assert.equal((await x.holds.availability({...c,pickupStore:'ONSEN_BASE',returnStore:'ONSEN_BASE'})).result,'INSUFFICIENT');
  });

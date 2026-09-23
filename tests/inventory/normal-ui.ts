@@ -9,7 +9,8 @@ let app:Awaited<ReturnType<typeof startDevelopmentApp>>|undefined;let stage='sta
 const password=randomBytes(24).toString('base64url');
 async function check(name:string,f:()=>Promise<void>){stage=name;await f();count++;console.log('PASS '+name);}
 try{
- app=await startDevelopmentApp({built:true});const {origin}=app;await seedInventory(app.db.pool);await bootstrapDevelopmentAdmin(app.db.pool,{email:'synthetic-e06-admin@example.invalid',displayName:'合成ADMIN',password});
+ // Ordinary staff/public holds need a nonzero 95% ceiling; the one-unit scarcity fixture has zero.
+ app=await startDevelopmentApp({built:true});const {origin}=app;await seedInventory(app.db.pool,true);await bootstrapDevelopmentAdmin(app.db.pool,{email:'synthetic-e06-admin@example.invalid',displayName:'合成ADMIN',password});
  for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:1280,height:960}});c.setDefaultTimeout(10000);return c;}
  async function login(c:BrowserContext,email:string){const page=await c.newPage();await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(password);await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(origin+'/staff/ledger');return page;}
@@ -60,6 +61,20 @@ try{
   await page.getByRole('button',{name:'新しい要求',exact:true}).click();let writes=0;const listener=(r:import('@playwright/test').Request)=>{if(r.method()==='POST'&&r.url().includes('/api/holds'))writes++;};page.on('request',listener);
   await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw new DOMException('Unavailable','QuotaExceededError');};});await page.getByRole('button',{name:'グループを仮押さえ',exact:true}).click();await expect(page.getByRole('status')).toContainText('変更を停止');assert.equal(writes,0);await expect(page.getByRole('button',{name:'新しい要求',exact:true})).toBeDisabled();page.off('request',listener);await page.reload();
  });
+ await check('management-only reserve choice requires independent permission, reason, scope and durable audit; capacity is read-only',async()=>{
+  const payload={requestKey:randomUUID(),conditions:skiSet('2032-04-01'),bufferOverride:{useReserve:true,reason:'SYNTHETIC explicit UI reserve'}};
+  assert.equal((await anonymous.request.post('/api/holds',{headers:{origin},data:payload})).status(),401);assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:payload})).status(),403);
+  await page.goto('/staff/holds');await expect(page.getByLabel('予備在庫を使用する / Use reserve inventory')).toHaveCount(0);
+  const grant=async(allowed:boolean)=>{const expectedRevision=(await app!.db.pool.query('SELECT revision FROM staff_members WHERE id=$1',[actor])).rows[0].revision;assert.equal((await admin.request.patch('/api/staff-users/'+actor,{headers:{origin},data:{...settings,expectedRevision,permissions:{...settings.permissions,INVENTORY_BUFFER_OVERRIDE:allowed}}})).status(),200);};
+  await grant(true);await page.reload();await expect(page.getByLabel('予備在庫を使用する / Use reserve inventory')).toBeVisible();
+  assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:{...payload,bufferOverride:{reason:'',useReserve:true}}})).status(),422);
+  const other=structuredClone(payload);other.conditions.pickupStore='ONSEN_BASE';assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:other})).status(),403);
+  await page.getByRole('button',{name:'新しい要求',exact:true}).click();await page.getByLabel('開始日',{exact:true}).fill('2032-04-01');await page.getByLabel('最終日',{exact:true}).fill('2032-04-01');await page.getByLabel('1人目 スキー（1ペア）',{exact:true}).selectOption(variants.ski);await page.getByLabel('1人目 スキーブーツ（1足）',{exact:true}).selectOption(variants.boot);await page.getByLabel('1人目 ポール（1ペア）',{exact:true}).selectOption(variants.pole);
+  await page.getByLabel('予備在庫を使用する / Use reserve inventory').check();await expect(page.getByRole('button',{name:'グループを仮押さえ',exact:true})).toBeDisabled();await page.getByLabel('予備在庫の利用・解除理由').fill('SYNTHETIC explicit UI reserve');await page.getByRole('button',{name:'グループを仮押さえ',exact:true}).click();await expect(page.getByRole('region',{name:'HOLD詳細'})).toContainText('予備在庫利用');
+  const record=(await app!.db.pool.query('SELECT h.id FROM inventory_holds h JOIN inventory_buffer_override_log l ON l.hold_id=h.id WHERE h.owner_id=$1 AND h.buffer_override AND l.reason=$2',[actor,'SYNTHETIC explicit UI reserve'])).rows[0];assert.ok(record);
+  await page.getByRole('button',{name:'施設全体の在庫枠を表示'}).click();const summary=page.getByRole('region',{name:'施設全体の在庫枠'});for(const name of ['稼働在庫','一般販売枠','一般確保','予備利用','一般残数','稼働残数'])await expect(summary.getByRole('columnheader',{name,exact:true})).toBeVisible();await expect(summary.locator('input')).toHaveCount(0);
+  await page.getByRole('button',{name:'仮押さえを取り消す',exact:true}).click();await grant(false);await page.reload();await expect(page.getByLabel('予備在庫を使用する / Use reserve inventory')).toHaveCount(0);assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:payload})).status(),403);
+ });
  await check('ordinary API rejects CSRF, forged role/actor/expiry, other store, other owner and revoked permission',async()=>{
   const payload={requestKey:randomUUID(),conditions:skiSet('2032-02-01')};
   for(const headers of [{},{origin:'https://untrusted.invalid'}])assert.equal((await editor.request.post('/api/holds',{headers,data:payload})).status(),403);
@@ -70,6 +85,6 @@ try{
   assert.equal((await editor.request.post('/api/holds',{headers:{origin},data:payload})).status(),403);await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();await expect(page.getByRole('heading',{name:'期間在庫と仮押さえ',exact:true})).toHaveCount(0);
  });
  console.log(`E06 normal UI/API/PostgreSQL: ${count} passed; 0 skipped. Synthetic real password auth; viewport simulation, not physical phone.`);
-}catch(e){console.error('E06_UI_FAILED '+stage+' '+(e as Error).name);failed=true;}finally{await browser.close();if(app)await app.stop();console.log('Owned E06 Web, browser and PostgreSQL stopped.');}
+}catch(e){console.error('E06_UI_FAILED '+stage+' '+(e as Error).name);console.error((e as Error).message);console.error((e as Error).stack?.split('\n').filter(line=>line.includes('/tests/inventory/')).join('\n'));failed=true;}finally{await browser.close();if(app)await app.stop();console.log('Owned E06 Web, browser and PostgreSQL stopped.');}
 
 if(failed)process.exit(1);

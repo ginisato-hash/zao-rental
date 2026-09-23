@@ -10,6 +10,13 @@ export type HoldItem={family:EquipmentFamily;variantIds:string[];modelPromise?:M
 export type HoldMember={key:string;product:'SKI_SET'|'SNOWBOARD_SET'|'SINGLE'|'WEAR_SET';age:'ADULT'|'KIDS';tier:'REGULAR'|'PREMIUM'|'STANDARD';wear?:boolean;wearSport?:'SKI'|'SNOWBOARD';items:HoldItem[]};
 export type HoldConditions={contractVersion?:'INTEGRATED_V1_2';reservationId:string;pickupStore:StoreId;returnStore:StoreId;period:Period;members:HoldMember[]};
 export function isWear(family:string){return family==='WEAR_JACKET'||family==='WEAR_PANTS';}
+// Owner decision (release-code-closure, Phase 1): POLE is removed from public feasibility
+// blocking — no physical or provisional inventory has ever been registered for it (see
+// RESULT.md §10), so it must never make an otherwise-satisfiable SKI_SET unbookable. POLE
+// remains a required structural member of SKI_SET (see families check below) and is still
+// shown to staff on the daily manifest; it is simply never inventory-claim-tracked, exactly
+// like an item the store hands out ad hoc without per-unit accounting.
+export function isPole(family:string){return family==='POLE';}
 export function memberSport(m:HoldMember){return m.product==='WEAR_SET'?m.wearSport!:m.product==='SNOWBOARD_SET'||m.items.some(i=>i.family==='SNOWBOARD'||i.family==='SNOWBOARD_BOOT')?'SNOWBOARD':'SKI';}
 export function itemTier(m:HoldMember,item:HoldItem){return isWear(item.family)?'STANDARD':m.tier;}
 export type PromiseVariant={id:string;family:string;age:string;tier:string;model_id?:string;catalog_season?:string|null;compatible_sports?:string[]|null};

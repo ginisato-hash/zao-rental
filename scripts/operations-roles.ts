@@ -12,10 +12,14 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  await owner.query(`GRANT SELECT ON ledger_stores,ledger_models,ledger_variants,ledger_assets,ledger_poles,ledger_records,ledger_history,ledger_locations,inventory_reservations,inventory_holds,inventory_claims,inventory_constraints,inventory_replans,inventory_history,transfer_pieces,transfer_batches,price_quotes,price_books,price_activations,rental_bookings,rental_payment_attempts,rental_history,rental_no_pickup_events,rental_custody_events,rental_inspection_events,rental_inventory_blocks,rental_actual_custody,ops_history,ops_collected_payments,foundation_migrations TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT ON ops_financial_alerts,ops_amendment_quotes,ops_amendments,ops_import_stages,ops_import_sources,ops_import_commits,ops_stocktake_reconciliations,ops_requests,rental_preparations,rental_loan_items,rental_return_batches,rental_return_candidates,rental_receipts,rental_inspections,rental_requests TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT,UPDATE ON ops_charge_requests,ops_refund_requests,ops_stocktakes TO ${user}`);
- await owner.query(`GRANT UPDATE(conditions,starts_at,due_at,occupancy_start,occupancy_end,allocation_stage,version) ON inventory_holds TO ${user}`);
+ await owner.query(`GRANT UPDATE(conditions,starts_at,due_at,occupancy_start,occupancy_end,allocation_stage,version,buffer_override) ON inventory_holds TO ${user}`);
+ if((await owner.query("SELECT to_regclass('public.provisional_capacity_claims') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT UPDATE(state,released_at) ON provisional_capacity_claims TO ${user}`);
+ if((await owner.query("SELECT to_regprocedure('inventory_buffer_override_record(uuid,text)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT EXECUTE ON FUNCTION inventory_buffer_override_record(uuid,text) TO ${user}`);
  await owner.query(`GRANT INSERT,UPDATE(active) ON inventory_claims,wear_claims TO ${user}`);
  await owner.query(`GRANT SELECT ON wear_claims TO ${user}`);
- await owner.query(`GRANT SELECT,INSERT,UPDATE ON wear_pools,wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts,wear_return_batches TO ${user}`);
+ await owner.query(`GRANT SELECT,INSERT,UPDATE ON wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts,wear_return_batches TO ${user}`);
+ await owner.query(`GRANT SELECT ON wear_pools TO ${user}`);
+ if((await owner.query("SELECT to_regprocedure('wear_pool_apply(uuid,text,integer,uuid)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT EXECUTE ON FUNCTION wear_pool_create(uuid,uuid,text,text),wear_pool_apply(uuid,text,integer,uuid) TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT ON wear_requests,wear_history TO ${user}`);
  await owner.query(`GRANT INSERT ON ledger_assets,ledger_poles TO ${user}`);
  await owner.query(`GRANT UPDATE(status) ON ledger_assets TO ${user}`);
@@ -25,10 +29,28 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  await owner.query(`GRANT USAGE ON SEQUENCE inventory_claims_id_seq,wear_claims_id_seq,wear_history_id_seq TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock(),inventory_record_replan(jsonb,jsonb),ops_assert_actor(text,text[],text),rental_apply_receipt(uuid),rental_apply_inspection(uuid),rental_complete_no_pickup(uuid),ops_checkout_amendment(uuid),ops_reconcile_poles(uuid,uuid,integer) TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('notification_status(text)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION notification_status(text),notification_resend(uuid,uuid,text,text) TO ${user}`);
+ // V2 (TD correction): provisional_capacity_register_source is now SECURITY DEFINER (fixed
+ // search_path, actor from current_setting('zao.actor')) — the function itself carries the INSERT
+ // rights, so the operations role needs only the narrow EXECUTE the migration's REVOKE ALL FROM
+ // PUBLIC otherwise withholds, never direct INSERT on provisional_capacity_sources/_buckets.
+ if((await owner.query("SELECT to_regprocedure('provisional_capacity_register_source(text,text,jsonb)') v")).rows[0].v){
+  await owner.query(`GRANT EXECUTE ON FUNCTION provisional_capacity_register_source(text,text,jsonb) TO ${user}`);
+  // BookingService/CustodyService (packages/core/src/payment/booking-service.ts) run under this
+  // role too: verifyClaims()/verifyPhysicalHandoff() read provisional_capacity_claims to accept a
+  // provisional-backed reservation at booking time and to fail closed at physical handoff — a
+  // read-only need, never a write, so no INSERT/UPDATE here.
+  await owner.query(`GRANT SELECT ON provisional_capacity_claims TO ${user}`);
+ }
  // The console functions are SECURITY DEFINER, so the role needs execute rights only
  // and never direct access to ops_exceptions or the source projection.
  if((await owner.query("SELECT to_regprocedure('ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION ops_collect_exceptions(text),ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid),ops_acknowledge_exception(uuid,text,text),ops_observe_signal(text,uuid,text) TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('field_acceptance_status(uuid,text)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION field_acceptance_record(uuid,text,text,text,text,text),field_acceptance_status(uuid,text),real_data_accept(uuid,text[]),real_data_acceptance_status() TO ${user}`);
+ for(const table of ['provisional_capacity_buckets','inventory_pole_exemptions']){
+  if((await owner.query('SELECT to_regclass($1) IS NOT NULL AS present',['public.'+table])).rows[0].present)await owner.query(`GRANT SELECT ON ${table} TO ${user}`);
+ }
+ if((await owner.query("SELECT to_regprocedure('inventory_sync_pole_exemptions(uuid)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT EXECUTE ON FUNCTION inventory_sync_pole_exemptions(uuid) TO ${user}`);
+ if((await owner.query("SELECT to_regprocedure('booking_cancel(uuid,uuid,jsonb)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION booking_cancellation_preview(uuid),booking_cancellation_status(uuid),booking_cancellation_payment_observed(uuid),booking_cancel(uuid,uuid,jsonb),cancellation_refund_row(uuid),cancellation_refund_claim(uuid),cancellation_refund_observe(uuid,jsonb) TO ${user}`);
+ if((await owner.query("SELECT to_regclass('public.booking_cancellation_refunds') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT SELECT ON booking_cancellation_refunds TO ${user}`);
  const operationsDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};const operationsPool=new Pool({...operationsDb,max:4,connectionTimeoutMillis:2000});
  return {operationsDb,operationsPool,close:trackPoolLifecycle(operationsPool)};
 }

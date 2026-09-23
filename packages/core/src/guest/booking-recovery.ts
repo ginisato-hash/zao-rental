@@ -48,8 +48,8 @@ export class BookingRecovery{
  }
  async exchange(code:unknown,requestId:unknown){
   if(typeof code!=='string'||!pattern.test(code))throw new FlowError('BOOKING_RECOVERY_DENIED',401);flowId(requestId);
-  const token=this.token('zao-booking-recovered-read-v1',[hash(code),requestId]);
-  try{const r=(await this.pool.query('SELECT * FROM booking_access.exchange_recovery($1,$2,$3,$4)',[hash(code),requestId,hash(token),this.keyVersion])).rows[0];if(!r)throw new Error();return {token,expiresAt:(r.expires_at as Date).toISOString(),maxAgeSeconds:Number(r.remaining_seconds),replayed:Boolean(r.replayed)};}catch{throw new FlowError('BOOKING_RECOVERY_DENIED',401);}
+  const token=this.token('zao-booking-recovered-read-v1',[hash(code),requestId]),cancelToken=this.token('zao-booking-cancel-v1',[hash(code),requestId]);
+  try{const r=(await this.pool.query('SELECT * FROM booking_access.exchange_recovery_with_cancellation($1,$2,$3,$4,$5)',[hash(code),requestId,hash(token),hash(cancelToken),this.keyVersion])).rows[0];if(!r)throw new Error();return {token,expiresAt:(r.expires_at as Date).toISOString(),maxAgeSeconds:Number(r.remaining_seconds),replayed:Boolean(r.replayed),cancelToken:r.cancel_expires_at?cancelToken:null,cancelMaxAgeSeconds:Number(r.cancel_remaining_seconds)};}catch{throw new FlowError('BOOKING_RECOVERY_DENIED',401);}
  }
  async revoke(code:unknown){if(typeof code!=='string'||!pattern.test(code))throw new FlowError('BOOKING_RECOVERY_DENIED',401);await this.pool.query('SELECT booking_access.revoke_recovery($1)',[hash(code)]);}
 }

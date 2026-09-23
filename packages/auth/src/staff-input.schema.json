@@ -109,6 +109,9 @@
           },
           "FIELD_ACCEPTANCE": {
             "type": "boolean"
+          },
+          "INVENTORY_BUFFER_OVERRIDE": {
+            "type": "boolean"
           }
         }
       },
@@ -243,6 +246,9 @@
             "type": "boolean"
           },
           "FIELD_ACCEPTANCE": {
+            "type": "boolean"
+          },
+          "INVENTORY_BUFFER_OVERRIDE": {
             "type": "boolean"
           }
         }

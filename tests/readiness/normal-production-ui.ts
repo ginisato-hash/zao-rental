@@ -17,11 +17,14 @@ import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {guestCatalog,guestVariants} from '../../packages/core/src/content/public-catalog';
 import {simulation} from '../flow/fixture';
 import {variants} from '../recommendation/fixture';
+import {seedInventory} from '../inventory/fixture';
 const x=await normalProductionFixture(),origin='https://production-fixture.invalid:'+x.db.identity.webPort;
 let server:Server|undefined,web:ReturnType<typeof next>|undefined,browser:Awaited<ReturnType<typeof chromium.launch>>|undefined,runtime:Awaited<ReturnType<typeof bootstrapProductionRuntime>>=null,certDir:string|undefined,failed=false,stage='setup',count=0,external=0;
 const oldEnv=process.env.NODE_ENV;
 const check=async(name:string,fn:()=>Promise<void>)=>{stage=name;await fn();count++;console.log('PASS '+name);};
 try{
+ // Exercise the ordinary public path with stocked supply, not the one-unit scarcity fixture.
+ await seedInventory(x.db.pool,true);
  const input=x.input({},origin);installProductionBootstrap(input);runtime=await bootstrapProductionRuntime();assert.ok(runtime?.guest);
  const c=await runtime.guest.security.service.create(),actor=await runtime.guest.contexts.resolve(c.token),holds=new HoldService(x.roles.holdPool,actor),quotes=new QuoteService(x.roles.pricingPool,actor),recommendations=new RecommendationService(x.roles.recommendationPool,actor,holds,quotes,async v=>guestVariants(await guestCatalog(runtime!.public!.readPool,v),v));
  const bookings=new BookingService(x.flow.flowPool,x.guestRole.guestPool,actor,x.fake,simulation),fixtureService=new GuestBookingService(runtime.guest.contexts,actor,recommendations,bookings,async()=>guestCatalog(runtime!.public!.readPool,await holds.recommendationCatalog()));

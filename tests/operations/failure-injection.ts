@@ -28,7 +28,7 @@ try{
  const recovery=new BookingRecovery(access.accessPool,randomBytes(32),'ops-fixture-v1',undefined,5000,true);
 
  // Payment acceptance is lost after the provider saved it: local knowledge is UNKNOWN only.
- const unknownPaid=await x.draft(undefined,requestFor('2035-02-21'));x.fake.failAfterSave=true;await x.service.startPayment(unknownPaid.booking.id,randomUUID());x.fake.failAfterSave=false;
+ const unknownPaid=await x.draft(undefined,requestFor('2035-02-21'),{reason:'SYNTHETIC operational failure observation'});x.fake.failAfterSave=true;await x.service.startPayment(unknownPaid.booking.id,randomUUID());x.fake.failAfterSave=false;
  await check('payment UNKNOWN is observed without ever confirming the booking',async()=>{
   const b=(await x.db.pool.query('SELECT state,confirmed_at FROM rental_bookings WHERE id=$1',[unknownPaid.booking.id])).rows[0];
   assert.equal(b.state,'PAYMENT_PENDING');assert.equal(b.confirmed_at,null);
@@ -36,7 +36,7 @@ try{
   assert.ok((await types()).includes('PAYMENT_UNKNOWN'));
  });
 
- const confirmed=await x.draft(undefined,requestFor('2035-02-22'));await x.service.startPayment(confirmed.booking.id,randomUUID());
+ const confirmed=await x.draft(undefined,requestFor('2035-02-22'),{reason:'SYNTHETIC operational failure observation'});await x.service.startPayment(confirmed.booking.id,randomUUID());
  await check('notification permanent failure never invalidates the confirmed booking',async()=>{
   const before=await business();
   const rejecting=new LoopbackDeliveryAdapter('PERMANENT_REJECT'),worker=new BookingNotificationWorker(notify!.notificationPool,x.origin,recovery,rejecting);
@@ -51,7 +51,7 @@ try{
 
  await check('lost delivery acceptance stays UNKNOWN and sends no second message',async()=>{
   const timeout=new LoopbackDeliveryAdapter('TIMEOUT_BEFORE_ACCEPT'),worker=new BookingNotificationWorker(notify!.notificationPool,x.origin,recovery,timeout);
-  const second=await x.draft(undefined,requestFor('2035-02-23'));await x.service.startPayment(second.booking.id,randomUUID());
+  const second=await x.draft(undefined,requestFor('2035-02-23'),{reason:'SYNTHETIC operational failure observation'});await x.service.startPayment(second.booking.id,randomUUID());
   const id=(await worker.enqueueConfirmed(second.booking.id))!;await worker.dispatch(id);
   const sent=timeout.calls;await worker.reconcile(id);
   assert.equal(timeout.calls,sent);

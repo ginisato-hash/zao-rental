@@ -8,6 +8,14 @@ export async function provisionCustodyRole(owner:Pool,identity:{namespace:string
  await owner.query(`ALTER ROLE ${user} LOGIN PASSWORD '${password}'`);
  await owner.query(`GRANT CONNECT ON DATABASE ${identity.database} TO ${user}`);
  await owner.query(`GRANT SELECT ON rental_bookings,rental_payment_attempts,rental_history,inventory_holds,inventory_claims,inventory_constraints,ledger_stores,ledger_models,ledger_variants,ledger_assets,ledger_poles,transfer_pieces,transfer_batches,wear_claims,rental_custody_events,rental_inspection_events,rental_inventory_blocks,rental_actual_custody TO ${user}`);
+ // verifyClaims()/verifyPhysicalHandoff() (booking-service.ts, extended by custody-service.ts's
+ // prepare()/checkout()) read provisional_capacity_claims — accept a provisional-backed
+ // reservation, fail closed at physical handoff while any claim here is still ACTIVE.
+ if((await owner.query("SELECT to_regclass('public.provisional_capacity_claims') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT SELECT ON provisional_capacity_claims TO ${user}`);
+ // Exact claim witnesses are read-only and individually guarded for historical schemas.
+ for(const table of ['wear_pools','provisional_capacity_buckets','inventory_pole_exemptions']){
+  if((await owner.query('SELECT to_regclass($1) IS NOT NULL AS present',['public.'+table])).rows[0].present)await owner.query(`GRANT SELECT ON ${table} TO ${user}`);
+ }
  await owner.query(`GRANT SELECT,INSERT ON rental_preparations,rental_loan_items,rental_return_batches,rental_return_candidates,rental_receipts,rental_inspections,rental_requests TO ${user}`);
  await owner.query(`GRANT UPDATE(version) ON rental_return_batches TO ${user}`);
  await owner.query(`GRANT UPDATE(state,outcome) ON rental_return_candidates TO ${user}`);

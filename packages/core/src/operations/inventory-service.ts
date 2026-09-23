@@ -4,13 +4,28 @@ import {ContentInputError} from '../content/bulk-plan';
 import {stageStockImport,commitImportDryRun,importDryRunReport,type ImportStage} from '../content/import-staging';
 import type {ImportVariant} from '../content/stock-import-plan';
 import {OperationsContext,operationalReason,type OpsConnection} from './context';
+// PROD-R5 (integration-corrected): the current real-data Owner scope. The generic
+// importer/planStockImport still supports all 7 ImportVariant families for future
+// architecture — this constant is what actually narrows the current Production real-import
+// package. Widening it (e.g. to admit POLE) is a deliberate, separately-reviewed
+// Owner-approved code change, never a runtime flag.
+//
+// Owner decision (docs/execution/launch-critical-m2b/INVENTORY_SOURCE_AUDIT.md,
+// INVENTORY_OWNER_DECISIONS.md): WEAR_JACKET/WEAR_PANTS admitted alongside the original 4
+// asset-backed families now that an Owner-approved wear quantity source exists. POLE stays
+// excluded — see the same audit's ski-set pole-capacity note.
+export const REAL_DATA_APPROVED_FAMILY_SCOPE=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'] as const satisfies readonly ImportVariant['family'][];
 type Asset={id:string;store_id:string;status:string;version:number;present_expected:boolean};
 type Quantity={id:string;kind:'POLES'|'WEAR';physical:number;version:number;protected_count:number};
 type Snapshot={assets:Asset[];quantities:Quantity[]};
 type Observations={assets:string[];quantities:Record<string,number>};
 type Stocktake={id:string;store_id:string;revision:number;state:string;baseline:Snapshot;observations:Observations};
 export class InventoryOperations{
- constructor(private ctx:OperationsContext){}
+ // PROD-R5 (integration-corrected): optional, defaults to unrestricted (every existing
+ // caller/test — which exercises all 7 families for generic infrastructure testing — is
+ // unaffected). The real-data production import entry point is the one expected to
+ // construct this with REAL_DATA_APPROVED_FAMILY_SCOPE explicitly.
+ constructor(private ctx:OperationsContext,private approvedFamilyScope?:readonly ImportVariant['family'][]){}
  private async snapshot(c:OpsConnection,store:string):Promise<Snapshot>{return {
   assets:(await c.query<Asset>(`SELECT a.id,a.store_id,a.status,a.version,NOT EXISTS(SELECT 1 FROM rental_loan_items l WHERE l.asset_id=a.id AND l.state='OUT') AND NOT EXISTS(SELECT 1 FROM transfer_pieces p WHERE p.asset_id=a.id AND p.state IN ('IN_TRANSIT','RECEIVED')) AS present_expected FROM ledger_assets a WHERE a.store_id=$1 ORDER BY a.id`,[store])).rows,
   quantities:(await c.query<Quantity>(`SELECT p.id,'POLES'::text AS kind,(p.quantity-(SELECT count(*)::int FROM rental_loan_items l WHERE l.pole_id=p.id AND l.state='OUT')) AS physical,p.version,(SELECT count(*)::int FROM rental_loan_items l WHERE l.pole_id=p.id AND l.state='OUT') AS protected_count FROM ledger_poles p WHERE p.store_id=$1 UNION ALL SELECT id,'WEAR',total-on_loan-in_transit,revision,returned_pending+cleaning+today_blocked+unavailable FROM wear_pools WHERE store_id=$1 ORDER BY id`,[store])).rows
@@ -40,7 +55,7 @@ export class InventoryOperations{
    // Canonical SQL stock guards reject changes that would break HOLD/custody promises.
    for(const id of differences.missing)await c.query("UPDATE ledger_assets SET status='MAINTENANCE' WHERE id=$1",[id]);
    for(const q of differences.quantities){if(q.difference===0)continue;if(q.kind==='POLES'){const target=q.counted!+q.protected_count;if((await c.query("SELECT 1 FROM rental_loan_items WHERE pole_id=$1 AND state='OUT' AND pole_slot>$2 UNION ALL SELECT 1 FROM inventory_claims WHERE pole_id=$1 AND active AND transfer_piece_id IS NULL AND pole_slot>$2 UNION ALL SELECT 1 FROM transfer_pieces WHERE (source_pole_id=$1 OR destination_pole_id=$1 OR receipt_pole_id=$1) AND state NOT IN ('CANCELLED','CLOSED') LIMIT 1",[q.id,target])).rowCount)throw new FlowError('POLE_PROMISE_RECONCILIATION_REQUIRED',409);await c.query('SELECT ops_reconcile_poles($1,$2,$3)',[s.id,q.id,s.revision]);}
-    else{const ready=q.counted!-q.protected_count;if(ready<0)throw new FlowError('CARE_BUCKET_RECONCILIATION_REQUIRED',409);await c.query('UPDATE wear_pools SET ready=$2 WHERE id=$1',[q.id,ready]);}}
+    else{const ready=q.counted!-q.protected_count;if(ready<0)throw new FlowError('CARE_BUCKET_RECONCILIATION_REQUIRED',409);await c.query("SELECT wear_pool_apply($1,'SET_READY',$2)",[q.id,ready]);}}
    const after=await this.snapshot(c,s.store_id),id=randomUUID();await c.query('INSERT INTO ops_stocktake_reconciliations(id,stocktake_id,actor,request_key,reason,before_data,after_data) VALUES($1,$2,$3,$4,$5,$6,$7)',[id,s.id,this.ctx.identity.subject,key,reason,JSON.stringify(current),JSON.stringify(after)]);
    await c.query("UPDATE ops_stocktakes SET state='RECONCILED',revision=revision+1 WHERE id=$1",[s.id]);return {id:s.id,revision:s.revision+1,state:'RECONCILED',reconciliationId:id};
   }));
@@ -51,7 +66,7 @@ export class InventoryOperations{
  }
  async importCatalog(){await this.ctx.authorize('INVENTORY_EDIT');const c=await this.catalog(this.ctx.pool);return {variants:c.variants,revision:c.revision,manufacturerSkuPolicy:'EMPTY_WHEN_NOT_IN_AUTHORITATIVE_CATALOG'};}
  async stageImport(key:string,value:unknown){const v=flowObject(value,['csv','sheet']);if(typeof v.csv!=='string'||Buffer.byteLength(v.csv)>2*1024*1024||typeof v.sheet!=='string')throw new FlowError('IMPORT_INPUT_INVALID',422);
-  return this.ctx.transaction('INVENTORY_EDIT',[],'IMPORT_DRY_RUN',(c)=>this.ctx.idempotent(c,key,{op:'stageImport',v},async()=>{const catalog=await this.catalog(c),stage=stageStockImport(v.csv as string,v.sheet as string,catalog.variants,catalog.prior,catalog.revision);
+  return this.ctx.transaction('INVENTORY_EDIT',[],'IMPORT_DRY_RUN',(c)=>this.ctx.idempotent(c,key,{op:'stageImport',v},async()=>{const catalog=await this.catalog(c),stage=stageStockImport(v.csv as string,v.sheet as string,catalog.variants,catalog.prior,catalog.revision,this.approvedFamilyScope);
    const stores=[...new Set(stage.staged.flatMap(r=>r.normalized.storeId?[r.normalized.storeId]:[]))];await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['INVENTORY_EDIT',stores,this.ctx.identity.subject]);
    const exists=new Set((await c.query<{id:string}>('SELECT id FROM ledger_assets WHERE id=ANY($1::uuid[])',[stage.staged.flatMap(r=>r.normalized.assetIds).filter(x=>/^[0-9a-f-]{36}$/.test(x))])).rows.map(r=>r.id));
    const conflicts=stage.plan?.entries.filter(e=>e.disposition!=='ALREADY_IMPORTED'&&e.source.assetIds.some(id=>exists.has(id))).map(e=>e.source.locator)??[];
@@ -84,7 +99,7 @@ export class InventoryOperations{
    for(const op of plan.operations){const r=op.source,m=r.metadata!,variant=catalog.variants.find(v=>v.id===r.variantId)!;
     if(op.kind==='ADD_ASSETS')for(const [n,id] of r.assetIds.entries())await c.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,$4,$4,$5,$6,$7,$8,$11,'UNVERIFIED',$9,$10)`,[id,r.variantId,variant.family,r.storeId,m.status,variant.family==='SKI_BOOT'?m.bslMm===null?'UNVERIFIED':'RECORDED':'NOT_APPLICABLE',m.bslMm,m.bslMm===null?'':'Receipt source '+m.sourceRow,m.sourceDocument,m.sourceRow+':'+(n+1),m.note??'']);
     else if(variant.family==='POLE'){const pool=(await c.query<{id:string}>('SELECT id FROM ledger_poles WHERE variant_id=$1 AND store_id=$2 AND status=$3',[r.variantId,r.storeId,m.status])).rows[0];if(pool)await c.query('UPDATE ledger_poles SET quantity=quantity+$2 WHERE id=$1',[pool.id,r.quantity]);else await c.query("INSERT INTO ledger_poles(id,variant_id,store_id,status,quantity,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,$4,$5,'','UNVERIFIED',$6,$7)",[randomUUID(),r.variantId,r.storeId,m.status,r.quantity,m.sourceDocument,m.sourceRow]);}
-    else{let pool=(await c.query<{id:string}>('SELECT id FROM wear_pools WHERE variant_id=$1 AND store_id=$2',[r.variantId,r.storeId])).rows[0];if(!pool){pool={id:randomUUID()};await c.query('INSERT INTO wear_pools(id,variant_id,store_id) VALUES($1,$2,$3)',[pool.id,r.variantId,r.storeId]);}const column=m.status==='AVAILABLE'?'ready':'unavailable';await c.query(`UPDATE wear_pools SET ${column}=${column}+$2 WHERE id=$1`,[pool.id,r.quantity]);}
+    else{let pool=(await c.query<{id:string}>('SELECT id FROM wear_pools WHERE variant_id=$1 AND store_id=$2',[r.variantId,r.storeId])).rows[0];if(!pool){pool={id:randomUUID()};await c.query("SELECT wear_pool_create($1,$2,$3,'INVENTORY_EDIT')",[pool.id,r.variantId,r.storeId]);}const operation=m.status==='AVAILABLE'?'IMPORT_READY':'IMPORT_UNAVAILABLE';await c.query('SELECT wear_pool_apply($1,$2,$3)',[pool.id,operation,r.quantity]);}
     await c.query('INSERT INTO ops_import_sources(source_key,source_sha256,stage_id,actor) VALUES($1,$2,$3,$4)',[op.sourceKey,op.sourceHash,v.id,this.ctx.identity.subject]);
    }
    const result={id:v.id,importedSources:plan.operations.length,assetsAdded:plan.operations.reduce((n,o)=>n+o.source.assetIds.length,0),alreadyImported:saved.stage.staged.length-plan.operations.length,deleted:0};

@@ -24,8 +24,8 @@ try{
  });
 
  // Two authoritative payment states the console must observe without altering them.
- const pending=await x.draft(undefined,requestFor('2035-02-11'));x.fake.status='PENDING';await x.service.startPayment(pending.booking.id,randomUUID());
- const unknown=await x.draft(undefined,requestFor('2035-02-12'));x.fake.failAfterSave=true;await x.service.startPayment(unknown.booking.id,randomUUID());x.fake.failAfterSave=false;x.fake.status='COMPLETED';
+ const pending=await x.draft(undefined,requestFor('2035-02-11'),{reason:'SYNTHETIC console payment-state observation'});x.fake.status='PENDING';await x.service.startPayment(pending.booking.id,randomUUID());
+ const unknown=await x.draft(undefined,requestFor('2035-02-12'),{reason:'SYNTHETIC console payment-state observation'});x.fake.failAfterSave=true;await x.service.startPayment(unknown.booking.id,randomUUID());x.fake.failAfterSave=false;x.fake.status='COMPLETED';
  await x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'OPERATIONS_VIEW',true)",[x.actor]);
 
  await check('view permission alone lists safe projections and never acknowledges',async()=>{

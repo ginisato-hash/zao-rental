@@ -32,7 +32,7 @@ try{
  const conditions=skiSet('2035-02-01');conditions.returnStore='ONSEN_BASE';
  let bookingId='';
  await check('booking, HOLD and fixture payment confirmation complete at the pickup store',async()=>{
-  const d=await x.draft(undefined,conditions);await x.service.startPayment(d.booking.id,randomUUID());bookingId=d.booking.id;
+  const d=await x.draft(undefined,conditions,{reason:'SYNTHETIC cross-store custody rehearsal'});await x.service.startPayment(d.booking.id,randomUUID());bookingId=d.booking.id;
   const b=(await x.db.pool.query('SELECT state,confirmed_at FROM rental_bookings WHERE id=$1',[bookingId])).rows[0];
   assert.equal(b.state,'CONFIRMED_DEV');assert.ok(b.confirmed_at);
   const h=(await x.db.pool.query('SELECT state,payment_state,pickup_store FROM inventory_holds WHERE id=(SELECT hold_id FROM rental_bookings WHERE id=$1)',[bookingId])).rows[0];

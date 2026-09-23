@@ -1,5 +1,12 @@
 import {exact} from '../../contracts/src/pricing';
 import {productionGuestConfiguration,guestConfigurationHash,type ProductionGuestConfiguration} from '../../contracts/src/production-guest';
+// PROD-R6-C: a WeakSet-backed capability, exactly like ProductionProjectionPermit's own WeakMap —
+// a plain object shaped like ProductionConfiguration (same field names/values, constructed by
+// hand or from untrusted JSON) is never sufficient; only an object this module itself produced
+// and vouches for passes. Shape-checking alone (matching field names/types) cannot distinguish
+// the two, which is exactly the residual gap this closes.
+const validated=new WeakSet<object>();
+export function isValidatedProductionConfiguration(c:unknown):c is ProductionConfiguration{return typeof c==='object'&&c!==null&&validated.has(c);}
 export const productionServices=['auth','ledger','hold','transfer','pricing','recommendation','operations','guest','content_read','avatar_read','booking_access'] as const;
 export type ProductionService=typeof productionServices[number];
 export const startupStages=['DB_CONFIG','INGRESS','PAYMENT','MEDIA','GUEST_SECURITY','BOOKING_ACCESS','FEATURE_FLAGS','READY'] as const;
@@ -55,6 +62,7 @@ export function productionConfiguration(input:unknown,now=new Date()):Readonly<P
   stage='MEDIA';let media:ProductionConfiguration['media']=null;
   if(c.media!==null){const m=exact(c.media,['provider','environment','accountId','bucket','visibility','r2DevEnabled','publicDomains','credentialExpiresAt']);if(m.provider!=='CLOUDFLARE_R2'||m.environment!=='PRODUCTION'||m.visibility!=='PRIVATE'||m.r2DevEnabled!==false||!Array.isArray(m.publicDomains)||m.publicDomains.length||typeof m.credentialExpiresAt!=='string'||!Number.isFinite(Date.parse(m.credentialExpiresAt))||Date.parse(m.credentialExpiresAt)<=now.getTime())throw Error();media={provider:'CLOUDFLARE_R2',environment:'PRODUCTION',accountId:text(m.accountId,/^[a-f0-9]{32}$/),bucket:text(m.bucket,/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/),visibility:'PRIVATE',r2DevEnabled:false,publicDomains:[],credentialExpiresAt:new Date(m.credentialExpiresAt).toISOString()};}
   if(flags.media&&!media)throw Error();
-  return Object.freeze({schemaVersion:1,capability:'ZAO_PRODUCTION_RUNTIME_V1',deployment:Object.freeze(deployment),database:Object.freeze({provider:'NEON',environment:'production',host,name,roles:Object.freeze(roles)}),flags:Object.freeze(flags),guest,approvedGuestSha256,payment:payment?Object.freeze(payment):null,media:media?Object.freeze(media):null});
+  const result=Object.freeze({schemaVersion:1 as const,capability:'ZAO_PRODUCTION_RUNTIME_V1' as const,deployment:Object.freeze(deployment),database:Object.freeze({provider:'NEON' as const,environment:'production' as const,host,name,roles:Object.freeze(roles)}),flags:Object.freeze(flags),guest,approvedGuestSha256,payment:payment?Object.freeze(payment):null,media:media?Object.freeze(media):null});
+  validated.add(result);return result;
  }catch{throw new ProductionStartupError(stage);}
 }

@@ -18,7 +18,7 @@ let app:Awaited<ReturnType<typeof startDevelopmentApp>>|undefined,flow:Awaited<R
 const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 try{
- app=await startDevelopmentApp({built:true,operations:true});const {origin,db,roles}=app;await seedRecommendation(db.pool);
+ app=await startDevelopmentApp({built:true,operations:true});const {origin,db,roles}=app;await seedRecommendation(db.pool,true);
  const now=new Date('2035-01-01T10:00:00+09:00');await db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${now.toISOString()}'::timestamptz$$`);
  const root=await bootstrapDevelopmentAdmin(db.pool,{email:'m1-root@example.invalid',displayName:'SYNTHETIC Admin',password}),admin=(await loadStaff(db.pool,root))!;
  const actor=(await writeAccount(roles.authPool,admin,undefined,{email:'m1-operator@example.invalid',password,displayName:'SYNTHETIC Operator',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{INVENTORY_VIEW:true,INVENTORY_EDIT:true,HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true,BOOKING_VIEW:true,BOOKING_CREATE:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,RENTAL_AMEND:true,REFUND_OVERRIDE:true,INVENTORY_RECONCILE:true}})).id!;

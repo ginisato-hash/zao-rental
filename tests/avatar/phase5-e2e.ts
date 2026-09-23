@@ -3,7 +3,7 @@ import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
 import {startFlowApp} from '../flow/launcher';
-import {seedRecommendation,variants} from '../recommendation/fixture';
+import {seedRecommendation,variants,lengthVariants} from '../recommendation/fixture';
 import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
@@ -16,6 +16,10 @@ const check=async(kind:string,name:string,fn:()=>Promise<void>)=>{stage=name;awa
 try{
  app=await startFlowApp({publicP0:true,avatarPhase5:true,warmRoutes:true});const {db,origin}=app;
  await seedRecommendation(db.pool,true);await db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:00Z'::timestamptz$$");
+ const stock=await db.pool.connect();try{await stock.query('BEGIN');await stock.query("SELECT set_config('zao.actor','synthetic-avatar-phase5',true),set_config('zao.reason','SYNTHETIC public alternate-length visual fixture',true)");
+  await stock.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_evidence,notes,source_kind,source_document,source_locator)
+   SELECT gen_random_uuid(),id,family,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE','NOT_APPLICABLE','','','SYNTHETIC','tests/avatar/phase5-e2e.ts','public-direction-'||id FROM ledger_variants WHERE id=ANY($1::uuid[])`,[[lengthVariants.ski145,variants.skiAlt]]);await stock.query('COMMIT');
+ }catch(e){await stock.query('ROLLBACK');throw e;}finally{stock.release();}
  const password=randomBytes(24).toString('base64url'),subject=await bootstrapDevelopmentAdmin(db.pool,{email:'avatar-phase5@example.invalid',displayName:'SYNTHETIC Phase5',password});
  for(const permission of ['PRICE_EDIT','BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'])await db.pool.query('INSERT INTO staff_permission_overrides VALUES($1,$2,true)',[subject,permission]);
  await new QuoteService(app.roles.pricingPool,(await loadStaff(db.pool,subject))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');

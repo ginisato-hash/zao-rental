@@ -6,7 +6,7 @@ import {BookingService} from '../../packages/core/src/payment/booking-service';
 import type {PaymentGateway} from '../../packages/contracts/src/rental-flow';
 const x=await flowFixture();let failed=false,stage='setup';
 try{
- const d=await x.draft();let entered!:()=>void,release!:()=>void;const waiting=new Promise<void>(r=>{entered=r;}),gate=new Promise<void>(r=>{release=r;});
+ const d=await x.draft(undefined,undefined,{reason:'SYNTHETIC scope-revocation concurrency mechanics'});let entered!:()=>void,release!:()=>void;const waiting=new Promise<void>(r=>{entered=r;}),gate=new Promise<void>(r=>{release=r;});
  const adapter:PaymentGateway={kind:'SIMULATED_DEV',async create(){entered();await gate;throw new Error('SYNTHETIC_RESPONSE_LOST');},async lookup(){return null;}};
  const service=new BookingService(x.flow.flowPool,x.roles.authPool,x.signed.identity,adapter,simulation);
  const payment=service.startPayment(d.booking.id,randomUUID()).catch(e=>e);await waiting;

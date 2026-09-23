@@ -9,12 +9,26 @@ import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {seedRecommendation} from '../recommendation/fixture';
 import {requestFor} from '../inventory/fixture';
-import {HoldService} from '../../packages/core/src/inventory/hold-service';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {FakeGateway,simulation} from '../flow/fixture';
+import {normalizePeriod,type HoldConditions} from '../../packages/contracts/src/hold';
 // Always exercises the newest migration in the plan, whichever one this branch adds.
 const NEW=migrationPlan.at(-1)!.file,PRIOR=migrationPlan.length-1;
+// Current HoldService.command() requires the current schema (matching tests/fixtures/legacy-
+// prefix.ts's own documented contract), so it cannot be used to populate the PRIOR-migrations
+// HOLD below whenever the newest migration (here, 0042) adds a column HoldService's own SQL
+// unconditionally references. Mirrors legacyHold() in tests/fixtures/legacy-prefix.ts exactly
+// (same direct inventory_reservations/inventory_holds/inventory_claims inserts), scoped locally
+// since what the newest migration adds — and thus needs omitting — varies migration to migration.
+async function legacyHoldBeforeNewMigration(pool:import('pg').Pool,actor:string,conditions:HoldConditions,now:Date){
+ const c=await pool.connect(),id=randomUUID(),p=normalizePeriod(conditions.period),expiry=new Date(now.getTime()+600000).toISOString();
+ try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','Synthetic pre-upgrade fixture',true)",[actor]);await c.query('INSERT INTO inventory_reservations VALUES($1,$2)',[conditions.reservationId,actor]);
+ await c.query('INSERT INTO inventory_holds(id,reservation_id,owner_id,pickup_store,return_store,conditions,starts_at,due_at,occupancy_start,occupancy_end,expires_at,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,\'ACTIVE\')',[id,conditions.reservationId,actor,conditions.pickupStore,conditions.returnStore,conditions,p.startsAt,p.dueAt,conditions.period.startDate,conditions.period.endDate,expiry]);
+ for(const m of conditions.members)for(const item of m.items){const pole=item.family==='POLE';const stock=(await c.query(`SELECT id FROM ${pole?'ledger_poles':'ledger_assets'} WHERE variant_id=$1 AND store_id=$2 AND status='AVAILABLE' ORDER BY id LIMIT 1`,[item.variantIds[0],conditions.pickupStore])).rows[0];assert.ok(stock);for(const day of p.dates)await c.query('INSERT INTO inventory_claims(hold_id,requirement_key,asset_id,pole_id,pole_slot,day) VALUES($1,$2,$3,$4,$5,$6)',[id,m.key+':'+item.family,pole?null:stock.id,pole?stock.id:null,pole?1:null,day]);}
+ await c.query('COMMIT');return {holdId:id};
+ }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+}
 const sha=(s:string)=>createHash('sha256').update(s).digest('hex');
 const TABLES=['ledger_assets','inventory_holds','inventory_claims','price_quotes','rental_bookings','rental_payment_attempts','rental_history','booking_notification_outbox'];
 const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined,flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined,failed=false,stage='prefix',count=0;
@@ -29,14 +43,18 @@ try{
  // Synthetic maintained-session fixture. No session token is printed or exported.
  await db.pool.query('INSERT INTO auth_session(id,"userId",token,"expiresAt","createdAt","updatedAt") VALUES($1,$2,$3,clock_timestamp()+interval \'1 hour\',now(),now())',[sessionId,actor,randomBytes(32).toString('hex')]);
  await db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) SELECT $1,p,true FROM unnest(ARRAY['HOLD_VIEW','HOLD_EDIT','QUOTE_VIEW','QUOTE_CREATE','PRICE_EDIT','BOOKING_VIEW','BOOKING_CREATE']) p",[actor]);
- const principal=(await loadStaff(db.pool,actor))!,holds=new HoldService(roles.holdPool,principal,()=>now),quotes=new QuoteService(roles.pricingPool,principal,()=>now);
+ const principal=(await loadStaff(db.pool,actor))!,quotes=new QuoteService(roles.pricingPool,principal,()=>now);
  await quotes.initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
- const conditions=requestFor('2035-02-05'),h=await holds.command('create',randomUUID(),conditions);
+ const conditions=requestFor('2035-02-05'),h=await legacyHoldBeforeNewMigration(db.pool,actor,conditions,now);
  const q=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote;
  const bookings=new BookingService(flow.flowPool,roles.authPool,{subject:actor,sessionId},new FakeGateway(()=>now),simulation);
  const b=await bookings.create(randomUUID(),q.id,{displayName:'SYNTHETIC Migration',email:'synthetic-m17@example.invalid',termsAccepted:true});await bookings.startPayment(b.id,randomUUID());
  assert.deepEqual((await db.pool.query("SELECT b.state,a.state pay FROM rental_bookings b JOIN rental_payment_attempts a ON a.booking_id=b.id")).rows,[{state:'CONFIRMED_DEV',pay:'COMPLETED'}]);
- const fingerprint=async()=>{const r:Record<string,unknown>={};for(const t of TABLES)r[t]=(await db.pool.query(`SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') v FROM ${t} t`)).rows[0].v;return r;};
+ // Columns the newest migration adds to an already-fingerprinted table are absent before the
+ // upgrade, so compare without them (matching tests/operations/upgrade.ts's own established
+ // pattern for the same situation). 0042 adds inventory_holds.buffer_override.
+ const added:Record<string,string>={inventory_holds:"-'buffer_override'"};
+ const fingerprint=async()=>{const r:Record<string,unknown>={};for(const t of TABLES)r[t]=(await db.pool.query(`SELECT coalesce(jsonb_agg(to_jsonb(t)${added[t]??''} ORDER BY to_jsonb(t)::text),'[]') v FROM ${t} t`)).rows[0].v;return r;};
  const before=await fingerprint(),sql=await readFile(migrationsDirectory+'/'+NEW,'utf8');
  // The objects this migration introduces, read from the migration itself. A migration may
  // legitimately add no relation at all and only replace a function, so count both.

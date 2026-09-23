@@ -1,3 +1,4 @@
+export const dynamic='force-dynamic';
 import {notFound} from 'next/navigation';
 import {pageContent,latePickupCopy,publicModels} from '../../../lib/public-content';
 import {publicOrigin,type Locale} from '../../../../../../packages/core/src/content/public-pages';

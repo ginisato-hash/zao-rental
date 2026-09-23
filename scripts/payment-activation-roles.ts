@@ -19,6 +19,10 @@ export async function provisionPaymentActivationRoles(owner:Pool,identity:{names
    const pool=new Pool({host:'127.0.0.1',port:identity.dbPort,database:n,user,password,max:3,connectionTimeoutMillis:2000,idleTimeoutMillis:5000});pools[key as keyof typeof names]=pool;closed.push(trackPoolLifecycle(pool));
   }
   for(const grant of paymentActivationGrants(n,'R14_LOCAL'))await client.query(grant);
+  // Local regressions migrate the current schema and run the current projector.
+  // The hosted R15 grant plan remains bound to its historical migration prefix.
+  await client.query(`GRANT SELECT(book_id) ON price_quotes TO ${names.projector}`);
+  await client.query(`GRANT SELECT ON provisional_capacity_claims,provisional_capacity_buckets,inventory_pole_exemptions TO ${names.projector}`);
   await client.query('COMMIT');
   return {names,pools,async close(){await Promise.all(closed.map(c=>c()));}};
  }catch(e){await client.query('ROLLBACK');await Promise.all(closed.map(c=>c()));throw e;}finally{client.release();}

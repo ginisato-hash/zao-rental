@@ -29,3 +29,16 @@ export async function legacyBooking(pool:Pool,actor:string,quoteId:string,contac
  await c.query('COMMIT');return {id};
  }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
 }
+
+// Populate the historical payment/confirmation shape without invoking a current service
+// against a deliberately incomplete schema (in particular before provisional claims).
+export async function legacyConfirmBooking(pool:Pool,actor:string,bookingId:string,now:Date){
+ assert.equal((await pool.query("SELECT to_regclass('public.provisional_capacity_claims') v")).rows[0].v,null);
+ const c=await pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','Historical synthetic confirmation fixture',true)",[actor]);
+ const b=(await c.query('SELECT * FROM rental_bookings WHERE id=$1 FOR UPDATE',[bookingId])).rows[0];assert.equal(b.state,'DRAFT');const id=randomUUID();
+ await c.query("INSERT INTO rental_payment_attempts(id,booking_id,actor,idempotency_key,merchant_id,location_id,amount_jpy,currency,state,provider_id,provider_state,provider_updated_at,completed_at) VALUES($1,$2,$3,$4,'SYNTHETIC-MERCHANT','SYNTHETIC-MOUNTAIN',$5,'JPY','COMPLETED',$6,'COMPLETED',$7,$7)",[id,bookingId,actor,randomUUID(),b.price_snapshot.totalJpy,'sim_'+id,now]);
+ await c.query("UPDATE rental_bookings SET state='CONFIRMED_DEV',confirmed_at=$2,version=version+1 WHERE id=$1",[bookingId,now]);
+ await c.query("UPDATE inventory_holds SET payment_state='SUCCESS',confirmed_at=$2,version=version+1 WHERE id=$1",[b.hold_id,now]);
+ await c.query("INSERT INTO rental_notifications(id,booking_id,destination,state) VALUES($1,$2,$3,'CAPTURED_TEST_ONLY')",[randomUUID(),bookingId,b.contact.email]);
+ await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+}

@@ -1,9 +1,10 @@
  'use client';
+import {BookingCancellation} from './BookingCancellation';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {BookingRecoveryForm,PrepareBookingRecovery} from './BookingRecovery';
 import type {BookingAccess} from '../../../../packages/core/src/guest/booking-access';
-type View=Awaited<ReturnType<BookingAccess['read']>>&{qrImage:string};
+type View=Awaited<ReturnType<BookingAccess['read']>>&{qrImage:string|null};
 async function request(path:string,body?:unknown){const r=await fetch('/api/booking-access'+path,{method:body===undefined?'GET':'POST',cache:'no-store',headers:{'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const v=await r.json();if(!r.ok)throw new Error(v.error);return v;}
 export function SaveBookingAccess({bookingId,locale}:{bookingId:string;locale:string}){
  const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
@@ -35,7 +36,7 @@ export function ConfirmedBooking({locale}:{locale:string}){
  // eslint-disable-next-line react-hooks/exhaustive-deps -- ja/t are derived from the locale prop, stable for the lifetime of this route
  },[]);
 
- return <section aria-label={t('保存済み予約','Saved booking')}><h1>{t('予約確認・QR','Booking confirmation & QR')}</h1><p>{t('開発用の合成予約です。実決済・本番予約ではありません。','This is a synthetic development booking. No real payment or production booking.')}</p>{view&&<><p>{view.state==='COMPLETED_DEV'?t('ご利用が完了しました','Rental completed'):t('予約が確認されました','Booking confirmed')}</p><p>{view.period.startDate} → {view.period.endDate}</p><p>{view.pickupStore} → {view.returnStore}</p><p>{t('元の返却期限','Original return deadline')}: <time>{view.dueAt}</time></p><p>{t('保存済み参考総額','Saved reference total')}: {view.totalJpy} JPY{t('（請求確定不可）',' (not a final charge)')}</p><picture><img src={view.qrImage} width={240} height={240} alt={t('保存済み予約QR','Saved booking QR')}/></picture><p>{t('QRは予約の識別子です。貸出には店舗スタッフによる認証・権限確認が必要です。','The QR is a booking identifier. Handover still requires in-person authentication and authorization by staff.')}</p></>}{message&&<p role="status">{message}</p>}<button disabled={busy||reading} onClick={()=>void reload()}>{t('予約を再読込','Reload booking')}</button><button disabled={busy||reading||(!view&&!pendingBookingId)} onClick={async()=>{
+ return <section aria-label={t('保存済み予約','Saved booking')}><h1>{t('予約確認・QR','Booking confirmation & QR')}</h1>{view?.mode!=='SQUARE_PRODUCTION'&&<p>{t('開発用の合成予約です。実決済・本番予約ではありません。','This is a synthetic development booking. No real payment or production booking.')}</p>}{view&&<><p>{view.state==='CANCELLED'?t('予約はキャンセルされました','Booking cancelled'):['COMPLETED_DEV','COMPLETED'].includes(view.state)?t('ご利用が完了しました','Rental completed'):t('予約が確認されました','Booking confirmed')}</p><p>{view.period.startDate} → {view.period.endDate}</p><p>{view.pickupStore} → {view.returnStore}</p><p>{t('元の返却期限','Original return deadline')}: <time>{view.dueAt}</time></p><p>{view.mode==='SQUARE_PRODUCTION'?t('予約金額','Booking total'):t('保存済み参考総額','Saved reference total')}: {view.totalJpy} JPY{view.mode!=='SQUARE_PRODUCTION'&&t('（請求確定不可）',' (not a final charge)')}</p>{view.qrImage&&<picture><img src={view.qrImage} width={240} height={240} alt={t('保存済み予約QR','Saved booking QR')}/></picture>}<p>{t('QRは予約の識別子です。貸出には店舗スタッフによる認証・権限確認が必要です。','The QR is a booking identifier. Handover still requires in-person authentication and authorization by staff.')}</p>{view.cancellationAllowed||view.cancellation?.cancelledAt?<BookingCancellation locale={ja?'ja':'en'} status={view.cancellation} accessBookingId={view.id} onCancelled={reload}/>:<p>{t('キャンセルするには、下のメール復旧で本人確認を行ってください。確認後10分間、キャンセル手続きができます。','To cancel, verify access using email recovery below. Cancellation access lasts ten minutes after verification.')}</p>}</>}{message&&<p role="status">{message}</p>}<button disabled={busy||reading} onClick={()=>void reload()}>{t('予約を再読込','Reload booking')}</button><button disabled={busy||reading||(!view&&!pendingBookingId)} onClick={async()=>{
   if(revoking.current||reading||(!view&&!pendingBookingId))return;
   revoking.current=true;++ticket.current;setView(null);setBusy(true);
   try{

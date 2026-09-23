@@ -31,7 +31,7 @@ process.once('message',async input=>{try{
   const headers=new Headers();for(const [k,v] of Object.entries(req.headers))if(v!==undefined)headers.set(k,Array.isArray(v)?v.join(','):v);
   const request=new Request(origin+req.url,{method:req.method??'GET',headers,...(req.method==='GET'?{}:{body:Buffer.concat(chunks)})});
   boundary.bind(request,{adapterId:boundary.adapter.id,address:req.socket.remoteAddress??''});
-  const response=await handler(request);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));
+  const response=await handler(request);res.writeHead(response.status,{...Object.fromEntries(response.headers),'set-cookie':response.headers.getSetCookie()});res.end(Buffer.from(await response.arrayBuffer()));
  }catch{res.writeHead(503,{'content-type':'application/json'});res.end('{"error":"REHEARSAL_UNAVAILABLE"}');}});
  await new Promise<void>(resolve=>server!.listen(port,'127.0.0.1',resolve));process.send({state:'READY',pid:process.pid,port});
  }catch{process.send?.({state:'STARTUP_REJECTED'});await stop(1);}});

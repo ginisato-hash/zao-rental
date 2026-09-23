@@ -147,7 +147,7 @@ try{
   ];
   for(const [scenario,status,code] of expected){
    const adapter=new LoopbackDeliveryAdapter(scenario),worker=new BookingNotificationWorker(notify!.notificationPool,x.origin,recovery,adapter);
-   const d=await x.draft();await x.service.startPayment(d.booking.id,randomUUID());
+   const d=await x.draft(undefined,undefined,{reason:'SYNTHETIC notification provider outcome fixture'});await x.service.startPayment(d.booking.id,randomUUID());
    const id=(await worker.enqueueConfirmed(d.booking.id))!;await worker.dispatch(id);
    const row=(await x.db.pool.query('SELECT status,last_safe_failure_code,attempt_count FROM booking_notification_outbox WHERE id=$1',[id])).rows[0];
    assert.equal(row.status,status,scenario);assert.equal(row.last_safe_failure_code,code,scenario);

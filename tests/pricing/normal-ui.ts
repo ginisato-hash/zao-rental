@@ -8,7 +8,8 @@ import {seedInventory,variants,skiSet} from '../inventory/fixture';
 let app:Awaited<ReturnType<typeof startDevelopmentApp>>|undefined,lastPage:Page|undefined;let stage='startup',count=0,failed=false;const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 try{
- app=await startDevelopmentApp({built:true});await seedInventory(app.db.pool);await bootstrapDevelopmentAdmin(app.db.pool,{email:'e08-ui-bootstrap@example.invalid',displayName:'合成初期ADMIN',password});const {origin}=app;
+ // Quote/HOLD UI exercises public booking with reserve headroom, not one-unit scarcity.
+ app=await startDevelopmentApp({built:true});await seedInventory(app.db.pool,true);await bootstrapDevelopmentAdmin(app.db.pool,{email:'e08-ui-bootstrap@example.invalid',displayName:'合成初期ADMIN',password});const {origin}=app;
  await app.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T00:00:00Z'::timestamptz$$");
  for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:1280,height:960}});c.setDefaultTimeout(10000);return c;}

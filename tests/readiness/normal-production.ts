@@ -21,7 +21,7 @@ import {HoldService} from '../../packages/core/src/inventory/hold-service';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {simulation} from '../flow/fixture';
-import {skiSet} from '../inventory/fixture';
+import {skiSet,variants} from '../inventory/fixture';
 import {guestCookie} from '../../packages/core/src/guest/context';
 const x=await normalProductionFixture();let runtime:ProductionRuntime|undefined,failed=false,stage='startup',count=0;
 const check=async(name:string,fn:()=>Promise<void>)=>{stage=name;await fn();count++;console.log('PASS '+name);};
@@ -59,10 +59,65 @@ try{
  const c=await r.guest!.security.service.create(),actor=await r.guest!.contexts.resolve(c.token),service=r.service(actor);
  let bookingId='',token='';
  await check('canonical HOLD/quote/fixture payment then composed payment-state/access reads survive Avatar OFF',async()=>{
+  // PUBLIC BOOKING POLICY test (genuine guest actor — structurally can never request
+  // bufferOverride): the shared seedInventory fixture's SKI/SKI_BOOT/POLE variants get an ample
+  // local top-up (this file's own isolated database only) purely so an ordinary guest booking —
+  // the actual thing under test — isn't incidentally blocked by the public capacity ceiling on a
+  // 1-unit variant. A dedicated held connection is required: set_config is connection-local.
+  {
+   const c=await x.db.pool.connect();
+   try{
+    await c.query('BEGIN');
+    await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC M15 fixture top-up',true)",[x.actor]);
+    for(const [family,variant] of [['SKI',variants.ski],['SKI_BOOT',variants.boot]] as const)for(let n=0;n<20;n++)await c.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE',$4,NULL,'','','SYNTHETIC','tests/readiness/normal-production.ts',$5) ON CONFLICT DO NOTHING`,[randomUUID(),variant,family,family==='SKI_BOOT'?'UNVERIFIED':'NOT_APPLICABLE','asset-m15-'+family+'-'+n]);
+    await c.query('UPDATE ledger_poles SET quantity=20 WHERE variant_id=$1',[variants.pole]);
+    await c.query('COMMIT');
+   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  }
   assert.ok((await service.get()).id);const h=new HoldService(x.roles.holdPool,actor),q=new QuoteService(x.roles.pricingPool,actor),b=new BookingService(x.flow.flowPool,x.guestRole.guestPool,actor,x.fake,simulation),conditions=skiSet('2035-02-05'),held=await h.command('create',randomUUID(),conditions),quote=(await q.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
   const booking=await b.create(randomUUID(),quote.id,{displayName:'SYNTHETIC M15',email:'synthetic-m15@example.invalid',termsAccepted:true});bookingId=booking.id;await b.startPayment(booking.id,randomUUID());
   await x.db.pool.query('UPDATE guest_drafts SET booking_id=$2 WHERE context_id=$1',[actor.contextId,booking.id]);
   const v=await service.get();assert.equal(v.booking?.state,'CONFIRMED_DEV');assert.equal(v.booking.payments[0]!.state,'COMPLETED');const issued=await r.access!.issue(actor,booking.id,randomUUID());token=issued.token;assert.equal((await r.access!.read(token)).id,booking.id);assert.equal(x.fake.calls.length,1);
+ });
+
+ await check('F6: rental_bookings_mode_state_check — real DB CHECK constraint rejects every illegal mode/state crossing and accepts every legal one, against this real committed booking row (not a synthetic fixture)',async()=>{
+  // The existing rental_booking_guard trigger only permits state/confirmed_at/version to change
+  // on UPDATE (any other diff — including mode — is refused as "immutable booking contract"), so
+  // proving the mode_state CHECK constraint itself (not that trigger) requires disabling it for
+  // this one probe, on this one already-real, already-FK-satisfied row, then restoring both the
+  // trigger and the row's original mode/state exactly before any later check relies on either.
+  const original=(await x.db.pool.query('SELECT mode,state,confirmed_at FROM rental_bookings WHERE id=$1',[bookingId])).rows[0] as {mode:string;state:string;confirmed_at:string};
+  // rental_booking_guard (BEFORE, blocks any column but state/confirmed_at/version changing) and
+  // rental_bookings_audit (AFTER, requires the app-set `zao.actor` session parameter this raw
+  // admin probe never sets) both need to be out of the way for a direct mode/state UPDATE —
+  // neither is the thing under test here, and both are restored, with the row's original
+  // mode/state, before this check returns.
+  await x.db.pool.query('ALTER TABLE rental_bookings DISABLE TRIGGER rental_booking_guard, DISABLE TRIGGER rental_bookings_audit');
+  try{
+   const rejected=[
+    ['SIMULATED_DEV','CONFIRMED'],['SQUARE_SANDBOX','CONFIRMED'],
+    ['SQUARE_PRODUCTION','CONFIRMED_DEV'],['SQUARE_PRODUCTION','COMPLETED_DEV'],
+   ] as const;
+   for(const [mode,state] of rejected){
+    await assert.rejects(x.db.pool.query('UPDATE rental_bookings SET mode=$2,state=$3 WHERE id=$1',[bookingId,mode,state]),{code:'23514',constraint:'rental_bookings_mode_state_check'},`${mode}+${state} must be rejected`);
+   }
+   const accepted=[
+    ['SIMULATED_DEV','CONFIRMED_DEV'],['SQUARE_SANDBOX','COMPLETED_DEV'],['SQUARE_PRODUCTION','CONFIRMED'],
+   ] as const;
+   for(const [mode,state] of accepted){
+    await x.db.pool.query('UPDATE rental_bookings SET mode=$2,state=$3 WHERE id=$1',[bookingId,mode,state]);
+    const row=(await x.db.pool.query('SELECT mode,state FROM rental_bookings WHERE id=$1',[bookingId])).rows[0];
+    assert.deepEqual(row,{mode,state},`${mode}+${state} must be accepted`);
+   }
+  }finally{
+   await x.db.pool.query('UPDATE rental_bookings SET mode=$2,state=$3,confirmed_at=$4 WHERE id=$1',[bookingId,original.mode,original.state,original.confirmed_at]);
+   await x.db.pool.query('ALTER TABLE rental_bookings ENABLE TRIGGER rental_booking_guard, ENABLE TRIGGER rental_bookings_audit');
+  }
+  const restored=(await x.db.pool.query('SELECT mode,state FROM rental_bookings WHERE id=$1',[bookingId])).rows[0];
+  assert.deepEqual(restored,{mode:original.mode,state:original.state});
+ });
+ await check('F6: rental_notifications real-email/CAPTURED widening is absent from this schema — the table still only accepts the synthetic-only shape',async()=>{
+  await assert.rejects(x.db.pool.query("INSERT INTO rental_notifications(id,booking_id,destination,state) VALUES(gen_random_uuid(),$1,'real-person@example.com','CAPTURED')",[bookingId]),{code:'23514'});
  });
  const before=(await x.db.pool.query('SELECT to_jsonb(b) b,to_jsonb(h) h FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1',[bookingId])).rows[0];
  await check('Production HTTP gate refuses simulation/create; existing read/QR survives missing delivery and spoofed ingress',async()=>{

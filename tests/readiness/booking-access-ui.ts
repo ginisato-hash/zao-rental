@@ -9,7 +9,7 @@ import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 const browser=await chromium.launch();let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,failed=false,stage='setup';
 try{
- app=await startFlowApp({publicP0:true,publicP1:true,publicP4:true});await seedRecommendation(app.db.pool);
+ app=await startFlowApp({publicP0:true,publicP1:true,publicP4:true});await seedRecommendation(app.db.pool,true);
  const clock=async(t:string)=>{assert.match(t,/^[0-9:T+-]+$/);await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${t}'::timestamptz$$`);};await clock('2035-01-01T10:00:00+09:00');
  const root=await bootstrapDevelopmentAdmin(app.db.pool,{email:'p4-root@example.invalid',displayName:'SYNTHETIC P4',password:randomBytes(24).toString('base64url')});for(const permission of ['QUOTE_VIEW','QUOTE_CREATE','PRICE_EDIT'])await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true)',[root,permission]);await new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  const context=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});context.setDefaultTimeout(15000);const page=await context.newPage();

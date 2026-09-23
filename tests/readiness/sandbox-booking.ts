@@ -25,8 +25,11 @@ async function fixture(){
  },x.now);
  const journal=new SandboxActivationJournal(x.flow.flowPool),gateway=new ActivatedSandboxGateway(new SquareSandboxGateway(transport,async()=> 'SYNTHETIC_SOURCE'),journal),service=new BookingService(x.flow.flowPool,x.roles.authPool,x.signed.identity,gateway,{...simulation,sandboxActivationId:SANDBOX_ACTIVATION_ID});
  let day=1;
+ // LOWER-LEVEL MECHANICS (Square Sandbox payment-adapter/state-machine plumbing): the HOLD here
+ // is incidental setup, not what's under test; x.principal (staff ADMIN) already has
+ // INVENTORY_BUFFER_OVERRIDE from flowFixture.
  async function draft(){const conditions=skiSet('2035-03-'+String(day++).padStart(2,'0'));
-  const h=await x.holds.command('create',randomUUID(),conditions);assert.equal(h.result,'CREATED');const q=(await x.quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote;return {booking:await service.create(randomUUID(),q.id,{displayName:'SYNTHETIC Sandbox',email:'synthetic-sandbox@example.invalid',termsAccepted:true}),holdId:h.holdId!};}
+  const h=await x.holds.command('create',randomUUID(),conditions,undefined,undefined,{reason:'SYNTHETIC sandbox-booking mechanics test'});assert.equal(h.result,'CREATED');const q=(await x.quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote;return {booking:await service.create(randomUUID(),q.id,{displayName:'SYNTHETIC Sandbox',email:'synthetic-sandbox@example.invalid',termsAccepted:true}),holdId:h.holdId!};}
  return {x,config,transport,journal,gateway,service,draft,payments,refunds,get posts(){return posts;},get refundPosts(){return refundPosts;},get gets(){return gets;},lose:()=>{lose=true;},status:(n:number)=>{status=n;},loseRefund:()=>{refundLose=true;}};
  }catch(e){await x.close();throw e;}}
 let f:Awaited<ReturnType<typeof fixture>>|undefined;

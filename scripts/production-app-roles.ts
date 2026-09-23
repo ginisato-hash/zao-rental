@@ -66,6 +66,10 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT SELECT,INSERT,UPDATE ON inventory_reservations,inventory_holds,inventory_claims,inventory_requests TO ${n.hold}`,
   `GRANT USAGE ON SEQUENCE inventory_claims_id_seq TO ${n.hold}`,
   `GRANT EXECUTE ON FUNCTION inventory_record_replan(jsonb,jsonb) TO ${n.hold}`,
+  // 95% public / staff INVENTORY_BUFFER_OVERRIDE audit log (0042_inventory_buffer_override.sql):
+  // HoldService is the only caller — never transfer/operations, which never create/amend a hold
+  // under override.
+  `GRANT EXECUTE ON FUNCTION inventory_buffer_override_record(uuid,text) TO ${n.hold}`,
   `GRANT SELECT ON rental_inventory_blocks,rental_loan_items,rental_inspection_events TO ${n.hold}`,
   `GRANT SELECT(id,hold_id) ON rental_bookings TO ${n.hold}`,
   `GRANT SELECT ON wear_pools,wear_claims,wear_loans,wear_receipts,wear_transfers TO ${n.hold}`,

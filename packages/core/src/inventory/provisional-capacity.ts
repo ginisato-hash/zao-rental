@@ -14,7 +14,14 @@ export type ProvisionalPlan = {feasible: true; rows: {key: string; bucket: strin
 // MAPPED bucket with room that day, oldest source first, so a later source (a fresh row, never an
 // edit to an earlier one) transparently adds capacity without this function's callers needing to
 // know which source a unit came from.
-export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequirement[], days: string[], now: Date, ignore: string|null): Promise<ProvisionalPlan> {
+// V5 (release-code-closure, 95% public / staff INVENTORY_BUFFER_OVERRIDE): `bufferOverride`
+// (default false — every existing caller keeps the strict public ceiling unless it explicitly
+// opts in) mirrors wearCapacityDetailed()'s own two-ceiling design exactly: a non-override
+// request may never push *public* usage of a bucket/day past floor(quantity*0.95); an override
+// request may use up to the full effective `quantity`, which the hard per-slot check always
+// enforces regardless of override status, so public+override usage can never together exceed
+// true bucket capacity.
+export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequirement[], days: string[], now: Date, ignore: string|null, bufferOverride = false): Promise<ProvisionalPlan> {
   if (!requirements.length) return {feasible: true, rows: []};
   const families = [...new Set(requirements.map((r) => r.family))];
   // V2 (TD correction): bookable quantity is derived (base + adjustments - materializations), never
@@ -24,8 +31,8 @@ export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequ
     `SELECT id,family,age,booking_size,provisional_capacity_effective_quantity(id) AS quantity FROM provisional_capacity_buckets WHERE active AND size_mapping_status='MAPPED' AND family=ANY($1::text[]) ORDER BY created_at ASC`,
     [families],
   )).rows;
-  const claims = buckets.length ? (await c.query<{bucket_id: string; day: string; quantity: number}>(
-    `SELECT c.bucket_id,c.day::text,sum(c.quantity)::int AS quantity FROM provisional_capacity_claims c JOIN inventory_holds h ON h.id=c.hold_id
+  const claims = buckets.length ? (await c.query<{bucket_id: string; day: string; quantity_all: number; quantity_public: number}>(
+    `SELECT c.bucket_id,c.day::text,sum(c.quantity)::int AS quantity_all,coalesce(sum(c.quantity) FILTER(WHERE NOT h.buffer_override),0)::int AS quantity_public FROM provisional_capacity_claims c JOIN inventory_holds h ON h.id=c.hold_id
      WHERE c.state='ACTIVE' AND c.bucket_id=ANY($1::uuid[]) AND c.day=ANY($2::date[]) AND ($3::uuid IS NULL OR h.id<>$3) AND h.state='ACTIVE'
        AND (h.expires_at>$4 OR h.payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR h.allocation_stage<>'PROVISIONAL')
      GROUP BY c.bucket_id,c.day`,
@@ -39,10 +46,15 @@ export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequ
     for (const day of days) {
       let placed = false;
       for (const b of candidates) {
-        const usedByOthers = claims.find((x) => x.bucket_id === b.id && x.day === day)?.quantity ?? 0;
+        const claim = claims.find((x) => x.bucket_id === b.id && x.day === day);
+        const usedByOthersAll = claim?.quantity_all ?? 0;
+        const usedByOthersPublic = claim?.quantity_public ?? 0;
         const slotKey = b.id + '/' + day;
         const usedByThisPlan = ownUsage.get(slotKey) ?? 0;
-        if (usedByOthers + usedByThisPlan + 1 <= b.quantity) {
+        const publicCap = Math.floor(b.quantity * 0.95);
+        const withinHardCeiling = usedByOthersAll + usedByThisPlan + 1 <= b.quantity;
+        const withinPublicCeiling = bufferOverride || usedByOthersPublic + usedByThisPlan + 1 <= publicCap;
+        if (withinHardCeiling && withinPublicCeiling) {
           ownUsage.set(slotKey, usedByThisPlan + 1);
           rows.push({key: r.key, bucket: b.id, day});
           placed = true;
@@ -58,8 +70,8 @@ export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequ
 /** Deactivate-and-reinsert, exactly matching writeWearClaims'/writeAllocationClaims' shape: never
  * a partial update, always a full replan for this hold's requirement set. Re-checks feasibility
  * once more at the write boundary, after every prior awaited SQL in the caller's transaction. */
-export async function writeProvisionalClaims(c: Conn, holdId: string, requirements: ProvisionalRequirement[], days: string[], now: Date): Promise<ProvisionalPlan> {
-  const plan = await provisionalCapacity(c, requirements, days, now, holdId);
+export async function writeProvisionalClaims(c: Conn, holdId: string, requirements: ProvisionalRequirement[], days: string[], now: Date, bufferOverride = false): Promise<ProvisionalPlan> {
+  const plan = await provisionalCapacity(c, requirements, days, now, holdId, bufferOverride);
   if (!plan.feasible) throw new HoldError('PROVISIONAL_CAPACITY_CHANGED', 409);
   await c.query(`UPDATE provisional_capacity_claims SET state='RELEASED',released_at=clock_timestamp() WHERE hold_id=$1 AND state='ACTIVE'`, [holdId]);
   if (plan.rows.length) {

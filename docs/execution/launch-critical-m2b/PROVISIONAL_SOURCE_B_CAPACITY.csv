@@ -17,26 +17,26 @@ SOURCE_B,SKI,KIDS,110 cm,110 cm,MAPPED,3,ASSET_PAIR,kids ski length aggregate
 SOURCE_B,SKI,KIDS,120 cm,120 cm,MAPPED,6,ASSET_PAIR,kids ski length aggregate
 SOURCE_B,SKI,KIDS,130 cm,130 cm,MAPPED,3,ASSET_PAIR,kids ski length aggregate
 SOURCE_B,SKI,KIDS,140 cm,140 cm,MAPPED,2,ASSET_PAIR,kids ski length aggregate
-SOURCE_B,SKI_BOOT,ADULT,22X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,23X,,BOOKING_SIZE_MAPPING_REQUIRED,4,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,24X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,25X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,26X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,27X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,28X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,29X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,30X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,ADULT,31X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,adult ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,15X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,16X,,BOOKING_SIZE_MAPPING_REQUIRED,4,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,17X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,18X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,19X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,20X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,21X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,22X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,23X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SKI_BOOT,KIDS,24X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,kids ski boot X-token aggregate; no reviewed alias exists for this token format
+SOURCE_B,SKI_BOOT,ADULT,22X,22/22.5,MAPPED,3,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,23X,23/23.5,MAPPED,4,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,24X,24/24.5,MAPPED,5,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,25X,25/25.5,MAPPED,5,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,26X,26/26.5,MAPPED,5,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,27X,27/27.5,MAPPED,5,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,28X,28/28.5,MAPPED,3,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,29X,29/29.5,MAPPED,2,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,30X,30/30.5,MAPPED,2,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,ADULT,31X,31/31.5,MAPPED,2,ASSET_PAIR,adult ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,15X,15/15.5,MAPPED,2,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,16X,16/16.5,MAPPED,4,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,17X,17/17.5,MAPPED,2,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,18X,18/18.5,MAPPED,5,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,19X,19/19.5,MAPPED,3,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,20X,20/20.5,MAPPED,5,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,21X,21/21.5,MAPPED,3,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,22X,22/22.5,MAPPED,3,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,23X,23/23.5,MAPPED,3,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SKI_BOOT,KIDS,24X,24/24.5,MAPPED,3,ASSET_PAIR,kids ski boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
 SOURCE_B,SNOWBOARD,ADULT,135 cm,135 cm,MAPPED,3,ASSET_BOARD,adult snowboard length aggregate
 SOURCE_B,SNOWBOARD,ADULT,140 cm,140 cm,MAPPED,7,ASSET_BOARD,adult snowboard length aggregate
 SOURCE_B,SNOWBOARD,ADULT,145 cm,145 cm,MAPPED,5,ASSET_BOARD,adult snowboard length aggregate
@@ -49,24 +49,24 @@ SOURCE_B,SNOWBOARD,KIDS,100 cm,100 cm,MAPPED,3,ASSET_BOARD,kids snowboard length
 SOURCE_B,SNOWBOARD,KIDS,110 cm,110 cm,MAPPED,3,ASSET_BOARD,kids snowboard length aggregate
 SOURCE_B,SNOWBOARD,KIDS,120 cm,120 cm,MAPPED,5,ASSET_BOARD,kids snowboard length aggregate
 SOURCE_B,SNOWBOARD,KIDS,130 cm,130 cm,MAPPED,5,ASSET_BOARD,kids snowboard length aggregate
-SOURCE_B,SNOWBOARD_BOOT,ADULT,22X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,23X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,24X,,BOOKING_SIZE_MAPPING_REQUIRED,4,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,25X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,26X,,BOOKING_SIZE_MAPPING_REQUIRED,6,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,27X,,BOOKING_SIZE_MAPPING_REQUIRED,6,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,28X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,29X,,BOOKING_SIZE_MAPPING_REQUIRED,3,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,30X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,ADULT,31X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,adult snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,17X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,18X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,19X,,BOOKING_SIZE_MAPPING_REQUIRED,2,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,20X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,21X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,22X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,23X,,BOOKING_SIZE_MAPPING_REQUIRED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
-SOURCE_B,SNOWBOARD_BOOT,KIDS,24X,,BOOKING_SIZE_MAPPING_REQUIRED,4,ASSET_PAIR,kids snowboard boot X-token aggregate; no reviewed alias exists for this token format
+SOURCE_B,SNOWBOARD_BOOT,ADULT,22X,22/22.5,MAPPED,2,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,23X,23/23.5,MAPPED,3,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,24X,24/24.5,MAPPED,4,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,25X,25/25.5,MAPPED,5,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,26X,26/26.5,MAPPED,6,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,27X,27/27.5,MAPPED,6,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,28X,28/28.5,MAPPED,5,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,29X,29/29.5,MAPPED,3,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,30X,30/30.5,MAPPED,2,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,ADULT,31X,31/31.5,MAPPED,2,ASSET_PAIR,adult snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,17X,17/17.5,MAPPED,2,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,18X,18/18.5,MAPPED,2,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,19X,19/19.5,MAPPED,2,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,20X,20/20.5,MAPPED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,21X,21/21.5,MAPPED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,22X,22/22.5,MAPPED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,23X,23/23.5,MAPPED,5,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
+SOURCE_B,SNOWBOARD_BOOT,KIDS,24X,24/24.5,MAPPED,4,ASSET_PAIR,kids snowboard boot X-token aggregate; Owner-approved resolution NX=N/N.5 (shared bucket, matches Source A convention)
 SOURCE_B,WEAR_JACKET,ADULT,XS,XS,MAPPED,10,PIECE_QUANTITY,adult jacket size aggregate
 SOURCE_B,WEAR_JACKET,ADULT,S,S,MAPPED,15,PIECE_QUANTITY,adult jacket size aggregate
 SOURCE_B,WEAR_JACKET,ADULT,M,M,MAPPED,20,PIECE_QUANTITY,adult jacket size aggregate

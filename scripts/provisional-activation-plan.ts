@@ -93,10 +93,12 @@ function main() {
   const payloadB = payloadFor('SOURCE_B', rowsB);
 
   const EXPECTED_RAW: Record<string, number> = {SKI: 311, SNOWBOARD: 260, SKI_BOOT: 311, SNOWBOARD_BOOT: 309, WEAR_JACKET: 115, WEAR_PANTS: 115};
-  const EXPECTED_MAPPED: Record<string, number> = {SKI: 311, SNOWBOARD: 260, SKI_BOOT: 242, SNOWBOARD_BOOT: 241, WEAR_JACKET: 115, WEAR_PANTS: 115};
+  // V4 (X-token resolution): Owner decision NX=N/N.5 resolves every Source B boot bucket, so
+  // MAPPED now equals RAW for every family — no more BOOKING_SIZE_MAPPING_REQUIRED buckets exist.
+  const EXPECTED_MAPPED: Record<string, number> = {SKI: 311, SNOWBOARD: 260, SKI_BOOT: 311, SNOWBOARD_BOOT: 309, WEAR_JACKET: 115, WEAR_PANTS: 115};
   const EXPECTED_SOURCE_A: Record<string, number> = {SKI: 213, SNOWBOARD: 205, SKI_BOOT: 242, SNOWBOARD_BOOT: 241};
   const EXPECTED_SOURCE_B: Record<string, number> = {SKI: 98, SNOWBOARD: 55, SKI_BOOT: 69, SNOWBOARD_BOOT: 68, WEAR_JACKET: 115, WEAR_PANTS: 115};
-  const EXPECTED_SOURCE_B_MAPPED: Record<string, number> = {SKI_BOOT: 0, SNOWBOARD_BOOT: 0};
+  const EXPECTED_SOURCE_B_MAPPED: Record<string, number> = {SKI_BOOT: 69, SNOWBOARD_BOOT: 68};
 
   const failures: string[] = [];
   const check = (label: string, actual: number, expected: number) => { if (actual !== expected) failures.push(`${label}: actual=${actual} expected=${expected}`); };

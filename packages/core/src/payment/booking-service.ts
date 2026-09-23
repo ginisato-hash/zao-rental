@@ -6,7 +6,7 @@ import {loadStaff,type Permission} from '../../../auth/src/staff-auth';
 import {authorizeBookingActor,isGuest,type GuestActor} from '../../../auth/src/booking-actor';
 import {type HoldConditions} from '../../../contracts/src/hold';
 import {advanceQualification} from '../../../contracts/src/pricing';
-import {FlowError,flowId,flowHash,syntheticContact,expectedClaimKeys,reservationQr,matchPayment,type PaymentGateway,type PaymentRequest,type PaymentObservation,type FlowPermission} from '../../../contracts/src/rental-flow';
+import {FlowError,flowId,flowHash,syntheticContact,claimKeysSatisfied,reservationQr,matchPayment,type PaymentGateway,type PaymentRequest,type PaymentObservation,type FlowPermission} from '../../../contracts/src/rental-flow';
 export type FlowIdentity={subject:string;sessionId:string}|(GuestActor&{sessionId?:never});
 export type BookingRow={id:string;owner_id:string;request_key:string;fingerprint:string;hold_id:string;quote_id:string;conditions:HoldConditions;price_snapshot:Record<string,unknown>;price_sha256:string;contact:ReturnType<typeof syntheticContact>;mode:'SIMULATED_DEV'|'SQUARE_SANDBOX';state:string;confirmed_at:Date|null;version:number;notification_locale:'ja'|'en'};
 type HoldRow={id:string;owner_id:string;state:string;conditions:HoldConditions;payment_state:string;expires_at:Date;due_at:Date;allocation_stage:string;transfer_attention:string|null;version:number};
@@ -33,11 +33,14 @@ export class BookingService{
  // same (requirement_key, day) from different tables (e.g. a physical AND a provisional claim for
  // the same key/day, which should never coexist by design) into one row, making a real
  // double-claim allocator bug indistinguishable from a single legitimate witness. With UNION ALL,
- // a duplicate produces an extra row, and the existing sorted-join comparison against
- // expectedClaimKeys() (which has exactly one entry per key) already fails closed on it — exactly
- // one protection witness per expected key/day, never two, is required structurally, not just by
- // convention.
- protected async verifyClaims(c:Connection,h:HoldRow,now:Date){if(h.transfer_attention)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');const claims=(await c.query<{requirement_key:string;day:string}>("SELECT requirement_key,day::text FROM inventory_claims WHERE hold_id=$1 AND active UNION ALL SELECT requirement_key,day::text FROM wear_claims WHERE hold_id=$1 AND active UNION ALL SELECT requirement_key,day::text FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'",[h.id])).rows;if(claims.map(x=>x.requirement_key+'/'+x.day).sort().join()!==expectedClaimKeys(h.conditions).join())throw new FlowError('INVENTORY_PROTECTION_INCOMPLETE');if((await c.query(`SELECT 1 FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.hold_id=$1 AND cl.active AND (b.issue IS NOT NULL OR p.state='CANCELLED' OR (b.planned_ready_at<$2 AND p.state NOT IN ('READY','CLOSED'))) LIMIT 1`,[h.id,now])).rowCount)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');}
+ // a duplicate produces an extra row, and claimKeysSatisfied() (which allows exactly one witness
+ // per required key/day, never two) already fails closed on it — exactly one protection witness
+ // per required key/day is enforced structurally, not just by convention.
+ // V4 (release-code-closure): claimKeysSatisfied(), not raw expectedClaimKeys() equality — POLE
+ // is optional (zero-or-one witness), not required, so a SKI_SET legitimately exempted from
+ // pole tracking (no real pole inventory registered) is never rejected as incomplete, while a
+ // SKI_SET whose real pole *is* claimed is still validated exactly like any other item.
+ protected async verifyClaims(c:Connection,h:HoldRow,now:Date){if(h.transfer_attention)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');const claims=(await c.query<{requirement_key:string;day:string}>("SELECT requirement_key,day::text FROM inventory_claims WHERE hold_id=$1 AND active UNION ALL SELECT requirement_key,day::text FROM wear_claims WHERE hold_id=$1 AND active UNION ALL SELECT requirement_key,day::text FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'",[h.id])).rows;if(!claimKeysSatisfied(h.conditions,claims.map(x=>x.requirement_key+'/'+x.day)))throw new FlowError('INVENTORY_PROTECTION_INCOMPLETE');if((await c.query(`SELECT 1 FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.hold_id=$1 AND cl.active AND (b.issue IS NOT NULL OR p.state='CANCELLED' OR (b.planned_ready_at<$2 AND p.state NOT IN ('READY','CLOSED'))) LIMIT 1`,[h.id,now])).rowCount)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');}
  /** Handoff-only gate (prepare()/checkout() in custody-service.ts, never booking creation or
   * payment confirmation): "Reservation allowed. Physical handoff not allowed." Any still-ACTIVE
   * provisional claim on this hold means at least one requirement has no real physical/wear

@@ -1,6 +1,6 @@
 import {wearCapacity,wearCapacityDetailed} from './wear-capacity';
 import type {PoolClient} from 'pg';
-import {HoldError,normalizePeriod,variantMatches,isWear,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
+import {HoldError,normalizePeriod,variantMatches,isWear,isPole,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {transferProjection,destinationFeasible,sourceReservations} from '../transfer/projection';
 import {dependencyScope,type ScopeNode} from './dependency-scope';
 import {matchPeriods,type Demand,type Placement} from './period-matching';
@@ -9,11 +9,11 @@ import type {ProvisionalFamily} from '../operations/provisional-capacity-source'
 // Internal repository functions: caller must hold inventory lock and establish authorization.
 // Shared by HOLD and authenticated booking operations; no HTTP or principal bypass API.
 type Conn=Pick<PoolClient,'query'>;
-type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:string;return_store:string;conditions:HoldConditions;expires_at:Date;due_at:Date;state:'ACTIVE'|'EXPIRED'|'RELEASED';payment_state:PaymentBoundary;allocation_stage:string;version:number;transfer_attention:string|null;confirmed_at:Date|null};
+type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:string;return_store:string;conditions:HoldConditions;expires_at:Date;due_at:Date;state:'ACTIVE'|'EXPIRED'|'RELEASED';payment_state:PaymentBoundary;allocation_stage:string;version:number;transfer_attention:string|null;confirmed_at:Date|null;buffer_override:boolean};
 type Unit={id:string;variant_id:string;family:string;age:string;tier:string;store_id:string;quantity:number;status:string;transfer_piece_id?:string;physical_pole_id?:string};
-type Claim={transfer_piece_id:string|null;hold_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;day:string;start:string;end:string;pickup_store:string;return_store:string};
+type Claim={transfer_piece_id:string|null;hold_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;day:string;start:string;end:string;pickup_store:string;return_store:string;buffer_override:boolean};
 type Witness={transferPiece:string|null;holdId:string;key:string;asset:string|null;pole:string|null;slots:Record<string,number>};
-export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,excludeKeys?:ReadonlySet<string>,wearFeasible?:boolean):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
+export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,excludeKeys?:ReadonlySet<string>,wearFeasible?:boolean,bufferOverride=false):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
   if(new Date(normalizePeriod(conditions.period).dueAt)<=now)throw new HoldError('PERIOD_ENDED');
   // Bounded metadata scan, not a LIMIT that silently discards existing promises.
   const nodes=(await c.query<ScopeNode>(`SELECT id,occupancy_start::text AS start,CASE WHEN pickup_store<>return_store THEN '9999-12-31' ELSE occupancy_end::text END AS end,
@@ -50,12 +50,22 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   // wearFeasible===undefined (every existing caller): computed here exactly as before, unchanged
   // behavior. planMixedAllocation passes an already-computed value instead, since it resolves wear
   // feasibility itself (with its own provisional-capacity fallback) before calling this function.
-  const wear=wearFeasible===undefined?await wearCapacity(c,conditions,now,ignore):{feasible:wearFeasible};
+  // `bufferOverride` must still be threaded through this internal recompute — otherwise a caller
+  // that itself received bufferOverride=true would silently have it discarded here, re-deriving
+  // wear feasibility under the strict public ceiling regardless.
+  const wear=wearFeasible===undefined?await wearCapacity(c,conditions,now,ignore,bufferOverride):{feasible:wearFeasible};
   if(!wear.feasible)return {result:'INSUFFICIENT',witness:[],replanned:[]};
   const units=(await c.query<Unit>(`SELECT a.id,a.variant_id,a.family,v.age,v.tier,a.store_id,1 AS quantity,a.status FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=ANY($1::uuid[]) UNION ALL SELECT p.id,p.variant_id,p.family,v.age,v.tier,p.store_id,p.quantity,p.status FROM ledger_poles p JOIN ledger_variants v ON v.id=p.variant_id WHERE p.variant_id=ANY($1::uuid[]) ORDER BY id LIMIT 3001`,[variantIds])).rows;
   for(const u of [...units])if(u.family==='POLE'){u.quantity-=transfers.filter(p=>p.destination_pole_id===u.id&&p.state==='READY').length;for(const p of transfers.filter(p=>p.destination_pole_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state)))units.push({...u,id:p.id,quantity:1,transfer_piece_id:p.id,physical_pole_id:u.id});}
   if(units.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  const fixedClaims=(await c.query<Claim>(`SELECT c.transfer_piece_id,c.hold_id,c.requirement_key,c.asset_id,c.pole_id,c.pole_slot,c.day::text,h.occupancy_start::text AS start,h.occupancy_end::text AS end,h.pickup_store,h.return_store FROM inventory_claims c JOIN inventory_holds h ON h.id=c.hold_id WHERE c.active AND h.id=ANY($1::uuid[]) AND (c.asset_id=ANY($2::uuid[]) OR c.pole_id=ANY($2::uuid[]) OR c.transfer_piece_id=ANY($2::uuid[])) LIMIT 100001`,[fixedIds,units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
+  // POLE feasibility (Owner decision, see isPole()'s own comment): a POLE requirement is exempt
+  // from the demand set — trivially satisfied, no claim ever written — only when zero pole units
+  // of a matching variant are registered anywhere in the ledger (checked here, after `units`,
+  // system-wide, not merely "none available today"). When real pole stock does exist, it stays
+  // a normal demand and is matched/conflict-checked exactly like any other family, so genuine
+  // same-unit double-booking prevention is unaffected once inventory is eventually registered.
+  const poleExempt=new Set(requirements.filter(r=>isPole(r.family)&&!units.some(u=>u.family==='POLE'&&r.variantIds.includes(u.variant_id))).map(r=>r.key));
+  const fixedClaims=(await c.query<Claim>(`SELECT c.transfer_piece_id,c.hold_id,c.requirement_key,c.asset_id,c.pole_id,c.pole_slot,c.day::text,h.occupancy_start::text AS start,h.occupancy_end::text AS end,h.pickup_store,h.return_store,h.buffer_override FROM inventory_claims c JOIN inventory_holds h ON h.id=c.hold_id WHERE c.active AND h.id=ANY($1::uuid[]) AND (c.asset_id=ANY($2::uuid[]) OR c.pole_id=ANY($2::uuid[]) OR c.transfer_piece_id=ANY($2::uuid[])) LIMIT 100001`,[fixedIds,units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   const constraints=(await c.query<{asset_id:string|null;pole_id:string|null;kind:string;start:string;end:string}>(`SELECT asset_id,pole_id,kind,starts_on::text AS start,ends_on::text AS end FROM inventory_constraints x WHERE x.asset_id=ANY($1::uuid[]) OR x.pole_id=ANY($1::uuid[]) LIMIT 10001`,[units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   const custody=(await c.query<{id:string;asset_id:string|null;pole_id:string|null;start:string;end:string;hold_id:string;requirement_key:string}>(`SELECT x.id,x.asset_id,x.pole_id,x.starts_on::text AS start,x.ends_on::text AS end,b.hold_id,l.requirement_key FROM rental_inventory_blocks x JOIN rental_loan_items l ON l.id=x.id JOIN rental_bookings b ON b.id=l.booking_id WHERE x.asset_id=ANY($1::uuid[]) OR x.pole_id=ANY($1::uuid[]) LIMIT 10001`,[units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   if(custody.length>10000)return {result:'INDETERMINATE',witness:[],replanned:[]};
@@ -68,7 +78,7 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   fixed.push(...receivedDay.map(p=>({key:'received/'+p.id,unit:p.unit,start:p.day,end:p.day})));
   // A second, diagnostic-only match relaxes custody/transfer constraints. It never creates claims.
   // Only report a transfer prerequisite if those constraints actually explain infeasibility.
-  const demandsFor=(diagnostic:boolean):Demand[]=>requirements.filter(r=>!isWear(r.family)).map(r=>{
+  const demandsFor=(diagnostic:boolean):Demand[]=>requirements.filter(r=>!isWear(r.family)&&!poleExempt.has(r.key)).map(r=>{
    const start=r.job.c.period.startDate,end=diagnostic||r.job.c.pickupStore===r.job.c.returnStore?r.job.c.period.endDate:'9999-12-31';
    const candidates=units.filter(u=>{
     const pinnedUnit=pin instanceof Map?pin.get(r.memberKey):pin&&'requirementKey' in pin&&r.memberKey===pin.requirementKey?pin.assetId:undefined;
@@ -97,6 +107,41 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
     const movement=transfers.find(p=>u.family==='POLE'?p.id===u.transfer_piece_id:p.asset_id===u.id&&destinationFeasible(p,r.job.c,now));
     return {transferPiece:movement?.id??null,holdId:r.job.id,key:r.memberKey,asset:u.family==='POLE'?null:u.id,pole:u.family==='POLE'?(u.physical_pole_id??u.id):null,slots};
    });
+   // 95% public / staff INVENTORY_BUFFER_OVERRIDE (release-code-closure): unlike wear/provisional's
+   // simple quantity pools, physical inventory is matched per discrete unit — the public ceiling is
+   // therefore an aggregate check on the RESULTING claim set (fixed + freshly matched), never a
+   // restriction on which units may be matched (Owner decision: no reserved unit identity, no
+   // buffer_reserved flag). For every (variant,day) touched by a PUBLIC claim, existing fixed public
+   // claims for that variant/day plus the newly written public claims must never exceed
+   // floor(trueUnitCount*0.95); a replanned other hold's own buffer_override status (not the
+   // candidate's) governs whether its own claims count toward the public total.
+   // `u.quantity`, not a per-row +1: a `ledger_assets` row is always exactly 1 physical unit (its
+   // own SELECT hardcodes `1 AS quantity`), but a `ledger_poles` row is a quantity-pool row (up to
+   // 1,000,000 per variant/store/status, migration 0002) — counting rows instead of summing
+   // quantity would undercount true pole operational capacity down to "row count", collapsing the
+   // public ceiling to floor(rowCount*0.95) instead of floor(trueUnitCount*0.95).
+   const operationalTotal=new Map<string,number>();
+   for(const u of units)if(!u.transfer_piece_id)operationalTotal.set(u.variant_id,(operationalTotal.get(u.variant_id)??0)+u.quantity);
+   const publicUsage=new Map<string,{variantId:string;count:number}>();
+   const bump=(variantId:string,day:string)=>{const key=variantId+'|'+day;const cur=publicUsage.get(key)??{variantId,count:0};cur.count++;publicUsage.set(key,cur);};
+   // `fixedClaims` spans every currently-active claim on the relevant units, across whatever dates
+   // those OTHER holds happen to occupy — including dates having nothing to do with this candidate
+   // or any replanned job. Bounding to `relevantDays` (the union of every job's own period in THIS
+   // planning pass) keeps the ceiling scoped to the (variant,day) pairs actually being decided here,
+   // never an unrelated pre-existing booking on some other day incidentally tipping this one over.
+   const relevantDays=new Set(jobs.flatMap(j=>normalizePeriod(j.c.period).dates));
+   for(const x of fixedClaims){
+    if(x.buffer_override||!relevantDays.has(x.day))continue;
+    const unitId=x.asset_id??x.transfer_piece_id??x.pole_id,variantId=unitId?units.find(u=>u.id===unitId)?.variant_id:undefined;
+    if(variantId)bump(variantId,x.day);
+   }
+   for(const p of matching){
+    const r=requirements.find(r=>r.key===p.key)!,u=units.find(u=>u.id===p.unit)!;
+    const jobOverride=r.job.id==='candidate'?bufferOverride:(live.find(h=>h.id===r.job.id)?.buffer_override??false);
+    if(jobOverride)continue;
+    for(const day of normalizePeriod(r.job.c.period).dates)bump(u.variant_id,day);
+   }
+   for(const {variantId,count} of publicUsage.values())if(count>Math.floor((operationalTotal.get(variantId)??0)*0.95))return {result:'INSUFFICIENT',witness:[],replanned:[]};
    return {result:'FEASIBLE',witness,replanned:mutable.map(h=>h.id)};
   }catch(e){if(e instanceof HoldError&&e.code==='INDETERMINATE')return {result:'INDETERMINATE',witness:[],replanned:[]};throw e;}
  }
@@ -127,9 +172,9 @@ const NONE:MixedResult['provisional']=[],NO_KEYS:ReadonlySet<string>=new Set();
  * re-inclusion order can matter when several eligible items genuinely compete for the same scarce
  * unit (see RESULT.md) — but whenever provisional is not needed at all, the first full physical
  * attempt already succeeds, so the common case is unaffected. */
-export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>):Promise<MixedResult>{
- const wear=await wearCapacityDetailed(c,conditions,now,ignore);
- const primary=await planAllocation(c,conditions,now,ignore,pin,undefined,wear.feasible?undefined:false);
+export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,bufferOverride=false):Promise<MixedResult>{
+ const wear=await wearCapacityDetailed(c,conditions,now,ignore,undefined,bufferOverride);
+ const primary=await planAllocation(c,conditions,now,ignore,pin,undefined,wear.feasible?undefined:false,bufferOverride);
  if(primary.result!=='INSUFFICIENT')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
  const eligiblePhysical=conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)&&m.tier!=='PREMIUM'&&!i.modelPromise&&PROVISIONAL_FAMILIES.includes(i.family as ProvisionalFamily)&&i.variantIds.length===1).map(i=>({memberKey:m.key+':'+i.family,age:m.age,family:i.family as ProvisionalFamily,variantId:i.variantIds[0]!})));
  const eligibleWear=wear.infeasible.map(w=>({memberKey:w.key,age:w.age,family:w.family as ProvisionalFamily,variantId:w.variant}));
@@ -140,19 +185,19 @@ export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:D
  const withSize=eligible.map(e=>({...e,bookingSize:variantRows.find(v=>v.id===e.variantId)?.size})).filter((e):e is typeof e&{bookingSize:string}=>!!e.bookingSize);
  if(withSize.length!==eligible.length)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS}; // an eligible item whose variant can't be resolved is not silently dropped from the demand — no fallback, original INSUFFICIENT stands
  const excludeKeys=new Set(eligiblePhysical.map(e=>'candidate/'+e.memberKey));
- let retry=await planAllocation(c,conditions,now,ignore,pin,excludeKeys,true);
+ let retry=await planAllocation(c,conditions,now,ignore,pin,excludeKeys,true,bufferOverride);
  if(retry.result!=='FEASIBLE')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS}; // even the physical items provisional could ever cover aren't enough — some other requirement is short
  // Greedy re-inclusion: prefer physical for every eligible item the remaining physical stock can
  // actually still cover, one at a time, so "physical preferred" holds per item, not just overall.
  for(const e of eligiblePhysical){
   const candidateExclude=new Set(excludeKeys);candidateExclude.delete('candidate/'+e.memberKey);
-  const attempt=await planAllocation(c,conditions,now,ignore,pin,candidateExclude,true);
+  const attempt=await planAllocation(c,conditions,now,ignore,pin,candidateExclude,true,bufferOverride);
   if(attempt.result==='FEASIBLE'){excludeKeys.delete('candidate/'+e.memberKey);retry=attempt;}
  }
  const stillProvisionalPhysical=eligiblePhysical.filter(e=>excludeKeys.has('candidate/'+e.memberKey));
  const requirements:ProvisionalRequirement[]=[...stillProvisionalPhysical,...eligibleWear].map(e=>({key:e.memberKey,family:e.family,age:e.age,bookingSize:withSize.find(w=>w.memberKey===e.memberKey)!.bookingSize}));
  const days=normalizePeriod(conditions.period).dates;
- const plan=await provisionalCapacity(c,requirements,days,now,ignore);
+ const plan=await provisionalCapacity(c,requirements,days,now,ignore,bufferOverride);
  if(!plan.feasible)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
  return {...retry,provisional:requirements,wearExcludeKeys:new Set(eligibleWear.map(e=>e.memberKey))};
 }

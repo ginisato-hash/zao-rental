@@ -36,12 +36,18 @@ try{
   assert.equal((await (await ledgerHttp(new Request(origin+'/api/ledger/assets/'+fid(1201),{headers:authHeaders}))).json()).notes,'Persisted after PR5 upgrade');
  });
  roles=await provisionApplicationRoles(db.pool,db.identity);const c1=await roles.holdPool.connect(),c2=await roles.holdPool.connect();try{assert.notEqual((await c1.query('SELECT pg_backend_pid() AS pid')).rows[0].pid,(await c2.query('SELECT pg_backend_pid() AS pid')).rows[0].pid);}finally{c1.release();c2.release();}const principal=(await loadStaff(db.pool,adminId))!;
- const settings={displayName:'合成HOLD担当',active:true,role:'STAFF' as const,scope:'ASSIGNED' as const,storeIds:['MOUNTAIN_BASE' as const,'ONSEN_BASE' as const],permissions:{HOLD_VIEW:true,HOLD_EDIT:true}};
+ // INVENTORY_BUFFER_OVERRIDE (release-code-closure): this whole suite is LOWER-LEVEL ALLOCATOR
+ // MECHANICS (constraint satisfaction, transfer plumbing, replan/lock behavior), deliberately built
+ // on a 1-2-unit-per-variant fixture to make exact allocation outcomes assertable — not a test of
+ // the 95% public-capacity policy itself. Granting it here and passing an explicit reason on every
+ // create() below keeps the ceiling from being the incidental reason these mechanics tests fail.
+ const settings={displayName:'合成HOLD担当',active:true,role:'STAFF' as const,scope:'ASSIGNED' as const,storeIds:['MOUNTAIN_BASE' as const,'ONSEN_BASE' as const],permissions:{HOLD_VIEW:true,HOLD_EDIT:true,INVENTORY_BUFFER_OVERRIDE:true}};
  const actor=(await writeAccount(roles.authPool,principal,undefined,{...settings,email:'synthetic-hold@example.invalid',password})).id!;
  const other=(await writeAccount(roles.authPool,principal,undefined,{...settings,email:'synthetic-other@example.invalid',password})).id!;
  const service=async(subject=actor)=>new HoldService(roles!.holdPool,(await loadStaff(roles!.authPool,subject))!,()=>now);
  async function reset(){now=new Date(now.getTime()+601000);}
- async function create(c=requestFor('2030-01-01')){return (await service()).command('create',randomUUID(),c);}
+ const bufferOverride={reason:'SYNTHETIC E06 allocator-mechanics test'};
+ async function create(c=requestFor('2030-01-01')){return (await service()).command('create',randomUUID(),c,undefined,undefined,bufferOverride);}
  async function held(id:string){return (await db.pool.query('SELECT requirement_key,asset_id,pole_id,pole_slot,day::text FROM inventory_claims WHERE hold_id=$1 AND active ORDER BY requirement_key,day',[id])).rows;}
  async function stageAllocation(id:string,stage:string){const c=await db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[actor]);await c.query('UPDATE inventory_holds SET allocation_stage=$2 WHERE id=$1',[id,stage]);await c.query('COMMIT');}finally{c.release();}}
  await check('remaining one, six concurrent requests across pooled connections: exactly one whole HOLD succeeds',async()=>{
@@ -63,7 +69,7 @@ try{
   const c=requestFor('2030-01-06',[variants.ski,variants.skiAlt]);c.members.push({...structuredClone(c.members[0]!),key:'person-b',items:[{family:'SKI',variantIds:[variants.ski]}]});const r=await create(c);assert.equal(r.result,'CREATED');const rows=await held(r.holdId!);assert.equal(rows.find(x=>x.requirement_key.startsWith('person-a')).asset_id,fid(1202));assert.equal(rows.find(x=>x.requirement_key.startsWith('person-b')).asset_id,fid(1201));
  });await reset();
  await check('provisional other-owner HOLD can be safely rearranged without changing its promise or expiry',async()=>{
-  const a=await (await service(other)).command('create',randomUUID(),requestFor('2030-01-07',[variants.ski,variants.skiAlt]));assert.equal((await held(a.holdId!))[0].asset_id,fid(1201));
+  const a=await (await service(other)).command('create',randomUUID(),requestFor('2030-01-07',[variants.ski,variants.skiAlt]),undefined,undefined,bufferOverride);assert.equal((await held(a.holdId!))[0].asset_id,fid(1201));
   const before=await (await service(other)).get(a.holdId!);const b=await create(requestFor('2030-01-07'));assert.equal(b.result,'CREATED');assert.equal((await held(a.holdId!))[0].asset_id,fid(1202));const after=await (await service(other)).get(a.holdId!);assert.deepEqual(after.conditions,before.conditions);assert.equal(after.expiresAt,before.expiresAt);assert.ok((await db.pool.query('SELECT count(*)::int AS n FROM inventory_replans')).rows[0].n>0);
  });await reset();
  await check('prepared/lent fixed allocations cannot move; failed replacement retains complete old hold',async()=>{
@@ -73,23 +79,23 @@ try{
  });await reset();
  await check('safe explicit asset replacement succeeds; replacement breaking another reservation fails without losing old hold or TTL',async()=>{
   const c=requestFor('2030-01-09'),a=await create(c),before=a.hold!.expiresAt;
-  const replacement={...c,members:[{...c.members[0]!,items:[{family:'SKI' as const,variantIds:[variants.skiAlt]}]}]};assert.equal((await (await service()).availability(replacement,a.holdId)).result,'FEASIBLE');
-  const moved=await (await service()).command('amend',randomUUID(),replacement,a.holdId);assert.equal(moved.result,'AMENDED');assert.equal(moved.hold!.expiresAt,before);assert.equal((await held(a.holdId!))[0].asset_id,fid(1202));
-  assert.equal((await create(requestFor('2030-01-09'))).result,'CREATED');const failed=await (await service()).command('amend',randomUUID(),c,a.holdId);assert.equal(failed.result,'INSUFFICIENT');assert.equal((await held(a.holdId!))[0].asset_id,fid(1202));assert.equal(failed.hold!.expiresAt,before);
+  const replacement={...c,members:[{...c.members[0]!,items:[{family:'SKI' as const,variantIds:[variants.skiAlt]}]}]};assert.equal((await (await service()).availability(replacement,a.holdId,undefined,true)).result,'FEASIBLE');
+  const moved=await (await service()).command('amend',randomUUID(),replacement,a.holdId,undefined,bufferOverride);assert.equal(moved.result,'AMENDED');assert.equal(moved.hold!.expiresAt,before);assert.equal((await held(a.holdId!))[0].asset_id,fid(1202));
+  assert.equal((await create(requestFor('2030-01-09'))).result,'CREATED');const failed=await (await service()).command('amend',randomUUID(),c,a.holdId,undefined,bufferOverride);assert.equal(failed.result,'INSUFFICIENT');assert.equal((await held(a.holdId!))[0].asset_id,fid(1202));assert.equal(failed.hold!.expiresAt,before);
  });await reset();
  await check('explicit provisional asset reassignment preserves exact conditions and rejects non-candidate model/size',async()=>{
   const c=requestFor('2030-01-15',[variants.ski,variants.skiAlt]),r=await create(c),before=r.hold!.conditions;
-  const moved=await (await service()).command('reassign',randomUUID(),{requirementKey:'person-a:SKI',assetId:fid(1202)},r.holdId);assert.equal(moved.result,'AMENDED');assert.deepEqual(moved.hold!.conditions,before);assert.equal((await held(r.holdId!))[0].asset_id,fid(1202));
-  const failed=await (await service()).command('reassign',randomUUID(),{requirementKey:'person-a:SKI',assetId:fid(1203)},r.holdId);assert.equal(failed.result,'INSUFFICIENT');assert.deepEqual(await held(r.holdId!),await held(moved.holdId!));assert.equal((await held(r.holdId!))[0].asset_id,fid(1202));
+  const moved=await (await service()).command('reassign',randomUUID(),{requirementKey:'person-a:SKI',assetId:fid(1202)},r.holdId,undefined,bufferOverride);assert.equal(moved.result,'AMENDED');assert.deepEqual(moved.hold!.conditions,before);assert.equal((await held(r.holdId!))[0].asset_id,fid(1202));
+  const failed=await (await service()).command('reassign',randomUUID(),{requirementKey:'person-a:SKI',assetId:fid(1203)},r.holdId,undefined,bufferOverride);assert.equal(failed.result,'INSUFFICIENT');assert.deepEqual(await held(r.holdId!),await held(moved.holdId!));assert.equal((await held(r.holdId!))[0].asset_id,fid(1202));
  });await reset();
  await check('concurrent replacements never duplicate physical claims, future commitments do not consume unrelated periods',async()=>{
   const a=await create(requestFor('2030-02-01')),b=await create(requestFor('2030-02-01',[variants.skiAlt]));
-  const outcomes=await Promise.all([a,b].map(r=>(async()=>{const c={...r.hold!.conditions,members:[{...r.hold!.conditions.members[0]!,items:[{family:'SKI' as const,variantIds:[variants.skiAlt]}]}]};return (await service()).command('amend',randomUUID(),c,r.holdId);})()));assert.equal(outcomes.filter(r=>r.result==='AMENDED').length,1);assert.equal((await held(a.holdId!))[0].asset_id,fid(1201));assert.equal((await create(requestFor('2030-01-20'))).result,'CREATED');
+  const outcomes=await Promise.all([a,b].map(r=>(async()=>{const c={...r.hold!.conditions,members:[{...r.hold!.conditions.members[0]!,items:[{family:'SKI' as const,variantIds:[variants.skiAlt]}]}]};return (await service()).command('amend',randomUUID(),c,r.holdId,undefined,bufferOverride);})()));assert.equal(outcomes.filter(r=>r.result==='AMENDED').length,1);assert.equal((await held(a.holdId!))[0].asset_id,fid(1201));assert.equal((await create(requestFor('2030-01-20'))).result,'CREATED');
  });await reset();
  await check('idempotency, payload mismatch, cancellation/expiration races and retries conserve quantity',async()=>{
-  const c=skiSet('2030-03-01'),key=randomUUID(),s=await service();const [a,b]=await Promise.all([s.command('create',key,c),s.command('create',key,c)]);assert.equal(a.holdId,b.holdId);await assert.rejects(s.command('create',key,{...c,returnStore:'ONSEN_BASE'}),{code:'IDEMPOTENCY_MISMATCH'});
+  const c=skiSet('2030-03-01'),key=randomUUID(),s=await service();const [a,b]=await Promise.all([s.command('create',key,c,undefined,undefined,bufferOverride),s.command('create',key,c,undefined,undefined,bufferOverride)]);assert.equal(a.holdId,b.holdId);await assert.rejects(s.command('create',key,{...c,returnStore:'ONSEN_BASE'},undefined,undefined,bufferOverride),{code:'IDEMPOTENCY_MISMATCH'});
   await Promise.all([s.command('cancel',randomUUID(),undefined,a.holdId),s.command('cancel',randomUUID(),undefined,a.holdId),create(skiSet('2030-03-01'))]);assert.equal((await held(a.holdId!)).length,0);
-  await reset();const result=await create(skiSet('2030-03-01'));assert.equal(result.result,'CREATED');await reset();const [expired,replacement]=await Promise.all([s.command('expire',randomUUID(),undefined,result.holdId),create(skiSet('2030-03-01'))]);assert.equal(expired.result,'EXPIRED');assert.equal(replacement.result,'CREATED');assert.equal((await s.command('create',key,c)).hold!.state,'RELEASED');
+  await reset();const result=await create(skiSet('2030-03-01'));assert.equal(result.result,'CREATED');await reset();const [expired,replacement]=await Promise.all([s.command('expire',randomUUID(),undefined,result.holdId),create(skiSet('2030-03-01'))]);assert.equal(expired.result,'EXPIRED');assert.equal(replacement.result,'CREATED');assert.equal((await s.command('create',key,c,undefined,undefined,bufferOverride)).hold!.state,'RELEASED');
  });await reset();
  await check('ten inclusive dates hold all three components and direct ledger edits cannot invalidate protected stock',async()=>{
   const c=skiSet('2030-12-28');c.period.slot='MULTIDAY';c.period.endDate='2031-01-06';const r=await create(c);assert.equal(r.result,'CREATED');const rows=await held(r.holdId!);assert.equal(rows.length,30);assert.equal(new Set(rows.filter(x=>x.asset_id).map(x=>x.asset_id)).size,2);assert.equal(new Set(rows.map(x=>x.day)).size,10);
@@ -99,7 +105,7 @@ try{
   const c=requestFor('2030-03-02');for(const x of [variants.kids,variants.premium])await assert.rejects(create({...c,members:[{...c.members[0]!,items:[{family:'SKI',variantIds:[x]}]}]}),{code:'VARIANT_MISMATCH'});
   const a=await create(c);const lock=await db.pool.connect();try{await lock.query('BEGIN');await lock.query('SELECT pg_advisory_xact_lock(71820600)');
    await assert.rejects((await service(other)).command('cancel',randomUUID(),undefined,a.holdId),{code:'FORBIDDEN'});
-   const waiting=await service();await assert.rejects(waiting.command('create',randomUUID(),requestFor('2030-03-03')),{code:'INDETERMINATE'});
+   const waiting=await service();await assert.rejects(waiting.command('create',randomUUID(),requestFor('2030-03-03'),undefined,undefined,bufferOverride),{code:'INDETERMINATE'});
   }finally{await lock.query('ROLLBACK');lock.release();}
   assert.equal((await create(requestFor('2030-03-03'))).result,'CREATED');
  });await reset();
@@ -140,12 +146,12 @@ try{
   const s=await service();let acquired=0;const listener=()=>{acquired++;};roles!.holdPool.on('acquire',listener);
   try{const listed=await s.list();assert.equal(listed.length,100);assert.ok(listed.every(h=>h.history.length===3));assert.equal(acquired,1);}finally{roles!.holdPool.off('acquire',listener);}
   const blocked=await roles!.holdPool.connect(),blocked2=await roles!.holdPool.connect();
-  try{const writer=await service(other);const [listed,written]=await Promise.all([s.list(),writer.command('create',randomUUID(),requestFor('2033-01-02'))]);assert.equal(listed.length,100);assert.equal(written.result,'CREATED');}finally{blocked.release();blocked2.release();}
+  try{const writer=await service(other);const [listed,written]=await Promise.all([s.list(),writer.command('create',randomUUID(),requestFor('2033-01-02'),undefined,undefined,bufferOverride)]);assert.equal(listed.length,100);assert.equal(written.result,'CREATED');}finally{blocked.release();blocked2.release();}
  });await reset();
  await check('exhausted real four-connection HOLD pool returns bounded INDETERMINATE on reads and write preflight',async()=>{
   const s=await service(),clients=[];for(let i=0;i<4;i++)clients.push(await roles!.holdPool.connect());const started=performance.now();
-  try{await Promise.all([s.list(),s.options(),s.command('create',randomUUID(),requestFor('2033-01-03'))].map(p=>assert.rejects(p,{code:'INDETERMINATE',status:503})));assert.ok(performance.now()-started<4000);}finally{clients.forEach(c=>c.release());}
-  assert.equal((await s.command('create',randomUUID(),requestFor('2033-01-03'))).result,'CREATED');
+  try{await Promise.all([s.list(),s.options(),s.command('create',randomUUID(),requestFor('2033-01-03'),undefined,undefined,bufferOverride)].map(p=>assert.rejects(p,{code:'INDETERMINATE',status:503})));assert.ok(performance.now()-started<4000);}finally{clients.forEach(c=>c.release());}
+  assert.equal((await s.command('create',randomUUID(),requestFor('2033-01-03'),undefined,undefined,bufferOverride)).result,'CREATED');
  });await reset();
  await check('300 combined ski/board synthetic load, full ten-day groups, bounded concurrent latency probe',async()=>{
   await seedInventory(db.pool,true);const boards=(await db.pool.query("SELECT count(*)::int AS n FROM ledger_assets WHERE family IN ('SKI','SNOWBOARD')")).rows[0].n;assert.equal(boards,300);

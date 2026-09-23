@@ -81,6 +81,21 @@ reviewed `X`-token → catalogue-size alias is added. This does not invalidate t
 source: `SKI`, `SNOWBOARD`, `WEAR_JACKET` and `WEAR_PANTS` (all `MAPPED`) remain independently
 bookable per the domain rule that one ambiguous bucket must not block unrelated capacity.
 
+### X-token resolution (Owner-approved, supersedes "Unresolved size buckets" above)
+
+The Owner has since explicitly resolved the `X`-token ambiguity: **`NX` = `N` or `N.5`**, i.e. the
+same shared-pair meaning as Source A's own `N/N.5` convention (§ above). This is a binding Owner
+decision, not a guess by this pass — the prior "no guess was made" disposition is superseded for
+this specific token format only. All 38 boot rows (`SKI_BOOT` 20, `SNOWBOARD_BOOT` 18) in
+`PROVISIONAL_SOURCE_B_CAPACITY.csv` now carry `booking_size = "N/N.5"` and
+`size_mapping_status = MAPPED`; `size_mapping_status = BOOKING_SIZE_MAPPING_REQUIRED` no longer
+appears anywhere in this source. Because Source A's boot buckets already use the identical
+`N/N.5` string for the same family/age/size, a Source B `NX` bucket and a Source A `N/N.5` bucket
+for the same key pool together transparently under `provisionalCapacity()`'s existing "any
+currently-ACTIVE MAPPED bucket" matching — no code change to bucket-candidate matching was
+needed, only this data resolution. See `docs/execution/provisional-booking-capacity/RESULT.md`
+for the corresponding RESULT entry and validated totals (MAPPED now equals RAW for every family).
+
 ## Explicitly excluded from this Owner update
 
 | item | Source B quantity | disposition |

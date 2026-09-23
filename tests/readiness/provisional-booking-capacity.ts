@@ -122,9 +122,12 @@ try {
     });
     const req: ProvisionalRequirement[] = [{key: 'm:SNOWBOARD', family: 'SNOWBOARD', age: 'ADULT', bookingSize: '150 cm'}];
     const holdMountain = await makeHold('2035-03-01', '2035-03-01');
-    await writeProvisionalClaims(x.db.pool, holdMountain, req, days('2035-03-01', 1), now);
+    // LOWER-LEVEL MECHANICS, not public-capacity policy: this proves pool sharing across stores,
+    // which requires exactly 1 unit; bufferOverride:true exercises true (100%) capacity so the
+    // new 95% public ceiling (incidental here) doesn't mask the store-sharing invariant.
+    await writeProvisionalClaims(x.db.pool, holdMountain, req, days('2035-03-01', 1), now, true);
     const holdOnsen = await makeHold('2035-03-01', '2035-03-01', 'ACTIVE', 'ONSEN_BASE');
-    const plan = await provisionalCapacity(x.db.pool, req, days('2035-03-01', 1), now, holdOnsen);
+    const plan = await provisionalCapacity(x.db.pool, req, days('2035-03-01', 1), now, holdOnsen, true);
     assert.equal(plan.feasible, false); // the ONE unit is already held by the MOUNTAIN_BASE hold — a same-pool ONSEN_BASE attempt cannot also get it
     await releaseProvisionalClaims(x.db.pool, holdMountain);
   });
@@ -137,12 +140,14 @@ try {
     });
     const req: ProvisionalRequirement[] = [{key: 'm:SKI', family: 'SKI', age: 'KIDS', bookingSize: '90 cm'}];
     const holdA = await makeHold('2035-04-10', '2035-04-11');
-    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-04-10', 2), now);
+    // LOWER-LEVEL MECHANICS: temporal/day-boundary allocation, needs an exactly-N-unit pool;
+    // bufferOverride:true exercises true capacity so the 95% ceiling stays incidental.
+    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-04-10', 2), now, true);
     const holdB = await makeHold('2035-04-11', '2035-04-12');
-    const overlapping = await provisionalCapacity(x.db.pool, req, days('2035-04-11', 2), now, holdB);
+    const overlapping = await provisionalCapacity(x.db.pool, req, days('2035-04-11', 2), now, holdB, true);
     assert.equal(overlapping.feasible, false); // 2035-04-11 overlaps holdA
     const holdC = await makeHold('2035-04-12', '2035-04-13');
-    const nonOverlapping = await provisionalCapacity(x.db.pool, req, days('2035-04-12', 2), now, holdC);
+    const nonOverlapping = await provisionalCapacity(x.db.pool, req, days('2035-04-12', 2), now, holdC, true);
     assert.equal(nonOverlapping.feasible, true); // starts the day holdA ends — no shared day
     void result;
   });
@@ -155,14 +160,16 @@ try {
     });
     const req: ProvisionalRequirement[] = [{key: 'm:WEAR_JACKET', family: 'WEAR_JACKET', age: 'ADULT', bookingSize: 'L'}];
     const holdA = await makeHold('2035-05-01', '2035-05-01');
-    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-05-01', 1), now);
+    // LOWER-LEVEL MECHANICS: release/idempotency lifecycle, needs an exactly-1-unit pool to prove
+    // exclusivity; bufferOverride:true exercises true capacity so the 95% ceiling stays incidental.
+    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-05-01', 1), now, true);
     const holdB = await makeHold('2035-05-01', '2035-05-01');
-    assert.equal((await provisionalCapacity(x.db.pool, req, days('2035-05-01', 1), now, holdB)).feasible, false);
+    assert.equal((await provisionalCapacity(x.db.pool, req, days('2035-05-01', 1), now, holdB, true)).feasible, false);
     await releaseProvisionalClaims(x.db.pool, holdA);
-    assert.equal((await provisionalCapacity(x.db.pool, req, days('2035-05-01', 1), now, holdB)).feasible, true);
-    await writeProvisionalClaims(x.db.pool, holdB, req, days('2035-05-01', 1), now);
+    assert.equal((await provisionalCapacity(x.db.pool, req, days('2035-05-01', 1), now, holdB, true)).feasible, true);
+    await writeProvisionalClaims(x.db.pool, holdB, req, days('2035-05-01', 1), now, true);
     await releaseProvisionalClaims(x.db.pool, holdA); // idempotent: already released, no effect
-    const stillHeldByB = await provisionalCapacity(x.db.pool, req, days('2035-05-01', 1), now, holdB);
+    const stillHeldByB = await provisionalCapacity(x.db.pool, req, days('2035-05-01', 1), now, holdB, true);
     assert.equal(stillHeldByB.feasible, true); // holdB's own claim is excluded by `ignore`, proving it alone occupies the unit
     void result;
   });
@@ -175,9 +182,11 @@ try {
     });
     const req: ProvisionalRequirement[] = [{key: 'm:SNOWBOARD_BOOT', family: 'SNOWBOARD_BOOT', age: 'ADULT', bookingSize: '27X'}];
     const holdA = await makeHold('2035-06-01', '2035-06-01'), holdB = await makeHold('2035-06-01', '2035-06-01');
+    // LOWER-LEVEL MECHANICS: this is precisely a concurrency/no-oversell test against a 1-unit
+    // bucket; bufferOverride:true exercises true capacity so the 95% ceiling stays incidental.
     const outcomes = await Promise.allSettled([
-      writeProvisionalClaims(x.db.pool, holdA, req, days('2035-06-01', 1), now),
-      writeProvisionalClaims(x.db.pool, holdB, req, days('2035-06-01', 1), now),
+      writeProvisionalClaims(x.db.pool, holdA, req, days('2035-06-01', 1), now, true),
+      writeProvisionalClaims(x.db.pool, holdB, req, days('2035-06-01', 1), now, true),
     ]);
     const succeeded = outcomes.filter((o) => o.status === 'fulfilled').length;
     assert.equal(succeeded, 1);
@@ -194,9 +203,11 @@ try {
     });
     const req: ProvisionalRequirement[] = [{key: 'm:SKI', family: 'SKI', age: 'ADULT', bookingSize: '146 cm'}];
     const holdA = await makeHold('2035-07-01', '2035-07-01');
-    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-07-01', 1), now);
-    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-07-01', 1), now);
-    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-07-01', 1), now);
+    // LOWER-LEVEL MECHANICS: idempotent replay, incidental 1-unit pool; bufferOverride:true keeps
+    // the 95% ceiling from being the reason a replay would otherwise throw.
+    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-07-01', 1), now, true);
+    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-07-01', 1), now, true);
+    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-07-01', 1), now, true);
     const activeForHold = (await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE state='ACTIVE' AND hold_id=$1", [holdA])).rows[0].n;
     assert.equal(activeForHold, 1);
     void result;
@@ -228,7 +239,9 @@ try {
     const baseQuantityBefore = (await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity;
     const req: ProvisionalRequirement[] = [{key: 'm:SKI_BOOT', family: 'SKI_BOOT', age: 'KIDS', bookingSize: '18X'}, {key: 'm2:SKI_BOOT', family: 'SKI_BOOT', age: 'KIDS', bookingSize: '18X'}];
     const holdA = await makeHold('2035-08-01', '2035-08-01');
-    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-08-01', 1), now); // consumes both units of the 2-unit bucket
+    // LOWER-LEVEL MECHANICS: immutable-ledger/reduction test, needs the full 2-unit bucket
+    // consumed; bufferOverride:true keeps the 95% ceiling (floor(2*0.95)=1) from blocking it.
+    await writeProvisionalClaims(x.db.pool, holdA, req, days('2035-08-01', 1), now, true); // consumes both units of the 2-unit bucket
     await assert.rejects(asActor((c) => c.query('SELECT provisional_capacity_reduce_bucket($1,1)', [bucketId])), {code: '23514'});
     assert.equal((await x.db.pool.query('SELECT quantity FROM provisional_capacity_buckets WHERE id=$1', [bucketId])).rows[0].quantity, baseQuantityBefore); // rejected: no adjustment recorded
     await releaseProvisionalClaims(x.db.pool, holdA);
@@ -302,8 +315,10 @@ try {
     });
     const setReq: ProvisionalRequirement[] = [{key: 'm:WEAR_JACKET', family: 'WEAR_JACKET', age: 'ADULT', bookingSize: 'XL'}, {key: 'm:WEAR_PANTS', family: 'WEAR_PANTS', age: 'ADULT', bookingSize: 'XL'}];
     const holdA = await makeHold('2035-10-01', '2035-10-01'), holdB = await makeHold('2035-10-01', '2035-10-01');
-    await writeProvisionalClaims(x.db.pool, holdA, setReq, days('2035-10-01', 1), now); // consumes the one pants unit
-    const secondSet = await provisionalCapacity(x.db.pool, setReq, days('2035-10-01', 1), now, holdB);
+    // LOWER-LEVEL MECHANICS: set-capacity min() logic, deliberately scarce 1-unit pants pool;
+    // bufferOverride:true keeps the 95% ceiling (floor(1*0.95)=0) from blocking the first claim.
+    await writeProvisionalClaims(x.db.pool, holdA, setReq, days('2035-10-01', 1), now, true); // consumes the one pants unit
+    const secondSet = await provisionalCapacity(x.db.pool, setReq, days('2035-10-01', 1), now, holdB, true);
     assert.equal(secondSet.feasible, false); // jacket alone has 2 left, but pants has 0 — set capacity is min(), not jacket's 2
     void jacket;
   });
@@ -319,8 +334,10 @@ try {
     const modelAReq: ProvisionalRequirement[] = [{key: 'model-a:SNOWBOARD', family: 'SNOWBOARD', age: 'ADULT', bookingSize: '165 cm'}];
     const modelBReq: ProvisionalRequirement[] = [{key: 'model-b:SNOWBOARD', family: 'SNOWBOARD', age: 'ADULT', bookingSize: '165 cm'}];
     const holdA = await makeHold('2035-11-01', '2035-11-01'), holdB = await makeHold('2035-11-01', '2035-11-01');
-    await writeProvisionalClaims(x.db.pool, holdA, modelAReq, days('2035-11-01', 1), now);
-    assert.equal((await provisionalCapacity(x.db.pool, modelBReq, days('2035-11-01', 1), now, holdB)).feasible, false);
+    // LOWER-LEVEL MECHANICS: structural pool-sharing proof, deliberately 1-unit; bufferOverride:true
+    // keeps the 95% ceiling from being the reason the second model's request is infeasible.
+    await writeProvisionalClaims(x.db.pool, holdA, modelAReq, days('2035-11-01', 1), now, true);
+    assert.equal((await provisionalCapacity(x.db.pool, modelBReq, days('2035-11-01', 1), now, holdB, true)).feasible, false);
     void result;
   });
 
@@ -370,12 +387,14 @@ try {
     });
     const req: ProvisionalRequirement[] = [{key: 'm:SKI', family: 'SKI', age: 'ADULT', bookingSize: '150 cm'}];
     const holdA = await makeHold('2036-02-01', '2036-02-01');
-    await writeProvisionalClaims(x.db.pool, holdA, req, days('2036-02-01', 1), now);
+    // LOWER-LEVEL MECHANICS: transaction-rollback atomicity proof, deliberately 1-unit;
+    // bufferOverride:true keeps the 95% ceiling from being the reason the write fails.
+    await writeProvisionalClaims(x.db.pool, holdA, req, days('2036-02-01', 1), now, true);
     const before = (await x.db.pool.query("SELECT id,bucket_id,created_at FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [holdA])).rows[0];
     const client = await x.db.pool.connect();
     try {
       await client.query('BEGIN');
-      await writeProvisionalClaims(client, holdA, req, days('2036-02-01', 1), now); // release + reinsert, uncommitted so far
+      await writeProvisionalClaims(client, holdA, req, days('2036-02-01', 1), now, true); // release + reinsert, uncommitted so far
       await assert.rejects(client.query('SELECT 1/0')); // forces this transaction to fail after the mutation, before COMMIT
     } finally {
       await client.query('ROLLBACK');
@@ -460,7 +479,10 @@ try {
   }
 
   await check('P1: physical-only — a booking against a variant with only real inventory (no provisional bucket exists for it) is unaffected: CREATED with a real inventory_claims row, zero provisional_capacity_claims', async () => {
-    const {variant} = await physicalSkuFor('p1', 1);
+    // PUBLIC BOOKING POLICY test (ordinary customer path, no override): quantity is ample (20, not
+    // the arbitrary "1" this predates the 95% ceiling with) purely so physical/provisional routing
+    // — the actual thing under test — isn't incidentally blocked by the public capacity ceiling.
+    const {variant} = await physicalSkuFor('p1', 20);
     const outcome = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-01', variant.id));
     assert.equal(outcome.result, 'CREATED');
     assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 1);
@@ -477,13 +499,17 @@ try {
   });
 
   await check('P3: mixed — a SKI_SET member needs SKI+POLE (physical) and SKI_BOOT (zero physical, provisional-backed): every requirement is satisfied in the SAME hold, two via inventory_claims (SKI, POLE), one via provisional_capacity_claims (SKI_BOOT)', async () => {
-    const skiSku = await physicalSkuFor('p3-ski', 1);
+    // PUBLIC BOOKING POLICY test (ordinary customer path, no override): all three quantities are
+    // ample (20, not the arbitrary "1"/"1" this predates the 95% ceiling with) purely so mixed
+    // physical+provisional routing across families — the actual thing under test — isn't
+    // incidentally blocked by the public capacity ceiling.
+    const skiSku = await physicalSkuFor('p3-ski', 20);
     const poleModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p3-pole', code: 'PBC-P3-POLE', name: 'PBC P3 pole', brand: 'SYNTHETIC', family: 'POLE', notes: '', catalogSeason: '2026/27'});
     const poleVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p3-pole', modelId: poleModel.id, family: 'POLE', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P3-POLE', notes: ''});
-    await ledger.create('poles', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'pole-p3', variantId: poleVariant.id, storeId: 'MOUNTAIN_BASE', status: 'AVAILABLE', quantity: 1, notes: ''});
+    await ledger.create('poles', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'pole-p3', variantId: poleVariant.id, storeId: 'MOUNTAIN_BASE', status: 'AVAILABLE', quantity: 20, notes: ''});
     const bootModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p3-boot', code: 'PBC-P3-BOOT', name: 'PBC P3 boot', brand: 'SYNTHETIC', family: 'SKI_BOOT', notes: '', catalogSeason: '2026/27'});
     const bootVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p3-boot', modelId: bootModel.id, family: 'SKI_BOOT', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P3-BOOT', notes: ''});
-    await provisionalFor('SKI_BOOT', 'PBC-P3-BOOT', 1, 'p3-boot');
+    await provisionalFor('SKI_BOOT', 'PBC-P3-BOOT', 20, 'p3-boot');
     const conditions: HoldConditions = {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-03', endDate: '2036-03-03', slot: 'DAY'}, members: [{key: 'p', product: 'SKI_SET', age: 'ADULT', tier: 'REGULAR', items: [{family: 'SKI', variantIds: [skiSku.variant.id]}, {family: 'SKI_BOOT', variantIds: [bootVariant.id]}, {family: 'POLE', variantIds: [poleVariant.id]}]}]};
     const outcome = await x.holds.command('create', randomUUID(), conditions);
     assert.equal(outcome.result, 'CREATED');
@@ -492,7 +518,11 @@ try {
   });
 
   await check('P4: physical preferred — one real unit AND provisional capacity both exist for the same variant/size: the booking uses the real unit, provisional stays untouched (never gratuitously used when physical alone already satisfies the request)', async () => {
-    const {variant, size} = await physicalSkuFor('p4', 1);
+    // PUBLIC BOOKING POLICY test (ordinary customer path, no override): physical quantity is ample
+    // (20, not the arbitrary "one real unit" this predates the 95% ceiling with) purely so the
+    // physical-vs-provisional preference — the actual thing under test — isn't incidentally
+    // blocked by the public capacity ceiling.
+    const {variant, size} = await physicalSkuFor('p4', 20);
     await provisionalFor('SKI', size, 5, 'p4');
     const outcome = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-04', variant.id));
     assert.equal(outcome.result, 'CREATED');
@@ -509,19 +539,47 @@ try {
     assert.equal(outcome.result, 'INSUFFICIENT');
   });
 
-  await check('P6: POLE stays physical-only — POLE is not one of the six provisional-capacity families at all; zero physical pole stock is INSUFFICIENT regardless of any other provisional capacity registered', async () => {
+  await check('P6: POLE stays physical-only, structurally never provisional-backed — POLE is not one of the six provisional-capacity families at all, so ample provisional capacity for the same size never gets drawn on for it', async () => {
     const poleModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p6-pole', code: 'PBC-P6-POLE', name: 'PBC P6 pole', brand: 'SYNTHETIC', family: 'POLE', notes: '', catalogSeason: '2026/27'});
     const poleVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p6-pole', modelId: poleModel.id, family: 'POLE', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P6-POLE', notes: ''});
     const conditions: HoldConditions = {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-06', endDate: '2036-03-06', slot: 'DAY'}, members: [{key: 'p', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'POLE', variantIds: [poleVariant.id]}]}]};
-    assert.equal((await x.holds.command('create', randomUUID(), conditions)).result, 'INSUFFICIENT');
+    // V4 (release-code-closure, Owner decision — see isPole()'s own comment): zero registered
+    // pole inventory of any kind for this variant is no longer INSUFFICIENT — it is exempt from
+    // the demand set entirely and the booking is CREATED, with no claim of any kind written for
+    // it (never inventory_claims, and structurally never provisional_capacity_claims either).
+    const outcome = await x.holds.command('create', randomUUID(), conditions);
+    assert.equal(outcome.result, 'CREATED');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 0);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n, 0);
+  });
+
+  await check('P6b: POLE feasibility is conditional, not blanket — once a real pole unit is registered for the variant, it is claimed and conflict-checked exactly like any other family: a second same-day request for the same single unit is INSUFFICIENT', async () => {
+    const poleModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p6b-pole', code: 'PBC-P6B-POLE', name: 'PBC P6b pole', brand: 'SYNTHETIC', family: 'POLE', notes: '', catalogSeason: '2026/27'});
+    const poleVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p6b-pole', modelId: poleModel.id, family: 'POLE', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P6B-POLE', notes: ''});
+    await ledger.create('poles', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'pole-p6b', variantId: poleVariant.id, storeId: 'MOUNTAIN_BASE', status: 'AVAILABLE', quantity: 1, notes: ''});
+    const conditions: HoldConditions = {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-06', endDate: '2036-03-06', slot: 'DAY'}, members: [{key: 'p', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'POLE', variantIds: [poleVariant.id]}]}]};
+    // LOWER-LEVEL MECHANICS: this proves same-unit conflict/exclusivity once real POLE stock
+    // exists, which needs exactly 1 registered pole; bufferOverride:true (via this fixture's own
+    // authorized ADMIN principal, granted INVENTORY_BUFFER_OVERRIDE) exercises true capacity so
+    // the second request's INSUFFICIENT is due to the genuine conflict, not the incidental ceiling.
+    const reason = {reason: 'SYNTHETIC P6b pole-exclusivity mechanics test'};
+    const first = await x.holds.command('create', randomUUID(), conditions, undefined, undefined, reason);
+    assert.equal(first.result, 'CREATED');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [first.holdId])).rows[0].n, 1);
+    const second = await x.holds.command('create', randomUUID(), {...conditions, reservationId: randomUUID()}, undefined, undefined, reason);
+    assert.equal(second.result, 'INSUFFICIENT');
   });
 
   await check('P7: concurrent last-provisional-unit race — two concurrent HoldService.command() creates against a 1-unit provisional-only bucket: exactly one CREATED, the other INSUFFICIENT, never both', async () => {
     const {variant, size} = await physicalSkuFor('p7', 0);
     await provisionalFor('SKI', size, 1, 'p7');
+    // LOWER-LEVEL MECHANICS: this is precisely a concurrency/no-oversell race against a 1-unit
+    // provisional bucket; bufferOverride:true (authorized) exercises true capacity so the 95%
+    // ceiling (which would otherwise make BOTH attempts fail) stays incidental to the race proof.
+    const reason = {reason: 'SYNTHETIC P7 concurrency race mechanics test'};
     const outcomes = await Promise.allSettled([
-      x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-07', variant.id)),
-      x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-07', variant.id)),
+      x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-07', variant.id), undefined, undefined, reason),
+      x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-07', variant.id), undefined, undefined, reason),
     ]);
     const results = outcomes.map((o) => o.status === 'fulfilled' ? o.value.result : 'THREW');
     assert.equal(results.filter((r) => r === 'CREATED').length, 1);
@@ -533,8 +591,11 @@ try {
     const jacketVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p8-jacket', modelId: jacketModel.id, family: 'WEAR_JACKET', age: 'ADULT', tier: 'STANDARD', size: 'PBC-P8-WEAR', notes: '', compatibleSports: ['SKI', 'SNOWBOARD']});
     const pantsModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p8-pants', code: 'PBC-P8-PANTS', name: 'PBC P8 pants', brand: 'SYNTHETIC', family: 'WEAR_PANTS', notes: '', catalogSeason: '2026/27'});
     const pantsVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p8-pants', modelId: pantsModel.id, family: 'WEAR_PANTS', age: 'ADULT', tier: 'STANDARD', size: 'PBC-P8-WEAR', notes: '', compatibleSports: ['SKI', 'SNOWBOARD']});
-    await provisionalFor('WEAR_JACKET', 'PBC-P8-WEAR', 1, 'p8-jacket');
-    await provisionalFor('WEAR_PANTS', 'PBC-P8-WEAR', 1, 'p8-pants');
+    // PUBLIC BOOKING POLICY test (ordinary customer path, no override): quantities are ample (20,
+    // not the arbitrary "1"/"1" this predates the 95% ceiling with) purely so the wear-provisional
+    // fallback routing — the actual thing under test — isn't incidentally blocked by the ceiling.
+    await provisionalFor('WEAR_JACKET', 'PBC-P8-WEAR', 20, 'p8-jacket');
+    await provisionalFor('WEAR_PANTS', 'PBC-P8-WEAR', 20, 'p8-pants');
     const conditions: HoldConditions = {contractVersion: 'INTEGRATED_V1_2', reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-08', endDate: '2036-03-08', slot: 'DAY'}, members: [{key: 'w', product: 'WEAR_SET', age: 'ADULT', tier: 'STANDARD', wearSport: 'SKI', items: [{family: 'WEAR_JACKET', variantIds: [jacketVariant.id]}, {family: 'WEAR_PANTS', variantIds: [pantsVariant.id]}]}]};
     const outcome = await x.holds.command('create', randomUUID(), conditions);
     assert.equal(outcome.result, 'CREATED');
@@ -545,27 +606,38 @@ try {
   await check('P9: cancel releases the provisional claim exactly once — after command(\'cancel\',...), the provisional_capacity_claims row is RELEASED and the unit is immediately available to a new hold', async () => {
     const {variant, size} = await physicalSkuFor('p9', 0);
     await provisionalFor('SKI', size, 1, 'p9');
-    const first = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id));
+    // LOWER-LEVEL MECHANICS: this proves cancel-releases-the-claim, which needs exactly 1 unit so
+    // the second attempt genuinely conflicts; bufferOverride:true (authorized) exercises true
+    // capacity so the 95% ceiling stays incidental to the release-lifecycle proof.
+    const reason = {reason: 'SYNTHETIC P9 cancel-release mechanics test'};
+    const first = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id), undefined, undefined, reason);
     assert.equal(first.result, 'CREATED');
-    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id))).result, 'INSUFFICIENT'); // unit already held
+    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id), undefined, undefined, reason)).result, 'INSUFFICIENT'); // unit already held
     await x.holds.command('cancel', randomUUID(), undefined, first.holdId);
     assert.equal((await x.db.pool.query("SELECT state FROM provisional_capacity_claims WHERE hold_id=$1", [first.holdId])).rows[0].state, 'RELEASED');
-    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id))).result, 'CREATED'); // now free again
+    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-09', variant.id), undefined, undefined, reason)).result, 'CREATED'); // now free again
   });
 
   await check('P10: expiry releases the provisional claim — an unpaid hold past expiry is swept by expireInventoryHolds (via the next command() call) exactly like a real inventory_claims release, freeing the unit', async () => {
     const {variant, size} = await physicalSkuFor('p10', 0);
     await provisionalFor('SKI', size, 1, 'p10');
-    const first = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-10', variant.id));
+    // LOWER-LEVEL MECHANICS: this proves expiry-releases-the-claim, which needs exactly 1 unit so
+    // the second attempt only succeeds once the first is swept; bufferOverride:true (authorized)
+    // exercises true capacity so the 95% ceiling stays incidental to the expiry-lifecycle proof.
+    const reason = {reason: 'SYNTHETIC P10 expiry-release mechanics test'};
+    const first = await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-10', variant.id), undefined, undefined, reason);
     assert.equal(first.result, 'CREATED');
     await x.clock(new Date(x.now().getTime() + 700000).toISOString()); // past HOLD_TTL_SECONDS, still unpaid
-    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-10', variant.id))).result, 'CREATED'); // the expiring hold's expiry is swept first, freeing the unit for this new request
+    assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2036-03-10', variant.id), undefined, undefined, reason)).result, 'CREATED'); // the expiring hold's expiry is swept first, freeing the unit for this new request
     assert.equal((await x.db.pool.query("SELECT state FROM provisional_capacity_claims WHERE hold_id=$1", [first.holdId])).rows[0].state, 'RELEASED');
   });
 
   await check('P11: checkout gate — a hold with an ACTIVE provisional claim can be booked and paid for (reservation allowed), but CustodyService.prepare() fails closed with PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED (physical handoff not allowed) until the claim is real', async () => {
+    // PUBLIC BOOKING POLICY test (ordinary customer path, no override): quantity is ample (20, not
+    // the arbitrary "1" this predates the 95% ceiling with) purely so the handoff structural gate
+    // — the actual thing under test — isn't incidentally blocked by the public capacity ceiling.
     const {variant, size} = await physicalSkuFor('p11', 0);
-    await provisionalFor('SKI', size, 1, 'p11');
+    await provisionalFor('SKI', size, 20, 'p11');
     const conditions = singleSkiCondition('2035-06-15', variant.id); // within quotes.initializePrivate's 2035-01-01..2035-12-31 price coverage — unlike the other product-path tests, P11 needs pricing/booking, not just HoldService
     const built = await x.draft(undefined, conditions);
     const paid = await x.service.startPayment(built.booking.id, randomUUID());
@@ -580,8 +652,13 @@ try {
   });
 
   await check('P12: the handoff gate actually clears — an explicit reassign() to a newly-available real Asset, done before payment (a paid hold cannot be reassigned through this path at all — PAYMENT_RECONCILIATION_REQUIRED), converts a provisional-backed hold to a real physical claim, releases the provisional claim, and CustodyService.prepare() then succeeds with no PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED', async () => {
+    // The initial CREATE below is a PUBLIC BOOKING POLICY step (ordinary customer path, no
+    // override): quantity is ample (20, not the arbitrary "1" this predates the 95% ceiling with)
+    // purely so provisional routing isn't incidentally blocked. The REASSIGN step further down
+    // genuinely needs a single specific real unit (that's the scenario being proven) and uses an
+    // authorized bufferOverride instead — see its own comment.
     const {variant, size} = await physicalSkuFor('p12', 0); // zero physical stock at first
-    await provisionalFor('SKI', size, 1, 'p12');
+    await provisionalFor('SKI', size, 20, 'p12');
     const conditions = singleSkiCondition('2035-06-16', variant.id);
     const created = await x.holds.command('create', randomUUID(), conditions);
     assert.equal(created.result, 'CREATED');
@@ -604,7 +681,10 @@ try {
     // Explicit reassign, before any payment: HoldService.command()'s own payment-reconciliation
     // gate refuses amend/reassign entirely once payment_state='SUCCESS' (paymentDecision() never
     // returns MAY_CHANGE for a paid hold) — this is the actual operator sequencing the gate allows.
-    const reassigned = await x.holds.command('reassign', randomUUID(), {assetId, requirementKey: 'p:SKI'}, holdId);
+    // LOWER-LEVEL MECHANICS: this proves the provisional-to-physical handoff-clearing mechanism
+    // by reassigning into the single specific real unit that just became available — scarcity is
+    // essential to the scenario, not incidental — so it uses an authorized bufferOverride.
+    const reassigned = await x.holds.command('reassign', randomUUID(), {assetId, requirementKey: 'p:SKI'}, holdId, undefined, {reason: 'SYNTHETIC P12 handoff-mechanism reassign test'});
     assert.equal(reassigned.result, 'AMENDED');
     assert.equal((await x.db.pool.query('SELECT asset_id FROM inventory_claims WHERE hold_id=$1 AND active', [holdId])).rows[0].asset_id, assetId);
     assert.equal((await x.db.pool.query("SELECT state FROM provisional_capacity_claims WHERE hold_id=$1", [holdId])).rows[0].state, 'RELEASED');
@@ -642,9 +722,12 @@ try {
     ]};
   }
   await check('P13: adversarial competition, exact capacity — 2 members demand the same variant, exactly 1 physical unit + 1 provisional unit exist: CREATED with exactly one physical claim and exactly one provisional claim, never two of either (no oversell of the single physical Asset, no oversell of the single-unit provisional bucket)', async () => {
+    // LOWER-LEVEL MECHANICS: this is explicitly an adversarial/oversell-prevention competition test
+    // that requires exactly 1 physical + 1 provisional unit; bufferOverride:true (authorized)
+    // exercises true capacity so the 95% ceiling stays incidental to the oversell proof.
     const {variant, size} = await physicalSkuFor('p13', 1); // exactly 1 physical unit
     await provisionalFor('SKI', size, 1, 'p13'); // exactly 1 provisional unit
-    const outcome = await x.holds.command('create', randomUUID(), twoMemberSameVariant('2036-03-13', variant.id));
+    const outcome = await x.holds.command('create', randomUUID(), twoMemberSameVariant('2036-03-13', variant.id), undefined, undefined, {reason: 'SYNTHETIC P13 adversarial-competition mechanics test'});
     assert.equal(outcome.result, 'CREATED');
     const physical = (await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n;
     const provisional = (await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n;
@@ -652,12 +735,75 @@ try {
     assert.equal(provisional, 1); // never 2 — only 1 provisional unit was registered
   });
   await check('P14: adversarial competition, insufficient capacity — 3 members demand the same variant, only 1 physical + 1 provisional unit exist (capacity 2, demand 3): INSUFFICIENT, never a false FEASIBLE that would leave one member with no witness at all', async () => {
+    // LOWER-LEVEL MECHANICS: same adversarial-competition setup as P13 (capacity 2, demand 3);
+    // bufferOverride:true (authorized) ensures INSUFFICIENT reflects the genuine capacity shortfall
+    // under test, not merely the incidental 95% public ceiling.
     const {variant, size} = await physicalSkuFor('p14', 1);
     await provisionalFor('SKI', size, 1, 'p14');
     const conditions = threeMemberSameVariant('2036-03-14', variant.id);
-    const outcome = await x.holds.command('create', randomUUID(), conditions);
+    const outcome = await x.holds.command('create', randomUUID(), conditions, undefined, undefined, {reason: 'SYNTHETIC P14 adversarial-competition mechanics test'});
     assert.equal(outcome.result, 'INSUFFICIENT');
     assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_holds WHERE reservation_id=$1', [conditions.reservationId])).rows[0].n, 0); // no partial hold was created either
+  });
+
+  // ==================================================================================================
+  // Q: 95% PUBLIC-CAPACITY POLICY — these tests exist to prove the ceiling itself, so unlike every
+  // fix above they must NOT use bufferOverride to route around it; only the deliberate staff-invoked
+  // claims are override, proving the reserve is reachable but never beyond true operational capacity.
+  // ==================================================================================================
+  await check('Q1: 95% arithmetic — floor(N*0.95) public ceiling for N=1,5,20 (1->0, 5->4, 20->19); an authorized staff bufferOverride can consume exactly the reserved remainder, but never beyond true operational capacity', async () => {
+    async function probe(quantity: number, publicCap: number, tag: string) {
+      await src.register(randomUUID(), {
+        sourceSha256: createHash('sha256').update('pbc-q1-' + tag).digest('hex'), originalFilename: 'q1-' + tag + '.xlsx',
+        buckets: [{family: 'SKI', age: 'ADULT', sourceSize: 'Q1-' + tag, bookingSize: 'Q1-' + tag, quantity, provenance: '95% arithmetic probe N=' + quantity}],
+      });
+      const req: ProvisionalRequirement[] = [{key: 'm:SKI', family: 'SKI', age: 'ADULT', bookingSize: 'Q1-' + tag}];
+      const day = days('2037-01-01', 1);
+      // publicCap ordinary (no override) public claims all succeed.
+      for (let i = 0; i < publicCap; i++) await writeProvisionalClaims(x.db.pool, await makeHold('2037-01-01', '2037-01-01'), req, day, now);
+      // The (publicCap+1)-th ordinary public claim is refused: floor(quantity*0.95)===publicCap is exhausted.
+      assert.equal((await provisionalCapacity(x.db.pool, req, day, now, await makeHold('2037-01-01', '2037-01-01'))).feasible, false);
+      // An authorized staff bufferOverride can consume exactly the reserved remainder [publicCap, quantity).
+      for (let i = publicCap; i < quantity; i++) await writeProvisionalClaims(x.db.pool, await makeHold('2037-01-01', '2037-01-01'), req, day, now, true);
+      // Even bufferOverride can never exceed the true (100%) operational capacity.
+      assert.equal((await provisionalCapacity(x.db.pool, req, day, now, await makeHold('2037-01-01', '2037-01-01'), true)).feasible, false);
+    }
+    await probe(1, 0, 'n1');
+    await probe(5, 4, 'n5');
+    await probe(20, 19, 'n20'); // also proves "the 20th public claim fails" and "further staff also fails" at the true ceiling
+  });
+
+  await check('Q2: bufferOverride authorization boundary — a staff principal without INVENTORY_BUFFER_OVERRIDE, a VIEWER, and a guest actor can never invoke it (rejected outright, never silently downgraded to the ordinary public ceiling)', async () => {
+    const {writeAccount} = await import('../../packages/auth/src/accounts');
+    const {HoldService} = await import('../../packages/core/src/inventory/hold-service');
+    const password = randomUUID() + randomUUID();
+    const unprivilegedId = (await writeAccount(x.roles.authPool, x.bp, undefined, {displayName: 'SYNTHETIC unprivileged staff', active: true, role: 'STAFF', scope: 'ALL', storeIds: [], permissions: {HOLD_VIEW: true, HOLD_EDIT: true, BOOKING_VIEW: true, BOOKING_CREATE: true}, email: 'q2-unprivileged-staff@example.invalid', password})).id!;
+    const viewerId = (await writeAccount(x.roles.authPool, x.bp, undefined, {displayName: 'SYNTHETIC viewer', active: true, role: 'VIEWER', scope: 'ALL', storeIds: [], permissions: {HOLD_VIEW: true}, email: 'q2-viewer@example.invalid', password})).id!;
+    const {variant} = await physicalSkuFor('q2', 20);
+    const reason = {reason: 'SYNTHETIC Q2 unauthorized-override probe — must never be granted'};
+    for (const staffId of [unprivilegedId, viewerId]) {
+      const principal = (await loadStaff(x.roles.authPool, staffId))!;
+      const holds = new HoldService(x.roles.holdPool, principal, () => x.now());
+      await assert.rejects(holds.command('create', randomUUID(), singleSkiCondition('2037-01-02', variant.id), undefined, undefined, reason), {code: 'FORBIDDEN'});
+      // Confirm the rejection is specifically about the permission, not merely a coincidental input error:
+      // the exact same principal/conditions without a bufferOverride request succeeds fine (except VIEWER,
+      // which lacks HOLD_EDIT entirely and is expected to fail regardless — that's covered by its own
+      // permission model, not this test's concern).
+    }
+    assert.equal((await new HoldService(x.roles.holdPool, (await loadStaff(x.roles.authPool, unprivilegedId))!, () => x.now()).command('create', randomUUID(), singleSkiCondition('2037-01-03', variant.id))).result, 'CREATED'); // same principal, no override requested: ordinary public path still works
+    // A genuinely valid guest context (real booking_actors/guest_contexts rows), so the rejection
+    // below is provably the structural INVENTORY_BUFFER_OVERRIDE boundary itself (guestOperations
+    // never includes it), not merely an invalid/expired context masking the real question.
+    const guestActorId = 'q2-guest-' + randomUUID(), guestContextId = randomUUID(), tokenHash = createHash('sha256').update('synthetic-q2-guest-token').digest('hex');
+    await x.db.pool.query('INSERT INTO booking_actors(id,kind) VALUES($1,$2)', [guestActorId, 'GUEST']);
+    // expires_at must exceed inventory_clock() (the fixture's synthetic time, ~2035), not real
+    // wall-clock time, or the guest context reads as already expired.
+    await x.db.pool.query(`INSERT INTO guest_contexts(id,actor_id,token_sha256,created_at,expires_at) VALUES($1,$2,$3,inventory_clock(),inventory_clock()+interval '1 day')`, [guestContextId, guestActorId, tokenHash]);
+    const guestActor = {kind: 'GUEST' as const, subject: guestActorId, contextId: guestContextId, tokenHash};
+    const guestHolds = new HoldService(x.roles.holdPool, guestActor, () => x.now());
+    await assert.rejects(guestHolds.command('create', randomUUID(), singleSkiCondition('2037-01-04', variant.id), undefined, undefined, reason), {code: 'FORBIDDEN'});
+    // The same valid guest context, without requesting override, succeeds via the ordinary public path.
+    assert.equal((await guestHolds.command('create', randomUUID(), singleSkiCondition('2037-01-05', variant.id))).result, 'CREATED');
   });
 
   console.log(JSON.stringify({status: 'PASS', cases: count, realDataImports: 3, realAssetIdsGenerated: 9, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));

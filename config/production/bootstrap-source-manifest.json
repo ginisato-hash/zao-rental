@@ -333,7 +333,14 @@
   {
    "id": "0041",
    "file": "0041_provisional_booking_capacity.sql",
-   "sha256": "ec183a6c8e63c7f79d970ac886af05b9edacd161f18da31c6c827bfc5ce95b50",
+   "sha256": "d95e9d564b2fd36602e12f2453c0ad308f0198a0d4417d1d3ea24e25748bab8e",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0042",
+   "file": "0042_inventory_buffer_override.sql",
+   "sha256": "63654a05cc1f9590d0acec600ac90275518d36fa46a2adb87cd90a65571f50ff",
    "runtimeGuards": 0,
    "guard": null
   }

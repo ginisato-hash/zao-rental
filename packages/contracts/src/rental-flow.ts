@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {canonical,normalizePeriod,type HoldConditions} from './hold';
+import {canonical,isPole,normalizePeriod,type HoldConditions} from './hold';
 import type {StoreId} from './ledger';
 export class FlowError extends Error{constructor(public code:string,public status=409){super(code);}}
 export const flowPermissions=['BOOKING_VIEW','BOOKING_CREATE','RENTAL_CHECKOUT','RENTAL_RETURN'] as const;
@@ -16,5 +16,20 @@ export type PaymentRequest={attemptId:string;bookingId:string;idempotencyKey:str
 export interface PaymentGateway{readonly kind:'SIMULATED_DEV'|'SQUARE_UNCONNECTED'|'SQUARE_SANDBOX'|'SQUARE_PRODUCTION';create(request:PaymentRequest):Promise<PaymentObservation>;lookup(request:PaymentRequest,providerId:string|null):Promise<PaymentObservation|null>;}
 export function matchPayment(expected:PaymentRequest,observed:PaymentObservation){if(!observed||typeof observed.providerId!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(observed.providerId)||observed.referenceId!==expected.bookingId||observed.idempotencyKey!==expected.idempotencyKey||observed.merchantId!==expected.merchantId||observed.locationId!==expected.locationId||observed.currency!=='JPY'||!Number.isSafeInteger(observed.amountJpy)||observed.amountJpy!==expected.amountJpy||!['PENDING','COMPLETED','FAILED','CANCELED'].includes(observed.status)||!Number.isFinite(Date.parse(observed.updatedAt))||observed.status==='COMPLETED'&&(!observed.completedAt||!Number.isFinite(Date.parse(observed.completedAt))))throw new FlowError('PAYMENT_EVIDENCE_MISMATCH');}
 export function expectedClaimKeys(c:HoldConditions){return c.members.flatMap(m=>m.items.flatMap(i=>normalizePeriod(c.period).dates.map(day=>m.key+':'+i.family+'/'+day))).sort();}
+// POLE feasibility (Owner decision, see isPole()'s own comment): POLE is exempted from
+// allocation *only when the allocator itself found zero registered pole inventory for the
+// requested variant* (see planAllocation's own POLE-availability probe) — when real pole
+// stock does exist, a POLE requirement is claimed and conflict-checked exactly like any other
+// family, preserving genuine same-unit double-booking prevention. A claim-completeness check
+// therefore treats every non-POLE key as required (exactly one witness) and every POLE key as
+// optional (zero or one witness, never two) — it must never reject a hold that legitimately
+// has a real POLE claim, and must never require one that was legitimately exempted.
+export function claimKeysSatisfied(c:HoldConditions,actualKeys:string[]):boolean{
+ const expected=c.members.flatMap(m=>m.items.flatMap(i=>normalizePeriod(c.period).dates.map(day=>({key:m.key+':'+i.family+'/'+day,optional:isPole(i.family)}))));
+ const byKey=new Map(expected.map(e=>[e.key,e]));
+ const seen=new Set<string>();
+ for(const k of actualKeys){const e=byKey.get(k);if(!e||seen.has(k))return false;seen.add(k);}
+ return expected.every(e=>e.optional||seen.has(e.key));
+}
 export function reservationQr(id:string){flowId(id);return 'zao-rental:reservation:'+id;}
 export function parseReservationQr(raw:unknown){if(typeof raw!=='string'||!raw.startsWith('zao-rental:reservation:'))throw new FlowError('INVALID_RESERVATION_QR',422);const id=raw.slice('zao-rental:reservation:'.length);flowId(id);return id;}

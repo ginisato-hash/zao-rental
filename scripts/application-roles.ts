@@ -32,6 +32,11 @@ export async function provisionApplicationRoles(owner:Pool,identity:{namespace:s
    else{await owner.query(`GRANT SELECT ON inventory_holds,inventory_claims TO ${user}`);await owner.query(`GRANT UPDATE(state,version,transfer_attention) ON inventory_holds TO ${user}`);await owner.query(`GRANT INSERT,UPDATE(active) ON inventory_claims TO ${user}`);}
    await owner.query(`GRANT USAGE ON SEQUENCE inventory_claims_id_seq TO ${user}`);
    await owner.query(`GRANT EXECUTE ON FUNCTION inventory_record_replan(jsonb,jsonb) TO ${user}`);
+   // 95% public / staff INVENTORY_BUFFER_OVERRIDE audit log (0042_inventory_buffer_override.sql):
+   // HoldService is the only caller — never transfer, which never creates/amends a hold under override.
+   // Guarded like every other post-0004 function grant in this file: migration-prefix upgrade tests
+   // provision this role against a database with only an early subset of migrations applied.
+   if(suffix==='hold'&&(await owner.query("SELECT to_regprocedure('inventory_buffer_override_record(uuid,text)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION inventory_buffer_override_record(uuid,text) TO ${user}`);
   }
   if(suffix==='transfer'){await owner.query(`GRANT SELECT,INSERT,UPDATE ON transfer_batches,transfer_pieces,transfer_requests TO ${user}`);await owner.query(`GRANT SELECT ON transfer_history TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION transfer_pool(uuid,text,text),transfer_move_stock(uuid,text,timestamptz) TO ${user}`);}
   // Quantity-wear adds capacity reads/claims to the existing isolated inventory role.

@@ -13,7 +13,10 @@ async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();cou
 try{
  role=await provisionCustodyRole(x.db.pool,x.db.identity);const svc=new CustodyService(role.custodyPool,x.roles.authPool,x.signed.identity);
  async function context(c:PoolClient){await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true),set_config('zao.reason','Synthetic custody scenarios',true)",[x.actor,x.signed.identity.sessionId]);}
- async function start(conditions:HoldConditions){const d=await x.draft(undefined,conditions);await x.service.startPayment(d.booking.id,randomUUID());return d;}
+ // LOWER-LEVEL MECHANICS (custody checkout/scan scenarios across variant matrices): x.draft()'s
+ // HOLD is incidental setup, not what's under test.
+ const bufferOverride={reason:'SYNTHETIC custody scenarios mechanics test'};
+ async function start(conditions:HoldConditions){const d=await x.draft(undefined,conditions,bufferOverride);await x.service.startPayment(d.booking.id,randomUUID());return d;}
  async function out(id:string,as=svc){const v=await as.checkoutView(id);await as.prepare(randomUUID(),{bookingId:id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC staff fit record'});return as.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:1});}
  async function scanned(assetId:string|null,poleLoanId:string|null,store='ONSEN_BASE'){let b=await svc.createBatch(randomUUID(),store);b=await svc.scan(randomUUID(),{batchId:b.id,expectedVersion:b.version,assetId,poleLoanId});return b;}
  const group=skiSet('2035-02-01');group.members.push({...structuredClone(group.members[0]!),key:'person-b'});group.members[1]!.items[0]!.variantIds=[variants.skiAlt];

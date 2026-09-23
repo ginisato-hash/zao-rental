@@ -21,7 +21,7 @@ import {HoldService} from '../../packages/core/src/inventory/hold-service';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {simulation} from '../flow/fixture';
-import {skiSet} from '../inventory/fixture';
+import {skiSet,variants} from '../inventory/fixture';
 import {guestCookie} from '../../packages/core/src/guest/context';
 const x=await normalProductionFixture();let runtime:ProductionRuntime|undefined,failed=false,stage='startup',count=0;
 const check=async(name:string,fn:()=>Promise<void>)=>{stage=name;await fn();count++;console.log('PASS '+name);};
@@ -59,6 +59,21 @@ try{
  const c=await r.guest!.security.service.create(),actor=await r.guest!.contexts.resolve(c.token),service=r.service(actor);
  let bookingId='',token='';
  await check('canonical HOLD/quote/fixture payment then composed payment-state/access reads survive Avatar OFF',async()=>{
+  // PUBLIC BOOKING POLICY test (genuine guest actor — structurally can never request
+  // bufferOverride): the shared seedInventory fixture's SKI/SKI_BOOT/POLE variants get an ample
+  // local top-up (this file's own isolated database only) purely so an ordinary guest booking —
+  // the actual thing under test — isn't incidentally blocked by the public capacity ceiling on a
+  // 1-unit variant. A dedicated held connection is required: set_config is connection-local.
+  {
+   const c=await x.db.pool.connect();
+   try{
+    await c.query('BEGIN');
+    await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC M15 fixture top-up',true)",[x.actor]);
+    for(const [family,variant] of [['SKI',variants.ski],['SKI_BOOT',variants.boot]] as const)for(let n=0;n<20;n++)await c.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE',$4,NULL,'','','SYNTHETIC','tests/readiness/normal-production.ts',$5) ON CONFLICT DO NOTHING`,[randomUUID(),variant,family,family==='SKI_BOOT'?'UNVERIFIED':'NOT_APPLICABLE','asset-m15-'+family+'-'+n]);
+    await c.query('UPDATE ledger_poles SET quantity=20 WHERE variant_id=$1',[variants.pole]);
+    await c.query('COMMIT');
+   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  }
   assert.ok((await service.get()).id);const h=new HoldService(x.roles.holdPool,actor),q=new QuoteService(x.roles.pricingPool,actor),b=new BookingService(x.flow.flowPool,x.guestRole.guestPool,actor,x.fake,simulation),conditions=skiSet('2035-02-05'),held=await h.command('create',randomUUID(),conditions),quote=(await q.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
   const booking=await b.create(randomUUID(),quote.id,{displayName:'SYNTHETIC M15',email:'synthetic-m15@example.invalid',termsAccepted:true});bookingId=booking.id;await b.startPayment(booking.id,randomUUID());
   await x.db.pool.query('UPDATE guest_drafts SET booking_id=$2 WHERE context_id=$1',[actor.contextId,booking.id]);

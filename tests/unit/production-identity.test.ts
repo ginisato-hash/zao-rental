@@ -19,6 +19,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import * as readiness from '../../packages/db/src/production-db-readiness';
+import {migrationPlan} from '../../packages/db/src/index';
 import {
   productionHostFingerprint,
   productionVercelProjectFingerprint,
@@ -128,4 +130,26 @@ test('issueExactProductionIdentity: a hand-built lookalike (not productionConfig
 test('the exact-identity capability is itself WeakMap-backed — a hand-built object shaped like one resolves to null, never a real configuration', () => {
   assert.equal(exactProductionIdentityConfiguration(undefined), null);
   assert.equal(exactProductionIdentityConfiguration({kind: 'EXACT_PRODUCTION_IDENTITY'} as never), null);
+});
+
+// V5: public readiness authority and pure target derivation are separate APIs.
+test('readiness exposes only the exact-identity I/O entrypoint and pure derivation', () => {
+  assert.deepEqual(Object.keys(readiness).sort(), ['deriveProductionDbReadinessTarget', 'probeProductionDatabaseReadiness']);
+});
+test('readiness target derivation is offline, immutable and conveys no identity authority', () => {
+  const c = configWith();
+  const target = readiness.deriveProductionDbReadinessTarget(c);
+  assert.deepEqual(target, {service: 'content_read', host: c.database.host, database: c.database.name, role: c.database.roles.content_read, migrationsExpected: migrationPlan.length});
+  assert.ok(Object.isFrozen(target));
+  assert.equal(exactProductionIdentityConfiguration(target as never), null);
+  assert.equal(readiness.deriveProductionDbReadinessTarget({...c, database: {...c.database, host: '  EP-SYNTHETIC.NEON.TECH  '}}).host, 'ep-synthetic.neon.tech');
+});
+test('readiness rejects raw configuration, fabricated identity and derived facts before invoking any connector', async () => {
+  let calls = 0;
+  const connect = async () => { calls++; throw new Error('CONNECTOR_MUST_NOT_BE_CALLED'); };
+  const c = configWith();
+  for (const forged of [{kind: 'EXACT_PRODUCTION_IDENTITY'}, Object.freeze({kind: 'EXACT_PRODUCTION_IDENTITY'}), c, readiness.deriveProductionDbReadinessTarget(c), undefined]) {
+    assert.deepEqual(await readiness.probeProductionDatabaseReadiness(forged as never, {} as never, connect), {status: 'FAILED', reason: 'PRODUCTION_IDENTITY_REQUIRED'});
+  }
+  assert.equal(calls, 0);
 });

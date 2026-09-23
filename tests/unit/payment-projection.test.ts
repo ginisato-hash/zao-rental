@@ -61,3 +61,20 @@ test('new R12 generation of an already projected observation links a new receipt
 test('new job reference cannot borrow an old projection receipt without current source verification',async()=>{const f=new ProjectionSqlFixture(),p=service(f);await p.project(reference());f.world.src.jobId=id(19);f.world.src.securityBlocked=true;await assert.rejects(p.project(reference(f.world.src)),{code:'PROJECTION_SOURCE_NOT_ACCEPTED'});assert.equal(f.world.receipts.length,1);});
 
 test('tampered saved result is rejected rather than returned as trusted internal data',async()=>{const f=new ProjectionSqlFixture(),p=service(f);await p.project(reference());(f.world.events[0]!.result as Record<string,unknown>).contact='SYNTHETIC_PRIVATE';await assert.rejects(p.project(reference()),{code:'INVALID_SAVED_PROJECTION'});assert.equal(f.world.history.length,3);});
+test('provisional wear and gear require matching bucket size and exact one cross-kind witness',()=>{
+ const s=stateFixture(),base=claimFixture(s),toProvisional=(c:typeof base[number])=>({kind:'PROVISIONAL' as const,requirement_key:c.requirement_key,day:c.day,quantity:1,family:c.family,age:c.age,booking_size:'M',requestedVariant:{...c,size:'M'}});
+ const claims=base.map(toProvisional);assert.deepEqual(projectionClaims(s.booking.conditions,claims as never),{gear:true,wear:true});
+ assert.equal(projectionClaims(s.booking.conditions,[...claims,base[1]!] as never).wear,false);
+ assert.equal(projectionClaims(s.booking.conditions,claims.slice(1) as never).gear,false);
+ claims[1]!.booking_size='L';assert.equal(projectionClaims(s.booking.conditions,claims as never).wear,false);claims[1]!.booking_size='M';
+ s.booking.conditions.members[0]!.tier='PREMIUM';assert.equal(projectionClaims(s.booking.conditions,claims as never).gear,false);
+});
+test('POLE needs exactly one physical claim or durable matching exemption',()=>{
+ const s=stateFixture(),m=s.booking.conditions.members[0]!;m.product='SKI_SET';m.items.push({family:'SKI_BOOT',variantIds:[id(20)]},{family:'POLE',variantIds:[id(21)]});
+ const physical=claimFixture(s),claims=physical.filter(c=>c.family!=='POLE');
+ assert.equal(projectionClaims(s.booking.conditions,claims as never).gear,false);
+ const pole=physical.find(c=>c.family==='POLE')!,exemption={kind:'POLE_EXEMPT',requirement_key:pole.requirement_key,day:pole.day,quantity:1,store_id:s.booking.conditions.pickupStore,variant_ids:[id(21)]};
+ assert.equal(projectionClaims(s.booking.conditions,[...claims,exemption] as never).gear,true);
+ assert.equal(projectionClaims(s.booking.conditions,[...physical,exemption] as never).gear,false);
+ assert.equal(projectionClaims(s.booking.conditions,[...claims,{...exemption,store_id:'ONSEN_BASE'}] as never).gear,false);
+});

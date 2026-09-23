@@ -145,37 +145,24 @@ export class TransactionalPaymentProjection implements PaymentProjectionPort{
 }
 
 export type ProjectionClaim=
- |(PromiseVariant&{requirement_key:string;day:string;kind:'GEAR';quantity:number})
- |(PromiseVariant&{requirement_key:string;day:string;kind:'WEAR';quantity:number})
- // V4 (release-code-closure): a provisional claim is a quantity-pool witness, not a specific
- // ledger_variant — it carries only family/age (from its bucket), never a variant id/tier/
- // model/compatible_sports, so it cannot be checked with the same per-variant match as GEAR/WEAR.
- |{requirement_key:string;day:string;kind:'PROVISIONAL';quantity:number;family:string;age:'ADULT'|'KIDS'};
+ |(PromiseVariant&{requirement_key:string;day:string;kind:'GEAR'|'WEAR';quantity:number})
+ |{requirement_key:string;day:string;kind:'PROVISIONAL';quantity:number;family:string;age:'ADULT'|'KIDS';booking_size:string;requestedVariant:(PromiseVariant&{size:string})|null}
+ |{requirement_key:string;day:string;kind:'POLE_EXEMPT';quantity:number;store_id:string;variant_ids:string[]};
 export function projectionClaims(conditions:HoldConditions,claims:ProjectionClaim[]){
  try{
   parseConditions(conditions);const dates=normalizePeriod(conditions.period).dates;
   const expected=conditions.members.flatMap(member=>member.items.flatMap(item=>dates.map(day=>({key:member.key+':'+item.family+'/'+day,member,item}))));
-  const wearRequirements=expected.filter(e=>isWear(e.item.family)),nonWearRequirements=expected.filter(e=>!isWear(e.item.family));
-  const wearRows=claims.filter((c):c is Extract<ProjectionClaim,{kind:'WEAR'}>=>c.kind==='WEAR');
-  const gearRows=claims.filter((c):c is Extract<ProjectionClaim,{kind:'GEAR'}>=>c.kind==='GEAR');
-  const provisionalRows=claims.filter((c):c is Extract<ProjectionClaim,{kind:'PROVISIONAL'}>=>c.kind==='PROVISIONAL');
-  if(wearRows.length!==wearRequirements.length)return {gear:false,wear:false};
-  const wearSeen=new Set<string>(),wearByKey=new Map(wearRequirements.map(e=>[e.key,e]));
-  const wear=wearRows.every(c=>{const key=c.requirement_key+'/'+c.day,e=wearByKey.get(key);if(!e||wearSeen.has(key)||c.quantity!==1||!e.item.variantIds.includes(c.id)||!variantMatches(e.member,e.item,c))return false;wearSeen.add(key);return true;});
-  // Physical and provisional witnesses are pooled exactly like verifyClaims()'s own UNION ALL
-  // (booking-service.ts P3): every non-wear requirement must have exactly one witness, from
-  // either table, never zero and never two — except POLE (Owner decision, see isPole()'s own
-  // comment), which is optional: zero-or-one witness, never two. A real POLE claim (when pole
-  // stock does exist) is still validated exactly like any other GEAR row; it is simply never
-  // required.
-  const nonWearByKey=new Map(nonWearRequirements.map(e=>[e.key,e])),nonWearSeen=new Set<string>();
-  const witnessOk=[...gearRows,...provisionalRows].every(c=>{
-   const key=c.requirement_key+'/'+c.day,e=nonWearByKey.get(key);
-   if(!e||nonWearSeen.has(key)||c.quantity!==1)return false;
-   const ok=c.kind==='PROVISIONAL'?e.item.family===c.family&&e.member.age===c.age:e.item.variantIds.includes(c.id)&&variantMatches(e.member,e.item,c);
-   if(!ok)return false;nonWearSeen.add(key);return true;
-  });
-  const gear=witnessOk&&nonWearRequirements.every(e=>isPole(e.item.family)||nonWearSeen.has(e.key));
+  const byKey=new Map(expected.map(e=>[e.key,e])),seen=new Set<string>();let gear=true,wear=true;
+  for(const c of claims){
+   const key=c.requirement_key+'/'+c.day,e=byKey.get(key);
+   if(!e)return {gear:false,wear:false};
+   let ok=!seen.has(key)&&c.quantity===1;seen.add(key);
+   if(c.kind==='POLE_EXEMPT')ok=ok&&isPole(e.item.family)&&c.store_id===conditions.pickupStore&&flowHash([...c.variant_ids].sort())===flowHash([...e.item.variantIds].sort());
+   else if(c.kind==='PROVISIONAL')ok=ok&&!isPole(e.item.family)&&e.member.tier!=='PREMIUM'&&!e.item.modelPromise&&e.item.variantIds.length===1&&e.item.family===c.family&&e.member.age===c.age&&!!c.requestedVariant&&e.item.variantIds[0]===c.requestedVariant.id&&c.requestedVariant.size===c.booking_size&&variantMatches(e.member,e.item,c.requestedVariant);
+   else ok=ok&&(c.kind==='WEAR')===isWear(e.item.family)&&e.item.variantIds.includes(c.id)&&variantMatches(e.member,e.item,c);
+   if(!ok){if(isWear(e.item.family))wear=false;else gear=false;}
+  }
+  for(const e of expected)if(!seen.has(e.key)){if(isWear(e.item.family))wear=false;else gear=false;}
   return {gear,wear};
  }catch{return {gear:false,wear:false};}
 }

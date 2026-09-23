@@ -23,5 +23,6 @@ export async function provisionFlowRole(owner:Pool,identity:{namespace:string;da
  await owner.query(`GRANT USAGE ON SEQUENCE wear_history_id_seq TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION inventory_clock() TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('notification_enqueue_confirmed(uuid)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid) TO ${user}`);
+ if((await owner.query("SELECT to_regclass('public.inventory_pole_exemptions') AS t")).rows[0].t)await owner.query(`GRANT SELECT ON inventory_pole_exemptions,provisional_capacity_buckets TO ${user}`);
  const flowDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};const flowPool=new Pool({...flowDb,max:4,connectionTimeoutMillis:2000});const close=trackPoolLifecycle(flowPool);return {flowDb,flowPool,close};
 }

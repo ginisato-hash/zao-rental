@@ -64,6 +64,7 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT SELECT ON transfer_pieces,transfer_batches TO ${n.hold}`,
   `GRANT SELECT ON ledger_stores,ledger_models,ledger_variants,ledger_assets,ledger_poles,staff_members,staff_store_access,staff_role_permissions,staff_permission_overrides,inventory_constraints,inventory_history,inventory_replans TO ${n.hold}`,
   `GRANT SELECT,INSERT,UPDATE ON inventory_reservations,inventory_holds,inventory_claims,inventory_requests TO ${n.hold}`,
+  `GRANT EXECUTE ON FUNCTION inventory_sync_pole_exemptions(uuid) TO ${n.hold},${n.transfer},${n.operations}`,
   `GRANT USAGE ON SEQUENCE inventory_claims_id_seq TO ${n.hold}`,
   `GRANT EXECUTE ON FUNCTION inventory_record_replan(jsonb,jsonb) TO ${n.hold}`,
   // 95% public / staff INVENTORY_BUFFER_OVERRIDE audit log (0042_inventory_buffer_override.sql):
@@ -171,7 +172,7 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   // BookingService/CustodyService (apps/web's booking/custody routes both run under this role)
   // read-only: verifyClaims()/verifyPhysicalHandoff(). No source/bucket registration authority
   // here — that is a separate, not-yet-authorized production operational decision.
-  `GRANT SELECT ON provisional_capacity_claims TO ${n.operations}`,
+  `GRANT SELECT ON provisional_capacity_claims,provisional_capacity_buckets,inventory_pole_exemptions TO ${n.operations}`,
   `GRANT INSERT ON ledger_assets,ledger_poles TO ${n.operations}`,
   `GRANT UPDATE(status) ON ledger_assets TO ${n.operations}`,
   `GRANT UPDATE(quantity,status) ON ledger_poles TO ${n.operations}`,

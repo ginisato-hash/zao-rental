@@ -1,3 +1,5 @@
+import {loadProtectionClaims} from '../inventory/claim-truth';
+import {projectionClaims} from './payment-projection';
 import {exactProductionIdentityConfiguration,type ExactProductionIdentity} from '../../../auth/src/production-identity';
 import {commercialPriceApproval,issueCommercialPriceAuthority,type CommercialPriceBook} from '../pricing/commercial-price-authority';
 import {HoldError} from '../../../contracts/src/hold';
@@ -8,7 +10,7 @@ import {loadStaff,type Permission} from '../../../auth/src/staff-auth';
 import {authorizeBookingActor,isGuest,type GuestActor} from '../../../auth/src/booking-actor';
 import {type HoldConditions} from '../../../contracts/src/hold';
 import {advanceQualification} from '../../../contracts/src/pricing';
-import {FlowError,flowId,flowHash,syntheticContact,commercialContact,claimKeysSatisfied,reservationQr,matchPayment,type PaymentGateway,type PaymentRequest,type PaymentObservation,type FlowPermission} from '../../../contracts/src/rental-flow';
+import {FlowError,flowId,flowHash,syntheticContact,commercialContact,reservationQr,matchPayment,type PaymentGateway,type PaymentRequest,type PaymentObservation,type FlowPermission} from '../../../contracts/src/rental-flow';
 export type FlowIdentity={subject:string;sessionId:string}|(GuestActor&{sessionId?:never});
 export type BookingRow={id:string;owner_id:string;request_key:string;fingerprint:string;hold_id:string;quote_id:string;conditions:HoldConditions;price_snapshot:Record<string,unknown>;price_sha256:string;contact:ReturnType<typeof syntheticContact>;mode:'SIMULATED_DEV'|'SQUARE_SANDBOX'|'SQUARE_PRODUCTION';state:string;confirmed_at:Date|null;version:number;notification_locale:'ja'|'en'};
 type HoldRow={id:string;owner_id:string;state:string;conditions:HoldConditions;payment_state:string;expires_at:Date;due_at:Date;allocation_stage:string;transfer_attention:string|null;version:number};
@@ -33,24 +35,7 @@ export class BookingService{
  private requirePayment(){if(this.commercialEnabled())return;if(process.env.NODE_ENV==='production'||!this.gateway||!['SIMULATED_DEV','SQUARE_SANDBOX'].includes(this.gateway.kind)||!this.simulation||!['test','development'].includes(this.simulation.nodeEnv)||this.gateway.kind==='SQUARE_SANDBOX'&&this.simulation.sandboxActivationId!=='P4-SANDBOX-OWNER-R1')throw new FlowError('PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',503);}
  private async source(c:Connection,quoteId:string,now:Date){flowId(quoteId);const q=(await c.query<{id:string;actor:string;hold_id:string|null;hold_version:number;conditions:HoldConditions;snapshot:Record<string,unknown>;snapshot_sha256:string;expires_at:Date;coupon_id:string|null;book_id:string}>('SELECT * FROM price_quotes WHERE id=$1',[quoteId])).rows[0];if(!q||q.actor!==this.identity.subject||!q.hold_id)throw new FlowError('FORBIDDEN',403);await this.authorize('BOOKING_CREATE',[q.conditions.pickupStore,q.conditions.returnStore]);const h=(await c.query<HoldRow>('SELECT * FROM inventory_holds WHERE id=$1',[q.hold_id])).rows[0];if(!h||h.owner_id!==this.identity.subject||flowHash(q.conditions)!==flowHash(h.conditions)||flowHash(q.snapshot)!==q.snapshot_sha256||q.hold_version!==h.version)throw new FlowError('QUOTE_HOLD_MISMATCH');if(q.expires_at<=now||h.expires_at<=now||h.due_at<=now||h.state!=='ACTIVE'||h.allocation_stage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(h.payment_state))throw new FlowError('HOLD_OR_QUOTE_NOT_USABLE');await this.verifyClaims(c,h,now);const readyAt=await this.time(c);if(q.expires_at<=readyAt||h.expires_at<=readyAt||h.due_at<=readyAt)throw new FlowError('HOLD_OR_QUOTE_NOT_USABLE');if(q.coupon_id)throw new FlowError('COUPON_REDEMPTION_NOT_CONNECTED');if(!Number.isSafeInteger(q.snapshot.totalJpy)||Number(q.snapshot.totalJpy)<1||q.snapshot.currency!=='JPY'||q.snapshot.chargeReady!==this.commercialEnabled())throw new FlowError('PRICE_POLICY_REQUIRES_REVIEW');
  if(this.productionIdentity){const book=(await c.query<CommercialPriceBook>('SELECT * FROM price_books WHERE id=$1',[q.book_id])).rows[0];if(!book||flowHash(commercialPriceApproval(issueCommercialPriceAuthority(this.productionIdentity),book))!==flowHash(q.snapshot.commercialApproval))throw new FlowError('PRICE_POLICY_REQUIRES_REVIEW');}return {q,h};}
- // V2 (provisional-capacity correction): an active provisional_capacity_claims row satisfies
- // expectedClaimKeys here exactly like a real inventory_claims/wear_claims row — a reservation
- // backed by Owner-approved provisional capacity is a genuine hold, not incomplete protection.
- // This is deliberately booking/payment-scoped only: physical handoff has its own, stricter
- // verifyPhysicalHandoff below, which this method never calls.
- //
- // V3 (TD correction): UNION ALL, not UNION — UNION silently folds two witnesses for the exact
- // same (requirement_key, day) from different tables (e.g. a physical AND a provisional claim for
- // the same key/day, which should never coexist by design) into one row, making a real
- // double-claim allocator bug indistinguishable from a single legitimate witness. With UNION ALL,
- // a duplicate produces an extra row, and claimKeysSatisfied() (which allows exactly one witness
- // per required key/day, never two) already fails closed on it — exactly one protection witness
- // per required key/day is enforced structurally, not just by convention.
- // V4 (release-code-closure): claimKeysSatisfied(), not raw expectedClaimKeys() equality — POLE
- // is optional (zero-or-one witness), not required, so a SKI_SET legitimately exempted from
- // pole tracking (no real pole inventory registered) is never rejected as incomplete, while a
- // SKI_SET whose real pole *is* claimed is still validated exactly like any other item.
- protected async verifyClaims(c:Connection,h:HoldRow,now:Date){if(h.transfer_attention)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');const claims=(await c.query<{requirement_key:string;day:string}>("SELECT requirement_key,day::text FROM inventory_claims WHERE hold_id=$1 AND active UNION ALL SELECT requirement_key,day::text FROM wear_claims WHERE hold_id=$1 AND active UNION ALL SELECT requirement_key,day::text FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'",[h.id])).rows;if(!claimKeysSatisfied(h.conditions,claims.map(x=>x.requirement_key+'/'+x.day)))throw new FlowError('INVENTORY_PROTECTION_INCOMPLETE');if((await c.query(`SELECT 1 FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.hold_id=$1 AND cl.active AND (b.issue IS NOT NULL OR p.state='CANCELLED' OR (b.planned_ready_at<$2 AND p.state NOT IN ('READY','CLOSED'))) LIMIT 1`,[h.id,now])).rowCount)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');}
+ protected async verifyClaims(c:Connection,h:HoldRow,now:Date){if(h.transfer_attention)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');const claims=projectionClaims(h.conditions,await loadProtectionClaims(c,h.id,h.conditions));if(!claims.gear||!claims.wear)throw new FlowError('INVENTORY_PROTECTION_INCOMPLETE');if((await c.query(`SELECT 1 FROM inventory_claims cl JOIN transfer_pieces p ON p.id=cl.transfer_piece_id JOIN transfer_batches b ON b.id=p.batch_id WHERE cl.hold_id=$1 AND cl.active AND (b.issue IS NOT NULL OR p.state='CANCELLED' OR (b.planned_ready_at<$2 AND p.state NOT IN ('READY','CLOSED'))) LIMIT 1`,[h.id,now])).rowCount)throw new FlowError('TRANSFER_RECONCILIATION_REQUIRED');}
  /** Handoff-only gate (prepare()/checkout() in custody-service.ts, never booking creation or
   * payment confirmation): "Reservation allowed. Physical handoff not allowed." Any still-ACTIVE
   * provisional claim on this hold means at least one requirement has no real physical/wear

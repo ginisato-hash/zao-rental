@@ -61,3 +61,9 @@ Provider references (official, read-only):
 C audit found two concrete issues retained from V4 that will be corrected next: provisional
 wear is rejected by the physical-wear count, and missing POLE is treated as optional without
 a durable exemption witness. No claim of complete Production inventory proof is made yet.
+
+## Phase C — exact inventory truth
+
+Booking admission and projection now share a UNION ALL witness reader and exact-one validation for every requirement/day. Provisional gear and wear validate canonical requested variant, family, age, size, and ordinary-tier eligibility; model promises cannot use provisional stock. Migration 0044 records immutable, releasable POLE exemptions only when relevant store/variant stock is unregistered. A zero-quantity registered pool is still tracked, never an exemption. Existing paid exemptions persist when stock is registered later. Missing and duplicate witnesses reject; provisional physical handoff remains blocked.
+
+Evidence: 111 projection unit tests; local-PG inventory-truth scenario (physical + provisional wear + durable exemption -> confirmed, missing/duplicate rejection, immutable evidence, zero-stock exclusion); 35 provisional tests; 29 Production role-plan tests; commercial projection PG proof. Lint/typecheck passed. Earlier fixture/role expectation failures remain preserved in owned evidence. No provider/live calls. Full verify not run.

@@ -1,7 +1,8 @@
+import {loadProtectionClaims} from '../../../core/src/inventory/claim-truth';
 import {deriveApprovedCommercialPriceFacts,type CommercialPriceBook} from '../../../core/src/pricing/commercial-price-authority';
 import {flowHash} from '../../../contracts/src/rental-flow';
 import type {InboxConnection} from '../square-webhook-inbox';
-import {ProjectionError,projectionClaims,decidePaymentProjection,type PaymentProjectionTransaction,type ProjectionReference,type ProjectionState,type ProjectionSource,type ProjectionPlan,type ProjectionResult,type ProjectionClaim} from '../../../core/src/payment/payment-projection';
+import {ProjectionError,projectionClaims,decidePaymentProjection,type PaymentProjectionTransaction,type ProjectionReference,type ProjectionState,type ProjectionSource,type ProjectionPlan,type ProjectionResult} from '../../../core/src/payment/payment-projection';
 const iso=(v:unknown):string|null=>v==null?null:new Date(v as string).toISOString();
 const safeStates=(s:ProjectionState)=>({booking:s.booking.state,attempt:s.attempt.state,hold:s.hold?.state??null,holdPayment:s.hold?.paymentState??null});
 /** Internal SQL worker. Public projection authority/identity is checked before this is constructed.
@@ -18,17 +19,7 @@ export class PgProjectionTransaction implements PaymentProjectionTransaction{
   const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1 FOR UPDATE',[b.hold_id])).rows[0];
   const head=(await c.query('SELECT revision,last_observation FROM payment_projection.heads WHERE attempt_id=$1 FOR UPDATE',[r.attemptId])).rows[0];
   const q=(await c.query('SELECT id,actor,hold_id,conditions,snapshot,snapshot_sha256,coupon_id,book_id FROM price_quotes WHERE id=$1',[b.quote_id])).rows[0];
-  // V4 (release-code-closure, PaymentProjection provisional exact-one witness): a third UNION
-  // ALL branch for provisional_capacity_claims, exactly mirroring verifyClaims()'s own
-  // three-way UNION ALL in booking-service.ts (P3) — a provisional-backed hold must never be
-  // misread as BLOCK_INVENTORY_DRIFT just because its witness lives in a different table.
-  const claims=(await c.query<ProjectionClaim>(`SELECT c.requirement_key,c.day::text,'GEAR' AS kind,1 AS quantity,v.id,v.family,v.age,v.tier,v.model_id,m.catalog_season,v.compatible_sports
-   FROM inventory_claims c LEFT JOIN ledger_assets a ON a.id=c.asset_id LEFT JOIN ledger_poles p ON p.id=c.pole_id
-   LEFT JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) LEFT JOIN ledger_models m ON m.id=v.model_id WHERE c.hold_id=$1 AND c.active
-   UNION ALL SELECT c.requirement_key,c.day::text,'WEAR' AS kind,c.quantity,v.id,v.family,v.age,v.tier,v.model_id,m.catalog_season,v.compatible_sports
-   FROM wear_claims c JOIN wear_pools p ON p.id=c.pool_id JOIN ledger_variants v ON v.id=p.variant_id JOIN ledger_models m ON m.id=v.model_id WHERE c.hold_id=$1 AND c.active
-   UNION ALL SELECT c.requirement_key,c.day::text,'PROVISIONAL' AS kind,c.quantity,NULL::uuid,b.family,b.age,NULL::text,NULL::uuid,NULL::text,NULL::text[]
-   FROM provisional_capacity_claims c JOIN provisional_capacity_buckets b ON b.id=c.bucket_id WHERE c.hold_id=$1 AND c.state='ACTIVE' LIMIT 1401`,[b.hold_id])).rows;
+  const claims=await loadProtectionClaims(c,b.hold_id,b.conditions);
   const integrity=projectionClaims(b.conditions,claims);
   let commercialPriceValid=false;if(b.mode==='SQUARE_PRODUCTION'&&q&&q.snapshot.chargeReady===true){const book=(await c.query<CommercialPriceBook>('SELECT id,revision,source_sha256,table_jpy,state FROM price_books WHERE id=$1',[q.book_id])).rows[0];try{commercialPriceValid=Boolean(book&&flowHash(deriveApprovedCommercialPriceFacts(book))===flowHash(q.snapshot.commercialApproval));}catch{/* Invalid price evidence fails closed. */}}
   const transfer=(await c.query(`SELECT coalesce(bool_or(b.issue IS NOT NULL OR p.state='CANCELLED'),false) AS forbidden,

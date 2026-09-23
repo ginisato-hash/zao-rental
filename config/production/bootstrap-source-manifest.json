@@ -350,6 +350,13 @@
    "sha256": "62bcb1b1354b163498581fbd26f2fdad35843a6d04907b615f83dff99232fd6c",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0044",
+   "file": "0044_pole_exemption_witness.sql",
+   "sha256": "cb271c5c1050bb189fce877f7459abc4d5ad9bd19d82e5f428eb05d329ad74e9",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

@@ -58,13 +58,8 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   const units=(await c.query<Unit>(`SELECT a.id,a.variant_id,a.family,v.age,v.tier,a.store_id,1 AS quantity,a.status FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=ANY($1::uuid[]) UNION ALL SELECT p.id,p.variant_id,p.family,v.age,v.tier,p.store_id,p.quantity,p.status FROM ledger_poles p JOIN ledger_variants v ON v.id=p.variant_id WHERE p.variant_id=ANY($1::uuid[]) ORDER BY id LIMIT 3001`,[variantIds])).rows;
   for(const u of [...units])if(u.family==='POLE'){u.quantity-=transfers.filter(p=>p.destination_pole_id===u.id&&p.state==='READY').length;for(const p of transfers.filter(p=>p.destination_pole_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state)))units.push({...u,id:p.id,quantity:1,transfer_piece_id:p.id,physical_pole_id:u.id});}
   if(units.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
-  // POLE feasibility (Owner decision, see isPole()'s own comment): a POLE requirement is exempt
-  // from the demand set — trivially satisfied, no claim ever written — only when zero pole units
-  // of a matching variant are registered anywhere in the ledger (checked here, after `units`,
-  // system-wide, not merely "none available today"). When real pole stock does exist, it stays
-  // a normal demand and is matched/conflict-checked exactly like any other family, so genuine
-  // same-unit double-booking prevention is unaffected once inventory is eventually registered.
-  const poleExempt=new Set(requirements.filter(r=>isPole(r.family)&&!units.some(u=>u.family==='POLE'&&r.variantIds.includes(u.variant_id))).map(r=>r.key));
+  // Only absent relevant stock permits a durable exemption; unavailable stock remains tracked.
+  const poleExempt=new Set(requirements.filter(r=>isPole(r.family)&&!units.some(u=>u.family==='POLE'&&r.variantIds.includes(u.variant_id)&&(u.store_id===r.job.c.pickupStore||transfers.some(p=>p.source_pole_id===u.id&&p.destination_store===r.job.c.pickupStore&&!['CANCELLED','CLOSED'].includes(p.state))))).map(r=>r.key));
   const fixedClaims=(await c.query<Claim>(`SELECT c.transfer_piece_id,c.hold_id,c.requirement_key,c.asset_id,c.pole_id,c.pole_slot,c.day::text,h.occupancy_start::text AS start,h.occupancy_end::text AS end,h.pickup_store,h.return_store,h.buffer_override FROM inventory_claims c JOIN inventory_holds h ON h.id=c.hold_id WHERE c.active AND h.id=ANY($1::uuid[]) AND (c.asset_id=ANY($2::uuid[]) OR c.pole_id=ANY($2::uuid[]) OR c.transfer_piece_id=ANY($2::uuid[])) LIMIT 100001`,[fixedIds,units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   const constraints=(await c.query<{asset_id:string|null;pole_id:string|null;kind:string;start:string;end:string}>(`SELECT asset_id,pole_id,kind,starts_on::text AS start,ends_on::text AS end FROM inventory_constraints x WHERE x.asset_id=ANY($1::uuid[]) OR x.pole_id=ANY($1::uuid[]) LIMIT 10001`,[units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   const custody=(await c.query<{id:string;asset_id:string|null;pole_id:string|null;start:string;end:string;hold_id:string;requirement_key:string}>(`SELECT x.id,x.asset_id,x.pole_id,x.starts_on::text AS start,x.ends_on::text AS end,b.hold_id,l.requirement_key FROM rental_inventory_blocks x JOIN rental_loan_items l ON l.id=x.id JOIN rental_bookings b ON b.id=l.booking_id WHERE x.asset_id=ANY($1::uuid[]) OR x.pole_id=ANY($1::uuid[]) LIMIT 10001`,[units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
@@ -148,6 +143,7 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
 export async function writeAllocationClaims(c:Conn,holdId:string,conditions:HoldConditions,witness:Witness[]){
   const rows=witness.flatMap(w=>normalizePeriod(conditions.period).dates.map(day=>({hold_id:holdId,requirement_key:w.key,asset_id:w.asset,pole_id:w.pole,pole_slot:w.slots[day]??null,transfer_piece_id:w.transferPiece,day})));
   await c.query(`INSERT INTO inventory_claims(hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day) SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,transfer_piece_id,day FROM jsonb_to_recordset($1::jsonb) AS x(hold_id uuid,requirement_key text,asset_id uuid,pole_id uuid,pole_slot integer,transfer_piece_id uuid,day date)`,[JSON.stringify(rows)]);
+  await c.query('SELECT inventory_sync_pole_exemptions($1)',[holdId]);
  }
 
 const PROVISIONAL_FAMILIES:readonly ProvisionalFamily[]=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'];
@@ -177,7 +173,7 @@ export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:D
  const primary=await planAllocation(c,conditions,now,ignore,pin,undefined,wear.feasible?undefined:false,bufferOverride);
  if(primary.result!=='INSUFFICIENT')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
  const eligiblePhysical=conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)&&m.tier!=='PREMIUM'&&!i.modelPromise&&PROVISIONAL_FAMILIES.includes(i.family as ProvisionalFamily)&&i.variantIds.length===1).map(i=>({memberKey:m.key+':'+i.family,age:m.age,family:i.family as ProvisionalFamily,variantId:i.variantIds[0]!})));
- const eligibleWear=wear.infeasible.map(w=>({memberKey:w.key,age:w.age,family:w.family as ProvisionalFamily,variantId:w.variant}));
+ const eligibleWear=wear.infeasible.filter(w=>!conditions.members.some(m=>m.tier==='PREMIUM'&&m.items.some(i=>m.key+':'+i.family===w.key))).map(w=>({memberKey:w.key,age:w.age,family:w.family as ProvisionalFamily,variantId:w.variant}));
  const eligible=[...eligiblePhysical,...eligibleWear];
  if(!eligible.length)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
  // Canonical booking size from the ledger variant itself, never the raw request string.

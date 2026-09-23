@@ -408,7 +408,7 @@ try {
   });
 
   // ---- role boundary: EXECUTE-only registration, no direct table access anywhere PUBLIC/operations/HOLD shouldn't have ----
-  await check('role boundary — PUBLIC has no EXECUTE on any provisional_capacity_* function; the operations role has EXECUTE on register_source only (no direct source/bucket table access at all, and no reduce/materialize call — SECURITY DEFINER carries the INSERT rights, not the caller); the HOLD role has exactly the narrow plan/write/release access it needs, never source registration or reduce/materialize', async () => {
+  await check('role boundary — PUBLIC has no EXECUTE on any provisional_capacity_* function; the operations role has EXECUTE on register_source only (no source access or bucket writes, and no reduce/materialize call — SECURITY DEFINER carries the INSERT rights, not the caller); the HOLD role has exactly the narrow plan/write/release access it needs, never source registration or reduce/materialize', async () => {
     const publicGrants = (await x.db.pool.query(
       `SELECT has_function_privilege('public','provisional_capacity_register_source(text,text,jsonb)','EXECUTE') a,
               has_function_privilege('public','provisional_capacity_reduce_bucket(uuid,integer)','EXECUTE') b,
@@ -418,11 +418,11 @@ try {
     assert.deepEqual(publicGrants, {a: false, b: false, c: false, d: false});
     const zero = '00000000-0000-0000-0000-000000000000';
     // operations: EXECUTE on register_source only (proven positively by test A's src.register()
-    // calls already succeeding) and SELECT on claims only (verifyClaims/verifyPhysicalHandoff) —
-    // no direct source/bucket table access of any kind, no reduce/materialize/available_on.
+    // calls already succeeding) and SELECT on claims and buckets (exact witness validation) —
+    // no source access or bucket writes, no reduce/materialize/available_on.
     for (const sql of [
       'SELECT 1 FROM provisional_capacity_sources',
-      'SELECT 1 FROM provisional_capacity_buckets',
+      "UPDATE provisional_capacity_buckets SET active=false",
       'INSERT INTO provisional_capacity_sources(source_sha256,original_filename,actor) VALUES(repeat(\'a\',64),\'x\',\'x\')',
       "UPDATE provisional_capacity_sources SET status='SUPERSEDED'",
       'DELETE FROM provisional_capacity_sources',
@@ -430,6 +430,7 @@ try {
       `SELECT provisional_capacity_materialize_bucket('${zero}'::uuid,1,'${zero}'::uuid)`,
       `SELECT provisional_capacity_available_on('SKI','ADULT','1 cm','2035-01-01'::date)`,
     ]) await assert.rejects(role!.operationsPool.query(sql), {code: '42501'});
+    await role!.operationsPool.query('SELECT 1 FROM provisional_capacity_buckets');
     await role!.operationsPool.query('SELECT 1 FROM provisional_capacity_claims'); // legitimate: does not throw
     // HOLD: SELECT on buckets, SELECT/INSERT on claims and EXECUTE on effective_quantity are all
     // legitimate (planAllocation/writeProvisionalClaims) — proven positively by every product-path

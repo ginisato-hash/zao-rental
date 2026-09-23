@@ -244,12 +244,17 @@ export async function environmentIdentifiers(pool:Queryable){
 export function tokenNormaliser(map:Map<string,string>){
  return (value:string)=>value.replace(/[A-Za-z0-9_$]+/g,token=>map.get(token)??token);
 }
-async function fingerprint(pool:Queryable,queries:Array<[string,string]>){
+async function fingerprint(pool:Queryable,queries:Array<[string,string]|[string,string,string]>){
  const normalise=tokenNormaliser(await environmentIdentifiers(pool));
  // Sequential: this also runs against a single pooled client inside a transaction, which
  // cannot serve concurrent queries.
  const parts=[];
- for(const [label,sql] of queries)parts.push({label,rows:(await pool.query<{value:string}>(sql)).rows.map(r=>normalise(r.value)).sort()});
+ for(const [label,sql,requires] of queries){
+  // A category over an application table is empty, not an error, before that table exists
+  // (the pre-bootstrap fingerprint). Where the table exists the query and rows are unchanged.
+  if(requires&&!(await pool.query<{present:boolean}>('SELECT to_regclass($1) IS NOT NULL present',[requires])).rows[0]!.present){parts.push({label,rows:[] as string[]});continue;}
+  parts.push({label,rows:(await pool.query<{value:string}>(sql)).rows.map(r=>normalise(r.value)).sort()});
+ }
  const material=Object.fromEntries(parts.map(p=>[p.label,p.rows]));
  return{sha256:sha256(JSON.stringify(material)),counts:Object.fromEntries(parts.map(p=>[p.label,p.rows.length])),material};
 }
@@ -340,8 +345,44 @@ export async function securityFingerprint(pool:Queryable){
   ['approvalRegistries',`SELECT n.nspname||'.'||c.relname||'.'||q.conname||' '||pg_get_constraintdef(q.oid) AS value
     FROM pg_constraint q JOIN pg_class c ON c.oid=q.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE q.contype='c' AND n.nspname||'.'||c.relname IN (${APPROVAL_REGISTRY_TABLES.map(t=>quote(t)).join(',')})`],
-  ['permissionRegistry',`SELECT 'staff_role_permissions '||role||' '||permission AS value FROM staff_role_permissions`],
+  ['permissionRegistry',`SELECT 'staff_role_permissions '||role||' '||permission AS value FROM staff_role_permissions`,'public.staff_role_permissions'],
  ]);
+}
+export type Fingerprint=Awaited<ReturnType<typeof schemaFingerprint>>;
+export type FingerprintDelta={sha256:string;categories:Record<string,{added:string[];removed:string[]}>};
+/** Pure before→after change of one environment's fingerprint, per category, as multisets: a row
+ * present twice before and once after is one removal, never zero. Output order is deterministic
+ * and the digest is over that canonical form. Provider/cluster baseline rows that the bootstrap
+ * does not touch cancel out; anything the bootstrap (or anyone else) changed remains visible. */
+export function fingerprintDelta(before:Pick<Fingerprint,'material'>,after:Pick<Fingerprint,'material'>):FingerprintDelta{
+ const labels=[...new Set([...Object.keys(before.material),...Object.keys(after.material)])].sort();
+ const categories:FingerprintDelta['categories']={};
+ for(const label of labels){
+  const count=new Map<string,number>();
+  for(const row of before.material[label]??[])count.set(row,(count.get(row)??0)-1);
+  for(const row of after.material[label]??[])count.set(row,(count.get(row)??0)+1);
+  const added:string[]=[],removed:string[]=[];
+  for(const [row,n] of count){for(let i=0;i<n;i++)added.push(row);for(let i=0;i>n;i--)removed.push(row);}
+  categories[label]={added:added.sort(),removed:removed.sort()};
+ }
+ return{sha256:sha256(JSON.stringify(categories)),categories};
+}
+/** Categories whose deltas differ between two environments (empty means delta-equivalent). */
+export function deltaMismatch(expected:FingerprintDelta,actual:FingerprintDelta){
+ return [...new Set([...Object.keys(expected.categories),...Object.keys(actual.categories)])].sort()
+  .filter(k=>JSON.stringify(expected.categories[k]??{added:[],removed:[]})!==JSON.stringify(actual.categories[k]??{added:[],removed:[]}));
+}
+/** Read-only evidence of who will run the bootstrap and what the provider gave that role. Recorded
+ * separately; never compared with a local cluster owner, whose posture is a different baseline. */
+export async function migrationOwnerPosture(pool:Queryable){
+ const row=(await pool.query<{database:string;role:string;databaseOwner:string}>('SELECT current_database() database,current_user role,pg_get_userbyid(d.datdba) "databaseOwner" FROM pg_database d WHERE d.datname=current_database()')).rows[0]!;
+ const attributes=(await pool.query<{value:string}>(`SELECT 'super='||rolsuper::text||' createdb='||rolcreatedb::text||' createrole='||rolcreaterole::text||' replication='||rolreplication::text||' bypassrls='||rolbypassrls::text||' inherit='||rolinherit::text||' login='||rolcanlogin::text AS value FROM pg_roles WHERE rolname=current_user`)).rows[0]!.value;
+ const memberships=(await pool.query<{value:string}>(`WITH RECURSIVE up AS (
+   SELECT m.roleid,m.member,m.admin_option,m.inherit_option,m.set_option,1 AS depth FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member WHERE r.rolname=current_user
+   UNION SELECT m.roleid,m.member,m.admin_option,m.inherit_option,m.set_option,up.depth+1 FROM pg_auth_members m JOIN up ON m.member=up.roleid WHERE up.depth<16)
+  SELECT pg_get_userbyid(member)||' IN '||pg_get_userbyid(roleid)||' admin='||admin_option::text||' inherit='||inherit_option::text||' set='||set_option::text AS value FROM up`)).rows.map(r=>r.value).sort();
+ const createroleSelfGrant=(await pool.query<{v:string}>(`SELECT current_setting('createrole_self_grant',true) v`)).rows[0]!.v??'';
+ return{...row,attributes,memberships,createroleSelfGrant};
 }
 export const mustBeEmpty=(registry:string)=>EMPTY_REGISTRY_TABLES.includes(registry);
 /** Row counts of every approval, A1 development-foundation and A2 historical R15 Sandbox

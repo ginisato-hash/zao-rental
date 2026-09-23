@@ -36,3 +36,28 @@ No tax arithmetic or tax-inclusive/exclusive label was invented.
 B Square Production; C exact-one protection including durable POLE exemption; D cancellation
 and refund settlement; E Resend; F publication. Amendment reserve-capacity disposition and
 historical prefix fixtures remain required. Full verify has not run.
+
+## B — Square Production and booking admission
+
+One shared Square engine and fetch transport now handle both environments. Production uses
+`https://connect.squareup.com`, its own credential environment and merchant/location bindings,
+with the existing request format, deadlines, validation, HMAC, UNKNOWN handling and GetPayment.
+No default fetch, credentials, retries or live activation were added. Booking/quote composition
+requires a registered exact identity bound to the same configuration before commercial create
+is usable. Production completion writes CONFIRMED, never CONFIRMED_DEV. Projection validates
+persisted approved price facts; its internal SQL worker is separately tested with synthetic
+Production-shaped rows and persisted provider truth in owned PostgreSQL. Public permit gates
+are unchanged. Production role plans include only the new booking writes and price/provisional
+reads required by these paths.
+
+Proof: 6 Production adapter cases; existing 26 transport/readiness unit cases; 131 projection/
+admission regressions; local commercial SQL proof; 12 normal runtime, 29 role-plan, 10 Square
+transport and 23 payment PostgreSQL cases passed. Real identity acceptance remains attended.
+
+Provider references (official, read-only):
+- https://developer.squareup.com/docs/build-basics/general-considerations/using-rest-api
+- https://developer.squareup.com/reference/square/payments-api
+
+C audit found two concrete issues retained from V4 that will be corrected next: provisional
+wear is rejected by the physical-wear count, and missing POLE is treated as optional without
+a durable exemption witness. No claim of complete Production inventory proof is made yet.

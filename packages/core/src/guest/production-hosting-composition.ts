@@ -91,9 +91,9 @@ export function installProductionHostingComposition(env:Readonly<Record<string,s
  // *the* real Production target (wrong Neon branch, wrong Vercel project, right-shaped-but-wrong
  // DB name all parse fine). This throws before any bootstrap install is attempted, exactly as
  // production-projection-authority.ts already requires for payment projection.
- issueExactProductionIdentity(c);
+ const identity=issueExactProductionIdentity(c);
  const input:ProductionRuntimeInput={
-  configuration:c,approvedConfigurationSha256:productionConfigurationDigest(c),deployment:c.deployment,
+  identity,configuration:c,approvedConfigurationSha256:productionConfigurationDigest(c),deployment:c.deployment,
   secrets:{
    guestKey:e.PRODUCTION_GUEST_KEY!,staffKey:e.PRODUCTION_STAFF_KEY!,accessKey:e.PRODUCTION_ACCESS_KEY!,recoveryKey:e.PRODUCTION_RECOVERY_KEY!,
    accessKeyVersion:e.PRODUCTION_ACCESS_KEY_VERSION!,recoveryKeyVersion:e.PRODUCTION_RECOVERY_KEY_VERSION!,

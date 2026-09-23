@@ -1,3 +1,4 @@
+import {flowHash} from '../../packages/contracts/src/rental-flow';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {productionProjectionPermit,productionProjectionTarget,deriveProductionProjectionTarget} from '../../packages/core/src/payment/production-projection-authority';
@@ -70,7 +71,11 @@ test('productionProjectionTarget resolves an absent/undefined permit to null, ne
 
 test('decidePaymentProjection recognizes SQUARE_PRODUCTION as a valid mode (additive, SQUARE_SANDBOX/SIMULATED_DEV unaffected)',()=>{
  const s=stateFixture();s.booking.mode='SQUARE_PRODUCTION';
+ assert.equal(decide(s,observation(),clock).decision,'BLOCK_PRICE_INTEGRITY');
+ s.booking.priceSnapshot={...s.booking.priceSnapshot,chargeReady:true};s.booking.priceHash=flowHash(s.booking.priceSnapshot);
+ s.quote!.snapshot=s.booking.priceSnapshot;s.quote!.snapshotHash=s.booking.priceHash;s.quote!.commercialPriceValid=true;
  assert.equal(decide(s,observation(),clock).decision,'APPLY_COMPLETED');
+ s.quote!.commercialPriceValid=false;assert.equal(decide(s,observation(),clock).decision,'BLOCK_PRICE_INTEGRITY');
 });
 test('decidePaymentProjection still rejects any other mode value',()=>{
  const s=stateFixture();s.booking.mode='SOMETHING_ELSE';

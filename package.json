@@ -91,7 +91,7 @@
     "test:m2a-launch-ui": "node --import tsx tests/operations/launch-ui.ts",
     "test:m2b-security": "node --import tsx tests/operations/production-security.ts",
     "test:m2b-bootstrap": "node --import tsx tests/operations/production-bootstrap.ts",
-    "test:production-runtime": "node --import tsx tests/readiness/normal-production.ts",
+    "test:production-runtime": "node --import tsx tests/readiness/normal-production.ts && node --import tsx tests/readiness/commercial-payment.ts",
     "test:production-runtime-ui": "node --import tsx tests/readiness/normal-production-ui.ts",
     "test:notification": "node --import tsx tests/notification/postgres.ts",
     "test:notification-ui": "node --import tsx tests/notification/normal-ui.ts"

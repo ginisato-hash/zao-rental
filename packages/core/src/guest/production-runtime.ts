@@ -1,3 +1,5 @@
+import {exactProductionIdentityConfiguration,type ExactProductionIdentity} from '../../../auth/src/production-identity';
+import {issueCommercialPriceAuthority} from '../pricing/commercial-price-authority';
 import {createHash} from 'node:crypto';
 import type {Pool} from 'pg';
 import {exact} from '../../../contracts/src/pricing';
@@ -32,6 +34,7 @@ export type ProductionRuntimeInput={configuration:unknown;approvedConfigurationS
  secrets:ProductionSecretMaterial;verifiedPeer:(request:Request)=>VerifiedProductionPeer|undefined;
  connect?:(c:ProductionConfiguration,service:ProductionService,credential:ProductionDatabaseCredential)=>Promise<Pool>;
  payment?:ProductionPaymentBinding;
+ identity?:ExactProductionIdentity;
  media?:{environment:'PRODUCTION';permission:'OBJECT_READ';credentials:()=>Promise<R2Credential>;requestHandler?:ConstructorParameters<typeof R2MediaProvider>[5]};
  audit:(stage:StartupStage)=>Promise<void>;
 };
@@ -42,6 +45,10 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
  try{
   const c=productionConfiguration(input.configuration);
   if(!/^[a-f0-9]{64}$/.test(input.approvedConfigurationSha256)||productionConfigurationDigest(c)!==input.approvedConfigurationSha256||canonical(c.deployment)!==canonical(input.deployment))throw Error();
+  const identityConfiguration=input.identity?exactProductionIdentityConfiguration(input.identity):null;
+  if(input.identity&&(!identityConfiguration||productionConfigurationDigest(identityConfiguration)!==productionConfigurationDigest(c)))throw Error();
+  const commercialIdentity=c.flags.booking&&c.flags.payment&&identityConfiguration?input.identity:undefined;
+  const priceAuthority=commercialIdentity?issueCommercialPriceAuthority(commercialIdentity):undefined;
   const secrets=exact(input.secrets,['database','guestKey','staffKey','accessKey','recoveryKey','accessKeyVersion','recoveryKeyVersion']) as unknown as ProductionSecretMaterial;
   stage='GUEST_SECURITY';const roots=[secrets.guestKey,secrets.staffKey,secrets.accessKey,secrets.recoveryKey];if(roots.some(k=>typeof k!=='string'||! /^[a-f0-9]{64}$/.test(k))||new Set(roots).size!==roots.length)throw Error();
   stage='BOOKING_ACCESS';for(const v of [secrets.accessKeyVersion,secrets.recoveryKeyVersion])if(typeof v!=='string'||!/^[-A-Za-z0-9_]{1,64}$/.test(v))throw Error();
@@ -62,10 +69,10 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   }:null;
   const staff=c.flags.staffOperations?{...base!,ledgerPool:required('ledger'),transferPool:required('transfer')}:null;
   stage='GUEST_SECURITY';const guest=c.flags.booking?await composeProductionGuestSecurity({pool:required('guest'),configuration:c.guest,approvedConfigurationSha256:c.approvedGuestSha256,serverKey:secrets.guestKey,ingress,audit:async()=>input.audit('GUEST_SECURITY')}):null;
-  const service=(actor:GuestActor)=>{if(!guest)throw new ProductionStartupError('FEATURE_FLAGS');const holds=new HoldService(required('hold'),actor),quotes=new QuoteService(required('pricing'),actor),recommendations=new RecommendationService(required('recommendation'),actor,holds,quotes,async variants=>guestVariants(await guestCatalog(required('content_read'),variants),variants));
+  const service=(actor:GuestActor)=>{if(!guest)throw new ProductionStartupError('FEATURE_FLAGS');const holds=new HoldService(required('hold'),actor),quotes=new QuoteService(required('pricing'),actor,undefined,priceAuthority),recommendations=new RecommendationService(required('recommendation'),actor,holds,quotes,async variants=>guestVariants(await guestCatalog(required('content_read'),variants),variants));
    // Read existing canonical payment/booking state even with Avatar/media absent.
    // Commercial create authority remains the existing payment activation boundary.
-   const bookings=new BookingService(required('operations'),required('guest'),actor);return new GuestBookingService(guest.contexts,actor,recommendations,bookings,async()=>guestCatalog(required('content_read'),await holds.recommendationCatalog()));};
+   const bookings=new BookingService(required('operations'),required('guest'),actor,commercialIdentity?validatedPayment:null,null,commercialIdentity);return new GuestBookingService(guest.contexts,actor,recommendations,bookings,async()=>guestCatalog(required('content_read'),await holds.recommendationCatalog()));};
   stage='BOOKING_ACCESS';const access=guest?new BookingAccess(required('booking_access'),Buffer.from(secrets.accessKey,'hex'),secrets.accessKeyVersion):null;
   const recovery=guest&&c.flags.guestRecovery?new BookingRecovery(required('booking_access'),Buffer.from(secrets.recoveryKey,'hex'),secrets.recoveryKeyVersion,undefined,5000,true):null;
   const readDerivative=async(digest:string)=>{if(!r2||! /^[a-f0-9]{64}$/.test(digest))return null;return r2.readPrivate('private/derivative/sha256/'+digest);};
@@ -81,7 +88,7 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
    // stays `{}`), and previously reported READY anyway just because the runtime object existed
    // and wasn't closed. 'OFF' matches the same semantics PAYMENT_ADAPTER/MEDIA already use for
    // "this capability was never turned on," not a fabricated connectivity claim.
-   safeStatus:()=>({APP:closed?'UNAVAILABLE':'READY',DB:closed?'UNAVAILABLE':Object.keys(pools).length>0?'READY':'OFF',GUEST:guest?'READY':'OFF',PAYMENT_ADAPTER:c.flags.payment?'CONFIGURED_ACTIVATION_PENDING':'OFF',WEBHOOK:!c.flags.payment?'OFF':c.payment?.webhookNotificationUrl?'CONFIGURED_ACTIVATION_PENDING':'UNCONNECTED',MEDIA:c.flags.media?'CONFIGURED':'OFF',NOTIFICATION:'UNCONNECTED'} as const),
+   safeStatus:()=>({APP:closed?'UNAVAILABLE':'READY',DB:closed?'UNAVAILABLE':Object.keys(pools).length>0?'READY':'OFF',GUEST:guest?'READY':'OFF',PAYMENT_ADAPTER:commercialIdentity?'CONFIGURED_COMMERCIAL':c.flags.payment?'CONFIGURED_ACTIVATION_PENDING':'OFF',WEBHOOK:!c.flags.payment?'OFF':c.payment?.webhookNotificationUrl?'CONFIGURED_ACTIVATION_PENDING':'UNCONNECTED',MEDIA:c.flags.media?'CONFIGURED':'OFF',NOTIFICATION:'UNCONNECTED'} as const),
    async close(){if(closed)return;closed=true;r2?.close();await Promise.all(Object.values(pools).map(p=>p.end().catch(()=>{})));}
   });
  }catch(error){r2?.close();await Promise.all(Object.values(pools).map(p=>p.end().catch(()=>{})));throw error instanceof ProductionStartupError?error:new ProductionStartupError(stage);}

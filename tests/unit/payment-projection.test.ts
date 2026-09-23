@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {flowHash} from '../../packages/contracts/src/rental-flow';
-import {decidePaymentProjection as decide,verifyProjectionSource,validateProjectionReference,projectionClaims,TransactionalPaymentProjection,type ProjectionState} from '../../packages/core/src/payment/payment-projection';
+import {decidePaymentProjection as decide,verifyProjectionSource,validateProjectionReference,validateSavedProjection,projectionClaims,TransactionalPaymentProjection,type ProjectionState} from '../../packages/core/src/payment/payment-projection';
 import {PgPaymentProjection} from '../../packages/db/src/payment-projection';
 import {clock,id,stateFixture,observation,reference,sourceFixture,claimFixture,ProjectionSqlFixture} from '../fixtures/payment-projection';
 const service=(f:ProjectionSqlFixture)=>new TransactionalPaymentProjection(new PgPaymentProjection(f));
@@ -77,4 +77,15 @@ test('POLE needs exactly one physical claim or durable matching exemption',()=>{
  assert.equal(projectionClaims(s.booking.conditions,[...claims,exemption] as never).gear,true);
  assert.equal(projectionClaims(s.booking.conditions,[...physical,exemption] as never).gear,false);
  assert.equal(projectionClaims(s.booking.conditions,[...claims,{...exemption,store_id:'ONSEN_BASE'}] as never).gear,false);
+});
+
+for(const status of ['COMPLETED','FAILED','CANCELED','PENDING'] as const)test('cancelled booking records late '+status+' without inventory resurrection',()=>{const s=stateFixture();s.booking.state='CANCELLED';s.hold!.state='RELEASED';s.gearClaimsIntact=false;s.wearClaimsIntact=false;const plan=decide(s,observation(status),clock);assert.equal(plan.mutation,'CANCELLED_PAYMENT');assert.equal(s.booking.state,'CANCELLED');assert.equal(s.hold!.state,'RELEASED');});
+test('cancelled payment still rejects amount and immutable price drift',()=>{const s=stateFixture();s.booking.state='CANCELLED';assert.equal(decide(s,{...observation(),amountJpy:101},clock).mutation,'NONE');s.quote!.snapshotHash='f'.repeat(64);assert.equal(decide(s,observation(),clock).decision,'BLOCK_PRICE_INTEGRITY');});
+
+test('saved payment projection rejects mode/state crossings before replay',async()=>{
+ const f=new ProjectionSqlFixture(),ref=reference(),saved=await service(f).project(ref);
+ validateSavedProjection(saved,ref,'SQUARE_SANDBOX');
+ assert.throws(()=>validateSavedProjection({...saved,bookingState:'CONFIRMED'},ref,'SQUARE_SANDBOX'),{code:'INVALID_SAVED_PROJECTION'});
+ assert.throws(()=>validateSavedProjection(saved,ref,'SQUARE_PRODUCTION'),{code:'INVALID_SAVED_PROJECTION'});
+ validateSavedProjection({...saved,bookingState:'CONFIRMED'},ref,'SQUARE_PRODUCTION');
 });

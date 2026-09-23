@@ -74,6 +74,8 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT SELECT ON rental_inventory_blocks,rental_loan_items,rental_inspection_events TO ${n.hold}`,
   `GRANT SELECT(id,hold_id) ON rental_bookings TO ${n.hold}`,
   `GRANT SELECT ON wear_pools,wear_claims,wear_loans,wear_receipts,wear_transfers TO ${n.hold}`,
+  `GRANT UPDATE(state,released_at) ON provisional_capacity_claims TO ${n.operations}`,
+  `GRANT EXECUTE ON FUNCTION inventory_buffer_override_record(uuid,text) TO ${n.operations}`,
   `GRANT INSERT,UPDATE(active) ON wear_claims TO ${n.hold}`,
   `GRANT USAGE ON SEQUENCE wear_claims_id_seq TO ${n.hold}`,
   `GRANT SELECT ON guest_contexts,booking_actors TO ${n.hold}`,
@@ -150,13 +152,16 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
  );
  // ---- booking_access (scripts/booking-access-role.ts) ----
  sql.push(
+  `GRANT EXECUTE ON FUNCTION booking_access.exchange_recovery_with_cancellation(text,uuid,text,text,text),booking_access.cancellation_ready(text,uuid),booking_access.cancellation_status(text),booking_access.cancellation_preview(text,uuid),booking_access.cancel(text,uuid,uuid,jsonb) TO ${n.booking_access}`,
   `GRANT USAGE ON SCHEMA booking_access TO ${n.booking_access}`,
   `GRANT EXECUTE ON FUNCTION booking_access.issue(uuid,text,text,uuid,uuid,text,text),booking_access.read(text),booking_access.revoke(text),booking_access.prepare_recovery(uuid,text,text,uuid,uuid,text,text),booking_access.recovery_delivered(text),booking_access.exchange_recovery(text,uuid,text,text),booking_access.revoke_recovery(text) TO ${n.booking_access}`,
   `GRANT EXECUTE ON FUNCTION booking_access.queue_recovery(uuid,text,text,uuid,uuid,text,text,text),booking_access.request_recovery(uuid,text,uuid,text,text,text) TO ${n.booking_access}`,
  );
+ // Remove the historical broad pool write grant when applying this plan to existing roles.
+ sql.push(`REVOKE INSERT,UPDATE,DELETE ON wear_pools,provisional_capacity_buckets,inventory_pole_exemptions FROM ${n.operations}`);
  // ---- operations (scripts/operations-roles.ts) ----
  sql.push(
-  `GRANT SELECT ON ledger_stores,ledger_models,ledger_variants,ledger_assets,ledger_poles,ledger_records,ledger_history,ledger_locations,inventory_reservations,inventory_holds,inventory_claims,inventory_constraints,inventory_replans,inventory_history,transfer_pieces,transfer_batches,price_quotes,price_books,price_activations,rental_bookings,rental_payment_attempts,rental_history,rental_no_pickup_events,rental_custody_events,rental_inspection_events,rental_inventory_blocks,rental_actual_custody,ops_history,ops_collected_payments,foundation_migrations TO ${n.operations}`,
+  `GRANT SELECT ON ledger_stores,ledger_models,ledger_variants,ledger_assets,ledger_poles,ledger_records,ledger_history,ledger_locations,inventory_reservations,inventory_holds,inventory_claims,inventory_constraints,inventory_replans,inventory_history,transfer_pieces,transfer_batches,price_quotes,price_books,price_activations,rental_bookings,rental_payment_attempts,rental_history,rental_no_pickup_events,rental_custody_events,rental_inspection_events,rental_inventory_blocks,rental_actual_custody,ops_history,ops_collected_payments,booking_cancellation_refunds,foundation_migrations TO ${n.operations}`,
   `GRANT INSERT,UPDATE(state,confirmed_at,version) ON rental_bookings TO ${n.operations}`,
   `GRANT INSERT,UPDATE(state,provider_id,provider_state,provider_updated_at,completed_at,updated_at) ON rental_payment_attempts TO ${n.operations}`,
   `GRANT SELECT,INSERT ON rental_provider_events,rental_notifications TO ${n.operations}`,
@@ -164,14 +169,18 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid) TO ${n.operations}`,
   `GRANT SELECT,INSERT ON ops_financial_alerts,ops_amendment_quotes,ops_amendments,ops_import_stages,ops_import_sources,ops_import_commits,ops_stocktake_reconciliations,ops_requests,rental_preparations,rental_loan_items,rental_return_batches,rental_return_candidates,rental_receipts,rental_inspections,rental_requests TO ${n.operations}`,
   `GRANT SELECT,INSERT,UPDATE ON ops_charge_requests,ops_refund_requests,ops_stocktakes TO ${n.operations}`,
-  `GRANT UPDATE(conditions,starts_at,due_at,occupancy_start,occupancy_end,allocation_stage,version) ON inventory_holds TO ${n.operations}`,
+  `GRANT UPDATE(conditions,starts_at,due_at,occupancy_start,occupancy_end,allocation_stage,version,buffer_override) ON inventory_holds TO ${n.operations}`,
   `GRANT INSERT,UPDATE(active) ON inventory_claims,wear_claims TO ${n.operations}`,
   `GRANT SELECT ON wear_claims TO ${n.operations}`,
-  `GRANT SELECT,INSERT,UPDATE ON wear_pools,wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts,wear_return_batches TO ${n.operations}`,
+  `GRANT SELECT,INSERT,UPDATE ON wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts,wear_return_batches TO ${n.operations}`,
+  `GRANT SELECT ON wear_pools TO ${n.operations}`,
+  `GRANT EXECUTE ON FUNCTION wear_pool_create(uuid,uuid,text,text),wear_pool_apply(uuid,text,integer,uuid) TO ${n.operations}`,
   `GRANT SELECT,INSERT ON wear_requests,wear_history TO ${n.operations}`,
   // BookingService/CustodyService (apps/web's booking/custody routes both run under this role)
   // read-only: verifyClaims()/verifyPhysicalHandoff(). No source/bucket registration authority
   // here — that is a separate, not-yet-authorized production operational decision.
+  `GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid),notification_sync_confirmed(),notification_claim(uuid),notification_material(uuid,uuid),notification_settle(uuid,uuid,text,text,text),notification_unknown(uuid),notification_reconciled(uuid,text),notification_due() TO ${n.operations}`,
+  `GRANT EXECUTE ON FUNCTION booking_cancellation_preview(uuid),booking_cancellation_status(uuid),booking_cancellation_payment_observed(uuid),booking_cancel(uuid,uuid,jsonb),cancellation_refund_row(uuid),cancellation_refund_claim(uuid),cancellation_refund_observe(uuid,jsonb) TO ${n.operations}`,
   `GRANT SELECT ON provisional_capacity_claims,provisional_capacity_buckets,inventory_pole_exemptions TO ${n.operations}`,
   `GRANT INSERT ON ledger_assets,ledger_poles TO ${n.operations}`,
   `GRANT UPDATE(status) ON ledger_assets TO ${n.operations}`,

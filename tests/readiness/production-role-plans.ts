@@ -189,6 +189,16 @@ try {
     await denied(() => operations.pool.query('SELECT count(*) FROM staff_members'));
     await denied(() => operations.pool.query('SELECT count(*) FROM auth_user'));
   });
+  const projector=await loginRole(production,db.identity.dbPort,TARGET,names.projector);opened.push(projector);
+  await check('booking/custody and payment projector can read every witness; direct INSERT/UPDATE/DELETE remain denied',async()=>{
+    for(const role of [operations,projector])for(const table of ['wear_pools','provisional_capacity_buckets','inventory_pole_exemptions']){
+      await role.pool.query(`SELECT * FROM ${table} LIMIT 0`);
+      await denied(()=>role.pool.query(`INSERT INTO ${table} DEFAULT VALUES`));
+      await denied(()=>role.pool.query(`UPDATE ${table} SET id=DEFAULT WHERE false`));
+      await denied(()=>role.pool.query(`DELETE FROM ${table} WHERE false`));
+    }
+    await denied(()=>operations.pool.query("SELECT wear_pool_create('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','MOUNTAIN_BASE','INVENTORY_EDIT')"));
+  });
   await check('R3 app roles: guest can read/write its own tables but has no staff/auth access', async () => {
     await guest.pool.query('SELECT count(*) FROM guest_contexts');
     await guest.pool.query('SELECT count(*) FROM guest_drafts');

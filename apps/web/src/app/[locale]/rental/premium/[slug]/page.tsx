@@ -1,3 +1,4 @@
+export const dynamic='force-dynamic';
 import {notFound,permanentRedirect} from 'next/navigation';
 import Link from 'next/link';
 import {publicModels,modelState} from '../../../../../lib/public-content';

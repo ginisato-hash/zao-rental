@@ -19,6 +19,11 @@ async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();cou
 const HEADERS={'cache-control':'private, no-store','vary':'Cookie'};
 try{
  app=await startDevelopmentApp({built:true,operations:true});const {origin,db,roles}=app;await seedRecommendation(db.pool);
+ // Each local booking variant needs two physical units for one public slot.
+ const seed=await db.pool.connect();try{await seed.query('BEGIN');await seed.query("SELECT set_config('zao.actor','synthetic-staff-home',true),set_config('zao.reason','SYNTHETIC home booking fixture',true)");
+  await seed.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_evidence,notes,source_kind,source_document,source_locator)
+   SELECT gen_random_uuid(),id,family,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE','NOT_APPLICABLE','','SYNTHETIC staff home','SYNTHETIC','tests/staff/home-ui.ts','public-home-'||id FROM ledger_variants WHERE id=ANY($1::uuid[])`,[[variants.ski,variants.skiAlt,lengthVariants.ski135]]);await seed.query('COMMIT');
+ }catch(e){await seed.query('ROLLBACK');throw e;}finally{seed.release();}
  // UX-5D: Staff Home's business date now comes from the Manifest server's own
  // inventory_clock(), never the browser clock. A fully synthetic business date (divorced
  // from the real wall-clock date) both keeps this suite independent of when it happens to

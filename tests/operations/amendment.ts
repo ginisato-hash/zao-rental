@@ -23,9 +23,16 @@ try{
  await check('extension freezes delta without changing original booking/payment; replay applies once',async()=>{
   const current=await svc.view(d.booking.id),conditions=structuredClone(current.conditions);conditions.period={startDate:'2035-02-05',endDate:'2035-02-06',slot:'MULTIDAY'};
   const q=await svc.quote(randomUUID(),{bookingId:d.booking.id,expectedHoldVersion:current.holdVersion,conditions,reason:'SYNTHETIC extension'});extension=q.id;amount=q.quote.additionalChargeJpy;assert.ok(amount>0);
-  const key=randomUUID(),v={quoteId:q.id,fitEvidence:'',reason:'SYNTHETIC agreed quote'},a=await svc.accept(key,v),again=await svc.accept(key,v);assert.deepEqual(a,again);
+  const key=randomUUID(),v={quoteId:q.id,fitEvidence:'',reason:'SYNTHETIC agreed quote'},a=await svc.accept(key,v),again=await svc.accept(key,v);assert.deepEqual(a,again);assert.equal((await svc.view(d.booking.id)).bufferOverride,true);assert.ok((await x.db.pool.query('SELECT count(*)::int n FROM inventory_buffer_override_log WHERE hold_id=$1',[d.holdId])).rows[0].n>=2);
   assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM ops_charge_requests WHERE booking_id=$1',[d.booking.id])).rows[0].n,1);
   assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(b) AS value FROM rental_bookings b WHERE id=$1',[d.booking.id])).rows[0].value,before);
+ });
+ await check('reserve amendment requires current permission and an explicit safe removal',async()=>{
+  const current=await svc.view(d.booking.id);await x.db.pool.query("UPDATE staff_permission_overrides SET allowed=false WHERE staff_id=$1 AND permission='INVENTORY_BUFFER_OVERRIDE'",[x.actor]);
+  await assert.rejects(svc.quote(randomUUID(),{bookingId:d.booking.id,expectedHoldVersion:current.holdVersion,conditions:current.conditions,reason:'SYNTHETIC revoked override'}));
+  await x.db.pool.query("UPDATE staff_permission_overrides SET allowed=true WHERE staff_id=$1 AND permission='INVENTORY_BUFFER_OVERRIDE'",[x.actor]);
+  // This fixture has one compatible physical unit: its public floor is zero.
+  await assert.rejects(svc.quote(randomUUID(),{bookingId:d.booking.id,expectedHoldVersion:current.holdVersion,conditions:current.conditions,reason:'SYNTHETIC remove reserve',bufferOverride:{useReserve:false,reason:'SYNTHETIC explicit removal'}}));assert.equal((await svc.view(d.booking.id)).bufferOverride,true);
  });
  await check('competing accepted extension uses expected version, only one applies',async()=>{
   const b=await svc.view(d.booking.id),conditions=structuredClone(b.conditions);conditions.period.endDate='2035-02-07';

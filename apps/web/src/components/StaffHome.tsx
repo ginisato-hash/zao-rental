@@ -20,7 +20,7 @@ type ManifestBookingRow={rowKind:'BOOKING_SCOPED';key:string;bookingId:string;di
 type ManifestCustodyRow={rowKind:'CUSTODY_ONLY';key:string;sourceStore:string;actualStore:string;family:string;taskState:string;taskAction:string;size?:string;age?:string;requirementKey?:string};
 type ManifestRow=ManifestBookingRow|ManifestCustodyRow;
 type ManifestResponse={store:string;date:string;section:string;generatedAt:string;pageSize:number;nextCursor:string|null;hasMore:boolean;rows:ManifestRow[]};
-const STATE_LABEL:Record<string,string>={DRAFT:'未確定（決済前）',PAYMENT_PENDING:'決済照合待ち',PAYMENT_REVIEW:'決済要確認',CONFIRMED_DEV:'確定済み',COMPLETED_DEV:'利用完了'};
+const STATE_LABEL:Record<string,string>={DRAFT:'未確定（決済前）',PAYMENT_PENDING:'決済照合待ち',PAYMENT_REVIEW:'決済要確認',CONFIRMED:'確定済み',COMPLETED:'利用完了',CANCELLED:'キャンセル済み',CONFIRMED_DEV:'確定済み',COMPLETED_DEV:'利用完了'};
 // Presentational mapping only, per UX-5D authorization — an unknown future enum value must
 // fail safe to 詳細確認, never be guessed from booking state/counts on the client.
 const ACTION_LABEL:Record<string,string>={CHECK_PAYMENT_OR_EXCEPTION:'要確認',PREPARE_EQUIPMENT:'準備',CHECKOUT:'貸出',OUT_WAIT_RETURN:'貸出中',RECEIVE_RETURN:'返却受付',INSPECTION_PENDING:'検品待ち',WEAR_CARE_IN_PROGRESS:'ウェア整備中',COMPLETE:'完了',NEEDS_DETAIL_REVIEW:'詳細確認',NO_ACTION:'対応なし'};

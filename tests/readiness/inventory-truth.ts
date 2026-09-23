@@ -35,5 +35,6 @@ try{
  assert.equal((await x.holds.command('create',randomUUID(),next,undefined,undefined,{reason:'SYNTHETIC fixture'})).result,'INSUFFICIENT');
  // Existing paid promise retains its recorded exemption; later inventory registration cannot erase it.
  assert.deepEqual(projectionClaims(conditions,await loadProtectionClaims(x.db.pool,d.holdId,conditions)),{gear:true,wear:true});
+ const preview=await x.service.cancellationPreview(d.booking.id);await x.service.cancel(d.booking.id,randomUUID(),preview.previewHash);assert.equal((await loadProtectionClaims(x.db.pool,d.holdId,conditions)).length,0);assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'",[d.holdId])).rows[0].n,0);
  console.log('PASS local PG: provisional wear + physical gear + durable POLE exemption -> paid booking; missing/duplicate witness rejected; immutable exemption; zero tracked stock never exempted.');
 }finally{await x.close();}

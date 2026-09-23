@@ -27,14 +27,18 @@ try{
 
  stage='synthetic business state';
  // Confirmed booking with a completed payment, plus an ambiguous one.
- const confirmed=await x.draft(undefined,requestFor('2035-03-03'));await x.service.startPayment(confirmed.booking.id,randomUUID());
- const ambiguous=await x.draft(undefined,requestFor('2035-03-04'));x.fake.failAfterSave=true;await x.service.startPayment(ambiguous.booking.id,randomUUID());x.fake.failAfterSave=false;
+ const confirmed=await x.draft(undefined,requestFor('2035-03-03'),{reason:'SYNTHETIC logical restore business fixture'});await x.service.startPayment(confirmed.booking.id,randomUUID());
+ const ambiguous=await x.draft(undefined,requestFor('2035-03-04'),{reason:'SYNTHETIC logical restore business fixture'});x.fake.failAfterSave=true;await x.service.startPayment(ambiguous.booking.id,randomUUID());x.fake.failAfterSave=false;
  // Durable confirmation delivery, an accepted refund request and a delayed transfer.
  const recovery=new BookingRecovery(access.accessPool,randomBytes(32),'restore-fixture-v1',undefined,5000,true);
  const worker=new BookingNotificationWorker(notify.notificationPool,x.origin,recovery,new LoopbackDeliveryAdapter());
  const delivery=(await worker.enqueueConfirmed(confirmed.booking.id))!;assert.equal((await worker.dispatch(delivery)).state,'ACCEPTED');
  const payment=(await x.db.pool.query('SELECT id FROM rental_payment_attempts WHERE booking_id=$1',[confirmed.booking.id])).rows[0];
  await new FinancialOperations(ctx).requestRefund(randomUUID(),{bookingId:confirmed.booking.id,paymentId:payment.id,actingStore:'MOUNTAIN_BASE',category:'CUSTOMER_EXCEPTION',reason:'SYNTHETIC restore fixture',amountJpy:100});
+ const cancelled=await x.draft(undefined,requestFor('2035-03-05'),{reason:'SYNTHETIC cancellation restore fixture'});await x.service.startPayment(cancelled.booking.id,randomUUID());
+ const preview=await x.service.cancellationPreview(cancelled.booking.id);await x.service.cancel(cancelled.booking.id,randomUUID(),preview.previewHash);
+ const refund=(await x.db.pool.query('SELECT id FROM booking_cancellation_refunds WHERE booking_id=$1',[cancelled.booking.id])).rows[0];
+ await x.db.pool.query('SELECT cancellation_refund_claim($1)',[refund.id]);
  const batch=randomUUID(),c=await x.db.pool.connect();
  try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC restore fixture',true)",[x.actor]);
   await c.query("INSERT INTO transfer_batches(id,source_store,destination_store,scheduled_date,planned_ready_at,needed_by,basis) VALUES($1,'MOUNTAIN_BASE','ONSEN_BASE','2034-12-30','2034-12-30T17:00:00+09:00','2034-12-31T08:30:00+09:00','SYNTHETIC restore transfer')",[batch]);
@@ -83,11 +87,17 @@ try{
 
  await check('critical business and audit rows survive the restore verbatim',async()=>{
   assert.deepEqual(await criticalFingerprint(restored!.pool),before);
+  for(const table of ['provisional_capacity_sources','provisional_capacity_buckets','provisional_capacity_adjustments','provisional_capacity_materializations','provisional_capacity_claims','inventory_buffer_override_log','inventory_pole_exemptions','booking_cancellation_policies','booking_cancellations','booking_cancellation_refunds']){
+   const sql=`SELECT to_jsonb(t) v FROM ${table} t ORDER BY to_jsonb(t)::text`;
+   assert.deepEqual((await restored!.pool.query(sql)).rows,(await x.db.pool.query(sql)).rows,table);
+  }
+  const uncertain=(await restored!.pool.query('SELECT state,dispatched_at FROM booking_cancellation_refunds WHERE id=$1',[refund.id])).rows[0];assert.equal(uncertain.state,'UNKNOWN');assert.ok(uncertain.dispatched_at);
  });
 
  await check('no session, credential or recovery proof comes back',async()=>{
   for(const [table,expectation] of [['auth_account',0],['auth_session',0],['auth_verification',0]] as const)assert.equal(Number((await restored!.pool.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n),expectation,table);
   assert.equal(Number((await restored!.pool.query('SELECT count(*)::int n FROM booking_access.recoveries')).rows[0].n),0);
+  assert.equal(Number((await restored!.pool.query('SELECT count(*)::int n FROM booking_access.cancellation_actions')).rows[0].n),0);
   assert.ok(Number((await restored!.pool.query('SELECT count(*)::int n FROM auth_user')).rows[0].n)>0);
   assert.ok(Number((await restored!.pool.query('SELECT count(*)::int n FROM staff_members')).rows[0].n)>0);
  });

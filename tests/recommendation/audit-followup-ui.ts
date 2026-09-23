@@ -12,7 +12,7 @@ const browser=await chromium.launch(),password=randomBytes(24).toString('base64u
 let app:Awaited<ReturnType<typeof startDevelopmentApp>>|undefined,passed=0,failed=0;
 async function check(name:string,fn:()=>Promise<void>){try{await fn();passed++;console.log('PASS '+name);}catch(e){failed++;console.error('FAIL '+name+' '+(e as Error).name);console.error((e as Error).stack?.split('\n').filter(l=>l.includes('/tests/recommendation/audit-followup-ui.ts:')).join('\n'));}}
 try{
- app=await startDevelopmentApp({built:true});await seedRecommendation(app.db.pool);
+ app=await startDevelopmentApp({built:true});await seedRecommendation(app.db.pool,true);
  await bootstrapDevelopmentAdmin(app.db.pool,{email:'audit-bootstrap@example.invalid',displayName:'合成初期ADMIN',password});
  const {origin}=app;
  async function clock(iso:string){const normalized=new Date(iso).toISOString();await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$ SELECT '${normalized}'::timestamptz $$`);}
@@ -54,13 +54,14 @@ try{
   });
  }
  await check('near AM cutoff new quote expires at12:00, HOLD lease never extended; saved quote remains immutable',async()=>{await clock('2035-06-11T11:59:00+09:00');const conditions=requestFor('2035-06-11');conditions.period.slot='AM';const key=randomUUID(),h=await (await staff.request.post('/api/holds',{headers:{origin},data:{requestKey:randomUUID(),conditions}})).json();const body={requestKey:key,input:{conditions,holdId:h.hold.id,couponCode:null,wantAdvance:false}};const response=await staff.request.post('/api/quotes',{headers:{origin},data:body});assert.equal(response.status(),201);const first=await response.json();assert.equal(first.quote.snapshot.expiresAt,'2035-06-11T03:00:00.000Z');await clock('2035-06-11T12:00:00+09:00');const again=await (await staff.request.post('/api/quotes',{headers:{origin},data:body})).json();assert.equal(again.quote.id,first.quote.id);assert.equal(again.quote.validity,'EXPIRED');assert.equal(again.quote.snapshotSha256,first.quote.snapshotSha256);assert.deepEqual(again.quote.snapshot,first.quote.snapshot);assert.equal((await (await staff.request.get('/api/holds/'+h.hold.id)).json()).expiresAt,h.hold.expiresAt);});
- // Each candidate comes from the normal ledger API, not a parser-only fixture. Distinct models avoid lexical duplicate keys.
+ // Each candidate comes from the normal ledger API. Two units provide one public slot;
+ // invalid sizes must still reject. Distinct models avoid lexical duplicate keys.
  const cases=[['SKI','150 cm',true],['SKI','150 CM',true],['SKI','150 Cm',true],['SKI','150\tCM',true],['SKI_BOOT','26.5 cm',true],['SKI_BOOT','26.5 CM',true],['SKI_BOOT','26.5  Cm',true],['SKI','150',false],['SKI','M',false],['SKI','150 mm',false]] as const;
  await clock('2035-06-12T10:00:00+09:00');
  for(const [index,[family,size,eligible]]of cases.entries())await check(`normal ledger registration -> recommendation ${family} ${JSON.stringify(size)} eligible=${eligible}`,async()=>{
   const provenance={notes:'SYNTHETIC audit case',sourceKind:'SYNTHETIC',sourceDocument:'tests/recommendation/audit-followup-ui.ts',sourceLocator:'cm-'+index};
   async function post(resource:string,data:unknown){const r=await staff.request.post('/api/ledger/'+resource,{headers:{origin},data});assert.equal(r.status(),201);return r.json();}
-  const model=await post('models',{code:'AUDIT-CM-'+index,name:'合成cm監査 '+index,brand:'SYNTHETIC',family,...provenance});const variant=await post('variants',{modelId:model.id,family,age:'ADULT',tier:'REGULAR',size,...provenance});await post('assets',{variantId:variant.id,family,storeId:'MOUNTAIN_BASE',status:'AVAILABLE',bslStatus:family==='SKI_BOOT'?'UNVERIFIED':'NOT_APPLICABLE',bslMm:null,bslEvidence:'',...provenance});
+  const model=await post('models',{code:'AUDIT-CM-'+index,name:'合成cm監査 '+index,brand:'SYNTHETIC',family,...provenance});const variant=await post('variants',{modelId:model.id,family,age:'ADULT',tier:'REGULAR',size,...provenance});for(let n=0;n<2;n++)await post('assets',{variantId:variant.id,family,storeId:'MOUNTAIN_BASE',status:'AVAILABLE',bslStatus:family==='SKI_BOOT'?'UNVERIFIED':'NOT_APPLICABLE',bslMm:null,bslEvidence:'',...provenance,sourceLocator:provenance.sourceLocator+'-asset-'+n});
   const r=await staff.request.post('/api/recommendations',{headers:{origin},data:{requestKey:randomUUID(),input:inputFor('2035-06-13'),replaceHoldId:null}});assert.equal(r.status(),201);const v:View=await r.json();const ids=v.preview.offered[0]!.candidates.RECOMMENDED?.member.items.find(i=>i.family===family)?.variantIds??[];console.log('LEDGER_CM '+JSON.stringify({size,family,eligible,selected:ids.includes(variant.id)}));assert.equal(ids.includes(variant.id),eligible);
  });
  console.log(`E09 audit normal UI/API/PostgreSQL: ${passed} passed; ${failed} failed; 0 skipped. Synthetic local password sessions; real app roles/DB. Clock and response delivery controlled only by test owner. No physical device claim.`);

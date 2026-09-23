@@ -78,6 +78,7 @@ export function productionPaymentActivationGrants(databaseName: string): string[
     `GRANT SELECT ON rental_payment_attempts,inventory_holds,inventory_claims,wear_claims,wear_pools,ledger_assets,ledger_poles,ledger_variants,ledger_models,transfer_pieces,transfer_batches TO ${names.projector}`,
     `GRANT SELECT(id,actor,hold_id,conditions,snapshot,snapshot_sha256,coupon_id,book_id) ON price_quotes TO ${names.projector}`,
     `GRANT SELECT(id,revision,source_sha256,table_jpy,state) ON price_books TO ${names.projector}`,
+    `GRANT EXECUTE ON FUNCTION booking_cancellation_payment_observed(uuid) TO ${names.projector}`,
     `GRANT SELECT ON provisional_capacity_claims,provisional_capacity_buckets,inventory_pole_exemptions TO ${names.projector}`,
     `GRANT UPDATE(state,confirmed_at,version) ON rental_bookings TO ${names.projector}`,
     `GRANT UPDATE(state,provider_id,provider_state,provider_updated_at,completed_at,updated_at) ON rental_payment_attempts TO ${names.projector}`,

@@ -12,7 +12,7 @@ const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 async function fingerprint(pool:Pool){const tables=(await pool.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).rows as {tablename:string}[];const values:Record<string,{rows:number;sha256:string}>={};for(const {tablename} of tables){assert.match(tablename,/^[A-Za-z_][A-Za-z0-9_]*$/);const rows=(await pool.query('SELECT to_jsonb(t) AS value FROM public."'+tablename+'" t')).rows.map(r=>canonical(r.value)).sort();values[tablename]={rows:rows.length,sha256:hash(canonical(rows))};}return values;}
 let x:Awaited<ReturnType<typeof flowFixture>>|undefined,restored:Awaited<ReturnType<typeof restoreOwnedCluster>>|undefined,sourceStopped=false,appPoolsClosed=false,failed=false,stage='setup';
 try{
- x=await flowFixture();await x.draft();const before=await fingerprint(x.db.pool),migration=(await x.db.pool.query('SELECT * FROM foundation_migrations ORDER BY id')).rows,major=(await x.db.pool.query('SHOW server_version_num')).rows[0].server_version_num;
+ x=await flowFixture();await x.draft(undefined,undefined,{reason:'SYNTHETIC cold backup exact-stock fixture'});const before=await fingerprint(x.db.pool),migration=(await x.db.pool.query('SELECT * FROM foundation_migrations ORDER BY id')).rows,major=(await x.db.pool.query('SHOW server_version_num')).rows[0].server_version_num;
  // All application-role pools close before the physical cluster stop/copy.
  await x.flow.close();await x.roles.close();appPoolsClosed=true;stage='cold backup';const backup=await backupOwnedCluster(x.db,()=>{sourceStopped=true;});
  console.log('PASS stopped owned source before verified cold backup; no live-file copying');

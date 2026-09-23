@@ -16,7 +16,7 @@ import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {RecommendationService} from '../../packages/core/src/recommendation/recommendation-service';
 import {guestCatalog,guestVariants} from '../../packages/core/src/content/public-catalog';
 import {guestHandler} from '../../apps/web/src/lib/guest-http';
-const db=await startIsolatedPostgres(),pools:Pool[]=[];let stage='setup';
+const db=await startIsolatedPostgres(),pools:Pool[]=[];let stage='setup',failed=false;
 try{
  await migrate(db.pool);const fixture=await seedPhase6Fixture(db.pool);await importPhase6Artwork(db.pool);const configs=await provisionLocalAvatarRoles(db.pool),p=Object.fromEntries(Object.entries(configs).map(([k,c])=>{const pool=new Pool(c);pools.push(pool);return [k,pool];}));
  const contexts=new GuestContexts(p.guest!),key=randomBytes(32).toString('hex'),security=new GuestSecurity(p.guest!,contexts,guestPolicy.policy,key),origin='http://127.0.0.1:12345';
@@ -29,4 +29,6 @@ try{
  stage='choose';const chosen=await request('/selection',{draftId:draft.id,expectedRevision:draft.revision,directions:{'person-1':'RECOMMENDED','person-2':'LONGER'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});assert.equal(chosen.status,200);assert.ok((await chosen.json()).selection);
  for(const table of ['inventory_holds','price_quotes','rental_bookings','rental_payment_attempts'])assert.equal((await db.pool.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n,0);
  await writeFile('docs/execution/avatar-phase6/guest-local-proof.json',JSON.stringify({status:'PASS',fixture,memberCount:2,directions:3,normalContextSavePreviewSelection:true,holdQuoteBookingPayment:0},null,2)+'\n');console.log('PASS normal local Guest service through Phase6 least-privilege roles');
-}catch(e){console.log(JSON.stringify({status:'FAIL',stage,category:(e as {code?:string}).code??(e as Error).name}));process.exitCode=1;}finally{await Promise.all(pools.map(p=>p.end()));await db.stop();}
+}catch(e){console.log(JSON.stringify({status:'FAIL',stage,category:(e as {code?:string}).code??(e as Error).name}));failed=true;}finally{await Promise.all(pools.map(p=>p.end()));await db.stop();}
+
+if(failed)process.exit(1);

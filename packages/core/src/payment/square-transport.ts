@@ -21,7 +21,7 @@ class FetchSquareTransport implements SquareTransport{
   const body=call.body;
   const money=body&&body.amount_money.currency==='JPY'&&Number.isSafeInteger(body.amount_money.amount)&&body.amount_money.amount>0;
   const payment=call.method==='POST'&&path==='/v2/payments'&&body&&'source_id' in body&&body.location_id===this.locationId&&money&&body.idempotency_key&&body.reference_id&&body.autocomplete===true;
-  const refund=call.method==='POST'&&path==='/v2/refunds'&&body&&'payment_id' in body&&money&&/^[a-f0-9-]{36}$/.test(body.idempotency_key)&&/^[A-Za-z0-9_-]{1,100}$/.test(body.payment_id)&&body.reason==='SYNTHETIC_P4_SANDBOX_TEST';
+  const refund=call.method==='POST'&&path==='/v2/refunds'&&body&&'payment_id' in body&&money&&/^[a-f0-9-]{36}$/.test(body.idempotency_key)&&/^[A-Za-z0-9_-]{1,100}$/.test(body.payment_id)&&(body.reason==='SYNTHETIC_P4_SANDBOX_TEST'&&this.environment==='SANDBOX'||body.reason==='ZAO_CANCELLATION_V1');
   const lookup=call.method==='GET'&&/^\/v2\/(payments|refunds)\/[A-Za-z0-9_-]{1,100}$/.test(path)&&body===undefined;
   if(call.version!==SQUARE_VERSION||!call.url.startsWith(this.origin+'/')||!(payment||refund||lookup))throw new FlowError('SQUARE_REQUEST_REJECTED',503);
   let response:Response|undefined;

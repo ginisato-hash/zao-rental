@@ -18,10 +18,13 @@ export const RESTORE_REQUIRED=[
  'public.wear_pools','public.wear_claims','public.wear_loans','public.wear_receipts','public.wear_return_batches','public.wear_transfers','public.wear_transfer_receipts','public.wear_unresolved_returns','public.wear_history','public.wear_requests',
  'public.ops_amendments','public.ops_amendment_quotes','public.ops_charge_requests','public.ops_refund_requests','public.ops_financial_alerts','public.ops_history','public.ops_stocktakes','public.ops_stocktake_reconciliations','public.ops_receipt_terms','public.ops_exceptions','public.field_acceptance_records','public.ops_import_sources','public.ops_import_stages','public.ops_import_commits','public.real_inventory_sources','public.real_data_acceptance',
  'public.booking_notification_outbox',
+ 'public.provisional_capacity_sources','public.provisional_capacity_buckets','public.provisional_capacity_adjustments','public.provisional_capacity_materializations','public.provisional_capacity_claims','public.inventory_buffer_override_log','public.inventory_pole_exemptions',
+ 'public.booking_cancellation_policies','public.booking_cancellations','public.booking_cancellation_refunds',
  'square_webhook.inbox','payment_reconciliation.streams','payment_reconciliation.jobs','payment_reconciliation.events','payment_reconciliation.audit','payment_reconciliation.provider_stops',
 ] as const;
 /** Deliberately not restored. Each entry names why the row cannot or must not come back. */
 export const NOT_RESTORED:Record<string,string>={
+ 'booking_access.cancellation_actions':'BEARER_CANCELLATION_PROOF_REVOKED',
  'public.auth_account':'CREDENTIAL_MATERIAL_REVOKED_AND_REISSUED','public.auth_session':'SESSION_REVOKED_STAFF_SIGN_IN_AGAIN','public.auth_verification':'EPHEMERAL_VERIFICATION_REISSUED',
  'booking_access.capabilities':'BEARER_PROOF_REVOKED','booking_access.recoveries':'RECOVERY_PROOF_REVOKED_GUEST_REQUESTS_AGAIN','booking_access.audit':'REFERENCES_REVOKED_PROOFS','booking_access.recovery_audit':'REFERENCES_REVOKED_PROOFS',
  'public.guest_contexts':'EPHEMERAL_GUEST_SESSION','public.guest_drafts':'EPHEMERAL_GUEST_DRAFT','public.guest_lifecycle':'EPHEMERAL_GUEST_SESSION','public.guest_rate_buckets':'EPHEMERAL_RATE_WINDOW','public.guest_security_audit':'REFERENCES_EPHEMERAL_GUEST_SESSION','public.guest_policy_versions':'RECREATED_BY_MIGRATION',

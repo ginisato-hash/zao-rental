@@ -51,9 +51,10 @@ export class PgProjectionTransaction implements PaymentProjectionTransaction{
   if(plan.mutation!=='NONE'){
    // The existing audit FK records original initiating actor. Origin is separately INTERNAL_LOCAL_PROJECTION.
    await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','PAYMENT_PROJECTION_LOCAL',true)",[a.actor]);
-   const state=plan.mutation==='COMPLETED'?'COMPLETED':plan.mutation==='PENDING'?'PENDING':plan.mutation==='FAILED'?'FAILED':'REVIEW';
+   const state=plan.mutation==='CANCELLED_PAYMENT'?(o!.status==='COMPLETED'?'COMPLETED':o!.status==='PENDING'?'PENDING':'FAILED'):plan.mutation==='COMPLETED'?'COMPLETED':plan.mutation==='PENDING'?'PENDING':plan.mutation==='FAILED'?'FAILED':'REVIEW';
    await c.query('UPDATE rental_payment_attempts SET state=$2,provider_id=$3,provider_state=$4,provider_updated_at=$5,completed_at=$6,updated_at=$7 WHERE id=$1',[a.expected.attemptId,state,o!.providerId,o!.status,o!.updatedAt,o!.completedAt,now]);a.state=state;
-   if(plan.mutation==='COMPLETED'){
+   if(plan.mutation==='CANCELLED_PAYMENT'){await c.query('SELECT booking_cancellation_payment_observed($1)',[b.id]);}
+   else if(plan.mutation==='COMPLETED'){
     const confirmedState=b.mode==='SQUARE_PRODUCTION'?'CONFIRMED':'CONFIRMED_DEV';await c.query("UPDATE rental_bookings SET state=$3,confirmed_at=$2,version=version+1 WHERE id=$1",[b.id,now,confirmedState]);b.state=confirmedState;
     const confirmed=await c.query("UPDATE inventory_holds SET payment_state='SUCCESS',confirmed_at=$2,version=version+1 WHERE id=$1 AND state='ACTIVE' AND confirmed_at IS NULL AND allocation_stage='PROVISIONAL' AND payment_state IN ('PENDING','UNKNOWN') AND expires_at>inventory_clock() AND due_at>inventory_clock() RETURNING id",[h!.id,now]);
     if(confirmed.rowCount!==1)throw new ProjectionError('PROJECTION_TIME_BOUNDARY_CHANGED');h!.paymentState='SUCCESS';

@@ -31,7 +31,7 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   // via its own explicit amend/reassign command, which replans through this same function for
   // itself as the candidate, not as another hold's automatic replan target.
   const provisionalBacked=(await c.query<{hold_id:string}>(`SELECT DISTINCT hold_id FROM provisional_capacity_claims WHERE state='ACTIVE' AND hold_id=ANY($1::uuid[])`,[scope])).rows.map(r=>r.hold_id);
-  const mutable=live.filter(h=>h.due_at>now&&!h.transfer_attention&&!pinned.includes(h.id)&&!provisionalBacked.includes(h.id)&&h.allocation_stage==='PROVISIONAL'&&(['NONE','FAILURE'].includes(h.payment_state)||h.payment_state==='SUCCESS'&&h.confirmed_at instanceof Date));
+  const mutable=live.filter(h=>(!h.buffer_override||bufferOverride)&&h.due_at>now&&!h.transfer_attention&&!pinned.includes(h.id)&&!provisionalBacked.includes(h.id)&&h.allocation_stage==='PROVISIONAL'&&(['NONE','FAILURE'].includes(h.payment_state)||h.payment_state==='SUCCESS'&&h.confirmed_at instanceof Date));
   // All non-replanned live promises remain fixed, including outside the closure.
   const fixedIds=nodes.filter(h=>!mutable.some(m=>m.id===h.id)).map(h=>h.id);
   const jobs=[...mutable.map(h=>({id:h.id,c:h.conditions})),{id:'candidate',c:conditions}];
@@ -56,6 +56,10 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   const wear=wearFeasible===undefined?await wearCapacity(c,conditions,now,ignore,bufferOverride):{feasible:wearFeasible};
   if(!wear.feasible)return {result:'INSUFFICIENT',witness:[],replanned:[]};
   const units=(await c.query<Unit>(`SELECT a.id,a.variant_id,a.family,v.age,v.tier,a.store_id,1 AS quantity,a.status FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=ANY($1::uuid[]) UNION ALL SELECT p.id,p.variant_id,p.family,v.age,v.tier,p.store_id,p.quantity,p.status FROM ledger_poles p JOIN ledger_variants v ON v.id=p.variant_id WHERE p.variant_id=ANY($1::uuid[]) ORDER BY id LIMIT 3001`,[variantIds])).rows;
+  // Property-wide denominator before transfer projection adjusts representations. Count each
+  // registered lendable unit once, irrespective of store; claims are usage, never capacity.
+  const operationalTotal=new Map<string,number>();
+  for(const u of units)if(u.status==='AVAILABLE')operationalTotal.set(u.variant_id,(operationalTotal.get(u.variant_id)??0)+u.quantity);
   for(const u of [...units])if(u.family==='POLE'){u.quantity-=transfers.filter(p=>p.destination_pole_id===u.id&&p.state==='READY').length;for(const p of transfers.filter(p=>p.destination_pole_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state)))units.push({...u,id:p.id,quantity:1,transfer_piece_id:p.id,physical_pole_id:u.id});}
   if(units.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   // Only absent relevant stock permits a durable exemption; unavailable stock remains tracked.
@@ -110,13 +114,9 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
    // claims for that variant/day plus the newly written public claims must never exceed
    // floor(trueUnitCount*0.95); a replanned other hold's own buffer_override status (not the
    // candidate's) governs whether its own claims count toward the public total.
-   // `u.quantity`, not a per-row +1: a `ledger_assets` row is always exactly 1 physical unit (its
-   // own SELECT hardcodes `1 AS quantity`), but a `ledger_poles` row is a quantity-pool row (up to
-   // 1,000,000 per variant/store/status, migration 0002) — counting rows instead of summing
-   // quantity would undercount true pole operational capacity down to "row count", collapsing the
-   // public ceiling to floor(rowCount*0.95) instead of floor(trueUnitCount*0.95).
-   const operationalTotal=new Map<string,number>();
-   for(const u of units)if(!u.transfer_piece_id)operationalTotal.set(u.variant_id,(operationalTotal.get(u.variant_id)??0)+u.quantity);
+   // Variant identity is a conservative compatibility partition: model/season/size promises
+   // never borrow another variant's reserve. Overlapping acceptable variant sets may produce
+   // a false negative, but cannot merge restricted supply or exceed any true unit hard ceiling.
    const publicUsage=new Map<string,{variantId:string;count:number}>();
    const bump=(variantId:string,day:string)=>{const key=variantId+'|'+day;const cur=publicUsage.get(key)??{variantId,count:0};cur.count++;publicUsage.set(key,cur);};
    // `fixedClaims` spans every currently-active claim on the relevant units, across whatever dates

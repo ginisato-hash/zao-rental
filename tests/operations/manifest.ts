@@ -17,6 +17,8 @@ import {registerWear} from '../wear/fixture';
 import type {HoldConditions} from '../../packages/contracts/src/hold';
 let failed=false,stage='fixture',count=0;const x=await flowFixture();let role:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
+// Manifest/custody mechanics use explicit staff reserve for tiny exact-capacity fixtures.
+const draft=(date?:string,conditions?:HoldConditions)=>x.draft(date,conditions,{reason:'SYNTHETIC manifest custody mechanics'});
 const BUSINESS=['rental_bookings','rental_payment_attempts','inventory_holds','inventory_claims','rental_loan_items','rental_preparations','rental_custody_events','rental_inspection_events','rental_no_pickup_events','wear_loans','wear_receipts','ops_exceptions'];
 try{
  role=await provisionOperationsRole(x.db.pool,x.db.identity);
@@ -27,7 +29,7 @@ try{
  // A dedicated account, never x.actor: staff_permission_overrides/staff_store_access writes
  // bump staff_members.revision (0003_staff_auth.sql's staff_permission_audit trigger), which
  // would invalidate the principal already captured inside x.holds/x.quotes/x.service and fail
- // every later x.draft() booking-actor authorization with a stale-revision FORBIDDEN.
+ // every later draft() booking-actor authorization with a stale-revision FORBIDDEN.
  async function account(email:string,scope:'ALL'|'ASSIGNED',storeIds:string[],permissions:Record<string,boolean>){
   await writeAccount(x.roles.authPool,x.bp,undefined,{email,password:x.password,displayName:'SYNTHETIC '+email.split('@')[0],active:true,role:'STAFF',scope,storeIds,permissions});
   const signed=await x.login(email);return new ManifestService(role!.operationsPool,x.roles.authPool,signed.identity);
@@ -58,7 +60,7 @@ try{
  });
 
  await x.clock('2035-02-01T05:00:00+09:00');
- const pickup=await x.draft('2035-02-01');await x.service.startPayment(pickup.booking.id,randomUUID());
+ const pickup=await draft('2035-02-01');await x.service.startPayment(pickup.booking.id,randomUUID());
 
  await check('pickup today is derived from server inventory_clock(), never a client date',async()=>{
   const page=await full.manifest({store:'MOUNTAIN_BASE',date:null,section:null,cursor:null,pageSize:null});
@@ -98,7 +100,7 @@ try{
   // checked out and never returned, so once its due time passes it permanently occupies
   // the default SKI asset via rental_inventory_blocks' OVERDUE_OUT view (0033_launch_operations.sql:125).
   const conditions=requestFor('2035-02-05',[variants.skiAlt]);conditions.period={startDate:'2035-02-05',endDate:'2035-02-06',slot:'MULTIDAY'};
-  const dueToday=await x.draft(undefined,conditions);await x.service.startPayment(dueToday.booking.id,randomUUID());
+  const dueToday=await draft(undefined,conditions);await x.service.startPayment(dueToday.booking.id,randomUUID());
   await x.clock('2035-02-05T09:00:00+09:00');
   const view=await custody.checkoutView(dueToday.booking.id);await custody.prepare(randomUUID(),{bookingId:dueToday.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC due-today fit'});
   await custody.checkout(randomUUID(),{bookingId:dueToday.booking.id,expectedPreparationVersion:1});
@@ -114,7 +116,7 @@ try{
   // A third distinct SKI asset: the default variants.ski/skiAlt units are both permanently
   // OUT (never returned) from the earlier pickup/OUT_WAIT_RETURN checks above.
   const multiday:HoldConditions={reservationId:randomUUID(),pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-02-10',endDate:'2035-02-12',slot:'MULTIDAY'},members:[{key:'person-a',product:'SINGLE',age:'ADULT',tier:'REGULAR',items:[{family:'SKI',variantIds:[lengthVariants.ski145]}]}]};
-  const d=await x.draft(undefined,multiday);await x.service.startPayment(d.booking.id,randomUUID());
+  const d=await draft(undefined,multiday);await x.service.startPayment(d.booking.id,randomUUID());
   await x.clock('2035-02-10T06:00:00+09:00');
   const startDay=(await full.manifest({store:'MOUNTAIN_BASE',date:'2035-02-10',section:null,cursor:null,pageSize:null})).rows.find(r=>(r as {bookingId?:string}).bookingId===d.booking.id) as {nextAction:string}|undefined;
   assert.notEqual(startDay?.nextAction,'COMPLETE');
@@ -130,7 +132,7 @@ try{
  await check('same-day receipt + inspection stays visible with COMPLETE; a later-day inspection completion does not leave a standing COMPLETE row',async()=>{
   // A distinct SKI asset from the permanently-OUT pickup/dueToday bookings above.
   const sameDayConditions=skiSet('2035-02-15');sameDayConditions.members[0]!.items[0]!.variantIds=[lengthVariants.ski135];
-  sameDay=await x.draft(undefined,sameDayConditions);await x.service.startPayment(sameDay.booking.id,randomUUID());
+  sameDay=await draft(undefined,sameDayConditions);await x.service.startPayment(sameDay.booking.id,randomUUID());
   const view=await custody.checkoutView(sameDay.booking.id);await custody.prepare(randomUUID(),{bookingId:sameDay.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC same-day fit'});
   await x.clock('2035-02-15T09:00:00+09:00');await custody.checkout(randomUUID(),{bookingId:sameDay.booking.id,expectedPreparationVersion:1});
   await x.clock('2035-02-15T13:00:00+09:00');
@@ -152,7 +154,7 @@ try{
   // 3-unit pool via the same INSPECTION_PENDING rental_inventory_blocks branch (0033:125)
   // that OVERDUE_OUT uses for a never-returned OUT item.
   const carryOverConditions=requestFor('2035-02-20',[lengthVariants.ski165]);
-  const d=await x.draft(undefined,carryOverConditions);await x.service.startPayment(d.booking.id,randomUUID());
+  const d=await draft(undefined,carryOverConditions);await x.service.startPayment(d.booking.id,randomUUID());
   const view=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC carry-over fit'});
   await x.clock('2035-02-20T09:00:00+09:00');await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:1});
   await x.clock('2035-02-20T13:00:00+09:00');
@@ -190,7 +192,7 @@ try{
   // would need a second concurrent unit that isn't available until wear-only is returned
   // later in this same check. wear-mixed alone still makes this booking mixed equipment+wear.
   const mixedInput={pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-02-26',endDate:'2035-02-26',slot:'DAY' as const},contractVersion:'INTEGRATED_V1_2' as const,members:[{key:'ski-mixed',sport:'SKI' as const,heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR' as const,ski:{weightKg:60,ageAtStart:30,level:'BEGINNER' as const},poleVariantId:variants.pole},wearMember('wear-mixed')]};
-  const mp=await recs.preview(randomUUID(),mixedInput,null),ms=await recs.select(mp.preview.id,randomUUID(),{directions:{'ski-mixed':'RECOMMENDED','wear-mixed':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});
+  const mp=await recs.preview(randomUUID(),mixedInput,null,true),ms=await recs.select(mp.preview.id,randomUUID(),{directions:{'ski-mixed':'RECOMMENDED','wear-mixed':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true},{reason:'SYNTHETIC mixed manifest mechanics'});
   const mixed=await x.service.create(randomUUID(),ms.quote!.id,{displayName:'SYNTHETIC Mixed',email:'synthetic-mixed@example.invalid',termsAccepted:true});
   await x.service.startPayment(mixed.id,randomUUID());
   await x.clock('2035-02-26T09:00:00+09:00');
@@ -235,7 +237,7 @@ try{
  await check('cross-store actual receipt: BOOKING_SCOPED when planned-store scope permits, CUSTODY_ONLY minimal projection when it does not',async()=>{
   // A distinct SKI asset from the other checked-out-forever/carry-over bookings above.
   const crossStoreConditions=skiSet('2035-02-28');crossStoreConditions.members[0]!.items[0]!.variantIds=[lengthVariants.ski134];
-  const d=await x.draft(undefined,crossStoreConditions);await x.service.startPayment(d.booking.id,randomUUID());
+  const d=await draft(undefined,crossStoreConditions);await x.service.startPayment(d.booking.id,randomUUID());
   const view=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC cross-store fit'});
   await x.clock('2035-02-28T09:00:00+09:00');await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:1});
   await x.clock('2035-02-28T13:00:00+09:00');
@@ -296,13 +298,13 @@ try{
   // permanently OUT from the pickup/dueToday bookings above. The date must also still be
   // in the future relative to the server clock (now 2035-02-28+ from the checks above),
   // or hold creation itself fails PERIOD_ENDED regardless of stock.
-  const d=await x.draft(undefined,requestFor('2035-03-01',[lengthVariants.ski166]));await x.service.startPayment(d.booking.id,randomUUID());
+  const d=await draft(undefined,requestFor('2035-03-01',[lengthVariants.ski166]));await x.service.startPayment(d.booking.id,randomUUID());
   const holder=await role!.operationsPool.connect();
   try{
    await holder.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');const before=(await holder.query('SELECT count(*)::int n FROM rental_bookings WHERE hold_id IS NOT NULL')).rows[0].n;
    // A different single-unit variant than the line above: two concurrent same-day holds
    // for the same variant would themselves conflict over the one physical asset.
-   await x.service.startPayment((await x.draft(undefined,requestFor('2035-03-01',[lengthVariants.ski145]))).booking.id,randomUUID());
+   await x.service.startPayment((await draft(undefined,requestFor('2035-03-01',[lengthVariants.ski145]))).booking.id,randomUUID());
    const after=(await holder.query('SELECT count(*)::int n FROM rental_bookings WHERE hold_id IS NOT NULL')).rows[0].n;
    assert.equal(before,after,'the held snapshot must not observe a booking created after the transaction began');
   }finally{await holder.query('ROLLBACK');holder.release();}

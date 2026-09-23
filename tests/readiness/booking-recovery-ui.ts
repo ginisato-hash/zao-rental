@@ -9,7 +9,7 @@ import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 const browser=await chromium.launch();let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,failed=false,stage='setup';
 try{
- app=await startFlowApp({publicP0:true,publicP1:true,publicP4:true,publicP5:true,warmRoutes:true});await seedRecommendation(app.db.pool);
+ app=await startFlowApp({publicP0:true,publicP1:true,publicP4:true,publicP5:true,warmRoutes:true});await seedRecommendation(app.db.pool,true);
  const clock=async(t:string)=>{assert.match(t,/^[0-9:T+-]+$/);await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${t}'::timestamptz$$`);};await clock('2035-01-01T10:00:00+09:00');
  const root=await bootstrapDevelopmentAdmin(app.db.pool,{email:'p4-root@example.invalid',displayName:'SYNTHETIC P4',password:randomBytes(24).toString('base64url')});for(const permission of ['QUOTE_VIEW','QUOTE_CREATE','PRICE_EDIT'])await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true)',[root,permission]);await new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  const context=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});context.setDefaultTimeout(15000);const page=await context.newPage();
@@ -23,7 +23,8 @@ try{
  const guest=(await context.cookies()).find(c=>c.name==='zao_guest')!;
  assert.equal((await context.request.post('/api/booking-access/recovery/prepare',{headers:{origin:app.origin},data:{bookingId,requestId:randomUUID()}})).status(),200);
  await app.recoveryFixture!.enroll(guest.value,bookingId,randomUUID());const code=app.recoveryFixture!.code();await context.close();
- await clock('2035-01-03T10:00:00+09:00');
+ await clock('2035-01-02T10:00:00+09:00');
+ assert.equal((await app.db.pool.query('SELECT bool_and(expires_at<inventory_clock()) v FROM guest_contexts')).rows[0].v,true);
  const fresh=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});fresh.setDefaultTimeout(15000);let recovered=await fresh.newPage();
  stage='fresh browser exchange response loss';await recovered.goto('/ja/reservation');await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toHaveCount(0);
  let observed!:()=>void;const lost=new Promise<void>(resolve=>observed=resolve);
@@ -40,6 +41,17 @@ try{
  assert.deepEqual((await app.db.pool.query('SELECT b.conditions,b.price_snapshot,b.price_sha256,h.expires_at,h.due_at FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1',[bookingId])).rows[0],before);
  const stranger=await browser.newContext({baseURL:app.origin});assert.equal((await stranger.request.post('/api/booking-access/recovery/exchange',{headers:{origin:app.origin},data:{code,requestId:randomUUID()}})).status(),401);await stranger.close();
  console.log('PASS process restart preserves one-time binding; another exchange key refused; original price/due/HOLD expiry unchanged');
+ stage='recovered cancellation authority and lost response';
+ const action=(await fresh.cookies()).find(c=>c.name==='zao_booking_cancel')!;assert.ok(action.httpOnly);assert.equal(action.sameSite,'Strict');
+ for(const secret of [action.value]){assert.equal((await recovered.content()).includes(secret),false);assert.equal(await recovered.evaluate(v=>JSON.stringify({...localStorage,...sessionStorage}).includes(v),secret),false);}
+ const readOnly=await browser.newContext({baseURL:app.origin});await readOnly.addCookies([cookie]);assert.equal((await readOnly.request.post('/api/booking-access/cancel',{headers:{origin:app.origin},data:{bookingId,requestKey:randomUUID(),previewHash:'a'.repeat(64)}})).status(),401);await readOnly.close();
+ await recovered.getByRole('button',{name:'予約をキャンセル',exact:true}).click();await expect(recovered.getByRole('heading',{name:'キャンセル内容の最終確認'})).toBeVisible();
+ let cancelCommitted!:()=>void;const cancelled=new Promise<void>(resolve=>cancelCommitted=resolve);await recovered.route('**/api/booking-access/cancel',async route=>{const response=await route.fetch();assert.equal(response.status(),200);await route.abort('failed');cancelCommitted();});
+ await recovered.getByRole('button',{name:'この返金額でキャンセルを確定'}).click();await cancelled;await recovered.unroute('**/api/booking-access/cancel');await recovered.reload();
+ await expect(recovered.getByRole('heading',{name:'予約をキャンセルしました'})).toBeVisible();await expect(recovered.getByRole('region',{name:'キャンセル状況'})).toContainText('返金処理待ち');await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toHaveCount(0);
+ for(const table of ['booking_cancellations','booking_cancellation_refunds'])assert.equal((await app.db.pool.query(`SELECT count(*)::int n FROM ${table} WHERE booking_id=$1`,[bookingId])).rows[0].n,1);
+ await recovered.goto('/en/reservation');await expect(recovered.getByRole('region',{name:'Cancellation status'})).toContainText('Refund pending');await recovered.goto('/ja/reservation');
+ console.log('PASS expired original context -> verified recovery -> separate HttpOnly CANCEL authority -> JA/EN cancellation; plain read cookie denied; committed response loss/reload leaves one cancellation/refund');
  stage='proof revoke hides existing QR';await recovered.getByLabel('予約復旧コード',{exact:true}).fill(code);await recovered.getByRole('button',{name:'この復旧コードを失効',exact:true}).click();await expect(recovered.getByRole('region',{name:'予約閲覧の復旧'}).getByRole('status')).toContainText('失効しました');await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toHaveCount(0);assert.equal((await fresh.request.get('/api/booking-access')).status(),401);
  for(const width of [320,390,430,768]){await recovered.setViewportSize({width,height:844});assert.ok(await recovered.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
  await mkdir('.local/screenshots',{recursive:true});await recovered.screenshot({path:'.local/screenshots/p5-recovery-after-revoke.png',fullPage:true});await fresh.close();

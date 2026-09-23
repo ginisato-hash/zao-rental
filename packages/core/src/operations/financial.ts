@@ -21,7 +21,7 @@ export class FinancialOperations{
  }
  async summary(bookingId:string,actingStore:string){
   await this.ctx.authorize('BOOKING_VIEW',[actingStore]);await this.booking(this.ctx.pool,bookingId,actingStore);
-  const payments=(await this.ctx.pool.query(`SELECT p.id,p.kind,p.amount_jpy::int AS collected_jpy,coalesce(sum(r.amount_jpy) FILTER(WHERE r.state='COMPLETED'),0)::int AS refunded_jpy,coalesce(sum(r.amount_jpy) FILTER(WHERE r.state IN ('PENDING','UNKNOWN','REVIEW')),0)::int AS reserved_jpy FROM ops_collected_payments p LEFT JOIN ops_refund_requests r ON r.payment_id=p.id AND r.payment_kind=p.kind WHERE p.booking_id=$1 GROUP BY p.id,p.kind,p.amount_jpy ORDER BY p.id`,[bookingId])).rows;
+  const payments=(await this.ctx.pool.query(`SELECT p.id,p.kind,p.amount_jpy::int AS collected_jpy,coalesce(sum(r.amount_jpy) FILTER(WHERE r.state='COMPLETED'),0)::int AS refunded_jpy,coalesce(sum(r.amount_jpy) FILTER(WHERE r.state IN ('PENDING','UNKNOWN','REVIEW')),0)::int AS reserved_jpy FROM ops_collected_payments p LEFT JOIN (SELECT payment_id,payment_kind,amount_jpy,state FROM ops_refund_requests UNION ALL SELECT payment_id,payment_kind,amount_jpy,state FROM booking_cancellation_refunds) r ON r.payment_id=p.id AND r.payment_kind=p.kind WHERE p.booking_id=$1 GROUP BY p.id,p.kind,p.amount_jpy ORDER BY p.id`,[bookingId])).rows;
   return {payments:payments.map(p=>({...p,remainingJpy:p.collected_jpy-p.refunded_jpy-p.reserved_jpy})),charges:(await this.ctx.pool.query<FinancialRow>('SELECT * FROM ops_charge_requests WHERE booking_id=$1 ORDER BY created_at,id',[bookingId])).rows.map(view),refunds:(await this.ctx.pool.query<FinancialRow>('SELECT * FROM ops_refund_requests WHERE booking_id=$1 ORDER BY created_at,id',[bookingId])).rows.map(view),alerts:(await this.ctx.pool.query('SELECT code,created_at FROM ops_financial_alerts WHERE booking_id=$1 ORDER BY created_at,id',[bookingId])).rows,automaticRefund:false,providerConnected:false};
  }
  async requestRefund(key:string,value:unknown){
@@ -32,10 +32,11 @@ export class FinancialOperations{
    await this.booking(c,v.bookingId as string,store);await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['BOOKING_VIEW',[store],this.ctx.identity.subject]);
    const old=(await c.query<FinancialRow&{fingerprint:string}>('SELECT * FROM ops_refund_requests WHERE booking_id=$1 AND request_key=$2',[v.bookingId,key])).rows[0];
    if(old){if(old.fingerprint!==fingerprint)throw new FlowError('IDEMPOTENCY_MISMATCH',409);return {...view(old),replayed:true};}
-   if((await c.query("SELECT 1 FROM ops_refund_requests WHERE booking_id=$1 AND state IN ('PENDING','UNKNOWN','REVIEW') UNION ALL SELECT 1 FROM ops_financial_alerts WHERE booking_id=$1 LIMIT 1",[v.bookingId])).rowCount)throw new FlowError('REFUND_RECONCILIATION_REQUIRED',409);
+   if((await c.query("SELECT 1 FROM ops_refund_requests WHERE booking_id=$1 AND state IN ('PENDING','UNKNOWN','REVIEW') UNION ALL SELECT 1 FROM ops_financial_alerts WHERE booking_id=$1 UNION ALL SELECT 1 FROM booking_cancellation_refunds WHERE booking_id=$1 AND state IN ('PENDING','UNKNOWN','REVIEW') LIMIT 1",[v.bookingId])).rowCount)throw new FlowError('REFUND_RECONCILIATION_REQUIRED',409);
    const p=(await c.query<{id:string;kind:'ORIGINAL'|'ADDITIONAL';provider_id:string|null;merchant_id:string;location_id:string;amount_jpy:string;currency:'JPY'}>('SELECT * FROM ops_collected_payments WHERE id=$1 AND booking_id=$2',[v.paymentId,v.bookingId])).rows[0];if(!p?.provider_id)throw new FlowError('COMPLETED_PAYMENT_REQUIRED',409);
    const reserved=Number((await c.query("SELECT coalesce(sum(amount_jpy),0) AS n FROM ops_refund_requests WHERE payment_id=$1 AND payment_kind=$2 AND state<>'FAILED'",[p.id,p.kind])).rows[0].n);
-   if(reserved+Number(v.amountJpy)>Number(p.amount_jpy))throw new FlowError('REFUND_CAP_EXCEEDED',409);
+   const automatic=Number((await c.query("SELECT coalesce(sum(amount_jpy),0) n FROM booking_cancellation_refunds WHERE payment_id=$1 AND payment_kind=$2 AND state<>'FAILED'",[p.id,p.kind])).rows[0].n);
+   if(reserved+automatic+Number(v.amountJpy)>Number(p.amount_jpy))throw new FlowError('REFUND_CAP_EXCEEDED',409);
    const id=randomUUID();await c.query(`INSERT INTO ops_refund_requests(id,booking_id,payment_id,payment_kind,actor,acting_store,request_key,fingerprint,reason_category,reason,payment_provider_id,merchant_id,location_id,amount_jpy,currency,collected_jpy,previous_reserved_jpy,policy_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'JPY',$15,$16,'STAFF_EXCEPTION_V04')`,[id,v.bookingId,p.id,p.kind,this.ctx.identity.subject,store,key,fingerprint,reasonCategory,note,p.provider_id,p.merchant_id,p.location_id,v.amountJpy,p.amount_jpy,reserved]);
    return {...view((await c.query<FinancialRow>('SELECT * FROM ops_refund_requests WHERE id=$1',[id])).rows[0]!),replayed:false};
   });
@@ -50,6 +51,7 @@ export class FinancialOperations{
  private requirePort(kind:Kind){if(process.env.NODE_ENV==='production'||!(kind==='charge'?this.payments:this.refunds))throw new FlowError('PROVIDER_NOT_CONNECTED',503);}
  async dispatch(kind:Kind,id:string){
   this.requirePort(kind);const reserved=await this.tx(kind,id,async(c,r,now)=>{
+   if(kind==='charge'&&(await this.booking(c,r.booking_id)).state==='CANCELLED')throw new FlowError('BOOKING_CANCELLED',409);
    if(r.state!=='PENDING'||r.dispatched_at!==null)return {row:r,dispatch:false};
    const row=(await c.query<FinancialRow>(`UPDATE ${table(kind)} SET state='UNKNOWN',dispatched_at=$2,updated_at=$2 WHERE id=$1 RETURNING *`,[id,now])).rows[0]!;return {row,dispatch:true};
   });
@@ -79,6 +81,7 @@ export class FinancialOperations{
   if(valid&&r.provider_updated_at&&Date.parse(at)<r.provider_updated_at.getTime())return view(r);
   if(!valid){await c.query(`UPDATE ${table(kind)} SET state='REVIEW',updated_at=$2 WHERE id=$1`,[id,now]);}
   else{const state=providerState==='COMPLETED'?'COMPLETED':providerState==='PENDING'?'PENDING':'FAILED';await c.query(`UPDATE ${table(kind)} SET state=$2,provider_id=$3,provider_state=$4,provider_updated_at=$5,completed_at=$6,updated_at=$7 WHERE id=$1`,[id,state,providerId,providerState,at,completedAt,now]);}
+  if(kind==='charge')await c.query('SELECT booking_cancellation_payment_observed($1)',[r.booking_id]);
   return view((await c.query<FinancialRow>(`SELECT * FROM ${table(kind)} WHERE id=$1`,[id])).rows[0]!);
  });}
 }

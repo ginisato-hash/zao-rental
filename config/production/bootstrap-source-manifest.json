@@ -357,6 +357,48 @@
    "sha256": "cb271c5c1050bb189fce877f7459abc4d5ad9bd19d82e5f428eb05d329ad74e9",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0045",
+   "file": "0045_guest_cancellation.sql",
+   "sha256": "6bb20ebb12bd3a296e4edfde02f89c4a14c0f9e1b52a305a58af1d3279e98d28",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0046",
+   "file": "0046_amendment_buffer_classification.sql",
+   "sha256": "b0c8f067805b8af91c53921dc07d8c9a40480b8d1ef1f1c43cbfa13ab73bc17b",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0047",
+   "file": "0047_commercial_notifications.sql",
+   "sha256": "60a449268a398040225613181f2b74b2b256179eb38725ca8058ae3b3af6dc0d",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0048",
+   "file": "0048_wear_pool_authority.sql",
+   "sha256": "ac46ef96fafe25b6d5ba9cc781071dda9d52fa8c8bf9034bbc529841c9a2106b",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0049",
+   "file": "0049_production_custody_states.sql",
+   "runtimeGuards": 0,
+   "guard": null,
+   "sha256": "a979e7d49b30c50e01572bd88d0fac277e9f195e3c69803946429c08e7b77e49"
+  },
+  {
+   "id": "0050",
+   "file": "0050_cancellation_action.sql",
+   "sha256": "4ebb70fac61dc50799c11bfcc0e4197bd38e3dbc9d1f0bfabdb33ec6ce77b97f",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

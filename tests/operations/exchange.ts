@@ -12,15 +12,17 @@ import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
 import {registerWear} from '../wear/fixture';
 import {skiSet,requestFor,variants,fid} from '../inventory/fixture';
 const x=await flowFixture();let role:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined,failed=false,stage='setup',count=0;
+// Exact one-unit exchange mechanics require an explicit, authorized reserve booking.
+const reserve={reason:'SYNTHETIC exact-capacity exchange mechanics'};
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 try{
  role=await provisionOperationsRole(x.db.pool,x.db.identity);await x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'RENTAL_AMEND',true)",[x.actor]);
  const svc=new AmendmentService(new OperationsContext(role.operationsPool,x.roles.authPool,x.signed.identity)),custody=new CustodyService(role.operationsPool,x.roles.authPool,x.signed.identity),wear=new WearService(x.flow.flowPool,x.roles.authPool,x.signed.identity);
  const ledger=new LedgerService(x.db.pool,{subject:x.actor,role:'ADMIN',storeIds:['MOUNTAIN_BASE','ONSEN_BASE']},async()=>{},async()=>{}),garments=await (async()=>{stage='register wear';return registerWear(ledger,wear);})();
- stage='booking fixture';Object.assign(x.principal,(await loadStaff(x.db.pool,x.actor))!);const d=await x.draft(undefined,skiSet('2035-02-05'));await x.service.startPayment(d.booking.id,randomUUID());
+ stage='booking fixture';Object.assign(x.principal,(await loadStaff(x.db.pool,x.actor))!);const d=await x.draft(undefined,skiSet('2035-02-05'),reserve);await x.service.startPayment(d.booking.id,randomUUID());
  const fingerprint=async()=>(await x.db.pool.query(`SELECT jsonb_build_object('hold',(SELECT to_jsonb(h) FROM inventory_holds h WHERE id=$1),'loans',(SELECT coalesce(jsonb_agg(to_jsonb(l) ORDER BY id),'[]') FROM rental_loan_items l WHERE booking_id=$2),'receipts',(SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY id),'[]') FROM rental_receipts r),'charges',(SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY id),'[]') FROM ops_charge_requests c)) v`,[d.holdId,d.booking.id])).rows[0].v;
  await check('extension shortage protects the next booking and original facts',async()=>{
-  const next=await x.holds.command('create',randomUUID(),requestFor('2035-02-06'));
+  const next=await x.holds.command('create',randomUUID(),requestFor('2035-02-06'),undefined,undefined,reserve);assert.equal(next.result,'CREATED');
   const before=await fingerprint(),v=await svc.view(d.booking.id),conditions=structuredClone(v.conditions);conditions.period={...conditions.period,endDate:'2035-02-06',slot:'MULTIDAY'};
   await assert.rejects(svc.quote(randomUUID(),{bookingId:d.booking.id,expectedHoldVersion:v.holdVersion,conditions,reason:'SYNTHETIC shortage'}));assert.deepEqual(await fingerprint(),before);await x.holds.command('cancel',randomUUID(),undefined,next.holdId);
  });
@@ -57,7 +59,7 @@ try{
  });
  await check('wear size exchange preserves total quantity, old receipt remains unavailable for same-day reuse',async()=>{
   const conditions={...requestFor('2035-02-05'),contractVersion:'INTEGRATED_V1_2' as const,members:[{key:'wear-a',product:'WEAR_SET' as const,age:'ADULT' as const,tier:'STANDARD' as const,wearSport:'SKI' as const,items:[{family:'WEAR_JACKET' as const,variantIds:[garments.variants['WEAR_JACKET-M']!]},{family:'WEAR_PANTS' as const,variantIds:[garments.variants['WEAR_PANTS-M']!]}]}]};
-  const b=await x.draft(undefined,conditions);const paid=await x.service.startPayment(b.booking.id,randomUUID());await wear.checkout(randomUUID(),{bookingId:b.booking.id,expectedBookingVersion:paid.version,store:'MOUNTAIN_BASE',reason:'SYNTHETIC checkout'});
+  const b=await x.draft(undefined,conditions,reserve);const paid=await x.service.startPayment(b.booking.id,randomUUID());await wear.checkout(randomUUID(),{bookingId:b.booking.id,expectedBookingVersion:paid.version,store:'MOUNTAIN_BASE',reason:'SYNTHETIC checkout'});
   const before=(await x.db.pool.query('SELECT sum(total)::int n FROM wear_pools')).rows[0].n,current=await svc.view(b.booking.id),next=structuredClone(current.conditions);next.members[0]!.items[0]!.variantIds=[garments.variants['WEAR_JACKET-L']!];
   const q=await svc.quote(randomUUID(),{bookingId:b.booking.id,expectedHoldVersion:current.holdVersion,conditions:next,reason:'SYNTHETIC jacket size'});await svc.accept(randomUUID(),{quoteId:q.id,reason:'SYNTHETIC jacket exchange',fitEvidence:'SYNTHETIC fit'});
   assert.equal((await x.db.pool.query('SELECT sum(total)::int n FROM wear_pools')).rows[0].n,before);assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM wear_loans WHERE booking_id=$1 AND returned<quantity',[b.booking.id])).rows[0].n,2);assert.equal((await x.db.pool.query('SELECT sum(returned_pending)::int n FROM wear_pools')).rows[0].n,1);

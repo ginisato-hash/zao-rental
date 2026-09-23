@@ -51,6 +51,8 @@ async function createRoles(owner:Pool){
    configs[service]={host:owner.options.host,port:owner.options.port,database,user,password,...(owner.options.ssl?{ssl:owner.options.ssl}:{})};
   }
   for(const grant of avatarHostedGrants(phase6Role))await c.query(grant);
+  for(const table of ['provisional_capacity_claims','provisional_capacity_buckets'])if((await c.query('SELECT to_regclass($1) IS NOT NULL AS present',['public.'+table])).rows[0].present)await c.query(`GRANT SELECT ON ${table} TO ${phase6Role('hold')}`);
+  if((await c.query("SELECT to_regprocedure('public.provisional_capacity_effective_quantity(uuid)') IS NOT NULL AS present")).rows[0].present)await c.query(`GRANT EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) TO ${phase6Role('hold')}`);
   await c.query('COMMIT');return configs;
  }catch{await c.query('ROLLBACK').catch(()=>{});throw Error('PHASE6_ROLE_SETUP_FAILED_RECONCILE');}finally{c.release();}
 }

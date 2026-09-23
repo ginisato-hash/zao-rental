@@ -3,7 +3,7 @@ import {squareCreateBody,squareObservation,parseVerifiedSquareWebhook} from './s
 export const SQUARE_VERSION='2026-08-19';
 export const SQUARE_SANDBOX_ORIGIN='https://connect.squareupsandbox.com';
 export const SQUARE_PRODUCTION_ORIGIN='https://connect.squareup.com';
-export type SandboxRefundBody={idempotency_key:string;payment_id:string;amount_money:{amount:number;currency:'JPY'};reason:'SYNTHETIC_P4_SANDBOX_TEST'};
+export type SandboxRefundBody={idempotency_key:string;payment_id:string;amount_money:{amount:number;currency:'JPY'};reason:'SYNTHETIC_P4_SANDBOX_TEST'|'ZAO_CANCELLATION_V1'};
 export type SquareCall={method:'GET'|'POST';url:string;version:typeof SQUARE_VERSION;body?:ReturnType<typeof squareCreateBody>|SandboxRefundBody;signal:AbortSignal};
 /** Shared engine: no default fetch or credentials. Transport is bound to its environment
  * and merchant; Production booking authority is enforced by the caller, never this port. */
@@ -25,7 +25,7 @@ export class SquarePaymentGateway implements PaymentGateway{
    const raw=r.body as {payment?:unknown}|null,o=squareObservation(raw?.payment,request,this.transport.merchantId);matchPayment(request,o);return o;
   }catch(e){if(e instanceof FlowError)throw e;throw new FlowError(method==='POST'?'PAYMENT_RESULT_UNKNOWN':'PAYMENT_LOOKUP_UNAVAILABLE',503);}
  }
- async create(request:PaymentRequest){let source:string;try{source=await this.deadline(signal=>this.source(request.attemptId,signal),'PAYMENT_SOURCE_NOT_CONNECTED');}catch{throw new FlowError('PAYMENT_SOURCE_NOT_CONNECTED',503);}if(!source||source.length>1024||['CASH','EXTERNAL'].includes(source))throw new FlowError('PAYMENT_SOURCE_NOT_CONNECTED',503);return this.call(request,'POST','/v2/payments',squareCreateBody(request,source));}
+ async create(request:PaymentRequest,sourceToken?:string){let source:string;try{source=sourceToken??await this.deadline(signal=>this.source(request.attemptId,signal),'PAYMENT_SOURCE_NOT_CONNECTED');}catch{throw new FlowError('PAYMENT_SOURCE_NOT_CONNECTED',503);}if(!source||source.length>1024||['CASH','EXTERNAL'].includes(source))throw new FlowError('PAYMENT_SOURCE_NOT_CONNECTED',503);return this.call(request,'POST','/v2/payments',squareCreateBody(request,source));}
  async lookup(request:PaymentRequest,providerId:string|null){
   // Square has no GetPayment-by-idempotency endpoint. UNKNOWN without a verified ID is
   // a reconciliation gate, never permission to issue another POST or choose a new key.

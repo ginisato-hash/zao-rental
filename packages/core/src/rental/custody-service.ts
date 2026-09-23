@@ -1,3 +1,4 @@
+import {bookingConfirmed} from '../../../contracts/src/booking-state';
 import {randomUUID} from 'node:crypto';
 import {pickupTiming} from '../../../contracts/src/pickup';
 import type {PoolClient} from 'pg';
@@ -36,7 +37,7 @@ export class CustodyService extends BookingService{
   return this.tx('RENTAL_CHECKOUT',[],key,{operation:'prepare',v},async c=>{await this.pickup(c,v.bookingId as string);},async(c,now)=>{
    const b=await this.pickup(c,v.bookingId as string),h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];
    if(b.version!==v.expectedBookingVersion||h.version!==v.expectedHoldVersion)throw new FlowError('STALE_VERSION');
-   if(b.state!=='CONFIRMED_DEV'||h.state!=='ACTIVE'||h.payment_state!=='SUCCESS'||!h.confirmed_at||h.transfer_attention||h.allocation_stage!=='PROVISIONAL')throw new FlowError('PREPARATION_NOT_ALLOWED');
+   if(!bookingConfirmed(b.mode,b.state)||h.state!=='ACTIVE'||h.payment_state!=='SUCCESS'||!h.confirmed_at||h.transfer_attention||h.allocation_stage!=='PROVISIONAL')throw new FlowError('PREPARATION_NOT_ALLOWED');
    await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);const a=await this.assignment(c,b.id);
    const expected=a.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})).sort((a,b)=>a.requirementKey.localeCompare(b.requirementKey));
    if(flowHash([...selections].sort((a,b)=>String(a.requirementKey).localeCompare(String(b.requirementKey))))!==flowHash(expected))throw new FlowError('EXACT_FULL_PERIOD_ASSIGNMENT_REQUIRED');
@@ -56,6 +57,7 @@ export class CustodyService extends BookingService{
  async checkout(key:string,value:unknown){const v=flowObject(value,['bookingId','expectedPreparationVersion']);flowId(v.bookingId);flowVersion(v.expectedPreparationVersion);
   return this.tx('RENTAL_CHECKOUT',[],key,{operation:'checkout',v},async c=>{await this.pickup(c,v.bookingId as string);},async(c,now)=>{
    const b=await this.pickup(c,v.bookingId as string),p=(await c.query('SELECT * FROM rental_preparations WHERE id=$1',[b.id])).rows[0];
+   if(!bookingConfirmed(b.mode,b.state))throw new FlowError('CHECKOUT_NOT_ALLOWED');
    if(!p||p.version!==v.expectedPreparationVersion||!p.prepared_at)throw new FlowError('STALE_PREPARATION');
    if((await c.query('SELECT 1 FROM rental_loan_items WHERE booking_id=$1',[b.id])).rowCount)throw new FlowError('ALREADY_CHECKED_OUT');
    const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);

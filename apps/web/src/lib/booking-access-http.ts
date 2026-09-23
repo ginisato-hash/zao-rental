@@ -1,6 +1,6 @@
 import type {BookingRecovery} from '../../../../packages/core/src/guest/booking-recovery';
 import QRCode from 'qrcode';
-import {BookingAccess,bookingAccessCookie,bookingAccessToken} from '../../../../packages/core/src/guest/booking-access';
+import {BookingAccess,bookingAccessCookie,bookingAccessToken,BOOKING_CANCEL_COOKIE,bookingCancellationCookie} from '../../../../packages/core/src/guest/booking-access';
 import {GuestContexts,guestToken} from '../../../../packages/core/src/guest/context';
 import {FlowError} from '../../../../packages/contracts/src/rental-flow';
 import {HoldError} from '../../../../packages/contracts/src/hold';
@@ -16,8 +16,13 @@ export function bookingAccessHandler(access:BookingAccess,contexts:GuestContexts
   if(req.method==='POST'&&(req.headers.get('origin')!==origin||req.headers.get('sec-fetch-site')==='cross-site'))throw new FlowError('ORIGIN_REJECTED',403);
   await guard?.(req);
   if(req.method==='GET'&&path===''){
-   const booking=await access.read(bookingAccessToken(req.headers));
-   return Response.json({...booking,qrImage:await QRCode.toDataURL(booking.qr,{width:240,margin:2})},{headers});
+   const booking=await access.read(bookingAccessToken(req.headers),bookingAccessToken(req.headers,BOOKING_CANCEL_COOKIE));
+   return Response.json({...booking,qrImage:booking.qr?await QRCode.toDataURL(booking.qr,{width:240,margin:2}):null},{headers});
+  }
+  if(req.method==='POST'&&['/cancellation-preview','/cancel'].includes(path)){
+   const v=exact(await readJson(req),path==='/cancel'?['bookingId','requestKey','previewHash']:['bookingId']);
+   const token=bookingAccessToken(req.headers,BOOKING_CANCEL_COOKIE);
+   return Response.json(path==='/cancel'?await access.cancel(token,v.bookingId,v.requestKey,v.previewHash):await access.cancellationPreview(token,v.bookingId),{headers});
   }
   if(req.method==='POST'&&path==='/issue'){
    const v=exact(await readJson(req),['bookingId','requestId']);
@@ -38,7 +43,7 @@ export function bookingAccessHandler(access:BookingAccess,contexts:GuestContexts
    }
    if(path==='/recovery/exchange'){
     const v=exact(await readJson(req),['code','requestId']),r=await recovery.exchange(v.code,v.requestId);
-    return Response.json({recovered:true,expiresAt:r.expiresAt,replayed:r.replayed,readOnly:true},{headers:{...headers,'Set-Cookie':bookingAccessCookie(r.token,origin.startsWith('https:'),r.maxAgeSeconds)}});
+    const response=Response.json({recovered:true,expiresAt:r.expiresAt,replayed:r.replayed,readOnly:true,cancellationAllowed:!!r.cancelToken},{headers});response.headers.append('Set-Cookie',bookingAccessCookie(r.token,origin.startsWith('https:'),r.maxAgeSeconds));response.headers.append('Set-Cookie',bookingCancellationCookie(r.cancelToken??'',origin.startsWith('https:'),r.cancelMaxAgeSeconds));return response;
    }
    const v=exact(await readJson(req),['code']);await recovery.revoke(v.code);return Response.json({revoked:true},{headers});
   }

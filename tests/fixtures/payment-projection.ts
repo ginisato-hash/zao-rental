@@ -54,6 +54,7 @@ export class ProjectionSqlFixture{
    else if(sql.startsWith('SELECT')&&sql.includes('FROM payment_projection.events'))rows=w.events.filter(e=>e.observation_fingerprint===v[2]).map(e=>({result:e.result,jobId:e.job_id,truthFingerprint:e.truth_fingerprint}));
    else if(sql.startsWith('SELECT')&&sql.includes('FROM payment_reconciliation.streams'))rows=[{truth_revision:w.src.truthRevision,latest:w.src.observation}];
    else if(sql.startsWith('SELECT')&&sql.includes('FROM payment_reconciliation.jobs'))rows=[{id:w.src.jobId,environment:w.src.environment,merchant_id:w.src.merchantId,payment_id:w.src.paymentId,state:w.src.state,security_blocked:w.src.securityBlocked,decision:w.src.decision,decision_fingerprint:w.src.decisionFingerprint,context_fingerprint:w.src.contextFingerprint}];
+   else if(sql.includes('booking_cancellation_status'))rows=[{v:null}];
    else if(sql.includes('bool_or'))rows=[w.transfer];
    else if(sql.startsWith('SELECT 1 FROM inventory_claims'))rows=w.transfer.forbidden?[{found:1}]:[];
    else if(sql.startsWith('SELECT')&&sql.includes('FROM inventory_claims'))rows=w.claims;

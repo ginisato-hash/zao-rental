@@ -18,4 +18,10 @@ export const migrationPlan = [
   {id:'0042',file:'0042_inventory_buffer_override.sql'},
   {id:'0043',file:'0043_commercial_price_snapshot.sql'},
   {id:'0044',file:'0044_pole_exemption_witness.sql'},
+  {id:'0045',file:'0045_guest_cancellation.sql'},
+  {id:'0046',file:'0046_amendment_buffer_classification.sql'},
+  {id:'0047',file:'0047_commercial_notifications.sql'},
+  {id:'0048',file:'0048_wear_pool_authority.sql'},
+  {id:'0049',file:'0049_production_custody_states.sql'},
+  {id:'0050',file:'0050_cancellation_action.sql'},
 ] as const;

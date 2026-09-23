@@ -15,6 +15,12 @@ try{
  role=await provisionCustodyRole(x.db.pool,x.db.identity);const svc=new CustodyService(role.custodyPool,x.roles.authPool,x.signed.identity);
  async function context(c:PoolClient,who=x.signed.identity){await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true),set_config('zao.reason','Synthetic custody test',true)",[who.subject,who.sessionId]);}
  async function sqlDenied(pool:typeof x.db.pool,sql:string,values:unknown[]=[],codes=['42501','23514']){const c=await pool.connect();try{await c.query('BEGIN');await context(c);let e:unknown;try{await c.query(sql,values);}catch(error){e=error;}assert.ok(e,'SQL must fail');assert.ok(codes.includes(String((e as {code?:string}).code)));}finally{await c.query('ROLLBACK');c.release();}}
+ await check('local custody and flow witness reads never grant direct DML',async()=>{
+  for(const pool of [role!.custodyPool,x.flow.flowPool])for(const table of ['wear_pools','provisional_capacity_buckets','inventory_pole_exemptions']){
+   await pool.query(`SELECT * FROM ${table} LIMIT 0`);
+   for(const sql of [`INSERT INTO ${table} DEFAULT VALUES`,`UPDATE ${table} SET id=DEFAULT WHERE false`,`DELETE FROM ${table} WHERE false`])await assert.rejects(pool.query(sql),{code:'42501'});
+  }
+ });
  await check('new functions deny PUBLIC; app has no owner membership, DDL, location/history/state writes',async()=>{
   for(const signature of ['rental_apply_receipt(uuid)','rental_apply_inspection(uuid)']){const row=(await x.db.pool.query("SELECT proconfig,proowner::regrole::text AS owner,proacl::text FROM pg_proc WHERE oid=$1::regprocedure",[signature])).rows[0];assert.ok(row.proconfig.includes('search_path=pg_catalog, public, pg_temp'));assert.equal(row.owner,x.db.identity.namespace+'_custody_executor');assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM pg_proc p CROSS JOIN LATERAL aclexplode(p.proacl) a WHERE p.oid=$1::regprocedure AND a.grantee=0',[signature])).rows[0].n,0);await sqlDenied(x.roles.ledgerPool,'SELECT '+signature.split('(')[0]+'($1)',[randomUUID()]);}
   for(const target of [x.db.identity.namespace+'_custody_executor',(await x.db.pool.query('SELECT current_user u')).rows[0].u])await sqlDenied(role!.custodyPool,'SET ROLE '+target);

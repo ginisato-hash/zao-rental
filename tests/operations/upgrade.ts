@@ -11,9 +11,7 @@ import {seedRecommendation} from '../recommendation/fixture';
 import {requestFor} from '../inventory/fixture';
 import {HoldService} from '../../packages/core/src/inventory/hold-service';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
-import {BookingService} from '../../packages/core/src/payment/booking-service';
-import {FakeGateway,simulation} from '../flow/fixture';
-import {legacyBooking} from '../fixtures/legacy-prefix';
+import {legacyBooking,legacyConfirmBooking} from '../fixtures/legacy-prefix';
 import {normalizePeriod,type HoldConditions} from '../../packages/contracts/src/hold';
 // Narrowly-scoped old-schema fixture for this exact checkpoint (avatar-phase6, migrations 1-32):
 // mirrors legacyHold() in tests/fixtures/legacy-prefix.ts (same direct inventory_reservations/
@@ -46,7 +44,7 @@ try{
  // legacy-prefix.ts's own documented contract ("current operational services require the current
  // schema"), the prefix HOLD is populated directly via the existing legacyHold() old-schema
  // fixture instead of the current HoldService.
- const conditions=requestFor('2035-02-05'),legacy=await legacyHoldAtPhase6(db.pool,actor,conditions,now),h={holdId:legacy.holdId},q=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote,bookings=new BookingService(flow.flowPool,roles.authPool,{subject:actor,sessionId},new FakeGateway(()=>now),simulation),b=await legacyBooking(db.pool,actor,q.id,{displayName:'SYNTHETIC Upgrade',email:'synthetic-upgrade@example.invalid',termsAccepted:true});await bookings.startPayment(b.id,randomUUID());
+ const conditions=requestFor('2035-02-05'),legacy=await legacyHoldAtPhase6(db.pool,actor,conditions,now),h={holdId:legacy.holdId},q=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote,b=await legacyBooking(db.pool,actor,q.id,{displayName:'SYNTHETIC Upgrade',email:'synthetic-upgrade@example.invalid',termsAccepted:true});await legacyConfirmBooking(db.pool,actor,b.id,now);
  // The historical prefix row must reach real confirmation before the upgrade is meaningful.
  assert.deepEqual((await db.pool.query("SELECT b.state,a.state pay FROM rental_bookings b JOIN rental_payment_attempts a ON a.booking_id=b.id")).rows,[{state:'CONFIRMED_DEV',pay:'COMPLETED'}]);
  const tables=['ledger_assets','ledger_history','inventory_holds','inventory_claims','price_books','price_quotes','pricing_history','rental_bookings','rental_payment_attempts','rental_history'];

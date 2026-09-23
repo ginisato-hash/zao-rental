@@ -21,7 +21,7 @@ try{
   const disabled=new BookingService(x.flow.flowPool,x.roles.authPool,x.signed.identity,null,simulation);
   const conditions=requestFor('2035-05-01');
   await assert.rejects(disabled.create(randomUUID(),randomUUID(),{displayName:'SYNTHETIC Guest',email:'synthetic-guest@example.invalid',termsAccepted:true}),{code:'PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',status:503});
-  const d=await x.draft(undefined,conditions);
+  const d=await x.draft(undefined,conditions,{reason:'SYNTHETIC disabled-provider security fixture'});
   const before=(await x.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n;
   await assert.rejects(disabled.startPayment(d.booking.id,randomUUID()),{code:'PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',status:503});
   await assert.rejects(disabled.reconcile(d.booking.id),{code:'PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',status:503});
@@ -34,7 +34,7 @@ try{
   const recovery=new BookingRecovery(access!.accessPool,randomBytes(32),'security-v1',undefined,5000,true);
   const off=new BookingNotificationWorker(notify!.notificationPool,x.origin,recovery);
   assert.equal(off.status(),'BOOKING_RECOVERY_DELIVERY_UNCONNECTED');
-  const d=await x.draft(undefined,requestFor('2035-05-02'));await x.service.startPayment(d.booking.id,randomUUID());
+  const d=await x.draft(undefined,requestFor('2035-05-02'),{reason:'SYNTHETIC disabled-provider security fixture'});await x.service.startPayment(d.booking.id,randomUUID());
   const id=(await off.enqueueConfirmed(d.booking.id))!;
   assert.equal((await off.dispatch(id)).state,'UNCONNECTED');
   assert.equal((await off.reconcile(id)).state,'UNCONNECTED');

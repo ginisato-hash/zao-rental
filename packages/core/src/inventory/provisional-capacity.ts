@@ -17,7 +17,8 @@ export type ProvisionalPlan = {feasible: true; rows: {key: string; bucket: strin
 // V5 (release-code-closure, 95% public / staff INVENTORY_BUFFER_OVERRIDE): `bufferOverride`
 // (default false — every existing caller keeps the strict public ceiling unless it explicitly
 // opts in) mirrors wearCapacityDetailed()'s own two-ceiling design exactly: a non-override
-// request may never push *public* usage of a bucket/day past floor(quantity*0.95); an override
+// request may never push public usage of a compatible family/age/size/day pool past
+// floor(sum(effective bucket quantities)*0.95); an override
 // request may use up to the full effective `quantity`, which the hard per-slot check always
 // enforces regardless of override status, so public+override usage can never together exceed
 // true bucket capacity.
@@ -48,12 +49,14 @@ export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequ
       for (const b of candidates) {
         const claim = claims.find((x) => x.bucket_id === b.id && x.day === day);
         const usedByOthersAll = claim?.quantity_all ?? 0;
-        const usedByOthersPublic = claim?.quantity_public ?? 0;
+        const groupIds=new Set(candidates.map(x=>x.id));
+        const usedByOthersPublic=claims.filter(x=>x.day===day&&groupIds.has(x.bucket_id)).reduce((n,x)=>n+x.quantity_public,0);
+        const plannedPublic=candidates.reduce((n,x)=>n+(ownUsage.get(x.id+'/'+day)??0),0);
         const slotKey = b.id + '/' + day;
         const usedByThisPlan = ownUsage.get(slotKey) ?? 0;
-        const publicCap = Math.floor(b.quantity * 0.95);
+        const publicCap = Math.floor(candidates.reduce((n,x)=>n+x.quantity,0) * 0.95);
         const withinHardCeiling = usedByOthersAll + usedByThisPlan + 1 <= b.quantity;
-        const withinPublicCeiling = bufferOverride || usedByOthersPublic + usedByThisPlan + 1 <= publicCap;
+        const withinPublicCeiling = bufferOverride || usedByOthersPublic + plannedPublic + 1 <= publicCap;
         if (withinHardCeiling && withinPublicCeiling) {
           ownUsage.set(slotKey, usedByThisPlan + 1);
           rows.push({key: r.key, bucket: b.id, day});

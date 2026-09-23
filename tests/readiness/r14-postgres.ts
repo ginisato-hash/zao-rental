@@ -85,6 +85,11 @@ export async function run(db:DB,out:string){
  try{
  await check('all migrations 0001-0032 recorded with hashes',async()=>{assert.equal((await db.pool.query("SELECT count(*)::int n FROM foundation_migrations WHERE id<='0032'")).rows[0].n,32);});
  await check('role boundaries: receiver/dispatcher/worker/diagnostic/public forbidden operations',async()=>{
+  await p.projector.query('SELECT book_id FROM price_quotes LIMIT 1');
+  for(const table of ['provisional_capacity_claims','provisional_capacity_buckets','inventory_pole_exemptions']){
+   await p.projector.query(`SELECT * FROM ${table} LIMIT 1`);
+   await assert.rejects(p.projector.query(`DELETE FROM ${table} WHERE false`),{code:'42501'});
+  }
   const denied:([keyof typeof p,string])[]=[['receiver',"UPDATE rental_bookings SET state='PAYMENT_REVIEW'"],['receiver','UPDATE inventory_holds SET version=version+1'],['receiver',`SELECT payment_projection.lock_source('${id(9)}')`],['receiver','SELECT * FROM square_webhook.inbox'],['dispatcher',"UPDATE rental_bookings SET state='PAYMENT_REVIEW'"],['worker',"UPDATE rental_bookings SET state='PAYMENT_REVIEW'"],['diagnostic',"SELECT payment_reconciliation.dispatch('SANDBOX',1)"],['publicProbe','SELECT * FROM payment_projection.events'],['publicProbe',"SELECT square_webhook.receive('SANDBOX','x','payment.updated','m','p','a')"],['publicProbe','SELECT * FROM payment_reconciliation.jobs'],['projector','UPDATE payment_reconciliation.jobs SET state=state'],['projector',"UPDATE rental_bookings SET contact='{}'"],['projector','UPDATE inventory_holds SET expires_at=now()'],['projector','UPDATE wear_claims SET active=false'],['projector','UPDATE inventory_claims SET active=false'],['projector','SELECT contact FROM rental_bookings'],['projector','INSERT INTO rental_notifications DEFAULT VALUES']];
   for(const [key,sql]of denied)await assert.rejects(p[key].query(sql),{code:'42501'});
   for(const pool of Object.values(p)){const a=(await pool.query('SELECT current_user AS name,usesuper FROM pg_user WHERE usename=current_user')).rows[0];assert.equal(a.usesuper,false);assert.notEqual(a.name,db.identity.namespace);await assert.rejects(pool.query('CREATE SCHEMA forbidden_r14'),{code:'42501'});}

@@ -3,7 +3,7 @@ import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
 import {startFlowApp} from '../flow/launcher';
-import {seedRecommendation,variants} from '../recommendation/fixture';
+import {seedRecommendation,variants,lengthVariants} from '../recommendation/fixture';
 import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
@@ -22,6 +22,10 @@ try{
  app=await startFlowApp({publicP0:true,avatarPhase5:true});const {db,origin}=app;
  await check('PG','all0001–0032 historical hashes preserved and migrated',async()=>{const entries=JSON.parse(await readFile(evidence+'/migration-hashes.json','utf8')) as {file:string;sha256:string}[];assert.equal(entries.length,32);assert.equal(migrationPlan.slice(0,32).length,32);for(const h of entries)assert.equal(hash(await readFile(h.file)),h.sha256);assert.equal((await db.pool.query("SELECT count(*)::int n FROM foundation_migrations WHERE id<='0032'")).rows[0].n,32);});
  await seedRecommendation(db.pool,true);await db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:00Z'::timestamptz$$");
+ const stock=await db.pool.connect();try{await stock.query('BEGIN');await stock.query("SELECT set_config('zao.actor','synthetic-avatar-artwork',true),set_config('zao.reason','SYNTHETIC public alternate-length artwork fixture',true)");
+  await stock.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_evidence,notes,source_kind,source_document,source_locator)
+   SELECT gen_random_uuid(),id,family,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE','NOT_APPLICABLE','','','SYNTHETIC','tests/avatar/artwork-activation.ts','public-direction-'||id FROM ledger_variants WHERE family='SKI' AND id=ANY($1::uuid[])`,[[variants.skiAlt,...Object.values(lengthVariants)]]);await stock.query('COMMIT');
+ }catch(e){await stock.query('ROLLBACK');throw e;}finally{stock.release();}
  const password=randomBytes(24).toString('base64url'),subject=await bootstrapDevelopmentAdmin(db.pool,{email:'avatar-artwork@example.invalid',displayName:'LOCAL ACCEPTANCE',password});
  for(const permission of ['PRICE_EDIT','BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'])await db.pool.query('INSERT INTO staff_permission_overrides VALUES($1,$2,true)',[subject,permission]);
  await new QuoteService(app.roles.pricingPool,(await loadStaff(db.pool,subject))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');

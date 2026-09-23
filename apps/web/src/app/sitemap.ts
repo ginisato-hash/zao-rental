@@ -1,3 +1,4 @@
+export const dynamic='force-dynamic';
 import {publicModels} from '../lib/public-content';
 import type {MetadataRoute} from 'next';
 import {publicPages,canonicalPath,publicOrigin,indexingEnabled,languages,type Locale} from '../../../../packages/core/src/content/public-pages';

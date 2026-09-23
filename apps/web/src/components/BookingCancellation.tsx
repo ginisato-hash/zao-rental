@@ -1,0 +1,17 @@
+'use client';
+import {useRef,useState} from 'react';
+export type CancellationStatus={cancelledAt:string|null;freeCancellationUntil:string;refundStatus:string|null;refundAmountJpy:number;maximumRefundJpy:number|null};
+type Preview={previewHash:string;refundAmountJpy:number;paymentUncertain:boolean;freeCancellationUntil:string};
+export function BookingCancellation({locale,status,onCancelled,accessBookingId}:{accessBookingId?:string;locale:'ja'|'en';status:CancellationStatus|null;onCancelled:()=>Promise<void>}){
+ const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
+ const [preview,setPreview]=useState<Preview|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const pending=useRef(false),key=useRef<string|null>(null);
+ const money=(n:number)=>new Intl.NumberFormat(ja?'ja-JP':'en-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n);
+ async function act(confirm:boolean){if(pending.current)return;pending.current=true;setBusy(true);setError('');try{
+  const response=await fetch((accessBookingId?'/api/booking-access/':'/api/guest/')+(confirm?'cancel':'cancellation-preview'),{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({...accessBookingId?{bookingId:accessBookingId}:{},...confirm?{requestKey:key.current??=(crypto.randomUUID()),previewHash:preview?.previewHash}:{}})});
+  if(!response.ok){setPreview(null);throw Error();}const result=await response.json();
+  if(confirm){setPreview(null);await onCancelled();}else setPreview(result);
+ }catch{setError(t('最新の予約状態を再読込し、返金額をもう一度確認してください。','Reload the booking and review the refund amount again.'));}finally{pending.current=false;setBusy(false);}}
+ if(status?.cancelledAt){const labels:Record<string,[string,string]>={REFUND_PENDING:['返金処理待ち','Refund pending'],PAYMENT_UNKNOWN:['決済結果を確認中','Payment result is being checked'],REFUND_UNKNOWN:['返金結果を確認中','Refund result is being checked'],REFUND_COMPLETED:['返金完了','Refund completed'],REFUND_FAILED:['返金処理に失敗しました。店舗にご連絡ください。','Refund failed. Please contact the store.'],REFUND_REVIEW:['返金内容を店舗で確認中','The store is reviewing the refund'],REFUND_NONE:['自動返金なし','No automatic refund']};const text=labels[status.refundStatus??''];return <section aria-label={t('キャンセル状況','Cancellation status')}><h3>{t('予約をキャンセルしました','Booking cancelled')}</h3><p role="status">{text?text[ja?0:1]:t('返金状況を確認中','Checking refund status')}</p><p>{t('返金済み金額','Amount refunded')}: {money(status.refundAmountJpy)}</p><button disabled={busy} onClick={()=>void onCancelled()}>{t('状況を更新','Refresh status')}</button></section>;}
+ return <section aria-label={t('予約のキャンセル','Cancel booking')}><button disabled={busy} onClick={()=>void act(false)}>{t('予約をキャンセル','Cancel booking')}</button>{error&&<p role="alert">{error}</p>}{preview&&<div><h3>{t('キャンセル内容の最終確認','Review cancellation')}</h3><p>{t('自動返金額','Automatic refund amount')}: <strong>{money(preview.refundAmountJpy)}</strong></p>{preview.paymentUncertain&&<p>{t('決済結果を確認中です。上記金額は決済完了が確認された場合の返金額です。','Payment is unconfirmed. The amount above will be refunded only if payment is confirmed as completed.')}</p>}<p>{t('利用開始の48時間前までは全額返金。それ以降の自動返金はありません。キャンセルは取り消せません。','Full refund until 48 hours before the rental starts; no automatic refund after that. Cancellation cannot be undone.')}</p><button disabled={busy} onClick={()=>void act(true)}>{t('この返金額でキャンセルを確定','Confirm cancellation with this refund amount')}</button><button disabled={busy} onClick={()=>setPreview(null)}>{t('予約を維持する','Keep booking')}</button></div>}</section>;
+}

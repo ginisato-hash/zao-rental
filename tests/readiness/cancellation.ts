@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {flowFixture} from '../flow/fixture';
+import {requestFor} from '../inventory/fixture';
+import {CancellationRefundWorker} from '../../packages/core/src/payment/cancellation-refund-worker';
+import {BookingNotificationWorker} from '../../packages/core/src/notification/worker';
+import {BookingRecovery} from '../../packages/core/src/guest/booking-recovery';
+import {provisionNotificationRole} from '../../scripts/notification-roles';
+import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
+import type {RefundRequest,RefundObservation} from '../../packages/core/src/operations/financial';
+const x=await flowFixture();let nr:Awaited<ReturnType<typeof provisionNotificationRole>>|undefined,ar:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined;
+const reserve={reason:'SYNTHETIC cancellation state-machine mechanics'};
+async function draft(day:string,unknown=false){const d=await x.draft(undefined,requestFor(day),reserve);x.fake.failAfterSave=unknown;await x.service.startPayment(d.booking.id,randomUUID());x.fake.failAfterSave=false;return d;}
+async function boundary(id:string,delta=0){const v=(await x.db.pool.query('SELECT free_cancellation_until t FROM booking_cancellation_policies WHERE booking_id=$1',[id])).rows[0].t as Date;await x.clock(new Date(v.getTime()+delta).toISOString());}
+async function cancel(id:string){const p=await x.service.cancellationPreview(id);return x.service.cancel(id,randomUUID(),p.previewHash);}
+try{
+ const exact=await draft('2035-02-05'),late=await draft('2035-02-06'),unknown=await draft('2035-02-07',true),failed=await draft('2035-02-08',true),rollback=await draft('2035-02-09');
+ await boundary(exact.booking.id);const p=await x.service.cancellationPreview(exact.booking.id);assert.equal(p.refundAmountJpy,exact.quote.snapshot.totalJpy);
+ const results=await Promise.all(Array.from({length:4},()=>x.service.cancel(exact.booking.id,randomUUID(),p.previewHash)));assert.ok(results.every(r=>r.cancelledAt));
+ assert.equal((await x.service.get(exact.booking.id)).state,'CANCELLED');assert.equal((await x.service.get(exact.booking.id)).qr,null);
+ for(const table of ['booking_cancellations','booking_cancellation_refunds'])assert.equal((await x.db.pool.query(`SELECT count(*)::int n FROM ${table} WHERE booking_id=$1`,[exact.booking.id])).rows[0].n,1);
+ assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM booking_notification_outbox WHERE booking_id=$1 AND event_type='BOOKING_CANCELLED'",[exact.booking.id])).rows[0].n,1);
+ assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active',[exact.holdId])).rows[0].n,0);
+ assert.equal((await x.db.pool.query('SELECT state FROM inventory_holds WHERE id=$1',[exact.holdId])).rows[0].state,'RELEASED');
+ await assert.rejects(x.db.pool.query("UPDATE rental_bookings SET state='CONFIRMED_DEV',version=version+1 WHERE id=$1",[exact.booking.id]));
+ await assert.rejects(x.db.pool.query("UPDATE booking_cancellation_policies SET free_cancellation_until=free_cancellation_until+interval '1 day' WHERE booking_id=$1",[exact.booking.id]));
+ await boundary(late.booking.id);const stale=await x.service.cancellationPreview(late.booking.id);await boundary(late.booking.id,1);await assert.rejects(x.service.cancel(late.booking.id,randomUUID(),stale.previewHash),{code:'CANCELLATION_PREVIEW_CHANGED'});assert.equal((await x.service.cancellationPreview(late.booking.id)).refundAmountJpy,0);await cancel(late.booking.id);assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM booking_cancellation_refunds WHERE booking_id=$1',[late.booking.id])).rows[0].n,0);
+ await boundary(unknown.booking.id);assert.equal((await x.service.cancellationPreview(unknown.booking.id)).paymentUncertain,true);await cancel(unknown.booking.id);assert.equal((await x.service.get(unknown.booking.id)).cancellation.refundStatus,'PAYMENT_UNKNOWN');await x.service.reconcile(unknown.booking.id);assert.equal((await x.service.get(unknown.booking.id)).state,'CANCELLED');assert.equal((await x.service.get(unknown.booking.id)).cancellation.refundStatus,'REFUND_PENDING');
+ await boundary(failed.booking.id);await cancel(failed.booking.id);const attempt=x.fake.calls.find(a=>a.bookingId===failed.booking.id)!;x.fake.receipts.set(attempt.attemptId,{...x.fake.receipts.get(attempt.attemptId)!,status:'FAILED',completedAt:null,updatedAt:x.now().toISOString()});await x.service.reconcile(failed.booking.id);assert.equal((await x.service.get(failed.booking.id)).state,'CANCELLED');assert.equal((await x.service.get(failed.booking.id)).cancellation.refundStatus,'REFUND_NONE');
+ // Provider calls happen only after cancellation and durable dispatch reservation commit.
+ let refundCalls=0;const response=(r:RefundRequest):RefundObservation=>({id:'refund_'+r.id,paymentProviderId:r.paymentProviderId,merchantId:r.merchantId,locationId:r.locationId,amountJpy:r.amountJpy,currency:'JPY',status:'COMPLETED',updatedAt:x.now().toISOString()});
+ const worker=new CancellationRefundWorker(x.flow.flowPool,{kind:'SIMULATED_DEV',async create(r){refundCalls++;assert.equal((await x.db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[r.bookingId])).rows[0].state,'CANCELLED');assert.equal((await x.db.pool.query('SELECT state FROM booking_cancellation_refunds WHERE id=$1',[r.id])).rows[0].state,'UNKNOWN');return response(r);},async lookup(r){return response(r);}});
+ const refund=(await x.db.pool.query('SELECT id FROM booking_cancellation_refunds WHERE booking_id=$1',[exact.booking.id])).rows[0].id;
+ await Promise.all([worker.dispatch(refund),worker.dispatch(refund)]);assert.equal(refundCalls,1);assert.equal((await x.service.get(exact.booking.id)).cancellation.refundStatus,'REFUND_COMPLETED');assert.equal((await x.service.get(exact.booking.id)).cancellation.refundAmountJpy,exact.quote.snapshot.totalJpy);
+ const lost=new CancellationRefundWorker(x.flow.flowPool,{kind:'SIMULATED_DEV',async create(){refundCalls++;throw Error('SYNTHETIC_RESPONSE_LOSS');},async lookup(){throw Error('UNREACHABLE');}}),unknownRefund=(await x.db.pool.query('SELECT id FROM booking_cancellation_refunds WHERE booking_id=$1',[unknown.booking.id])).rows[0].id;
+ assert.equal((await lost.dispatch(unknownRefund)).state,'UNKNOWN');assert.equal((await lost.dispatch(unknownRefund)).state,'NOT_CLAIMED');assert.equal((await lost.reconcile(unknownRefund)).state,'UNKNOWN');assert.equal(refundCalls,2);
+ // A queue insertion failure rolls back cancellation, releases and refund intent together.
+ await boundary(rollback.booking.id);await x.db.pool.query("CREATE FUNCTION synthetic_cancel_fault() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.event_type='BOOKING_CANCELLED' THEN RAISE EXCEPTION 'SYNTHETIC_OUTBOX_FAILURE';END IF;RETURN NEW;END$$;CREATE TRIGGER synthetic_cancel_fault BEFORE INSERT ON booking_notification_outbox FOR EACH ROW EXECUTE FUNCTION synthetic_cancel_fault()");
+ await assert.rejects(cancel(rollback.booking.id));assert.equal((await x.service.get(rollback.booking.id)).state,'CONFIRMED_DEV');assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active',[rollback.holdId])).rows[0].n,1);assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM booking_cancellations WHERE booking_id=$1',[rollback.booking.id])).rows[0].n,0);await x.db.pool.query('DROP TRIGGER synthetic_cancel_fault ON booking_notification_outbox;DROP FUNCTION synthetic_cancel_fault()');
+ nr=await provisionNotificationRole(x.db.pool,x.db.identity);ar=await provisionBookingAccessRole(x.db.pool,x.db.identity);const recovery=new BookingRecovery(ar.accessPool,Buffer.alloc(32,4),'synthetic',undefined,5000,true);let mail=0;
+ const notification=new BookingNotificationWorker(nr.notificationPool,x.origin,recovery,{async send(m){mail++;assert.equal(m.eventType,'BOOKING_CANCELLED');assert.ok(m.text.includes('cancelled')||m.text.includes('キャンセル'));return {state:'UNKNOWN'};}});
+ const delivery=(await x.db.pool.query("SELECT id FROM booking_notification_outbox WHERE booking_id=$1 AND event_type='BOOKING_CANCELLED'",[exact.booking.id])).rows[0].id;assert.equal((await notification.dispatch(delivery)).state,'UNKNOWN');await x.clock(new Date(x.now().getTime()+61000).toISOString());assert.equal((await notification.reconcile(delivery)).state,'UNKNOWN');await notification.dispatch(delivery);assert.equal(mail,1);
+ console.log('PASS exact48h/full; under48h/zero; stale preview; concurrent cancellation once; claims released; terminal cancellation; UNKNOWN then paid/refund or failed/zero; refund dispatch after commit; no blind refund/mail retry; outbox failure rolls back. External provider requests 0.');
+}finally{await nr?.close();await ar?.close();await x.close();}

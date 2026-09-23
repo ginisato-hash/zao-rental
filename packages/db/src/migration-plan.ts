@@ -16,4 +16,5 @@ export const migrationPlan = [
   {id:'0040',file:'0040_production_payment_admission.sql'},
   {id:'0041',file:'0041_provisional_booking_capacity.sql'},
   {id:'0042',file:'0042_inventory_buffer_override.sql'},
+  {id:'0043',file:'0043_commercial_price_snapshot.sql'},
 ] as const;

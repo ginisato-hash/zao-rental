@@ -343,6 +343,13 @@
    "sha256": "63654a05cc1f9590d0acec600ac90275518d36fa46a2adb87cd90a65571f50ff",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0043",
+   "file": "0043_commercial_price_snapshot.sql",
+   "sha256": "62bcb1b1354b163498581fbd26f2fdad35843a6d04907b615f83dff99232fd6c",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

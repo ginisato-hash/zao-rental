@@ -19,3 +19,6 @@ export function publicationApproved(){return Boolean(root[key]&&issued.has(root[
 export function publicIndexablePath(path:string,query=''){
  return !query&&/^\/(ja|en)(?:\/?$|\/(?:rental(?:\/(?:ski|snowboard|wear|kids-family|premium(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)?))?|prices|stores\/(?:mountain-base|onsen-base)|pickup-return|faq)\/?$)/.test(path);
 }
+/** Pure per-request robots decision used by proxy.ts: index only with installed authority, the
+ * exact public origin and an allowlisted query-free public path; everything else is noindex. */
+export function indexablePage(approved:boolean,origin:string,path:string,query=''){return approved&&origin===PUBLICATION_ORIGIN&&publicIndexablePath(path,query);}

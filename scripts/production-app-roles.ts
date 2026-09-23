@@ -2,7 +2,7 @@
 // application roles, reusing (not duplicating) the exact grant lists already proven locally in
 // scripts/application-roles.ts, guest-roles.ts, content-roles.ts, booking-access-role.ts,
 // avatar-read-role.ts and operations-roles.ts. No DB access, no password, no CREATE happens
-// here — an operator applies this plan once against the real, fully-migrated (all 40 migrations)
+// here — an operator applies this plan once against the real, fully-migrated (all migrationPlan migrations, 0001–0050)
 // Production database, then separately provisions each role's real LOGIN password out of band.
 //
 // The local scripts guard several grants behind a runtime `to_regclass`/`to_regprocedure` check
@@ -177,8 +177,9 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT EXECUTE ON FUNCTION wear_pool_create(uuid,uuid,text,text),wear_pool_apply(uuid,text,integer,uuid) TO ${n.operations}`,
   `GRANT SELECT,INSERT ON wear_requests,wear_history TO ${n.operations}`,
   // BookingService/CustodyService (apps/web's booking/custody routes both run under this role)
-  // read-only: verifyClaims()/verifyPhysicalHandoff(). No source/bucket registration authority
-  // here — that is a separate, not-yet-authorized production operational decision.
+  // read-only: verifyClaims()/verifyPhysicalHandoff(). Source/bucket registration is only the
+  // SECURITY DEFINER provisional_capacity_register_source() EXECUTE granted below (staff
+  // INVENTORY_EDIT + scope ALL enforced by ProvisionalCapacitySourceOperations); never direct DML.
   `GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid),notification_sync_confirmed(),notification_claim(uuid),notification_material(uuid,uuid),notification_settle(uuid,uuid,text,text,text),notification_unknown(uuid),notification_reconciled(uuid,text),notification_due() TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION booking_cancellation_preview(uuid),booking_cancellation_status(uuid),booking_cancellation_payment_observed(uuid),booking_cancel(uuid,uuid,jsonb),cancellation_refund_row(uuid),cancellation_refund_claim(uuid),cancellation_refund_observe(uuid,jsonb) TO ${n.operations}`,
   `GRANT SELECT ON provisional_capacity_claims,provisional_capacity_buckets,inventory_pole_exemptions TO ${n.operations}`,
@@ -192,6 +193,7 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT EXECUTE ON FUNCTION notification_status(text),notification_resend(uuid,uuid,text,text) TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION ops_collect_exceptions(text),ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid),ops_acknowledge_exception(uuid,text,text),ops_observe_signal(text,uuid,text) TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION field_acceptance_record(uuid,text,text,text,text,text),field_acceptance_status(uuid,text),real_data_accept(uuid,text[]),real_data_acceptance_status() TO ${n.operations}`,
+  `GRANT EXECUTE ON FUNCTION provisional_capacity_register_source(text,text,jsonb) TO ${n.operations}`,
  );
  return sql;
 }

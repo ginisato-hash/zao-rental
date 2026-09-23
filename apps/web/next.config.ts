@@ -4,8 +4,10 @@ const config: NextConfig = {
   serverExternalPackages:['@node-rs/argon2'],
   logging: false,
   async headers() {
+    // Page indexing is decided per request by proxy.ts from PublicationAuthority (noindex unless
+    // installed, exact origin and allowlisted path). A static page-wide X-Robots-Tag here would
+    // make that authority unreachable; APIs stay statically noindex below.
     return [{ source: '/:path*', headers: [
-      ...(process.env.NODE_ENV!=='production'&&process.env.ZAO_TEST_PUBLIC_INDEXING==='1'?[]:[{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]),
       { key: 'X-Content-Type-Options', value: 'nosniff' },
       { key: 'Referrer-Policy', value: 'no-referrer' },
       { key: 'X-Frame-Options', value: 'DENY' },

@@ -13,6 +13,7 @@ import {productionBackupRoleSql} from '../../scripts/production-backup-role';
 import {productionPaymentRoleNames, productionPaymentRoleCreateSql, productionPaymentActivationGrants} from '../../scripts/production-payment-roles';
 import {productionAppRoleNames, productionAppRoleCreateSql, productionAppRoleGrantSql} from '../../scripts/production-app-roles';
 import {verifyProductionDatabase} from '../../packages/db/src/production-connection';
+import {PgSquareProductionWebhookInbox, PgSquareWebhookInbox} from '../../packages/db/src/square-webhook-inbox';
 import {productionServices, type ProductionConfiguration} from '../../packages/auth/src/production-config';
 
 const TARGET = 'zao_rental_role_plan_test';
@@ -128,6 +129,21 @@ try {
     const claimedOnlyMerchant2 = (await worker.pool.query("SELECT payment_reconciliation.claim_production('owner-1',10,'merchant-1') AS claim")).rows;
     assert.equal(claimedOnlyMerchant2.length, 0); // merchant-1's claim call cannot see merchant-2's job
   });
+  await check('Production webhook inbox adapter: _pay_receipt persists PRODUCTION events through receive_production() only', async () => {
+    const inbox = new PgSquareProductionWebhookInbox(receiver.pool);
+    const signal = { environment: 'PRODUCTION' as const, eventId: 'evt-adapter-1', type: 'payment.updated' as const, merchantId: 'merchant-3', paymentId: 'pay-adapter-1', bodySha256: 'd'.repeat(64) };
+    assert.equal(await inbox.receive(signal), 'INSERTED');
+    assert.equal(await inbox.receive(signal), 'DUPLICATE');
+    assert.equal(await inbox.receive({ ...signal, bodySha256: '9'.repeat(64) }), 'HASH_CONFLICT');
+    const row = (await production!.query("SELECT environment,state,conflict_count FROM square_webhook.inbox WHERE event_id='evt-adapter-1'")).rows;
+    assert.deepEqual(row, [{ environment: 'PRODUCTION', state: 'BLOCKED', conflict_count: 1 }]);
+    // The generic adapter needs EXECUTE on the environment-parameterised receive(); the Production
+    // receiver credential has none, so it fails closed (503 path) and writes nothing.
+    await assert.rejects(new PgSquareWebhookInbox(receiver.pool).receive({ ...signal, eventId: 'evt-adapter-2' }), { message: 'WEBHOOK_INBOX_UNAVAILABLE' });
+    await assert.rejects(new PgSquareWebhookInbox(receiver.pool).receive({ ...signal, environment: 'SANDBOX', eventId: 'evt-adapter-3' }), { message: 'WEBHOOK_INBOX_UNAVAILABLE' });
+    assert.equal((await production!.query("SELECT count(*)::int n FROM square_webhook.inbox WHERE event_id IN ('evt-adapter-2','evt-adapter-3')")).rows[0].n, 0);
+    assert.equal((await production!.query("SELECT count(*)::int n FROM square_webhook.inbox WHERE environment<>'PRODUCTION'")).rows[0].n, 0);
+  });
   await check('mutation test: revoking claim_production from _pay_truth breaks it; re-granting restores it', async () => {
     await production!.query(`REVOKE EXECUTE ON FUNCTION payment_reconciliation.claim_production(text,integer,text) FROM ${names.worker}`);
     await denied(() => worker.pool.query("SELECT payment_reconciliation.claim_production('owner-1',10,'merchant-2') AS claim"));
@@ -188,6 +204,15 @@ try {
     await operations.pool.query("SELECT inventory_clock()");
     await denied(() => operations.pool.query('SELECT count(*) FROM staff_members'));
     await denied(() => operations.pool.query('SELECT count(*) FROM auth_user'));
+  });
+  await check('R3 app roles: operations may EXECUTE provisional_capacity_register_source() only; direct source/bucket DML stays denied', async () => {
+    assert.equal((await operations.pool.query("SELECT has_function_privilege(current_user,'provisional_capacity_register_source(text,text,jsonb)','EXECUTE') v")).rows[0].v, true);
+    await denied(() => operations.pool.query("INSERT INTO provisional_capacity_sources(id) VALUES (gen_random_uuid())"));
+    await denied(() => operations.pool.query("UPDATE provisional_capacity_sources SET id=id"));
+    await denied(() => operations.pool.query("DELETE FROM provisional_capacity_sources"));
+    await denied(() => operations.pool.query("INSERT INTO provisional_capacity_buckets(id) VALUES (gen_random_uuid())"));
+    await denied(() => operations.pool.query("DELETE FROM provisional_capacity_buckets"));
+    for (const other of [guest, hold, contentRead, bookingAccess]) assert.equal((await other.pool.query("SELECT has_function_privilege(current_user,'provisional_capacity_register_source(text,text,jsonb)','EXECUTE') v")).rows[0].v, false);
   });
   const projector=await loginRole(production,db.identity.dbPort,TARGET,names.projector);opened.push(projector);
   await check('booking/custody and payment projector can read every witness; direct INSERT/UPDATE/DELETE remain denied',async()=>{

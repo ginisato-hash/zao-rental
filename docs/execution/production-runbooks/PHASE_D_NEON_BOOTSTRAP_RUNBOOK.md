@@ -4,7 +4,7 @@
 
 ## What this does
 
-Applies the canonical migration set (`packages/db/src/migration-plan.ts`, `0001`–`0040` as of this integration — the migration-0040 naming collision between the original PROD-R4/R6/R7 branches is resolved: `0040_production_payment_admission.sql` is the sole canonical `0040`; the R4 backup role and R7 webhook roles were converted to operational role plans, never migrations — see `docs/execution/production-integration/RESULT.md`) to a real, empty Neon Production database, using the existing `bootstrapProductionSchema()` in [scripts/production-bootstrap.ts](../../../scripts/production-bootstrap.ts) — the same mechanism `npm run test:m2b-bootstrap` proves locally against a disposable cluster. This runbook does not add any new code; it documents how to invoke the existing, already-tested function against a real target.
+Applies the canonical migration set (`packages/db/src/migration-plan.ts`, `0001`–`0050` as of merged main `2843540` (originally `0001`–`0040` at this integration) — the migration-0040 naming collision between the original PROD-R4/R6/R7 branches is resolved: `0040_production_payment_admission.sql` is the sole canonical `0040`; the R4 backup role and R7 webhook roles were converted to operational role plans, never migrations — see `docs/execution/production-integration/RESULT.md`) to a real, empty Neon Production database, using the existing `bootstrapProductionSchema()` in [scripts/production-bootstrap.ts](../../../scripts/production-bootstrap.ts) — the same mechanism `npm run test:m2b-bootstrap` proves locally against a disposable cluster. This runbook does not add any new code; it documents how to invoke the existing, already-tested function against a real target.
 
 ## Preconditions (verify all of these before connecting to anything real)
 
@@ -14,6 +14,14 @@ Applies the canonical migration set (`packages/db/src/migration-plan.ts`, `0001`
 4. **TLS**: connect with `sslmode=verify-full` and a real CA root (R2B uses `/etc/ssl/certs/ca-certificates.crt` on its pinned `postgres:18` runner — use the equivalent trusted root for whatever machine actually runs this).
 5. **Nobody else is mid-migration** — this is a one-time bootstrap of an empty database; there is no concurrent-writer scenario to worry about beyond the advisory lock (`pg_advisory_xact_lock(71820401)`) the function itself takes.
 6. **A rollback plan exists** — since this runs inside one transaction (`BEGIN`/`COMMIT`/`ROLLBACK` on any error), a failure partway through leaves the database exactly as empty as before. No manual rollback procedure is needed for a failed attempt; only a *successful* bootstrap that later needs to be undone would require `DROP SCHEMA public CASCADE` (and every other created schema) — which is destructive and must be its own separately-authorized decision, not assumed here.
+
+## Recorded plan before any write (added by production-activation-readiness)
+
+Run `npm run production:activation-plan` from the exact release commit first. It is no-write (no DB,
+provider or network access; credential names only) and prints the canonical migration count, bootstrap
+`planSha256`/`sourceManifestSha256`, role names and SQL digests, the pinned host fingerprint to compare
+against, and a `planDigestSha256`. The attended authorization should name that digest; the bootstrap
+result's `planSha256`/`manifestSha256` must equal the plan's.
 
 ## Exact invocation
 
@@ -43,7 +51,7 @@ Set `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD`/`PGSSLROOTCERT` in the 
 
 After a successful run, before treating the database as ready for any other Production activity:
 1. Run the same `schemaFingerprint()`/`securityFingerprint()` comparison `test:m2b-bootstrap` runs locally, but pointed at this real database vs. a freshly-migrated local reference, to independently confirm structural/security equivalence (this needs a small adaptation of the existing test, not new production logic — write that adaptation when this runbook is actually executed, not before).
-2. Confirm `SELECT count(*) FROM foundation_migrations` equals the migration count you expect (40).
+2. Confirm `SELECT count(*) FROM foundation_migrations` equals the migration count you expect (50; `npm run production:activation-plan` prints the exact current count).
 3. **Then apply the role plans** — this is the next deliberate step, still entirely operator-run, still no LOGIN credential created automatically: `productionBackupRoleSql()` ([scripts/production-backup-role.ts](../../../scripts/production-backup-role.ts)), `productionPaymentRoleCreateSql()`/`productionPaymentActivationGrants()` ([scripts/production-payment-roles.ts](../../../scripts/production-payment-roles.ts)), and `productionAppRoleCreateSql()`/`productionAppRoleGrantSql()` ([scripts/production-app-roles.ts](../../../scripts/production-app-roles.ts)) each return plain SQL statement arrays for the real database name — run them against the same target, in that order, then separately `ALTER ROLE ... LOGIN PASSWORD ...` each one only when its credential is actually needed (see `docs/execution/production-integration/RESULT.md` for the full role inventory and what each one can and cannot do).
 
 ## What this explicitly does NOT do

@@ -238,14 +238,10 @@ try {
   // (production-db-readiness.ts connects as content_read specifically — reusing it here, rather
   // than a separate ad-hoc credential, is the actual real-world wiring this proves.)
   //
-  // V4 (TD correction): exercises the pure `probeConfiguredDatabaseReadiness` work function
-  // directly, on a plain ProductionConfiguration — no ExactProductionIdentity needed. This proves
-  // the real connect/verify/migration-count logic against real PostgreSQL exactly as before; only
-  // the now-impossible-to-fake identity-minting step is no longer part of this proof (see the
-  // separate reject-path check below and RESULT.md's R3_ATTENDED_ACCEPTANCE_REQUIRED disposition
-  // for the real identity-gated `probeProductionDatabaseReadiness` accept path).
-  await check('F1: probeConfiguredDatabaseReadiness proves real DB connectivity/identity independent of the dark hosting composition (which never opens a connection at all); a wrong credential fails closed, never CONNECTED; no write of any kind occurs', async () => {
-    const { probeConfiguredDatabaseReadiness } = await import('../../packages/db/src/production-db-readiness');
+  // Exercise only the internal transport worker against owned local PostgreSQL. The public
+  // Production API cannot accept a raw config and has no test identity issuer.
+  await check('F1: internal readiness transport verifies real DB identity and migrations; wrong credentials fail; no writes occur', async () => {
+    const { readDatabaseReadiness } = await import('../../packages/db/src/internal/database-readiness');
     const { migrationPlan } = await import('../../packages/db/src/index');
     const { productionConfiguration } = await import('../../packages/auth/src/production-config');
     const { productionGuestConfiguration, guestConfigurationHash } = await import('../../packages/contracts/src/production-guest');
@@ -253,13 +249,10 @@ try {
     await production!.query(`ALTER ROLE ${appNames.content_read} LOGIN PASSWORD '${probePassword}'`);
     const before = (await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n as number;
     const connect = async (_c: unknown, _service: unknown, credential: { password: string }) => {
-      if (credential.password !== probePassword) throw new Error('SYNTHETIC_WRONG_CREDENTIAL');
       return new Pool({ host: '127.0.0.1', port: db.identity.dbPort, database: TARGET, user: appNames.content_read, password: credential.password, max: 2, connectionTimeoutMillis: 2000 });
     };
     const credential = { provider: 'NEON' as const, environment: 'PRODUCTION' as const, host: 'ep-f1-fixture.neon.tech', port: 5432 as const, database: TARGET, user: appNames.content_read, password: probePassword, revoked: false as const };
-    // A real, fully-validated config (not the F9 block's hand-cast `roleConfig`) — required by
-    // probeConfiguredDatabaseReadiness's own ProductionConfiguration type, though no identity
-    // capability is minted from it here.
+    // Synthetic configuration is only input to the internal worker; no identity is minted.
     const f1Guest = productionGuestConfiguration({ schemaVersion: 1, revision: 'F1-FIXTURE', ingressAdapterId: 'f1-fixture-dispatcher', policy: { version: 'F1-FIXTURE', contextSeconds: 3600, absoluteSeconds: 7200, recoverySeconds: 3600, replaySeconds: 30, retentionSeconds: 60, windowSeconds: 10, peerRequests: 1000, globalRequests: 2000 } });
     const f1Config = productionConfiguration({
       schemaVersion: 1, capability: 'ZAO_PRODUCTION_RUNTIME_V1',
@@ -269,20 +262,26 @@ try {
       guest: f1Guest, approvedGuestSha256: guestConfigurationHash(f1Guest),
       payment: null, media: null,
     });
-    const good = await probeConfiguredDatabaseReadiness(f1Config, credential, connect as never);
+    const good = await readDatabaseReadiness(f1Config, migrationPlan.length, () => connect(f1Config, 'content_read', credential));
     assert.deepEqual(good, { status: 'CONNECTED', migrationsApplied: migrationPlan.length, migrationsExpected: migrationPlan.length, schemaComplete: true });
-    const bad = await probeConfiguredDatabaseReadiness(f1Config, { ...credential, password: 'wrong-password' }, connect as never);
+    const bad = await readDatabaseReadiness(f1Config, migrationPlan.length, () => connect(f1Config, 'content_read', { ...credential, password: 'wrong-password' }));
     assert.equal(bad.status, 'FAILED');
+    const incomplete = await readDatabaseReadiness(f1Config, migrationPlan.length + 1, () => connect(f1Config, 'content_read', credential));
+    assert.deepEqual(incomplete, { status: 'CONNECTED', migrationsApplied: migrationPlan.length, migrationsExpected: migrationPlan.length + 1, schemaComplete: false });
+    const wrongDatabase = {...f1Config, database: {...f1Config.database, name: 'wrong_database'}};
+    assert.equal((await readDatabaseReadiness(wrongDatabase, migrationPlan.length, () => connect(f1Config, 'content_read', credential))).status, 'FAILED');
     // Read-only proof: the migration count (and every table this role can otherwise see) is unchanged.
     assert.equal((await production!.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n, before);
   });
   await check('F1: the real identity-gated probeProductionDatabaseReadiness rejects a forged/unregistered ExactProductionIdentity before ever touching the connector', async () => {
     const { probeProductionDatabaseReadiness } = await import('../../packages/db/src/production-db-readiness');
     const forged = { kind: 'EXACT_PRODUCTION_IDENTITY' } as never;
-    const unreachableConnect = async () => { throw new Error('CONNECTOR_MUST_NOT_BE_CALLED'); };
+    let connectorCalls = 0;
+    const unreachableConnect = async () => { connectorCalls++; throw new Error('CONNECTOR_MUST_NOT_BE_CALLED'); };
     const credential = { provider: 'NEON' as const, environment: 'PRODUCTION' as const, host: 'ep-f1-fixture.neon.tech', port: 5432 as const, database: TARGET, user: appNames.content_read, password: 'unused', revoked: false as const };
     const result = await probeProductionDatabaseReadiness(forged, credential, unreachableConnect as never);
     assert.deepEqual(result, { status: 'FAILED', reason: 'PRODUCTION_IDENTITY_REQUIRED' });
+    assert.equal(connectorCalls, 0);
   });
 
   // ---- F5: _pay_dispatch/_pay_truth/_pay_diagnostic Production roles (§R7/R6-A above already

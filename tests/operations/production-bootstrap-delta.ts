@@ -109,24 +109,18 @@ try{
    assert.equal((await p.query("SELECT to_regclass('foundation_migrations') IS NULL absent")).rows[0].absent,true);
   }
  });
- await check('Neon-shaped non-superuser owner rehearsal: outcome recorded; any failure is fully rolled back',async()=>{
+ await check('Neon-shaped non-superuser owner (createrole_self_grant empty): bootstrap commits with exact delta equivalence',async()=>{
   const password=secret();
-  await db.pool.query(`CREATE ROLE ${NEON_OWNER} LOGIN CREATEDB CREATEROLE INHERIT PASSWORD '${password}'`);
+  await db.pool.query(`CREATE ROLE ${NEON_OWNER} LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT PASSWORD '${password}'`);
   await db.pool.query(`GRANT ${PARENT} TO ${NEON_OWNER}`);
   await db.pool.query(`CREATE DATABASE ${NEON_TARGET} OWNER ${NEON_OWNER}`);
   const neon=connect(NEON_TARGET,NEON_OWNER,password),before=await securityFingerprint(neon),schemaBefore=await schemaFingerprint(neon);
-  try{
-   await bootstrapProductionSchema(neon,NEON_TARGET);
-   const mismatch=[...deltaMismatch(canonicalSchemaDelta,fingerprintDelta(schemaBefore,await schemaFingerprint(neon))),...deltaMismatch(canonicalSecurityDelta,fingerprintDelta(before,await securityFingerprint(neon)))];
-   evidence.neonShapedOwner={bootstrap:'COMMITTED',deltaMismatch:mismatch};
-  }catch(e){
-   const error=e as {code?:string;where?:string};
-   evidence.neonShapedOwner={bootstrap:'REJECTED_ROLLED_BACK',sqlstate:error.code??null,statement:(error.where??'').split('\n')[0]!.replace(/"/g,'').slice(0,160)};
-   assert.equal(await occupied(neon),0);
-   assert.equal((await neon.query("SELECT to_regclass('foundation_migrations') IS NULL absent")).rows[0].absent,true);
-   assert.equal(Number((await db.pool.query('SELECT count(*)::int n FROM pg_roles WHERE starts_with(rolname,$1)',[NEON_TARGET+'_'])).rows[0].n),0);
-   assert.equal((await securityFingerprint(neon)).sha256,before.sha256);
-  }
+  assert.equal((await neon.query("SELECT current_setting('createrole_self_grant') v")).rows[0].v,'');
+  const r=await bootstrapProductionSchema(neon,NEON_TARGET);
+  assert.equal(r.applied,50);assert.equal(r.guardsRewritten,12);
+  assert.deepEqual(deltaMismatch(canonicalSchemaDelta,fingerprintDelta(schemaBefore,await schemaFingerprint(neon))),[]);
+  assert.deepEqual(deltaMismatch(canonicalSecurityDelta,fingerprintDelta(before,await securityFingerprint(neon))),[]);
+  evidence.neonShapedOwner={bootstrap:'COMMITTED',deltaMismatch:[]};
  });
  console.log(JSON.stringify({status:'PASS',cases:count,productionConnections:0,...evidence}));
 }catch(e){

@@ -58,11 +58,27 @@ After a successful run, before treating the database as ready for any other Prod
 
 No Square/payment/webhook LOGIN credential is created or activated by this step. No real customer data is written. No Vercel deploy is triggered by this (see the companion Phase E runbook — the two are independent; this can run before or after Phase E). No DNS/public launch changes.
 
-## Known blocker before execution (production-bootstrap-delta-verification)
+## Non-superuser owner compatibility (production-owner-compat/2, EPHEMERAL_ROLE_CREATOR)
 
-A local rehearsal with a Neon-shaped owner (non-superuser, `CREATEDB CREATEROLE`, member of a provider role)
-shows the canonical migrations currently require superuser: `bootstrapProductionSchema()` is rejected with
-SQLSTATE 42501 at `ALTER SCHEMA rental_internal OWNER TO <db>_custody_executor` ("must be able to SET ROLE"),
-and with `createrole_self_grant='set, inherit'` the next failure is `ALTER FUNCTION … OWNER TO <db>_custody_executor`
-("permission denied for schema public"). The transaction rolls back completely (no objects, no roles). Neon's
-`neondb_owner` is not a superuser, so Phase B should not be attempted until this is dispositioned.
+Neon's `neondb_owner` is a CREATEROLE non-superuser. Under PostgreSQL 16+/18 a role it creates would leave it an
+irrevocable ADMIN member, and ownership transfers need SET on the new owner plus CREATE on the target schema. The
+Production bootstrap (never `migrate()`, never the migration files) therefore, inside the single transaction:
+creates a NOLOGIN CREATEROLE `zao_boot_<16 hex>` role (derived from target, compatibility version and source-manifest
+digest; refused if it already exists), runs only the pinned 0015 role-creation block as that role, bridges
+`<db>_custody_executor` to the session with SET/INHERIT (grantor = the ephemeral role), grants the executor temporary
+CREATE on `public` only, runs 0001–0050, revokes that grant and the bridge, proves the ephemeral role owns and is
+granted nothing, drops it, and before COMMIT proves: ephemeral role absent, no owner membership in either custody
+role, no dangling membership, executor CREATE on `public` false, and executor CREATE on the database false (never
+granted). Any deviation rolls back.
+Observed runtime contract (PostgreSQL 18.4, matching REL_18_STABLE source): `ALTER SCHEMA … OWNER TO` checks database
+CREATE against the invoking/current user, not the destination owner, so the executor needs no database CREATE; the
+PostgreSQL documentation describes the new owner's database CREATE, which does not match this runtime. `ALTER FUNCTION
+… OWNER TO` does require the new owner to hold CREATE on the function's schema. Re-verify on any major-version change.
+The 0015 anchor (role-block end, role-block SHA-256, first `OWNER TO` offset) is pinned in
+`config/production/bootstrap-source-manifest.json`; the wrapper, bridge, cleanup and proof contract are bound into
+`planSha256`. `createrole_self_grant` is not relied on. Proven locally by `tests/operations/production-bootstrap-owner-compat.ts`
+(E1–E6, M1–M8; M4 is the PG18 compatibility proof that no database CREATE is required or granted).
+
+Table/column grant categories of `securityFingerprint()` are rebuilt from the catalog with PostgreSQL 18's own
+`information_schema` semantics minus the current-viewer filter, so the Production (non-superuser) and local
+(superuser) fingerprints are comparable; `publicTableGrants` now includes real PUBLIC table grants.

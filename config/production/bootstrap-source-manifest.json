@@ -109,6 +109,11 @@
     "subject": "n",
     "offset": 235,
     "fragment": "n !~ '^zr_[a-f0-9]{12}$'"
+   },
+   "ownerCompatibility": {
+    "roleBlockEnd": 604,
+    "roleBlockSha256": "fced4942fbd8033ded0acc4d9d06db3ea7e4c863cf9a30c7538175a251fc06ad",
+    "firstOwnerTransferOffset": 22800
    }
   },
   {

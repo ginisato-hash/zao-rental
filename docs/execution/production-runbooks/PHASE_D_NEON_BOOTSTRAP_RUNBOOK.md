@@ -50,10 +50,35 @@ Set `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD`/`PGSSLROOTCERT` in the 
 `bootstrapProductionSchema` returns `{applied, guardsRewritten, target, transformerVersion, planSha256, manifestSha256, provenance}`. Compare `guardsRewritten` against the current `GUARD_MIGRATIONS` constant in `scripts/production-bootstrap.ts` at the time this actually runs (**12**, unchanged by this integration — none of migration `0040`'s functions carry a `zr_*` dev-safety guard, so it added no new guarded migration) — a mismatch means the manifest and code have drifted and the run would already have thrown before reaching this point, so this is really a sanity check on the returned value matching what you expect, not a live risk.
 
 After a successful run, before treating the database as ready for any other Production activity:
-1. Run the same `schemaFingerprint()`/`securityFingerprint()` comparison `test:m2b-bootstrap` runs locally, but pointed at this real database vs. a freshly-migrated local reference, to independently confirm structural/security equivalence (this needs a small adaptation of the existing test, not new production logic — write that adaptation when this runbook is actually executed, not before).
+1. **Verify by pre/post delta equivalence, not absolute equality.** A managed Neon owner and a local cluster owner have different role postures, which `securityFingerprint()` rightly includes (its role closure starts at `current_user`), so an absolute Production-vs-local comparison fails for reasons unrelated to the bootstrap. Instead compare `fingerprintDelta(before, after)` of Production with that of a fresh local canonical database, for both `schemaFingerprint()` and `securityFingerprint()`, every category, and require `deltaMismatch(...)` to be empty. Provider baseline rows cancel out only if unchanged; any change on either side stays visible (proved by `tests/operations/production-bootstrap-delta.ts`). Sequence: (1) Production PRE schema fingerprint, (2) Production PRE security fingerprint, (3) `migrationOwnerPosture()` recorded as separate evidence, (4) local empty PRE fingerprints, (5) local `migrate()`, (6) local POST fingerprints, (7) canonical deltas fixed, (8) `bootstrapProductionSchema()`, (9) Production POST fingerprints, (10) Production deltas, (11) delta equivalence, (12) registry checks, (13) STOP.
 2. Confirm `SELECT count(*) FROM foundation_migrations` equals the migration count you expect (50; `npm run production:activation-plan` prints the exact current count).
 3. **Then apply the role plans** — this is the next deliberate step, still entirely operator-run, still no LOGIN credential created automatically: `productionBackupRoleSql()` ([scripts/production-backup-role.ts](../../../scripts/production-backup-role.ts)), `productionPaymentRoleCreateSql()`/`productionPaymentActivationGrants()` ([scripts/production-payment-roles.ts](../../../scripts/production-payment-roles.ts)), and `productionAppRoleCreateSql()`/`productionAppRoleGrantSql()` ([scripts/production-app-roles.ts](../../../scripts/production-app-roles.ts)) each return plain SQL statement arrays for the real database name — run them against the same target, in that order, then separately `ALTER ROLE ... LOGIN PASSWORD ...` each one only when its credential is actually needed (see `docs/execution/production-integration/RESULT.md` for the full role inventory and what each one can and cannot do).
 
 ## What this explicitly does NOT do
 
 No Square/payment/webhook LOGIN credential is created or activated by this step. No real customer data is written. No Vercel deploy is triggered by this (see the companion Phase E runbook — the two are independent; this can run before or after Phase E). No DNS/public launch changes.
+
+## Non-superuser owner compatibility (production-owner-compat/2, EPHEMERAL_ROLE_CREATOR)
+
+Neon's `neondb_owner` is a CREATEROLE non-superuser. Under PostgreSQL 16+/18 a role it creates would leave it an
+irrevocable ADMIN member, and ownership transfers need SET on the new owner plus CREATE on the target schema. The
+Production bootstrap (never `migrate()`, never the migration files) therefore, inside the single transaction:
+creates a NOLOGIN CREATEROLE `zao_boot_<16 hex>` role (derived from target, compatibility version and source-manifest
+digest; refused if it already exists), runs only the pinned 0015 role-creation block as that role, bridges
+`<db>_custody_executor` to the session with SET/INHERIT (grantor = the ephemeral role), grants the executor temporary
+CREATE on `public` only, runs 0001–0050, revokes that grant and the bridge, proves the ephemeral role owns and is
+granted nothing, drops it, and before COMMIT proves: ephemeral role absent, no owner membership in either custody
+role, no dangling membership, executor CREATE on `public` false, and executor CREATE on the database false (never
+granted). Any deviation rolls back.
+Observed runtime contract (PostgreSQL 18.4, matching REL_18_STABLE source): `ALTER SCHEMA … OWNER TO` checks database
+CREATE against the invoking/current user, not the destination owner, so the executor needs no database CREATE; the
+PostgreSQL documentation describes the new owner's database CREATE, which does not match this runtime. `ALTER FUNCTION
+… OWNER TO` does require the new owner to hold CREATE on the function's schema. Re-verify on any major-version change.
+The 0015 anchor (role-block end, role-block SHA-256, first `OWNER TO` offset) is pinned in
+`config/production/bootstrap-source-manifest.json`; the wrapper, bridge, cleanup and proof contract are bound into
+`planSha256`. `createrole_self_grant` is not relied on. Proven locally by `tests/operations/production-bootstrap-owner-compat.ts`
+(E1–E6, M1–M8; M4 is the PG18 compatibility proof that no database CREATE is required or granted).
+
+Table/column grant categories of `securityFingerprint()` are rebuilt from the catalog with PostgreSQL 18's own
+`information_schema` semantics minus the current-viewer filter, so the Production (non-superuser) and local
+(superuser) fingerprints are comparable; `publicTableGrants` now includes real PUBLIC table grants.

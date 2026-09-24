@@ -9,7 +9,7 @@ import {randomBytes} from 'node:crypto';
 import {Pool,type PoolClient} from 'pg';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {migrate} from '../../packages/db/src/index';
-import {bootstrapProductionSchema,schemaFingerprint,securityFingerprint,fingerprintDelta,deltaMismatch,migrationOwnerPosture,type Fingerprint} from '../../scripts/production-bootstrap';
+import {bootstrapProductionSchema,schemaFingerprint,securityFingerprint,fingerprintDelta,deltaMismatch,migrationOwnerPosture,environmentIdentifiers,tokenNormaliser,type Fingerprint} from '../../scripts/production-bootstrap';
 
 const TARGET='zao_rental_provider_shaped',CANONICAL='zr_'+randomBytes(6).toString('hex');
 const PARENT='synthetic_provider_parent',OWNER='synthetic_provider_owner',NEON_OWNER='synthetic_neon_shaped_owner',NEON_TARGET='zao_rental_neon_shaped';
@@ -121,6 +121,27 @@ try{
   assert.deepEqual(deltaMismatch(canonicalSchemaDelta,fingerprintDelta(schemaBefore,await schemaFingerprint(neon))),[]);
   assert.deepEqual(deltaMismatch(canonicalSecurityDelta,fingerprintDelta(before,await securityFingerprint(neon))),[]);
   evidence.neonShapedOwner={bootstrap:'COMMITTED',deltaMismatch:[]};
+ });
+ await check('Neon-named owner (neondb / neondb_owner): identifiers do not collide and bootstrap commits with exact delta equivalence',async()=>{
+  // R0.6 on real Neon stopped here: the owner name carries the database prefix.
+  const password=secret(),foreign=['neondb2_custody','otherdb_custody'];
+  await db.pool.query(`CREATE ROLE neondb_owner LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT PASSWORD '${password}'`);
+  await db.pool.query(`GRANT ${PARENT} TO neondb_owner`);
+  for(const r of foreign)await db.pool.query(`CREATE ROLE ${r} NOLOGIN`);
+  await db.pool.query('CREATE DATABASE neondb OWNER neondb_owner');
+  const neon=connect('neondb','neondb_owner',password);
+  assert.deepEqual([...await environmentIdentifiers(neon)].sort(),[['neondb','<DATABASE>'],['neondb_owner','<MIGRATION_OWNER>']]);
+  const schemaBefore=await schemaFingerprint(neon),before=await securityFingerprint(neon);
+  const r=await bootstrapProductionSchema(neon,'neondb');
+  assert.equal(r.applied,50);assert.equal(r.guardsRewritten,12);
+  const map=await environmentIdentifiers(neon);
+  assert.deepEqual([...map].sort(),[['neondb','<DATABASE>'],['neondb_custody','<DATABASE>_custody'],
+   ['neondb_custody_executor','<DATABASE>_custody_executor'],['neondb_owner','<MIGRATION_OWNER>']]);
+  for(const f of foreign){assert.equal(map.has(f),false,f);assert.equal(tokenNormaliser(map)(f),f);}
+  const schemaAfter=await schemaFingerprint(neon),after=await securityFingerprint(neon);
+  assert.deepEqual(deltaMismatch(canonicalSchemaDelta,fingerprintDelta(schemaBefore,schemaAfter)),[]);
+  assert.deepEqual(deltaMismatch(canonicalSecurityDelta,fingerprintDelta(before,after)),[]);
+  evidence.neonNamedOwner={bootstrap:'COMMITTED',identifiers:map.size,deltaMismatch:[]};
  });
  console.log(JSON.stringify({status:'PASS',cases:count,productionConnections:0,...evidence}));
 }catch(e){

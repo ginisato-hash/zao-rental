@@ -299,8 +299,10 @@ export async function environmentIdentifiers(pool:Queryable){
  // Literal prefix, never LIKE: a database name containing underscores would make them
  // single-character wildcards, so `zaoxrentalyproductionztest_custody_executor` would be taken
  // for this database's own role and mapped onto its placeholder.
+ // The migration owner is already mapped above; a provider-named owner such as Neon's
+ // `neondb_owner` also carries the database prefix and must not be mapped twice.
  const derived=(await pool.query<{rolname:string}>(
-  `SELECT rolname FROM pg_roles WHERE starts_with(rolname::text,current_database()::text||'_') ORDER BY 1`)).rows;
+  `SELECT rolname FROM pg_roles WHERE starts_with(rolname::text,current_database()::text||'_') AND rolname<>current_user ORDER BY 1`)).rows;
  for(const {rolname} of derived){
   const placeholder='<DATABASE>'+rolname.slice(row.database.length);
   if(map.has(rolname))throw new Error('PRODUCTION_FINGERPRINT_IDENTIFIER_COLLISION '+rolname);

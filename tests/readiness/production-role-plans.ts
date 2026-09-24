@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {startIsolatedPostgres} from '../../scripts/postgres';
+import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {bootstrapProductionSchema} from '../../scripts/production-bootstrap';
 import {productionBackupRoleSql} from '../../scripts/production-backup-role';
 import {productionPaymentRoleNames, productionPaymentRoleCreateSql, productionPaymentActivationGrants} from '../../scripts/production-payment-roles';
@@ -33,16 +34,19 @@ async function loginRole(owner: Pool, dbPort: number, database: string, role: st
   const password = randomBytes(24).toString('hex');
   await owner.query(`ALTER ROLE ${role} LOGIN PASSWORD '${password}'`);
   const pool = new Pool({ host: '127.0.0.1', port: dbPort, database, user: role, password, max: 2, connectionTimeoutMillis: 2000 });
-  return { pool, async close() { await pool.end(); } };
+  const close = trackPoolLifecycle(pool);
+  return { pool, close };
 }
 
 const db = await startIsolatedPostgres();
 let production: Pool | undefined;
+let closeProduction: (() => Promise<void>) | undefined;
 const opened: { close(): Promise<void> }[] = [];
 try {
   await db.pool.query(`CREATE DATABASE ${TARGET}`);
   const source = db.pool.options as { password?: string };
   production = new Pool({ host: '127.0.0.1', port: db.identity.dbPort, user: db.identity.user, password: source.password, database: TARGET, max: 6 });
+  closeProduction = trackPoolLifecycle(production);
   await bootstrapProductionSchema(production, TARGET);
 
   // ---- R4: backup role ----
@@ -339,7 +343,10 @@ try {
 
   console.log(JSON.stringify({ status: 'PASS', cases: passed }));
 } finally {
-  for (const o of opened) await o.close();
-  await production?.end();
-  await db.stop();
+  // Order: role pools disconnect, then the owner pool, then the server. One failure never skips the rest.
+  let cleanupFailure: unknown;
+  for (const o of opened) { try { await o.close(); } catch (e) { cleanupFailure ??= e; } }
+  try { await closeProduction?.(); } catch (e) { cleanupFailure ??= e; }
+  try { await db.stop(); } catch (e) { cleanupFailure ??= e; }
+  if (cleanupFailure) throw cleanupFailure;
 }

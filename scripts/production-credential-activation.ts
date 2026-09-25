@@ -5,7 +5,6 @@
 import {createHash,createHmac,pbkdf2Sync,randomBytes} from 'node:crypto';
 import {productionAppRoleNames,assertProductionDatabaseName} from './production-app-roles';
 import {COMMERCIAL_DB_SERVICES} from '../packages/core/src/guest/production-commercial-composition';
-import type {ProductionService} from '../packages/auth/src/production-config';
 
 export const PRODUCTION_CREDENTIAL_ACTIVATION_VERSION='production-credential-activation/1';
 export const COMMERCIAL_CREDENTIAL_SERVICES=COMMERCIAL_DB_SERVICES;

@@ -10,9 +10,10 @@ test('activation plan is deterministic, no-write and bound to the canonical migr
  assert.deepEqual([a.writes,a.networkRequests,a.valuesRead],[0,0,0]);
  assert.equal(a.target.database,'neondb');assert.equal(a.bootstrap.canonicalMigrations,migrationPlan.length);assert.equal(a.bootstrap.lastMigration,migrationPlan.at(-1)!.id);
  assert.ok(a.roles.payment.names.includes('neondb_pay_receipt'));assert.equal(a.credentials.webhookIngress.receiverRole,'neondb_pay_receipt');
- assert.equal(a.nextWriteStep.gate,'PRODUCTION_FOUNDATION_BOOTSTRAP');assert.match(a.nextWriteStep.action,/^bootstrapProductionFoundation\(ownerPool,'neondb'\)/);
+ assert.equal(a.nextWriteStep.gate,'PRODUCTION_CREDENTIAL_CANARY');assert.match(a.nextWriteStep.action,/neondb_content_read/);
  assert.equal(a.roleProvisioning.roleProvisioningVersion,'production-role-provisioning/1');assert.equal(a.roleProvisioning.managerRole,'neondb_role_admin');assert.equal(a.roleProvisioning.operationalRoles.length,17);
  assert.match(a.roleProvisioning.foundationPlanSha256,/^[a-f0-9]{64}$/);assert.equal(a.roleProvisioning.binding.bootstrapPlanSha256,a.bootstrap.planSha256);
+ assert.equal(a.credentialActivation.version,'production-credential-activation/1');assert.equal(a.credentialActivation.managerRole,'neondb_role_admin');assert.equal(a.credentialActivation.canary,'content_read');assert.equal(a.credentialActivation.services.length,10);assert.equal(a.credentialActivation.branchProtection,'REQUIRED_BEFORE_FIRST_CREDENTIAL');assert.match(a.credentialActivation.planSha256,/^[a-f0-9]{64}$/);
  assert.notEqual((await productionActivationPlan({...source,head:'2'.repeat(40)})).planDigestSha256,a.planDigestSha256);
 });
 test('credentials are listed by name only; a secret present in the environment never reaches the plan',async()=>{

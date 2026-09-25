@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {readFileSync} from 'node:fs';
 import type {Pool,PoolClient} from 'pg';
 import {migrationPlan,migrationsDirectory} from '../packages/db/src/index';
+import {productionRoleProvisioningPlan,roleProvisioningDigests,PRODUCTION_ROLE_PROVISIONING_VERSION} from './production-role-provisioning';
 /** Production schema bootstrap.
  *
  * Canonical migrations refuse to run anywhere but an owned local database: twelve of them
@@ -507,7 +508,9 @@ export async function approvalRegistryRows(pool:Queryable){
  const sql=APPROVAL_REGISTRY_TABLES.map(t=>`SELECT ${quote(t)} AS registry,count(*)::int AS rows FROM ${t}`).join(' UNION ALL ');
  return (await pool.query<{registry:string;rows:number}>(sql+' ORDER BY 1')).rows;
 }
-/** Applies the canonical schema to an empty, explicitly named Production database. */
+/** Applies the canonical schema to an empty, explicitly named Production database.
+ * Schema-only primitive, kept for diagnostics and legacy use: new Production activation uses
+ * bootstrapProductionFoundation(), which also provisions the operational roles. */
 export async function bootstrapProductionSchema(pool:Pool,target:string){
  assertProductionTarget(target);
  const actual=(await pool.query<{name:string}>('SELECT current_database() name')).rows[0]!.name;
@@ -520,6 +523,17 @@ export type BootstrapPlan=Awaited<ReturnType<typeof bootstrapPlan>>;
 /** One transaction: migrations, owner-compatibility cleanup, ephemeral-role proofs, COMMIT.
  * Product use always goes through bootstrapProductionSchema(); tests pass deliberately mutated plans. */
 export async function runBootstrapPlan(pool:Pool,plan:BootstrapPlan){
+ return runPlanTransaction(pool,plan,{});
+}
+type TransactionHooks={
+ /** After the last migration, while the Option D executor bridge still exists. */
+ afterMigrations?:(c:PoolClient)=>Promise<void>;
+ /** After the first Option D cleanup statement (fault-injection point only). */
+ duringCleanup?:(c:PoolClient)=>Promise<void>;
+ /** After Option D cleanup and its proofs, immediately before COMMIT. */
+ beforeCommit?:(c:PoolClient)=>Promise<void>;
+};
+async function runPlanTransaction(pool:Pool,plan:BootstrapPlan,hooks:TransactionHooks){
  const compat=plan.ownerCompatibility;
  if((await pool.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[compat.bootstrapRole])).rowCount)throw new Error('PRODUCTION_BOOTSTRAP_ROLE_ALREADY_EXISTS');
  const client=await pool.connect();
@@ -531,15 +545,122 @@ export async function runBootstrapPlan(pool:Pool,plan:BootstrapPlan){
    await client.query(entry.sql);
    await client.query('INSERT INTO foundation_migrations VALUES($1,$2)',[entry.id,entry.checksum]);
   }
-  for(const statement of compat.cleanup)await client.query(statement);
+  await hooks.afterMigrations?.(client);
+  for(const [i,statement] of compat.cleanup.entries()){await client.query(statement);if(i===0)await hooks.duringCleanup?.(client);}
   await assertEphemeralRoleDroppable(client,compat.bootstrapRole);
   if(compat.drop)try{await client.query(compat.drop);}catch{throw new Error('PRODUCTION_BOOTSTRAP_EPHEMERAL_ROLE_DEPENDENCY');}
   await assertOwnerCompatibilityCleared(client,compat);
+  await hooks.beforeCommit?.(client);
   await client.query('COMMIT');
  }catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}
  return{applied:plan.entries.length,guardsRewritten:plan.guardsRewritten,target:plan.target,
   transformerVersion:plan.transformerVersion,planSha256:plan.planSha256,manifestSha256:plan.manifestSha256,
   provenance:plan.provenance.filter(p=>p.transformation!=='NONE'),ownerCompatibility:plan.ownerCompatibilityProvenance};
+}
+
+/** Production foundation = the schema plan plus role provisioning, bound under one digest. This, not
+ * bootstrapProductionSchema(), is the authorised Production activation route. */
+export async function productionFoundationPlan(target:string){
+ const bootstrap=await bootstrapPlan(target),roles=productionRoleProvisioningPlan(target);
+ if(roles.executorRole!==bootstrap.ownerCompatibility.executorRole||roles.custodyRole!==bootstrap.ownerCompatibility.custodyRole)throw new Error('PRODUCTION_FOUNDATION_PLAN_MISMATCH');
+ const binding={bootstrapPlanSha256:bootstrap.planSha256,roleProvisioningVersion:PRODUCTION_ROLE_PROVISIONING_VERSION,...roleProvisioningDigests(roles)};
+ return{target,bootstrap,roles,binding,foundationPlanSha256:sha256(JSON.stringify(binding))};
+}
+export type FoundationPlan=Awaited<ReturnType<typeof productionFoundationPlan>>;
+export const FOUNDATION_FAULT_STAGES=['after-manager-create','after-operational-create','during-owner-grants','during-custody-grant','during-option-d-cleanup','before-topology-proof'] as const;
+export type FoundationFaultStage=typeof FOUNDATION_FAULT_STAGES[number];
+/** Applies schema and operational roles to an empty, explicitly named Production database in one
+ * transaction; any failure rolls all of it back. */
+export async function bootstrapProductionFoundation(pool:Pool,target:string){
+ assertProductionTarget(target);
+ const actual=(await pool.query<{name:string}>('SELECT current_database() name')).rows[0]!.name;
+ if(actual!==target)throw new Error('PRODUCTION_TARGET_MISMATCH');
+ const occupied=Number((await pool.query(`SELECT count(*)::int n FROM pg_class c JOIN pg_namespace s ON s.oid=c.relnamespace WHERE c.relkind IN ('r','v','m') AND s.nspname NOT LIKE 'pg\\_%' AND s.nspname<>'information_schema'`)).rows[0].n);
+ if(occupied)throw new Error('PRODUCTION_DATABASE_NOT_EMPTY');
+ return runFoundationPlan(pool,await productionFoundationPlan(target));
+}
+/** Product use always goes through bootstrapProductionFoundation(); tests pass mutated plans or a fault stage. */
+export async function runFoundationPlan(pool:Pool,plan:FoundationPlan,options:{failAt?:FoundationFaultStage}={}){
+ const r=plan.roles;
+ if((await pool.query('SELECT 1 FROM pg_roles WHERE rolname=ANY($1)',[[r.managerRole,...r.operationalRoleNames]])).rowCount)throw new Error('PRODUCTION_FOUNDATION_ROLE_ALREADY_EXISTS');
+ const fault=(stage:FoundationFaultStage)=>{if(options.failAt===stage)throw new Error('PRODUCTION_FOUNDATION_INJECTED_FAULT '+stage);};
+ const run=async(c:PoolClient,statements:string[],stage?:FoundationFaultStage)=>{for(const [i,s] of statements.entries()){await c.query(s);if(i===0&&stage)fault(stage);}};
+ const reset=async(c:PoolClient)=>{await c.query(r.resetRoleSql);if((await row(c,'SELECT current_user=session_user AS back',[])).back!==true)throw new Error('PRODUCTION_ROLE_PROVISIONING_RESET_FAILED');};
+ const schema=await runPlanTransaction(pool,plan.bootstrap,{
+  afterMigrations:async c=>{
+   await c.query(r.managerCreateSql);fault('after-manager-create');
+   await run(c,r.ownerManagerMembershipSql);
+   await assertManagerAdministrable(c,r);
+   await run(c,r.enterManagerSql);await run(c,r.operationalCreateSql);await reset(c);fault('after-operational-create');
+   await run(c,r.ownerGrantStatements,'during-owner-grants');
+   await assertGrantAuthority(c,r,[]);
+   await run(c,r.enterCustodyExecutorSql);await run(c,r.custodyExecutorGrantStatements,'during-custody-grant');await reset(c);
+   await assertGrantAuthority(c,r,r.custodyExecutorGrantStatements);
+  },
+  duringCleanup:async()=>fault('during-option-d-cleanup'),
+  beforeCommit:async c=>{fault('before-topology-proof');await assertRoleTopology(c,r);await assertCustodyExecute(c,r);},
+ });
+ return{...schema,roleProvisioning:{version:r.version,managerRole:r.managerRole,operationalRoles:r.operationalRoleNames.length,
+  ownerGrantStatements:r.ownerGrantStatements.length,custodyExecutorGrantStatements:r.custodyExecutorGrantStatements.length,planSha256:r.planSha256},
+  foundationPlanSha256:plan.foundationPlanSha256};
+}
+type Roles=FoundationPlan['roles'];
+/** The owner can administer and SET to the manager without inheriting its authority. */
+async function assertManagerAdministrable(c:PoolClient,r:Roles){
+ const m=await row(c,`SELECT coalesce(bool_or(admin_option),false) AS admin,coalesce(bool_or(set_option),false) AS "set",coalesce(bool_or(inherit_option),false) AS inherit
+  FROM pg_auth_members WHERE member=session_user::regrole AND roleid=$1::regrole`,[r.managerRole]);
+ if(m.admin!==true||m.set!==true||m.inherit!==false)throw new Error('PRODUCTION_ROLE_MANAGER_ADMINISTRATION_PROOF_FAILED');
+}
+/** Every function a custody-authority statement names, resolved to its oid. */
+function custodyGrantTargets(statements:string[]){
+ return statements.map(s=>{const m=s.match(/^GRANT EXECUTE ON FUNCTION (.+) TO ([a-z][a-z0-9_]*)$/);if(!m)throw new Error('PRODUCTION_ROLE_PROVISIONING_PLAN_SHAPE');
+  const sigs:string[]=[];let depth=0,start=0;for(let i=0;i<m[1]!.length;i++){const ch=m[1]![i];if(ch==='(')depth++;else if(ch===')')depth--;else if(ch===','&&depth===0){sigs.push(m[1]!.slice(start,i));start=i+1;}}
+  sigs.push(m[1]!.slice(start));return sigs.map(sig=>({sig,grantee:m[2]!}));}).flat();
+}
+/** Grants to operational roles whose grantor is a custody role must be exactly the planned custody set:
+ * with the Option D bridge still inherited, an owner-issued grant on a custody-owned object would
+ * otherwise succeed silently under the executor's authority. */
+async function assertGrantAuthority(c:PoolClient,r:Roles,custodyStatements:string[]){
+ const params=[r.operationalRoleNames,[r.executorRole,r.custodyRole]];
+ const other=await row(c,`WITH g AS (SELECT oid FROM pg_roles WHERE rolname=ANY($2)),o AS (SELECT oid FROM pg_roles WHERE rolname=ANY($1)) SELECT
+  ((SELECT count(*) FROM pg_class x,aclexplode(x.relacl) a WHERE a.grantor IN (SELECT oid FROM g) AND a.grantee IN (SELECT oid FROM o))
+  +(SELECT count(*) FROM pg_attribute x,aclexplode(x.attacl) a WHERE a.grantor IN (SELECT oid FROM g) AND a.grantee IN (SELECT oid FROM o))
+  +(SELECT count(*) FROM pg_namespace x,aclexplode(x.nspacl) a WHERE a.grantor IN (SELECT oid FROM g) AND a.grantee IN (SELECT oid FROM o))
+  +(SELECT count(*) FROM pg_database x,aclexplode(x.datacl) a WHERE a.grantor IN (SELECT oid FROM g) AND a.grantee IN (SELECT oid FROM o))
+  +(SELECT count(*) FROM pg_default_acl x,aclexplode(x.defaclacl) a WHERE a.grantor IN (SELECT oid FROM g) AND a.grantee IN (SELECT oid FROM o)))::int AS n`,params);
+ const actual=(await c.query(`SELECT p.oid::text||' '||pg_get_userbyid(a.grantee)||' '||a.privilege_type||' '||a.is_grantable::text AS v FROM pg_proc p,aclexplode(p.proacl) a
+  WHERE a.grantor IN (SELECT oid FROM pg_roles WHERE rolname=ANY($2)) AND a.grantee IN (SELECT oid FROM pg_roles WHERE rolname=ANY($1))`,params)).rows.map(x=>x.v as string).sort();
+ const expected:string[]=[];
+ for(const t of custodyGrantTargets(custodyStatements)){const oid=(await row(c,'SELECT to_regprocedure($1)::oid::text AS oid',[t.sig])).oid;
+  if(!oid)throw new Error('PRODUCTION_ROLE_GRANT_AUTHORITY_VIOLATION unresolved');expected.push(oid+' '+t.grantee+' EXECUTE false');}
+ if(other.n!==0||JSON.stringify(actual)!==JSON.stringify(expected.sort()))throw new Error('PRODUCTION_ROLE_GRANT_AUTHORITY_VIOLATION');
+}
+/** Pre-COMMIT: manager, operational roles and memberships have exactly the planned shape. */
+async function assertRoleTopology(c:PoolClient,r:Roles){
+ const t=await row(c,`WITH o AS (SELECT oid,rolname FROM pg_roles WHERE rolname=ANY($1)),mgr AS (SELECT oid FROM pg_roles WHERE rolname=$2) SELECT
+  (SELECT count(*) FROM pg_roles WHERE rolname=$2 AND NOT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND rolcreaterole AND NOT rolinherit AND NOT rolreplication AND NOT rolbypassrls)::int AS manager,
+  (SELECT count(*) FROM pg_auth_members WHERE member=session_user::regrole AND roleid IN (SELECT oid FROM o))::int AS owner_direct,
+  (SELECT count(*) FROM pg_auth_members WHERE member IN (SELECT oid FROM mgr) AND roleid IN (SELECT oid FROM o))::int AS manager_rows,
+  (SELECT count(DISTINCT roleid) FROM pg_auth_members WHERE member IN (SELECT oid FROM mgr) AND roleid IN (SELECT oid FROM o) AND admin_option AND NOT inherit_option AND NOT set_option)::int AS manager_admin,
+  (SELECT count(*) FROM pg_auth_members WHERE roleid IN (SELECT oid FROM o) AND member NOT IN (SELECT oid FROM mgr))::int AS other_members,
+  (SELECT array_agg(pg_get_userbyid(member)||' IN '||pg_get_userbyid(roleid) ORDER BY 1) FROM pg_auth_members WHERE member IN (SELECT oid FROM o)) AS operational_memberships,
+  (SELECT count(*) FROM pg_auth_members WHERE member IN (SELECT oid FROM mgr) AND roleid NOT IN (SELECT oid FROM o))::int AS manager_memberships,
+  (SELECT count(*) FROM o)::int AS operational,
+  (SELECT count(*) FROM pg_roles r JOIN o ON o.oid=r.oid WHERE NOT r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolbypassrls AND r.rolinherit=(r.rolname=$3))::int AS operational_attributes,
+  pg_has_role($2,$4,'SET') OR pg_has_role($2,$5,'SET') AS manager_can_set_custody`,[r.operationalRoleNames,r.managerRole,r.database+'_backup',r.executorRole,r.custodyRole]);
+ const expectedMemberships=[r.database+'_backup IN pg_read_all_data'];
+ const failed=[t.manager!==1&&'manager',t.owner_direct!==0&&'owner_direct_operational',t.manager_rows!==17&&'manager_rows',t.manager_admin!==17&&'manager_admin',
+  t.other_members!==0&&'other_members',JSON.stringify(t.operational_memberships)!==JSON.stringify(expectedMemberships)&&'operational_memberships',
+  t.manager_memberships!==0&&'manager_memberships',t.operational!==17&&'operational',t.operational_attributes!==17&&'operational_attributes',t.manager_can_set_custody!==false&&'manager_can_set_custody'].filter(Boolean);
+ await assertManagerAdministrable(c,r);
+ if(failed.length)throw new Error('PRODUCTION_ROLE_TOPOLOGY_PROOF_FAILED '+failed.join(','));
+}
+/** The operations role reaches every custody function it is planned to, with no custody membership. */
+async function assertCustodyExecute(c:PoolClient,r:Roles){
+ for(const t of custodyGrantTargets(r.custodyExecutorGrantStatements)){
+  const x=await row(c,`SELECT coalesce(has_function_privilege($1::text,to_regprocedure($2::text),'EXECUTE'),false) AS ok,(SELECT count(*) FROM pg_auth_members WHERE member=$1::text::regrole AND roleid IN ($3::text::regrole,$4::text::regrole))::int AS custody`,[t.grantee,t.sig,r.executorRole,r.custodyRole]);
+  if(x.ok!==true||x.custody!==0)throw new Error('PRODUCTION_CUSTODY_EXECUTE_PROOF_FAILED '+t.sig);
+ }
 }
 const row=async(c:PoolClient,sql:string,params:unknown[])=>(await c.query(sql,params)).rows[0] as Record<string,unknown>;
 /** The ephemeral creator may be dropped only when nothing but its own memberships refers to it;

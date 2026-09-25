@@ -6,6 +6,46 @@
 
 Applies the canonical migration set (`packages/db/src/migration-plan.ts`, `0001`–`0050` as of merged main `2843540` (originally `0001`–`0040` at this integration) — the migration-0040 naming collision between the original PROD-R4/R6/R7 branches is resolved: `0040_production_payment_admission.sql` is the sole canonical `0040`; the R4 backup role and R7 webhook roles were converted to operational role plans, never migrations — see `docs/execution/production-integration/RESULT.md`) to a real, empty Neon Production database, using the existing `bootstrapProductionSchema()` in [scripts/production-bootstrap.ts](../../../scripts/production-bootstrap.ts) — the same mechanism `npm run test:m2b-bootstrap` proves locally against a disposable cluster. This runbook does not add any new code; it documents how to invoke the existing, already-tested function against a real target.
 
+## Official route since PROD-R0.7-C: `bootstrapProductionFoundation()`
+
+For any new Production activation, `bootstrapProductionFoundation(ownerPool, 'neondb')` in
+[scripts/production-bootstrap.ts](../../../scripts/production-bootstrap.ts) is the only authorised route.
+`bootstrapProductionSchema()` alone is a schema-only primitive: diagnostic/legacy use only, never a new
+Production activation. The Owner authorises the `foundationPlanSha256` that `npm run production:activation-plan`
+prints (it binds the unchanged schema `planSha256`, `production-role-provisioning/1`, the role provisioning
+plan digest, its proof contract and the authority-tagged grants).
+
+In the same single transaction as the schema (`BEGIN` → advisory lock → 0001–0050 with Option D → role
+provisioning → Option D cleanup → proofs → `COMMIT`; any failure rolls all of it back):
+
+1. As the owner, create the persistent manager `neondb_role_admin` (NOLOGIN NOSUPERUSER NOCREATEDB CREATEROLE
+   NOINHERIT NOREPLICATION NOBYPASSRLS). The owner receives ADMIN automatically; `GRANT … TO SESSION_USER WITH SET
+   TRUE, INHERIT FALSE` adds SET. Proven before use: owner→manager ADMIN, SET, no INHERIT.
+2. `SET LOCAL ROLE neondb_role_admin`, create the 17 operational roles from the existing generators (backup,
+   5 payment, 11 app; all NOLOGIN), `RESET ROLE`. The owner therefore holds no direct membership in any of them
+   (measured on real Neon, PROD-R0.7-A/B: a role the owner creates directly leaves it an irrevocable ADMIN row).
+3. As the owner, run the OWNER-authority grants (backup, payment, app). Proof: no ACL entry to an operational role
+   has a custody role as grantor — while the Option D bridge is still inherited, an owner-issued grant on a
+   custody-owned object would otherwise succeed under the executor's authority.
+4. `SET LOCAL ROLE neondb_custody_executor` (the Option D bridge still exists), run the single CUSTODY_EXECUTOR
+   grant (EXECUTE on `rental_apply_receipt`, `rental_apply_inspection`, `rental_complete_no_pickup`,
+   `ops_checkout_amendment`, `ops_reconcile_poles` to `neondb_operations`), `RESET ROLE`. Proof: custody-granted
+   entries equal exactly that set. No membership is added.
+5. The existing Option D cleanup and proofs, unchanged.
+6. Before `COMMIT`: manager exactly as above, no custody membership and cannot SET either custody role; the 17
+   roles NOLOGIN/NOSUPERUSER/NOCREATEDB/NOCREATEROLE/NOREPLICATION/NOBYPASSRLS with INHERIT only for
+   `neondb_backup`; manager→each role ADMIN only (no INHERIT, no SET), no other members; the only operational
+   membership is `neondb_backup IN pg_read_all_data`; `neondb_operations` has EXECUTE on the five custody functions.
+
+No LOGIN, password or credential is created. Each role's LOGIN is a later, separately Owner-approved step taken
+through `SET ROLE neondb_role_admin`. Proven locally by `tests/operations/production-foundation.ts`
+(`npm run test:production-foundation`, also part of `test:m2b-bootstrap`): fault injection at six stages, three
+mutations, schema delta equal to `migrate()`, and an identical foundation security delta on two provider baselines.
+
+The Production database already bootstrapped with `bootstrapProductionSchema()` (Phase B, pre-write evidence
+2026-09-24 22:17:53.72769+00, LSN 0/1BB75A8) is not empty, so this route refuses it; how to reach the foundation
+state there is a separate TD/Owner decision. No restore, PITR or branch operation is implied by this section.
+
 ## Preconditions (verify all of these before connecting to anything real)
 
 1. **A real Neon Production database/branch already exists** and is empty (no tables, views, or materialized views outside `pg_catalog`/`information_schema` — `bootstrapProductionSchema` checks this itself and refuses with `PRODUCTION_DATABASE_NOT_EMPTY` if not, but confirm this is the intended fresh target before connecting at all).
@@ -25,19 +65,19 @@ result's `planSha256`/`manifestSha256` must equal the plan's.
 
 ## Exact invocation
 
-There is currently no permanent CLI wrapper around `bootstrapProductionSchema` — it's only ever called from the test suite today. Do not add one as part of running this; a one-off invocation is safer and leaves no permanent script pointing at Production. From the repository root, with `pg` already a dependency:
+There is currently no permanent CLI wrapper around `bootstrapProductionFoundation` (or the legacy schema-only `bootstrapProductionSchema`) — it's only ever called from the test suite today. Do not add one as part of running this; a one-off invocation is safer and leaves no permanent script pointing at Production. From the repository root, with `pg` already a dependency:
 
 ```bash
 node --import tsx -e "
 import {Pool} from 'pg';
-import {bootstrapProductionSchema} from './scripts/production-bootstrap.ts';
+import {bootstrapProductionFoundation} from './scripts/production-bootstrap.ts';
 const pool = new Pool({
   host: process.env.PGHOST, port: Number(process.env.PGPORT ?? 5432),
   database: process.env.PGDATABASE, user: process.env.PGUSER, password: process.env.PGPASSWORD,
   ssl: { rejectUnauthorized: true, ca: (await import('node:fs')).readFileSync(process.env.PGSSLROOTCERT ?? '/etc/ssl/certs/ca-certificates.crt', 'utf8') },
 });
 try {
-  const result = await bootstrapProductionSchema(pool, process.env.PGDATABASE);
+  const result = await bootstrapProductionFoundation(pool, process.env.PGDATABASE);
   console.log(JSON.stringify(result, null, 2));
 } finally { await pool.end(); }
 "
@@ -47,12 +87,12 @@ Set `PGHOST`/`PGPORT`/`PGDATABASE`/`PGUSER`/`PGPASSWORD`/`PGSSLROOTCERT` in the 
 
 ## Expected result and what to verify after
 
-`bootstrapProductionSchema` returns `{applied, guardsRewritten, target, transformerVersion, planSha256, manifestSha256, provenance}`. Compare `guardsRewritten` against the current `GUARD_MIGRATIONS` constant in `scripts/production-bootstrap.ts` at the time this actually runs (**12**, unchanged by this integration — none of migration `0040`'s functions carry a `zr_*` dev-safety guard, so it added no new guarded migration) — a mismatch means the manifest and code have drifted and the run would already have thrown before reaching this point, so this is really a sanity check on the returned value matching what you expect, not a live risk.
+`bootstrapProductionFoundation` returns the schema result `{applied, guardsRewritten, target, transformerVersion, planSha256, manifestSha256, provenance}` plus `roleProvisioning` and `foundationPlanSha256`. Compare `guardsRewritten` against the current `GUARD_MIGRATIONS` constant in `scripts/production-bootstrap.ts` at the time this actually runs (**12**, unchanged by this integration — none of migration `0040`'s functions carry a `zr_*` dev-safety guard, so it added no new guarded migration) — a mismatch means the manifest and code have drifted and the run would already have thrown before reaching this point, so this is really a sanity check on the returned value matching what you expect, not a live risk.
 
 After a successful run, before treating the database as ready for any other Production activity:
 1. **Verify by pre/post delta equivalence, not absolute equality.** A managed Neon owner and a local cluster owner have different role postures, which `securityFingerprint()` rightly includes (its role closure starts at `current_user`), so an absolute Production-vs-local comparison fails for reasons unrelated to the bootstrap. Instead compare `fingerprintDelta(before, after)` of Production with that of a fresh local canonical database, for both `schemaFingerprint()` and `securityFingerprint()`, every category, and require `deltaMismatch(...)` to be empty. Provider baseline rows cancel out only if unchanged; any change on either side stays visible (proved by `tests/operations/production-bootstrap-delta.ts`). Sequence: (1) Production PRE schema fingerprint, (2) Production PRE security fingerprint, (3) `migrationOwnerPosture()` recorded as separate evidence, (4) local empty PRE fingerprints, (5) local `migrate()`, (6) local POST fingerprints, (7) canonical deltas fixed, (8) `bootstrapProductionSchema()`, (9) Production POST fingerprints, (10) Production deltas, (11) delta equivalence, (12) registry checks, (13) STOP.
 2. Confirm `SELECT count(*) FROM foundation_migrations` equals the migration count you expect (50; `npm run production:activation-plan` prints the exact current count).
-3. **Then apply the role plans** — this is the next deliberate step, still entirely operator-run, still no LOGIN credential created automatically: `productionBackupRoleSql()` ([scripts/production-backup-role.ts](../../../scripts/production-backup-role.ts)), `productionPaymentRoleCreateSql()`/`productionPaymentActivationGrants()` ([scripts/production-payment-roles.ts](../../../scripts/production-payment-roles.ts)), and `productionAppRoleCreateSql()`/`productionAppRoleGrantSql()` ([scripts/production-app-roles.ts](../../../scripts/production-app-roles.ts)) each return plain SQL statement arrays for the real database name — run them against the same target, in that order, then separately `ALTER ROLE ... LOGIN PASSWORD ...` each one only when its credential is actually needed (see `docs/execution/production-integration/RESULT.md` for the full role inventory and what each one can and cannot do).
+3. **Role plans are already applied by the foundation route** (NOLOGIN, inside the same transaction; see the section above). Superseded for new activations: applying `productionBackupRoleSql()`, `productionPaymentRoleCreateSql()`/`productionPaymentActivationGrants()` and `productionAppRoleCreateSql()`/`productionAppRoleGrantSql()` separately as the owner leaves it an ADMIN membership in every role and cannot grant the five custody-owned functions (PROD-R0.7-A). LOGIN/password for any role stays a separately Owner-approved step through `neondb_role_admin`.
 
 ## What this explicitly does NOT do
 

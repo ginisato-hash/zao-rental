@@ -27,10 +27,19 @@ export function assertProductionRoleName(roleName: string): void {
  * meant to be the direct LOGIN identity for the whole pg_dump session, not assumed via SET ROLE
  * from another identity — its pg_read_all_data membership must be active on connection alone. */
 export function productionBackupRoleSql(databaseName: string, roleName: string = databaseName + '_backup'): string[] {
+  return [...productionBackupRoleCreateSql(databaseName, roleName), ...productionBackupRoleGrantSql(databaseName, roleName)];
+}
+/** The CREATE half alone: the Production foundation bootstrap runs it as the role manager. */
+export function productionBackupRoleCreateSql(databaseName: string, roleName: string = databaseName + '_backup'): string[] {
+  assertProductionDatabaseName(databaseName);
+  assertProductionRoleName(roleName);
+  return [`CREATE ROLE ${roleName} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOREPLICATION NOBYPASSRLS`];
+}
+/** The GRANT half alone: the Production foundation bootstrap runs it as the database owner. */
+export function productionBackupRoleGrantSql(databaseName: string, roleName: string = databaseName + '_backup'): string[] {
   assertProductionDatabaseName(databaseName);
   assertProductionRoleName(roleName);
   return [
-    `CREATE ROLE ${roleName} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOREPLICATION NOBYPASSRLS`,
     `GRANT CONNECT ON DATABASE ${databaseName} TO ${roleName}`,
     `GRANT pg_read_all_data TO ${roleName}`,
   ];

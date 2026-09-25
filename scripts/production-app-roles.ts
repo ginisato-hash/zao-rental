@@ -40,7 +40,15 @@ export function productionAppRoleCreateSql(databaseName:string):string[]{
 }
 
 export function productionAppRoleGrantSql(databaseName:string):string[]{
+ return productionAppRoleGrantPlan(databaseName).map(x=>x.sql);
+}
+/** Who may execute a grant on real Neon. The database owner holds grant authority over what it owns;
+ * the five custody functions are owned by <db>_custody_executor, whose EXECUTE only it can grant
+ * (measured on real Neon, PROD-R0.7-A: the owner gets 42501 once the bootstrap bridge is gone). */
+export type ProductionGrantAuthority='OWNER'|'CUSTODY_EXECUTOR';
+export function productionAppRoleGrantPlan(databaseName:string):{authority:ProductionGrantAuthority;sql:string}[]{
  const n=productionAppRoleNames(databaseName),sql:string[]=[];
+ const custodyOwned=`GRANT EXECUTE ON FUNCTION rental_apply_receipt(uuid),rental_apply_inspection(uuid),rental_complete_no_pickup(uuid),ops_checkout_amendment(uuid),ops_reconcile_poles(uuid,uuid,integer) TO ${n.operations}`;
  for(const role of Object.values(n))sql.push(`GRANT CONNECT ON DATABASE ${databaseName} TO ${role}`,`GRANT USAGE ON SCHEMA public TO ${role}`);
 
  // ---- auth (scripts/application-roles.ts) ----
@@ -189,11 +197,12 @@ export function productionAppRoleGrantSql(databaseName:string):string[]{
   `GRANT UPDATE(version) ON rental_return_batches TO ${n.operations}`,
   `GRANT UPDATE(state,outcome) ON rental_return_candidates TO ${n.operations}`,
   `GRANT USAGE ON SEQUENCE inventory_claims_id_seq,wear_claims_id_seq,wear_history_id_seq TO ${n.operations}`,
-  `GRANT EXECUTE ON FUNCTION inventory_clock(),inventory_record_replan(jsonb,jsonb),ops_assert_actor(text,text[],text),rental_apply_receipt(uuid),rental_apply_inspection(uuid),rental_complete_no_pickup(uuid),ops_checkout_amendment(uuid),ops_reconcile_poles(uuid,uuid,integer) TO ${n.operations}`,
+  `GRANT EXECUTE ON FUNCTION inventory_clock(),inventory_record_replan(jsonb,jsonb),ops_assert_actor(text,text[],text) TO ${n.operations}`,
+  custodyOwned,
   `GRANT EXECUTE ON FUNCTION notification_status(text),notification_resend(uuid,uuid,text,text) TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION ops_collect_exceptions(text),ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid),ops_acknowledge_exception(uuid,text,text),ops_observe_signal(text,uuid,text) TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION field_acceptance_record(uuid,text,text,text,text,text),field_acceptance_status(uuid,text),real_data_accept(uuid,text[]),real_data_acceptance_status() TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION provisional_capacity_register_source(text,text,jsonb) TO ${n.operations}`,
  );
- return sql;
+ return sql.map(s=>({authority:s===custodyOwned?'CUSTODY_EXECUTOR':'OWNER',sql:s}));
 }

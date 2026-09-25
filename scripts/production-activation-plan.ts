@@ -14,6 +14,7 @@ import {productionFoundationPlan} from './production-bootstrap';
 import {productionAppRoleNames,productionAppRoleCreateSql,productionAppRoleGrantSql} from './production-app-roles';
 import {productionPaymentRoleNames,productionPaymentRoleCreateSql,productionPaymentActivationGrants} from './production-payment-roles';
 import {productionBackupRoleSql} from './production-backup-role';
+import {productionCredentialActivationPlan} from './production-credential-activation';
 import {EXPECTED_PRODUCTION_DATABASE_NAME,EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,EXPECTED_PRODUCTION_VERCEL_PROJECT_FINGERPRINT_SHA256} from '../packages/auth/src/production-identity';
 import {COMMERCIAL_ACTIVATION_TOKEN,COMMERCIAL_ALLOWLISTED_KEYS,COMMERCIAL_SECRET_KEYS,commercialGuestConfiguration} from '../packages/core/src/guest/production-commercial-composition';
 import {guestConfigurationHash} from '../packages/contracts/src/production-guest';
@@ -23,7 +24,7 @@ const sha256=(v:string)=>createHash('sha256').update(v).digest('hex');
 const sqlDigest=(sql:string[])=>sha256(sql.join(';\n'));
 
 export async function productionActivationPlan(source:{head:string;tree:string;clean:boolean}){
- const db=EXPECTED_PRODUCTION_DATABASE_NAME,foundation=await productionFoundationPlan(db),bootstrap=foundation.bootstrap,roleProvisioning=foundation.roles;
+ const db=EXPECTED_PRODUCTION_DATABASE_NAME,foundation=await productionFoundationPlan(db),bootstrap=foundation.bootstrap,roleProvisioning=foundation.roles,credentialActivation=productionCredentialActivationPlan(db);
  const appCreate=productionAppRoleCreateSql(db),appGrant=productionAppRoleGrantSql(db),payCreate=productionPaymentRoleCreateSql(db),payGrant=productionPaymentActivationGrants(db),backup=productionBackupRoleSql(db);
  const backupWorkflow=readFileSync('.github/workflows/production-backup.yml','utf8');
  const workflowNames=(kind:'secrets'|'vars')=>[...new Set([...backupWorkflow.matchAll(new RegExp(`\\$\\{\\{\\s*${kind}\\.([A-Z0-9_]+)\\s*\\}\\}`,'g'))].map(m=>m[1]!))].sort();
@@ -41,6 +42,9 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
   roleProvisioning:{roleProvisioningVersion:roleProvisioning.version,managerRole:roleProvisioning.managerRole,operationalRoles:roleProvisioning.operationalRoleNames,
    ownerGrantStatements:roleProvisioning.ownerGrantStatements.length,custodyExecutorGrantStatements:roleProvisioning.custodyExecutorGrantStatements.length,
    roleProvisioningPlanSha256:roleProvisioning.planSha256,foundationPlanSha256:foundation.foundationPlanSha256,binding:foundation.binding},
+  credentialActivation:{version:credentialActivation.version,managerRole:credentialActivation.managerRole,services:credentialActivation.services,roles:credentialActivation.roles,
+   canary:credentialActivation.canary,probes:credentialActivation.probes,proofContract:credentialActivation.proofContract,planSha256:credentialActivation.planSha256,
+   branchProtection:'REQUIRED_BEFORE_FIRST_CREDENTIAL',remainingOperationalRolesStayNoLogin:credentialActivation.remainingOperationalRolesStayNoLogin},
   credentials:{
    webApp:{activationToken:COMMERCIAL_ACTIVATION_TOKEN,alsoRequired:['ZAO_PRODUCTION_RUNTIME'],names:[...COMMERCIAL_ALLOWLISTED_KEYS],secretNames:[...COMMERCIAL_SECRET_KEYS],
     nonSecretDerived:{PRODUCTION_DB_NAME:db,PRODUCTION_GUEST_POLICY_SHA256:guestConfigurationHash(commercialGuestConfiguration()),PRODUCTION_RELEASE_ID:source.head},
@@ -49,20 +53,19 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
    backupWorkflow:{secretNames:workflowNames('secrets'),variableNames:workflowNames('vars')},
   },
   nextWriteStep:{
-   gate:'PRODUCTION_FOUNDATION_BOOTSTRAP',
-   action:`bootstrapProductionFoundation(ownerPool,'${db}') applying ${migrationPlan.length} migrations and the ${roleProvisioning.operationalRoleNames.length} NOLOGIN operational roles under ${roleProvisioning.managerRole} in one transaction`,
-   superseded:'bootstrapProductionSchema() alone is a schema-only primitive for diagnostics/legacy use, never a new Production activation',
+   gate:'PRODUCTION_CREDENTIAL_CANARY',
+   action:`protect the active/rollback branches, then provision only ${credentialActivation.roles[credentialActivation.canary]} through ${credentialActivation.managerRole} using a locally-derived SCRAM verifier and the exact Production sensitive sink`,
    preconditions:[
-    'Separate attended TD/Owner authorization for this exact foundationPlanSha256',
-    'Read-only Neon readback: exact project/branch/database, PostgreSQL 18, only the owner role present',
-    `sha256(lowercased PGHOST) equals ${EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256} (bootstrap itself does not check the host)`,
-    `current_database() is ${db} and contains no application objects (bootstrap refuses a non-empty database)`,
-    `none of ${roleProvisioning.managerRole} or the ${roleProvisioning.operationalRoleNames.length} operational roles exists (bootstrap refuses otherwise)`,
-    'Neon point-in-time restore window (retention 7 days) confirmed before the write',
+    'Foundation bootstrap and Production promotion are already accepted; read-only schema/security/role baselines still match',
+    'Active Production branch and rollback branch are protected before any real credential is minted',
+    `Credential activation plan digest equals ${credentialActivation.planSha256}`,
+    `The canary ${credentialActivation.roles[credentialActivation.canary]} is NOLOGIN with the foundation least-privilege posture`,
+    'The target server scram_iterations value is read immediately before activation',
+    'The exact Production sensitive sink exists and can accept one secret without exposing or reading it back',
    ],
-   rollback:'A failure rolls the single transaction back. After a successful commit, undo is Neon branch point-in-time restore to the recorded pre-bootstrap timestamp; there is no scripted down-migration.',
-   proof:'Returned applied/guardsRewritten/planSha256/manifestSha256/foundationPlanSha256 equal this plan; foundation_migrations holds exactly the canonical rows; the pre-COMMIT role topology and custody EXECUTE proofs passed',
-   notIncluded:'No LOGIN, password or credential: each role LOGIN is a separate Owner-approved step through the role manager',
+   rollback:`On connection/probe/sink failure: SET LOCAL ROLE ${credentialActivation.managerRole}; ALTER ROLE ${credentialActivation.roles[credentialActivation.canary]} NOLOGIN PASSWORD NULL; stop before any other role`,
+   proof:`The canary logs in over verify-full TLS as itself, passes its positive probe, fails its negative probe with 42501, survives one compute restart/cold-start check, and the sink reports only expected metadata`,
+   notIncluded:'The other nine commercial credentials, avatar, payment worker/receiver, backup, Square, Resend, publication, DNS and cleanup remain separate gates',
   },
  };
  return {...plan,planDigestSha256:sha256(canonical(plan))};

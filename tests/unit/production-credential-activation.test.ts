@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {COMMERCIAL_DB_SERVICES} from '../../packages/core/src/guest/production-commercial-composition';
+import * as contract from '../../scripts/production-credential-activation';
 import {
- COMMERCIAL_CREDENTIAL_PROBES,COMMERCIAL_CREDENTIAL_SERVICES,PRODUCTION_CREDENTIAL_ACTIVATION_VERSION,
- assertScramSha256Verifier,buildScramSha256Verifier,commercialCredentialRoleNames,
- productionCredentialActivationPlan,productionCredentialActivationSql,productionCredentialPasswordFromEntropy,
- productionCredentialRollbackSql,
+ COMMERCIAL_CREDENTIAL_PROBES,COMMERCIAL_CREDENTIAL_SERVICES,PRODUCTION_CREDENTIAL_ACTIVATION_VERSION,PRODUCTION_CREDENTIAL_PASSWORD_AUTHORITY,
+ commercialCredentialRoleNames,productionCredentialActivationPlan,productionCredentialActivationSql,productionCredentialRollbackSql,
+ productionCredentialResetPasswordRequest,productionCredentialPasswordFromResetResponse,
 } from '../../scripts/production-credential-activation';
 
 test('credential tranche is exactly the ten commercial DB services and excludes avatar/payment/backup',()=>{
@@ -16,56 +16,64 @@ test('credential tranche is exactly the ten commercial DB services and excludes 
   'neondb_auth','neondb_ledger','neondb_hold','neondb_transfer','neondb_pricing',
   'neondb_recommendation','neondb_operations','neondb_guest','neondb_content_read','neondb_booking_access',
  ]);
- for(const forbidden of ['neondb_avatar_read','neondb_pay_receipt','neondb_pay_dispatch','neondb_pay_truth','neondb_pay_projection','neondb_pay_diagnostic','neondb_backup'])
-  assert.ok(!Object.values(roles).includes(forbidden as never));
+ for(const forbidden of ['neondb_avatar_read','neondb_pay_receipt','neondb_pay_dispatch','neondb_pay_truth','neondb_pay_projection','neondb_pay_diagnostic','neondb_backup','neondb_role_admin','neondb_custody','neondb_custody_executor'])
+  assert.ok(!Object.values(roles).includes(forbidden as never),forbidden);
 });
 
-test('password encoding requires exactly 256 bits and is URL-safe ASCII',()=>{
- const p=productionCredentialPasswordFromEntropy(Buffer.alloc(32,0xab));
- assert.equal(p.length,43);
- assert.match(p,/^[A-Za-z0-9_-]{43}$/);
- assert.throws(()=>productionCredentialPasswordFromEntropy(Buffer.alloc(31)),/ENTROPY_INVALID/);
+test('activation SQL is exactly the manager SET plus a LOGIN toggle; no password or verifier ever enters SQL',()=>{
+ for(const service of COMMERCIAL_CREDENTIAL_SERVICES){
+  const role=commercialCredentialRoleNames('neondb')[service],activate=productionCredentialActivationSql('neondb',service);
+  assert.deepEqual(activate,['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "${role}" LOGIN`]);
+  assert.doesNotMatch(activate.join('\n'),/PASSWORD|SCRAM|VALID UNTIL|ENCRYPTED/i);
+ }
+ assert.equal(productionCredentialActivationSql.length,2,'v2 takes no verifier argument');
 });
 
-test('SCRAM-SHA-256 verifier matches an independently pinned vector and validates strictly',()=>{
- const password=productionCredentialPasswordFromEntropy(Buffer.from('95f46bc9d50a9c8f7b0ed8e93cf0f6ad65a13f8fa20d0b77f39801910cb7ff01','hex'));
- const verifier=buildScramSha256Verifier(password,4096,Buffer.from('0123456789abcdef','ascii'));
- assert.equal(verifier,'SCRAM-SHA-256$4096:MDEyMzQ1Njc4OWFiY2RlZg==$gnnUST8HMiWyihGRGRhGuueVBkH4eCRtGptGAFf9Nvc=:ouPOKTsXIBFuoNVvhSrY60kL+c0LEd99tACJshsP17A=');
- assert.doesNotThrow(()=>assertScramSha256Verifier(verifier));
- assert.throws(()=>assertScramSha256Verifier(verifier.replace('4096','1')),/VERIFIER_INVALID/);
- assert.throws(()=>buildScramSha256Verifier('short',4096,Buffer.alloc(16)),/PASSWORD_INVALID/);
- assert.throws(()=>buildScramSha256Verifier(password,4095,Buffer.alloc(16)),/ITERATIONS_INVALID/);
- assert.throws(()=>buildScramSha256Verifier(password,4096,Buffer.alloc(15)),/SALT_INVALID/);
+test('rollback remains the manager SET plus NOLOGIN PASSWORD NULL',()=>{
+ assert.deepEqual(productionCredentialRollbackSql('neondb','content_read'),['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_content_read" NOLOGIN PASSWORD NULL']);
 });
 
-test('activation and rollback SQL use only the manager path; activation contains verifier, never plaintext password',()=>{
- const password=productionCredentialPasswordFromEntropy(Buffer.alloc(32,7));
- const verifier=buildScramSha256Verifier(password,4096,Buffer.alloc(16,9));
- const activate=productionCredentialActivationSql('neondb','content_read',verifier);
- assert.deepEqual(activate,['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_content_read" LOGIN PASSWORD \''+verifier+'\'']);
- assert.ok(!activate.join('\n').includes(password));
- assert.doesNotThrow(()=>assertScramSha256Verifier(verifier));
- const rollback=productionCredentialRollbackSql('neondb','content_read');
- assert.deepEqual(rollback,['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_content_read" NOLOGIN PASSWORD NULL']);
- assert.throws(()=>productionCredentialActivationSql('neondb','content_read','not-a-verifier'),/VERIFIER_INVALID/);
+test('password authority is the Neon reset_password API: one non-idempotent POST per role',()=>{
+ const r=productionCredentialResetPasswordRequest('curly-union-23141081','br-long-king-azkou4fy','neondb','content_read');
+ assert.deepEqual({...r},{method:'POST',path:'/projects/curly-union-23141081/branches/br-long-king-azkou4fy/roles/neondb_content_read/reset_password',idempotent:false,maxCalls:1});
+ assert.equal(PRODUCTION_CREDENTIAL_PASSWORD_AUTHORITY,'NEON_ROLE_RESET_PASSWORD_API');
+ assert.throws(()=>productionCredentialResetPasswordRequest('bad id','br-x','neondb','content_read'),/TARGET_INVALID/);
+ assert.throws(()=>productionCredentialResetPasswordRequest('curly-union-23141081','ep-x','neondb','content_read'),/TARGET_INVALID/);
+ assert.doesNotMatch(r.path,/reveal_password/);
 });
 
-test('all ten services have one read-only positive and one 42501 negative probe',()=>{
+test('reset response parsing takes only the exact role password and operation ids',()=>{
+ const ok={role:{name:'neondb_content_read',password:'x'.repeat(24),branch_id:'br-a'},operations:[{id:'054c34ce-9b64-46f4-9aad-4093067f640f',action:'apply_config'}]};
+ assert.deepEqual(productionCredentialPasswordFromResetResponse(ok,'neondb_content_read'),{password:'x'.repeat(24),operationIds:['054c34ce-9b64-46f4-9aad-4093067f640f']});
+ for(const bad of [null,{},{role:{name:'neondb_guest',password:'x'.repeat(24)}},{role:{name:'neondb_content_read',password:'short'}},{role:{name:'neondb_content_read',password:'x'.repeat(24)},operations:[{id:'not-an-op'}]}])
+  assert.throws(()=>productionCredentialPasswordFromResetResponse(bad,'neondb_content_read'),/RESET_RESPONSE_INVALID/);
+});
+
+test('v2 carries no SCRAM or local password generator',()=>{
+ for(const removed of ['buildScramSha256Verifier','assertScramSha256Verifier','generateProductionCredentialPassword','productionCredentialPasswordFromEntropy'])
+  assert.equal((contract as Record<string,unknown>)[removed],undefined,removed);
+});
+
+test('all ten probes are unchanged: one read-only positive and one 42501 negative each',()=>{
  assert.deepEqual(Object.keys(COMMERCIAL_CREDENTIAL_PROBES),[...COMMERCIAL_CREDENTIAL_SERVICES]);
+ assert.deepEqual(COMMERCIAL_CREDENTIAL_PROBES.content_read,{positive:'SELECT count(*) FROM content_public_policies',negative:'SELECT 1 FROM ledger_poles LIMIT 1',negativeSqlState:'42501'});
+ assert.equal(COMMERCIAL_CREDENTIAL_PROBES.booking_access.positive,"SELECT booking_access.read('nonexistent')");
  for(const service of COMMERCIAL_CREDENTIAL_SERVICES){
   const p=COMMERCIAL_CREDENTIAL_PROBES[service];
-  assert.ok(p.positive.startsWith('SELECT '),service);
-  assert.ok(p.negative.startsWith('SELECT '),service);
+  assert.ok(p.positive.startsWith('SELECT ')&&p.negative.startsWith('SELECT '),service);
   assert.equal(p.negativeSqlState,'42501');
-  assert.doesNotMatch(p.positive,/\b(?:INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE)\b/i);
-  assert.doesNotMatch(p.negative,/\b(?:INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE)\b/i);
+  assert.doesNotMatch(p.positive+p.negative,/\b(?:INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE)\b/i);
  }
 });
 
-test('secret-free activation plan is deterministic and binds canary/probes/proof contract',()=>{
+test('secret-free activation plan is deterministic and names the Neon-native authorities',()=>{
  const p=productionCredentialActivationPlan('neondb');
  assert.equal(p.version,PRODUCTION_CREDENTIAL_ACTIVATION_VERSION);
- assert.equal(p.version,'production-credential-activation/1');
+ assert.equal(p.version,'production-credential-activation/2');
+ assert.equal(p.passwordAuthority,'NEON_ROLE_RESET_PASSWORD_API');
+ assert.equal(p.roleAttributeAuthority,'neondb_role_admin');
+ assert.equal(p.passwordSqlTransport,'NONE');
+ assert.deepEqual(p.passwordReset,{method:'POST',path:'/projects/{project_id}/branches/{branch_id}/roles/{role_name}/reset_password',idempotent:false,maxCallsPerRole:1,blindRetry:false,responseHandling:'MEMORY_ONLY',revealPassword:'NOT_USED'});
  assert.equal(p.managerRole,'neondb_role_admin');
  assert.equal(p.canary,'content_read');
  assert.equal(p.services.length,10);
@@ -73,6 +81,5 @@ test('secret-free activation plan is deterministic and binds canary/probes/proof
  assert.match(p.planSha256,/^[a-f0-9]{64}$/);
  assert.equal(productionCredentialActivationPlan('neondb').planSha256,p.planSha256);
  assert.notEqual(productionCredentialActivationPlan('zao_rental_other').planSha256,p.planSha256);
- const encoded=JSON.stringify(p);
- assert.doesNotMatch(encoded,/PASSWORD '|SCRAM-SHA-256\$/);
+ assert.doesNotMatch(JSON.stringify(p),/PASSWORD '|SCRAM-SHA-256\$/);
 });

@@ -43,6 +43,7 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
    ownerGrantStatements:roleProvisioning.ownerGrantStatements.length,custodyExecutorGrantStatements:roleProvisioning.custodyExecutorGrantStatements.length,
    roleProvisioningPlanSha256:roleProvisioning.planSha256,foundationPlanSha256:foundation.foundationPlanSha256,binding:foundation.binding},
   credentialActivation:{version:credentialActivation.version,managerRole:credentialActivation.managerRole,services:credentialActivation.services,roles:credentialActivation.roles,
+   passwordAuthority:credentialActivation.passwordAuthority,roleAttributeAuthority:credentialActivation.roleAttributeAuthority,passwordSqlTransport:credentialActivation.passwordSqlTransport,passwordReset:credentialActivation.passwordReset,
    canary:credentialActivation.canary,probes:credentialActivation.probes,proofContract:credentialActivation.proofContract,planSha256:credentialActivation.planSha256,
    branchProtection:'REQUIRED_BEFORE_FIRST_CREDENTIAL',remainingOperationalRolesStayNoLogin:credentialActivation.remainingOperationalRolesStayNoLogin},
   credentials:{
@@ -54,16 +55,17 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
   },
   nextWriteStep:{
    gate:'PRODUCTION_CREDENTIAL_CANARY',
-   action:`protect the active/rollback branches, then provision only ${credentialActivation.roles[credentialActivation.canary]} through ${credentialActivation.managerRole} using a locally-derived SCRAM verifier and the exact Production sensitive sink`,
+   action:`provision only ${credentialActivation.roles[credentialActivation.canary]}: one Neon reset_password POST (password held in memory only), then ${credentialActivation.managerRole} toggles LOGIN in SQL with no password, then the exact Production sensitive sink`,
    preconditions:[
     'Foundation bootstrap and Production promotion are already accepted; read-only schema/security/role baselines still match',
     'Active Production branch and rollback branch are protected before any real credential is minted',
     `Credential activation plan digest equals ${credentialActivation.planSha256}`,
     `The canary ${credentialActivation.roles[credentialActivation.canary]} is NOLOGIN with the foundation least-privilege posture`,
-    'The target server scram_iterations value is read immediately before activation',
+    'reset_password is a non-idempotent POST: one call per role, no blind retry, response parsed in memory only, reveal_password not used',
+    'After the reset and before LOGIN, the role posture (attributes, memberships, grantors, ownership, ACL) is unchanged',
     'The exact Production sensitive sink exists and can accept one secret without exposing or reading it back',
    ],
-   rollback:`On connection/probe/sink failure: SET LOCAL ROLE ${credentialActivation.managerRole}; ALTER ROLE ${credentialActivation.roles[credentialActivation.canary]} NOLOGIN PASSWORD NULL; stop before any other role`,
+   rollback:`On any failure after the reset: SET LOCAL ROLE ${credentialActivation.managerRole}; ALTER ROLE ${credentialActivation.roles[credentialActivation.canary]} NOLOGIN PASSWORD NULL; stop before any other role`,
    proof:`The canary logs in over verify-full TLS as itself, passes its positive probe, fails its negative probe with 42501, survives one compute restart/cold-start check, and the sink reports only expected metadata`,
    notIncluded:'The other nine commercial credentials, avatar, payment worker/receiver, backup, Square, Resend, publication, DNS and cleanup remain separate gates',
   },

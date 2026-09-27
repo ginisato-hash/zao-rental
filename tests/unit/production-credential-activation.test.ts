@@ -6,12 +6,13 @@ import * as contract from '../../scripts/production-credential-activation';
 import {
  COMMERCIAL_CREDENTIAL_PROBES,COMMERCIAL_CREDENTIAL_SERVICES,PRODUCTION_CREDENTIAL_ACTIVATION_VERSION,PRODUCTION_CREDENTIAL_INITIAL_PASSWORD_AUTHORITY,PRODUCTION_CREDENTIAL_STEADY_STATE_PASSWORD_AUTHORITY,
  assertProductionCredentialTemporaryPassword,commercialCredentialRoleNames,productionCredentialActivationPlan,productionCredentialActivationSql,productionCredentialRollbackSql,
- productionCredentialResetPasswordRequest,productionCredentialPasswordFromResetResponse,productionCredentialSink,productionCredentialTemporaryPassword,productionCredentialTemporaryPasswordSql,
+ productionCredentialResetPasswordRequest,productionCredentialPasswordFromResetResponse,productionCredentialCompleteReset,productionCredentialSink,productionCredentialTemporaryPassword,productionCredentialTemporaryPasswordSql,
 } from '../../scripts/production-credential-activation';
 
 const TEMP='A'.repeat(21)+'_'+'b'.repeat(20)+'-',OP='054c34ce-9b64-46f4-9aad-4093067f640f';
 const reset=(role:string,password='n'.repeat(32))=>({role:{name:role,password,branch_id:'br-a'},operations:[{id:OP,action:'apply_config'}]});
-const neon=(service:typeof COMMERCIAL_CREDENTIAL_SERVICES[number])=>{const role=commercialCredentialRoleNames('neondb')[service];return productionCredentialPasswordFromResetResponse(reset(role),role,TEMP);};
+const pending=(service:typeof COMMERCIAL_CREDENTIAL_SERVICES[number])=>{const role=commercialCredentialRoleNames('neondb')[service];return productionCredentialPasswordFromResetResponse(reset(role),role,TEMP);};
+const neon=(service:typeof COMMERCIAL_CREDENTIAL_SERVICES[number])=>productionCredentialCompleteReset(pending(service),{[OP]:'finished'});
 
 test('credential tranche is exactly the ten commercial DB services and excludes avatar/payment/backup',()=>{
  assert.deepEqual([...COMMERCIAL_CREDENTIAL_SERVICES],[...COMMERCIAL_DB_SERVICES]);
@@ -43,18 +44,21 @@ test('temporary password is strict 43-char base64url; anything else is refused b
  assert.throws(()=>productionCredentialTemporaryPasswordSql('neondb','content_read',"x'); ALTER ROLE neondb_owner LOGIN; --".padEnd(43,'x')),/TEMPORARY_PASSWORD_INVALID/);
 });
 
-test('initial bootstrap SQL is manager SET plus the temporary password and never contains LOGIN',()=>{
+test('initial bootstrap SQL asserts NOLOGIN in the same statement as the temporary password and can never grant LOGIN',()=>{
  for(const service of COMMERCIAL_CREDENTIAL_SERVICES){
   const role=commercialCredentialRoleNames('neondb')[service],sql=productionCredentialTemporaryPasswordSql('neondb',service,TEMP);
-  assert.deepEqual(sql,['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "${role}" PASSWORD '${TEMP}'`]);
-  assert.doesNotMatch(sql.join('\n'),/\bLOGIN\b|\bNOLOGIN\b|VALID UNTIL|SCRAM/i);
+  assert.deepEqual(sql,['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "${role}" NOLOGIN PASSWORD '${TEMP}'`]);
+  assert.doesNotMatch(sql.join('\n'),/(?<!NO)LOGIN\b|VALID UNTIL|SCRAM/i);
+  assert.equal(sql.filter(s=>/PASSWORD/.test(s)).length,1);
+  assert.match(sql.find(s=>/PASSWORD/.test(s))!,/^ALTER ROLE "[a-z_]+" NOLOGIN PASSWORD '/);
  }
 });
 
-test('LOGIN requires a Neon reset credential for the exact role: LOGIN before reset is impossible through the API',()=>{
+test('LOGIN requires a completed Neon reset credential for the exact role: LOGIN before a finished reset is impossible',()=>{
+ assert.throws(()=>productionCredentialActivationSql('neondb','content_read',pending('content_read') as never),/NEON_RESET_REQUIRED/,'pending credential');
  assert.throws(()=>productionCredentialActivationSql('neondb','content_read',undefined as never),/NEON_RESET_REQUIRED/);
  assert.throws(()=>productionCredentialActivationSql('neondb','content_read',TEMP as never),/NEON_RESET_REQUIRED/);
- assert.throws(()=>productionCredentialActivationSql('neondb','content_read',{role:'neondb_content_read',password:'n'.repeat(32),operationIds:[]}),/NEON_RESET_REQUIRED/,'forged object');
+ assert.throws(()=>productionCredentialActivationSql('neondb','content_read',{role:'neondb_content_read',password:'n'.repeat(32),operationIds:[],completed:true}),/NEON_RESET_REQUIRED/,'forged object');
  assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('guest')),/NEON_RESET_REQUIRED/,'another role credential');
  for(const service of COMMERCIAL_CREDENTIAL_SERVICES){
   const role=commercialCredentialRoleNames('neondb')[service],activate=productionCredentialActivationSql('neondb',service,neon(service));
@@ -81,9 +85,24 @@ test('final password authority is Neon: the response is parsed for the exact rol
  const c=productionCredentialPasswordFromResetResponse(reset('neondb_content_read'),'neondb_content_read',TEMP);
  assert.deepEqual({...c,operationIds:[...c.operationIds]},{role:'neondb_content_read',password:'n'.repeat(32),operationIds:[OP]});
  assert.ok(Object.isFrozen(c));
- for(const bad of [null,{},reset('neondb_guest'),reset('neondb_content_read','short'),reset('neondb_content_read',TEMP),{role:{name:'neondb_content_read',password:'n'.repeat(32)},operations:[{id:'not-an-op'}]}])
+ const role={name:'neondb_content_read',password:'n'.repeat(32)};
+ for(const bad of [null,{},reset('neondb_guest'),reset('neondb_content_read','short'),reset('neondb_content_read',TEMP),{role,operations:[{id:'not-an-op'}]},
+  {role},{role,operations:[]},{role,operations:null},{role,operations:[{id:OP},{id:OP}]}])
   assert.throws(()=>productionCredentialPasswordFromResetResponse(bad,'neondb_content_read',TEMP),/RESET_RESPONSE_INVALID/);
  assert.throws(()=>productionCredentialPasswordFromResetResponse(reset('neondb_content_read'),'neondb_content_read','short'),/TEMPORARY_PASSWORD_INVALID/);
+});
+
+test('a pending credential becomes usable only when exactly its operations are all finished',()=>{
+ const OP2='9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f';
+ const two=()=>productionCredentialPasswordFromResetResponse({role:{name:'neondb_content_read',password:'n'.repeat(32)},operations:[{id:OP},{id:OP2}]},'neondb_content_read',TEMP);
+ for(const status of [{},{[OP]:'finished'},{[OP]:'finished',[OP2]:'running'},{[OP]:'finished',[OP2]:'failed'},{[OP]:'finished',[OP2]:'finished','00000000-0000-0000-0000-000000000000':'finished'}])
+  assert.throws(()=>productionCredentialCompleteReset(two(),status),/RESET_NOT_COMPLETED/,JSON.stringify(status));
+ const p=two(),done=productionCredentialCompleteReset(p,{[OP]:'finished',[OP2]:'finished'});
+ assert.equal(done.completed,true);assert.ok(Object.isFrozen(done));
+ assert.deepEqual(productionCredentialActivationSql('neondb','content_read',done),['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_content_read" LOGIN']);
+ assert.throws(()=>productionCredentialCompleteReset(p,{[OP]:'finished',[OP2]:'finished'}),/PENDING_RESET_REQUIRED/,'a pending credential completes once');
+ assert.throws(()=>productionCredentialCompleteReset({role:'neondb_content_read',password:'n'.repeat(32),operationIds:[OP]},{[OP]:'finished'}),/PENDING_RESET_REQUIRED/,'forged pending');
+ assert.throws(()=>productionCredentialCompleteReset(done as never,{[OP]:'finished',[OP2]:'finished'}),/PENDING_RESET_REQUIRED/);
 });
 
 test('only the Neon password maps to the Vercel sink; the temporary password never can',()=>{
@@ -93,7 +112,8 @@ test('only the Neon password maps to the Vercel sink; the temporary password nev
   assert.ok(COMMERCIAL_ALLOWLISTED_KEYS.includes(sink.key)&&COMMERCIAL_SECRET_KEYS.includes(sink.key),sink.key);
  }
  assert.throws(()=>productionCredentialSink('neondb','content_read',TEMP as never),/NEON_RESET_REQUIRED/);
- assert.throws(()=>productionCredentialSink('neondb','content_read',{role:'neondb_content_read',password:TEMP,operationIds:[]}),/NEON_RESET_REQUIRED/);
+ assert.throws(()=>productionCredentialSink('neondb','content_read',pending('content_read') as never),/NEON_RESET_REQUIRED/,'pending credential');
+ assert.throws(()=>productionCredentialSink('neondb','content_read',{role:'neondb_content_read',password:TEMP,operationIds:[],completed:true}),/NEON_RESET_REQUIRED/);
  assert.throws(()=>productionCredentialSink('neondb','content_read',neon('auth')),/NEON_RESET_REQUIRED/);
 });
 
@@ -125,9 +145,11 @@ test('secret-free activation plan is deterministic and names the hybrid authorit
  assert.equal(p.finalPasswordSource,'NEON_RESET_RESPONSE');
  assert.equal(p.temporaryPasswordInstalledInVercel,false);
  assert.equal(p.futureRotation,'NEON_RESET_PASSWORD_ONLY');
- assert.deepEqual(p.sequence,['TEMPORARY_PASSWORD_WHILE_NOLOGIN','RESET_PASSWORD_ONCE','ERASE_TEMPORARY','LOGIN_WITHOUT_PASSWORD_CLAUSE','TLS_AND_PROBES','SINK_NEON_PASSWORD']);
- assert.ok(p.sequence.indexOf('RESET_PASSWORD_ONCE')<p.sequence.indexOf('LOGIN_WITHOUT_PASSWORD_CLAUSE'));
- assert.deepEqual(p.passwordReset,{method:'POST',path:'/projects/{project_id}/branches/{branch_id}/roles/{role_name}/reset_password',idempotent:false,maxCallsPerRole:1,blindRetry:false,responseHandling:'MEMORY_ONLY',revealPassword:'NOT_USED'});
+ assert.deepEqual(p.sequence,['TEMPORARY_PASSWORD_WITH_NOLOGIN','RESET_PASSWORD_ONCE','ALL_RESET_OPERATIONS_FINISHED','DROP_TEMPORARY_REFERENCES','LOGIN_WITHOUT_PASSWORD_CLAUSE','TLS_AND_PROBES','SINK_NEON_PASSWORD']);
+ assert.ok(p.sequence.indexOf('ALL_RESET_OPERATIONS_FINISHED')<p.sequence.indexOf('LOGIN_WITHOUT_PASSWORD_CLAUSE'));
+ assert.deepEqual(p.temporaryPassword,{entropyBytes:32,encoding:'base64url',length:43,pattern:'^[A-Za-z0-9_-]{43}$',sql:'NOLOGIN_PASSWORD_ONE_STATEMENT',handling:'NEVER_PERSISTED_LOGGED_OR_SUNK'});
+ assert.doesNotMatch(JSON.stringify(p),/memory|eras/i);
+ assert.deepEqual(p.passwordReset,{method:'POST',path:'/projects/{project_id}/branches/{branch_id}/roles/{role_name}/reset_password',idempotent:false,maxCallsPerRole:1,blindRetry:false,responseHandling:'IN_PROCESS_NEVER_PERSISTED',emptyOperations:'FAIL_CLOSED',usableAfter:'ALL_OPERATIONS_FINISHED',revealPassword:'NOT_USED'});
  assert.equal(p.managerRole,'neondb_role_admin');
  assert.equal(p.canary,'content_read');
  assert.equal(p.services.length,10);

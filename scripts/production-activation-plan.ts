@@ -57,14 +57,14 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
   },
   nextWriteStep:{
    gate:'PRODUCTION_CREDENTIAL_CANARY',
-   action:`provision only ${credentialActivation.roles[credentialActivation.canary]}: ${credentialActivation.managerRole} sets a disposable temporary password in SQL while the role stays NOLOGIN, one Neon reset_password POST replaces it (Neon password held in memory only), then ${credentialActivation.managerRole} toggles LOGIN in SQL with no password, then the exact Production sensitive sink receives the Neon password only`,
+   action:`provision only ${credentialActivation.roles[credentialActivation.canary]}: ${credentialActivation.managerRole} sets a disposable temporary password together with NOLOGIN in one SQL statement, one Neon reset_password POST replaces it (Neon password never persisted or logged), and only after every returned operation finished ${credentialActivation.managerRole} toggles LOGIN in SQL with no password, then the exact Production sensitive sink receives the Neon password only`,
    preconditions:[
     'Foundation bootstrap and Production promotion are already accepted; read-only schema/security/role baselines still match',
     'Active Production branch and rollback branch are protected before any real credential is minted',
     `Credential activation plan digest equals ${credentialActivation.planSha256}`,
     `The canary ${credentialActivation.roles[credentialActivation.canary]} is NOLOGIN with no password and the foundation least-privilege posture`,
-    'The temporary password is 43-char base64url, memory only, set while NOLOGIN, never installed in any sink',
-    'reset_password is a non-idempotent POST: one call per role, no blind retry, response parsed in memory only, reveal_password not used',
+    'The temporary password is 43-char base64url, set with NOLOGIN in one statement, never persisted, logged or installed in any sink',
+    'reset_password is a non-idempotent POST: one call per role, no blind retry, response parsed in process and never persisted, empty operations fail closed, usable only after all returned operations finished, reveal_password not used',
     'After the reset and before LOGIN, the role posture (attributes, memberships, grantors, ownership, ACL) is unchanged',
     'The exact Production sensitive sink exists and can accept one secret without exposing or reading it back',
    ],

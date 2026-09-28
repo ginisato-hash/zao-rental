@@ -10,6 +10,7 @@ import {Pool} from 'pg';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {bootstrapProductionSchema} from '../../scripts/production-bootstrap';
+import {productionCredentialReadDatabaseClock,productionCredentialLeaseDeadline} from '../../scripts/production-credential-activation';
 import {productionBackupRoleSql} from '../../scripts/production-backup-role';
 import {productionPaymentRoleNames, productionPaymentRoleCreateSql, productionPaymentActivationGrants} from '../../scripts/production-payment-roles';
 import {productionAppRoleNames, productionAppRoleCreateSql, productionAppRoleGrantSql} from '../../scripts/production-app-roles';
@@ -47,6 +48,26 @@ try {
   const source = db.pool.options as { password?: string };
   production = new Pool({ host: '127.0.0.1', port: db.identity.dbPort, user: db.identity.user, password: source.password, database: TARGET, max: 6 });
   closeProduction = trackPoolLifecycle(production);
+  await check('credential lease reads the real PostgreSQL clock, binds its database, and adds exactly 20 minutes including microseconds', async () => {
+    const client = await production!.connect();
+    try {
+      await assert.rejects(productionCredentialReadDatabaseClock('anotherdb', 'content_read', client), /DATABASE_CLOCK_READ_INVALID/);
+      for (const timezone of ['UTC', 'Asia/Tokyo', 'America/Denver']) {
+        await client.query('SELECT set_config($1,$2,false)', ['TimeZone', timezone]);
+        const before = (await client.query('SELECT clock_timestamp()::text AS t')).rows[0].t;
+        const clock = await productionCredentialReadDatabaseClock(TARGET, 'content_read', client);
+        const lease = productionCredentialLeaseDeadline(TARGET, 'content_read', clock);
+        const proof = (await client.query(`SELECT $1::timestamptz >= $2::timestamptz
+          AND $1::timestamptz <= clock_timestamp() AS actual_read,
+          $3::timestamptz - $1::timestamptz = interval '20 minutes' AS exact_duration`,
+        [clock.databaseNow, before, lease.deadline])).rows[0];
+        assert.deepEqual(proof, {actual_read: true, exact_duration: true});
+        assert.equal(lease.database, TARGET);
+        assert.equal(lease.role, TARGET + '_content_read');
+        assert.throws(() => productionCredentialLeaseDeadline(TARGET, 'content_read', clock), /DATABASE_CLOCK_PROOF_REQUIRED/);
+      }
+    } finally { client.release(true); } // Discard this test session's timezone setting.
+  });
   await bootstrapProductionSchema(production, TARGET);
 
   // ---- R4: backup role ----

@@ -45,7 +45,10 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
   credentialActivation:{version:credentialActivation.version,managerRole:credentialActivation.managerRole,services:credentialActivation.services,roles:credentialActivation.roles,
    initialPasswordAuthority:credentialActivation.initialPasswordAuthority,steadyStatePasswordAuthority:credentialActivation.steadyStatePasswordAuthority,roleAttributeAuthority:credentialActivation.roleAttributeAuthority,
    temporaryPasswordRoleState:credentialActivation.temporaryPasswordRoleState,finalPasswordSource:credentialActivation.finalPasswordSource,temporaryPasswordInstalledInVercel:credentialActivation.temporaryPasswordInstalledInVercel,
-   sequence:credentialActivation.sequence,passwordReset:credentialActivation.passwordReset,futureRotation:credentialActivation.futureRotation,
+   preFinalizationPasswordLease:credentialActivation.preFinalizationPasswordLease,passwordLeaseMinutes:credentialActivation.passwordLeaseMinutes,sinkOrdering:credentialActivation.sinkOrdering,
+   containmentSql:credentialActivation.containmentSql,containmentRetry:credentialActivation.containmentRetry,finalization:credentialActivation.finalization,finalizationFailure:credentialActivation.finalizationFailure,
+   canarySequence:credentialActivation.canarySequence,remainingSequence:credentialActivation.remainingSequence,remainingOrder:credentialActivation.remainingOrder,
+   passwordReset:credentialActivation.passwordReset,restart:credentialActivation.restart,futureRotation:credentialActivation.futureRotation,
    canary:credentialActivation.canary,probes:credentialActivation.probes,proofContract:credentialActivation.proofContract,planSha256:credentialActivation.planSha256,
    branchProtection:'REQUIRED_BEFORE_FIRST_CREDENTIAL',remainingOperationalRolesStayNoLogin:credentialActivation.remainingOperationalRolesStayNoLogin},
   credentials:{
@@ -57,7 +60,7 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
   },
   nextWriteStep:{
    gate:'PRODUCTION_CREDENTIAL_CANARY',
-   action:`provision only ${credentialActivation.roles[credentialActivation.canary]}: ${credentialActivation.managerRole} sets a disposable temporary password together with NOLOGIN in one SQL statement, one Neon reset_password POST replaces it (Neon password never persisted or logged), and only after every returned operation finished ${credentialActivation.managerRole} toggles LOGIN in SQL with no password, then the exact Production sensitive sink receives the Neon password only`,
+   action:`provision only ${credentialActivation.roles[credentialActivation.canary]}: ${credentialActivation.managerRole} sets a disposable temporary password together with NOLOGIN in one SQL statement, one Neon reset_password POST replaces it (Neon password never persisted or logged), after every returned operation finished ${credentialActivation.managerRole} grants LOGIN with a ${credentialActivation.passwordLeaseMinutes}-minute VALID UNTIL lease from database time, then direct TLS/probes, one endpoint restart and the same proof again; only then the exact Production sensitive sink receives the Neon password, and only a confirmed sink allows VALID UNTIL infinity`,
    preconditions:[
     'Foundation bootstrap and Production promotion are already accepted; read-only schema/security/role baselines still match',
     'Active Production branch and rollback branch are protected before any real credential is minted',
@@ -66,10 +69,11 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
     'The temporary password is 43-char base64url, set with NOLOGIN in one statement, never persisted, logged or installed in any sink',
     'reset_password is a non-idempotent POST: one call per role, no blind retry, response parsed in process and never persisted, empty operations fail closed, usable only after all returned operations finished, reveal_password not used',
     'After the reset and before LOGIN, the role posture (attributes, memberships, grantors, ownership, ACL) is unchanged',
-    'The exact Production sensitive sink exists and can accept one secret without exposing or reading it back',
+    'A network stability gate passes before any mutation (3 rounds over at least 60 seconds)',
+    'No password reaches the sink before restart persistence is proven; a failed finalization or readback deletes the sink and contains',
    ],
-   rollback:`On any failure after the temporary password is set: SET LOCAL ROLE ${credentialActivation.managerRole}; ALTER ROLE ${credentialActivation.roles[credentialActivation.canary]} NOLOGIN PASSWORD NULL; stop before any other role`,
-   proof:`The canary logs in over verify-full TLS as itself, passes its positive probe, fails its negative probe with 42501, survives one compute restart/cold-start check, and the sink reports only expected metadata`,
+   rollback:`On any failure after the temporary password is set: SET LOCAL ROLE ${credentialActivation.managerRole}; ALTER ROLE ${credentialActivation.roles[credentialActivation.canary]} NOLOGIN PASSWORD NULL (idempotent, retried with bounded backoff until LOGIN false is read back), delete the sink if present, never repeat reset_password or restart, stop before any other role`,
+   proof:`The canary logs in over verify-full TLS as itself, passes its positive probe, fails its negative probe with 42501, survives one compute restart with the same credential, the sink reports only expected metadata, and the final readback is LOGIN with VALID UNTIL infinity`,
    notIncluded:'The other nine commercial credentials, avatar, payment worker/receiver, backup, Square, Resend, publication, DNS and cleanup remain separate gates',
   },
  };

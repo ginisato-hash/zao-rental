@@ -11,7 +11,8 @@
 //     connection; existing sessions are not assumed to be terminated;
 //  4. the final password reaches its Production sensitive sink only after direct TLS and probe proof
 //     and, for the canary, after restart persistence proof. Only a confirmed sink allows VALID UNTIL
-//     'infinity'; a failed finalization or readback is an activation failure (delete sink, contain, stop).
+//     'infinity', once: issuing it consumes the confirmation, and a failed finalization or its one readback is a
+//     terminal activation failure (delete sink, contain, stop) with no proof left to retry with.
 // Containment (NOLOGIN PASSWORD NULL, sink deletion) is idempotent and retried with bounded backoff;
 // reset_password and restart are non-idempotent and never resent. Secrets are never persisted, logged or
 // sunk except the proven Neon password into its sink; references are dropped (no zeroization is claimed).
@@ -125,10 +126,12 @@ export function productionCredentialContainmentSchedule():number[]{
  return out;
 }
 
-type Stage='COMPLETED'|'PROBE_PROVEN'|'RESTART_PROVEN'|'SINK_CONFIRMED';
+type Stage='COMPLETED'|'PROBE_PROVEN'|'RESTART_PROVEN'|'SINK_CONFIRMED'|'FINALIZATION_ATTEMPT';
 export type ProbeProvenNeonCredential=Readonly<{role:string;password:string;stage:'PROBE_PROVEN'}>;
 export type RestartProvenNeonCredential=Readonly<{role:string;password:string;stage:'RESTART_PROVEN'}>;
 export type SinkConfirmedNeonCredential=Readonly<{role:string;stage:'SINK_CONFIRMED';sinkKey:string}>;
+/** One issued VALID UNTIL 'infinity' statement awaiting its one readback. Exists only after its sink confirmation was consumed. */
+export type FinalizationAttemptNeonCredential=Readonly<{role:string;stage:'FINALIZATION_ATTEMPT';sinkKey:string;sql:readonly string[]}>;
 const neonStage=new WeakMap<object,Stage>();
 const stageOf=(credential:unknown):Stage|undefined=>typeof credential==='object'&&credential!==null?(neonCompleted.has(credential)?'COMPLETED':neonStage.get(credential)):undefined;
 const requireStage=(database:string,service:CommercialCredentialService,credential:unknown,allowed:readonly Stage[],error:string)=>{
@@ -138,18 +141,26 @@ const requireStage=(database:string,service:CommercialCredentialService,credenti
 };
 const sinkKeyFor=(service:CommercialCredentialService)=>`PRODUCTION_DB_PASSWORD_${service.toUpperCase()}`;
 
+/** Proof that a lease deadline is database clock_timestamp() plus exactly the fixed lease. Only this module can
+ * create one; activation accepts nothing else, so no raw or far-future timestamp can reach VALID UNTIL. Single use. */
+export type LeaseDeadlineProof=Readonly<{deadline:string}>;
+const leaseProofs=new WeakSet<object>();
 /** Lease deadline: database clock_timestamp() plus the fixed lease, as an exact UTC second. Never local time. */
-export function productionCredentialLeaseDeadline(databaseNow:string):string{
+export function productionCredentialLeaseDeadline(databaseNow:string):LeaseDeadlineProof{
  if(typeof databaseNow!=='string'||!/(?:Z|[+-]\d{2}(?::?\d{2})?)$/.test(databaseNow.trim()))throw new Error('PRODUCTION_CREDENTIAL_DATABASE_TIME_INVALID');
  const t=Date.parse(databaseNow.trim().replace(' ','T').replace(/([+-]\d{2})$/,'$1:00'));
  if(!Number.isFinite(t))throw new Error('PRODUCTION_CREDENTIAL_DATABASE_TIME_INVALID');
- return new Date(Math.floor(t/1000)*1000+PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES*60000).toISOString().replace('.000Z','Z');
+ const proof=Object.freeze({deadline:new Date(Math.floor(t/1000)*1000+PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES*60000).toISOString().replace('.000Z','Z')});
+ leaseProofs.add(proof);
+ return proof;
 }
-/** LOGIN with the bounded lease. Requires the completed Neon reset credential for this exact role. No password clause. */
-export function productionCredentialActivationSql(database:string,service:CommercialCredentialService,credential:CompletedNeonResetCredential,leaseDeadline:string):string[]{
+/** LOGIN with the bounded lease. Requires the completed Neon reset credential for this exact role and an unspent lease
+ * proof, which this call consumes. No password clause. */
+export function productionCredentialActivationSql(database:string,service:CommercialCredentialService,credential:CompletedNeonResetCredential,lease:LeaseDeadlineProof):string[]{
  requireStage(database,service,credential,['COMPLETED'],'PRODUCTION_CREDENTIAL_COMPLETED_NEON_RESET_REQUIRED');
- if(typeof leaseDeadline!=='string'||!LEASE_DEADLINE.test(leaseDeadline))throw new Error('PRODUCTION_CREDENTIAL_LEASE_INVALID');
- return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} LOGIN VALID UNTIL '${leaseDeadline}'`];
+ if(typeof lease!=='object'||lease===null||!leaseProofs.has(lease)||!LEASE_DEADLINE.test(lease.deadline))throw new Error('PRODUCTION_CREDENTIAL_LEASE_PROOF_REQUIRED');
+ leaseProofs.delete(lease);
+ return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} LOGIN VALID UNTIL '${lease.deadline}'`];
 }
 export type ProductionCredentialProbeEvidence=Readonly<{currentUser:string;sessionUser:string;tlsVerifyFull:boolean;positive:'PASS'|string;negativeSqlState:string|null;postureUnchanged:boolean}>;
 const assertProbeEvidence=(role:string,service:CommercialCredentialService,e:ProductionCredentialProbeEvidence|null|undefined)=>{
@@ -194,16 +205,23 @@ export function productionCredentialSinkConfirmed(database:string,service:Commer
  neonStage.delete(credential);
  const confirmed=Object.freeze({role:c.role,stage:'SINK_CONFIRMED' as const,sinkKey:key});neonStage.set(confirmed,'SINK_CONFIRMED');return confirmed;
 }
-/** Lease removal. Only after the sink is confirmed. */
-export function productionCredentialFinalizationSql(database:string,service:CommercialCredentialService,confirmed:SinkConfirmedNeonCredential):string[]{
+/** Lease removal, one shot: SinkConfirmed -> FinalizationAttempt. Issuing the infinity SQL consumes the sink
+ * confirmation, so it can never be issued twice from the same proof. */
+export function productionCredentialFinalizationSql(database:string,service:CommercialCredentialService,confirmed:SinkConfirmedNeonCredential):FinalizationAttemptNeonCredential{
  requireStage(database,service,confirmed,['SINK_CONFIRMED'],'PRODUCTION_CREDENTIAL_SINK_CONFIRMATION_REQUIRED');
- return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} VALID UNTIL 'infinity'`];
+ neonStage.delete(confirmed);
+ const sql=Object.freeze([managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} VALID UNTIL 'infinity'`]);
+ const attempt=Object.freeze({role:confirmed.role,stage:'FINALIZATION_ATTEMPT' as const,sinkKey:confirmed.sinkKey,sql});
+ neonStage.set(attempt,'FINALIZATION_ATTEMPT');return attempt;
 }
-/** Final readback. Anything but LOGIN with VALID UNTIL infinity is an activation failure: delete sink, contain, stop. */
-export function productionCredentialFinalized(database:string,service:CommercialCredentialService,confirmed:SinkConfirmedNeonCredential,readback:Readonly<{rolcanlogin:unknown;rolvaliduntil:unknown}>|null|undefined){
- requireStage(database,service,confirmed,['SINK_CONFIRMED'],'PRODUCTION_CREDENTIAL_SINK_CONFIRMATION_REQUIRED');
+/** The attempt's one readback: FinalizationAttempt -> Finalized, or terminal failure. The attempt is consumed before the
+ * readback is judged, so a failed readback leaves no proof to retry with; containment (rollback SQL, sink deletion,
+ * stop) is the only next step. */
+export function productionCredentialFinalized(database:string,service:CommercialCredentialService,attempt:FinalizationAttemptNeonCredential,readback:Readonly<{rolcanlogin:unknown;rolvaliduntil:unknown}>|null|undefined){
+ requireStage(database,service,attempt,['FINALIZATION_ATTEMPT'],'PRODUCTION_CREDENTIAL_FINALIZATION_ATTEMPT_REQUIRED');
+ neonStage.delete(attempt);
  if(!readback||readback.rolcanlogin!==true||readback.rolvaliduntil!=='infinity')throw new Error('PRODUCTION_CREDENTIAL_FINALIZATION_FAILED');
- return Object.freeze({role:confirmed.role,sinkKey:confirmed.sinkKey,result:'ACTIVE' as const});
+ return Object.freeze({role:attempt.role,sinkKey:attempt.sinkKey,result:'ACTIVE' as const});
 }
 export function productionCredentialRollbackSql(database:string,service:CommercialCredentialService):string[]{
  return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} NOLOGIN PASSWORD NULL`];
@@ -216,13 +234,13 @@ export const PRODUCTION_CREDENTIAL_PROOF_CONTRACT=Object.freeze({
  passwordReset:['exactly one reset_password POST (non-idempotent, never retried)','password parsed in process; raw response never logged or stored','a response without operations fails closed','the credential is pending until every returned operation is observed finished',
   'failure or unknown outcome: containment, no second reset, no reveal_password, stop'],
  preLogin:['after reset the role is still NOLOGIN with identical attributes, memberships, grantors, ownership and ACL','application references to the temporary password are dropped'],
- lease:['deadline is database clock_timestamp() plus 20 minutes as an exact UTC second','manager SET, then ALTER ROLE <role> LOGIN VALID UNTIL <deadline>; no password clause','readback: LOGIN true and rolvaliduntil equals the deadline',
+ lease:['deadline is database clock_timestamp() plus 20 minutes as an exact UTC second','LOGIN SQL accepts only the unspent lease proof the database-time helper produced, never a raw timestamp','manager SET, then ALTER ROLE <role> LOGIN VALID UNTIL <deadline>; no password clause','readback: LOGIN true and rolvaliduntil equals the deadline',
   'lease enforcement is proven by a NEW connection being rejected after expiry; existing sessions are not assumed to be terminated'],
  connection:['verify-full TLS authentication with the Neon password succeeds as the exact role','verifyProductionDatabase-equivalent least-privilege posture passes'],
  probes:['one role-specific positive probe succeeds','one role-specific forbidden probe fails with SQLSTATE 42501'],
  canary:['content_read first; exactly one endpoint restart, never resent','after the restart the same credential authenticates again with both probes and unchanged posture','only then may the canary password reach its sink'],
  sink:['only a probe-proven (canary: restart-proven) Neon password is installed into the exact Production sensitive sink','only sink metadata is read back; the value is never read back or logged'],
- finalization:['only a confirmed sink allows ALTER ROLE <role> VALID UNTIL infinity','readback must be LOGIN true with VALID UNTIL infinity','a failed finalization or readback is an activation failure: delete the sink, contain, stop'],
+ finalization:['only a confirmed sink allows ALTER ROLE <role> VALID UNTIL infinity','issuing that SQL consumes the sink confirmation: one finalization attempt, one readback','readback must be LOGIN true with VALID UNTIL infinity','a failed finalization or readback is an activation failure: delete the sink, contain, stop','after a failed readback neither the sink confirmation nor the attempt can be used again; containment is the only next step'],
  containment:['NOLOGIN PASSWORD NULL is idempotent and retried with 5/10/20/30-second backoff for at most 10 minutes until LOGIN false is read back','sink deletion is idempotent: absent counts as success','reset_password and restart are never repeated','no other role is touched after a failure'],
  remaining:['the nine other commercial roles run strictly serially after the canary passes, without restarts; any failure contains that role and stops the tranche'],
  futureRotation:['live rotation of a bootstrapped credential used by the public runtime is out of scope and requires a separate coordinated contract'],
@@ -238,7 +256,7 @@ export function productionCredentialActivationPlan(database:string){
   preFinalizationPasswordLease:'REQUIRED' as const,passwordLeaseMinutes:PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES,leaseClock:'DATABASE_CLOCK_TIMESTAMP' as const,
   leaseEnforcementProof:'NEW_CONNECTION_REJECTED_AFTER_EXPIRY' as const,existingSessionsTerminatedByExpiry:'NOT_ASSUMED' as const,
   sinkOrdering:'AFTER_RESTART_PERSISTENCE' as const,containmentSql:PRODUCTION_CREDENTIAL_CONTAINMENT.sql,containmentRetry:PRODUCTION_CREDENTIAL_CONTAINMENT.retry,containment:PRODUCTION_CREDENTIAL_CONTAINMENT,
-  finalization:'SINK_CONFIRMED_THEN_VALID_UNTIL_INFINITY' as const,finalizationFailure:'DELETE_SINK_CONTAIN_STOP' as const,
+  finalization:'SINK_CONFIRMED_THEN_VALID_UNTIL_INFINITY' as const,finalizationAttempts:'ONE_SHOT' as const,finalizationFailure:'DELETE_SINK_CONTAIN_STOP' as const,
   canarySequence:['TEMPORARY_PASSWORD_WHILE_NOLOGIN','RESET_PASSWORD_ONCE','WAIT_RESET_OPERATIONS','DROP_TEMP_REFERENCE','LOGIN_WITH_BOUNDED_VALID_UNTIL','TLS_AND_PROBES','RESTART_ONCE_IF_CANARY','TLS_AND_PROBES_AFTER_RESTART','SINK_NEON_PASSWORD','VERIFY_SINK_METADATA','VALID_UNTIL_INFINITY'],
   remainingSequence:['TEMPORARY_PASSWORD_WHILE_NOLOGIN','RESET_PASSWORD_ONCE','WAIT_RESET_OPERATIONS','DROP_TEMP_REFERENCE','LOGIN_WITH_BOUNDED_VALID_UNTIL','TLS_AND_PROBES','SINK_NEON_PASSWORD','VERIFY_SINK_METADATA','VALID_UNTIL_INFINITY'],
   passwordReset:{method:'POST',path:'/projects/{project_id}/branches/{branch_id}/roles/{role_name}/reset_password',idempotent:false,maxCallsPerRole:1,blindRetry:false,responseHandling:'IN_PROCESS_NEVER_PERSISTED',emptyOperations:'FAIL_CLOSED',usableAfter:'ALL_OPERATIONS_FINISHED',revealPassword:'NOT_USED'},

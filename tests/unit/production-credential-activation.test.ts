@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {Client} from 'pg';
 import {COMMERCIAL_ALLOWLISTED_KEYS,COMMERCIAL_DB_SERVICES,COMMERCIAL_SECRET_KEYS} from '../../packages/core/src/guest/production-commercial-composition';
 import {productionAppRoleNames} from '../../scripts/production-app-roles';
 import * as contract from '../../scripts/production-credential-activation';
@@ -8,13 +9,23 @@ import {
  PRODUCTION_CREDENTIAL_CONTAINMENT,PRODUCTION_CREDENTIAL_REMAINING_ORDER,type CommercialCredentialService,
  assertProductionCredentialTemporaryPassword,commercialCredentialRoleNames,productionCredentialActivationPlan,productionCredentialActivationSql,productionCredentialRollbackSql,
  productionCredentialResetPasswordRequest,productionCredentialPasswordFromResetResponse,productionCredentialCompleteReset,productionCredentialSink,productionCredentialTemporaryPassword,productionCredentialTemporaryPasswordSql,
- productionCredentialLeaseDeadline,productionCredentialProbeProven,productionCredentialRestartRequest,productionCredentialRestartProven,productionCredentialSinkConfirmed,
+ productionCredentialReadDatabaseClock,productionCredentialLeaseDeadline,productionCredentialProbeProven,productionCredentialRestartRequest,productionCredentialRestartProven,productionCredentialSinkConfirmed,
  productionCredentialFinalizationSql,productionCredentialFinalized,productionCredentialContainmentSchedule,
 } from '../../scripts/production-credential-activation';
 
-const TEMP='A'.repeat(21)+'_'+'b'.repeat(20)+'-',OP='054c34ce-9b64-46f4-9aad-4093067f640f',LEASE='2026-09-28T04:38:25Z';
-/** A fresh lease proof from database time; each activation consumes one. */
-const lease=()=>productionCredentialLeaseDeadline('2026-09-28 04:18:25.912345+00');
+const TEMP='A'.repeat(21)+'_'+'b'.repeat(20)+'-',OP='054c34ce-9b64-46f4-9aad-4093067f640f',LEASE='2026-09-28T04:38:25.912345Z';
+/** Unit-only replacement of the trusted DB transport; the real PostgreSQL path is covered in production-role-plans. */
+const clockClient=(rows:unknown[])=>{
+ const client=new Client();
+ Object.defineProperty(client,'query',{value:async(sql:string)=>{
+  assert.equal(sql,'SELECT current_database() AS database, clock_timestamp()::text AS database_now');
+  return {rows};
+ }});
+ return client;
+};
+const clock=(service:CommercialCredentialService='content_read',database='neondb',now='2026-09-28 04:18:25.912345+00')=>
+ productionCredentialReadDatabaseClock(database,service,clockClient([{database,database_now:now}]));
+const lease=async(service:CommercialCredentialService='content_read',database='neondb')=>productionCredentialLeaseDeadline(database,service,await clock(service,database));
 const roleOf=(service:CommercialCredentialService)=>commercialCredentialRoleNames('neondb')[service];
 const reset=(role:string,password='n'.repeat(32))=>({role:{name:role,password,branch_id:'br-a'},operations:[{id:OP,action:'apply_config'}]});
 const pending=(service:CommercialCredentialService)=>productionCredentialPasswordFromResetResponse(reset(roleOf(service)),roleOf(service),TEMP);
@@ -62,7 +73,7 @@ test('temporary password remains NOLOGIN: bootstrap SQL asserts NOLOGIN in the s
  }
 });
 
-test('reset completion proof remains mandatory; a response without operations fails closed',()=>{
+test('reset completion proof remains mandatory; a response without operations fails closed',async()=>{
  const c=productionCredentialPasswordFromResetResponse(reset('neondb_content_read'),'neondb_content_read',TEMP);
  assert.deepEqual({...c,operationIds:[...c.operationIds]},{role:'neondb_content_read',password:'n'.repeat(32),operationIds:[OP]});
  const role={name:'neondb_content_read',password:'n'.repeat(32)};
@@ -75,35 +86,71 @@ test('reset completion proof remains mandatory; a response without operations fa
   assert.throws(()=>productionCredentialCompleteReset(two(),status),/RESET_NOT_COMPLETED/,JSON.stringify(status));
  const p=two();productionCredentialCompleteReset(p,{[OP]:'finished',[OP2]:'finished'});
  assert.throws(()=>productionCredentialCompleteReset(p,{[OP]:'finished',[OP2]:'finished'}),/PENDING_RESET_REQUIRED/,'a pending credential completes once');
- assert.throws(()=>productionCredentialActivationSql('neondb','content_read',pending('content_read') as never,lease()),/COMPLETED_NEON_RESET_REQUIRED/,'pending cannot LOGIN');
+ const freshLease=await lease();
+ assert.throws(()=>productionCredentialActivationSql('neondb','content_read',pending('content_read') as never,freshLease),/COMPLETED_NEON_RESET_REQUIRED/,'pending cannot LOGIN');
 });
 
-test('activation grants LOGIN with a bounded VALID UNTIL lease derived from database time and no password clause',()=>{
- assert.equal(productionCredentialLeaseDeadline('2026-09-28 04:18:25.912345+00').deadline,'2026-09-28T04:38:25Z');
- assert.equal(productionCredentialLeaseDeadline('2026-09-28T13:18:25.1+09:00').deadline,'2026-09-28T04:38:25Z');
- assert.equal(productionCredentialLeaseDeadline('2026-09-28T23:50:00Z').deadline,'2026-09-29T00:10:00Z');
- for(const bad of ['2026-09-28 04:18:25','not a time','',null])assert.throws(()=>productionCredentialLeaseDeadline(bad as never),/DATABASE_TIME_INVALID/,String(bad));
+test('clock provenance requires a PostgreSQL client and the fixed database clock read, never a timestamp or result object',async()=>{
+ for(const bad of ['2099-12-31T23:40:00Z',null,{databaseNow:'2099-12-31T23:40:00Z'},
+  {rows:[{database:'neondb',database_now:'2099-12-31T23:40:00Z'}]},{query:async()=>({rows:[]})}])
+  await assert.rejects(productionCredentialReadDatabaseClock('neondb','content_read',bad as never),/DATABASE_CLIENT_REQUIRED/);
+ for(const rows of [[],[{database:'anotherdb',database_now:'2026-09-28T04:18:25Z'}],[{database:'neondb',database_now:null}],
+  [{database:'neondb',database_now:'2026-09-28T04:18:25Z'},{database:'neondb',database_now:'2026-09-28T04:18:25Z'}]])
+  await assert.rejects(productionCredentialReadDatabaseClock('neondb','content_read',clockClient(rows)),/DATABASE_CLOCK_READ_INVALID/);
+ const failed=new Client();
+ Object.defineProperty(failed,'query',{value:async()=>{throw new Error('DB_READ_FAILED');}});
+ await assert.rejects(productionCredentialReadDatabaseClock('neondb','content_read',failed),/DB_READ_FAILED/);
+});
+
+test('only a registered database clock proof mints a lease; invented far-future strings and forged clock proofs fail',async()=>{
+ // @ts-expect-error The old timestamp-only entry point is no longer callable.
+ assert.throws(()=>productionCredentialLeaseDeadline('2099-12-31T23:40:00Z'),/DATABASE_CLOCK_PROOF_REQUIRED/);
+ const real=await clock();
+ for(const bad of ['2099-12-31T23:40:00Z','2026-09-28T04:18:25Z',null,undefined,{},
+  {...real},{...real,databaseNow:'2099-12-31T23:40:00Z'},Object.freeze({...real})])
+  assert.throws(()=>productionCredentialLeaseDeadline('neondb','content_read',bad as never),/DATABASE_CLOCK_PROOF_REQUIRED/);
+ assert.throws(()=>productionCredentialLeaseDeadline('neondb','guest',real),/DATABASE_CLOCK_PROOF_REQUIRED/);
+ assert.throws(()=>productionCredentialLeaseDeadline('anotherdb','content_read',real),/DATABASE_CLOCK_PROOF_REQUIRED/);
+ assert.throws(()=>{(real as {databaseNow:string}).databaseNow='2099-12-31T23:40:00Z';},TypeError);
+ assert.equal(productionCredentialLeaseDeadline('neondb','content_read',real).deadline,LEASE);
+ assert.throws(()=>productionCredentialLeaseDeadline('neondb','content_read',real),/DATABASE_CLOCK_PROOF_REQUIRED/,'one lease per DB clock read');
+});
+
+test('activation grants LOGIN with exactly DB clock plus 20 minutes, retaining fractional seconds and no password clause',async()=>{
+ for(const [now,deadline] of [
+  ['2026-09-28 04:18:25.912345+00',LEASE],
+  ['2026-09-28T13:18:25.912345+09:00',LEASE],
+  ['2026-09-28T00:18:25.912345-0400',LEASE],
+  ['2026-09-28T23:50:00Z','2026-09-29T00:10:00Z'],
+ ])assert.equal(productionCredentialLeaseDeadline('neondb','content_read',await clock('content_read','neondb',now)).deadline,deadline);
+ for(const bad of ['2026-09-28 04:18:25','not a time','2026-09-28T99:00:00Z','']){
+  const c=await clock('content_read','neondb',bad);
+  assert.throws(()=>productionCredentialLeaseDeadline('neondb','content_read',c),/DATABASE_TIME_INVALID/);
+ }
  for(const service of COMMERCIAL_CREDENTIAL_SERVICES){
-  const sql=productionCredentialActivationSql('neondb',service,neon(service),lease());
+  const proof=await lease(service);
+  assert.equal(proof.leaseMinutes,20);assert.equal(proof.role,roleOf(service));assert.equal(proof.database,'neondb');
+  const sql=productionCredentialActivationSql('neondb',service,neon(service),proof);
   assert.deepEqual(sql,['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "${roleOf(service)}" LOGIN VALID UNTIL '${LEASE}'`]);
   assert.doesNotMatch(sql.join('\n'),/PASSWORD|infinity|SCRAM/i);
  }
- assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('guest'),lease()),/COMPLETED_NEON_RESET_REQUIRED/,'another role');
- assert.throws(()=>productionCredentialActivationSql('neondb','content_read',{role:'neondb_content_read',password:'n'.repeat(32),operationIds:[],completed:true},lease()),/COMPLETED_NEON_RESET_REQUIRED/,'forged');
+ const proof=await lease();
+ assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('guest'),proof),/COMPLETED_NEON_RESET_REQUIRED/,'another role');
+ assert.throws(()=>productionCredentialActivationSql('neondb','content_read',{role:'neondb_content_read',password:'n'.repeat(32),operationIds:[],completed:true},proof),/COMPLETED_NEON_RESET_REQUIRED/,'forged');
 });
 
-test('only a lease proof from the database-time helper reaches activation SQL, and only once',()=>{
- // A raw timestamp, even the exact correct one, a far-future one, or a hand-built object shaped like a proof.
+test('only the exact database and service lease reaches activation SQL, and only once',async()=>{
+ const proof=await lease();
  for(const bad of [LEASE,'2099-12-31T23:59:59Z','infinity',"2026-09-28T04:38:25Z'; --",'',undefined,null,
-  {deadline:LEASE},{deadline:'2099-12-31T23:59:59Z'},Object.freeze({deadline:LEASE})])
-  assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('content_read'),bad as never),/LEASE_PROOF_REQUIRED/,JSON.stringify(bad));
- // A far-future "database time" is not a way around it either: the helper only ever adds exactly the fixed lease.
- assert.equal(productionCredentialLeaseDeadline('2099-12-31T23:40:00Z').deadline,'2100-01-01T00:00:00Z');
- const proof=lease();
+  {deadline:LEASE},{...proof},{...proof,deadline:'2099-12-31T23:59:59Z'},Object.freeze({...proof}),await clock()])
+  assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('content_read'),bad as never),/LEASE_PROOF_REQUIRED/);
+ const guestLease=await lease('guest'),otherDatabaseLease=await lease('content_read','anotherdb');
+ assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('content_read'),guestLease),/LEASE_PROOF_REQUIRED/);
+ assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('content_read'),otherDatabaseLease),/LEASE_PROOF_REQUIRED/);
  assert.throws(()=>{(proof as {deadline:string}).deadline='2099-12-31T23:59:59Z';},TypeError,'the proof is frozen');
  assert.equal(productionCredentialActivationSql('neondb','content_read',neon('content_read'),proof)[1],`ALTER ROLE "neondb_content_read" LOGIN VALID UNTIL '${LEASE}'`);
  assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('content_read'),proof),/LEASE_PROOF_REQUIRED/,'a lease proof is spent by one activation');
- const refused=lease();
+ const refused=await lease();
  assert.throws(()=>productionCredentialActivationSql('neondb','content_read',neon('guest'),refused),/COMPLETED_NEON_RESET_REQUIRED/);
  assert.ok(productionCredentialActivationSql('neondb','content_read',neon('content_read'),refused),'a refusal for another reason does not burn the proof');
 });

@@ -1,5 +1,6 @@
-// PROD-R0.8-F: pure, no-I/O contract for the first Production credential tranche.
-// No provider call, database connection, password persistence, env read or logging happens here.
+// PROD-R0.8-F: contract for the first Production credential tranche.
+// The clock adapter performs one read through an operator-owned PostgreSQL client; all other helpers
+// remain no-I/O. No provider call, connection creation, password persistence, env read or logging happens here.
 // Neon rejects client-derived SCRAM verifiers, and its reset_password API refuses a role that has no
 // password yet. Operational roles are created NOLOGIN PASSWORD NULL, so the lifecycle is hybrid:
 //  1. initial bootstrap: a disposable 43-char base64url password is set through the role manager in
@@ -18,6 +19,7 @@
 // sunk except the proven Neon password into its sink; references are dropped (no zeroization is claimed).
 // Future live rotation of a bootstrapped role is out of scope and requires separate coordination.
 import {createHash,randomBytes} from 'node:crypto';
+import {Client} from 'pg';
 import {productionAppRoleNames,assertProductionDatabaseName} from './production-app-roles';
 import {COMMERCIAL_DB_SERVICES} from '../packages/core/src/guest/production-commercial-composition';
 
@@ -114,7 +116,7 @@ export const PRODUCTION_CREDENTIAL_CANARY='content_read' satisfies CommercialCre
 /** The nine non-canary roles, activated strictly one after another only after the canary passes. */
 export const PRODUCTION_CREDENTIAL_REMAINING_ORDER=Object.freeze(['booking_access','recommendation','pricing','guest','ledger','hold','transfer','auth','operations'] as const satisfies readonly CommercialCredentialService[]);
 export const PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES=20;
-const LEASE_DEADLINE=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+const LEASE_DEADLINE=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/;
 /** Containment is the idempotent safety operation: retried with bounded backoff until LOGIN=false is read back. */
 export const PRODUCTION_CREDENTIAL_CONTAINMENT=Object.freeze({sql:'NOLOGIN_PASSWORD_NULL_IDEMPOTENT' as const,retry:'BOUNDED_UNTIL_CONFIRMED' as const,
  backoffSeconds:Object.freeze([5,10,20,30]),maxWindowSeconds:600,confirmation:'LOGIN_FALSE_READBACK' as const,sinkDeletion:'IDEMPOTENT_ABSENT_IS_SUCCESS' as const,
@@ -141,16 +143,32 @@ const requireStage=(database:string,service:CommercialCredentialService,credenti
 };
 const sinkKeyFor=(service:CommercialCredentialService)=>`PRODUCTION_DB_PASSWORD_${service.toUpperCase()}`;
 
-/** Proof that a lease deadline is database clock_timestamp() plus exactly the fixed lease. Only this module can
- * create one; activation accepts nothing else, so no raw or far-future timestamp can reach VALID UNTIL. Single use. */
-export type LeaseDeadlineProof=Readonly<{deadline:string}>;
-const leaseProofs=new WeakSet<object>();
-/** Lease deadline: database clock_timestamp() plus the fixed lease, as an exact UTC second. Never local time. */
-export function productionCredentialLeaseDeadline(databaseNow:string):LeaseDeadlineProof{
- if(typeof databaseNow!=='string'||!/(?:Z|[+-]\d{2}(?::?\d{2})?)$/.test(databaseNow.trim()))throw new Error('PRODUCTION_CREDENTIAL_DATABASE_TIME_INVALID');
- const t=Date.parse(databaseNow.trim().replace(' ','T').replace(/([+-]\d{2})$/,'$1:00'));
+/** Clock provenance is established at the I/O boundary, never by accepting a timestamp or query-result object.
+ * The operator owns the connected pg client and its transport; in-process replacement of that trusted adapter
+ * is outside this capability boundary. The fixed query also verifies the actual database identity. */
+export type DatabaseClockProof=Readonly<{database:string;service:CommercialCredentialService;role:string;databaseNow:string}>;
+export type LeaseDeadlineProof=DatabaseClockProof&Readonly<{deadline:string;leaseMinutes:20}>;
+const databaseClockProofs=new WeakSet<object>(),leaseProofs=new WeakSet<object>();
+export async function productionCredentialReadDatabaseClock(database:string,service:CommercialCredentialService,client:Client):Promise<DatabaseClockProof>{
+ const role=roleFor(database,service);
+ if(!(client instanceof Client))throw new Error('PRODUCTION_CREDENTIAL_DATABASE_CLIENT_REQUIRED');
+ const result=await client.query<{database:string;database_now:string}>('SELECT current_database() AS database, clock_timestamp()::text AS database_now');
+ if(result.rows.length!==1||result.rows[0]?.database!==database||typeof result.rows[0].database_now!=='string')throw new Error('PRODUCTION_CREDENTIAL_DATABASE_CLOCK_READ_INVALID');
+ const proof=Object.freeze({database,service,role,databaseNow:result.rows[0].database_now});
+ databaseClockProofs.add(proof);
+ return proof;
+}
+/** Consumes one actual DB read for this database/role. Add exactly 20 minutes, retaining PostgreSQL's
+ * fractional seconds while normalizing the timezone; neither a caller deadline nor local time is accepted. */
+export function productionCredentialLeaseDeadline(database:string,service:CommercialCredentialService,clock:DatabaseClockProof):LeaseDeadlineProof{
+ if(typeof clock!=='object'||clock===null||!databaseClockProofs.has(clock)||clock.database!==database||clock.service!==service||clock.role!==roleFor(database,service))throw new Error('PRODUCTION_CREDENTIAL_DATABASE_CLOCK_PROOF_REQUIRED');
+ databaseClockProofs.delete(clock);
+ const parts=/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(\.\d{1,6})?(Z|[+-]\d{2}(?::?\d{2})?)$/.exec(clock.databaseNow);
+ if(!parts)throw new Error('PRODUCTION_CREDENTIAL_DATABASE_TIME_INVALID');
+ const t=Date.parse(`${parts[1]}T${parts[2]}${parts[4]!.replace(/^([+-]\d{2})$/,'$1:00')}`);
  if(!Number.isFinite(t))throw new Error('PRODUCTION_CREDENTIAL_DATABASE_TIME_INVALID');
- const proof=Object.freeze({deadline:new Date(Math.floor(t/1000)*1000+PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES*60000).toISOString().replace('.000Z','Z')});
+ const deadline=new Date(t+PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES*60000).toISOString().replace('.000Z',`${parts[3]??''}Z`);
+ const proof=Object.freeze({...clock,deadline,leaseMinutes:PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES});
  leaseProofs.add(proof);
  return proof;
 }
@@ -158,7 +176,7 @@ export function productionCredentialLeaseDeadline(databaseNow:string):LeaseDeadl
  * proof, which this call consumes. No password clause. */
 export function productionCredentialActivationSql(database:string,service:CommercialCredentialService,credential:CompletedNeonResetCredential,lease:LeaseDeadlineProof):string[]{
  requireStage(database,service,credential,['COMPLETED'],'PRODUCTION_CREDENTIAL_COMPLETED_NEON_RESET_REQUIRED');
- if(typeof lease!=='object'||lease===null||!leaseProofs.has(lease)||!LEASE_DEADLINE.test(lease.deadline))throw new Error('PRODUCTION_CREDENTIAL_LEASE_PROOF_REQUIRED');
+ if(typeof lease!=='object'||lease===null||!leaseProofs.has(lease)||lease.database!==database||lease.service!==service||lease.role!==roleFor(database,service)||!LEASE_DEADLINE.test(lease.deadline))throw new Error('PRODUCTION_CREDENTIAL_LEASE_PROOF_REQUIRED');
  leaseProofs.delete(lease);
  return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} LOGIN VALID UNTIL '${lease.deadline}'`];
 }
@@ -234,7 +252,7 @@ export const PRODUCTION_CREDENTIAL_PROOF_CONTRACT=Object.freeze({
  passwordReset:['exactly one reset_password POST (non-idempotent, never retried)','password parsed in process; raw response never logged or stored','a response without operations fails closed','the credential is pending until every returned operation is observed finished',
   'failure or unknown outcome: containment, no second reset, no reveal_password, stop'],
  preLogin:['after reset the role is still NOLOGIN with identical attributes, memberships, grantors, ownership and ACL','application references to the temporary password are dropped'],
- lease:['deadline is database clock_timestamp() plus 20 minutes as an exact UTC second','LOGIN SQL accepts only the unspent lease proof the database-time helper produced, never a raw timestamp','manager SET, then ALTER ROLE <role> LOGIN VALID UNTIL <deadline>; no password clause','readback: LOGIN true and rolvaliduntil equals the deadline',
+ lease:['the operator-owned PostgreSQL client executes the fixed clock_timestamp() query and verifies current_database(); no timestamp or query-result input can mint a clock proof','deadline is database clock_timestamp() plus exactly 20 minutes, preserving fractional seconds and normalizing to UTC','clock and lease capabilities are bound to the exact database and service/role and each consumed once','LOGIN SQL accepts only the unspent lease proof derived from the registered database-clock proof, never a raw timestamp','manager SET, then ALTER ROLE <role> LOGIN VALID UNTIL <deadline>; no password clause','readback: LOGIN true and rolvaliduntil equals the deadline',
   'lease enforcement is proven by a NEW connection being rejected after expiry; existing sessions are not assumed to be terminated'],
  connection:['verify-full TLS authentication with the Neon password succeeds as the exact role','verifyProductionDatabase-equivalent least-privilege posture passes'],
  probes:['one role-specific positive probe succeeds','one role-specific forbidden probe fails with SQLSTATE 42501'],

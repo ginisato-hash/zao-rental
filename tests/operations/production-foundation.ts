@@ -9,6 +9,7 @@ import {Pool} from 'pg';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {migrate} from '../../packages/db/src/index';
+import {productionCredentialTemporaryPasswordSql,productionCredentialRollbackSql,productionCredentialTemporaryPassword,productionCredentialBaseline} from '../../scripts/production-credential-activation';
 import {bootstrapProductionFoundation,runFoundationPlan,productionFoundationPlan,schemaFingerprint,securityFingerprint,fingerprintDelta,deltaMismatch,
  FOUNDATION_FAULT_STAGES,type FoundationPlan} from '../../scripts/production-bootstrap';
 
@@ -118,6 +119,21 @@ try{
    await c.query(`ALTER ROLE neondb_operations PASSWORD '${randomBytes(12).toString('hex')}'`);
   }finally{await c.query('ROLLBACK');c.release();}
   assert.equal(await scalar(a.neon,`SELECT count(*)::int FROM pg_roles WHERE rolname IN ('neondb_operations','neondb_pay_receipt') AND rolcanlogin`),0);
+ });
+ await check('credential contract v5: a stale expired VALID UNTIL is normalized to infinity by the manager-run temporary bootstrap and by idempotent containment, never LOGIN',async()=>{
+  // Exact contract SQL (manager SET included) against this disposable Neon-shaped neondb; pg_authid is read through the superuser pool.
+  const role='neondb_content_read';
+  const tx=async(sql:string[])=>{const c=await a.neon.connect();try{await c.query('BEGIN');for(const s of sql)await c.query(s);await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}};
+  const state=async()=>(await a.canonical.query(`SELECT r.rolcanlogin,a.rolpassword IS NULL AS "passwordIsNull",CASE WHEN isfinite(r.rolvaliduntil) THEN (r.rolvaliduntil AT TIME ZONE 'UTC')::text||'+00' ELSE r.rolvaliduntil::text END AS rolvaliduntil FROM pg_roles r JOIN pg_authid a ON a.oid=r.oid WHERE r.rolname=$1`,[role])).rows[0];
+  assert.deepEqual(await state(),{rolcanlogin:false,passwordIsNull:true,rolvaliduntil:null});assert.equal(productionCredentialBaseline(await state()),'READY_PRISTINE');
+  await a.canonical.query(`ALTER ROLE ${role} NOLOGIN PASSWORD NULL VALID UNTIL '2026-09-28 13:32:16.818847+00'`);
+  assert.deepEqual(await state(),{rolcanlogin:false,passwordIsNull:true,rolvaliduntil:'2026-09-28 13:32:16.818847+00'});assert.equal(productionCredentialBaseline(await state()),'STALE_LEASE');
+  await tx(productionCredentialTemporaryPasswordSql(DB,'content_read',productionCredentialTemporaryPassword()));
+  assert.deepEqual(await state(),{rolcanlogin:false,passwordIsNull:false,rolvaliduntil:'infinity'});
+  for(let n=0;n<2;n++){
+   await tx(productionCredentialRollbackSql(DB,'content_read'));
+   assert.deepEqual(await state(),{rolcanlogin:false,passwordIsNull:true,rolvaliduntil:'infinity'});assert.equal(productionCredentialBaseline(await state()),'READY_NORMALIZED');
+  }
  });
  await check('a second foundation bootstrap is refused on the non-empty database',async()=>{
   await assert.rejects(bootstrapProductionFoundation(a.neon,DB),/PRODUCTION_DATABASE_NOT_EMPTY/);

@@ -11,6 +11,7 @@ import {
  productionCredentialResetPasswordRequest,productionCredentialPasswordFromResetResponse,productionCredentialCompleteReset,productionCredentialSink,productionCredentialTemporaryPassword,productionCredentialTemporaryPasswordSql,
  productionCredentialReadDatabaseClock,productionCredentialLeaseDeadline,productionCredentialProbeProven,productionCredentialRestartRequest,productionCredentialRestartProven,productionCredentialSinkConfirmed,
  productionCredentialFinalizationSql,productionCredentialFinalized,productionCredentialContainmentSchedule,productionCredentialRestartOperationClass,
+ productionCredentialBaseline,PRODUCTION_CREDENTIAL_CLEAN_BASELINES,productionCredentialContainmentComplete,PRODUCTION_CREDENTIAL_STALE_LEASE_ROUTE,
 } from '../../scripts/production-credential-activation';
 
 const TEMP='A'.repeat(21)+'_'+'b'.repeat(20)+'-',OP='054c34ce-9b64-46f4-9aad-4093067f640f',LEASE='2026-09-28T04:38:25.912345Z';
@@ -65,11 +66,12 @@ test('temporary password is strict 43-char base64url; anything else is refused b
  assert.throws(()=>productionCredentialTemporaryPasswordSql('neondb','content_read',"x'); ALTER ROLE neondb_owner LOGIN; --".padEnd(43,'x')),/TEMPORARY_PASSWORD_INVALID/);
 });
 
-test('temporary password remains NOLOGIN: bootstrap SQL asserts NOLOGIN in the same statement and can never grant LOGIN',()=>{
+test('temporary password remains NOLOGIN: bootstrap SQL asserts NOLOGIN and VALID UNTIL infinity in the same statement and can never grant LOGIN or a lease',()=>{
  for(const service of COMMERCIAL_CREDENTIAL_SERVICES){
   const sql=productionCredentialTemporaryPasswordSql('neondb',service,TEMP);
-  assert.deepEqual(sql,['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "${roleOf(service)}" NOLOGIN PASSWORD '${TEMP}'`]);
-  assert.doesNotMatch(sql.join('\n'),/(?<!NO)LOGIN\b|VALID UNTIL|SCRAM/i);
+  assert.deepEqual(sql,['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "${roleOf(service)}" NOLOGIN PASSWORD '${TEMP}' VALID UNTIL 'infinity'`]);
+  assert.doesNotMatch(sql.join('\n'),/(?<!NO)LOGIN\b|SCRAM/i);
+  assert.deepEqual(sql.join('\n').match(/VALID UNTIL '[^']*'/g),["VALID UNTIL 'infinity'"],'no finite lease on the temporary password');
  }
 });
 
@@ -245,18 +247,22 @@ test('a failed finalization readback is terminal: neither the confirmation nor t
   assert.throws(()=>productionCredentialFinalizationSql('neondb','content_read',confirmed),/SINK_CONFIRMATION_REQUIRED/,'no second infinity SQL from the same confirmation');
   assert.throws(()=>productionCredentialFinalized('neondb','content_read',confirmed as never,{rolcanlogin:true,rolvaliduntil:'infinity'}),/FINALIZATION_ATTEMPT_REQUIRED/);
   // Containment needs no proof and is always available.
-  assert.deepEqual(productionCredentialRollbackSql('neondb','content_read'),['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_content_read" NOLOGIN PASSWORD NULL']);
+  assert.deepEqual(productionCredentialRollbackSql('neondb','content_read'),['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "neondb_content_read" NOLOGIN PASSWORD NULL VALID UNTIL 'infinity'`]);
  }
  const attempt=productionCredentialFinalizationSql('neondb','content_read',confirmedChain());
  assert.throws(()=>productionCredentialFinalized('neondb','guest',attempt,{rolcanlogin:true,rolvaliduntil:'infinity'}),/FINALIZATION_ATTEMPT_REQUIRED/,'another role');
  assert.throws(()=>productionCredentialFinalized('neondb','content_read',{role:'neondb_content_read',stage:'FINALIZATION_ATTEMPT',sinkKey:'PRODUCTION_DB_PASSWORD_CONTENT_READ',sql:[]},{rolcanlogin:true,rolvaliduntil:'infinity'}),/FINALIZATION_ATTEMPT_REQUIRED/,'forged');
 });
 
-test('rollback remains the manager SET plus NOLOGIN PASSWORD NULL, classified idempotent and retriable with bounded backoff',()=>{
- assert.deepEqual(productionCredentialRollbackSql('neondb','content_read'),['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_content_read" NOLOGIN PASSWORD NULL']);
- assert.equal(PRODUCTION_CREDENTIAL_CONTAINMENT.sql,'NOLOGIN_PASSWORD_NULL_IDEMPOTENT');
+test('rollback is the manager SET plus NOLOGIN PASSWORD NULL VALID UNTIL infinity, classified idempotent and retriable with bounded backoff',()=>{
+ for(const service of COMMERCIAL_CREDENTIAL_SERVICES){
+  const sql=productionCredentialRollbackSql('neondb',service);
+  assert.deepEqual(sql,['SET LOCAL ROLE "neondb_role_admin"',`ALTER ROLE "${roleOf(service)}" NOLOGIN PASSWORD NULL VALID UNTIL 'infinity'`]);
+  assert.doesNotMatch(sql.join('\n'),/(?<!NO)LOGIN\b/);
+ }
+ assert.equal(PRODUCTION_CREDENTIAL_CONTAINMENT.sql,'NOLOGIN_PASSWORD_NULL_VALID_UNTIL_INFINITY_IDEMPOTENT');
  assert.equal(PRODUCTION_CREDENTIAL_CONTAINMENT.retry,'BOUNDED_UNTIL_CONFIRMED');
- assert.equal(PRODUCTION_CREDENTIAL_CONTAINMENT.confirmation,'LOGIN_FALSE_READBACK');
+ assert.equal(PRODUCTION_CREDENTIAL_CONTAINMENT.confirmation,'READY_NORMALIZED_READBACK');
  assert.equal(PRODUCTION_CREDENTIAL_CONTAINMENT.sinkDeletion,'IDEMPOTENT_ABSENT_IS_SUCCESS');
  assert.deepEqual([...PRODUCTION_CREDENTIAL_CONTAINMENT.neverRepeated],['reset_password','endpoint_restart']);
  const s=productionCredentialContainmentSchedule();
@@ -294,10 +300,10 @@ test('all ten probes are unchanged: one read-only positive and one 42501 negativ
  }
 });
 
-test('v4 plan is exact, deterministic and secret-free; sink follows restart proof and infinity follows sink metadata',()=>{
+test('v5 plan is exact, deterministic and secret-free; sink follows restart proof and infinity follows sink metadata',()=>{
  const p=productionCredentialActivationPlan('neondb');
  assert.equal(p.version,PRODUCTION_CREDENTIAL_ACTIVATION_VERSION);
- assert.equal(p.version,'production-credential-activation/4');
+ assert.equal(p.version,'production-credential-activation/5');
  assert.equal(p.initialPasswordAuthority,'SQL_TEMPORARY_PLAINTEXT_NOLOGIN');
  assert.equal(PRODUCTION_CREDENTIAL_INITIAL_PASSWORD_AUTHORITY,'SQL_TEMPORARY_PLAINTEXT_NOLOGIN');
  assert.equal(p.steadyStatePasswordAuthority,'NEON_ROLE_RESET_PASSWORD_API');
@@ -312,7 +318,11 @@ test('v4 plan is exact, deterministic and secret-free; sink follows restart proo
  assert.equal(p.leaseEnforcementProof,'NEW_CONNECTION_REJECTED_AFTER_EXPIRY');
  assert.equal(p.existingSessionsTerminatedByExpiry,'NOT_ASSUMED');
  assert.equal(p.sinkOrdering,'AFTER_RESTART_PERSISTENCE');
- assert.equal(p.containmentSql,'NOLOGIN_PASSWORD_NULL_IDEMPOTENT');
+ assert.equal(p.containmentSql,'NOLOGIN_PASSWORD_NULL_VALID_UNTIL_INFINITY_IDEMPOTENT');
+ assert.equal(p.temporaryPassword.sql,'NOLOGIN_PASSWORD_VALID_UNTIL_INFINITY_ONE_STATEMENT');
+ assert.deepEqual(p.cleanBaselines,['READY_PRISTINE','READY_NORMALIZED']);assert.equal(p.staleLeaseBaseline,'NOT_CLEAN');
+ assert.deepEqual(p.staleLeaseRoute,['STALE_LEASE','SEPARATELY_AUTHORIZED_CONTAINMENT','READY_NORMALIZED','NETWORK_GATE','FRESH_LIFECYCLE','TEMPORARY_BOOTSTRAP']);assert.equal(p.containment.confirmation,'READY_NORMALIZED_READBACK');
+ assert.doesNotMatch(JSON.stringify(p),/LOGIN false is read back|LOGIN_FALSE_READBACK|stale finite VALID UNTIL is normalized/);
  assert.equal(p.containmentRetry,'BOUNDED_UNTIL_CONFIRMED');
  assert.equal(p.finalization,'SINK_CONFIRMED_THEN_VALID_UNTIL_INFINITY');
  assert.equal(p.futureRotation,'FUTURE_LIVE_ROTATION_REQUIRES_SEPARATE_COORDINATION');
@@ -336,4 +346,41 @@ test('v4 plan is exact, deterministic and secret-free; sink follows restart proo
  assert.doesNotMatch(JSON.stringify(p),/PASSWORD '|SCRAM-SHA-256\$|memory|eras/i);
  assert.ok(!JSON.stringify(p).includes(TEMP));
  assert.doesNotMatch(JSON.stringify(p),/NEON_RESET_PASSWORD_ONLY/);
+});
+
+test('baseline: untouched NULL and normalized infinity are clean; any finite VALID UNTIL, expired or future, is a stale lease',()=>{
+ const ro=(rolvaliduntil:unknown)=>({rolcanlogin:false,passwordIsNull:true,rolvaliduntil});
+ assert.equal(productionCredentialBaseline(ro(null)),'READY_PRISTINE');
+ assert.equal(productionCredentialBaseline(ro('infinity')),'READY_NORMALIZED');
+ for(const finite of ['2026-09-28 13:32:16.818847+00','2999-01-01 00:00:00+00',LEASE])assert.equal(productionCredentialBaseline(ro(finite)),'STALE_LEASE');
+ for(const bad of [null,undefined,{rolcanlogin:true,passwordIsNull:true,rolvaliduntil:null},{rolcanlogin:false,passwordIsNull:false,rolvaliduntil:null},
+  {rolcanlogin:'false',passwordIsNull:true,rolvaliduntil:null},ro(undefined),ro(''),ro(new Date()),ro(0)])assert.equal(productionCredentialBaseline(bad as never),'NOT_READY');
+ assert.deepEqual([...PRODUCTION_CREDENTIAL_CLEAN_BASELINES],['READY_PRISTINE','READY_NORMALIZED']);
+ assert.ok(!(PRODUCTION_CREDENTIAL_CLEAN_BASELINES as readonly string[]).includes('STALE_LEASE'));
+});
+
+test('infinity on a LOGIN-capable role comes only from finalization; bootstrap and containment pair infinity with NOLOGIN, the lease stays finite',async()=>{
+ const temp=productionCredentialTemporaryPasswordSql('neondb','content_read',TEMP)[1]!,rollback=productionCredentialRollbackSql('neondb','content_read')[1]!;
+ for(const sql of [temp,rollback])assert.match(sql,/^ALTER ROLE "neondb_content_read" NOLOGIN PASSWORD .* VALID UNTIL 'infinity'$/);
+ const login=productionCredentialActivationSql('neondb','content_read',neon('content_read'),await lease())[1]!;
+ assert.equal(login,`ALTER ROLE "neondb_content_read" LOGIN VALID UNTIL '${LEASE}'`);assert.doesNotMatch(login,/infinity/);
+ const final=productionCredentialFinalizationSql('neondb','content_read',productionCredentialSinkConfirmed('neondb','content_read',restarted(),META('content_read'))).sql[1]!;
+ assert.equal(final,`ALTER ROLE "neondb_content_read" VALID UNTIL 'infinity'`);
+ assert.deepEqual([temp,rollback,login,final].filter(s=>/infinity/.test(s)&&!/NOLOGIN/.test(s)),[final]);
+});
+
+test('containment is complete only on a READY_NORMALIZED readback; LOGIN false alone is not complete',()=>{
+ assert.equal(productionCredentialContainmentComplete({rolcanlogin:false,passwordIsNull:true,rolvaliduntil:'infinity'}),true);
+ for(const bad of [{rolcanlogin:false,passwordIsNull:true,rolvaliduntil:'2026-09-28 13:32:16.818847+00'},{rolcanlogin:false,passwordIsNull:true,rolvaliduntil:null},
+  {rolcanlogin:false,passwordIsNull:false,rolvaliduntil:'infinity'},{rolcanlogin:true,passwordIsNull:true,rolvaliduntil:'infinity'},null,undefined])
+  assert.equal(productionCredentialContainmentComplete(bad),false,JSON.stringify(bad));
+ assert.match(JSON.stringify(productionCredentialActivationPlan('neondb').proofContract.containment),/containment is complete only when the readback is READY_NORMALIZED/);
+});
+
+test('a STALE_LEASE role reaches the temporary bootstrap only through separately authorized containment, READY_NORMALIZED and the network gate',()=>{
+ assert.deepEqual([...PRODUCTION_CREDENTIAL_STALE_LEASE_ROUTE],['STALE_LEASE','SEPARATELY_AUTHORIZED_CONTAINMENT','READY_NORMALIZED','NETWORK_GATE','FRESH_LIFECYCLE','TEMPORARY_BOOTSTRAP']);
+ const pre=productionCredentialActivationPlan('neondb').proofContract;
+ assert.ok(pre.pre.some(x=>/STALE_LEASE role never goes to the temporary bootstrap: it is first repaired by separately authorized containment and must read back READY_NORMALIZED before the network gate/.test(x)));
+ assert.ok(pre.initialBootstrap.some(x=>/defense in depth from a clean baseline, not a STALE_LEASE repair/.test(x)));
+ assert.doesNotMatch(JSON.stringify(pre),/normaliz(ed|es|ing) (any )?stale/i);
 });

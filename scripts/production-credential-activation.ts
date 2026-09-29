@@ -4,7 +4,9 @@
 // Neon rejects client-derived SCRAM verifiers, and its reset_password API refuses a role that has no
 // password yet. Operational roles are created NOLOGIN PASSWORD NULL, so the lifecycle is hybrid:
 //  1. initial bootstrap: a disposable 43-char base64url password is set through the role manager in
-//     one statement that also asserts NOLOGIN, so it never exists on a LOGIN-capable role;
+//     one statement that also asserts NOLOGIN and VALID UNTIL 'infinity', so it never exists on a LOGIN-capable
+//     role. It runs only from a clean baseline (READY_PRISTINE or READY_NORMALIZED); VALID UNTIL 'infinity' there is
+//     defense in depth, never the repair route for a STALE_LEASE role;
 //  2. exactly one Neon reset_password replaces it; the response is only a pending credential until
 //     every returned operation has finished;
 //  3. LOGIN is granted with a bounded VALID UNTIL lease derived from database time, so losing operator
@@ -14,7 +16,10 @@
 //     and, for the canary, after restart persistence proof. Only a confirmed sink allows VALID UNTIL
 //     'infinity', once: issuing it consumes the confirmation, and a failed finalization or its one readback is a
 //     terminal activation failure (delete sink, contain, stop) with no proof left to retry with.
-// Containment (NOLOGIN PASSWORD NULL, sink deletion) is idempotent and retried with bounded backoff;
+// Containment (NOLOGIN PASSWORD NULL VALID UNTIL 'infinity', sink deletion) is idempotent and retried with bounded
+// backoff until a READY_NORMALIZED readback; it also clears the finite lease, so no stale VALID UNTIL is carried into
+// a later lifecycle. A STALE_LEASE role is repaired only by separately authorized containment to READY_NORMALIZED,
+// before the network gate and a fresh lifecycle;
 // reset_password and restart are non-idempotent and never resent. Secrets are never persisted, logged or
 // sunk except the proven Neon password into its sink; references are dropped (no zeroization is claimed).
 // Future live rotation of a bootstrapped role is out of scope and requires separate coordination.
@@ -23,7 +28,7 @@ import {Client} from 'pg';
 import {productionAppRoleNames,assertProductionDatabaseName} from './production-app-roles';
 import {COMMERCIAL_DB_SERVICES} from '../packages/core/src/guest/production-commercial-composition';
 
-export const PRODUCTION_CREDENTIAL_ACTIVATION_VERSION='production-credential-activation/4';
+export const PRODUCTION_CREDENTIAL_ACTIVATION_VERSION='production-credential-activation/5';
 export const PRODUCTION_CREDENTIAL_INITIAL_PASSWORD_AUTHORITY='SQL_TEMPORARY_PLAINTEXT_NOLOGIN';
 export const PRODUCTION_CREDENTIAL_STEADY_STATE_PASSWORD_AUTHORITY='NEON_ROLE_RESET_PASSWORD_API';
 export const COMMERCIAL_CREDENTIAL_SERVICES=COMMERCIAL_DB_SERVICES;
@@ -53,11 +58,13 @@ export function productionCredentialTemporaryPassword(){
  assertProductionCredentialTemporaryPassword(value);
  return value;
 }
-/** Initial bootstrap SQL: manager SET, then NOLOGIN and the temporary password in one statement, so the
- * temporary password can never be present on a LOGIN-capable role regardless of the prior state. */
+/** Initial bootstrap SQL: manager SET, then NOLOGIN, the temporary password and VALID UNTIL 'infinity' in one
+ * statement, so the temporary password can never be present on a LOGIN-capable role regardless of the prior state.
+ * Allowed only from a clean baseline; VALID UNTIL 'infinity' is defense in depth, not a STALE_LEASE repair route.
+ * The role stays NOLOGIN; the 20-minute lease is only set by LOGIN. */
 export function productionCredentialTemporaryPasswordSql(database:string,service:CommercialCredentialService,temporary:string):string[]{
  assertProductionCredentialTemporaryPassword(temporary);
- return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} NOLOGIN PASSWORD '${temporary}'`];
+ return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} NOLOGIN PASSWORD '${temporary}' VALID UNTIL 'infinity'`];
 }
 
 /** The one provider call that mints the final password. Non-idempotent POST: exactly one call per role,
@@ -117,9 +124,10 @@ export const PRODUCTION_CREDENTIAL_CANARY='content_read' satisfies CommercialCre
 export const PRODUCTION_CREDENTIAL_REMAINING_ORDER=Object.freeze(['booking_access','recommendation','pricing','guest','ledger','hold','transfer','auth','operations'] as const satisfies readonly CommercialCredentialService[]);
 export const PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES=20;
 const LEASE_DEADLINE=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/;
-/** Containment is the idempotent safety operation: retried with bounded backoff until LOGIN=false is read back. */
-export const PRODUCTION_CREDENTIAL_CONTAINMENT=Object.freeze({sql:'NOLOGIN_PASSWORD_NULL_IDEMPOTENT' as const,retry:'BOUNDED_UNTIL_CONFIRMED' as const,
- backoffSeconds:Object.freeze([5,10,20,30]),maxWindowSeconds:600,confirmation:'LOGIN_FALSE_READBACK' as const,sinkDeletion:'IDEMPOTENT_ABSENT_IS_SUCCESS' as const,
+/** Containment is the idempotent safety operation: retried with bounded backoff until a READY_NORMALIZED readback
+ * (LOGIN false, no password, VALID UNTIL 'infinity'). LOGIN false alone is not completion. */
+export const PRODUCTION_CREDENTIAL_CONTAINMENT=Object.freeze({sql:'NOLOGIN_PASSWORD_NULL_VALID_UNTIL_INFINITY_IDEMPOTENT' as const,retry:'BOUNDED_UNTIL_CONFIRMED' as const,
+ backoffSeconds:Object.freeze([5,10,20,30]),maxWindowSeconds:600,confirmation:'READY_NORMALIZED_READBACK' as const,sinkDeletion:'IDEMPOTENT_ABSENT_IS_SUCCESS' as const,
  neverRepeated:Object.freeze(['reset_password','endpoint_restart'])});
 /** Delays in seconds for successive containment attempts: 5, 10, 20, then 30 repeatedly, never beyond the window. */
 export function productionCredentialContainmentSchedule():number[]{
@@ -255,13 +263,31 @@ export function productionCredentialFinalized(database:string,service:Commercial
  return Object.freeze({role:attempt.role,sinkKey:attempt.sinkKey,result:'ACTIVE' as const});
 }
 export function productionCredentialRollbackSql(database:string,service:CommercialCredentialService):string[]{
- return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} NOLOGIN PASSWORD NULL`];
+ return [managerSet(database),`ALTER ROLE ${qi(roleFor(database,service))} NOLOGIN PASSWORD NULL VALID UNTIL 'infinity'`];
+}
+/** Pre-lifecycle role baseline from a catalog readback (rolvaliduntil as text). NULL is an untouched role; 'infinity'
+ * is a role that already passed a lifecycle (finalized or contained). Any finite VALID UNTIL, expired or future, is a
+ * STALE_LEASE and never a clean baseline. */
+export type ProductionCredentialBaseline='READY_PRISTINE'|'READY_NORMALIZED'|'STALE_LEASE'|'NOT_READY';
+export const PRODUCTION_CREDENTIAL_CLEAN_BASELINES=Object.freeze(['READY_PRISTINE','READY_NORMALIZED'] as const);
+/** The only STALE_LEASE exit: separately authorized containment, a READY_NORMALIZED readback, then the network gate. */
+export const PRODUCTION_CREDENTIAL_STALE_LEASE_ROUTE=Object.freeze(['STALE_LEASE','SEPARATELY_AUTHORIZED_CONTAINMENT','READY_NORMALIZED','NETWORK_GATE','FRESH_LIFECYCLE','TEMPORARY_BOOTSTRAP'] as const);
+export function productionCredentialBaseline(readback:Readonly<{rolcanlogin:unknown;passwordIsNull:unknown;rolvaliduntil:unknown}>|null|undefined):ProductionCredentialBaseline{
+ if(!readback||readback.rolcanlogin!==false||readback.passwordIsNull!==true)return 'NOT_READY';
+ if(readback.rolvaliduntil===null)return 'READY_PRISTINE';
+ if(readback.rolvaliduntil==='infinity')return 'READY_NORMALIZED';
+ return typeof readback.rolvaliduntil==='string'&&readback.rolvaliduntil!==''?'STALE_LEASE':'NOT_READY';
+}
+/** Containment is complete only on a READY_NORMALIZED readback; LOGIN false with a finite VALID UNTIL, a password or
+ * VALID UNTIL NULL is not complete and stays in bounded retry. */
+export function productionCredentialContainmentComplete(readback:Parameters<typeof productionCredentialBaseline>[0]):boolean{
+ return productionCredentialBaseline(readback)==='READY_NORMALIZED';
 }
 
 export const PRODUCTION_CREDENTIAL_PROOF_CONTRACT=Object.freeze({
- pre:['network stability gate: 3 successful rounds over at least 60 seconds of Neon API, endpoint DNS, owner read-only DB, Neon operation list and Vercel metadata; no mutation','exact role is NOLOGIN, has no password and has the foundation role posture','role is registered in the Neon role API','manager SET succeeds','no Production password sink exists yet'],
- initialBootstrap:['temporary password is 32 random bytes as 43-char base64url, generated in process and never persisted, logged or sunk','manager SET, then ALTER ROLE <role> NOLOGIN PASSWORD with the temporary value in one statement; never LOGIN',
-  'after commit the role is still NOLOGIN with identical attributes, memberships, grantors, ownership and ACL','the temporary password is never installed in any sink and never used as a final credential'],
+ pre:['network stability gate: 3 successful rounds over at least 60 seconds of Neon API, endpoint DNS, owner read-only DB, Neon operation list and Vercel metadata; no mutation','exact role is NOLOGIN, has no password and has the foundation role posture','role baseline is READY_PRISTINE (VALID UNTIL NULL) or READY_NORMALIZED (VALID UNTIL infinity); a finite VALID UNTIL, expired or future, is STALE_LEASE and not a clean baseline','a STALE_LEASE role never goes to the temporary bootstrap: it is first repaired by separately authorized containment and must read back READY_NORMALIZED before the network gate','role is registered in the Neon role API','manager SET succeeds','no Production password sink exists yet'],
+ initialBootstrap:['temporary password is 32 random bytes as 43-char base64url, generated in process and never persisted, logged or sunk','manager SET, then ALTER ROLE <role> NOLOGIN PASSWORD <temporary> VALID UNTIL infinity in one statement; never LOGIN, no lease','after commit the role is NOLOGIN with a password and VALID UNTIL infinity; infinity here is defense in depth from a clean baseline, not a STALE_LEASE repair',
+  'after commit the role is still NOLOGIN with identical attributes (VALID UNTIL aside), memberships, grantors, ownership and ACL','the temporary password is never installed in any sink and never used as a final credential'],
  passwordReset:['exactly one reset_password POST (non-idempotent, never retried)','password parsed in process; raw response never logged or stored','a response without operations fails closed','the credential is pending until every returned operation is observed finished',
   'failure or unknown outcome: containment, no second reset, no reveal_password, stop'],
  preLogin:['after reset the role is still NOLOGIN with identical attributes, memberships, grantors, ownership and ACL','application references to the temporary password are dropped'],
@@ -272,7 +298,7 @@ export const PRODUCTION_CREDENTIAL_PROOF_CONTRACT=Object.freeze({
  canary:['content_read first; exactly one endpoint restart, never resent','after the restart the same credential authenticates again with both probes and unchanged posture','only then may the canary password reach its sink'],
  sink:['only a probe-proven (canary: restart-proven) Neon password is installed into the exact Production sensitive sink','only sink metadata is read back; the value is never read back or logged'],
  finalization:['only a confirmed sink allows ALTER ROLE <role> VALID UNTIL infinity','issuing that SQL consumes the sink confirmation: one finalization attempt, one readback','readback must be LOGIN true with VALID UNTIL infinity','a failed finalization or readback is an activation failure: delete the sink, contain, stop','after a failed readback neither the sink confirmation nor the attempt can be used again; containment is the only next step'],
- containment:['NOLOGIN PASSWORD NULL is idempotent and retried with 5/10/20/30-second backoff for at most 10 minutes until LOGIN false is read back','sink deletion is idempotent: absent counts as success','reset_password and restart are never repeated','no other role is touched after a failure'],
+ containment:['NOLOGIN PASSWORD NULL VALID UNTIL infinity is idempotent and retried with 5/10/20/30-second backoff for at most 10 minutes until a READY_NORMALIZED readback','containment is complete only when the readback is READY_NORMALIZED: LOGIN false, no password, VALID UNTIL infinity; LOGIN false alone is not complete and no finite lease survives','sink deletion is idempotent: absent counts as success','reset_password and restart are never repeated','no other role is touched after a failure'],
  remaining:['the nine other commercial roles run strictly serially after the canary passes, without restarts; any failure contains that role and stops the tranche'],
  futureRotation:['live rotation of a bootstrapped credential used by the public runtime is out of scope and requires a separate coordinated contract'],
 });
@@ -283,7 +309,8 @@ export function productionCredentialActivationPlan(database:string){
  const body={version:PRODUCTION_CREDENTIAL_ACTIVATION_VERSION,database,managerRole,
   initialPasswordAuthority:PRODUCTION_CREDENTIAL_INITIAL_PASSWORD_AUTHORITY,steadyStatePasswordAuthority:PRODUCTION_CREDENTIAL_STEADY_STATE_PASSWORD_AUTHORITY,
   roleAttributeAuthority:managerRole,temporaryPasswordRoleState:'NOLOGIN' as const,finalPasswordSource:'NEON_RESET_RESPONSE' as const,temporaryPasswordInstalledInVercel:false,
-  temporaryPassword:{entropyBytes:32,encoding:'base64url',length:43,pattern:TEMPORARY_PASSWORD.source,sql:'NOLOGIN_PASSWORD_ONE_STATEMENT',handling:'NEVER_PERSISTED_LOGGED_OR_SUNK'},
+  temporaryPassword:{entropyBytes:32,encoding:'base64url',length:43,pattern:TEMPORARY_PASSWORD.source,sql:'NOLOGIN_PASSWORD_VALID_UNTIL_INFINITY_ONE_STATEMENT',handling:'NEVER_PERSISTED_LOGGED_OR_SUNK'},
+  cleanBaselines:[...PRODUCTION_CREDENTIAL_CLEAN_BASELINES],staleLeaseBaseline:'NOT_CLEAN' as const,staleLeaseRoute:[...PRODUCTION_CREDENTIAL_STALE_LEASE_ROUTE],
   preFinalizationPasswordLease:'REQUIRED' as const,passwordLeaseMinutes:PRODUCTION_CREDENTIAL_PASSWORD_LEASE_MINUTES,leaseClock:'DATABASE_CLOCK_TIMESTAMP' as const,
   leaseEnforcementProof:'NEW_CONNECTION_REJECTED_AFTER_EXPIRY' as const,existingSessionsTerminatedByExpiry:'NOT_ASSUMED' as const,
   sinkOrdering:'AFTER_RESTART_PERSISTENCE' as const,containmentSql:PRODUCTION_CREDENTIAL_CONTAINMENT.sql,containmentRetry:PRODUCTION_CREDENTIAL_CONTAINMENT.retry,containment:PRODUCTION_CREDENTIAL_CONTAINMENT,

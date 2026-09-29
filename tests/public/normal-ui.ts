@@ -322,6 +322,50 @@ try{
  const newPage=async(width=390,height=844)=>{const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width,height}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;p.on('dialog',d=>void d.accept());return {ctx,p};};
  const countOf=async(table:string)=>(await app!.db.pool.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n as number;
  const noRawCode=async(p:Page)=>assert.doesNotMatch(await p.getByRole('main').innerText(),/\b[A-Z]{2,}_[A-Z_]{2,}\b/,'no internal enum or error code is customer-visible');
+ await check('UI-FINAL-R01: static date and slot constraints stop invalid periods inline before any save',async()=>{
+  for(const ja of [true,false]){
+   const {ctx,p}=await newPage();await p.goto(ja?'/ja/book':'/en/book');
+   const start=p.getByLabel(ja?'利用開始日':'Start date',{exact:true}),end=p.getByLabel(ja?'利用終了日':'End date',{exact:true}),slot=p.getByLabel(ja?'利用枠':'Rental slot',{exact:true});
+   await expect(start).toBeEnabled();const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
+   await start.fill('2035-06-02');
+   for(const [endDate,rentalSlot,key,copy] of [
+    ['2035-06-01','DAY','endDate',ja?'開始日以降':'on or after'],
+    ['2035-06-12','MULTIDAY','endDate',ja?'最大10日':'no more than 10 days'],
+    ['2035-06-03','DAY','slot',ja?'複数日':'Multiple days'],
+    ['2035-06-02','MULTIDAY','slot',ja?'午前・午後・1日':'Morning, Afternoon or Full day'],
+   ]){
+    await end.fill(endDate!);await slot.selectOption(rentalSlot!);await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+    await expect(p.locator('#guest-err-'+key)).toContainText(copy!);await expect(key==='slot'?slot:end).toHaveAttribute('aria-invalid','true');await expect(start).toBeVisible();
+   }
+   assert.deepEqual(posts,[]);await end.fill('2035-06-11');await slot.selectOption('MULTIDAY');
+   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();await expect(p.getByLabel(ja?'用品 1':'Equipment 1',{exact:true})).toBeVisible();
+   await noRawCode(p);await ctx.close();
+  }
+ });
+ await check('UI-FINAL-R01: numeric controls mirror server bounds, tenths, and the SKI age category including zero',async()=>{
+  for(const ja of [true,false]){
+   const {ctx,p}=await newPage();await p.goto(ja?'/ja/book':'/en/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
+   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill('2035-07-01');await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+   const height=p.getByLabel(ja?'身長cm 1':'Height cm 1',{exact:true}),foot=p.getByLabel(ja?'足サイズcm 1':'Foot size cm 1',{exact:true}),weight=p.getByLabel(ja?'体重kg 1':'Weight kg 1',{exact:true}),age=p.getByLabel(ja?'開始日の年齢 1':'Age at start 1',{exact:true});
+   for(const [control,min,max,step] of [[height,'50','250','1'],[foot,'5','50','0.1'],[weight,'5','300','any'],[age,'0','120','1']] as const){await expect(control).toHaveAttribute('min',min);await expect(control).toHaveAttribute('max',max);await expect(control).toHaveAttribute('step',step);}
+   await expect(height).toHaveAttribute('inputmode','numeric');await expect(foot).toHaveAttribute('inputmode','decimal');await expect(age).toHaveAttribute('inputmode','numeric');
+   const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
+   for(const [control,key,invalidValues,validValues] of [
+    [height,'height',['49','251','170.5'],['50','250','170']],
+    [foot,'foot',['4.9','50.1','25.15'],['5','50','25.1','25.3']],
+    [weight,'weight',['4.9','300.1'],['5','300','60.25']],
+    [age,'age',['-1','121','30.5'],['13','120','30']],
+   ] as const){
+    for(const value of invalidValues){await control.fill(value);await control.blur();await expect(control).toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-'+key)).toBeVisible();}
+    for(const value of validValues){await control.fill(value);await control.blur();await expect(control).not.toHaveAttribute('aria-invalid','true');}
+   }
+   await age.fill('12');await age.blur();await expect(p.locator('#guest-err-m0-age')).toContainText(ja?'13歳以上は大人':'Adult for 13 or older');
+   await p.getByLabel(ja?'年齢区分 1':'Age category 1',{exact:true}).selectOption('KIDS');await age.fill('0');
+   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
+   await expect(age).not.toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-age')).toHaveCount(0);await expect(p.locator('#guest-err-m0-pole')).toBeVisible();
+   assert.deepEqual(posts,[],'invalid input is blocked locally; missing child pole remains an independent error');await noRawCode(p);await ctx.close();
+  }
+ });
  await check('CH-04B: unsaved Input survives a hard reload for the same draft only; the restore sends nothing and checkout stays impossible until the ordinary server save',async()=>{
   const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   const before=await draftOf(p);

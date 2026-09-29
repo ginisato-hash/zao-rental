@@ -6,6 +6,7 @@ import type {StoreId} from '../../../../packages/contracts/src/ledger';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
 import {BookingSearchInput} from './BookingSearchInput';
 import {useOperationsRequest} from './useOperationsRequest';
+import {STORE_LABEL} from './guest-format';
 import './holds.css';
 import './staff-home.css';
 type BookingRow={id:string;state:string;version:number;period:{startDate:string;endDate:string;slot:string}|null;pickup_store:string|null;return_store:string|null;display_name:string|null;total_jpy:string|null;mode:string};
@@ -28,6 +29,16 @@ const TASK_ACTION_LABEL:Record<string,string>={INSPECT:'検品',NO_ACTION:'対�
 // A bookingId only ever opens the pickup/return workflow when the server's own action enum
 // says there is pickup/return/detail work to do — never for COMPLETE/NO_ACTION.
 const ACTIONABLE=new Set(['CHECK_PAYMENT_OR_EXCEPTION','PREPARE_EQUIPMENT','CHECKOUT','OUT_WAIT_RETURN','RECEIVE_RETURN','INSPECTION_PENDING','WEAR_CARE_IN_PROGRESS','NEEDS_DETAIL_REVIEW']);
+// Presentational names for server enums (never recomputed): an unknown value fails safe to generic copy.
+const SLOT_LABEL:Record<string,string>={DAY:'1日',AM:'午前',PM:'午後',MULTIDAY:'複数日'};
+const FAMILY_LABEL:Record<string,string>={SKI:'スキー',SNOWBOARD:'スノーボード',SKI_BOOT:'スキーブーツ',SNOWBOARD_BOOT:'スノーボードブーツ',POLE:'ポール',WEAR_JACKET:'ウェア（上）',WEAR_PANTS:'ウェア（下）'};
+const AGE_LABEL:Record<string,string>={ADULT:'大人',KIDS:'子供'};
+const SEVERITY_LABEL:Record<string,string>={INFO:'情報',WARN:'注意',ERROR:'重大'};
+const stateLabel=(s:string)=>STATE_LABEL[s]??'状態を確認中';
+const slotLabel=(s:string)=>SLOT_LABEL[s]??'—';
+const storeName=(s:string|null)=>s?STORE_LABEL[s]??'店舗':'—';
+// A raw error code is never shown; the retry control is the section's own 更新 / もう一度読み込む.
+const loadErrorText=(what:string,raw:string)=>/^[A-Z][A-Z0-9_]*$/.test(raw)||/fetch|network|load failed/i.test(raw)?what+'を読み込めませんでした。通信状況を確認し、もう一度読み込んでください。':raw;
 function actionLabel(action:string){return ACTION_LABEL[action]??'詳細確認';}
 function taskActionLabel(action:string){return TASK_ACTION_LABEL[action]??'詳細確認';}
 function money(raw:string|number|null){const n=Number(raw);return Number.isFinite(n)?new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n):'—';}
@@ -66,7 +77,10 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  // right away, and a late/superseded response — from the old store, an old load-more page,
  // or simply an out-of-order same-store reply — is dropped rather than ever being rendered.
  const manifestGeneration=useRef(0);
- function openBooking(id:string){router.push('/staff/rentals?booking='+id);}
+ // One navigation per press: a second click while the route is opening is ignored. The guard lifts
+ // itself so a cancelled or restored navigation never leaves the cards permanently disabled.
+ const [opening,setOpening]=useState(false);
+ function openBooking(id:string){if(opening)return;setOpening(true);window.setTimeout(()=>setOpening(false),4000);router.push('/staff/rentals?booking='+id);}
  function loadManifest(store:StoreId,cursor:string|null,append:boolean){
   const generation=++manifestGeneration.current;
   const qs='/api/operations/manifest?store='+store+'&section=all&pageSize=50'+(cursor?'&cursor='+encodeURIComponent(cursor):'');
@@ -102,43 +116,48 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
   if(row.rowKind==='BOOKING_SCOPED'){
    const label=actionLabel(row.nextAction),canOpen=ACTIONABLE.has(row.nextAction)&&showManifest;
    return <article className="staff-card" key={row.key}>
-    <p><strong>{row.period.startDate} → {row.period.endDate}</strong> · {row.period.slot}</p>
-    <p>{row.displayName}</p>
-    <p>{STATE_LABEL[row.bookingState]??row.bookingState}</p>
-    <p>{row.pickupStore}→{row.returnStore}{row.totalJpy!==undefined?' · '+money(row.totalJpy):''}</p>
-    <p className="staff-card-action">{label}</p>
-    {row.exception?.attention&&<p className="staff-card-attention">要注意{row.exception.topSeverity?'（'+row.exception.topSeverity+'）':''}</p>}
-    {canOpen&&<button className="staff-card-primary" onClick={()=>openBooking(row.bookingId)}>{label}へ進む</button>}
+    <div className="staff-card-head"><strong>{row.displayName}</strong><span className="staff-chip">{stateLabel(row.bookingState)}</span></div>
+    <p>{row.period.startDate} → {row.period.endDate} · {slotLabel(row.period.slot)}</p>
+    <p>{storeName(row.pickupStore)} → {storeName(row.returnStore)}{row.totalJpy!==undefined?' · '+money(row.totalJpy):''}</p>
+    <p className="staff-card-action"><span>次にすること</span><strong>{label}</strong></p>
+    {row.exception?.attention&&<p className="staff-card-attention">要注意{row.exception.topSeverity?'（'+(SEVERITY_LABEL[row.exception.topSeverity]??'確認')+'）':''}</p>}
+    {canOpen&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(row.bookingId)}>{label}へ進む</button>}
    </article>;
   }
   const label=taskActionLabel(row.taskAction);
   return <article className="staff-card" key={row.key}>
-   <p><strong>{row.family}</strong>{row.size?' '+row.size+(row.age?' / '+row.age:''):row.requirementKey?' '+row.requirementKey:''}</p>
-   <p>{row.sourceStore}→{row.actualStore}</p>
-   <p className="staff-card-action">{label}</p>
+   <div className="staff-card-head"><strong>{FAMILY_LABEL[row.family]??'用品'}{row.size?' '+row.size+(row.age?' / '+(AGE_LABEL[row.age]??''):''):''}</strong><span className="staff-chip staff-chip--muted">在庫タスク</span></div>
+   <p>{storeName(row.sourceStore)} → {storeName(row.actualStore)}</p>
+   <p className="staff-card-action"><span>次にすること</span><strong>{label}</strong></p>
   </article>;
  }
- return <main className="holds staff-home"><header><p>ZAO Rental · 合成データ専用</p><h1>スタッフホーム</h1><nav><a href="/staff/logout">ログアウト</a></nav></header>
+ const manifestError=manifestMessage?loadErrorText('本日の業務',manifestMessage):'';
+ const manifestKind=manifestError?'error':manifestRows===null||manifestBusy?'loading':manifestRows.length?'ready':'empty';
+ const manifestStatus=manifestError||(manifestRows===null?'本日の業務を読み込んでいます…':manifestBusy?'最新の状態を読み込んでいます…':'');
+ return <main className="holds staff-home"><header className="staff-home-header"><div><p className="staff-secondary">ZAO Rental · 合成データ専用</p><h1>スタッフホーム</h1></div><nav><a href="/staff/logout">ログアウト</a></nav></header>
+ {canBookingView&&<section aria-label="店舗・営業日" className="staff-context">
+  {showManifest&&<label>対象店舗<select aria-label="対象店舗" value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{storeName(s)}</option>)}</select></label>}
+  <p className="staff-context-date"><span>営業日</span><strong>{manifestDate?manifestDate+'（JST）':'確認しています…'}</strong></p>
+ </section>}
  {effectivePickup&&<BookingSearchInput onBooking={openBooking}/>}
- {canBookingView&&<section aria-label="本日の予約"><h2>本日</h2>
+ {showManifest&&<section aria-label="本日の業務" aria-busy={manifestBusy} className="staff-manifest"><div className="staff-section-head"><h2>本日の業務</h2><button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>更新</button></div>
+  <p className="staff-secondary">{storeName(activeStore)}{manifestDate?' · '+manifestDate:''} の貸出・返却・検品タスクです。実際の操作は貸出・返却の画面で行います。</p>
+  <div className={'staff-state staff-state--'+manifestKind}><p role="status">{manifestStatus}</p>{manifestKind==='error'&&<button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>もう一度読み込む</button>}</div>
+  {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:!manifestError&&!manifestBusy&&<p className="staff-empty">現在対応が必要な項目はありません。</p>)}
+  {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
+  <Link href="/staff/rentals">貸出・返却の画面を開く</Link>
+ </section>}
+ {canBookingView&&<section aria-label="本日の予約"><div className="staff-section-head"><h2>本日の予約</h2>
   {/* UX-5E: the Refresh button and status line must never be gated behind manifestDate itself
       -- a BOOKING_VIEW-only principal has no "本日の業務" section and therefore no other retry
       control anywhere on the page, so if the very first Manifest date read fails (401/403 is
       handled separately by StaffSessionBoundary; this covers 409/503/network failure), this
       button is the only way to recover without a full page reload. */}
-  <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>更新</button>
-  <p role="status">{bookingsReq.message||manifestMessage||(manifestDate?'':'業務日付を確認しています…')}</p>
+  <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>更新</button></div>
+  <p role="status">{bookingsReq.message?loadErrorText('本日の予約',bookingsReq.message):manifestError||(manifestDate?'':'業務日付を確認しています…')}</p>
   {manifestDate&&<><p className="staff-secondary">本日が利用期間に含まれる予約（{manifestDate} JST）。完全な入出庫予定表ではありません。</p>
-   {bookings&&(todays.length?<div className="staff-card-grid">{todays.map(b=><article className="staff-card" key={b.id}><p><strong>{b.period!.startDate} → {b.period!.endDate}</strong> · {b.period!.slot}</p><p>{b.display_name??'（氏名未取得）'}</p><p>{STATE_LABEL[b.state]??b.state}</p><p>{b.pickup_store}→{b.return_store} · {money(b.total_jpy)}</p>{effectivePickup&&<button className="staff-card-primary" onClick={()=>openBooking(b.id)}>貸出・受付で状態を確認</button>}</article>)}</div>:<p>本日が利用期間に含まれる予約はありません。</p>)}
+   {bookings&&(todays.length?<div className="staff-card-grid">{todays.map(b=><article className="staff-card" key={b.id}><div className="staff-card-head"><strong>{b.display_name??'（氏名未取得）'}</strong><span className="staff-chip">{stateLabel(b.state)}</span></div><p>{b.period!.startDate} → {b.period!.endDate} · {slotLabel(b.period!.slot)}</p><p>{storeName(b.pickup_store)} → {storeName(b.return_store)} · {money(b.total_jpy)}</p>{effectivePickup&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(b.id)}>貸出・受付で状態を確認</button>}</article>)}</div>:<p className="staff-empty">本日が利用期間に含まれる予約はありません。</p>)}
   </>}
- </section>}
- {showManifest&&<section aria-label="本日の業務"><h2>本日の業務</h2><p className="staff-secondary">対象店舗の当日の貸出・返却・検品タスクです。実際の操作は貸出・返却の画面で行います。</p>
-  <label>対象店舗<select aria-label="対象店舗" value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{s}</option>)}</select></label>
-  <button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>更新</button>
-  <p role="status">{manifestMessage}</p>
-  {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:<p>現在対応が必要な項目はありません。</p>)}
-  {manifestHasMore&&<button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
-  <Link href="/staff/rentals">貸出・返却の画面を開く</Link>
  </section>}
  {canOperationsView&&<section aria-label="運用の注意事項"><h2>運用の注意事項</h2><p>本日の業務カードの「要注意」表示、または以下から詳細を確認してください。</p><Link href="/admin/ops">運用例外の画面を開く</Link></section>}
  <details className="staff-secondary-links"><summary>その他の管理機能</summary><nav>{canInventoryView&&<a href="/staff/ledger">道具の台帳</a>}{canInventoryView&&<a href="/admin/inventory">棚卸・CSV投入</a>}{canBookingView&&<a href="/staff/amendments">変更・返金依頼</a>}{canTransferView&&<a href="/staff/transfers">店舗間移動</a>}{canQuoteView&&<a href="/staff/quotes">見積</a>}{canHoldView&&<a href="/staff/holds">期間在庫・HOLD</a>}{canHoldView&&canQuoteView&&<a href="/staff/recommendations">サイズ推薦</a>}{canInventoryView&&<a href="/staff/wear">ウェアの数量貸出・返却</a>}<a href="/staff/password">パスワード変更</a>{canManageStaff&&<a href="/staff/users">スタッフ管理</a>}</nav></details>

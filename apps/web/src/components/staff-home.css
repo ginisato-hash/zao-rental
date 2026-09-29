@@ -1,21 +1,35 @@
-.staff-home{max-width:960px;margin:auto;padding:16px;overflow-wrap:anywhere}
-.staff-home h1{font-size:22px;margin:8px 0}
+.staff-home{max-width:1080px;margin:auto;padding:16px;overflow-wrap:anywhere}
+.staff-home h1{font-size:22px;margin:4px 0}
+.staff-home-header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .staff-home section{background:#edf4f1;padding:14px;border-radius:10px;margin:14px 0}
-.staff-home h2{font-size:16px;margin:0 0 8px}
+.staff-home h2{font-size:16px;margin:0}
+.staff-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 8px}
 .staff-home input,.staff-home select{max-width:100%;min-width:0;padding:8px;font:inherit;min-height:44px;box-sizing:border-box}
-.staff-home label{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.staff-home label{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-weight:600}
 .staff-home button{min-height:44px;min-width:44px;padding:8px 14px;font:inherit}
 .staff-actions{display:flex;flex-wrap:wrap;gap:8px}
-.staff-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
-.staff-card{background:white;border:1px solid #d4e0da;border-radius:8px;padding:12px;min-width:0}
+/* 1. store / business date: the page's operating context, always first */
+.staff-home section.staff-context{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 24px;background:#e4efea;border:1px solid #c9dcd3}
+.staff-context label{margin:0;min-width:min(100%,240px)}
+.staff-context-date{margin:0;display:flex;flex-direction:column;gap:2px}.staff-context-date span{font-size:12px;color:#4a5c54;font-weight:600}.staff-context-date strong{font-size:18px}
+/* 3. Manifest states: loading / error / empty / ready are visually distinct */
+.staff-state{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}.staff-state [role=status]{margin:0}
+.staff-state--loading [role=status]{color:#35584a}
+.staff-state--error{background:#fff4ec;border:1px solid #e7b89a;border-left:4px solid #b54708;border-radius:6px;padding:8px 12px;margin:8px 0}.staff-state--error [role=status]{color:#8a2c0d}
+.staff-empty{background:white;border:1px dashed #b8cdc3;border-radius:8px;padding:14px;margin:8px 0;color:#35584a}
+.staff-more{margin-top:12px}
+.staff-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;margin:10px 0}
+.staff-card{background:white;border:1px solid #d4e0da;border-radius:8px;padding:12px;min-width:0;display:flex;flex-direction:column}
 .staff-card p{margin:4px 0}
-.staff-card .staff-card-primary{margin-top:8px}
-.staff-card .staff-card-action{font-weight:650}
-.staff-card .staff-card-attention{color:#9a3412}
+.staff-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.staff-chip{flex:0 0 auto;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:#e4efea;color:#23473a;border:1px solid #c9dcd3}.staff-chip--muted{background:#f3f6f5;color:#4a5c54}
+.staff-card .staff-card-action{display:flex;gap:8px;align-items:baseline;border-top:1px solid #e6eeea;padding-top:6px;margin-top:6px}.staff-card .staff-card-action span{font-size:12px;color:#4a5c54}
+.staff-card .staff-card-primary{margin-top:auto;align-self:stretch;background:#1f5f4a;color:white;border:1px solid #1f5f4a;border-radius:6px;font-weight:650}.staff-card .staff-card-primary:disabled{opacity:.6}
+.staff-card .staff-card-attention{color:#9a3412;font-weight:650}
 .staff-secondary{color:#4a5c54;font-size:13px}
 .staff-home details.staff-secondary-links{background:transparent;padding:0}
 .staff-home details.staff-secondary-links>summary{cursor:pointer;font-weight:650;padding:10px 0;min-height:44px;display:flex;align-items:center}
 .staff-home details.staff-secondary-links nav{display:flex;flex-wrap:wrap;gap:4px 12px}
 .staff-home details.staff-secondary-links nav a{min-height:44px;display:flex;align-items:center}
 .staff-home [role=status]{font-weight:600;min-height:1.5em}
-@media(max-width:500px){.staff-home{padding:10px}.staff-home section{padding:10px}}
+@media(max-width:500px){.staff-home{padding:10px}.staff-home section{padding:10px}.staff-context label{min-width:100%}}

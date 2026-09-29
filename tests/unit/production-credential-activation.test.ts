@@ -10,7 +10,7 @@ import {
  assertProductionCredentialTemporaryPassword,commercialCredentialRoleNames,productionCredentialActivationPlan,productionCredentialActivationSql,productionCredentialRollbackSql,
  productionCredentialResetPasswordRequest,productionCredentialPasswordFromResetResponse,productionCredentialCompleteReset,productionCredentialSink,productionCredentialTemporaryPassword,productionCredentialTemporaryPasswordSql,
  productionCredentialReadDatabaseClock,productionCredentialLeaseDeadline,productionCredentialProbeProven,productionCredentialRestartRequest,productionCredentialRestartProven,productionCredentialSinkConfirmed,
- productionCredentialFinalizationSql,productionCredentialFinalized,productionCredentialContainmentSchedule,
+ productionCredentialFinalizationSql,productionCredentialFinalized,productionCredentialContainmentSchedule,productionCredentialRestartOperationClass,
 } from '../../scripts/production-credential-activation';
 
 const TEMP='A'.repeat(21)+'_'+'b'.repeat(20)+'-',OP='054c34ce-9b64-46f4-9aad-4093067f640f',LEASE='2026-09-28T04:38:25.912345Z';
@@ -180,6 +180,30 @@ test('restart proof requires the same credential identity, the exact role and a 
  assert.throws(()=>productionCredentialRestartProven('neondb','content_read',p,{...evidence('content_read'),restartProven:true,authenticatedWith:p}),/PROBE_PROOF_REQUIRED/,'probe proof is consumed once');
  for(const bad of [evidence('content_read',{tlsVerifyFull:false}),evidence('content_read',{positive:'FAIL 42501'}),evidence('content_read',{postureUnchanged:false}),evidence('content_read',{sessionUser:'neondb_owner'})])
   assert.throws(()=>productionCredentialProbeProven('neondb','content_read',neon('content_read'),bad as never),/PROBE_EVIDENCE_INVALID/);
+});
+
+test('restart operation readiness classifies each provider state without polling terminal states',()=>{
+ const cases={finished:'TERMINAL_SUCCESS',failed:'TERMINAL_FAILURE',error:'TERMINAL_FAILURE',cancelled:'TERMINAL_FAILURE',scheduling:'PENDING',running:'PENDING',cancelling:'PENDING'};
+ for(const [status,expected] of Object.entries(cases))assert.equal(productionCredentialRestartOperationClass(status),expected,status);
+ for(const error of [undefined,null,''])assert.equal(productionCredentialRestartOperationClass('skipped',error,0),'TERMINAL_SUCCESS');
+});
+
+test('skipped restart operations require explicit zero failures and an empty or missing error',()=>{
+ for(const error of ['provider failure',' ',{},[],0,false])assert.equal(productionCredentialRestartOperationClass('skipped',error,0),'ANOMALOUS');
+ for(const failures of [undefined,null,1,-1,'0',false,NaN])assert.equal(productionCredentialRestartOperationClass('skipped','',failures),'ANOMALOUS');
+});
+
+test('unknown restart operation status fails closed instead of polling',()=>{
+ for(const status of [undefined,null,'','FINISHED','queued','unknown',0,{},[]])assert.equal(productionCredentialRestartOperationClass(status,'',0),'ANOMALOUS');
+});
+
+test('restart skipped readiness does not broaden reset completion or prove password persistence',()=>{
+ assert.equal(productionCredentialRestartOperationClass('skipped','',0),'TERMINAL_SUCCESS');
+ assert.throws(()=>productionCredentialCompleteReset(pending('content_read'),{[OP]:'skipped'}),/RESET_NOT_COMPLETED/);
+ const p=probed('content_read');
+ assert.throws(()=>productionCredentialSink('neondb','content_read',p),/SINK_PROOF_REQUIRED/);
+ assert.throws(()=>productionCredentialRestartProven('neondb','content_read',p,{...evidence('content_read'),restartProven:true,authenticatedWith:p,positive:'FAIL'}),/PROBE_EVIDENCE_INVALID/);
+ assert.throws(()=>productionCredentialRestartProven('neondb','content_read',p,{...evidence('content_read'),restartProven:false,authenticatedWith:p}),/RESTART_EVIDENCE_INVALID/);
 });
 
 test('non-canary roles reach their sink with probe proof and no restart',()=>{

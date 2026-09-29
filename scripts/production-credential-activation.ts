@@ -192,6 +192,19 @@ export function productionCredentialProbeProven(database:string,service:Commerci
  neonCompleted.delete(credential);
  const proven=Object.freeze({role:c.role,password:c.password,stage:'PROBE_PROVEN' as const});neonStage.set(proven,'PROBE_PROVEN');return proven;
 }
+export type NeonRestartOperationClass='TERMINAL_SUCCESS'|'TERMINAL_FAILURE'|'PENDING'|'ANOMALOUS';
+/** Endpoint restart readiness only, never reset completion or credential persistence proof.
+ * A skipped provider operation is immediately terminal, but requires explicit zero failures and no error. */
+export function productionCredentialRestartOperationClass(status:unknown,error?:unknown,failuresCount?:unknown):NeonRestartOperationClass{
+ switch(status){
+  case 'finished':return 'TERMINAL_SUCCESS';
+  case 'skipped':return failuresCount===0&&(error===undefined||error===null||error==='')?'TERMINAL_SUCCESS':'ANOMALOUS';
+  case 'failed':case 'error':case 'cancelled':return 'TERMINAL_FAILURE';
+  case 'scheduling':case 'running':case 'cancelling':return 'PENDING';
+  default:return 'ANOMALOUS';
+ }
+}
+
 /** The one endpoint restart of the canary. Non-idempotent: never resent after an unknown outcome. */
 export function productionCredentialRestartRequest(projectId:string,endpointId:string){
  if(!PROJECT_ID.test(projectId)||!ENDPOINT_ID.test(endpointId))throw new Error('PRODUCTION_CREDENTIAL_TARGET_INVALID');

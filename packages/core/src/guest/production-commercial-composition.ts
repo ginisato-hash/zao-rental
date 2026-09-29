@@ -78,7 +78,7 @@ export function parsePublicationApproval(raw:string|undefined):PublicationApprov
 export type CommercialPlan=Readonly<{
  configuration:Readonly<ProductionConfiguration>;
  secrets:ProductionRuntimeInput['secrets'];
- square:Readonly<{applicationId:string;merchantId:string;locations:Readonly<Record<typeof STORES[number],string>>;accessToken:string;expiresAt:Date}>;
+ square:Readonly<{applicationId:string;merchantId:string;locations:Readonly<Record<typeof STORES[number],string>>;accessToken:string;expiresAt:Date|null}>;
  resendApiKey:string;
  publication:PublicationApproval|undefined;
 }>;
@@ -111,8 +111,10 @@ export function commercialProductionPlan(env:Env,now=new Date()):CommercialPlan|
  for(const s of STORES){const l=e[locationKey(s)];if(!l||!/^[A-Za-z0-9_-]{1,100}$/.test(l))fail('PRODUCTION_COMMERCIAL_SQUARE_LOCATION_INVALID');locations[s]=l!;}
  if(locations.MOUNTAIN_BASE===locations.ONSEN_BASE)fail('PRODUCTION_COMMERCIAL_SQUARE_LOCATION_INVALID');
  if(!accessToken||accessToken.length<16||accessToken.length>4096||!/^[-A-Za-z0-9._~+/=]+$/.test(accessToken))fail('PRODUCTION_COMMERCIAL_SQUARE_CREDENTIAL_INVALID');
- const expiresRaw=e.PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT,expiresAt=new Date(expiresRaw??'');
- if(!expiresRaw||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(expiresRaw)||!Number.isFinite(expiresAt.getTime())||expiresAt<=now)fail('PRODUCTION_COMMERCIAL_SQUARE_CREDENTIAL_EXPIRED');
+ // Exactly "never" declares a provider-confirmed non-expiring token (Square token status carries no
+ // expires_at); it becomes expiresAt null. Anything else must be a valid future UTC timestamp.
+ const expiresRaw=e.PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT;let expiresAt:Date|null=null;
+ if(expiresRaw!=='never'){const d=new Date(expiresRaw??'');if(!expiresRaw||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(expiresRaw)||!Number.isFinite(d.getTime())||d<=now)fail('PRODUCTION_COMMERCIAL_SQUARE_CREDENTIAL_EXPIRED');expiresAt=d;}
  const resendApiKey=e.PRODUCTION_RESEND_API_KEY;
  if(!resendApiKey||!/^re_[-A-Za-z0-9_]{16,200}$/.test(resendApiKey))fail('PRODUCTION_COMMERCIAL_RESEND_CREDENTIAL_INVALID');
  const database:Partial<Record<ProductionService,ProductionDatabaseCredential>>={};

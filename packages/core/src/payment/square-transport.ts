@@ -2,11 +2,13 @@ import {FlowError} from '../../../contracts/src/rental-flow';
 import {SQUARE_SANDBOX_ORIGIN,SQUARE_PRODUCTION_ORIGIN,SQUARE_VERSION,type SquareCall,type SquareTransport} from './square-engine';
 import type {SquareSandboxTransport} from './square-sandbox';
 import type {SquareProductionTransport} from './square-production';
-export type SquareCredential={environment:'SANDBOX'|'PRODUCTION';merchantId:string;locationId:string;accessToken:string;expiresAt:Date;revoked:boolean};
+/** expiresAt null means the provider's own token status reports no expiry (a non-expiring Production personal
+ * access token); it is accepted for PRODUCTION only. Any Date must be valid and in the future. */
+export type SquareCredential={environment:'SANDBOX'|'PRODUCTION';merchantId:string;locationId:string;accessToken:string;expiresAt:Date|null;revoked:boolean};
 /** Inject from an approved secret provider only. No environment reader/default fetch,
  * credential, real connection or retry loop is installed by this module. */
 export type SquareFetch=(url:string,init:RequestInit)=>Promise<Response>;
-export type SandboxCredential=SquareCredential&{environment:'SANDBOX'};
+export type SandboxCredential=SquareCredential&{environment:'SANDBOX';expiresAt:Date};
 export type ProductionSquareCredential=SquareCredential&{environment:'PRODUCTION'};
 class FetchSquareTransport implements SquareTransport{
  private readonly origin:string;
@@ -28,7 +30,7 @@ class FetchSquareTransport implements SquareTransport{
   try{
    call.signal.throwIfAborted();
    const secret=await abortable(this.credential(call.signal),call.signal);
-   if(secret.environment!==this.environment||secret.merchantId!==this.merchantId||secret.locationId!==this.locationId||secret.revoked||!Number.isFinite(secret.expiresAt.getTime())||secret.expiresAt<=this.now()||!/^[-A-Za-z0-9._~+/=]{1,4096}$/.test(secret.accessToken))throw new FlowError('SQUARE_AUTH_STOP',503);
+   if(secret.environment!==this.environment||secret.merchantId!==this.merchantId||secret.locationId!==this.locationId||secret.revoked||!credentialCurrent(secret,this.now())||!/^[-A-Za-z0-9._~+/=]{1,4096}$/.test(secret.accessToken))throw new FlowError('SQUARE_AUTH_STOP',503);
    call.signal.throwIfAborted();
    response=await abortable(this.fetch(call.url,{method:call.method,headers:{Authorization:'Bearer '+secret.accessToken,'Square-Version':SQUARE_VERSION,Accept:'application/json','Content-Type':'application/json'},...(call.body?{body:JSON.stringify(call.body)}:{}),signal:call.signal,redirect:'error',cache:'no-store',credentials:'omit'}),call.signal);
    if(response.status<200||response.status>=300){await response.body?.cancel();return {status:response.status,body:null};}
@@ -48,6 +50,7 @@ export class FetchSquareProductionTransport extends FetchSquareTransport impleme
   super('PRODUCTION',merchantId,locationId,credential,fetch,now);
  }
 }
+function credentialCurrent(secret:SquareCredential,now:Date){return secret.expiresAt===null?secret.environment==='PRODUCTION':secret.expiresAt instanceof Date&&Number.isFinite(secret.expiresAt.getTime())&&secret.expiresAt>now;}
 async function abortable<T>(operation:Promise<T>,signal:AbortSignal):Promise<T>{
  let rejectAbort:()=>void=()=>{};const aborted=new Promise<never>((_,reject)=>{rejectAbort=()=>reject(new Error('ABORTED'));signal.addEventListener('abort',rejectAbort,{once:true});if(signal.aborted)rejectAbort();});
  try{return await Promise.race([operation,aborted]);}finally{signal.removeEventListener('abort',rejectAbort);}

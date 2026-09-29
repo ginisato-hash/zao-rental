@@ -37,7 +37,11 @@ test('Production credential resolver pins environment/merchant/location before i
  const build=(patch:Partial<ProductionSquareCredential>={})=>new FetchSquareProductionTransport(request.merchantId,request.locationId,async()=>{reads++;return {...credential,...patch};},async(url,init)=>{fetches++;assert.equal(url,SQUARE_PRODUCTION_ORIGIN+'/v2/payments');assert.equal(init.redirect,'error');assert.equal(new Headers(init.headers).get('Authorization'),'Bearer '+credential.accessToken);return Response.json({payment});});
  const x=fixture();await x.gateway.create(request);const call=x.calls[0]!;
  await build().send(call);assert.equal(fetches,1);
- for(const patch of [{environment:'SANDBOX' as never},{merchantId:'wrong'},{locationId:'wrong'},{revoked:true},{expiresAt:new Date('2000-01-01')}])await assert.rejects(build(patch).send(call),{code:'SQUARE_AUTH_STOP'});
- assert.equal(fetches,1);const before=reads;await assert.rejects(build().send({...call,url:'https://connect.squareupsandbox.com/v2/payments'}),{code:'SQUARE_REQUEST_REJECTED'});assert.equal(reads,before);
+ for(const patch of [{environment:'SANDBOX' as never},{merchantId:'wrong'},{locationId:'wrong'},{revoked:true},{expiresAt:new Date('2000-01-01')},{expiresAt:new Date('invalid')}])await assert.rejects(build(patch).send(call),{code:'SQUARE_AUTH_STOP'});
+ assert.equal(fetches,1);
+ // expiresAt null = provider-confirmed non-expiring Production token: accepted, but revoked or a wrong binding still stops.
+ await build({expiresAt:null}).send(call);assert.equal(fetches,2);
+ for(const patch of [{expiresAt:null,revoked:true},{expiresAt:null,merchantId:'wrong'},{expiresAt:null,locationId:'wrong'},{expiresAt:null,environment:'SANDBOX' as never}])await assert.rejects(build(patch).send(call),{code:'SQUARE_AUTH_STOP'});
+ assert.equal(fetches,2);const before=reads;await assert.rejects(build().send({...call,url:'https://connect.squareupsandbox.com/v2/payments'}),{code:'SQUARE_REQUEST_REJECTED'});assert.equal(reads,before);
  assert.equal(call.version,SQUARE_VERSION);
 });

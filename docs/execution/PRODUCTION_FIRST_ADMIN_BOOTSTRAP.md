@@ -72,7 +72,7 @@ Orphan auth rows with no staff return
 overwrites or reuses records. `insertAccount()` performs canonical email handling,
 Argon2id hashing, account/staff/access writes and the existing audit triggers.
 The account is active ADMIN / ALL, has no explicit store assignments, and has
-only `PRICE_EDIT=true` as an explicit override. Existing ADMIN defaults provide
+exactly `PRICE_EDIT=true` and `QUOTE_VIEW=true` as explicit overrides. Existing ADMIN defaults provide
 INVENTORY_VIEW, INVENTORY_EDIT and STAFF_MANAGE. The audit label identifies this
 operator procedure; no technical staff row is created.
 

@@ -25,7 +25,16 @@ try{
  await new QuoteService(app.roles.pricingPool,(await loadStaff(db.pool,subject))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  await check('PG','fresh canonical0001–0032 with dedicated Avatar role',async()=>{assert.equal((await db.pool.query("SELECT count(*)::int n FROM foundation_migrations WHERE id<='0032'")).rows[0].n,32);assert.ok(app!.avatar);});
  browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}}),anon=await browser.newContext({baseURL:origin}),other=await browser.newContext({baseURL:origin}),staff=await browser.newContext({baseURL:origin});
- for(const context of [c,anon,other,staff]){context.setDefaultTimeout(20000);await context.route('**/*',async route=>{if(new URL(route.request().url()).origin!==origin){externalAttempts++;await route.abort();}else{if(measuringVisuals&&route.request().method()==='POST'&&new URL(route.request().url()).pathname!=='/api/guest/context')visualPosts++;await route.continue();}});}
+ let failArtwork=false;
+ // Keep interception ownership stable while injecting the optional metadata failure.
+ // Adding/removing a page route can race the context route for requests in flight.
+ for(const context of [c,anon,other,staff]){context.setDefaultTimeout(20000);await context.route('**/*',async route=>{
+  const request=route.request(),url=new URL(request.url());
+  if(url.origin!==origin){externalAttempts++;await route.abort();return;}
+  if(measuringVisuals&&request.method()==='POST'&&url.pathname!=='/api/guest/context')visualPosts++;
+  if(context===c&&failArtwork&&request.method()==='GET'&&url.pathname.startsWith('/api/guest/avatar/')){await route.fulfill({status:503,body:''});return;}
+  await route.continue();
+ });}
  // Warm ordinary routes before interaction so Next dev compilation does not reload a submitted form.
  for(const path of ['/ja','/en/book','/staff/login','/staff/ledger','/api/auth/get-session'])await anon.request.get(path);
  const page=await c.newPage(),fatals:string[]=[];page.on('pageerror',()=>fatals.push('PAGE_ERROR'));page.on('console',m=>{if(m.type()==='error'&&/hydration|uncaught|maximum update/i.test(m.text()))fatals.push('CONSOLE_FATAL');});
@@ -70,7 +79,14 @@ try{
  await check('BROWSER','appearance switch is local, updates body and causes no metadata reload or POST',async()=>{const old=await page.locator('[data-layer="AVATAR"] img').getAttribute('src');await page.getByRole('button',{name:'見た目 2',exact:true}).click();await expect(page.locator('[data-layer="AVATAR"] img')).not.toHaveAttribute('src',old!);await page.waitForFunction(()=>document.querySelector<HTMLImageElement>('[data-layer="AVATAR"] img')?.naturalHeight===1000);assert.equal(metadataRequests.length,requestsBefore);assert.equal(visualPosts,0);assert.equal(await page.locator('img[src*="_next/image"]').count(),0);await shot('desktop-appearance2');});
  await check('BROWSER','English candidate page keeps full disclaimer and appearance labels',async()=>{await page.goto('/en/book');await expect(page.getByRole('button',{name:'Appearance 1',exact:true})).toBeVisible();await expect(page.locator('.avatar-disclaimer')).toContainText('completed payment');});
  await check('BROWSER','revoked rights refresh omits renderer and keeps business candidates usable',async()=>{const state=structuredClone(base);for(const m of state.catalog.media)m.rightsConfirmed=false;await save(state);assert.equal((await c.request.get(imagePath)).status(),404);await page.reload();await expect(page.getByRole('radio',{name:/RECOMMENDED/i})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(0);await save(base);});
- await check('BROWSER','optional artwork HTTP failure does not fail candidate step or invent art',async()=>{await page.route('**/api/guest/avatar/**',route=>route.fulfill({status:503,body:''}));await page.reload();await expect(page.getByRole('radio',{name:/RECOMMENDED/i})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(0);await page.unroute('**/api/guest/avatar/**');});
+ await check('BROWSER','optional artwork HTTP failure does not fail candidate step or invent art',async()=>{
+  failArtwork=true;
+  try{
+   const unavailable=page.waitForResponse(r=>new URL(r.url()).pathname.startsWith('/api/guest/avatar/')&&r.status()===503);
+   await page.reload();assert.equal((await unavailable).status(),503);
+   await expect(page.getByRole('radio',{name:/RECOMMENDED/i})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(0);
+  }finally{failArtwork=false;}
+ });
  await check('PG','all visual reads and switches preserve guest/business rows exactly',async()=>{assert.deepEqual(await business(),before);assert.equal(visualPosts,0);});
  measuringVisuals=false;
  const staffPage=await staff.newPage();

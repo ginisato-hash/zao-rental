@@ -24,7 +24,7 @@
     "check:secrets": "node scripts/check-secrets.mjs",
     "test:controller:macos": "node --import tsx scripts/test-controller-macos.ts",
     "controller:export": "node --import tsx scripts/export-controller.ts",
-    "test:auth": "node --import tsx tests/auth/first-admin-bootstrap.ts && node --import tsx tests/auth/staff-flow.ts",
+    "test:auth": "node --import tsx tests/auth/first-admin-bootstrap.ts && node --import tsx tests/auth/staff-flow.ts && node --import tsx tests/auth/first-admin-commercial.ts",
     "test:inventory": "node --import tsx tests/inventory/real-postgres.ts",
     "test:provisional-booking-capacity": "node --import tsx tests/readiness/provisional-booking-capacity.ts && node --import tsx tests/readiness/inventory-truth.ts && node --import tsx tests/readiness/capacity-policy.ts && node --import tsx tests/operations/provisional-source-http.ts",
     "test:holds-ui": "node --import tsx tests/inventory/normal-ui.ts",
@@ -54,7 +54,7 @@
     "test:custody-ui": "node --import tsx tests/custody/normal-ui.ts",
     "test:late-pickup": "node --import tsx tests/custody/late-pickup.ts",
     "test:staff-home-ui": "node --import tsx tests/staff/home-ui.ts",
-    "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts",
+    "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts && node --experimental-test-module-mocks --import tsx tests/public/prepare-payment.ts",
     "test:public-content": "node --import tsx tests/public/content-postgres.ts",
     "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",
     "demo:public": "node --import tsx tests/public/demo.ts",
@@ -98,6 +98,7 @@
     "test:notification": "node --import tsx tests/notification/postgres.ts",
     "test:notification-ui": "node --import tsx tests/notification/normal-ui.ts",
     "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts",
+    "production:complete-first-admin-commercial": "node --import tsx scripts/production-complete-first-admin-commercial.ts",
     "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts"
   },
   "dependencies": {

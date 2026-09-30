@@ -12,11 +12,12 @@ export type FirstAdminInput=Pick<NewAccount,'email'|'displayName'|'password'>;
 const prefix='PRODUCTION_STAFF_BOOTSTRAP_';
 function stop(suffix:string):never{throw new Error(prefix+suffix);}
 // Owner-fixed canonical identity, fingerprinted to keep the address out of source/evidence.
+export const FIRST_ADMIN_OWNER_EMAIL_FINGERPRINT='95b26d91fdaaa06112be39dcda9918d72f029317f5da9a5c038241c8a2c3a3c0';
 export function assertFirstAdminOwnerEmail(email:string){
  let fingerprint:string;try{fingerprint=createHash('sha256').update(canonicalEmail(email)).digest('hex');}catch{stop('OWNER_EMAIL_REJECTED');}
- if(fingerprint!=='95b26d91fdaaa06112be39dcda9918d72f029317f5da9a5c038241c8a2c3a3c0')stop('OWNER_EMAIL_REJECTED');
+ if(fingerprint!==FIRST_ADMIN_OWNER_EMAIL_FINGERPRINT)stop('OWNER_EMAIL_REJECTED');
 }
-const account=(input:FirstAdminInput):NewAccount=>({...input,active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{PRICE_EDIT:true}});
+const account=(input:FirstAdminInput):NewAccount=>({...input,active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{PRICE_EDIT:true,QUOTE_VIEW:true}});
 export function firstAdminInput(raw:unknown):FirstAdminInput{
  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).sort().join()!=='displayName,email,password')stop('INPUT_REJECTED');
  try{parseAccount(account(raw as FirstAdminInput),true);}catch{stop('INPUT_REJECTED');}
@@ -82,13 +83,13 @@ async function counts(client:PoolClient){
 async function readback(client:PoolClient,id:string,input:FirstAdminInput){
  const n=await counts(client);
  const row=(await client.query(`SELECT m.active,m.role,m.scope,a.password,a."providerId",u.email,u.name FROM staff_members m JOIN auth_user u ON u.id=m.id JOIN auth_account a ON a."userId"=m.id WHERE m.id=$1`,[id])).rows[0];
- const details=(await client.query(`SELECT (SELECT count(*)::int FROM auth_session) sessions,(SELECT count(*)::int FROM staff_store_access) stores,(SELECT count(*)::int FROM staff_permission_overrides) overrides,(SELECT count(*)::int FROM staff_permission_overrides WHERE staff_id=$1 AND permission='PRICE_EDIT' AND allowed) price_edit,(SELECT count(*)::int FROM staff_audit WHERE event='ACCOUNT_CREATED') created,(SELECT count(*)::int FROM staff_audit WHERE event='ACCOUNT_CREATED' AND target_staff_id=$1 AND actor_staff_id='production-first-admin-bootstrap') own_created`,[id])).rows[0];
+ const details=(await client.query(`SELECT (SELECT count(*)::int FROM auth_session) sessions,(SELECT count(*)::int FROM staff_store_access) stores,(SELECT count(*)::int FROM staff_permission_overrides) overrides,(SELECT count(*)::int FROM staff_permission_overrides WHERE staff_id=$1 AND permission='PRICE_EDIT' AND allowed) price_edit,(SELECT count(*)::int FROM staff_permission_overrides WHERE staff_id=$1 AND permission='QUOTE_VIEW' AND allowed) quote_view,(SELECT count(*)::int FROM staff_audit WHERE event='ACCOUNT_CREATED') created,(SELECT count(*)::int FROM staff_audit WHERE event='ACCOUNT_CREATED' AND target_staff_id=$1 AND actor_staff_id='production-first-admin-bootstrap') own_created`,[id])).rows[0];
  const principal=await loadStaff(client,id);
- if(n.staff_members!==1||n.auth_user!==1||n.auth_account!==1||!row||row.active!==true||row.role!=='ADMIN'||row.scope!=='ALL'||row.providerId!=='credential'||!row.password.startsWith('$argon2id$')||row.email!==canonicalEmail(input.email)||row.name!==input.displayName||!await verifyStaffPassword({hash:row.password,password:input.password})||details.sessions!==0||details.stores!==0||details.overrides!==1||details.price_edit!==1||details.created!==1||details.own_created!==1||!['INVENTORY_VIEW','INVENTORY_EDIT','STAFF_MANAGE','PRICE_EDIT'].every(p=>principal?.permissions.includes(p as never)))stop('READBACK_FAILED');
+ if(n.staff_members!==1||n.auth_user!==1||n.auth_account!==1||!row||row.active!==true||row.role!=='ADMIN'||row.scope!=='ALL'||row.providerId!=='credential'||!row.password.startsWith('$argon2id$')||row.email!==canonicalEmail(input.email)||row.name!==input.displayName||!await verifyStaffPassword({hash:row.password,password:input.password})||details.sessions!==0||details.stores!==0||details.overrides!==2||details.price_edit!==1||details.quote_view!==1||details.created!==1||details.own_created!==1||!['INVENTORY_VIEW','INVENTORY_EDIT','STAFF_MANAGE','PRICE_EDIT','QUOTE_VIEW'].every(p=>principal?.permissions.includes(p as never)))stop('READBACK_FAILED');
  // Examine only the rows written by this operation, in memory. Never send plaintext to SQL.
  const persisted=(await client.query(`SELECT to_jsonb(t) AS data FROM auth_user t UNION ALL SELECT to_jsonb(t) FROM auth_account t UNION ALL SELECT to_jsonb(t) FROM staff_members t UNION ALL SELECT to_jsonb(t) FROM staff_store_access t UNION ALL SELECT to_jsonb(t) FROM staff_permission_overrides t UNION ALL SELECT to_jsonb(t) FROM staff_audit t WHERE target_staff_id=$1 UNION ALL SELECT to_jsonb(t) FROM booking_actors t WHERE id=$1`,[id])).rows;
  if(persisted.some(r=>Object.values(r.data as Record<string,unknown>).some(v=>typeof v==='string'&&v.includes(input.password))))stop('READBACK_FAILED');
- return {...n,credential_account:1,email_unique:true,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0};
+ return {...n,credential_account:1,email_unique:true,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,QUOTE_VIEW:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0};
 }
 /** Internal transaction primitive, shared with disposable PostgreSQL tests. The only
  * operator entrypoint must first admit Git, secure input, fixed Production URI/TLS/owner.

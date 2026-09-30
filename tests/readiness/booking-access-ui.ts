@@ -49,11 +49,28 @@ try{
  const bookingId=(await app.db.pool.query('SELECT id FROM rental_bookings')).rows[0].id as string,requestStorage='zao-booking-access-request:'+bookingId;
  const firstRequest=await page.evaluate(key=>sessionStorage.getItem(key),requestStorage);assert.ok(firstRequest);
  const otherStorage='zao-booking-access-request:'+randomUUID(),otherRequest=randomUUID();await page.evaluate(({key,value})=>sessionStorage.setItem(key,value),{key:otherStorage,value:otherRequest});
- let revokeAck!:()=>void;const revokeLost=new Promise<void>(r=>revokeAck=r);
- await page.route('**/api/booking-access/revoke',async route=>{const response=await route.fetch();assert.equal(response.status(),200);await route.abort('failed');revokeAck();});
- await page.getByRole('button',{name:'この端末の予約閲覧権を失効'}).click();await revokeLost;await expect(page.getByRole('status')).toContainText('未確認');
+ // Keep the real browser HTTP transport. Route.fetch() introduced a second
+ // transport whose socket failure could escape the scenario before fault injection.
+ // Lose the application acknowledgement only after the real response body arrives;
+ // Set-Cookie can already have arrived, as with a response lost after its headers.
+ let revokeRequests=0;page.on('request',r=>{if(r.url()===app!.origin+'/api/booking-access/revoke'&&r.method()==='POST')revokeRequests++;});
+ await page.evaluate(()=>{
+  const originalFetch=window.fetch;let loseNextRevoke=true;
+  window.fetch=async(...args:Parameters<typeof fetch>)=>{
+   const input=args[0],url=new URL(input instanceof Request?input.url:String(input),location.href);
+   const lose=loseNextRevoke&&url.origin===location.origin&&url.pathname==='/api/booking-access/revoke'&&(args[1]?.method??(input instanceof Request?input.method:'GET'))==='POST';
+   if(lose)loseNextRevoke=false;
+   const response=await originalFetch(...args);
+   if(lose){await response.arrayBuffer();throw new TypeError('Synthetic revoke acknowledgement loss');}
+   return response;
+  };
+ });
+ const [revokeResponse]=await Promise.all([page.waitForResponse(r=>r.url()===app!.origin+'/api/booking-access/revoke'&&r.request().method()==='POST'),page.getByRole('button',{name:'この端末の予約閲覧権を失効'}).click()]);
+ assert.equal(revokeResponse.status(),200);await expect(page.getByRole('status')).toContainText('未確認');assert.equal(revokeRequests,1);
+ assert.equal((await app.db.pool.query('SELECT revoked_at IS NOT NULL AS revoked FROM booking_access.capabilities WHERE booking_id=$1 AND request_id=$2',[bookingId,firstRequest])).rows[0].revoked,true,'real revoke committed before the unacknowledged state');
+ assert.equal((await context.request.get('/api/booking-access',{headers:{cookie:'zao_booking_access='+cookie.value}})).status(),401,'the original capability is denied, even if its old cookie is presented');
  assert.equal(await page.evaluate(key=>sessionStorage.getItem(key),requestStorage),firstRequest,'unacknowledged revocation retains the old issuance key');
- await page.unroute('**/api/booking-access/revoke');await page.reload();await page.getByRole('button',{name:'この端末の予約閲覧権を失効'}).click();await expect(page.getByRole('status')).toContainText('失効しました');
+ await page.reload();await page.getByRole('button',{name:'この端末の予約閲覧権を失効'}).click();await expect(page.getByRole('status')).toContainText('失効しました');assert.equal(revokeRequests,2,'only the deliberate replay sends the second revoke');
  assert.equal(await page.evaluate(key=>sessionStorage.getItem(key),requestStorage),null,'acknowledged revocation clears only that booking request');
  assert.equal(await page.evaluate(key=>sessionStorage.getItem(key),otherStorage),otherRequest);
  await page.goto('/ja/book');await expect(page.getByRole('button',{name:'予約閲覧をこの端末へ保存'})).toBeVisible();
@@ -61,6 +78,7 @@ try{
  await page.getByRole('link',{name:'保存した予約とQRを開く'}).click();await expect(page.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();
  assert.notEqual(await page.evaluate(key=>sessionStorage.getItem(key),requestStorage),firstRequest);
  const caps=(await app.db.pool.query('SELECT revoked_at FROM booking_access.capabilities')).rows;assert.equal(caps.length,2);assert.equal(caps.filter(r=>r.revoked_at===null).length,1);
+ assert.equal((await app.db.pool.query('SELECT revoked_at IS NOT NULL AS revoked FROM booking_access.capabilities WHERE booking_id=$1 AND request_id=$2',[bookingId,firstRequest])).rows[0].revoked,true,'explicit resave never revives the original capability');
  console.log('PASS lost revoke response preserves key; acknowledged replay then explicit same-tab resave uses one new capability without reviving the old one');
  stage='CH-05 regression: pagehide->focus->pagehide does not leave reload permanently disabled';
  // TEST-OBS-02: reuse the same readGate mechanism as BA-01-RES above so this actually

@@ -404,6 +404,13 @@
    "sha256": "4ebb70fac61dc50799c11bfcc0e4197bd38e3dbc9d1f0bfabdb33ec6ce77b97f",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0051",
+   "file": "0051_production_projection_source.sql",
+   "sha256": "3dadd8687225020b5091427d69dd5e5a6688a4cf00bacf9310bba38059670237",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

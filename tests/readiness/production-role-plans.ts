@@ -17,6 +17,8 @@ import {productionAppRoleNames, productionAppRoleCreateSql, productionAppRoleGra
 import {verifyProductionDatabase} from '../../packages/db/src/production-connection';
 import {PgSquareProductionWebhookInbox, PgSquareWebhookInbox} from '../../packages/db/src/square-webhook-inbox';
 import {productionServices, type ProductionConfiguration} from '../../packages/auth/src/production-config';
+import {productionProjectionChecks} from './production-projection-checks';
+import {applyProductionPaymentRuntimeMigration} from '../../scripts/production-payment-runtime-migration';
 
 const TARGET = 'zao_rental_role_plan_test';
 let passed = 0;
@@ -107,10 +109,40 @@ try {
   const names = productionPaymentRoleNames(TARGET);
   for (const sql of productionPaymentRoleCreateSql(TARGET)) await production.query(sql);
   for (const sql of productionPaymentActivationGrants(TARGET)) await production.query(sql);
+  await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
+    const c=await production!.connect();try{
+      const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0050'")).rows[0].checksum;
+      await c.query('DROP FUNCTION payment_projection.lock_source_production(uuid,text,text)');
+      await c.query("DELETE FROM foundation_migrations WHERE id='0051'");
+      await c.query(`GRANT EXECUTE ON FUNCTION payment_projection.lock_source(uuid) TO ${names.projector}`);
+      // Production app roles are created below; install only the pre-existing HOLD identity for this upgrade proof.
+      const holdRole=TARGET+'_hold';await c.query(`CREATE ROLE ${holdRole} NOLOGIN`);
+      await c.query("UPDATE foundation_migrations SET checksum=repeat('0',64) WHERE id='0050'");
+      await assert.rejects(applyProductionPaymentRuntimeMigration(c,TARGET,db.identity.user),{message:'PRODUCTION_PAYMENT_RUNTIME_RECONCILIATION_REQUIRED'});
+      assert.equal((await c.query("SELECT to_regprocedure('payment_projection.lock_source_production(uuid,text,text)') IS NULL absent")).rows[0].absent,true);
+      await c.query("UPDATE foundation_migrations SET checksum=$1 WHERE id='0050'",[checksum]);
+      const failing=Object.create(c) as typeof c;
+      failing.query=(async(...args:unknown[])=>{if(String(args[0]).startsWith('INSERT INTO public.foundation_migrations'))throw Error('SYNTHETIC_AFTER_DDL_FAILURE');return Reflect.apply(c.query,c,args);}) as typeof c.query;
+      await assert.rejects(applyProductionPaymentRuntimeMigration(failing,TARGET,db.identity.user),{message:'SYNTHETIC_AFTER_DDL_FAILURE'});
+      assert.deepEqual((await c.query(`SELECT to_regprocedure('payment_projection.lock_source_production(uuid,text,text)') IS NULL absent,has_function_privilege($1,'payment_projection.lock_source(uuid)','EXECUTE') old_reader,has_function_privilege($2,'provisional_capacity_effective_quantity(uuid)','EXECUTE') hold_reader`,[names.projector,holdRole])).rows[0],{absent:true,old_reader:true,hold_reader:false});
+      const result=await applyProductionPaymentRuntimeMigration(c,TARGET,db.identity.user);assert.equal(result.status,'PRODUCTION_PAYMENT_RUNTIME_INSTALLED');assert.deepEqual(result.applied,['0051']);
+      await assert.rejects(applyProductionPaymentRuntimeMigration(c,TARGET,db.identity.user),{message:'PRODUCTION_PAYMENT_RUNTIME_RECONCILIATION_REQUIRED'});
+      // Reconstruct the old state only inside this disposable fixture, then lose the COMMIT acknowledgement.
+      await c.query('DROP FUNCTION payment_projection.lock_source_production(uuid,text,text)');await c.query("DELETE FROM foundation_migrations WHERE id='0051'");
+      await c.query(`GRANT EXECUTE ON FUNCTION payment_projection.lock_source(uuid) TO ${names.projector}`);await c.query(`REVOKE EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) FROM ${holdRole}`);
+      let commits=0;const lost=Object.create(c) as typeof c;
+      lost.query=(async(...args:unknown[])=>{const value=await Reflect.apply(c.query,c,args);if(args[0]==='COMMIT'){commits++;throw Error('SYNTHETIC_COMMIT_ACK_LOSS');}return value;}) as typeof c.query;
+      await assert.rejects(applyProductionPaymentRuntimeMigration(lost,TARGET,db.identity.user),{message:'PRODUCTION_PAYMENT_RUNTIME_COMMIT_UNKNOWN_READBACK_REQUIRED'});
+      assert.equal(commits,1);assert.equal((await c.query("SELECT count(*)::int n FROM foundation_migrations WHERE id='0051'")).rows[0].n,1);
+      // Drop only this synthetic placeholder; the canonical app role plan below recreates the full role.
+      await c.query(`REVOKE EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) FROM ${holdRole}`);await c.query(`DROP ROLE ${holdRole}`);
+    }finally{c.release();}
+  });
   const receiver = await loginRole(production, db.identity.dbPort, TARGET, names.receiver); opened.push(receiver);
   const dispatcher = await loginRole(production, db.identity.dbPort, TARGET, names.dispatcher); opened.push(dispatcher);
   const worker = await loginRole(production, db.identity.dbPort, TARGET, names.worker); opened.push(worker);
   const diagnostic = await loginRole(production, db.identity.dbPort, TARGET, names.diagnostic); opened.push(diagnostic);
+  const projector = await loginRole(production, db.identity.dbPort, TARGET, names.projector); opened.push(projector);
 
   await check('_pay_receipt (F4): can receive_production() but not the generic Sandbox-capable receive(), nor dispatch/claim/finalize/context-load', async () => {
     const r = await receiver.pool.query("SELECT square_webhook.receive_production('evt-p-1','payment.created','merchant-1','pay-1',repeat('a',64)) AS v");
@@ -192,6 +224,7 @@ try {
   const avatarRead = await loginRole(production, db.identity.dbPort, TARGET, appNames.avatar_read); opened.push(avatarRead);
   const bookingAccess = await loginRole(production, db.identity.dbPort, TARGET, appNames.booking_access); opened.push(bookingAccess);
   const appRoles = { auth, ledger, hold, transfer, pricing, recommendation, operations, guest, content_read: contentRead, avatar_read: avatarRead, booking_access: bookingAccess } as const;
+  await productionProjectionChecks(production,projector.pool,hold.pool,pricing.pool,[receiver.pool,dispatcher.pool,worker.pool,diagnostic.pool],check);
 
   await check('R3 app roles: auth can read/write its own tables but not another service\'s schema', async () => {
     await auth.pool.query('SELECT count(*) FROM staff_members');
@@ -239,7 +272,6 @@ try {
     await denied(() => operations.pool.query("DELETE FROM provisional_capacity_buckets"));
     for (const other of [guest, hold, contentRead, bookingAccess]) assert.equal((await other.pool.query("SELECT has_function_privilege(current_user,'provisional_capacity_register_source(text,text,jsonb)','EXECUTE') v")).rows[0].v, false);
   });
-  const projector=await loginRole(production,db.identity.dbPort,TARGET,names.projector);opened.push(projector);
   await check('booking/custody and payment projector can read every witness; direct INSERT/UPDATE/DELETE remain denied',async()=>{
     for(const role of [operations,projector])for(const table of ['wear_pools','provisional_capacity_buckets','inventory_pole_exemptions']){
       await role.pool.query(`SELECT * FROM ${table} LIMIT 0`);
@@ -286,6 +318,13 @@ try {
   const roleConfig = { database: { name: TARGET, roles: appNames } } as unknown as ProductionConfiguration;
   await check('F9: verifyProductionDatabase() passes for all 11 Production app roles (rolsuper/rolcreatedb/rolcreaterole/rolinherit/rolreplication/rolbypassrls/membership/database_owner/object_owner/CREATE all false)', async () => {
     for (const service of productionServices) await verifyProductionDatabase(appRoles[service].pool, roleConfig, service);
+  });
+  await check('Production HOLD startup invokes its narrow quantity reader; missing grant fails closed without direct adjustment/materialization access',async()=>{
+    for(const table of ['provisional_capacity_adjustments','provisional_capacity_materializations'])await denied(()=>hold.pool.query('SELECT 1 FROM '+table+' WHERE false'));
+    await production!.query(`REVOKE EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) FROM ${appNames.hold}`);
+    await assert.rejects(verifyProductionDatabase(hold.pool,roleConfig,'hold'),{stage:'DB_CONFIG'});
+    await production!.query(`GRANT EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) TO ${appNames.hold}`);
+    await verifyProductionDatabase(hold.pool,roleConfig,'hold');
   });
   await check('F9 mutation test: a role granted rolinherit=true fails verifyProductionDatabase(); reverting to NOINHERIT restores it', async () => {
     await production!.query(`ALTER ROLE ${appNames.auth} INHERIT`);

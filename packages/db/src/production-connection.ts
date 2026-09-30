@@ -28,4 +28,10 @@ export async function verifyProductionDatabase(pool:Pool,c:ProductionConfigurati
  has_database_privilege(current_user,current_database(),'CREATE') database_create,has_schema_privilege(current_user,'public','CREATE') schema_create
  FROM pg_roles r WHERE r.rolname=current_user`)).rows[0];
  if(!row||row.db!==c.database.name||row.role!==c.database.roles[service]||Object.entries(row).some(([k,v])=>!['db','role'].includes(k)&&v!==false))throw new ProductionStartupError('DB_CONFIG');
+ if(service==='hold'){
+  const client=await pool.connect();
+  try{await client.query('BEGIN READ ONLY');const result=(await client.query('SELECT public.provisional_capacity_effective_quantity(NULL::uuid) IS NULL AS callable')).rows[0];if(result?.callable!==true)throw Error();}
+  catch{throw new ProductionStartupError('DB_CONFIG');}
+  finally{try{await client.query('ROLLBACK');}finally{client.release();}}
+ }
 }

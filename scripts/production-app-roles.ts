@@ -2,7 +2,7 @@
 // application roles, reusing (not duplicating) the exact grant lists already proven locally in
 // scripts/application-roles.ts, guest-roles.ts, content-roles.ts, booking-access-role.ts,
 // avatar-read-role.ts and operations-roles.ts. No DB access, no password, no CREATE happens
-// here — an operator applies this plan once against the real, fully-migrated (all migrationPlan migrations, 0001–0050)
+// here — an operator applies this plan once against the real, fully-migrated (all migrationPlan migrations, 0001–0051)
 // Production database, then separately provisions each role's real LOGIN password out of band.
 //
 // The local scripts guard several grants behind a runtime `to_regclass`/`to_regprocedure` check
@@ -90,6 +90,7 @@ export function productionAppRoleGrantPlan(databaseName:string):{authority:Produ
   // Provisional booking-capacity (packages/core/src/inventory/hold-service.ts, allocation.ts):
   // same split as wear above — hold plans/reads buckets and writes/releases its own claims.
   `GRANT SELECT ON provisional_capacity_buckets TO ${n.hold}`,
+  `GRANT EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) TO ${n.hold}`,
   `GRANT SELECT,INSERT,UPDATE(state,released_at) ON provisional_capacity_claims TO ${n.hold}`,
   `GRANT USAGE ON SEQUENCE provisional_capacity_claims_id_seq TO ${n.hold}`,
  );

@@ -16,7 +16,7 @@ import {productionRoleProvisioningPlan,roleProvisioningDigests,PRODUCTION_ROLE_P
  * must agree before any DDL runs:
  *
  *   1. APPROVED SOURCE. `config/production/bootstrap-source-manifest.json` pins, for each of
- *      the fifty reviewed migrations (0001–0050), its SHA256 and — where one exists — the exact byte
+ *      the fifty-one reviewed migrations (0001–0051), its SHA256 and — where one exists — the exact byte
  *      offset, subject expression and fragment of the single guard that may be rewritten. A
  *      file whose bytes differ from the reviewed ones is refused. The manifest is committed
  *      data, never recomputed from whatever happens to be on disk, so re-pinning it is a

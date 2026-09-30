@@ -63,7 +63,7 @@ export async function verifyAcceptanceRole(pool:Pool,c:ProductionConfiguration,r
  if(role!=='operations'){
   const required=productionPaymentActivationGrants(c.database.name).filter(sql=>sql.startsWith('GRANT EXECUTE ON FUNCTION ')&&sql.split(' TO ')[1]?.split(',').includes(expected)).flatMap(sql=>sql.split(' TO ')[0]!.match(/[a-z_][a-z0-9_.]*\([^)]*\)/g)??[]);
   const positive=(await pool.query("SELECT bool_and(has_function_privilege(current_user,f,'EXECUTE')) allowed FROM unnest($1::text[]) t(f)",[required])).rows[0];
-  const negative=(await pool.query("SELECT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE (n.nspname='square_webhook' AND p.proname='receive' OR n.nspname='payment_reconciliation' AND p.proname IN ('dispatch','claim','finalize','load_context','load_contexts','diagnostics')) AND has_function_privilege(current_user,p.oid,'EXECUTE')) forbidden")).rows[0];
+  const negative=(await pool.query("SELECT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE (n.nspname='square_webhook' AND p.proname='receive' OR n.nspname='payment_projection' AND p.proname='lock_source' OR n.nspname='payment_reconciliation' AND p.proname IN ('dispatch','claim','finalize','load_context','load_contexts','diagnostics')) AND has_function_privilege(current_user,p.oid,'EXECUTE')) forbidden")).rows[0];
   if(positive?.allowed!==true||negative?.forbidden!==false)fail('M3_DATABASE_GRANTS_REJECTED');
  }
 }
@@ -74,6 +74,16 @@ export async function verifyAcceptanceAttempt(pool:Pool,target:AcceptanceTarget)
  if(!row)fail('M3_TARGET_REJECTED');
  const {mode,...persisted}=row;
  if(mode!=='SQUARE_PRODUCTION'||flowHash(persisted)!==flowHash(target))fail('M3_TARGET_REJECTED');
+}
+
+/** A zero-row invocation proves runtime admission, not just EXECUTE metadata. */
+export async function verifyAcceptanceProjectionSource(pool:Pool,merchantId:string){
+ const client=await pool.connect();
+ try{
+  await client.query('BEGIN READ ONLY');
+  const row=(await client.query("SELECT payment_projection.lock_source_production(NULL::uuid,$1,'m3_preflight_no_job') IS NULL AS callable",[merchantId])).rows[0];
+  if(row?.callable!==true)fail('M3_PROJECTION_SOURCE_REJECTED');
+ }finally{try{await client.query('ROLLBACK');}finally{client.release();}}
 }
 
 /** One dispatch, one claim, one persisted context, at most one provider GET; no scheduling/retry. */
@@ -112,7 +122,10 @@ export async function runProductionPaymentAcceptance(command:AcceptanceCommand,r
  const target=()=>input.target??fail('M3_TARGET_REQUIRED');
  const transport=(locationId:string)=>new FetchSquareProductionTransport(c.payment!.merchantId,locationId,async()=>({environment:'PRODUCTION',merchantId:c.payment!.merchantId,locationId,accessToken:input.square.accessToken,expiresAt:input.square.expiresAt==='never'?null:new Date(input.square.expiresAt),revoked:false}),fetch);
  try{
-  if(command==='preflight'){for(const role of Object.keys(productionPaymentRoleNames(c.database.name)) as PaymentRole[])await open(role);return {status:'READY',verifiedPaymentRoles:5,providerCalls:0};}
+  if(command==='preflight'){
+   for(const role of Object.keys(productionPaymentRoleNames(c.database.name)) as PaymentRole[]){const pool=await open(role);if(role==='projector')await verifyAcceptanceProjectionSource(pool,c.payment!.merchantId);}
+   return {status:'READY',verifiedPaymentRoles:5,providerCalls:0};
+  }
   if(command==='reconcile-one'){
    const dispatcher=new PgPaymentReconciliation(await open('dispatcher'),undefined,authority),worker=new PgPaymentReconciliation(await open('worker'),undefined,authority);
    return await reconcileProductionOne({dispatch:(e,n)=>dispatcher.dispatch(e,n),claimBatch:(e,id,n)=>worker.claimBatch(e,id,n),finalize:(claim,outcome)=>worker.finalize(claim,outcome),diagnostics:async()=>[]},worker,new SquareProductionPaymentTruth(transport(target().locationId)),target());
@@ -122,7 +135,7 @@ export async function runProductionPaymentAcceptance(command:AcceptanceCommand,r
    const permit=productionProjectionPermit(identity,target()),pool=await open('projector');
    await verifyAcceptanceAttempt(pool,target());
    const repository=new PgPaymentProjection(pool,async(client,ref)=>{
-    const source=(await client.query<{source:ProjectionSource|null}>('SELECT payment_projection.lock_source($1) AS source',[ref.jobId])).rows[0]?.source??null;
+    const source=(await client.query<{source:ProjectionSource|null}>('SELECT payment_projection.lock_source_production($1,$2,$3) AS source',[ref.jobId,target().merchantId,target().paymentId])).rows[0]?.source??null;
     if(source?.observation){matchPayment(target(),source.observation);if(source.paymentId!==target().paymentId)fail('M3_TARGET_REJECTED');}
     return source;
    },undefined,permit);
@@ -134,7 +147,7 @@ export async function runProductionPaymentAcceptance(command:AcceptanceCommand,r
    if(!input.jobId)return {jobs,reference:null};
    const projector=await open('projector');await verifyAcceptanceAttempt(projector,target());
    const client=await projector.connect();try{
-    await client.query('BEGIN');const source=(await client.query<{source:ProjectionSource|null}>('SELECT payment_projection.lock_source($1) AS source',[input.jobId])).rows[0]?.source;
+    await client.query('BEGIN');const source=(await client.query<{source:ProjectionSource|null}>('SELECT payment_projection.lock_source_production($1,$2,$3) AS source',[input.jobId,target().merchantId,target().paymentId])).rows[0]?.source;
     if(!source?.observation)fail('M3_PERSISTED_TRUTH_REQUIRED');
     matchPayment(target(),source!.observation!);if(source!.paymentId!==target().paymentId)fail('M3_TARGET_REJECTED');
     const revision=(await client.query<{revision:number}>('SELECT revision FROM payment_projection.heads WHERE attempt_id=$1',[target().attemptId])).rows[0]?.revision??0;

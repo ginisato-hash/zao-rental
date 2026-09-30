@@ -86,6 +86,7 @@ export function productionPaymentActivationGrants(databaseName: string): string[
     `GRANT SELECT,INSERT ON payment_projection.heads,payment_projection.events,payment_projection.job_receipts TO ${names.projector}`,
     `GRANT UPDATE(revision,last_observation) ON payment_projection.heads TO ${names.projector}`,
     `GRANT USAGE ON SEQUENCE payment_projection.events_id_seq TO ${names.projector}`,
-    `GRANT EXECUTE ON FUNCTION inventory_clock(),payment_projection.lock_source(uuid),payment_reconciliation.valid_observation(jsonb) TO ${names.projector}`,
+    `GRANT EXECUTE ON FUNCTION inventory_clock(),payment_projection.lock_source_production(uuid,text,text),payment_reconciliation.valid_observation(jsonb) TO ${names.projector}`,
+    `REVOKE EXECUTE ON FUNCTION payment_projection.lock_source(uuid) FROM ${names.projector}`,
   ];
 }

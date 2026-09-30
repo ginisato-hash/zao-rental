@@ -1,14 +1,25 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {randomBytes} from 'node:crypto';
-import {chmodSync,mkdirSync,mkdtempSync,rmSync,symlinkSync,writeFileSync} from 'node:fs';
+import {chmodSync,mkdirSync,mkdtempSync,rmSync,symlinkSync,writeFileSync,statSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import type {PoolClient} from 'pg';
-import {assertFirstAdminRelease,assertFirstAdminTls,firstAdminDatabaseConfig,firstAdminInput,firstAdminSafeError,readFirstAdminInput} from '../../scripts/lib/first-admin-bootstrap';
+import {assertFirstAdminOwnerEmail,assertFirstAdminRelease,assertFirstAdminTls,firstAdminDatabaseConfig,firstAdminInput,firstAdminSafeError,readFirstAdminInput,writeFirstAdminInput} from '../../scripts/lib/first-admin-bootstrap';
 
 const value=()=>({email:'SYNTHETIC-OWNER@example.invalid',displayName:'Synthetic Owner',password:randomBytes(24).toString('base64url')});
+test('generated password is persisted only to a new owned 0600 input and never returned',()=>{
+ const temp=mkdtempSync(join(tmpdir(),'zao-first-admin-')),repository=join(temp,'repo'),file=join(temp,'generated.json'),v=value();mkdirSync(repository);
+ try{
+  assert.equal(writeFirstAdminInput(file,repository,{email:v.email,displayName:v.displayName}),undefined);
+  const input=readFirstAdminInput(file,repository);assert.match(input.password,/^[A-Za-z0-9_-]{43}$/);assert.equal(statSync(file).mode&0o7777,0o600);assert.equal(statSync(file).uid,process.getuid?.());
+  assert.throws(()=>writeFirstAdminInput(file,repository,v),/SECURE_INPUT_REQUIRED/);assert.equal(readFirstAdminInput(file,repository).password,input.password);
+  assert.throws(()=>writeFirstAdminInput(join(repository,'input.json'),repository,v),/SECURE_INPUT_REQUIRED/);
+  assert.throws(()=>assertFirstAdminOwnerEmail(v.email),/OWNER_EMAIL_REJECTED/);
+  assert.throws(()=>assertFirstAdminOwnerEmail('invalid'),/OWNER_EMAIL_REJECTED/);
+ }finally{rmSync(temp,{recursive:true,force:true});}
+});
 test('exact three-field schema uses canonical account validation and cannot override authority',()=>{
  const v=value();assert.deepEqual(firstAdminInput(v),v);
  for(const bad of [null,[],{}, {...v,role:'ADMIN'},{...v,permissions:{PRICE_EDIT:true}},{...v,password:'short'},{...v,password:'x'.repeat(129)},{...v,email:'invalid'},{...v,displayName:' '},{...v,displayName:v.password}])assert.throws(()=>firstAdminInput(bad),/INPUT_REJECTED/);

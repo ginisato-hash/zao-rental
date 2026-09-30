@@ -50,7 +50,7 @@ try{
   const accepted=results.filter(r=>r.status==='fulfilled'),rejected=results.filter(r=>r.status==='rejected');assert.equal(accepted.length,1);assert.equal(rejected.length,1);
   assert.equal(firstAdminSafeError((rejected[0] as PromiseRejectedResult).reason),'PRODUCTION_STAFF_BOOTSTRAP_ALREADY_COMPLETED');
   const facts=(accepted[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof bootstrap>>>).value;
-  assert.deepEqual(facts,{staff_members:1,auth_user:1,auth_account:1,credential_accounts:1,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0});
+  assert.deepEqual(facts,{staff_members:1,auth_user:1,auth_account:1,credential_account:1,email_unique:true,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0});
   for(const secret of Object.values(input))assert.ok(!JSON.stringify(facts).includes(secret));
   assert.deepEqual((await db.pool.query('SELECT permission,allowed FROM staff_permission_overrides')).rows,[{permission:'PRICE_EDIT',allowed:true}]);
   await assert.rejects(bootstrap(),/ALREADY_COMPLETED/);

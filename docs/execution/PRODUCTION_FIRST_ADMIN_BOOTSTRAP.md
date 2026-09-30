@@ -23,19 +23,37 @@ the variable does not create an account; only this explicit CLI does so.
 npm run production:bootstrap-first-admin -- --input /absolute/owner-controlled/file.json
 ```
 
-Owner supplies exactly three JSON string fields:
+The secure input contains exactly three JSON string fields. The Owner has fixed
+the email in the current M3-C instruction; do not ask again. Only displayName
+remains an Owner identity input, requested immediately before the account-creation
+gate, without guessing or blocking source/tests/PR preparation:
 
 | Field | Required value |
 | --- | --- |
-| `email` | Real Owner login email; canonical account validation, maximum 254 characters |
+| `email` | Already fixed by Owner; canonical value must match the pinned SHA-256 identity |
 | `displayName` | Real Owner display name, 1–80 characters, not whitespace-only |
-| `password` | Owner-chosen password, 15–128 characters |
+| `password` | Codex-generated 256-bit cryptographic randomness, encoded as 43 base64url characters |
 
 The file must be outside repositories, an absolute path to a regular file owned
 by the invoking OS user, mode exactly 0600, and at most 16 KiB. Symlinks are
 rejected. Do not supply account values as individual arguments, paste them into
 chat or evidence, or copy the password into a profile field. The command does
 not create another password file. The Owner retains control of the input file.
+
+At the account-creation gate, Codex uses `writeFirstAdminInput()` with the fixed
+email and Owner-supplied displayName in process memory. The helper generates
+`randomBytes(32)`, creates a new file exclusively (never overwrites), enforces
+0600, and returns no values. No password is requested in chat or expanded into
+stdout, argv, shell history, logs, evidence, repository files, `.env`, or any
+additional secret store. The secure file is subsequently read only for bootstrap
+and the first normal login. No real password/input file is prepared while
+displayName is unknown. Synthetic tests exercise the same file generator.
+
+Before any Production DB access, `assertFirstAdminOwnerEmail()` canonicalizes
+input.email and checks the Owner-fixed SHA-256 fingerprint
+`95b26d91fdaaa06112be39dcda9918d72f029317f5da9a5c038241c8a2c3a3c0`.
+A different address returns OWNER_EMAIL_REJECTED without printing its value. The
+email itself is kept out of source, evidence and readback.
 
 ## Admission, transaction and evidence
 
@@ -59,7 +77,7 @@ INVENTORY_VIEW, INVENTORY_EDIT and STAFF_MANAGE. The audit label identifies this
 operator procedure; no technical staff row is created.
 
 Sanitized invariant checks run before and after COMMIT: one staff/user/credential
-account, expected active role/scope and permissions, valid Argon2id, no plaintext
+account, `email_unique=true`, expected active role/scope and permissions, valid Argon2id, no plaintext
 password in written rows, one ACCOUNT_CREATED and zero sessions. Evidence
 contains only these facts and the source SHA, never profile values, hash, cookie,
 token or database URL. `COMMIT_UNKNOWN_READBACK_REQUIRED` and

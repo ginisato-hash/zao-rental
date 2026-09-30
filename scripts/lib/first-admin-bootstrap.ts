@@ -1,15 +1,21 @@
-import {constants,openSync,closeSync,fstatSync,readSync,realpathSync} from 'node:fs';
-import {isAbsolute,relative} from 'node:path';
+import {createHash,randomBytes} from 'node:crypto';
+import {constants,openSync,closeSync,fstatSync,readSync,realpathSync,writeFileSync,fchmodSync,fsyncSync} from 'node:fs';
+import {dirname,isAbsolute,relative} from 'node:path';
 import {TLSSocket,checkServerIdentity} from 'node:tls';
 import type {PoolClient} from 'pg';
 import {insertAccount,parseAccount,type NewAccount} from '../../packages/auth/src/accounts';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
-import {verifyStaffPassword} from '../../packages/auth/src/password';
+import {canonicalEmail,verifyStaffPassword} from '../../packages/auth/src/password';
 import {EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,productionHostFingerprint} from '../../packages/auth/src/production-identity';
 
 export type FirstAdminInput=Pick<NewAccount,'email'|'displayName'|'password'>;
 const prefix='PRODUCTION_STAFF_BOOTSTRAP_';
 function stop(suffix:string):never{throw new Error(prefix+suffix);}
+// Owner-fixed canonical identity, fingerprinted to keep the address out of source/evidence.
+export function assertFirstAdminOwnerEmail(email:string){
+ let fingerprint:string;try{fingerprint=createHash('sha256').update(canonicalEmail(email)).digest('hex');}catch{stop('OWNER_EMAIL_REJECTED');}
+ if(fingerprint!=='95b26d91fdaaa06112be39dcda9918d72f029317f5da9a5c038241c8a2c3a3c0')stop('OWNER_EMAIL_REJECTED');
+}
 const account=(input:FirstAdminInput):NewAccount=>({...input,active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{PRICE_EDIT:true}});
 export function firstAdminInput(raw:unknown):FirstAdminInput{
  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).sort().join()!=='displayName,email,password')stop('INPUT_REJECTED');
@@ -18,6 +24,22 @@ export function firstAdminInput(raw:unknown):FirstAdminInput{
  // Otherwise a password copied into a profile field would be stored as plaintext.
  if(value.email.includes(value.password)||value.displayName.includes(value.password))stop('INPUT_REJECTED');
  return {email:value.email,displayName:value.displayName,password:value.password};
+}
+/** Attended preparation helper: identity comes from Owner, never guessed or argv.
+ * The generated 256-bit password has exactly one persistent destination. No value is returned.
+ * Production admission independently binds the Owner email; tests use synthetic identities. */
+export function writeFirstAdminInput(path:string,repository:string,identity:Pick<FirstAdminInput,'email'|'displayName'>):void{
+ let fd:number|undefined;
+ try{
+  const uid=process.getuid?.();if(!isAbsolute(path)||uid===undefined)stop('SECURE_INPUT_REQUIRED');
+  const parent=realpathSync(dirname(path)),rel=relative(realpathSync(repository),parent);
+  if(!(rel==='..'||rel.startsWith('../')))stop('SECURE_INPUT_REQUIRED');
+  const input=firstAdminInput({...identity,password:randomBytes(32).toString('base64url')});
+  fd=openSync(path,constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);
+  const stat=fstatSync(fd);if(!stat.isFile()||stat.uid!==uid)stop('SECURE_INPUT_REQUIRED');
+  fchmodSync(fd,0o600);writeFileSync(fd,JSON.stringify(input)+'\n');fsyncSync(fd);
+ }catch(error){if(error instanceof Error&&error.message===prefix+'INPUT_REJECTED')throw error;stop('SECURE_INPUT_REQUIRED');}
+ finally{if(fd!==undefined)closeSync(fd);}
 }
 export function readFirstAdminInput(path:string,repository:string):FirstAdminInput{
  let fd:number|undefined;const buffer=Buffer.alloc(16385);
@@ -62,11 +84,11 @@ async function readback(client:PoolClient,id:string,input:FirstAdminInput){
  const row=(await client.query(`SELECT m.active,m.role,m.scope,a.password,a."providerId",u.email,u.name FROM staff_members m JOIN auth_user u ON u.id=m.id JOIN auth_account a ON a."userId"=m.id WHERE m.id=$1`,[id])).rows[0];
  const details=(await client.query(`SELECT (SELECT count(*)::int FROM auth_session) sessions,(SELECT count(*)::int FROM staff_store_access) stores,(SELECT count(*)::int FROM staff_permission_overrides) overrides,(SELECT count(*)::int FROM staff_permission_overrides WHERE staff_id=$1 AND permission='PRICE_EDIT' AND allowed) price_edit,(SELECT count(*)::int FROM staff_audit WHERE event='ACCOUNT_CREATED') created,(SELECT count(*)::int FROM staff_audit WHERE event='ACCOUNT_CREATED' AND target_staff_id=$1 AND actor_staff_id='production-first-admin-bootstrap') own_created`,[id])).rows[0];
  const principal=await loadStaff(client,id);
- if(n.staff_members!==1||n.auth_user!==1||n.auth_account!==1||!row||row.active!==true||row.role!=='ADMIN'||row.scope!=='ALL'||row.providerId!=='credential'||!row.password.startsWith('$argon2id$')||row.email!==input.email.trim().toLowerCase()||row.name!==input.displayName||!await verifyStaffPassword({hash:row.password,password:input.password})||details.sessions!==0||details.stores!==0||details.overrides!==1||details.price_edit!==1||details.created!==1||details.own_created!==1||!['INVENTORY_VIEW','INVENTORY_EDIT','STAFF_MANAGE','PRICE_EDIT'].every(p=>principal?.permissions.includes(p as never)))stop('READBACK_FAILED');
+ if(n.staff_members!==1||n.auth_user!==1||n.auth_account!==1||!row||row.active!==true||row.role!=='ADMIN'||row.scope!=='ALL'||row.providerId!=='credential'||!row.password.startsWith('$argon2id$')||row.email!==canonicalEmail(input.email)||row.name!==input.displayName||!await verifyStaffPassword({hash:row.password,password:input.password})||details.sessions!==0||details.stores!==0||details.overrides!==1||details.price_edit!==1||details.created!==1||details.own_created!==1||!['INVENTORY_VIEW','INVENTORY_EDIT','STAFF_MANAGE','PRICE_EDIT'].every(p=>principal?.permissions.includes(p as never)))stop('READBACK_FAILED');
  // Examine only the rows written by this operation, in memory. Never send plaintext to SQL.
  const persisted=(await client.query(`SELECT to_jsonb(t) AS data FROM auth_user t UNION ALL SELECT to_jsonb(t) FROM auth_account t UNION ALL SELECT to_jsonb(t) FROM staff_members t UNION ALL SELECT to_jsonb(t) FROM staff_store_access t UNION ALL SELECT to_jsonb(t) FROM staff_permission_overrides t UNION ALL SELECT to_jsonb(t) FROM staff_audit t WHERE target_staff_id=$1 UNION ALL SELECT to_jsonb(t) FROM booking_actors t WHERE id=$1`,[id])).rows;
  if(persisted.some(r=>Object.values(r.data as Record<string,unknown>).some(v=>typeof v==='string'&&v.includes(input.password))))stop('READBACK_FAILED');
- return {...n,credential_accounts:1,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0};
+ return {...n,credential_account:1,email_unique:true,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0};
 }
 /** Internal transaction primitive, shared with disposable PostgreSQL tests. The only
  * operator entrypoint must first admit Git, secure input, fixed Production URI/TLS/owner.
@@ -91,6 +113,6 @@ export async function firstAdminTransaction(client:PoolClient,raw:FirstAdminInpu
  }
 }
 export function firstAdminSafeError(error:unknown){
- const allowed=['INPUT_REJECTED','SECURE_INPUT_REQUIRED','RELEASE_REJECTED','DATABASE_REJECTED','DATABASE_OWNER_REJECTED','TLS_REJECTED','ALREADY_COMPLETED','RECONCILIATION_REQUIRED','READBACK_FAILED','COMMITTED_READBACK_REQUIRED','COMMIT_UNKNOWN_READBACK_REQUIRED','ARGUMENTS_REJECTED'];
+ const allowed=['INPUT_REJECTED','OWNER_EMAIL_REJECTED','SECURE_INPUT_REQUIRED','RELEASE_REJECTED','DATABASE_REJECTED','DATABASE_OWNER_REJECTED','TLS_REJECTED','ALREADY_COMPLETED','RECONCILIATION_REQUIRED','READBACK_FAILED','COMMITTED_READBACK_REQUIRED','COMMIT_UNKNOWN_READBACK_REQUIRED','ARGUMENTS_REJECTED'];
  return error instanceof Error&&allowed.some(c=>error.message===prefix+c)?error.message:prefix+'OPERATION_FAILED';
 }

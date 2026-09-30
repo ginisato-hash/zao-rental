@@ -30,7 +30,8 @@ test('release admission refuses dirty, unmerged, malformed and foreign-repositor
  for(const patch of [{clean:false},{main:'b'.repeat(40)},{head:'a'},{origin:'https://github.com/other/zao-rental.git'}])assert.throws(()=>assertFirstAdminRelease({...facts,...patch}),/RELEASE_REJECTED/);
 });
 test('fixed Production URI and real TLS admission have no synthetic fallback',()=>{
- for(const uri of [undefined,'invalid','postgresql://neondb_owner:synthetic-password@127.0.0.1/neondb?sslmode=verify-full','postgresql://neondb_owner:synthetic-password@another.neon.tech/neondb?sslmode=verify-full'])assert.throws(()=>firstAdminDatabaseConfig(uri),/DATABASE_REJECTED/);
+ const synthetic=(host:string)=>{const u=new URL('postgresql://'+host+'/neondb?sslmode=verify-full');u.username='neondb_owner';u.password=randomBytes(24).toString('base64url');return u.href;};
+ for(const uri of [undefined,'invalid',synthetic('127.0.0.1'),synthetic('another.neon.tech')])assert.throws(()=>firstAdminDatabaseConfig(uri),/DATABASE_REJECTED/);
  for(const stream of [undefined,{encrypted:true,authorized:true,servername:'synthetic'}])assert.throws(()=>assertFirstAdminTls({connection:{stream}} as unknown as PoolClient,'synthetic'),/TLS_REJECTED/);
 });
 test('CLI requires an explicit secure-file invocation and never echoes arguments or credentials',()=>{

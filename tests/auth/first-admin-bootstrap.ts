@@ -50,9 +50,9 @@ try{
   const accepted=results.filter(r=>r.status==='fulfilled'),rejected=results.filter(r=>r.status==='rejected');assert.equal(accepted.length,1);assert.equal(rejected.length,1);
   assert.equal(firstAdminSafeError((rejected[0] as PromiseRejectedResult).reason),'PRODUCTION_STAFF_BOOTSTRAP_ALREADY_COMPLETED');
   const facts=(accepted[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof bootstrap>>>).value;
-  assert.deepEqual(facts,{staff_members:1,auth_user:1,auth_account:1,credential_account:1,email_unique:true,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0});
+  assert.deepEqual(facts,{staff_members:1,auth_user:1,auth_account:1,credential_account:1,email_unique:true,active:true,role:'ADMIN',scope:'ALL',PRICE_EDIT:true,QUOTE_VIEW:true,argon2id:true,plaintext_password_absent:true,ACCOUNT_CREATED:1,auth_session:0});
   for(const secret of Object.values(input))assert.ok(!JSON.stringify(facts).includes(secret));
-  assert.deepEqual((await db.pool.query('SELECT permission,allowed FROM staff_permission_overrides')).rows,[{permission:'PRICE_EDIT',allowed:true}]);
+  assert.deepEqual((await db.pool.query('SELECT permission,allowed FROM staff_permission_overrides ORDER BY permission')).rows,[{permission:'PRICE_EDIT',allowed:true},{permission:'QUOTE_VIEW',allowed:true}]);
   await assert.rejects(bootstrap(),/ALREADY_COMPLETED/);
  });
  await check('normal Better Auth login produces one session that authorizes real OperationsContext permissions',async()=>{
@@ -61,10 +61,10 @@ try{
   const response=await handler(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:input.email,password:input.password})}));assert.equal(response.status,200);
   const cookie=response.headers.getSetCookie().map(x=>x.split(';')[0]).join('; '),state=await resolveStaff(auth,roles.authPool,new Headers({cookie}));assert.equal(state.status,'authorized');
   if(state.status!=='authorized')throw Error('SYNTHETIC_LOGIN_FAILED');
-  assert.equal(state.principal.role,'ADMIN');assert.equal(state.principal.scope,'ALL');assert.deepEqual(state.principal.permissions,['INVENTORY_EDIT','INVENTORY_VIEW','PRICE_EDIT','STAFF_MANAGE']);
+  assert.equal(state.principal.role,'ADMIN');assert.equal(state.principal.scope,'ALL');assert.deepEqual(state.principal.permissions,['INVENTORY_EDIT','INVENTORY_VIEW','PRICE_EDIT','QUOTE_VIEW','STAFF_MANAGE']);
   const sessions=(await db.pool.query('SELECT id,"userId" FROM auth_session')).rows;assert.equal(sessions.length,1);assert.equal(sessions[0].userId,state.principal.subject);
   const ctx=new OperationsContext(roles.ledgerPool,roles.authPool,{subject:state.principal.subject,sessionId:sessions[0].id});
-  for(const permission of ['INVENTORY_EDIT','PRICE_EDIT'] as const)assert.equal((await ctx.authorize(permission)).subject,state.principal.subject);
+  for(const permission of ['INVENTORY_EDIT','PRICE_EDIT','QUOTE_VIEW'] as const)assert.equal((await ctx.authorize(permission)).subject,state.principal.subject);
   await assert.rejects(ctx.authorize('REFUND_OVERRIDE'),/FORBIDDEN/);
   await assert.rejects(new OperationsContext(roles.ledgerPool,roles.authPool,{subject:state.principal.subject,sessionId:'fabricated'}).authorize('PRICE_EDIT'),/UNAUTHENTICATED/);
  });

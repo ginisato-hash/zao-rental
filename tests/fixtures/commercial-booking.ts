@@ -3,9 +3,12 @@ import {flowHash,type PaymentObservation} from '../../packages/contracts/src/ren
 import {deriveApprovedCommercialPriceFacts,type CommercialPriceBook} from '../../packages/core/src/pricing/commercial-price-authority';
 import {skiSet} from '../inventory/fixture';
 import type {flowFixture} from '../flow/fixture';
+import type {Pool} from 'pg';
+import type {HoldConditions} from '../../packages/contracts/src/hold';
+type CommercialFixture=Pick<Awaited<ReturnType<typeof flowFixture>>,'actor'|'holds'|'quotes'|'now'>&{db:{pool:Pool}};
 /** Direct local schema fixture, not an identity/permit issuer or a Production service accept proof. */
-export async function commercialBookingFixture(x:Awaited<ReturnType<typeof flowFixture>>,day='2035-02-10'){
- const conditions=skiSet(day),hold=await x.holds.command('create',randomUUID(),conditions,undefined,undefined,{reason:'SYNTHETIC commercial transport proof'});
+export async function commercialBookingFixture(x:CommercialFixture,day='2035-02-10',supplied?:HoldConditions){
+ const conditions=supplied??skiSet(day),hold=await x.holds.command('create',randomUUID(),conditions,undefined,undefined,supplied?undefined:{reason:'SYNTHETIC commercial transport proof'});
  if(hold.result!=='CREATED')throw Error('FIXTURE_STOCK_REQUIRED');
  const ordinary=(await x.quotes.create(randomUUID(),{conditions,holdId:hold.holdId,couponCode:null,wantAdvance:false})).quote;
  const book=(await x.db.pool.query<CommercialPriceBook>('SELECT * FROM price_books WHERE id=$1',[ordinary.snapshot.priceBookId])).rows[0]!;

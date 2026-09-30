@@ -67,7 +67,7 @@ try {
     } finally { observer.release(); }
     await migrate(recovery.pool);
     await migrate(recovery.pool);
-    assert.deepEqual((await recovery.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows, Array.from({length:50},(_,n)=>({id:String(n+1).padStart(4,'0')})));
+    assert.deepEqual((await recovery.pool.query('SELECT id FROM foundation_migrations ORDER BY id')).rows, Array.from({length:51},(_,n)=>({id:String(n+1).padStart(4,'0')})));
     await seed(recovery.pool, recovery.identity.namespace);
     await recordTelemetry(recovery.pool, randomUUID(), recovery.identity.namespace, 'foundation.probe');
     assert.equal((await recovery.pool.query('SELECT count(*)::int AS n FROM telemetry_events')).rows[0].n, 1);

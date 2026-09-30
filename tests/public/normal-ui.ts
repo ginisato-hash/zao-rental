@@ -116,7 +116,7 @@ try{
     await expect(page.getByRole('status').filter({hasText:'処理中です'})).toBeVisible();
     cm06Checked=true;
     assert.equal(new URL(route.request().url()).origin,app!.origin);const response=await forward.fetch(route.request(),{maxRetries:0,maxRedirects:0});assert.equal(response.status(),200);await route.abort('failed');done();}catch(e){fail(e);}finally{await forward.dispose();}
-  });await page.getByRole('button',{name:'この内容で予約を確定する（開発用決済）'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'保存済みの結果を再読込'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'保存済みの結果を再読込'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
+  });await page.getByRole('button',{name:'この内容で支払う（開発用決済）'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'保存済みの結果を再読込'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'保存済みの結果を再読込'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
  });
  await check('UIR-01/UIR-02 regression: no cross-context input leak, malformed cache does not crash, server-saved input still restores',async()=>{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
@@ -188,15 +188,15 @@ try{
   await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
   await expect(p.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
   await p.goBack();await expect(p).toHaveURL(/\/ja\/book$/);
-  // This app has no reload-safe autosave for unsubmitted input by design (CH-04B remains
-  // OPEN/DESIGN_GATE); a real Back here was observed, live, to sometimes fall back to a full
-  // document reload, which safely resets to step 0 rather than reviving stale unsaved data --
-  // never a broken or mixed state. Either a soft step-1->0 or a hard reload lands here.
-  await expect(p.getByLabel('利用開始日',{exact:true})).toBeVisible();
+  // A real Back here was observed, live, to sometimes fall back to a full document reload. Since
+  // CH-04B that reload restores this same draft's unsaved Input from its draft-scoped cache (with a
+  // status line) instead of discarding it, so a soft step-1->0 or the restored step 1 are both
+  // correct landings -- never a broken or mixed state, and never a server write.
+  await expect(p.getByLabel('利用開始日',{exact:true}).or(p.getByRole('button',{name:'候補と参考料金を確認',exact:true}))).toBeVisible();
   await p.goForward();await expect(p).toHaveURL(/\/ja\/book$/);await p.waitForLoadState('networkidle');
-  // Whichever of step 0/1 this lands on is safe; re-supply the (unsaved, by design) input and
-  // continue if needed -- this test is about the review/checkout-consistency guarantees below,
-  // not about making unsubmitted input reload-safe, which CH-04B explicitly leaves out of scope.
+  // Whichever of step 0/1 this lands on is safe; re-supply the input and continue if needed --
+  // this test is about the review/checkout-consistency guarantees below (CH-04B restore itself is
+  // covered by its own case).
   await expect(p.getByLabel('利用開始日',{exact:true}).or(p.getByRole('button',{name:'候補と参考料金を確認',exact:true}))).toBeVisible();
   if(await p.getByLabel('利用開始日',{exact:true}).isVisible()){
    await p.getByLabel('利用開始日',{exact:true}).fill('2035-02-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-02-01');
@@ -230,7 +230,7 @@ try{
   await p.getByRole('button',{name:'全員分の最終確認へ'}).click();
   await expect(p.getByRole('region',{name:'全員分の確認'})).toContainText('スノーボードセット');
   await p.getByLabel('合成データによる開発確認であることを確認').check();
-  await expect(p.getByRole('button',{name:'この内容で予約を確定する（開発用決済）',exact:true})).toBeEnabled();
+  await expect(p.getByRole('button',{name:'この内容で支払う（開発用決済）',exact:true})).toBeEnabled();
   await expect(p.getByText('内容が変更されています')).toHaveCount(0);
   await ctx.close();
   // 2) UIR-03: editing the equipment AFTER a saved review, without resubmitting, must never
@@ -246,11 +246,9 @@ try{
   // checkout gate, both separately verified at the function level against the reviewer's exact
   // counter-examples (see docs/execution/prelaunch-uiux/FINDINGS.md). What IS directly
   // observable here, and is what this asserts, is the real, live guarantee that actually
-  // matters: after editing equipment post-review and triggering this in-app "edit" action, the
-  // review that comes back always reflects the server's own actual (unedited) contract -- never
-  // a mix of the new local edit and the old review -- and the checkout button is only ever
-  // enabled for that fully-synced contract, matching scenario 3's already-covered explicit
-  // resubmit path.
+  // matters: after editing equipment post-review, a stale review is never shown as
+  // checkout-ready -- before CH-04B the reload dropped the edit and showed only the server's own
+  // contract; since CH-04B it restores the edit and no review/checkout is reachable at all.
   const ctx2=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx2.setDefaultTimeout(15000);const p2=await ctx2.newPage();last=p2;
   await p2.goto('/ja/book');await expect(p2.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p2.getByLabel('利用開始日',{exact:true}).fill('2035-02-03');await p2.getByLabel('利用終了日',{exact:true}).fill('2035-02-03');
@@ -265,10 +263,13 @@ try{
   await p2.getByLabel('用品 1',{exact:true}).selectOption('SNOWBOARD');
   await expect(p2.getByRole('status').filter({hasText:'保存されていない変更があります'})).toBeVisible();
   await p2.evaluate(()=>window.dispatchEvent(new PopStateEvent('popstate',{state:{...(history.state as object),step:3}})));await p2.waitForLoadState('networkidle');
-  await expect(p2.getByRole('region',{name:'全員分の確認'})).toContainText('スキーセット');
-  await expect(p2.getByRole('region',{name:'全員分の確認'})).not.toContainText('スノーボードセット');
-  await p2.getByLabel('合成データによる開発確認であることを確認').check();
-  await expect(p2.getByRole('button',{name:'この内容で予約を確定する（開発用決済）',exact:true})).toBeEnabled();
+  // Since CH-04B that full reload restores this same draft's unsaved SNOWBOARD edit instead of
+  // discarding it -- and because it no longer matches the server's saved Ski review, neither the
+  // review nor checkout is reachable from it; only the ordinary save path could bring one back.
+  await expect(p2.getByRole('status').filter({hasText:'未保存の入力を復元しました'})).toBeVisible();
+  await expect(p2.getByLabel('用品 1',{exact:true})).toHaveValue('SNOWBOARD');
+  await expect(p2.getByRole('region',{name:'全員分の確認'})).toHaveCount(0);
+  await expect(p2.getByRole('button',{name:/支払う/})).toHaveCount(0);
   // 5) Same guard for a candidate-direction change made after an existing selection (pick a
   // different direction on step 2 while a server selection already exists, without resubmitting
   // it) is verified at the function level only: computeMaxStep's selectionSynced branch is
@@ -298,15 +299,208 @@ try{
   await p.getByLabel('Equipment 1',{exact:true}).selectOption('SNOWBOARD');
   await expect(p.getByRole('status').filter({hasText:'unsaved changes'})).toBeVisible();
   await p.evaluate(()=>window.dispatchEvent(new PopStateEvent('popstate',{state:{...(history.state as object),step:3}})));await p.waitForLoadState('networkidle');
-  // As in the JA test above, this popstate is caught by Next's own global handling and turns
-  // into a full reload here too, which resets the unsaved SNOWBOARD edit before it could ever
-  // reach a mismatched checkout -- the review that returns reflects the server's own actual
-  // (Ski) contract, never the discarded local edit, and checkout stays enabled only for it.
-  await expect(p.getByRole('region',{name:'Group review'})).toContainText('Ski set');
-  await expect(p.getByRole('region',{name:'Group review'})).not.toContainText('Snowboard set');
-  await p.getByLabel('I understand this is a synthetic development preview').check();
-  await expect(p.getByRole('button',{name:'Confirm this booking (test payment)',exact:true})).toBeEnabled();
+  // As in the JA test above, this popstate turns into a full reload, which since CH-04B restores
+  // the unsaved Snowboard edit for this draft; it no longer matches the saved Ski review, so no
+  // review or checkout is reachable until the ordinary save path runs again.
+  await expect(p.getByRole('status').filter({hasText:'Unsaved entries restored'})).toBeVisible();
+  await expect(p.getByLabel('Equipment 1',{exact:true})).toHaveValue('SNOWBOARD');
+  await expect(p.getByRole('region',{name:'Group review'})).toHaveCount(0);
+  await expect(p.getByRole('button',{name:/Pay/})).toHaveCount(0);
   await ctx.close();
+ });
+ const DRAFT_KEY='zao-guest-draft-input:v2:';
+ const draftOf=(p:Page)=>p.evaluate(()=>fetch('/api/guest/draft',{cache:'no-store'}).then(r=>r.json())) as Promise<{id:string;revision:number;input:unknown}>;
+ const cacheKeys=(p:Page)=>p.evaluate(prefix=>Object.keys(sessionStorage).filter(k=>k.startsWith(prefix)),DRAFT_KEY);
+ async function toReview(p:Page,date:string,locale:'ja'|'en'='ja'){
+  const ja=locale==='ja';await p.goto('/'+locale+'/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
+  await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill(date);await p.getByLabel(ja?'利用終了日':'End date',{exact:true}).fill(date);
+  await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();await p.getByLabel((ja?'ポールのサイズ':'Pole size')+' 1',{exact:true}).selectOption('pole-'+variants.pole);
+  await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();
+  await p.getByLabel(ja?'全員のサイズ・モデル条件・ウェア構成を確認した':'I confirm each person’s size, model promise and wear selections').check();
+  await p.getByRole('button',{name:ja?'全員分の最終確認へ':'Review the whole group',exact:true}).click();await expect(p.getByRole('region',{name:ja?'全員分の確認':'Group review'})).toBeVisible();
+ }
+ const newPage=async(width=390,height=844)=>{const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width,height}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;p.on('dialog',d=>void d.accept());return {ctx,p};};
+ const countOf=async(table:string)=>(await app!.db.pool.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n as number;
+ const noRawCode=async(p:Page)=>assert.doesNotMatch(await p.getByRole('main').innerText(),/\b[A-Z]{2,}_[A-Z_]{2,}\b/,'no internal enum or error code is customer-visible');
+ await check('UI-FINAL-R01: static date and slot constraints stop invalid periods inline before any save',async()=>{
+  for(const ja of [true,false]){
+   const {ctx,p}=await newPage();await p.goto(ja?'/ja/book':'/en/book');
+   const start=p.getByLabel(ja?'利用開始日':'Start date',{exact:true}),end=p.getByLabel(ja?'利用終了日':'End date',{exact:true}),slot=p.getByLabel(ja?'利用枠':'Rental slot',{exact:true});
+   await expect(start).toBeEnabled();const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
+   await start.fill('2035-06-02');
+   for(const [endDate,rentalSlot,key,copy] of [
+    ['2035-06-01','DAY','endDate',ja?'開始日以降':'on or after'],
+    ['2035-06-12','MULTIDAY','endDate',ja?'最大10日':'no more than 10 days'],
+    ['2035-06-03','DAY','slot',ja?'複数日':'Multiple days'],
+    ['2035-06-02','MULTIDAY','slot',ja?'午前・午後・1日':'Morning, Afternoon or Full day'],
+   ]){
+    await end.fill(endDate!);await slot.selectOption(rentalSlot!);await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+    await expect(p.locator('#guest-err-'+key)).toContainText(copy!);await expect(key==='slot'?slot:end).toHaveAttribute('aria-invalid','true');await expect(start).toBeVisible();
+   }
+   assert.deepEqual(posts,[]);await end.fill('2035-06-11');await slot.selectOption('MULTIDAY');
+   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();await expect(p.getByLabel(ja?'用品 1':'Equipment 1',{exact:true})).toBeVisible();
+   await noRawCode(p);await ctx.close();
+  }
+ });
+ await check('UI-FINAL-R01: numeric controls mirror server bounds, tenths, and the SKI age category including zero',async()=>{
+  for(const ja of [true,false]){
+   const {ctx,p}=await newPage();await p.goto(ja?'/ja/book':'/en/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
+   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill('2035-07-01');await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+   const height=p.getByLabel(ja?'身長cm 1':'Height cm 1',{exact:true}),foot=p.getByLabel(ja?'足サイズcm 1':'Foot size cm 1',{exact:true}),weight=p.getByLabel(ja?'体重kg 1':'Weight kg 1',{exact:true}),age=p.getByLabel(ja?'開始日の年齢 1':'Age at start 1',{exact:true});
+   for(const [control,min,max,step] of [[height,'50','250','1'],[foot,'5','50','0.1'],[weight,'5','300','any'],[age,'0','120','1']] as const){await expect(control).toHaveAttribute('min',min);await expect(control).toHaveAttribute('max',max);await expect(control).toHaveAttribute('step',step);}
+   await expect(height).toHaveAttribute('inputmode','numeric');await expect(foot).toHaveAttribute('inputmode','decimal');await expect(age).toHaveAttribute('inputmode','numeric');
+   const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
+   for(const [control,key,invalidValues,validValues] of [
+    [height,'height',['49','251','170.5'],['50','250','170']],
+    [foot,'foot',['4.9','50.1','25.15'],['5','50','25.1','25.3']],
+    [weight,'weight',['4.9','300.1'],['5','300','60.25']],
+    [age,'age',['-1','121','30.5'],['13','120','30']],
+   ] as const){
+    for(const value of invalidValues){await control.fill(value);await control.blur();await expect(control).toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-'+key)).toBeVisible();}
+    for(const value of validValues){await control.fill(value);await control.blur();await expect(control).not.toHaveAttribute('aria-invalid','true');}
+   }
+   await age.fill('12');await age.blur();await expect(p.locator('#guest-err-m0-age')).toContainText(ja?'13歳以上は大人':'Adult for 13 or older');
+   await p.getByLabel(ja?'年齢区分 1':'Age category 1',{exact:true}).selectOption('KIDS');await age.fill('0');
+   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
+   await expect(age).not.toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-age')).toHaveCount(0);await expect(p.locator('#guest-err-m0-pole')).toBeVisible();
+   assert.deepEqual(posts,[],'invalid input is blocked locally; missing child pole remains an independent error');await noRawCode(p);await ctx.close();
+  }
+ });
+ await check('CH-04B: unsaved Input survives a hard reload for the same draft only; the restore sends nothing and checkout stays impossible until the ordinary server save',async()=>{
+  const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  const before=await draftOf(p);
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-02');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-03');await p.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');
+  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);await p.getByLabel('身長cm 1',{exact:true}).fill('172');
+  const envelope=JSON.parse((await p.evaluate(k=>sessionStorage.getItem(k),DRAFT_KEY+before.id))??'null');
+  assert.deepEqual(Object.keys(envelope).sort(),['baseRevision','baseServerInputFingerprint','draftId','input','schemaVersion']);
+  assert.deepEqual([envelope.schemaVersion,envelope.draftId,envelope.baseRevision,envelope.input.members[0].heightCm],[2,before.id,before.revision,172]);
+  assert.doesNotMatch(JSON.stringify(envelope),/@|displayName|email|contact|token|paymentSource|recovery|qr/i,'only Input is stored');
+  assert.deepEqual(await p.evaluate(()=>[localStorage.length,JSON.stringify(history.state??null).includes('172')]),[0,false],'no localStorage and no Input in history.state');
+  const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
+  await p.reload();
+  await expect(p.getByRole('status').filter({hasText:'未保存の入力を復元しました'})).toBeVisible();
+  await expect(p.getByLabel('身長cm 1',{exact:true})).toHaveValue('172');await expect(p.getByLabel('ポールのサイズ 1',{exact:true})).toHaveValue('pole-'+variants.pole);
+  assert.deepEqual(posts.filter(x=>x!=='/api/guest/context'),[],'restoring sends no draft/preview/selection/checkout request');
+  const server=await draftOf(p);assert.equal(server.revision,before.revision);assert.deepEqual(server.input,before.input);
+  await expect(p.getByRole('region',{name:'全員分の確認'})).toHaveCount(0);await expect(p.getByRole('button',{name:/支払う/})).toHaveCount(0);
+  await mkdir('.local/screenshots',{recursive:true});await p.screenshot({path:'.local/screenshots/guest-restored-ja-390.png',fullPage:true});
+  // The ordinary save path is the only way forward, and it clears the cache.
+  await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
+  assert.deepEqual(await cacheKeys(p),[]);assert.equal(((await draftOf(p)).input as {members:{heightCm:number}[]}).members[0]!.heightCm,172);
+  await ctx.close();
+ });
+ await check('CH-04B: a new guest context never restores the previous context’s cached Input',async()=>{
+  const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  const before=await draftOf(p);await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-04');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-04');
+  assert.deepEqual(await cacheKeys(p),[DRAFT_KEY+before.id]);
+  assert.equal(await p.evaluate(()=>fetch('/api/guest/logout',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:'{}'}).then(r=>r.status)),200);
+  await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  const after=await draftOf(p);assert.notEqual(after.id,before.id);
+  await expect(p.getByLabel('利用開始日',{exact:true})).toHaveValue('');await expect(p.getByText('未保存の入力を復元しました')).toHaveCount(0);
+  assert.deepEqual(await cacheKeys(p),[],'the old context’s cache is discarded, not restored');
+  await ctx.close();
+ });
+ await check('CH-04B: a server revision change discards the stale cache instead of restoring it',async()=>{
+  const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  const before=await draftOf(p);await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-06');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-06');
+  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole);
+  const cached=JSON.parse((await p.evaluate(k=>sessionStorage.getItem(k),DRAFT_KEY+before.id))!);
+  const saved=await p.evaluate(body=>fetch('/api/guest/draft',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),{draftId:before.id,expectedRevision:before.revision,input:{...cached.input,period:{startDate:'2035-03-20',endDate:'2035-03-20',slot:'DAY'}}});
+  assert.equal(saved.revision,before.revision+1);
+  await p.reload();await expect(p.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
+  await expect(p.getByText('未保存の入力を復元しました')).toHaveCount(0);await expect.poll(()=>cacheKeys(p)).toEqual([]);
+  await p.getByRole('button',{name:'日程に戻る',exact:true}).click();
+  await expect(p.getByLabel('利用開始日',{exact:true})).toHaveValue('2035-03-20');
+  await ctx.close();
+ });
+ await check('NR-03 B: insufficient stock at payment shows customer copy, never a raw code, and stays unpayable',async()=>{
+  const {ctx,p}=await newPage();await toReview(p,'2035-03-16');
+  const holds=await countOf('inventory_holds'),bookings=await countOf('rental_bookings');
+  const c=await app!.db.pool.connect();let ids:string[]=[];
+  try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor','synthetic-nr03',true),set_config('zao.reason','SYNTHETIC NR-03 stock shortage',true)");// Only free skis: ones already claimed by earlier bookings (or in transfer) are protected by the stock guard and are unavailable anyway.
+   ids=(await c.query("UPDATE ledger_assets SET status='MAINTENANCE' WHERE family='SKI' AND status='AVAILABLE' AND NOT EXISTS(SELECT 1 FROM inventory_claims WHERE asset_id=ledger_assets.id AND active) AND NOT EXISTS(SELECT 1 FROM transfer_pieces WHERE asset_id=ledger_assets.id AND state NOT IN ('CANCELLED','CLOSED')) RETURNING id")).rows.map(r=>r.id);await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  try{
+   await p.getByLabel('合成データによる開発確認であることを確認').check();await p.getByRole('button',{name:'この内容で支払う（開発用決済）',exact:true}).click();
+   await expect(p.getByRole('main').getByRole('alert')).toContainText('在庫を確保できませんでした');
+   await expect(p.getByRole('region',{name:'予約を続けられません'})).toContainText('在庫を確保できませんでした');
+   await expect(p.getByRole('button',{name:/支払う/})).toHaveCount(0);await noRawCode(p);
+   assert.equal(await countOf('inventory_holds'),holds);assert.equal(await countOf('rental_bookings'),bookings);
+   await p.screenshot({path:'.local/screenshots/guest-insufficient-stock-ja-390.png',fullPage:true});
+  }finally{
+   const r=await app!.db.pool.connect();try{await r.query('BEGIN');await r.query("SELECT set_config('zao.actor','synthetic-nr03',true),set_config('zao.reason','SYNTHETIC NR-03 stock restore',true)");await r.query("UPDATE ledger_assets SET status='AVAILABLE' WHERE id=ANY($1::uuid[])",[ids]);await r.query('COMMIT');}finally{r.release();}
+  }
+  await ctx.close();
+ });
+ const quotes=new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!);
+ async function changeSkiPrice(jpy:number,at:string){const base=(await quotes.catalog()).active!;const book=await quotes.createDraft(randomUUID(),base.book_id,'2035-01-01','2035-12-31');await quotes.editDraft(book.id,book.revision,'SKI_SET_ADULT_REGULAR','DAY_1',jpy);await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${at}'::timestamptz$$`);await quotes.activate(book.id,book.revision+1,new Date(at).toISOString(),base.id);}
+ await check('NR-03 A: a price change after review shows the new total, is accepted explicitly, and the same flow then pays exactly once',async()=>{
+  const {ctx,p}=await newPage();await toReview(p,'2035-03-12');
+  const oldTotal=(await p.locator('dl.guest-price dd').last().innerText()).trim();
+  await changeSkiPrice(7600,'2035-01-01T01:00:01Z');
+  const bookings=await countOf('rental_bookings'),attempts=await countOf('rental_payment_attempts');
+  await p.getByLabel('合成データによる開発確認であることを確認').check();await p.getByRole('button',{name:'この内容で支払う（開発用決済）',exact:true}).click();
+  await expect(p.getByRole('main').getByRole('alert')).toContainText('料金が更新されました');
+  const panel=p.getByRole('region',{name:'料金の更新'});await expect(panel).toContainText(oldTotal);await expect(panel).toContainText('7,600');
+  await expect(p.getByRole('button',{name:/支払う/})).toBeDisabled();await noRawCode(p);
+  assert.deepEqual([await countOf('rental_bookings'),await countOf('rental_payment_attempts')],[bookings,attempts],'nothing is booked or charged at the changed price');
+  await p.screenshot({path:'.local/screenshots/guest-price-changed-ja-390.png',fullPage:true});
+  await panel.getByRole('button',{name:'新しい料金を確認して続ける',exact:true}).click();await expect(panel).toHaveCount(0);
+  await expect(p.locator('dl.guest-price dd').last()).toContainText('7,600');
+  assert.equal(await countOf('rental_payment_attempts'),attempts,'accepting the new price does not pay by itself (no blind retry)');
+  await p.getByRole('button',{name:'この内容でもう一度支払う（開発用決済）',exact:true}).click();
+  await expect(p.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();
+  assert.equal(await countOf('rental_payment_attempts'),attempts+1);
+  assert.equal((await app!.db.pool.query("SELECT (price_snapshot->>'totalJpy')::int t FROM rental_bookings ORDER BY created_at DESC LIMIT 1")).rows[0].t,7600);
+  await ctx.close();
+ });
+ await check('NR-03 C: an expired HOLD (inventory_clock advanced, no wall-clock wait) is shown plainly and can never be paid',async()=>{
+  const {ctx,p}=await newPage();await toReview(p,'2035-03-14');
+  await changeSkiPrice(7700,'2035-01-01T01:00:02Z');
+  await p.getByLabel('合成データによる開発確認であることを確認').check();await p.getByRole('button',{name:'この内容で支払う（開発用決済）',exact:true}).click();
+  await expect(p.getByRole('region',{name:'料金の更新'})).toBeVisible();
+  const holdId=(await app!.db.pool.query("SELECT id FROM inventory_holds WHERE state='ACTIVE' ORDER BY expires_at DESC LIMIT 1")).rows[0].id as string;
+  await app!.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T02:30:00Z'::timestamptz$$");
+  const attempts=await countOf('rental_payment_attempts');
+  try{
+   await p.getByRole('button',{name:'保存済みの結果を再読込',exact:true}).click();
+   await expect(p.getByRole('region',{name:'予約を続けられません'})).toContainText('在庫の確保期限が切れました');
+   await expect(p.getByRole('region',{name:'料金の更新'})).toHaveCount(0);await expect(p.getByRole('button',{name:/支払う/})).toHaveCount(0);await noRawCode(p);
+   assert.equal(await countOf('rental_payment_attempts'),attempts);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_bookings WHERE hold_id=$1',[holdId])).rows[0].n,0);
+   await p.screenshot({path:'.local/screenshots/guest-hold-expired-ja-390.png',fullPage:true});
+  }finally{await app!.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:02Z'::timestamptz$$");}
+  await ctx.close();
+ });
+ await check('visual acceptance: JA/EN at 390 and 1440 for dates, equipment, candidates, review and confirmation, with inline validation and no horizontal overflow',async()=>{
+  let day=22;
+  for(const [locale,width] of [['ja',390],['en',390],['ja',1440],['en',1440]] as const){
+   const ja=locale==='ja',{ctx,p}=await newPage(width,width===390?844:900),shot=(n:string)=>p.screenshot({path:`.local/screenshots/guest-${n}-${locale}-${width}.png`,fullPage:true}),fits=async()=>assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   await p.goto('/'+locale+'/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
+   // Forward attempt with nothing entered: messages appear beside the fields, not while typing.
+   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+   await expect(p.getByText(ja?'利用開始日を選択してください。':'Choose a start date.')).toBeVisible();await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toHaveAttribute('aria-invalid','true');
+   await shot('dates-invalid');const date='2035-03-'+String(day++);
+   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill(date);await p.getByLabel(ja?'利用終了日':'End date',{exact:true}).fill(date);
+   await expect(p.getByText(ja?'利用開始日を選択してください。':'Choose a start date.')).toHaveCount(0);await fits();await shot('dates');
+   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+   for(const [label,mode] of [[ja?'身長cm 1':'Height cm 1','numeric'],[ja?'足サイズcm 1':'Foot size cm 1','decimal'],[ja?'体重kg 1':'Weight kg 1','numeric']] as const)await expect(p.getByLabel(label,{exact:true})).toHaveAttribute('inputmode',mode);
+   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
+   await expect(p.getByText(ja?'ポールのサイズを選択してください。':'Choose a pole size.')).toBeVisible();await fits();await shot('equipment-invalid');
+   await p.getByLabel((ja?'ポールのサイズ':'Pole size')+' 1',{exact:true}).selectOption('pole-'+variants.pole);await expect(p.getByText(ja?'ポールのサイズを選択してください。':'Choose a pole size.')).toHaveCount(0);await shot('equipment');
+   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await expect(p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/})).toBeVisible();
+   for(const raw of ['SHORTER','RECOMMENDED','LONGER'])await expect(p.getByRole('main')).not.toContainText(raw);
+   await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(ja?'全員のサイズ・モデル条件・ウェア構成を確認した':'I confirm each person’s size, model promise and wear selections').check();await fits();await shot('candidate');
+   await p.getByRole('button',{name:ja?'全員分の最終確認へ':'Review the whole group',exact:true}).click();
+   const review=p.getByRole('region',{name:ja?'全員分の確認':'Group review'});
+   for(const text of ja?['日程','受取店舗','返却店舗','利用者 1','Regular','小計','全員分の参考総額']:['Dates','Pickup store','Return store','Person 1','Regular','Subtotal','Group estimate'])await expect(review).toContainText(text);
+   await expect(p.getByLabel(ja?'メール（架空）':'Email (synthetic)',{exact:true})).toHaveAttribute('inputmode','email');await noRawCode(p);await fits();await shot('review');
+   await p.getByRole('button',{name:ja?'この内容で支払う（開発用決済）':'Pay with these details (test payment)',exact:true}).click();
+   await expect(p.getByText(ja?'内容に同意したらチェックを入れてください。':'Tick this box to accept.')).toBeVisible();
+   await p.getByLabel(ja?'合成データによる開発確認であることを確認':'I understand this is a synthetic development preview').check();await expect(p.getByText(ja?'内容に同意したらチェックを入れてください。':'Tick this box to accept.')).toHaveCount(0);
+   await p.getByRole('button',{name:ja?'この内容で支払う（開発用決済）':'Pay with these details (test payment)',exact:true}).click();
+   await expect(p.getByRole('heading',{name:ja?'予約が確認されました':'Booking confirmed',exact:true})).toBeVisible();
+   assert.deepEqual(await cacheKeys(p),[],'a confirmed booking keeps no draft-input cache');await noRawCode(p);await fits();await shot('confirmed');
+   await ctx.close();
+  }
  });
  await check('cross-guest/CSRF and role/amount tampering rejected; logout drops the former context',async()=>{
   const old=await (await context.request.get('/api/guest/draft')).json();const other=await browser.newContext({baseURL:app!.origin});assert.equal((await other.request.get('/api/guest/draft')).status(),401);assert.equal((await other.request.post('/api/guest/context',{data:{}})).status(),403);await other.request.post('/api/guest/context',{headers:{origin:app!.origin},data:{}});assert.equal((await other.request.post('/api/guest/draft',{headers:{origin:app!.origin},data:{draftId:old.id,expectedRevision:old.revision,input:old.input}})).status(),403);assert.equal((await context.request.post('/api/guest/checkout',{headers:{origin:app!.origin},data:{paid:true,amount:1,role:'ADMIN'}})).status(),422);await page.getByRole('button',{name:'この予約画面を閉じる'}).click();await page.waitForURL(app!.origin+'/ja');assert.equal((await context.request.get('/api/guest/draft')).status(),401);await other.close();

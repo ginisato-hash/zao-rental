@@ -45,7 +45,7 @@ export function parseConditions(value:unknown):HoldConditions {
 export function utcDate(date:string):number{if(!/^20\d{2}-\d{2}-\d{2}$/.test(date))throw new HoldError('INVALID_DATE');const ms=Date.parse(date+'T00:00:00Z');if(!Number.isFinite(ms)||new Date(ms).toISOString().slice(0,10)!==date)throw new HoldError('INVALID_DATE');return ms;}
 export function normalizePeriod(p:Period){
  const first=utcDate(p.startDate),last=utcDate(p.endDate),days=(last-first)/86400000+1;
- if(!Number.isInteger(days)||days<1||days>10||!['AM','PM','DAY','MULTIDAY'].includes(p.slot)||p.slot!=='MULTIDAY'&&days!==1)throw new HoldError('INVALID_PERIOD');
+ if(!Number.isInteger(days)||days<1||days>10||!['AM','PM','DAY','MULTIDAY'].includes(p.slot)||(p.slot==='MULTIDAY')!==(days>1))throw new HoldError('INVALID_PERIOD');
  const dates=Array.from({length:days},(_,i)=>new Date(first+i*86400000).toISOString().slice(0,10));
  const startsAt=new Date(p.startDate+(p.slot==='PM'?'T13:00:00+09:00':'T08:30:00+09:00')).toISOString();
  const dueAt=new Date(p.endDate+(p.slot==='AM'?'T12:00:00+09:00':'T17:00:00+09:00')).toISOString();

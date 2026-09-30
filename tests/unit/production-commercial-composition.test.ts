@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {COMMERCIAL_ACTIVATION_TOKEN,COMMERCIAL_ALLOWLISTED_KEYS,COMMERCIAL_DB_SERVICES,COMMERCIAL_FLAGS,commercialGuestConfiguration,commercialProductionPlan,commercialRuntimeInput,installProductionCommercialComposition,parseProductionPublicOrigin} from '../../packages/core/src/guest/production-commercial-composition';
+import {COMMERCIAL_ACTIVATION_TOKEN,COMMERCIAL_ALLOWLISTED_KEYS,COMMERCIAL_DB_SERVICES,COMMERCIAL_FLAGS,commercialGuestConfiguration,commercialProductionPlan,commercialRuntimeInput,commercialSquareRoutes,installProductionCommercialComposition,parseProductionPublicOrigin} from '../../packages/core/src/guest/production-commercial-composition';
+import {SQUARE_VERSION,type SquareCall} from '../../packages/core/src/payment/square-engine';
 import {installProductionHostingComposition,HOSTING_ACTIVATION_TOKEN} from '../../packages/core/src/guest/production-hosting-composition';
 import {productionServices} from '../../packages/auth/src/production-config';
 import {guestConfigurationHash} from '../../packages/contracts/src/production-guest';
@@ -54,6 +55,7 @@ test('every invalid or ambiguous input fails closed with a value-free code',()=>
   {PRODUCTION_SQUARE_APPLICATION_ID:'sandbox-sq0idb-syntheticAppId0001'},{PRODUCTION_SQUARE_MERCHANT_ID:undefined},
   {PRODUCTION_SQUARE_LOCATION_ONSEN_BASE:undefined},{PRODUCTION_SQUARE_LOCATION_ONSEN_BASE:'SYNTHETIC-LOC-MOUNTAIN'},
   {PRODUCTION_SQUARE_ACCESS_TOKEN:undefined},{PRODUCTION_SQUARE_ACCESS_TOKEN:'short'},{PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:'2000-01-01T00:00:00Z'},{PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:'tomorrow'},
+  {PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:undefined},{PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:''},...['NEVER','Never',' never','never ','null','0','none','2099-01-01'].map(v=>({PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:v})),
   {PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL:'https://ingress.example/hook?x=1'},
   {PRODUCTION_RESEND_API_KEY:undefined},{PRODUCTION_RESEND_API_KEY:'sk_synthetic_not_resend_0001'},
   {PRODUCTION_PUBLICATION_APPROVAL:'{"state":"PUBLICATION_APPROVED"}'},{PRODUCTION_PUBLICATION_APPROVAL:'true'},
@@ -64,6 +66,17 @@ test('every invalid or ambiguous input fails closed with a value-free code',()=>
   assert.match(error.message,/^[A-Z_]+$/,JSON.stringify(patch));
   for(const secret of [TOKEN,RESEND,'a'.repeat(64),pw('operations')])assert.ok(!error.message.includes(secret));
  }
+});
+test('Square token expiry: exactly "never" is provider-confirmed non-expiring (null); a future UTC timestamp stays a Date',async()=>{
+ assert.equal(commercialProductionPlan(env({PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:'never'}))!.square.expiresAt,null);
+ assert.equal(commercialProductionPlan(env())!.square.expiresAt!.toISOString(),'2099-01-01T00:00:00.000Z');
+ assert.throws(()=>commercialProductionPlan(env({PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:'2035-01-01T00:00:00Z'}),new Date('2035-01-01T00:00:01Z')),{message:'PRODUCTION_COMMERCIAL_SQUARE_CREDENTIAL_EXPIRED'});
+ // The non-expiring credential reaches the exact Production transport; nothing else about the binding is relaxed.
+ const p=commercialProductionPlan(env({PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:'never'}))!,sent:{url:string;auth:string|null}[]=[];
+ const routes=commercialSquareRoutes(p.square,async(url,init)=>{sent.push({url,auth:new Headers(init.headers).get('Authorization')});return Response.json({payment:{id:'x'}});});
+ const call:SquareCall={method:'GET',url:'https://connect.squareup.com/v2/payments/synthetic-payment',version:SQUARE_VERSION,signal:new AbortController().signal};
+ await routes.MOUNTAIN_BASE.transport.send(call);assert.deepEqual(sent,[{url:call.url,auth:'Bearer '+TOKEN}]);
+ for(const e of [{PRODUCTION_SQUARE_LOCATION_ONSEN_BASE:'SYNTHETIC-LOC-MOUNTAIN'},{PRODUCTION_SQUARE_APPLICATION_ID:'sandbox-sq0idb-syntheticAppId0001'},{VERCEL_ENV:'preview'}])assert.throws(()=>commercialProductionPlan(env({...e,PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:'never'})));
 });
 test('install always runs the real exact-identity gate first; a synthetic project never installs a bootstrap',()=>{
  assert.throws(()=>installProductionCommercialComposition(env()),{message:'PRODUCTION_IDENTITY_WRONG_VERCEL_PROJECT'});

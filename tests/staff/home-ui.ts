@@ -77,6 +77,8 @@ try{
  assert.equal((await db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[confirmedId])).rows[0].state,'CONFIRMED_DEV');
  const dailyBusiness=()=>page.getByRole('region',{name:'本日の業務'});
  const todayBooking=()=>page.getByRole('region',{name:'本日の予約'});
+ // Store / business date is the first block on Staff Home (final UI closure), above search and Manifest.
+ const storeContext=()=>page.getByRole('region',{name:'店舗・営業日'});
 
  await check('operational Staff Home replaces the one-link page; the Manifest server date (a synthetic year, never the real current year) controls the displayed business date; narrow (BOOKING_VIEW-only) permission keeps Today read-only and hides every capability-gated section/link',async()=>{
   await page.goto('/staff');await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
@@ -180,12 +182,12 @@ try{
   // ever puts a real task at ONSEN_BASE — until then it is genuinely empty for every account.
   await page.goto('/staff');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
-  await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE');
+  await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE');
   // No equipment stock exists at ONSEN_BASE in this fixture, so a genuine empty page (not a
   // leftover MOUNTAIN_BASE card) is the only correct outcome here.
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toHaveCount(0);
   await expect(dailyBusiness()).toContainText('現在対応が必要な項目はありません');
-  await dailyBusiness().getByLabel('対象店舗').selectOption('MOUNTAIN_BASE');
+  await storeContext().getByLabel('対象店舗').selectOption('MOUNTAIN_BASE');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
  });
 
@@ -210,9 +212,10 @@ try{
   const scanned=await page.request.post('/api/custody/scan',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:batch.version,assetId:crossAssetId,poleLoanId:null}}});assert.equal(scanned.status(),200);
   const confirmed=await page.request.post('/api/custody/confirm',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:(await scanned.json()).version}}});assert.equal(confirmed.status(),200);
   await onsenPage.goto('/staff');
-  const custodyCard=onsenPage.getByRole('region',{name:'本日の業務'}).locator('.staff-card',{hasText:'SKI'});
+  // Families are shown by name (final UI closure: no raw enum), so the SKI task card is found by its label.
+  const custodyCard=onsenPage.getByRole('region',{name:'本日の業務'}).locator('.staff-card',{hasText:/^スキー(?!ブーツ)/});
   await expect(custodyCard).toBeVisible();
-  await expect(custodyCard).toContainText('MOUNTAIN_BASE');await expect(custodyCard).toContainText('ONSEN_BASE');
+  await expect(custodyCard).toContainText('Mountain Base');await expect(custodyCard).toContainText('Onsen Base');for(const raw of ['MOUNTAIN_BASE','ONSEN_BASE'])await expect(custodyCard).not.toContainText(raw);
   // Not yet inspected: server taskAction=INSPECT -> the 検品 display mapping, read from the
   // server value only, never inferred from inspectionPending/state on the client.
   await expect(custodyCard).toContainText('検品');
@@ -270,7 +273,7 @@ try{
   await page.goto('/staff'); // fires the initial MOUNTAIN_BASE request, which is held
   // A <select> is never disabled by manifestBusy, unlike the Refresh/load-more buttons — this
   // is what lets the switch actually fire a new request while the old one is still pending.
-  await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE');
+  await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE');
   await expect.poll(()=>bRequested).toBe(true);
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race ONSEN'})).toBeVisible();
   releaseA!();
@@ -299,7 +302,7 @@ try{
   await page.goto('/staff');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race Page1'})).toBeVisible();
   await dailyBusiness().getByRole('button',{name:'さらに読み込む'}).click(); // the first page already settled, so this button is enabled; the load-more it triggers is what gets held
-  await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE'); // switch stores while that load-more is still stuck
+  await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE'); // switch stores while that load-more is still stuck
   await expect.poll(()=>onsenRequested).toBe(true);
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race ONSEN Fresh'})).toBeVisible();
   releaseMore!();
@@ -326,7 +329,7 @@ try{
    }
   });
   await page.goto('/staff'); // fires the initial MOUNTAIN_BASE request, held with a stale date
-  await dailyBusiness().getByLabel('対象店舗').selectOption('ONSEN_BASE');
+  await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE');
   await expect.poll(()=>onsenRequested).toBe(true);
   await expect(todayBooking()).toContainText(businessDate);
   releaseOld!();
@@ -408,6 +411,25 @@ try{
   await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
  });
 
+ await check('Manifest loading, empty and error states are visually distinct and never shown as each other',async()=>{
+  await mkdir('.local/screenshots',{recursive:true});await page.setViewportSize({width:390,height:900});await page.goto('/staff');
+  await expect(dailyBusiness().locator('.staff-card').first()).toBeVisible();
+  let release!:()=>void;const held=new Promise<void>(r=>{release=r;});
+  await page.route('**/api/operations/manifest*',async route=>{await held;await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});});
+  await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
+  await expect(dailyBusiness().getByRole('status')).toContainText('読み込んでいます');await expect(dailyBusiness()).not.toContainText('現在対応が必要な項目はありません');
+  await dailyBusiness().screenshot({path:'.local/screenshots/staff-manifest-loading-390.png'});
+  release();await expect(dailyBusiness()).toContainText('現在対応が必要な項目はありません');await expect(dailyBusiness().getByRole('status')).toHaveText('');
+  await dailyBusiness().screenshot({path:'.local/screenshots/staff-manifest-empty-390.png'});
+  await page.unroute('**/api/operations/manifest*');
+  await page.route('**/api/operations/manifest*',async route=>{await route.fulfill({status:503,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'OPERATIONS_UNCONNECTED'})});});
+  await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
+  await expect(dailyBusiness().getByRole('status')).toContainText('読み込めませんでした');await expect(dailyBusiness()).not.toContainText('OPERATIONS_UNCONNECTED');
+  await expect(dailyBusiness().getByRole('button',{name:'もう一度読み込む',exact:true})).toBeVisible();await expect(dailyBusiness()).not.toContainText('現在対応が必要な項目はありません');
+  await dailyBusiness().screenshot({path:'.local/screenshots/staff-manifest-error-390.png'});
+  await page.unroute('**/api/operations/manifest*');
+  await dailyBusiness().getByRole('button',{name:'もう一度読み込む',exact:true}).click();await expect(dailyBusiness().locator('.staff-card').first()).toBeVisible();
+ });
  await check('Staff Home is usable at 390 and 1440 with no horizontal overflow',async()=>{
   await mkdir('.local/screenshots',{recursive:true});
   for(const width of [390,1440]){

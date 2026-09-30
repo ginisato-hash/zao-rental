@@ -24,7 +24,7 @@
     "check:secrets": "node scripts/check-secrets.mjs",
     "test:controller:macos": "node --import tsx scripts/test-controller-macos.ts",
     "controller:export": "node --import tsx scripts/export-controller.ts",
-    "test:auth": "node --import tsx tests/auth/staff-flow.ts",
+    "test:auth": "node --import tsx tests/auth/first-admin-bootstrap.ts && node --import tsx tests/auth/staff-flow.ts",
     "test:inventory": "node --import tsx tests/inventory/real-postgres.ts",
     "test:provisional-booking-capacity": "node --import tsx tests/readiness/provisional-booking-capacity.ts && node --import tsx tests/readiness/inventory-truth.ts && node --import tsx tests/readiness/capacity-policy.ts && node --import tsx tests/operations/provisional-source-http.ts",
     "test:holds-ui": "node --import tsx tests/inventory/normal-ui.ts",
@@ -97,7 +97,8 @@
     "test:production-runtime-ui": "node --import tsx tests/readiness/normal-production-ui.ts",
     "test:notification": "node --import tsx tests/notification/postgres.ts",
     "test:notification-ui": "node --import tsx tests/notification/normal-ui.ts",
-    "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts"
+    "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts",
+    "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

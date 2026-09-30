@@ -35,7 +35,7 @@ class FetchSquareTransport implements SquareTransport{
    response=await abortable(this.fetch(call.url,{method:call.method,headers:{Authorization:'Bearer '+secret.accessToken,'Square-Version':SQUARE_VERSION,Accept:'application/json','Content-Type':'application/json'},...(call.body?{body:JSON.stringify(call.body)}:{}),signal:call.signal,redirect:'error',cache:'no-store',credentials:'omit'}),call.signal);
    if(response.status<200||response.status>=300){await response.body?.cancel();return {status:response.status,body:null};}
    return {status:response.status,body:await readSquareJson(response,call.signal)};
-  }catch(e){await response?.body?.cancel().catch(()=>{});if(e instanceof FlowError&&e.code==='SQUARE_AUTH_STOP')throw e;throw new FlowError(unknown,503);}
+  }catch(e){await response?.body?.cancel().catch(()=>{});if(e instanceof FlowError&&e.code==='SQUARE_AUTH_STOP')throw e;if(this.environment==='PRODUCTION'&&call.method==='GET'&&response&&!call.signal.aborted&&e instanceof SquareResponseMalformed)throw new FlowError('SQUARE_INVALID_RESPONSE',503);throw new FlowError(unknown,503);}
  }
 }
 export class FetchSquareSandboxTransport extends FetchSquareTransport implements SquareSandboxTransport {
@@ -84,10 +84,11 @@ export class FetchSquareS1Transport {
  }
 }
 
+class SquareResponseMalformed extends Error{}
 async function readSquareJson(response:Response,signal:AbortSignal):Promise<unknown>{
- if(!response.headers.get('content-type')?.toLowerCase().startsWith('application/json'))throw new Error();
- const reader=response.body?.getReader();if(!reader)throw new Error();let total=0;const chunks:Uint8Array[]=[];
- try{while(true){const r=await abortable(reader.read(),signal);if(r.done)break;total+=r.value.byteLength;if(total>1024*1024)throw new Error();chunks.push(r.value);}}
+ if(!response.headers.get('content-type')?.toLowerCase().startsWith('application/json'))throw new SquareResponseMalformed();
+ const reader=response.body?.getReader();if(!reader)throw new SquareResponseMalformed();let total=0;const chunks:Uint8Array[]=[];
+ try{while(true){const r=await abortable(reader.read(),signal);if(r.done)break;total+=r.value.byteLength;if(total>1024*1024)throw new SquareResponseMalformed();chunks.push(r.value);}}
  finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
- signal.throwIfAborted();return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));
+ signal.throwIfAborted();try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));}catch{throw new SquareResponseMalformed();}
 }

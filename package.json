@@ -96,7 +96,8 @@
     "test:production-runtime": "node --import tsx tests/readiness/normal-production.ts && node --import tsx tests/readiness/commercial-payment.ts",
     "test:production-runtime-ui": "node --import tsx tests/readiness/normal-production-ui.ts",
     "test:notification": "node --import tsx tests/notification/postgres.ts",
-    "test:notification-ui": "node --import tsx tests/notification/normal-ui.ts"
+    "test:notification-ui": "node --import tsx tests/notification/normal-ui.ts",
+    "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

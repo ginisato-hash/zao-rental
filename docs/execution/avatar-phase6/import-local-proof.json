@@ -1,7 +1,7 @@
 {
   "status": "PASS",
   "boundedLockSqlstate": "55P03",
-  "elapsedMs": 1598.368792,
+  "elapsedMs": 1604.843042,
   "rollbackRows": 0,
   "approvedVisuals": 3,
   "repeatedImportRefused": true,

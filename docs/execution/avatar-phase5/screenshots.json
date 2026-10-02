@@ -1,37 +1,37 @@
 [
   {
     "file": "docs/execution/avatar-phase5/screenshots/390-SHORTER.png",
-    "sha256": "99d3e1f9f72cfb7b05e4e87be340f63cda0fdc249909213742cb530ca032e435",
+    "sha256": "9f9ef9ddafa368009838c3737f8e24ab172c0aefa152be4b682537e031df845c",
     "syntheticOnly": true
   },
   {
     "file": "docs/execution/avatar-phase5/screenshots/390-RECOMMENDED.png",
-    "sha256": "272c75226ec28fa835dacaa2cb96e94bbf840b46f11996e5a5031f6a4cc35eee",
+    "sha256": "3d39d1056ada04e1f69592d1c8c654c4742994c1eb85cbe1585ac557723e0629",
     "syntheticOnly": true
   },
   {
     "file": "docs/execution/avatar-phase5/screenshots/390-LONGER.png",
-    "sha256": "1c304d34485e2fbb0536b98710766b5fd8074073dc599bcd122c312da5a791e7",
+    "sha256": "60658b50d49030bcfd4822fad6998f7ea9c11d749278b6941c201390746901b8",
     "syntheticOnly": true
   },
   {
     "file": "docs/execution/avatar-phase5/screenshots/1440-SHORTER.png",
-    "sha256": "3b77db8bdcaba827f0c3ecc839294db2c79925e1c680bcbae6c8c3afeb2a84dd",
+    "sha256": "43d89b8a5857802358c6ec914b3728ca2392cb3f0ea908beb569ac7b60240306",
     "syntheticOnly": true
   },
   {
     "file": "docs/execution/avatar-phase5/screenshots/1440-RECOMMENDED.png",
-    "sha256": "c782e71916465df855543959899bc7731cc07c9ff6ce6fa357837d446faf5257",
+    "sha256": "e6b9e756619cf219738777f34f4de6e442e4698ca705935c6a4fe3ae641e3a4b",
     "syntheticOnly": true
   },
   {
     "file": "docs/execution/avatar-phase5/screenshots/1440-LONGER.png",
-    "sha256": "dc99147cf9968476ff5757aa3d1237777ace5c2ea317d68ecd6d3c4d9e9fcb12",
+    "sha256": "dfd477a5f759149ea4b9c4ca51fb825a67ba85406df1cea35ad9a601c92d5a92",
     "syntheticOnly": true
   },
   {
     "file": "docs/execution/avatar-phase5/screenshots/desktop-appearance2.png",
-    "sha256": "d2907be09d01bb48b850555fc4d5491b3def45d0b8fcd22a4cf1ac557e24449f",
+    "sha256": "91a8451557490d66b08a0661a1068d2ca0349f12d0ecb9d8a5a75bf6871be49d",
     "syntheticOnly": true
   }
 ]

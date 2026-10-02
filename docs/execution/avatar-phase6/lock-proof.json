@@ -4,7 +4,7 @@
   "statementTimeoutMs": 5000,
   "conflictingConnection": true,
   "sqlstate": "55P03",
-  "elapsedMs": 1603.6248749999995,
+  "elapsedMs": 1592.6225409999997,
   "failedImportRows": 0,
   "normalImportCount": 3,
   "repeatedImportRejected": true,

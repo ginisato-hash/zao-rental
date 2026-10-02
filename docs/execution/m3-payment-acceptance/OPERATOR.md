@@ -21,6 +21,14 @@ npm run production:payment-acceptance -- project-one --input /absolute/private/m
 npm run production:payment-acceptance -- cancellation-refund-one --input /absolute/private/m3-input.json
 ```
 
+Every command also accepts `--plan /absolute/non-secret-plan.json`: exactly `releaseId`, `tree`, `target`,
+`reference`, `jobId`, `refund`, merged in process memory over the secure input (which must not already carry them;
+only `configuration.deployment.releaseId` follows the plan). Merchant, locations, hosts, roles, credentials and
+origin cannot be supplied. `reconcile-one` uses the exact-payment Production functions of migration 0052 so an older
+unrelated inbox event is never dispatched; a lost checkout response (attempt `UNKNOWN`, `provider_id` null) is
+recoverable only through one `GetPayment` that matches every persisted fact, and its payment may bind only after
+the booking is already cancelled. See `docs/execution/m3-targeted-recovery/PLAN.md`.
+
 The input is an owner-owned regular file, mode 0600, outside the checkout, at most
 64 KiB. No ambient environment activation or credential fallback exists. Assemble
 it only from approved secure sources; do not put credentials in arguments, logs,

@@ -53,7 +53,9 @@ export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,n
  try{
   if(!Number.isFinite(now.getTime()))throw new Error();accepted=normalized(o,now);
   const {booking:b,attempt:a}=s;flowId(b.id);flowId(a.expected.attemptId);flowId(a.expected.idempotencyKey);
-  if(!Number.isSafeInteger(s.revision)||s.revision<0||!Number.isSafeInteger(b.version)||b.version<1||b.id!==a.expected.bookingId||a.actor!==b.ownerId||a.providerId!==accepted.providerId||!bookingStateValid(b.mode,b.state))throw new Error();
+  // A null attempt providerId is the lost-checkout-response case: matchPayment below still requires booking,
+  // idempotency key, merchant, location and amount. It may bind only in the CANCELLED_PAYMENT branch.
+  if(!Number.isSafeInteger(s.revision)||s.revision<0||!Number.isSafeInteger(b.version)||b.version<1||b.id!==a.expected.bookingId||a.actor!==b.ownerId||a.providerId!==null&&a.providerId!==accepted.providerId||!bookingStateValid(b.mode,b.state))throw new Error();
   matchPayment(a.expected,accepted);
  }catch{return finish('BLOCK_IDENTITY_MISMATCH','NONE',null);}
  o=accepted;
@@ -78,6 +80,7 @@ export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,n
   if(!q||q.id!==b.quoteId||q.snapshotHash!==b.priceHash||flowHash(b.priceSnapshot)!==b.priceHash||flowHash(q.snapshot)!==b.priceHash||b.priceSnapshot.totalJpy!==a.expected.amountJpy||b.priceSnapshot.currency!=='JPY'||b.mode==='SQUARE_PRODUCTION'&&(b.priceSnapshot.chargeReady!==true||q.commercialPriceValid!==true))return finish('BLOCK_PRICE_INTEGRITY');
   return finish(o.status==='COMPLETED'?'APPLY_COMPLETED':o.status==='PENDING'?'KEEP_PENDING':o.status==='FAILED'?'APPLY_FAILED':'APPLY_CANCELED','CANCELLED_PAYMENT');
  }
+ if(a.providerId===null)return finish('BLOCK_IDENTITY_MISMATCH','NONE',null);
  if(a.state==='COMPLETED'||b.confirmedAt||bookingConfirmed(b.mode,b.state)||bookingCompleted(b.mode,b.state))return finish('NOOP_TERMINAL');
  if(['FAILED','CANCELED'].includes(a.providerState??'')||a.state==='FAILED')return finish(o.status==='COMPLETED'?'BLOCK_INVALID_TRANSITION':'NOOP_TERMINAL');
  if(!['SUBMITTING','UNKNOWN','PENDING','REVIEW'].includes(a.state)||!['PAYMENT_PENDING','PAYMENT_REVIEW'].includes(b.state)||!h||h.ownerId!==b.ownerId||h.id!==b.holdId||h.reservationId!==b.id)return finish('BLOCK_INVALID_TRANSITION');

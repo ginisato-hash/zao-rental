@@ -1,25 +1,25 @@
 [
   {
     "file": "docs/execution/avatar-artwork-activation/screenshots/390-appearance1.png",
-    "sha256": "7a5a7fd325f24efb52a6445484c5300f0ee95daaa585ce53f53e4d339fd34281",
+    "sha256": "3ba10307ad79680dfb5582c6684346f84906976e149dc9d489bb2f8ae44a338a",
     "ownerApprovedLocalArtwork": true,
     "syntheticBusinessData": true
   },
   {
     "file": "docs/execution/avatar-artwork-activation/screenshots/390-appearance2.png",
-    "sha256": "4c5fed74160dfb0a7bd130b4fbcb52112d4dc322e2c77b3b31bbe34487dffcaf",
+    "sha256": "3ff8e301ea7878180a7fc6c01e9871c8285eabbf473a91ef3a31b321b303beb9",
     "ownerApprovedLocalArtwork": true,
     "syntheticBusinessData": true
   },
   {
     "file": "docs/execution/avatar-artwork-activation/screenshots/1440-appearance1.png",
-    "sha256": "2cce0dfba019d7431ad802b4dc2e8de57b7053289583fd5b9d3a9b9233b10cb0",
+    "sha256": "6e27d992dd10e2ef8ede77fb2def554252aeb41c23f17e7a5bc4fdfd9fef69a6",
     "ownerApprovedLocalArtwork": true,
     "syntheticBusinessData": true
   },
   {
     "file": "docs/execution/avatar-artwork-activation/screenshots/1440-appearance2.png",
-    "sha256": "0da85b48578f3ae0eb9cc5a86e62ca16b5905cdd55104c7a28114a8eece66173",
+    "sha256": "2a8d2c95a0ab7a139fdd1660c892734295bc859b3c91ce67133df8acee186d25",
     "ownerApprovedLocalArtwork": true,
     "syntheticBusinessData": true
   }

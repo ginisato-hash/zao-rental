@@ -12,8 +12,8 @@
       "expectedRatio": 0.8823529411764706,
       "bodyHeight": 275.21875,
       "skiHeight": 242.84375,
-      "bodyBottom": 832.5625,
-      "skiBottom": 832.5625,
+      "bodyBottom": 833.125,
+      "skiBottom": 833.125,
       "overflow": false
     },
     {
@@ -26,8 +26,8 @@
       "expectedRatio": 0.8611111111111112,
       "bodyHeight": 276.5,
       "skiHeight": 238.09375,
-      "bodyBottom": 833.078125,
-      "skiBottom": 833.078125,
+      "bodyBottom": 832.640625,
+      "skiBottom": 832.640625,
       "overflow": false
     },
     {
@@ -40,8 +40,8 @@
       "expectedRatio": 0.8529411764705882,
       "bodyHeight": 276.984375,
       "skiHeight": 236.25,
-      "bodyBottom": 560.40625,
-      "skiBottom": 560.40625,
+      "bodyBottom": 560.96875,
+      "skiBottom": 560.96875,
       "overflow": false
     },
     {
@@ -54,8 +54,8 @@
       "expectedRatio": 0.8333333333333334,
       "bodyHeight": 278.15625,
       "skiHeight": 231.796875,
-      "bodyBottom": 832.71875,
-      "skiBottom": 832.71875,
+      "bodyBottom": 561.28125,
+      "skiBottom": 561.28125,
       "overflow": false
     },
     {
@@ -68,8 +68,8 @@
       "expectedRatio": 0.9117647058823529,
       "bodyHeight": 273.484375,
       "skiHeight": 249.359375,
-      "bodyBottom": 832.765625,
-      "skiBottom": 832.765625,
+      "bodyBottom": 833.328125,
+      "skiBottom": 833.328125,
       "overflow": false
     },
     {
@@ -82,8 +82,8 @@
       "expectedRatio": 0.9166666666666666,
       "bodyHeight": 273.203125,
       "skiHeight": 250.4375,
-      "bodyBottom": 832.78125,
-      "skiBottom": 832.78125,
+      "bodyBottom": 833.34375,
+      "skiBottom": 833.34375,
       "overflow": false
     },
     {
@@ -96,8 +96,8 @@
       "expectedRatio": 0.8823529411764706,
       "bodyHeight": 275.21875,
       "skiHeight": 242.84375,
-      "bodyBottom": 832.5625,
-      "skiBottom": 832.5625,
+      "bodyBottom": 559.125,
+      "skiBottom": 559.125,
       "overflow": false
     },
     {
@@ -110,8 +110,8 @@
       "expectedRatio": 0.8611111111111112,
       "bodyHeight": 276.5,
       "skiHeight": 238.09375,
-      "bodyBottom": 833.078125,
-      "skiBottom": 833.078125,
+      "bodyBottom": 560.640625,
+      "skiBottom": 560.640625,
       "overflow": false
     },
     {
@@ -124,8 +124,8 @@
       "expectedRatio": 0.8529411764705882,
       "bodyHeight": 276.984375,
       "skiHeight": 236.25,
-      "bodyBottom": 560.40625,
-      "skiBottom": 560.40625,
+      "bodyBottom": 560.96875,
+      "skiBottom": 560.96875,
       "overflow": false
     },
     {
@@ -138,8 +138,8 @@
       "expectedRatio": 0.8333333333333334,
       "bodyHeight": 278.15625,
       "skiHeight": 231.796875,
-      "bodyBottom": 832.71875,
-      "skiBottom": 832.71875,
+      "bodyBottom": 561.28125,
+      "skiBottom": 561.28125,
       "overflow": false
     },
     {
@@ -152,8 +152,8 @@
       "expectedRatio": 0.9117647058823529,
       "bodyHeight": 273.484375,
       "skiHeight": 249.359375,
-      "bodyBottom": 832.765625,
-      "skiBottom": 832.765625,
+      "bodyBottom": 833.328125,
+      "skiBottom": 833.328125,
       "overflow": false
     },
     {
@@ -166,8 +166,8 @@
       "expectedRatio": 0.9166666666666666,
       "bodyHeight": 273.203125,
       "skiHeight": 250.4375,
-      "bodyBottom": 832.78125,
-      "skiBottom": 832.78125,
+      "bodyBottom": 833.34375,
+      "skiBottom": 833.34375,
       "overflow": false
     },
     {
@@ -180,8 +180,8 @@
       "expectedRatio": 0.8823529411764706,
       "bodyHeight": 474.90625,
       "skiHeight": 419.03125,
-      "bodyBottom": 1080.84375,
-      "skiBottom": 1080.84375,
+      "bodyBottom": 787.625,
+      "skiBottom": 787.625,
       "overflow": false
     },
     {
@@ -194,8 +194,8 @@
       "expectedRatio": 0.8611111111111112,
       "bodyHeight": 477.09375,
       "skiHeight": 410.828125,
-      "bodyBottom": 1081.390625,
-      "skiBottom": 1081.390625,
+      "bodyBottom": 788.171875,
+      "skiBottom": 788.171875,
       "overflow": false
     },
     {
@@ -208,8 +208,8 @@
       "expectedRatio": 0.8529411764705882,
       "bodyHeight": 477.9375,
       "skiHeight": 407.65625,
-      "bodyBottom": 789,
-      "skiBottom": 789,
+      "bodyBottom": 788.78125,
+      "skiBottom": 788.78125,
       "overflow": false
     },
     {
@@ -222,8 +222,8 @@
       "expectedRatio": 0.8333333333333334,
       "bodyHeight": 479.984375,
       "skiHeight": 399.984375,
-      "bodyBottom": 789.671875,
-      "skiBottom": 789.671875,
+      "bodyBottom": 790.453125,
+      "skiBottom": 790.453125,
       "overflow": false
     },
     {
@@ -236,8 +236,8 @@
       "expectedRatio": 0.9117647058823529,
       "bodyHeight": 471.90625,
       "skiHeight": 430.265625,
-      "bodyBottom": 785.734375,
-      "skiBottom": 785.734375,
+      "bodyBottom": 785.515625,
+      "skiBottom": 785.515625,
       "overflow": false
     },
     {
@@ -250,8 +250,8 @@
       "expectedRatio": 0.9166666666666666,
       "bodyHeight": 471.421875,
       "skiHeight": 432.140625,
-      "bodyBottom": 785.25,
-      "skiBottom": 785.265625,
+      "bodyBottom": 786.03125,
+      "skiBottom": 786.046875,
       "overflow": false
     },
     {
@@ -264,8 +264,8 @@
       "expectedRatio": 0.8823529411764706,
       "bodyHeight": 474.90625,
       "skiHeight": 419.03125,
-      "bodyBottom": 1080.84375,
-      "skiBottom": 1080.84375,
+      "bodyBottom": 787.625,
+      "skiBottom": 787.625,
       "overflow": false
     },
     {
@@ -278,8 +278,8 @@
       "expectedRatio": 0.8611111111111112,
       "bodyHeight": 477.09375,
       "skiHeight": 410.828125,
-      "bodyBottom": 1081.390625,
-      "skiBottom": 1081.390625,
+      "bodyBottom": 788.171875,
+      "skiBottom": 788.171875,
       "overflow": false
     },
     {
@@ -292,8 +292,8 @@
       "expectedRatio": 0.8529411764705882,
       "bodyHeight": 477.9375,
       "skiHeight": 407.65625,
-      "bodyBottom": 789,
-      "skiBottom": 789,
+      "bodyBottom": 788.78125,
+      "skiBottom": 788.78125,
       "overflow": false
     },
     {
@@ -306,8 +306,8 @@
       "expectedRatio": 0.8333333333333334,
       "bodyHeight": 479.984375,
       "skiHeight": 399.984375,
-      "bodyBottom": 789.671875,
-      "skiBottom": 789.671875,
+      "bodyBottom": 790.453125,
+      "skiBottom": 790.453125,
       "overflow": false
     },
     {
@@ -320,8 +320,8 @@
       "expectedRatio": 0.9117647058823529,
       "bodyHeight": 471.90625,
       "skiHeight": 430.265625,
-      "bodyBottom": 785.734375,
-      "skiBottom": 785.734375,
+      "bodyBottom": 785.515625,
+      "skiBottom": 785.515625,
       "overflow": false
     },
     {
@@ -334,8 +334,8 @@
       "expectedRatio": 0.9166666666666666,
       "bodyHeight": 471.421875,
       "skiHeight": 432.140625,
-      "bodyBottom": 785.25,
-      "skiBottom": 785.265625,
+      "bodyBottom": 786.03125,
+      "skiBottom": 786.046875,
       "overflow": false
     }
   ]

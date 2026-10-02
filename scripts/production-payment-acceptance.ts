@@ -1,17 +1,23 @@
 import {execFileSync} from 'node:child_process';
 import {readFileSync,lstatSync,realpathSync} from 'node:fs';
 import {isAbsolute,relative} from 'node:path';
-import {acceptanceCommands,acceptancePlan,acceptanceRelease,runProductionPaymentAcceptance,type AcceptanceCommand} from './lib/production-payment-acceptance';
+import {acceptanceCommands,acceptanceOverlay,acceptancePlan,acceptanceRelease,runProductionPaymentAcceptance,type AcceptanceCommand} from './lib/production-payment-acceptance';
 
 /** Explicit attended CLI only. A 0600 file outside the checkout supplies scoped credentials.
  * No .env load, automatic activation, scheduler, provider POST retry or payment-create command. */
 async function main(){
- const [command,flag,path,...extra]=process.argv.slice(2);
- if(!acceptanceCommands.includes(command as AcceptanceCommand)||flag!=='--input'||!path||!isAbsolute(path)||extra.length)throw Error('M3_ARGUMENTS_REJECTED');
+ const [command,flag,path,planFlag,planPath,...extra]=process.argv.slice(2);
+ if(!acceptanceCommands.includes(command as AcceptanceCommand)||flag!=='--input'||!path||!isAbsolute(path)||extra.length||(planFlag===undefined?planPath!==undefined:planFlag!=='--plan'||!planPath||!isAbsolute(planPath)))throw Error('M3_ARGUMENTS_REJECTED');
  const git=(...args:string[])=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:15000}).trim();
  const stat=lstatSync(path),resolved=realpathSync(path),rel=relative(git('rev-parse','--show-toplevel'),resolved);
  if(!stat.isFile()||stat.isSymbolicLink()||(stat.mode&0o777)!==0o600||stat.size>65536||!(rel==='..'||rel.startsWith('../'))||process.getuid&&stat.uid!==process.getuid())throw Error('M3_SECURE_INPUT_REQUIRED');
- const raw:unknown=JSON.parse(readFileSync(resolved,'utf8'));
+ let raw:unknown=JSON.parse(readFileSync(resolved,'utf8'));
+ if(planPath){
+  // Non-secret overlay: the secure input file is never rewritten; the merge exists only in this process.
+  const plan=lstatSync(planPath);
+  if(!plan.isFile()||plan.isSymbolicLink()||(plan.mode&0o022)!==0||plan.size>16384||process.getuid&&plan.uid!==process.getuid())throw Error('M3_PLAN_REJECTED');
+  raw=acceptanceOverlay(raw,JSON.parse(readFileSync(realpathSync(planPath),'utf8')));
+ }
  const {input}=acceptancePlan(raw);
  if(!/^(?:https:\/\/github\.com\/|git@github\.com:)ginisato-hash\/zao-rental(?:\.git)?$/.test(git('remote','get-url','origin')))throw Error('M3_REPOSITORY_REJECTED');
  const remote=git('ls-remote','origin','refs/heads/main').split(/\s+/);

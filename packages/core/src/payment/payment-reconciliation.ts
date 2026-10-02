@@ -24,7 +24,9 @@ export const boundedLookup:LookupDeadline=async(run,milliseconds)=>{
 /** Finite library call only. No runtime composition, HTTP endpoint, timer loop, cron, env or business port. */
 export class PaymentReconciliationWorker{
  constructor(private repository:PaymentReconciliationRepository,private contexts:PaymentContextReader,private provider:PaymentTruthProvider,
-  private now:()=>Date=()=>new Date(),private jitter:()=>number=Math.random,private deadline:LookupDeadline=boundedLookup){}
+  private now:()=>Date=()=>new Date(),private jitter:()=>number=Math.random,private deadline:LookupDeadline=boundedLookup,
+  /** Attended response-loss recovery only: admits a persisted attempt whose providerId is still null for exactly this candidate payment ID. Absent for every ordinary worker. */
+  private unboundCandidate?:{readonly paymentId:string}){}
  async runOnce(environment:WebhookEnvironment,workerId:string,limit=1){
   if(!Number.isInteger(limit)||limit<1||limit>reconciliationPolicy.maxBatch||!/^[-A-Za-z0-9_]{1,100}$/.test(workerId))throw new Error('INVALID_WORKER_BATCH');
   const dispatched=await this.repository.dispatch(environment,limit);
@@ -47,7 +49,8 @@ export class PaymentReconciliationWorker{
   else if(claim.leaseExpiresAt<=this.now())return {id:claim.id,result:'STALE_LEASE' as const};
   else{
    let context:PaymentContext|null;try{context=batch?batch.get(claim.id)??null:await this.contexts.load(claim);}catch{context=null;}
-   if(!context||context.expected.merchantId!==claim.merchantId||context.current.providerId!==claim.paymentId)outcome=this.failure(claim,'PAYMENT_CONTEXT_MISSING');
+   const bound=context&&(context.current.providerId===claim.paymentId||context.current.providerId===null&&this.unboundCandidate?.paymentId===claim.paymentId);
+   if(!context||context.expected.merchantId!==claim.merchantId||!bound)outcome=this.failure(claim,'PAYMENT_CONTEXT_MISSING');
    else if(claim.leaseExpiresAt<=this.now())return {id:claim.id,result:'STALE_LEASE' as const};
    else{
     let lookup:LookupResult;

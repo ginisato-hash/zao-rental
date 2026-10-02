@@ -3,6 +3,14 @@ import type {PaymentContext} from '../../core/src/payment/payment-truth';
 import type {WebhookEnvironment} from '../../core/src/payment/square-webhook-inbox';
 import type {PaymentReconciliationRepository,ReconciliationClaim,JobOutcome,JobSummary,PaymentContextReader} from '../../core/src/payment/payment-reconciliation';
 import {productionReconciliationTarget,type ProductionReconciliationAuthority} from '../../core/src/payment/production-reconciliation-authority';
+export type ReconciliationRecovery={attemptId:string;bookingId:string;paymentId:string};
+/** Exact statements of the attended Production targeted surface (0052). Pure so the identical text/parameters are executed
+ * by the real-PostgreSQL role tests; the class below only supplies the merchant bound to its ProductionReconciliationAuthority. */
+export const recoveryStatements={
+ dispatch:(merchantId:string,r:ReconciliationRecovery)=>({text:'SELECT payment_reconciliation.dispatch_target_production($1,$2) AS n',values:[merchantId,r.paymentId]}),
+ claim:(workerId:string,merchantId:string,r:ReconciliationRecovery)=>({text:'SELECT payment_reconciliation.claim_target_production($1,$2,$3) AS claim',values:[workerId,merchantId,r.paymentId]}),
+ load:(merchantId:string,paymentId:string,r:ReconciliationRecovery)=>({text:'SELECT payment_reconciliation.load_context_target_production($1,$2,$3,$4) AS context',values:[r.attemptId,r.bookingId,merchantId,paymentId]}),
+} as const;
 /** Explicit transaction, commit barrier, no retries. SQL stores only allowlisted truth metadata.
  *
  * F5 (TD correction): `environment==='PRODUCTION'` alone is never sufficient to route onto the
@@ -17,7 +25,11 @@ import {productionReconciliationTarget,type ProductionReconciliationAuthority} f
  * Without `authority`, this class's Sandbox path (including `target`-scoped R15/dev routing) is
  * byte-identical to before. */
 export class PgPaymentReconciliation implements PaymentReconciliationRepository,PaymentContextReader{
- constructor(private readonly pool:InboxPool,private readonly target?:{merchantId:string;paymentId:string},private readonly authority?:ProductionReconciliationAuthority){}
+ /** `recovery` (requires `authority`) switches to the attended Production target surface (0052): exact payment dispatch/claim and
+  * a persisted-identity context that tolerates a still-null provider_id. Without it every method is unchanged. */
+ constructor(private readonly pool:InboxPool,private readonly target?:{merchantId:string;paymentId:string},private readonly authority?:ProductionReconciliationAuthority,private readonly recovery?:ReconciliationRecovery){
+  if(recovery&&!authority)throw new Error('PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED');
+ }
  private async tx<T>(run:(c:InboxConnection)=>Promise<T>):Promise<T>{
   const c=await this.pool.connect().catch(()=>{throw new Error('RECONCILIATION_STORAGE_UNAVAILABLE');});let broken=false;
   try{await c.query('BEGIN');await c.query("SET LOCAL synchronous_commit=on; SET LOCAL lock_timeout='2000ms'; SET LOCAL statement_timeout='5000ms'; SET LOCAL idle_in_transaction_session_timeout='10000ms'");const result=await run(c);await c.query('COMMIT');return result;}
@@ -36,14 +48,19 @@ export class PgPaymentReconciliation implements PaymentReconciliationRepository,
  }
  async dispatch(environment:WebhookEnvironment,limit:number){
   this.assertEnvironment(environment);
-  return this.tx(async c=>this.authority
+  if(this.recovery&&limit!==1)throw new Error('PRODUCTION_TARGETED_RECONCILIATION_LIMIT');
+  return this.tx(async c=>this.recovery
+   ?(await c.query<{n:number}>(recoveryStatements.dispatch(this.requireAuthorityTarget().merchantId,this.recovery))).rows[0]!.n
+   :this.authority
    ?(await c.query<{n:number}>('SELECT payment_reconciliation.dispatch_production($1,$2) AS n',[this.requireAuthorityTarget().merchantId,limit])).rows[0]!.n
    :(await c.query<{n:number}>(this.target?'SELECT payment_reconciliation.dispatch_target($1,$2,$3,$4) AS n':'SELECT payment_reconciliation.dispatch($1,$2) AS n',this.target?[environment,limit,this.target.merchantId,this.target.paymentId]:[environment,limit])).rows[0]!.n);
  }
  async claimBatch(environment:WebhookEnvironment,workerId:string,limit:number){
   this.assertEnvironment(environment);
   return this.tx(async c=>{
-   const rows=this.authority
+   const rows=this.recovery
+    ?(await c.query<{claim:ReconciliationClaim}>(recoveryStatements.claim(workerId,this.requireAuthorityTarget().merchantId,this.recovery))).rows
+    :this.authority
     ?(await c.query<{claim:ReconciliationClaim}>('SELECT payment_reconciliation.claim_production($1,$2,$3) AS claim',[workerId,limit,this.requireAuthorityTarget().merchantId])).rows
     :(await c.query<{claim:ReconciliationClaim}>(this.target?'SELECT payment_reconciliation.claim_target($1,$2,$3,$4,$5) AS claim':'SELECT payment_reconciliation.claim($1,$2,$3) AS claim',this.target?[environment,workerId,limit,this.target.merchantId,this.target.paymentId]:[environment,workerId,limit])).rows;
    return rows.map(({claim})=>({...claim,leaseExpiresAt:new Date(claim.leaseExpiresAt),deadlineAt:new Date(claim.deadlineAt)}));
@@ -56,10 +73,16 @@ export class PgPaymentReconciliation implements PaymentReconciliationRepository,
  async loadBatch(claims:ReconciliationClaim[]):Promise<ReadonlyMap<string,PaymentContext>>{
   if(claims.length===0)return new Map();if(claims.length>20||claims.some(c=>c.environment!==claims[0]!.environment))throw new Error('INVALID_CONTEXT_BATCH');
   this.assertEnvironment(claims[0]!.environment);
+  if(this.recovery)return new Map(await Promise.all(claims.map(async claim=>[claim.id,await this.load(claim)] as const)).then(rows=>rows.filter((row):row is readonly [string,PaymentContext]=>row[1]!==null)));
   return this.tx(async c=>new Map((await c.query<{entry:{jobId:string;context:PaymentContext}}>(this.authority?'SELECT payment_reconciliation.load_contexts_production($1,$2::uuid[]) AS entry':'SELECT payment_reconciliation.load_contexts($1,$2::uuid[]) AS entry',[claims[0]!.environment,claims.map(c=>c.id)])).rows.map(({entry})=>[entry.jobId,entry.context])));
  }
  async load(claim:ReconciliationClaim){
   this.assertEnvironment(claim.environment);
+  if(this.recovery){
+   if(claim.paymentId!==this.recovery.paymentId)return null;
+   const recovery=this.recovery;
+   return this.tx(async c=>(await c.query<{context:PaymentContext|null}>(recoveryStatements.load(claim.merchantId,claim.paymentId,recovery))).rows[0]?.context??null);
+  }
   return this.tx(async c=>(await c.query<{context:PaymentContext|null}>(this.authority?'SELECT payment_reconciliation.load_context_production($1,$2,$3) AS context':'SELECT payment_reconciliation.load_context($1,$2,$3) AS context',[claim.environment,claim.merchantId,claim.paymentId])).rows[0]?.context??null);
  }
  async diagnostics(environment:WebhookEnvironment,limit:number){

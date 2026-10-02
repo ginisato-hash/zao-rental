@@ -98,6 +98,7 @@
     "test:notification": "node --import tsx tests/notification/postgres.ts",
     "test:notification-ui": "node --import tsx tests/notification/normal-ui.ts",
     "production:repair-payment-runtime": "node --import tsx scripts/production-repair-payment-runtime.ts",
+    "production:install-targeted-reconciliation": "node --import tsx scripts/production-install-targeted-reconciliation.ts",
     "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts",
     "production:complete-first-admin-commercial": "node --import tsx scripts/production-complete-first-admin-commercial.ts",
     "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts"

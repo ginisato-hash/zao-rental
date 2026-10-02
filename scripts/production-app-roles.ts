@@ -2,7 +2,7 @@
 // application roles, reusing (not duplicating) the exact grant lists already proven locally in
 // scripts/application-roles.ts, guest-roles.ts, content-roles.ts, booking-access-role.ts,
 // avatar-read-role.ts and operations-roles.ts. No DB access, no password, no CREATE happens
-// here — an operator applies this plan once against the real, fully-migrated (all migrationPlan migrations, 0001–0051)
+// here — an operator applies this plan once against the real, fully-migrated (all migrationPlan migrations, 0001–0052)
 // Production database, then separately provisions each role's real LOGIN password out of band.
 //
 // The local scripts guard several grants behind a runtime `to_regclass`/`to_regprocedure` check

@@ -16,7 +16,7 @@ import {productionRoleProvisioningPlan,roleProvisioningDigests,PRODUCTION_ROLE_P
  * must agree before any DDL runs:
  *
  *   1. APPROVED SOURCE. `config/production/bootstrap-source-manifest.json` pins, for each of
- *      the fifty-one reviewed migrations (0001–0051), its SHA256 and — where one exists — the exact byte
+ *      the fifty-two reviewed migrations (0001–0052), its SHA256 and — where one exists — the exact byte
  *      offset, subject expression and fragment of the single guard that may be rewritten. A
  *      file whose bytes differ from the reviewed ones is refused. The manifest is committed
  *      data, never recomputed from whatever happens to be on disk, so re-pinning it is a
@@ -29,7 +29,7 @@ import {productionRoleProvisioningPlan,roleProvisioningDigests,PRODUCTION_ROLE_P
  *      comment, in a string, in dynamic SQL inside a function, or whose subject is the tail of
  *      a longer identifier, is refused rather than rewritten.
  *
- * Historical migration files 0001-0050 stay byte-identical on disk; nothing here writes them.
+ * Historical migration files 0001-0051 stay byte-identical on disk; nothing here writes them.
  */
 export const TRANSFORMER_VERSION='production-bootstrap/3';
 export const TRANSFORMATION_CLASS='MIGRATION_TIME_DATABASE_IDENTITY_PREDICATE';

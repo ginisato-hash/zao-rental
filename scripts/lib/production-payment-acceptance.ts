@@ -25,6 +25,18 @@ const hash=(s:unknown,n:number):s is string=>typeof s==='string'&&new RegExp('^[
 export function acceptanceRelease(input:Pick<AcceptanceInput,'releaseId'|'tree'>,facts:{head:string;tree:string;main:string;clean:boolean}){
  if(!hash(input.releaseId,40)||!hash(input.tree,40)||!facts.clean||input.releaseId!==facts.head||input.releaseId!==facts.main||input.tree!==facts.tree)fail('M3_RELEASE_IDENTITY_REJECTED');
 }
+const baseKeys=['releaseId','tree','configuration','databaseUrls','square','target','reference','jobId','refund'] as const;
+const overlayKeys=['releaseId','tree','target','reference','jobId','refund'] as const;
+/** Non-secret execution overlay. Only the six listed facts can differ from the immutable secure input; releaseId/tree are copied
+ * into configuration.deployment.releaseId and nothing else of the validated configuration (project, origin, Neon host, database,
+ * role names, merchant, locations, flags) can be supplied or changed here. The secure input must not already carry a target. */
+export function acceptanceOverlay(baseRaw:unknown,planRaw:unknown):unknown{
+ const base=flowObject(baseRaw,baseKeys),plan=flowObject(planRaw,overlayKeys);
+ if(!hash(plan.releaseId,40)||!hash(plan.tree,40)||base.target!==null||base.reference!==null||base.jobId!==null||base.refund!==null)fail('M3_PLAN_REJECTED');
+ const configuration=flowObject(base.configuration,['schemaVersion','capability','deployment','database','flags','guest','approvedGuestSha256','payment','media']);
+ const deployment=flowObject(configuration.deployment,['provider','environment','projectId','releaseId','origin']);
+ return {...base,releaseId:plan.releaseId,tree:plan.tree,configuration:{...configuration,deployment:{...deployment,releaseId:plan.releaseId}},target:plan.target,reference:plan.reference,jobId:plan.jobId,refund:plan.refund};
+}
 export function acceptancePlan(raw:unknown){
  const value=flowObject(raw,['releaseId','tree','configuration','databaseUrls','square','target','reference','jobId','refund']) as unknown as AcceptanceInput;
  const c=productionConfiguration(value.configuration);
@@ -68,12 +80,31 @@ export async function verifyAcceptanceRole(pool:Pool,c:ProductionConfiguration,r
  }
 }
 
+/** The persisted provider_id must equal the target payment, or still be null after a lost checkout response.
+ * A null binding is only admitted for an already CANCELLED booking: that is the one projection branch that may bind it. */
 export async function verifyAcceptanceAttempt(pool:Pool,target:AcceptanceTarget){
- const row=(await pool.query(`SELECT a.id AS "attemptId",a.booking_id AS "bookingId",a.idempotency_key AS "idempotencyKey",a.merchant_id AS "merchantId",a.location_id AS "locationId",a.amount_jpy::integer AS "amountJpy",a.currency,a.provider_id AS "paymentId",b.mode
+ const row=(await pool.query(`SELECT a.id AS "attemptId",a.booking_id AS "bookingId",a.idempotency_key AS "idempotencyKey",a.merchant_id AS "merchantId",a.location_id AS "locationId",a.amount_jpy::integer AS "amountJpy",a.currency,a.provider_id AS "paymentId",b.mode,b.state AS "bookingState"
  FROM rental_payment_attempts a JOIN rental_bookings b ON b.id=a.booking_id WHERE a.id=$1 AND a.booking_id=$2`,[target.attemptId,target.bookingId])).rows[0];
  if(!row)fail('M3_TARGET_REJECTED');
- const {mode,...persisted}=row;
- if(mode!=='SQUARE_PRODUCTION'||flowHash(persisted)!==flowHash(target))fail('M3_TARGET_REJECTED');
+ const {mode,bookingState,paymentId,...persisted}=row;
+ if(mode!=='SQUARE_PRODUCTION'||paymentId!==null&&paymentId!==target.paymentId||flowHash({...persisted,paymentId:target.paymentId})!==flowHash(target))fail('M3_TARGET_REJECTED');
+ if(paymentId===null&&bookingState!=='CANCELLED')fail('M3_UNBOUND_PAYMENT_REQUIRES_CANCELLED_BOOKING');
+}
+
+/** Zero-row runtime admission of the targeted 0052 functions with a payment ID that matches no event/job.
+ * Rolled back; the non-read-only transaction is required because the claim/dispatch scans use FOR UPDATE. */
+export async function verifyAcceptanceTargetedRuntime(pool:Pool,role:PaymentRole,merchantId:string){
+ if(role!=='dispatcher'&&role!=='worker')return;
+ const client=await pool.connect();
+ try{
+  await client.query('BEGIN');
+  if(role==='dispatcher'){const row=(await client.query("SELECT payment_reconciliation.dispatch_target_production($1,'m3_preflight_no_event') n",[merchantId])).rows[0];if(row?.n!==0)fail('M3_TARGETED_RUNTIME_REJECTED');}
+  else{
+   const claims=await client.query("SELECT payment_reconciliation.claim_target_production('m3_preflight_probe',$1,'m3_preflight_no_job')",[merchantId]);
+   const context=(await client.query("SELECT payment_reconciliation.load_context_target_production(NULL::uuid,NULL::uuid,$1,'m3_preflight_no_attempt') value",[merchantId])).rows[0];
+   if(claims.rowCount!==0||context?.value!==null)fail('M3_TARGETED_RUNTIME_REJECTED');
+  }
+ }finally{try{await client.query('ROLLBACK');}finally{client.release();}}
 }
 
 /** A zero-row invocation proves runtime admission, not just EXECUTE metadata. */
@@ -87,16 +118,16 @@ export async function verifyAcceptanceProjectionSource(pool:Pool,merchantId:stri
 }
 
 /** One dispatch, one claim, one persisted context, at most one provider GET; no scheduling/retry. */
-export async function reconcileProductionOne(repository:PaymentReconciliationRepository,contexts:PaymentContextReader,provider:PaymentTruthProvider,target:AcceptanceTarget){
+export async function reconcileProductionOne(repository:PaymentReconciliationRepository,contexts:PaymentContextReader,provider:PaymentTruthProvider,target:AcceptanceTarget,options:{unboundCandidate?:boolean}={}){
  let invoked=false;
  const bounded:PaymentReconciliationRepository={
   dispatch:(e,n)=>repository.dispatch(e,n),
   async claimBatch(e,id,n){const claims=await repository.claimBatch(e,id,n);if(claims.length>1||claims.some(c=>c.environment!=='PRODUCTION'||c.merchantId!==target.merchantId||c.paymentId!==target.paymentId))fail('M3_CLAIM_TARGET_REJECTED');return claims;},
   finalize:(c,o)=>repository.finalize(c,o),diagnostics:(e,n)=>repository.diagnostics(e,n),
  };
- const scoped:PaymentContextReader={async load(claim){const context=await contexts.load(claim);if(!context||flowHash({...context.expected,paymentId:target.paymentId})!==flowHash(target))return null;return context;}};
+ const scoped:PaymentContextReader={async load(claim){const context=await contexts.load(claim);if(!context||flowHash({...context.expected,paymentId:target.paymentId})!==flowHash(target)||context.current.providerId!==null&&context.current.providerId!==target.paymentId)return null;return context;}};
  const once:PaymentTruthProvider={async lookupPayment(request){if(invoked)fail('M3_LOOKUP_ALREADY_INVOKED');invoked=true;return provider.lookupPayment(request);}};
- return new PaymentReconciliationWorker(bounded,scoped,once).runOnce('PRODUCTION','m3-attended',1);
+ return new PaymentReconciliationWorker(bounded,scoped,once,undefined,undefined,undefined,options.unboundCandidate?{paymentId:target.paymentId}:undefined).runOnce('PRODUCTION','m3-attended',1);
 }
 
 export function refundNextAction(row:{state:string;dispatched_at:string|null;provider_id:string|null},authorized:boolean){
@@ -123,12 +154,15 @@ export async function runProductionPaymentAcceptance(command:AcceptanceCommand,r
  const transport=(locationId:string)=>new FetchSquareProductionTransport(c.payment!.merchantId,locationId,async()=>({environment:'PRODUCTION',merchantId:c.payment!.merchantId,locationId,accessToken:input.square.accessToken,expiresAt:input.square.expiresAt==='never'?null:new Date(input.square.expiresAt),revoked:false}),fetch);
  try{
   if(command==='preflight'){
-   for(const role of Object.keys(productionPaymentRoleNames(c.database.name)) as PaymentRole[]){const pool=await open(role);if(role==='projector')await verifyAcceptanceProjectionSource(pool,c.payment!.merchantId);}
+   for(const role of Object.keys(productionPaymentRoleNames(c.database.name)) as PaymentRole[]){const pool=await open(role);if(role==='projector')await verifyAcceptanceProjectionSource(pool,c.payment!.merchantId);await verifyAcceptanceTargetedRuntime(pool,role,c.payment!.merchantId);}
    return {status:'READY',verifiedPaymentRoles:5,providerCalls:0};
   }
   if(command==='reconcile-one'){
-   const dispatcher=new PgPaymentReconciliation(await open('dispatcher'),undefined,authority),worker=new PgPaymentReconciliation(await open('worker'),undefined,authority);
-   return await reconcileProductionOne({dispatch:(e,n)=>dispatcher.dispatch(e,n),claimBatch:(e,id,n)=>worker.claimBatch(e,id,n),finalize:(claim,outcome)=>worker.finalize(claim,outcome),diagnostics:async()=>[]},worker,new SquareProductionPaymentTruth(transport(target().locationId)),target());
+   // Exact-payment dispatch/claim (0052) so an older unrelated inbox event is never touched, and the persisted attempt is
+   // located by identity because a lost checkout response leaves provider_id null. GetPayment remains the only authority.
+   const recovery={attemptId:target().attemptId,bookingId:target().bookingId,paymentId:target().paymentId};
+   const dispatcher=new PgPaymentReconciliation(await open('dispatcher'),undefined,authority,recovery),worker=new PgPaymentReconciliation(await open('worker'),undefined,authority,recovery);
+   return await reconcileProductionOne({dispatch:(e,n)=>dispatcher.dispatch(e,n),claimBatch:(e,id,n)=>worker.claimBatch(e,id,n),finalize:(claim,outcome)=>worker.finalize(claim,outcome),diagnostics:async()=>[]},worker,new SquareProductionPaymentTruth(transport(target().locationId)),target(),{unboundCandidate:true});
   }
   if(command==='project-one'){
    if(!input.reference)fail('M3_PROJECTION_REFERENCE_REQUIRED');

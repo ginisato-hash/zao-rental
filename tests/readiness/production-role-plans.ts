@@ -19,6 +19,7 @@ import {PgSquareProductionWebhookInbox, PgSquareWebhookInbox} from '../../packag
 import {productionServices, type ProductionConfiguration} from '../../packages/auth/src/production-config';
 import {productionProjectionChecks} from './production-projection-checks';
 import {applyProductionPaymentRuntimeMigration} from '../../scripts/production-payment-runtime-migration';
+import {applyProductionTargetedReconciliationMigration} from '../../scripts/production-targeted-reconciliation-migration';
 
 const TARGET = 'zao_rental_role_plan_test';
 let passed = 0;
@@ -112,6 +113,9 @@ try {
   await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
     const c=await production!.connect();try{
       const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0050'")).rows[0].checksum;
+      // 0052 ships in the same plan; rewind it so the historical 0050→0051 proof still starts from a 51-entry-less registry.
+      await c.query('DROP FUNCTION payment_reconciliation.dispatch_target_production(text,text),payment_reconciliation.claim_target_production(text,text,text),payment_reconciliation.load_context_target_production(uuid,uuid,text,text)');
+      await c.query("DELETE FROM foundation_migrations WHERE id='0052'");
       await c.query('DROP FUNCTION payment_projection.lock_source_production(uuid,text,text)');
       await c.query("DELETE FROM foundation_migrations WHERE id='0051'");
       await c.query(`GRANT EXECUTE ON FUNCTION payment_projection.lock_source(uuid) TO ${names.projector}`);
@@ -136,6 +140,32 @@ try {
       assert.equal(commits,1);assert.equal((await c.query("SELECT count(*)::int n FROM foundation_migrations WHERE id='0051'")).rows[0].n,1);
       // Drop only this synthetic placeholder; the canonical app role plan below recreates the full role.
       await c.query(`REVOKE EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) FROM ${holdRole}`);await c.query(`DROP ROLE ${holdRole}`);
+    }finally{c.release();}
+  });
+  await check('Fixed Production 0051→0052 upgrade rejects drift, rolls back partial failure, installs only0052 with exact grants, refuses replay and reports lost COMMIT',async()=>{
+    const c=await production!.connect();try{
+      const fns='payment_reconciliation.dispatch_target_production(text,text),payment_reconciliation.claim_target_production(text,text,text),payment_reconciliation.load_context_target_production(uuid,uuid,text,text)';
+      const absent=async()=>(await c.query("SELECT to_regprocedure('payment_reconciliation.dispatch_target_production(text,text)') IS NULL a,to_regprocedure('payment_reconciliation.claim_target_production(text,text,text)') IS NULL b,to_regprocedure('payment_reconciliation.load_context_target_production(uuid,uuid,text,text)') IS NULL c")).rows[0];
+      assert.deepEqual(await absent(),{a:true,b:true,c:true});
+      const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0051'")).rows[0].checksum;
+      await c.query("UPDATE foundation_migrations SET checksum=repeat('0',64) WHERE id='0051'");
+      await assert.rejects(applyProductionTargetedReconciliationMigration(c,TARGET,db.identity.user),{message:'PRODUCTION_TARGETED_RECONCILIATION_RECONCILIATION_REQUIRED'});
+      assert.deepEqual(await absent(),{a:true,b:true,c:true});
+      await c.query("UPDATE foundation_migrations SET checksum=$1 WHERE id='0051'",[checksum]);
+      const failing=Object.create(c) as typeof c;
+      failing.query=(async(...args:unknown[])=>{if(String(args[0]).startsWith('INSERT INTO public.foundation_migrations'))throw Error('SYNTHETIC_AFTER_DDL_FAILURE');return Reflect.apply(c.query,c,args);}) as typeof c.query;
+      await assert.rejects(applyProductionTargetedReconciliationMigration(failing,TARGET,db.identity.user),{message:'SYNTHETIC_AFTER_DDL_FAILURE'});
+      assert.deepEqual(await absent(),{a:true,b:true,c:true});
+      const result=await applyProductionTargetedReconciliationMigration(c,TARGET,db.identity.user);
+      assert.equal(result.status,'PRODUCTION_TARGETED_RECONCILIATION_INSTALLED');assert.deepEqual(result.applied,['0052']);assert.equal(result.credentialChanges,0);assert.equal(result.businessWrites,0);
+      await assert.rejects(applyProductionTargetedReconciliationMigration(c,TARGET,db.identity.user),{message:'PRODUCTION_TARGETED_RECONCILIATION_RECONCILIATION_REQUIRED'});
+      // Reconstruct the pre-0052 state only inside this disposable fixture, then lose the COMMIT acknowledgement.
+      await c.query('DROP FUNCTION '+fns);await c.query("DELETE FROM foundation_migrations WHERE id='0052'");
+      let commits=0;const lost=Object.create(c) as typeof c;
+      lost.query=(async(...args:unknown[])=>{const value=await Reflect.apply(c.query,c,args);if(args[0]==='COMMIT'){commits++;throw Error('SYNTHETIC_COMMIT_ACK_LOSS');}return value;}) as typeof c.query;
+      await assert.rejects(applyProductionTargetedReconciliationMigration(lost,TARGET,db.identity.user),{message:'PRODUCTION_TARGETED_RECONCILIATION_COMMIT_UNKNOWN_READBACK_REQUIRED'});
+      assert.equal(commits,1);assert.equal((await c.query("SELECT count(*)::int n FROM foundation_migrations WHERE id='0052'")).rows[0].n,1);
+      assert.deepEqual(await absent(),{a:false,b:false,c:false});
     }finally{c.release();}
   });
   const receiver = await loginRole(production, db.identity.dbPort, TARGET, names.receiver); opened.push(receiver);

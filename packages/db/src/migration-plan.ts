@@ -26,4 +26,5 @@ export const migrationPlan = [
   {id:'0050',file:'0050_cancellation_action.sql'},
   {id:'0051',file:'0051_production_projection_source.sql'},
   {id:'0052',file:'0052_production_targeted_reconciliation.sql'},
+  {id:'0053',file:'0053_production_expired_failed_terminalization.sql'},
 ] as const;

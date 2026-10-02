@@ -418,6 +418,13 @@
    "sha256": "05fa67fddc1abd1c0e405c085f81db14d8dd0cb3c5957eeaba1ec5f6f8e5e057",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0053",
+   "file": "0053_production_expired_failed_terminalization.sql",
+   "sha256": "1617b2b434ec60b2b9ada40ecae546292cd6980de6195f606f6f7a5b0c8f4e3b",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

@@ -19,6 +19,7 @@ import {PgSquareProductionWebhookInbox, PgSquareWebhookInbox} from '../../packag
 import {productionServices, type ProductionConfiguration} from '../../packages/auth/src/production-config';
 import {productionProjectionChecks} from './production-projection-checks';
 import {applyProductionPaymentRuntimeMigration} from '../../scripts/production-payment-runtime-migration';
+import {applyProductionExpiredFailedTerminalizationMigration} from '../../scripts/production-expired-failed-terminalization-migration';
 import {applyProductionTargetedReconciliationMigration} from '../../scripts/production-targeted-reconciliation-migration';
 
 const TARGET = 'zao_rental_role_plan_test';
@@ -113,6 +114,8 @@ try {
   await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
     const c=await production!.connect();try{
       const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0050'")).rows[0].checksum;
+      await c.query('DROP FUNCTION payment_projection.terminalize_expired_unbound_failed_production(uuid,uuid,uuid,text,text,bigint,text)');
+      await c.query("DELETE FROM foundation_migrations WHERE id='0053'");
       // 0052 ships in the same plan; rewind it so the historical 0050→0051 proof still starts from a 51-entry-less registry.
       await c.query('DROP FUNCTION payment_reconciliation.dispatch_target_production(text,text),payment_reconciliation.claim_target_production(text,text,text),payment_reconciliation.load_context_target_production(uuid,uuid,text,text)');
       await c.query("DELETE FROM foundation_migrations WHERE id='0052'");
@@ -166,6 +169,34 @@ try {
       await assert.rejects(applyProductionTargetedReconciliationMigration(lost,TARGET,db.identity.user),{message:'PRODUCTION_TARGETED_RECONCILIATION_COMMIT_UNKNOWN_READBACK_REQUIRED'});
       assert.equal(commits,1);assert.equal((await c.query("SELECT count(*)::int n FROM foundation_migrations WHERE id='0052'")).rows[0].n,1);
       assert.deepEqual(await absent(),{a:false,b:false,c:false});
+    }finally{c.release();}
+  });
+  await check('Fixed 0053 installer rejects drift/posture, rolls back partial failure, proves exact ACL after COMMIT, refuses replay and reports lost acknowledgement',async()=>{
+    const c=await production!.connect();try{
+      const fn='payment_projection.terminalize_expired_unbound_failed_production(uuid,uuid,uuid,text,text,bigint,text)';
+      const absent=async()=>(await c.query('SELECT to_regprocedure($1) IS NULL absent',[fn])).rows[0].absent;
+      assert.equal(await absent(),true);
+      const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0052'")).rows[0].checksum;
+      await c.query("UPDATE foundation_migrations SET checksum=repeat('0',64) WHERE id='0052'");
+      await assert.rejects(applyProductionExpiredFailedTerminalizationMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
+      await c.query("UPDATE foundation_migrations SET checksum=$1 WHERE id='0052'",[checksum]);
+      await c.query(`ALTER ROLE ${names.projector} INHERIT`);
+      await assert.rejects(applyProductionExpiredFailedTerminalizationMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
+      await c.query(`ALTER ROLE ${names.projector} NOINHERIT`);
+      const failing=Object.create(c) as typeof c;
+      failing.query=(async(...args:unknown[])=>{if(String(args[0]).startsWith('INSERT INTO public.foundation_migrations'))throw Error('SYNTHETIC_AFTER_DDL_FAILURE');return Reflect.apply(c.query,c,args);}) as typeof c.query;
+      await assert.rejects(applyProductionExpiredFailedTerminalizationMigration(failing,TARGET,db.identity.user),/SYNTHETIC_AFTER_DDL_FAILURE/);
+      assert.equal(await absent(),true);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,52);
+      const result=await applyProductionExpiredFailedTerminalizationMigration(c,TARGET,db.identity.user);
+      assert.equal(result.status,'PRODUCTION_EXPIRED_FAILED_TERMINALIZATION_INSTALLED');assert.deepEqual(result.applied,['0053']);
+      assert.equal(result.grantsAdded,1);assert.equal(result.credentialChanges,0);assert.equal(result.businessWrites,0);
+      assert.equal((await c.query("SELECT checksum FROM foundation_migrations WHERE id='0053'")).rows[0].checksum,result.checksum);
+      await assert.rejects(applyProductionExpiredFailedTerminalizationMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
+      await c.query('DROP FUNCTION '+fn);await c.query("DELETE FROM foundation_migrations WHERE id='0053'");
+      let commits=0;const lost=Object.create(c) as typeof c;
+      lost.query=(async(...args:unknown[])=>{const value=await Reflect.apply(c.query,c,args);if(args[0]==='COMMIT'){commits++;throw Error('SYNTHETIC_COMMIT_ACK_LOSS');}return value;}) as typeof c.query;
+      await assert.rejects(applyProductionExpiredFailedTerminalizationMigration(lost,TARGET,db.identity.user),{message:'PRODUCTION_EXPIRED_FAILED_TERMINALIZATION_COMMIT_UNKNOWN_READBACK_REQUIRED'});
+      assert.equal(commits,1);assert.equal(await absent(),false);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,53);
     }finally{c.release();}
   });
   const receiver = await loginRole(production, db.identity.dbPort, TARGET, names.receiver); opened.push(receiver);

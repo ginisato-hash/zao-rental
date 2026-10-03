@@ -34,7 +34,7 @@ test('null attempt providerId on a CANCELLED booking binds only through CANCELLE
  for(const [field,value] of Object.entries({referenceId:id(90),idempotencyKey:id(91),merchantId:'other',locationId:'other',amountJpy:101,currency:'USD'}))assert.equal(decide(s,{...observation(),[field]:value} as never,clock).decision,'BLOCK_IDENTITY_MISMATCH','mismatch '+field);
  s.attempt.providerId='different-payment';assert.equal(decide(s,observation(),clock).decision,'BLOCK_IDENTITY_MISMATCH');
 });
-test('null attempt providerId on any non-cancelled booking never confirms, reviews or mutates',()=>{
+test('null attempt providerId with active HOLD never confirms, reviews or mutates',()=>{
  for(const state of ['PAYMENT_PENDING','PAYMENT_REVIEW'])for(const status of ['COMPLETED','PENDING','FAILED','CANCELED'] as const){
   const s=cancelledState();s.booking.state=state;const before=structuredClone(s);
   const plan=decide(s,observation(status),clock);assert.equal(plan.decision,'BLOCK_IDENTITY_MISMATCH');assert.equal(plan.mutation,'NONE');assert.deepEqual(s,before);
@@ -68,9 +68,10 @@ test('operator reconcile: unbound candidate needs the explicit option; a context
 
 // ---- operator attempt binding ----
 const attemptPool=(patch:Record<string,unknown>)=>({query:async()=>({rows:[{...target,mode:'SQUARE_PRODUCTION',bookingState:'PAYMENT_PENDING',...patch}]})}) as unknown as Pool;
-test('persisted attempt may be unbound only for an already CANCELLED booking and never bound to another payment',async()=>{
+test('persisted attempt needs CANCELLED or an exact expired HOLD, and never binds another payment',async()=>{
  await verifyAcceptanceAttempt(attemptPool({}),target);
  await verifyAcceptanceAttempt(attemptPool({paymentId:null,bookingState:'CANCELLED'}),target);
+ for(const bookingState of ['PAYMENT_PENDING','PAYMENT_REVIEW'])await verifyAcceptanceAttempt(attemptPool({paymentId:null,bookingState,expiredUnboundCandidate:true}),target);
  await assert.rejects(verifyAcceptanceAttempt(attemptPool({paymentId:null}),target),/M3_UNBOUND_PAYMENT_REQUIRES_CANCELLED_BOOKING/);
  await assert.rejects(verifyAcceptanceAttempt(attemptPool({paymentId:null,bookingState:'PAYMENT_REVIEW'}),target),/M3_UNBOUND_PAYMENT_REQUIRES_CANCELLED_BOOKING/);
  for(const patch of [{paymentId:'OTHER'},{mode:'SQUARE_SANDBOX'},{amountJpy:1},{idempotencyKey:id(90)},{merchantId:'OTHER'},{locationId:'OTHER'}])await assert.rejects(verifyAcceptanceAttempt(attemptPool({paymentId:null,bookingState:'CANCELLED',...patch}),target),/M3_TARGET_REJECTED/);

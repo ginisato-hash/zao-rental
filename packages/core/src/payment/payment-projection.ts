@@ -15,7 +15,7 @@ export type ProjectionAttempt={expected:PaymentRequest;actor:string;state:string
 export type ProjectionHold={id:string;ownerId:string;reservationId:string;state:string;paymentState:string;allocationStage:string;transferAttention:string|null;expiresAt:string;dueAt:string;confirmedAt:string|null;version:number;conditions:HoldConditions};
 export type ProjectionQuote={id:string;actor:string;holdId:string|null;conditions:HoldConditions;snapshot:Record<string,unknown>;snapshotHash:string;couponId:string|null;commercialPriceValid?:boolean};
 export type ProjectionState={booking:ProjectionBooking;attempt:ProjectionAttempt;hold:ProjectionHold|null;quote:ProjectionQuote|null;gearClaimsIntact:boolean;wearClaimsIntact:boolean;forbiddenTransfer:boolean;unreadyTransferAt:string|null;revision:number;previous:PaymentObservation|null};
-export type ProjectionPlan={decision:ProjectionDecision;fingerprint:string;observationFingerprint:string;observation:PaymentObservation|null;operatorActionRequired:boolean;mutation:'NONE'|'PENDING'|'COMPLETED'|'FAILED'|'REVIEW_COMPLETED'|'CANCELLED_PAYMENT'};
+export type ProjectionPlan={decision:ProjectionDecision;fingerprint:string;observationFingerprint:string;observation:PaymentObservation|null;operatorActionRequired:boolean;mutation:'NONE'|'PENDING'|'COMPLETED'|'FAILED'|'FAILED_CANCELLED'|'REVIEW_COMPLETED'|'CANCELLED_PAYMENT'};
 export type ProjectionResult={bookingId:string;attemptId:string;revision:number;decision:ProjectionDecision;decisionFingerprint:string;observationFingerprint:string;providerStatus:string|null;bookingState:string;attemptState:string;operatorActionRequired:boolean;duplicate:boolean};
 export class ProjectionError extends Error{constructor(public code:string){super(code);}}
 const hash=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
@@ -43,6 +43,20 @@ export function verifyProjectionSource(ref:ProjectionReference,source:Projection
   return o;
  }catch{throw new ProjectionError('PROJECTION_SOURCE_NOT_ACCEPTED');}
 }
+function projectionPriceIntact(s:ProjectionState,o:PaymentObservation){
+ const {booking:b,attempt:a,hold:h,quote:q}=s;
+ if(!h)return false;
+ try{
+  parseConditions(b.conditions);parseConditions(h.conditions);
+  if(b.conditions.reservationId!==b.id||flowHash(b.conditions)!==flowHash(h.conditions)||h.dueAt!==normalizePeriod(h.conditions.period).dueAt)throw new Error();
+  if(!q||q.id!==b.quoteId||q.holdId!==h.id||q.actor!==b.ownerId||flowHash(q.conditions)!==flowHash(b.conditions)||q.couponId!==null)throw new Error();
+  if(!hash(b.priceHash)||flowHash(b.priceSnapshot)!==b.priceHash||q.snapshotHash!==b.priceHash||flowHash(q.snapshot)!==q.snapshotHash||flowHash(q.snapshot.conditions)!==flowHash(b.conditions))throw new Error();
+  if(b.priceSnapshot.chargeReady!==(b.mode==='SQUARE_PRODUCTION')||b.mode==='SQUARE_PRODUCTION'&&q.commercialPriceValid!==true||b.priceSnapshot.currency!=='JPY'||b.priceSnapshot.totalJpy!==a.expected.amountJpy)throw new Error();
+  const discount=b.priceSnapshot.advanceDiscountJpy;if(!Number.isSafeInteger(discount)||Number(discount)<0||Number(discount)>a.expected.amountJpy)throw new Error();
+  if(o.status==='COMPLETED'&&Number(discount)>0&&advanceQualification(b.conditions.period.startDate,o.completedAt?new Date(o.completedAt):null)!=='QUALIFIED')throw new Error();
+  return true;
+ }catch{return false;}
+}
 /** Pure business decision. All facts are re-read under the transaction's locks by the repository. */
 export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,now:Date):ProjectionPlan{
  const finish=(decision:ProjectionDecision,mutation:ProjectionPlan['mutation']='NONE',observation:PaymentObservation|null=o):ProjectionPlan=>{
@@ -54,7 +68,7 @@ export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,n
   if(!Number.isFinite(now.getTime()))throw new Error();accepted=normalized(o,now);
   const {booking:b,attempt:a}=s;flowId(b.id);flowId(a.expected.attemptId);flowId(a.expected.idempotencyKey);
   // A null attempt providerId is the lost-checkout-response case: matchPayment below still requires booking,
-  // idempotency key, merchant, location and amount. It may bind only in the CANCELLED_PAYMENT branch.
+  // idempotency key, merchant, location and amount. Only the two guarded cancellation branches may bind it.
   if(!Number.isSafeInteger(s.revision)||s.revision<0||!Number.isSafeInteger(b.version)||b.version<1||b.id!==a.expected.bookingId||a.actor!==b.ownerId||a.providerId!==null&&a.providerId!==accepted.providerId||!bookingStateValid(b.mode,b.state))throw new Error();
   matchPayment(a.expected,accepted);
  }catch{return finish('BLOCK_IDENTITY_MISMATCH','NONE',null);}
@@ -80,20 +94,22 @@ export function decidePaymentProjection(s:ProjectionState,o:PaymentObservation,n
   if(!q||q.id!==b.quoteId||q.snapshotHash!==b.priceHash||flowHash(b.priceSnapshot)!==b.priceHash||flowHash(q.snapshot)!==b.priceHash||b.priceSnapshot.totalJpy!==a.expected.amountJpy||b.priceSnapshot.currency!=='JPY'||b.mode==='SQUARE_PRODUCTION'&&(b.priceSnapshot.chargeReady!==true||q.commercialPriceValid!==true))return finish('BLOCK_PRICE_INTEGRITY');
   return finish(o.status==='COMPLETED'?'APPLY_COMPLETED':o.status==='PENDING'?'KEEP_PENDING':o.status==='FAILED'?'APPLY_FAILED':'APPLY_CANCELED','CANCELLED_PAYMENT');
  }
+ // A lost response can close only a failed Production payment after its exact original HOLD expired.
+ if(a.providerId===null&&b.mode==='SQUARE_PRODUCTION'&&['PAYMENT_PENDING','PAYMENT_REVIEW'].includes(b.state)
+  &&!b.confirmedAt&&['SUBMITTING','UNKNOWN','PENDING','REVIEW'].includes(a.state)&&!a.completedAt&&a.providerState!=='COMPLETED'
+  &&['FAILED','CANCELED'].includes(o.status)&&h&&h.id===b.holdId&&h.ownerId===b.ownerId&&h.reservationId===b.id
+  &&h.state==='ACTIVE'&&!h.confirmedAt&&h.allocationStage==='PROVISIONAL'&&['PENDING','UNKNOWN'].includes(h.paymentState)
+  &&Number.isFinite(Date.parse(h.expiresAt))&&Number.isFinite(Date.parse(h.dueAt))
+  &&(Date.parse(h.expiresAt)<=now.getTime()||Date.parse(h.dueAt)<=now.getTime())){
+  if(!projectionPriceIntact(s,o))return finish('BLOCK_PRICE_INTEGRITY');
+  return finish(o.status==='FAILED'?'APPLY_FAILED':'APPLY_CANCELED','FAILED_CANCELLED');
+ }
  if(a.providerId===null)return finish('BLOCK_IDENTITY_MISMATCH','NONE',null);
  if(a.state==='COMPLETED'||b.confirmedAt||bookingConfirmed(b.mode,b.state)||bookingCompleted(b.mode,b.state))return finish('NOOP_TERMINAL');
  if(['FAILED','CANCELED'].includes(a.providerState??'')||a.state==='FAILED')return finish(o.status==='COMPLETED'?'BLOCK_INVALID_TRANSITION':'NOOP_TERMINAL');
  if(!['SUBMITTING','UNKNOWN','PENDING','REVIEW'].includes(a.state)||!['PAYMENT_PENDING','PAYMENT_REVIEW'].includes(b.state)||!h||h.ownerId!==b.ownerId||h.id!==b.holdId||h.reservationId!==b.id)return finish('BLOCK_INVALID_TRANSITION');
  const block=(decision:ProjectionDecision)=>finish(decision,o.status==='COMPLETED'?'REVIEW_COMPLETED':'NONE');
- try{
-  parseConditions(b.conditions);parseConditions(h.conditions);
-  if(b.conditions.reservationId!==b.id||flowHash(b.conditions)!==flowHash(h.conditions)||h.dueAt!==normalizePeriod(h.conditions.period).dueAt)throw new Error();
-  if(!q||q.id!==b.quoteId||q.holdId!==h.id||q.actor!==b.ownerId||flowHash(q.conditions)!==flowHash(b.conditions)||q.couponId!==null)throw new Error();
-  if(!hash(b.priceHash)||flowHash(b.priceSnapshot)!==b.priceHash||q.snapshotHash!==b.priceHash||flowHash(q.snapshot)!==q.snapshotHash||flowHash(q.snapshot.conditions)!==flowHash(b.conditions))throw new Error();
-  if(b.priceSnapshot.chargeReady!==(b.mode==='SQUARE_PRODUCTION')||b.mode==='SQUARE_PRODUCTION'&&q.commercialPriceValid!==true||b.priceSnapshot.currency!=='JPY'||b.priceSnapshot.totalJpy!==a.expected.amountJpy)throw new Error();
-  const discount=b.priceSnapshot.advanceDiscountJpy;if(!Number.isSafeInteger(discount)||Number(discount)<0||Number(discount)>a.expected.amountJpy)throw new Error();
-  if(o.status==='COMPLETED'&&Number(discount)>0&&advanceQualification(b.conditions.period.startDate,o.completedAt?new Date(o.completedAt):null)!=='QUALIFIED')throw new Error();
- }catch{return block('BLOCK_PRICE_INTEGRITY');}
+ if(!projectionPriceIntact(s,o))return block('BLOCK_PRICE_INTEGRITY');
  if(h.state!=='ACTIVE'||h.confirmedAt||h.allocationStage!=='PROVISIONAL'||!['PENDING','UNKNOWN'].includes(h.paymentState))return block('BLOCK_INVALID_TRANSITION');
  if(o.status==='COMPLETED'){
   if(!Number.isFinite(Date.parse(h.expiresAt))||!Number.isFinite(Date.parse(h.dueAt))||Date.parse(h.expiresAt)<=now.getTime()||Date.parse(h.dueAt)<=now.getTime())return block('BLOCK_EXPIRED_HOLD');

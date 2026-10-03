@@ -422,7 +422,7 @@
   {
    "id": "0053",
    "file": "0053_production_expired_failed_terminalization.sql",
-   "sha256": "1617b2b434ec60b2b9ada40ecae546292cd6980de6195f606f6f7a5b0c8f4e3b",
+   "sha256": "dd30f52c621d4bb77133a7bb588a2b29f68686d60196d6a57369ee62e1826c9a",
    "runtimeGuards": 0,
    "guard": null
   }

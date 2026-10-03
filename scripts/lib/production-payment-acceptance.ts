@@ -81,14 +81,19 @@ export async function verifyAcceptanceRole(pool:Pool,c:ProductionConfiguration,r
 }
 
 /** The persisted provider_id must equal the target payment, or still be null after a lost checkout response.
- * A null binding is only admitted for an already CANCELLED booking: that is the one projection branch that may bind it. */
+ * An unbound pending booking additionally requires an exact expired HOLD; 0053 revalidates failed persisted truth. */
 export async function verifyAcceptanceAttempt(pool:Pool,target:AcceptanceTarget){
- const row=(await pool.query(`SELECT a.id AS "attemptId",a.booking_id AS "bookingId",a.idempotency_key AS "idempotencyKey",a.merchant_id AS "merchantId",a.location_id AS "locationId",a.amount_jpy::integer AS "amountJpy",a.currency,a.provider_id AS "paymentId",b.mode,b.state AS "bookingState"
- FROM rental_payment_attempts a JOIN rental_bookings b ON b.id=a.booking_id WHERE a.id=$1 AND a.booking_id=$2`,[target.attemptId,target.bookingId])).rows[0];
+ const row=(await pool.query(`SELECT a.id AS "attemptId",a.booking_id AS "bookingId",a.idempotency_key AS "idempotencyKey",a.merchant_id AS "merchantId",a.location_id AS "locationId",a.amount_jpy::integer AS "amountJpy",a.currency,a.provider_id AS "paymentId",b.mode,b.state AS "bookingState",
+ coalesce(b.state IN ('PAYMENT_PENDING','PAYMENT_REVIEW') AND b.confirmed_at IS NULL
+  AND a.actor=b.owner_id AND a.state IN ('SUBMITTING','UNKNOWN','PENDING','REVIEW')
+  AND h.owner_id=b.owner_id AND h.reservation_id=b.id AND h.state='ACTIVE' AND h.confirmed_at IS NULL
+  AND h.allocation_stage='PROVISIONAL' AND h.payment_state IN ('PENDING','UNKNOWN')
+  AND (h.expires_at<=inventory_clock() OR h.due_at<=inventory_clock()),false) AS "expiredUnboundCandidate"
+ FROM rental_payment_attempts a JOIN rental_bookings b ON b.id=a.booking_id LEFT JOIN inventory_holds h ON h.id=b.hold_id WHERE a.id=$1 AND a.booking_id=$2`,[target.attemptId,target.bookingId])).rows[0];
  if(!row)fail('M3_TARGET_REJECTED');
- const {mode,bookingState,paymentId,...persisted}=row;
+ const {mode,bookingState,paymentId,expiredUnboundCandidate,...persisted}=row;
  if(mode!=='SQUARE_PRODUCTION'||paymentId!==null&&paymentId!==target.paymentId||flowHash({...persisted,paymentId:target.paymentId})!==flowHash(target))fail('M3_TARGET_REJECTED');
- if(paymentId===null&&bookingState!=='CANCELLED')fail('M3_UNBOUND_PAYMENT_REQUIRES_CANCELLED_BOOKING');
+ if(paymentId===null&&bookingState!=='CANCELLED'&&expiredUnboundCandidate!==true)fail('M3_UNBOUND_PAYMENT_REQUIRES_CANCELLED_BOOKING');
 }
 
 /** Zero-row runtime admission of the targeted 0052 functions with a payment ID that matches no event/job.

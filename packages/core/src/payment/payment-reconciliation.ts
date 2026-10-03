@@ -27,14 +27,16 @@ export class PaymentReconciliationWorker{
   private now:()=>Date=()=>new Date(),private jitter:()=>number=Math.random,private deadline:LookupDeadline=boundedLookup,
   /** Attended response-loss recovery only: admits a persisted attempt whose providerId is still null for exactly this candidate payment ID. Absent for every ordinary worker. */
   private unboundCandidate?:{readonly paymentId:string}){}
- async runOnce(environment:WebhookEnvironment,workerId:string,limit=1){
+ async runOnce(environment:WebhookEnvironment,workerId:string,limit=1,continueWhile:()=>boolean=()=>true){
   if(!Number.isInteger(limit)||limit<1||limit>reconciliationPolicy.maxBatch||!/^[-A-Za-z0-9_]{1,100}$/.test(workerId))throw new Error('INVALID_WORKER_BATCH');
+  if(!continueWhile())return {dispatched:0,claimed:0,results:[]};
   const dispatched=await this.repository.dispatch(environment,limit);
+  if(!continueWhile())return {dispatched,claimed:0,results:[]};
   const claims=await this.repository.claimBatch(environment,workerId,limit);
   let contexts:ReadonlyMap<string,PaymentContext>|undefined;
   if(this.contexts.loadBatch){try{contexts=await this.contexts.loadBatch(claims);}catch{contexts=new Map();}}
   const results=[];
-  for(const claim of claims){const result=await this.process(claim,contexts);results.push(result);if('code' in result&&(result.code==='AUTH_BLOCKED'||result.code==='RATE_LIMITED'))break;}
+  for(const claim of claims){if(!continueWhile())break;const result=await this.process(claim,contexts);results.push(result);if('code' in result&&(result.code==='AUTH_BLOCKED'||result.code==='RATE_LIMITED'))break;}
   return {dispatched,claimed:claims.length,results};
  }
  private failure(claim:ReconciliationClaim,code:LookupFailure):JobOutcome{

@@ -19,4 +19,7 @@ test('transport failure classification never exports messages, URLs, cookies or 
   const result=safeTestTransportFailure(new Error(message+' URL=http://SYNTHETIC_PRIVATE Cookie=SYNTHETIC_PRIVATE'));assert.deepEqual(result,{code:'TEST_HTTP_TRANSPORT_FAILURE',category});assert.ok(!JSON.stringify(result).includes('PRIVATE'));
  }
  assert.deepEqual(safeTestTransportFailure({get message(){throw Error('must not invoke');}}),{code:'TEST_HTTP_TRANSPORT_FAILURE',category:'UNCLASSIFIED'});
+ for(const [message,category] of [['DISK_BLOCKED {"private":"SYNTHETIC_PRIVATE"}','DISK_SPACE'],['Port 23920 is occupied; refusing to attach or kill any process','LOCAL_PORT_UNAVAILABLE'],['Ambient database configuration detected; SYNTHETIC_PRIVATE','AMBIENT_DATABASE_REJECTED']]){
+  assert.deepEqual(safeTestTransportFailure(new Error(message)),{code:'TEST_HTTP_TRANSPORT_FAILURE',category});
+ }
 });

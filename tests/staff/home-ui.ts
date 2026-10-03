@@ -143,7 +143,7 @@ try{
   await page.waitForURL(new RegExp('/staff/rentals\\?booking='+confirmedId));
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText(confirmedId);
   await page.getByLabel('準備・最終適合の作業記録').fill('SYNTHETIC UX5D staff fit; no automatic DIN');
-  await page.getByLabel('表示された個体と数量を照合した（合成検証）').check();
+  await page.getByLabel('表示された個体と数量を照合した').check();
   await page.getByRole('button',{name:'照合した用品を準備固定'}).click();
   await page.getByRole('button',{name:'道具の貸出を記録'}).click();
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('OUT');
@@ -201,7 +201,7 @@ try{
   await page.goto('/staff/rentals?booking='+crossStoreId);
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText(crossStoreId);
   await page.getByLabel('準備・最終適合の作業記録').fill('SYNTHETIC UX5D cross-store fit; no automatic DIN');
-  await page.getByLabel('表示された個体と数量を照合した（合成検証）').check();
+  await page.getByLabel('表示された個体と数量を照合した').check();
   await page.getByRole('button',{name:'照合した用品を準備固定'}).click();
   await page.getByRole('button',{name:'道具の貸出を記録'}).click();
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('OUT');

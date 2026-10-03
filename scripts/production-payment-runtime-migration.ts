@@ -7,8 +7,8 @@ const refused='PRODUCTION_PAYMENT_RUNTIME_RECONCILIATION_REQUIRED';
  * No role creation, credential rotation, historical migration replay or business-row write. */
 export async function applyProductionPaymentRuntimeMigration(c:PoolClient,database:string,owner:string){
  const plan=await bootstrapPlan(database),payment=productionPaymentRoleNames(database),app=productionAppRoleNames(database);
- // Historical one-shot: valid only inside the exact 53-entry plan it ships with; 0052/0053 are never applied here.
- if(plan.entries.length!==53||plan.entries[50]?.id!=='0051'||plan.entries[51]?.id!=='0052')throw Error(refused);
+ // Historical one-shot: the immutable prefix is checked below; later migrations are never applied here.
+ if(plan.entries.length<53||plan.entries[50]?.id!=='0051'||plan.entries[51]?.id!=='0052')throw Error(refused);
  let committing=false,committed=false;
  try{
   await c.query('BEGIN');

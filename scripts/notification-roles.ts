@@ -10,5 +10,6 @@ export async function provisionNotificationRole(owner:Pool,identity:{namespace:s
  await owner.query(`CREATE ROLE ${user} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
  await owner.query(`GRANT CONNECT ON DATABASE ${identity.database} TO ${user}`);await owner.query(`GRANT USAGE ON SCHEMA public TO ${user}`);
  await owner.query(`GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid),notification_sync_confirmed(),notification_claim(uuid),notification_material(uuid,uuid),notification_settle(uuid,uuid,text,text,text),notification_unknown(uuid),notification_reconciled(uuid,text),notification_due() TO ${user}`);
+ if((await owner.query("SELECT to_regprocedure('notification_due_normal(timestamptz,integer)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION notification_due_normal(timestamptz,integer) TO ${user}`);
  const notificationDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password},notificationPool=new Pool({...notificationDb,max:4,connectionTimeoutMillis:2000});return {notificationDb,notificationPool,close:trackPoolLifecycle(notificationPool)};
 }

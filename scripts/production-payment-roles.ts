@@ -39,6 +39,17 @@ export function productionPaymentRoleNames(databaseName: string) {
   return names;
 }
 
+/** Additive finite-worker surface only; operator applies after review/backup, never at startup. */
+export function productionNormalWorkerGrants(databaseName:string,operationsRole:string):string[]{
+ const n=productionPaymentRoleNames(databaseName);if(!IDENTIFIER.test(operationsRole)||operationsRole!==databaseName+'_operations')throw Error('PRODUCTION_ROLE_NAME_INVALID');
+ return [
+  `GRANT EXECUTE ON FUNCTION payment_reconciliation.dispatch_normal(text,integer,timestamptz) TO ${n.dispatcher}`,
+  `GRANT EXECUTE ON FUNCTION payment_reconciliation.claim_normal(text,integer,text,timestamptz) TO ${n.worker}`,
+  `GRANT EXECUTE ON FUNCTION payment_projection.normal_candidates(text,timestamptz,integer) TO ${n.projector}`,
+  `GRANT EXECUTE ON FUNCTION notification_due_normal(timestamptz,integer) TO ${operationsRole}`,
+ ];
+}
+
 /** CREATE ROLE statements only — NOLOGIN, no password, no privilege beyond what a later GRANT
  * statement adds explicitly. An operator flips exactly one of these to LOGIN with a real
  * password, out of band, when that specific credential is actually provisioned.

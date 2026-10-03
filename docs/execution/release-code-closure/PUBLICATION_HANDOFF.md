@@ -20,9 +20,9 @@ projection, failed payment or reconciliation. Existing notification remains
    approved provisional data without claiming it is received or available for physical handoff.
 4. Exercise JA/EN and 390/1440px customer/staff paths; distinguish isolated providers and browser
    camera fixtures from genuine provider and device acceptance. Correct reproduced blockers only.
-5. Freeze one candidate after targeted checks; run one final full verification, then one independent
-   Claude static review on sanitized source/base/head/authority/manifest. Existing Team, extra usage OFF,
-   tools/MCP/hooks off. Initial1; correction1 only for B/H/M. One ordinary PR, natural Foundation CI.
+5. Freeze one candidate after targeted checks; run one final full verification, then independent ChatGPT / Technical Director
+   static review on sanitized source/base/head/authority/manifest. PR48 is already accepted/merged;
+   only the new candidate requires review. Claude/quota waiting is retired. One ordinary PR, natural Foundation CI.
 6. Merge only exact reviewed/validated head with SUCCESS CI and no conflict. Never rerun the same SHA
    to find green. Deploy an accepted merged candidate once in the existing protected project.
 7. Record exact source, review, CI, deployment, runtime and remaining inputs in the Issue's release proof.
@@ -39,7 +39,7 @@ Both approved Square locations are ACTIVE with card processing. The dedicated Pr
 and its existing enabled payment-created/payment-updated subscription already exist. Reuse the prior
 signed durable-ACK proof; it is not an authorization to resend a test. The ingress currently uses the
 F2 receipt role's finite lease. Durable normal-operation payment credentials and worker dispatch must
-be ready before public GO; do not convert or extend the F2 window as a shortcut.
+be ready before public activation; do not convert or extend the F2 window as a shortcut.
 
 The main site is All Deployments protected, at `https://zao-rental.vercel.app`.
 `PRODUCTION_PUBLICATION_APPROVAL` is absent. Baseline rollback deployment:
@@ -57,7 +57,7 @@ The active commercial book is revision2, `ZAO_2026_27_V1`, accepted equipment so
 `12a7a493f33dc4ea46a12c7f0dc2f770938b81598721d78672985469fccd64d5` and the existing wear v1.2
 authority. Its current rental period is **2027-01-15 only**, an acceptance date. Do not treat that as
 the public season, silently enlarge it, apply a tax adjustment, or replace the immutable price snapshot.
-The observed catalog initially has only two adult-M wear variants; physical assets/poles/wear pools and
+The earlier two adult-M wear variants have been extended by the approved 18 variants; physical assets/poles/wear pools and
 approved public-policy rows are zero. Later receipts must distinguish added catalog from physical stock.
 
 ## Required Owner inputs — single answer contract
@@ -68,7 +68,7 @@ Use the existing source/receipt/photo templates rather than duplicating inventor
 | Input | Minimum answer / prepared action | Acceptance condition |
 |---|---|---|
 | Public rental season | `rentalFrom`, `rentalUntil`, any store/date closures | Accepted commercial book/activation covers intended dates at both stores; fresh quote matches pinned arithmetic |
-| Equipment catalog / sizes | Tier per source/model; one approved booking-size mapping for bare numbers, `cm`, and shared `N/N.5` | Exact variant/bucket matching and guest recommendation; no double capacity, premium/model-promise substitution or guessed tier |
+| Equipment catalog / sizes | Tier per source/model; reuse the approved size mapping, including shared `N/N.5` as one quantity pool | Exact variant/bucket matching and guest recommendation; no double capacity, premium/model-promise substitution or guessed tier |
 | Physical equipment | Final received-source file, approved count per row, store allocation, existing label numbering if any | Independent source approval, dry-run/import receipt, inspection before AVAILABLE; BSL remains unverified until measured; no inferred DIN |
 | Wear receipt | Confirm received jacket/pants counts by age/size/store using existing receipt template | Provisional pools and real wear pools reconciled separately; physical handoff gate remains enforced |
 | Commercial wording | Approved JA/EN tax-display basis, terms/cancellation/privacy and business/store information | Reviewed content becomes approved policy; no unapproved tax arithmetic or legal statement |
@@ -78,7 +78,7 @@ Use the existing source/receipt/photo templates rather than duplicating inventor
 | Live mail / recovery | Confirm intended owned recipient and message count for the new scenario | Exact frozen outbox/payload, one send, provider acceptance and received email; unknown recipient remains blocked |
 | Physical devices / two stores | Staff-operated phone/camera, printed reservation/asset labels, receipt and inspection participants | Scan/search → correct booking → physical assignment → checkout/return at both stores; fake camera and manual ID entry do not satisfy this |
 | Backup custody / external sinks | Independently secured existing age identity, bucket-scoped R2 credential and approved workflow-dispatch credential delivery | Secrets enter protected sinks only; existing local age identity is not regenerated or published |
-| Final publication | Exact accepted release, domain control and final GO | All preceding requirements proved before protection removal, DNS/indexing and sales activation |
+| Publication activation | Exact accepted release and verified domain control; Owner GO already granted at 2026-10-03T07:51:19Z | All preceding requirements proved before protection removal, DNS/indexing and sales activation; do not request GO again |
 
 For the former cancellation notification, keep the exact held outbox. Do not change its recipient,
 booking contact, or regenerate it. Its unresolved recipient is independent of all other work.
@@ -122,12 +122,12 @@ receives and handles alerts; no unapproved third-party notification endpoint is 
 ## Exact release, final activation and rollback
 
 Before deploy: record main/head/tree, exact review/CI, full source migration registry, environment-name
-delta, current alias/protection and accepted rollback ID. This display correction needs no migration,
-role or provider configuration change. Set build/runtime `PRODUCTION_RELEASE_ID` and
+delta, current alias/protection and accepted rollback ID. The current candidate adds only migrations0054/0055. All0001–0053 bytes are unchanged.
+Use the fixed installer below after backup; the four new EXECUTE grants are a separate held delta. Set build/runtime `PRODUCTION_RELEASE_ID` and
 `VERCEL_GIT_COMMIT_SHA` to exact merged main in the single deployment. Verify READY, source metadata,
 alias, `/api/readiness`, normal staff/guest display and unchanged noindex/protection.
 
-For final GO, after the input/acceptance gates above:
+Apply the already granted Owner GO after the input/acceptance gates above:
 
 1. Verify domain ownership and the exact DNS records returned for `salomonzao.rent` by the existing
    Vercel project. Prepare the actual values immediately before approved DNS work; never guess an IP.
@@ -136,7 +136,7 @@ For final GO, after the input/acceptance gates above:
 3. Install the final Owner record in the existing publication sink:
 
 ```json
-{"state":"PUBLICATION_APPROVED","origin":"https://salomonzao.rent","releaseId":"<exact accepted source SHA>","approvedBy":"<Owner identifier>","approvedAt":"<Owner GO UTC>"}
+{"state":"PUBLICATION_APPROVED","origin":"https://salomonzao.rent","releaseId":"<exact accepted source SHA>","approvedBy":"<Owner identifier>","approvedAt":"2026-10-03T07:51:19Z"}
 ```
 
 4. Apply the approved release/alias and protection change once. Verify JA/EN public pages, customer
@@ -148,3 +148,73 @@ For final GO, after the input/acceptance gates above:
 
 The final proof must enumerate real operations and owner actions still required. Neither reviewer PASS,
 successful deployment, correct failure rejection nor synthetic UI success is a claim of public readiness.
+
+
+## Current continuation: normal worker and paid provisional fulfillment
+
+Authority: Issue47 updated body and comment5969785059, base main
+`502ab44f6d97c0a0bd5b0643e6f50642b46fc2d3`. A new candidate is reviewed independently.
+2026-10-03T14:30Z readback: Production still uses rollback deployment/source above, protection is
+`all`, registry53 matches the unchanged source prefix, commercial10 roles remain LOGIN/infinity.
+The five F2 roles have naturally expired (metadata proven; a fresh login refusal is not yet proven).
+No credential, old payment, outbox or Production stock has been changed during this continuation.
+Source A/B total151 buckets/1421 units; Source B shared-size decision is accepted. Physical assets,
+poles, wear pools and public policy rows remain0. Current price covers only the acceptance date.
+Only zao-rental.vercel.app is attached; salomonzao.rent ownership/attachment remains unproved.
+
+The finite normal entrypoint is `scripts/production-worker.ts preflight|run-once --input <absolute-file>`
+(run with `node --import tsx`). The input must be a caller-owned0600 regular file outside the checkout.
+It contains the existing commercial `environment`, explicit `databaseUrls` for dispatcher/worker/projector,
+and this finite plan (illustrative shape, no authorization or secrets):
+
+```json
+{"workerId":"normal-window-1","acceptedBookingsAfter":"<approved UTC cutoff after F2>","deadline":"<UTC at most60 seconds from invocation>","batchSize":20,"notificationLimit":0,"refundCreateLimit":0,"refundBudgetJpy":0}
+```
+
+Exact clean current main/Production identity, real TLS and role metadata are checked before processing.
+`preflight` performs no Provider call or role mutation. A tick dispatches/claims only bound commercial
+payments created after the cutoff, selects persisted truth for projection, then bounded refunds and
+notifications. Merchant/location come from persisted attempts and the pinned two-store configuration.
+No M3 `*-one` call, attended unbound recovery, scheduler, startup side effect or default location exists.
+Deadline stops new items; an in-flight operation finishes/settles under its existing timeout. Lease expiry
+handles unprocessed claimed items. UNKNOWN without provider identity never causes another refund POST.
+Keep notification/refund limits0 until the particular live window has explicit recipient/count/budget
+acceptance. Existing F2 cutoffs are additionally excluded. Normal operation credential/sink lifecycle is
+still required; never extend, rotate or repurpose the expired F2 window to make preflight pass.
+
+For paid provisional fulfillment, use the existing inventory import stage/commit API (or staff inventory
+form) with the original `provisionalSourceId`. A stage binds that ID into its immutable hash. Each actually
+imported SHOP_RECEIPT/ADD row deducts the matching mapped source bucket in the same transaction as physical
+stock; duplicate/concurrent commits do not deduct twice. Ambiguous/missing provenance or excess quantity
+rolls back the physical import. Received units may remain unavailable pending inspection. This is distinct
+from publication/real-data acceptance and does not activate the historical0041 materialization function.
+Then request the normal amendment quote with unchanged conditions; the server permits this only for an
+active provisional claim. Accept it to assign available physical stock, then normal prepare/checkout.
+The original booking, payment and immutable price snapshot remain unchanged; no charge is added merely
+for fulfillment. The existing95% per-pool ceilings, permissions and handoff gates remain enforced.
+
+### Exact Production schema/permission delta and rollback
+
+After accepted candidate, backup proof and pinned owner/TLS checks, call
+`applyProductionNormalWorkerMigration(client, 'neondb', 'neondb_owner')` from
+`scripts/production-normal-worker-migration.ts`. It accepts only the exact53-entry checksum prefix,
+applies0054/0055 atomically under registry/inventory locks, checks owner-only ACLs and retained0041 guard,
+and reads back55 checksums. No grants, credentials or business rows are changed. A lost COMMIT means
+read-only reconciliation; never rerun. On pre-COMMIT error the transaction rolls back. After commit,
+keep the additive schema and return to the accepted protected deployment; no destructive down.
+
+The separate reviewed plan `productionNormalWorkerGrants('neondb','neondb_operations')` has exactly:
+
+```sql
+GRANT EXECUTE ON FUNCTION payment_reconciliation.dispatch_normal(text,integer,timestamptz) TO neondb_pay_dispatch;
+GRANT EXECUTE ON FUNCTION payment_reconciliation.claim_normal(text,integer,text,timestamptz) TO neondb_pay_truth;
+GRANT EXECUTE ON FUNCTION payment_projection.normal_candidates(text,timestamptz,integer) TO neondb_pay_projection;
+GRANT EXECUTE ON FUNCTION notification_due_normal(timestamptz,integer) TO neondb_operations;
+```
+
+Production application of these grants is HELD: Issue47 prohibits unapproved privilege expansion.
+There are no new table/DML grants, memberships, roles or credential changes. After specific authorization,
+apply once and read back exact per-function ACLs and denial for other roles/PUBLIC. Rollback revokes only
+these four grants and keeps the schema/protection; do not change existing privileges or F2 credentials.
+Backup/restore protected sinks and separate key custody remain prerequisites; a prior automatic-approval
+rejection of BACKUP/AGE value read/export is retained as a hard block, not retried via another path.

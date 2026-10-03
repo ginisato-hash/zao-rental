@@ -11,7 +11,7 @@ const functions={
  * No role creation, credential or VALID UNTIL change, historical migration replay or business-row write. */
 export async function applyProductionTargetedReconciliationMigration(c:PoolClient,database:string,owner:string){
  const plan=await bootstrapPlan(database),payment=productionPaymentRoleNames(database);
- if(plan.entries.length!==53||plan.entries[51]?.id!=='0052')throw Error(refused);
+ if(plan.entries.length<53||plan.entries[51]?.id!=='0052')throw Error(refused);
  let committing=false,committed=false;
  try{
   await c.query('BEGIN');

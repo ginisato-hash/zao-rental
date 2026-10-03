@@ -27,8 +27,9 @@ export const recoveryStatements={
 export class PgPaymentReconciliation implements PaymentReconciliationRepository,PaymentContextReader{
  /** `recovery` (requires `authority`) switches to the attended Production target surface (0052): exact payment dispatch/claim and
   * a persisted-identity context that tolerates a still-null provider_id. Without it every method is unchanged. */
- constructor(private readonly pool:InboxPool,private readonly target?:{merchantId:string;paymentId:string},private readonly authority?:ProductionReconciliationAuthority,private readonly recovery?:ReconciliationRecovery){
+ constructor(private readonly pool:InboxPool,private readonly target?:{merchantId:string;paymentId:string},private readonly authority?:ProductionReconciliationAuthority,private readonly recovery?:ReconciliationRecovery,private readonly normalSince?:string){
   if(recovery&&!authority)throw new Error('PRODUCTION_RECONCILIATION_AUTHORITY_REQUIRED');
+  if(normalSince&&(!authority||target||recovery||!Number.isFinite(Date.parse(normalSince))))throw new Error('PRODUCTION_NORMAL_WORKER_WINDOW_REQUIRED');
  }
  private async tx<T>(run:(c:InboxConnection)=>Promise<T>):Promise<T>{
   const c=await this.pool.connect().catch(()=>{throw new Error('RECONCILIATION_STORAGE_UNAVAILABLE');});let broken=false;
@@ -51,6 +52,8 @@ export class PgPaymentReconciliation implements PaymentReconciliationRepository,
   if(this.recovery&&limit!==1)throw new Error('PRODUCTION_TARGETED_RECONCILIATION_LIMIT');
   return this.tx(async c=>this.recovery
    ?(await c.query<{n:number}>(recoveryStatements.dispatch(this.requireAuthorityTarget().merchantId,this.recovery))).rows[0]!.n
+   :this.normalSince
+   ?(await c.query<{n:number}>('SELECT payment_reconciliation.dispatch_normal($1,$2,$3) AS n',[this.requireAuthorityTarget().merchantId,limit,this.normalSince])).rows[0]!.n
    :this.authority
    ?(await c.query<{n:number}>('SELECT payment_reconciliation.dispatch_production($1,$2) AS n',[this.requireAuthorityTarget().merchantId,limit])).rows[0]!.n
    :(await c.query<{n:number}>(this.target?'SELECT payment_reconciliation.dispatch_target($1,$2,$3,$4) AS n':'SELECT payment_reconciliation.dispatch($1,$2) AS n',this.target?[environment,limit,this.target.merchantId,this.target.paymentId]:[environment,limit])).rows[0]!.n);
@@ -60,6 +63,8 @@ export class PgPaymentReconciliation implements PaymentReconciliationRepository,
   return this.tx(async c=>{
    const rows=this.recovery
     ?(await c.query<{claim:ReconciliationClaim}>(recoveryStatements.claim(workerId,this.requireAuthorityTarget().merchantId,this.recovery))).rows
+    :this.normalSince
+    ?(await c.query<{claim:ReconciliationClaim}>('SELECT payment_reconciliation.claim_normal($1,$2,$3,$4) AS claim',[workerId,limit,this.requireAuthorityTarget().merchantId,this.normalSince])).rows
     :this.authority
     ?(await c.query<{claim:ReconciliationClaim}>('SELECT payment_reconciliation.claim_production($1,$2,$3) AS claim',[workerId,limit,this.requireAuthorityTarget().merchantId])).rows
     :(await c.query<{claim:ReconciliationClaim}>(this.target?'SELECT payment_reconciliation.claim_target($1,$2,$3,$4,$5) AS claim':'SELECT payment_reconciliation.claim($1,$2,$3) AS claim',this.target?[environment,workerId,limit,this.target.merchantId,this.target.paymentId]:[environment,workerId,limit])).rows;

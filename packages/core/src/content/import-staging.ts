@@ -9,7 +9,7 @@ const digest=(v:unknown)=>createHash('sha256').update(canonical(v)).digest('hex'
 export type ImportStage=ReturnType<typeof stageStockImport>;
 /** Raw source is never evaluated. Preserve exact source digest, sheet/row provenance,
  * and each original cell alongside normalized fields. No fuzzy model/year/SKU matching. */
-export function stageStockImport(text:string,sheet:string,variants:ImportVariant[],prior:Record<string,string>,catalogRevision:string,approvedFamilyScope?:readonly ImportVariant['family'][]){
+export function stageStockImport(text:string,sheet:string,variants:ImportVariant[],prior:Record<string,string>,catalogRevision:string,approvedFamilyScope?:readonly ImportVariant['family'][],provisionalSourceId?:string){
  if(!/^[-A-Za-z0-9_ .]{1,100}$/.test(sheet))throw new ContentInputError('SOURCE_LOCATOR_INVALID');
  const raw=csvRows(text),providedHeader=raw.shift()?.join(',');
  const v3=providedHeader===STOCK_IMPORT_HEADER_V3.join(','),v2=v3||providedHeader===STOCK_IMPORT_HEADER_V2.join(',');
@@ -28,7 +28,7 @@ export function stageStockImport(text:string,sheet:string,variants:ImportVariant
  // Cross-row immutable ID/locator checks must be retained, not only per-row validation.
  const plan=staged.length?planStockImport(staged.map(s=>s.normalized),variants,prior,catalogRevision,approvedFamilyScope):null;
  for(const entry of plan?.entries??[])if(entry.issues.length){const row=staged.find(s=>s.normalized.locator===entry.source.locator)!.row;if(!unresolved.some(u=>u.row===row))unresolved.push({row,codes:entry.issues});}
- const material={schemaVersion:v3?3:v2?2:1,sourceSha256,sheet,catalogRevision,staged,unresolved,plan};return {...material,stageSha256:digest(material)};
+ const material={...(provisionalSourceId?{provisionalSourceId}:{}),schemaVersion:v3?3:v2?2:1,sourceSha256,sheet,catalogRevision,staged,unresolved,plan};return {...material,stageSha256:digest(material)};
 }
 /** Explicit dry-run commit. Rebuild against current trusted catalog/prior source history;
  * a supplied hash is correspondence evidence, not inventory write permission. */

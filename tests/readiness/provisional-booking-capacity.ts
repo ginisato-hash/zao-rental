@@ -18,6 +18,7 @@ import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconci
 import {InventoryOperations} from '../../packages/core/src/operations/inventory-service';
 import {STOCK_IMPORT_HEADER_V3} from '../../packages/contracts/src/stock-import';
 import {CustodyService} from '../../packages/core/src/rental/custody-service';
+import {AmendmentService} from '../../packages/core/src/operations/amendment-service';
 import type {HoldConditions} from '../../packages/contracts/src/hold';
 
 let failed = false, stage = 'fixture', count = 0;
@@ -705,6 +706,62 @@ try {
     assert.ok(prepared.preparation); // succeeded — no PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED, no other rejection
   });
 
+  await check('P12 paid: same-source receipt preserves capacity and paid contract through normal amendment and checkout', async () => {
+    const {model, variant, size} = await physicalSkuFor('p12-paid', 0);
+    const assetIds = Array.from({length: 10}, () => randomUUID());
+    const sourceDocument = 'SYNTHETIC same-source paid receipt';
+    const row = ['SHOP_RECEIPT', 'ADD', model.id, '2026/27', variant.id, '', 10, 'ASSET_PAIR', assetIds.join('|'), 'MOUNTAIN_BASE', sourceDocument, 'row-paid', 'SKI', size, 'REGULAR', '', 'AVAILABLE', 'SYNTHETIC', 'PBC product-path p12-paid', ''].join(',');
+    const csv = STOCK_IMPORT_HEADER_V3.join(',') + '\n' + row + '\n';
+    const source = await src.register(randomUUID(), {sourceSha256: createHash('sha256').update(csv).digest('hex'), originalFilename: sourceDocument,
+      buckets: [{family: 'SKI', age: 'ADULT', sourceSize: size, bookingSize: size, quantity: 20, provenance: 'SYNTHETIC original provisional source, partially received'}]});
+    const conditions = singleSkiCondition('2035-06-17', variant.id), built = await x.draft(undefined, conditions);
+    await x.service.startPayment(built.booking.id, randomUUID());
+    const before = (await x.db.pool.query('SELECT to_jsonb(b) value FROM rental_bookings b WHERE id=$1', [built.booking.id])).rows[0].value;
+    const payment = (await x.db.pool.query('SELECT to_jsonb(p) value FROM rental_payment_attempts p WHERE booking_id=$1', [built.booking.id])).rows;
+    await assert.rejects(x.holds.command('reassign', randomUUID(), {assetId: assetIds[0], requirementKey: 'p:SKI'}, built.holdId), {code: 'PAYMENT_RECONCILIATION_REQUIRED'});
+    const unbound = await inventoryOps.stageImport(randomUUID(), {csv, sheet: 'SYNTHETIC paid receipt'});
+    await assert.rejects(inventoryOps.commitImport(randomUUID(), {id: unbound.id, stageSha256: unbound.stageSha256, reason: 'SYNTHETIC missing original source'}), {code: 'OPERATION_CONFLICT'});
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM ledger_assets WHERE variant_id=$1', [variant.id])).rows[0].n, 0, 'rejected capacity binding rolls back physical receipt');
+    const staged = await inventoryOps.stageImport(randomUUID(), {csv, sheet: 'SYNTHETIC paid receipt', provisionalSourceId: source.sourceId});
+    assert.equal(staged.ready, true, JSON.stringify(staged.unresolved));
+    const key = randomUUID(), input = {id: staged.id, stageSha256: staged.stageSha256, reason: 'SYNTHETIC same-source receipt'};
+    const [receipt, concurrentReceipt] = await Promise.all([inventoryOps.commitImport(key, input), inventoryOps.commitImport(key, input)]);
+    assert.deepEqual(concurrentReceipt, receipt);
+    assert.equal(receipt.assetsAdded, 10);
+    assert.deepEqual(await inventoryOps.commitImport(key, input), receipt);
+    const overflow=row.split(',');overflow[6]='11';overflow[8]=Array.from({length:11},()=>randomUUID()).join('|');overflow[11]='row-paid-overflow';
+    const excess=await inventoryOps.stageImport(randomUUID(),{csv:STOCK_IMPORT_HEADER_V3.join(',')+'\n'+overflow.join(',')+'\n',sheet:'SYNTHETIC excess receipt',provisionalSourceId:source.sourceId});
+    await assert.rejects(inventoryOps.commitImport(randomUUID(),{id:excess.id,stageSha256:excess.stageSha256,reason:'SYNTHETIC capacity overflow rejection'}),{code:'OPERATION_CONFLICT'});
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM ledger_assets WHERE variant_id=$1',[variant.id])).rows[0].n,10);
+
+    await x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'RENTAL_AMEND',true)", [x.actor]);
+    Object.assign(x.principal, (await loadStaff(x.roles.authPool, x.actor))!);
+    const amend = new AmendmentService(ctx), current = await amend.view(built.booking.id);
+    const q = await amend.quote(randomUUID(), {bookingId: built.booking.id, expectedHoldVersion: current.holdVersion, conditions: current.conditions, reason: 'SYNTHETIC paid fulfillment'});
+    assert.equal(q.quote.additionalChargeJpy, 0);
+    const acceptKey = randomUUID(), acceptInput = {quoteId: q.id, fitEvidence: '', reason: 'SYNTHETIC paid fulfillment'};
+    const accepted = await amend.accept(acceptKey, acceptInput);
+    assert.deepEqual(await amend.accept(acceptKey, acceptInput), accepted);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [built.holdId])).rows[0].n, 0);
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [built.holdId])).rows[0].n, 1);
+    assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(b) value FROM rental_bookings b WHERE id=$1', [built.booking.id])).rows[0].value, before);
+    assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(p) value FROM rental_payment_attempts p WHERE booking_id=$1', [built.booking.id])).rows, payment);
+    assert.deepEqual((await amend.view(built.booking.id)).conditions, current.conditions);
+    const remaining = (await x.db.pool.query('SELECT sum(provisional_capacity_effective_quantity(id))::int n FROM provisional_capacity_buckets WHERE source_id=$1', [source.sourceId])).rows[0].n;
+    assert.equal(10 + remaining, 20, 'same Source physical + provisional must stay 20, not 30');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM provisional_capacity_receipts WHERE commit_id=$1', [staged.id])).rows[0].n, 1);
+    assert.deepEqual(await inventoryOps.commitImport(randomUUID(), input), receipt);
+    // Existing policy rounds each physical/provisional pool down: 9 + 9 <= floor(20 * .95).
+    for (let n = 0; n < 17; n++) assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2035-06-17', variant.id))).result, 'CREATED');
+    assert.notEqual((await x.holds.command('create', randomUUID(), singleSkiCondition('2035-06-17', variant.id))).result, 'CREATED', 'existing pool ceilings remain 9 + 9, never above SKU/day floor(20 * .95)');
+    const previousClock = x.now().toISOString();
+    await x.clock('2035-06-17T10:00:00+09:00');
+    const custody = new CustodyService(role!.operationsPool, x.roles.authPool, x.signed.identity), view = await custody.checkoutView(built.booking.id);
+    const prepared = await custody.prepare(randomUUID(), {bookingId: built.booking.id, expectedBookingVersion: view.bookingVersion, expectedHoldVersion: view.holdVersion, selections: view.items.map(i => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: i.pole_id})), fitEvidence: 'SYNTHETIC fit'});
+    assert.equal((await custody.checkout(randomUUID(), {bookingId: built.booking.id, expectedPreparationVersion: prepared.preparation.version})).loans.length, 1);
+    await x.clock(previousClock);
+  });
+
   // ---- P13/P14: adversarial multi-item competition (P7 correction) — the greedy re-inclusion
   // simplification must stay conservative: a false negative (routing more to provisional than a
   // perfect solver would) is accepted, but never a false FEASIBLE (oversell). Two members compete
@@ -807,7 +864,7 @@ try {
     assert.equal((await guestHolds.command('create', randomUUID(), singleSkiCondition('2037-01-05', variant.id))).result, 'CREATED');
   });
 
-  console.log(JSON.stringify({status: 'PASS', cases: count, realDataImports: 3, realAssetIdsGenerated: 9, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));
+  console.log(JSON.stringify({status: 'PASS', cases: count, realDataImports: 4, realAssetIdsGenerated: 19, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));
 } catch (e) {
   failed = true;
   console.error(JSON.stringify({status: 'FAIL', stage, code: (e as {code?: string}).code ?? (e as Error).name, detail: (e as Error).message.slice(0, 500)}));

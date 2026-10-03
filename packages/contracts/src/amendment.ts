@@ -2,12 +2,12 @@ import {canonical,parseConditions,normalizePeriod,type HoldConditions} from './h
 import {calculate,money,WEAR_TABLE,WEAR_PRICE_VERSION,type PriceTable} from './pricing';
 import {FlowError} from './rental-flow';
 export const AMENDMENT_POLICY='ORIGINAL_BOOK_EXPLICIT_AMENDMENT_M1_LOCAL_V1' as const;
-export function amendmentConditions(before:HoldConditions,value:unknown,now:Date):HoldConditions{
+export function amendmentConditions(before:HoldConditions,value:unknown,now:Date,physicalFulfillment=false):HoldConditions{
  const next=parseConditions(value);
  if(next.reservationId!==before.reservationId||next.pickupStore!==before.pickupStore||next.returnStore!==before.returnStore||next.period.startDate!==before.period.startDate||next.contractVersion!==before.contractVersion)throw new FlowError('AMENDMENT_CONTRACT_IDENTITY_IMMUTABLE',422);
  if(next.members.length!==before.members.length||next.members.some(m=>!before.members.some(old=>old.key===m.key&&old.age===m.age)))throw new FlowError('AMENDMENT_MEMBER_IDENTITY_IMMUTABLE',422);
  if(new Date(normalizePeriod(before.period).dueAt)<=now||new Date(normalizePeriod(next.period).dueAt)<=now)throw new FlowError('AMENDMENT_PERIOD_ENDED',409);
- if(canonical(before)===canonical(next))throw new FlowError('AMENDMENT_UNCHANGED',422);return next;
+ if(canonical(before)===canonical(next)&&!physicalFulfillment)throw new FlowError('AMENDMENT_UNCHANGED',422);return next;
 }
 // Local-only implementation of PRICING.md's original-book proposal. Production
 // publication remains a separate gate. Original contract and payment rows are never repriced.

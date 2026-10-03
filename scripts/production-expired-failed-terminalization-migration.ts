@@ -6,7 +6,7 @@ const fn='payment_projection.terminalize_expired_unbound_failed_production(uuid,
 /** Fixed 0052→0053 upgrade. No credentials, historical replay or business-row writes. */
 export async function applyProductionExpiredFailedTerminalizationMigration(c:PoolClient,database:string,owner:string){
  const plan=await bootstrapPlan(database),payment=productionPaymentRoleNames(database);
- if(plan.entries.length!==53||plan.entries[52]?.id!=='0053')throw Error(refused);
+ if(plan.entries.length<53||plan.entries[52]?.id!=='0053')throw Error(refused);
  const posture=async()=>{
   const roles=(await c.query(`SELECT r.rolname,r.rolsuper,r.rolcreatedb,r.rolcreaterole,r.rolinherit,r.rolreplication,r.rolbypassrls,
    EXISTS(SELECT 1 FROM pg_auth_members WHERE member=r.oid) membership,

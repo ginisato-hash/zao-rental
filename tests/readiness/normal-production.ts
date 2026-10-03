@@ -55,6 +55,9 @@ try{
   }finally{await media.close();}
  });
  runtime=await composeProductionRuntime(input);const r=runtime,origin=r.configuration.deployment.origin;
+ await check('normal worker is explicit and rejects absent exact commercial identity before provider lookup',async()=>{
+  let lookups=0;await assert.rejects(r.runWorker({plan:{},databaseUrls:{dispatcher:'',worker:'',projector:''},lookup:{async lookupPayment(){lookups++;throw Error('MUST_NOT_CALL');}}}),{stage:'PAYMENT'});assert.equal(lookups,0);
+ });
  await check('least-privilege normal runtime boots with Avatar/media OFF, separate access/recovery keys and safe readiness',async()=>{assert.equal(r.avatar,null);assert.ok(r.guest&&r.access&&r.recovery&&r.staff);assert.equal(r.safeStatus().NOTIFICATION,'UNCONNECTED');assert.deepEqual(await readinessResponse({ready:true,stage:'READY'}).json(),{status:'READY'});const anonymous={status:'anonymous' as const,principal:null,stamp:null};assert.equal(readinessDetails({ready:true,stage:'READY'},anonymous,r.safeStatus()).status,401);assert.equal(readinessDetails({ready:true,stage:'READY'},{status:'authorized',principal:{...x.principal,permissions:['BOOKING_VIEW']},stamp:'synthetic'},r.safeStatus()).status,403);const out=await readinessDetails({ready:false,stage:'DB_CONFIG'},{status:'authorized',principal:{...x.principal,permissions:['STAFF_MANAGE']},stamp:'synthetic'},{...r.safeStatus(),DB:'SYNTHETIC_RAW_SECRET',password:'SYNTHETIC_RAW_SECRET'}).text();assert.ok(!out.includes('SYNTHETIC_RAW_SECRET'));assert.equal((await readinessResponse({ready:false,stage:'DB_CONFIG'}).json()).stage,undefined);});
  const c=await r.guest!.security.service.create(),actor=await r.guest!.contexts.resolve(c.token),service=r.service(actor);
  let bookingId='',token='';

@@ -28,6 +28,7 @@ import {avatarGuestSecurity} from '../avatar/guest-rate';
 import {loadGuestAvatar} from '../avatar/guest';
 import {R2MediaProvider,type R2Credential} from '../content/r2-media';
 import type {PaymentGateway} from '../../../contracts/src/rental-flow';
+import {runProductionWorker,type ProductionWorkerInput} from '../../../db/src/normal-production-worker';
 export const productionConfigurationDigest=(c:ProductionConfiguration)=>createHash('sha256').update(canonical(c)).digest('hex');
 export type ProductionSecretMaterial={
  database:Partial<Record<ProductionService,ProductionDatabaseCredential>>;
@@ -94,6 +95,7 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   }
   stage='READY';await input.audit(stage);if(input.publication){if(!input.identity)throw Error();publication=issuePublicationAuthority(input.identity,input.publication);installPublicationAuthority(publication);}let closed=false;
   return Object.freeze({configuration:c,staff,guest,service,access,recovery,avatar,refundWorker,notifications,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
+   async runWorker(workerInput:ProductionWorkerInput){if(closed||!commercialIdentity)throw new ProductionStartupError('PAYMENT');return runProductionWorker(commercialIdentity,workerInput,required('operations'),notifications,refundWorker);},
    public:guest?{r:base!,guestPool:required('guest'),readPool:required('content_read'),contexts:guest.contexts}:null,
    // F1 (TD correction): DB must never report READY without at least one actually-open pool —
    // a dark profile with every flag false opens zero connections (`active` stays empty, `pools`

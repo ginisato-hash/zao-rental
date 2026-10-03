@@ -8,8 +8,10 @@ import {commercialBookingFixture} from '../fixtures/commercial-booking';
 import {PgProjectionTransaction} from '../../packages/db/src/internal/payment-projection';
 import {decidePaymentProjection,verifyProjectionSource} from '../../packages/core/src/payment/payment-projection';
 import {BookingService} from '../../packages/core/src/payment/booking-service';
-const x=await flowFixture();let operations:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;
+import {normalWorkerAcceptance} from './normal-worker-acceptance';
+const x=await flowFixture(new Date().toISOString());let operations:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;
 try{
+ await normalWorkerAcceptance(x);
  const f=await commercialBookingFixture(x);
  // Public authority remains closed even with valid-looking configuration/capability shapes.
  assert.throws(()=>new BookingService(x.flow.flowPool,x.roles.authPool,x.signed.identity,{kind:'SQUARE_PRODUCTION',async create(){throw Error('UNREACHABLE');},async lookup(){throw Error('UNREACHABLE');}},null,{kind:'EXACT_PRODUCTION_IDENTITY'}),{code:'PRODUCTION_PAYMENT_AUTHORITY_REQUIRED'});
@@ -22,7 +24,7 @@ try{
   assert.equal((await tx.prior(f.ref.observationFingerprint))?.result.bookingState,'CONFIRMED');
  }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
  const row=(await x.db.pool.query('SELECT state,price_snapshot FROM rental_bookings WHERE id=$1',[f.bookingId])).rows[0];assert.equal(row.state,'CONFIRMED');assert.equal(row.price_snapshot.chargeReady,true);
- assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM payment_projection.events')).rows[0].n,1);
+ assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM payment_projection.events WHERE booking_id=$1',[f.bookingId])).rows[0].n,1);
  const cancelled=await commercialBookingFixture(x,'2035-02-11'),db=await x.db.pool.connect();try{await db.query('BEGIN');await db.query("SELECT set_config('zao.actor',$1,true)",[x.actor]);const preview=(await db.query('SELECT booking_cancellation_preview($1) v',[cancelled.bookingId])).rows[0].v;await db.query('SELECT booking_cancel($1,$2,$3::jsonb)',[cancelled.bookingId,crypto.randomUUID(),JSON.stringify(preview)]);await db.query('COMMIT');
   await db.query('BEGIN');const tx=new PgProjectionTransaction(db,cancelled.ref),state=await tx.load(),now=await tx.time(),observed=verifyProjectionSource(cancelled.ref,await tx.source(),now,'PRODUCTION'),plan=decidePaymentProjection(state,observed,now);assert.equal(plan.mutation,'CANCELLED_PAYMENT');assert.equal((await tx.persist(state,plan,cancelled.ref,now)).bookingState,'CANCELLED');await db.query('COMMIT');
   assert.equal((await db.query('SELECT state FROM inventory_holds WHERE id=$1',[cancelled.holdId])).rows[0].state,'RELEASED');assert.equal((await db.query('SELECT count(*)::int n FROM booking_cancellation_refunds WHERE booking_id=$1',[cancelled.bookingId])).rows[0].n,1);

@@ -60,7 +60,7 @@ try{
   assert.ok(pX0.material.roleMemberships!.some(r=>r.includes(PARENT)));assert.ok(!cX0.material.roleMemberships!.some(r=>r.includes(PARENT)));
   // The pre-bootstrap security fingerprint is computable on an empty database (registry absent).
   assert.deepEqual(pX0.material.permissionRegistry,[]);assert.ok(pX1.material.permissionRegistry!.length>0);
-  assert.equal(result.applied,52);
+  assert.equal(result.applied,53);
  });
  await check('D2 delta equivalence: schema and security deltas are identical despite the baseline',async()=>{
   assert.deepEqual(deltaMismatch(canonicalSchemaDelta,productionSchemaDelta),[]);assert.equal(productionSchemaDelta.sha256,canonicalSchemaDelta.sha256);
@@ -117,7 +117,7 @@ try{
   const neon=connect(NEON_TARGET,NEON_OWNER,password),before=await securityFingerprint(neon),schemaBefore=await schemaFingerprint(neon);
   assert.equal((await neon.query("SELECT current_setting('createrole_self_grant') v")).rows[0].v,'');
   const r=await bootstrapProductionSchema(neon,NEON_TARGET);
-  assert.equal(r.applied,52);assert.equal(r.guardsRewritten,12);
+  assert.equal(r.applied,53);assert.equal(r.guardsRewritten,12);
   assert.deepEqual(deltaMismatch(canonicalSchemaDelta,fingerprintDelta(schemaBefore,await schemaFingerprint(neon))),[]);
   assert.deepEqual(deltaMismatch(canonicalSecurityDelta,fingerprintDelta(before,await securityFingerprint(neon))),[]);
   evidence.neonShapedOwner={bootstrap:'COMMITTED',deltaMismatch:[]};
@@ -133,7 +133,7 @@ try{
   assert.deepEqual([...await environmentIdentifiers(neon)].sort(),[['neondb','<DATABASE>'],['neondb_owner','<MIGRATION_OWNER>']]);
   const schemaBefore=await schemaFingerprint(neon),before=await securityFingerprint(neon);
   const r=await bootstrapProductionSchema(neon,'neondb');
-  assert.equal(r.applied,52);assert.equal(r.guardsRewritten,12);
+  assert.equal(r.applied,53);assert.equal(r.guardsRewritten,12);
   const map=await environmentIdentifiers(neon);
   assert.deepEqual([...map].sort(),[['neondb','<DATABASE>'],['neondb_custody','<DATABASE>_custody'],
    ['neondb_custody_executor','<DATABASE>_custody_executor'],['neondb_owner','<MIGRATION_OWNER>']]);

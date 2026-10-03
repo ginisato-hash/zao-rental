@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
-import type {Pool} from 'pg';
+import type {Pool,PoolClient} from 'pg';
 import {insertAccount} from '../../packages/auth/src/accounts';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {HoldService} from '../../packages/core/src/inventory/hold-service';
@@ -8,7 +8,7 @@ import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import type {HoldConditions} from '../../packages/contracts/src/hold';
 import {PgProjectionTransaction} from '../../packages/db/src/internal/payment-projection';
 import {decidePaymentProjection,verifyProjectionSource,type ProjectionSource} from '../../packages/core/src/payment/payment-projection';
-import {verifyAcceptanceProjectionSource} from '../../scripts/lib/production-payment-acceptance';
+import {verifyAcceptanceProjectionSource,verifyAcceptanceAttempt} from '../../scripts/lib/production-payment-acceptance';
 import {commercialBookingFixture,responseLossBookingFixture,syntheticMerchant} from '../fixtures/commercial-booking';
 import {flowHash} from '../../packages/contracts/src/rental-flow';
 import {recoveryStatements} from '../../packages/db/src/payment-reconciliation';
@@ -55,10 +55,12 @@ export async function productionProjectionChecks(owner:Pool,projector:Pool,hold:
   };
   type Fixture=Awaited<ReturnType<typeof fixture>>;
   const readSource=async(f:Fixture)=>((await projector.query(sourceSql,[f.ref.jobId,f.observation.merchantId,f.observation.providerId])).rows[0].source) as ProjectionSource;
-  const project=async(f:Fixture)=>{
+  const project=async(f:Fixture,beforeQuery?:(sql:string)=>void)=>{
    const c=await projector.connect();try{
     await c.query('BEGIN');await c.query('SELECT pg_advisory_xact_lock(71820600)');
-    const tx=new PgProjectionTransaction(c,f.ref,async(conn,ref)=>(await conn.query<{source:ProjectionSource|null}>(sourceSql,[ref.jobId,f.observation.merchantId,f.observation.providerId])).rows[0]?.source??null);
+    const connection=Object.create(c) as PoolClient;
+    connection.query=((...args:unknown[])=>{beforeQuery?.(String(args[0]));return Reflect.apply(c.query,c,args);}) as typeof c.query;
+    const tx=new PgProjectionTransaction(connection,f.ref,async(conn,ref)=>(await conn.query<{source:ProjectionSource|null}>(sourceSql,[ref.jobId,f.observation.merchantId,f.observation.providerId])).rows[0]?.source??null);
     const state=await tx.load(),source=await tx.source(),time=await tx.time(),observation=verifyProjectionSource(f.ref,source,time,'PRODUCTION');
     assert.equal(state.quote?.commercialPriceValid,true);
     const prior=await tx.prior(f.ref.observationFingerprint);
@@ -163,10 +165,10 @@ export async function productionProjectionChecks(owner:Pool,projector:Pool,hold:
    assert.equal((await ask([first.attemptId,first.bookingId,merchant,first.observation.providerId])).current.providerId,first.observation.providerId);
    assert.equal(await ask([first.attemptId,first.bookingId,merchant,'other-payment']),null);
   });
-  const reconcileLost=async(l:Lost,calls:{method:string;url:string}[])=>{
+  const reconcileLost=async(l:Lost,calls:{method:string;url:string}[],status:'COMPLETED'|'FAILED'|'CANCELED'|'PENDING'='COMPLETED')=>{
    const r=recoveryOf(l);
    await receiveEvent('evt-reconcile-'+r.paymentId,r.paymentId);
-   const raw={id:r.paymentId,reference_id:l.bookingId,location_id:l.locationId,amount_money:{amount:Number(l.snapshot.totalJpy),currency:'JPY'},status:'COMPLETED',updated_at:'2026-10-01T00:00:00.000Z',card_details:{card:{last_4:'1111'},card_payment_timeline:{captured_at:'2026-10-01T00:00:00.000Z'}}};
+   const raw={id:r.paymentId,reference_id:l.bookingId,location_id:l.locationId,amount_money:{amount:Number(l.snapshot.totalJpy),currency:'JPY'},status,updated_at:'2026-10-01T00:00:00.000Z',...(status==='COMPLETED'?{card_details:{card:{last_4:'1111'},card_payment_timeline:{captured_at:'2026-10-01T00:00:00.000Z'}}}:{})};
    const provider=new SquareProductionPaymentTruth({environment:'PRODUCTION',merchantId:merchant,locationId:l.locationId,async send(call){calls.push({method:call.method,url:call.url});return {status:200,body:{payment:raw}};}});
    const repository:PaymentReconciliationRepository={
     dispatch:async()=>(await dispatcherPool.query(recoveryStatements.dispatch(merchant,r))).rows[0].n,
@@ -216,6 +218,89 @@ export async function productionProjectionChecks(owner:Pool,projector:Pool,hold:
    assert.equal((await project({...l,ref,observation} as unknown as Fixture)).duplicate,true);
    assert.equal((await owner.query('SELECT count(*)::int n FROM booking_cancellation_refunds WHERE booking_id=$1',[l.bookingId])).rows[0].n,1);
    assert.equal(calls.length,1);
+  });
+  // ---- 0053: restricted failed/canceled response-loss terminalization ----
+  const terminalSql='SELECT payment_projection.terminalize_expired_unbound_failed_production($1,$2,$3,$4,$5,$6,$7)';
+  const terminalFn='payment_projection.terminalize_expired_unbound_failed_production(uuid,uuid,uuid,text,text,bigint,text)';
+  const terminalArgs=(f:Fixture):unknown[]=>[f.bookingId,f.attemptId,f.ref.jobId,merchant,f.observation.providerId,f.ref.truthRevision,f.ref.truthFingerprint];
+  const targetOf=(l:Lost)=>({attemptId:l.attemptId,bookingId:l.bookingId,idempotencyKey:l.key,merchantId:merchant,locationId:l.locationId,amountJpy:Number(l.snapshot.totalJpy),currency:'JPY' as const,paymentId:l.observation.providerId});
+  const business=async(f:Fixture)=>(await owner.query(`SELECT to_jsonb(b) booking,to_jsonb(a) attempt,to_jsonb(h) hold,
+   (SELECT jsonb_agg(c ORDER BY c.id) FROM provisional_capacity_claims c WHERE hold_id=h.id) claims,
+   (SELECT jsonb_agg(c) FROM booking_cancellations c WHERE booking_id=b.id) cancellations,
+   (SELECT jsonb_agg(r) FROM booking_cancellation_refunds r WHERE booking_id=b.id) refunds,
+   (SELECT jsonb_agg(n ORDER BY n.id) FROM booking_notification_outbox n WHERE booking_id=b.id) outbox,
+   (SELECT jsonb_agg(e ORDER BY e.id) FROM payment_projection.events e WHERE attempt_id=a.id) events,
+   (SELECT jsonb_agg(p) FROM payment_projection.heads p WHERE attempt_id=a.id) heads,
+   (SELECT jsonb_agg(r) FROM payment_projection.job_receipts r WHERE attempt_id=a.id) receipts,
+   (SELECT jsonb_agg(r ORDER BY r.id) FROM rental_history r WHERE entity_id IN (b.id,a.id)) history
+   FROM rental_bookings b JOIN rental_payment_attempts a ON a.booking_id=b.id JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1`,[f.bookingId])).rows[0];
+  await check('0053 function ACL: only Production projector, no PUBLIC or other payment role and no direct cancellation privilege',async()=>{
+   for(const pool of otherPaymentRoles)await denied(()=>pool.query(terminalSql,[randomUUID(),randomUUID(),randomUUID(),merchant,'synthetic-payment',1,'a'.repeat(64)]));
+   const acl=(await owner.query("SELECT NOT EXISTS(SELECT 1 FROM pg_proc p,LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE p.oid=$1::regprocedure AND a.grantee=0 AND a.privilege_type='EXECUTE') denied",[terminalFn])).rows[0];assert.equal(acl.denied,true);
+   for(const fn of ['booking_cancel(uuid,uuid,jsonb)','booking_cancellation_preview(uuid)'])assert.equal((await projector.query("SELECT has_function_privilege(current_user,$1,'EXECUTE') allowed",[fn])).rows[0].allowed,false);
+  });
+  for(const status of ['FAILED','CANCELED'] as const)await check('Expired unbound '+status+': exactly one guarded call/cancellation/outbox, zero refund; duplicate has no provider call',async()=>{
+   const l=await lostFixture(status==='FAILED'?'2035-04-01':'2035-04-02'),calls:{method:string;url:string}[]=[],truth=await reconcileLost(l,calls,status),f={...l,...truth};
+   assert.equal(truth.source.decision,'ACCEPT_'+status);
+   await assert.rejects(verifyAcceptanceAttempt(projector,targetOf(l)),/M3_UNBOUND_PAYMENT_REQUIRES_CANCELLED_BOOKING/);
+   await clock(new Date(now.getTime()+700000));await verifyAcceptanceAttempt(projector,targetOf(l));
+   const before=await business(f),sql:string[]=[];
+   for(const stage of ['SELECT payment_projection.terminalize_expired','INSERT INTO payment_projection.heads','INSERT INTO payment_projection.events','INSERT INTO payment_projection.job_receipts']){
+    await assert.rejects(project(f,q=>{if(q.startsWith(stage))throw Error('SYNTHETIC_PROJECTION_FAILURE');}),/SYNTHETIC_PROJECTION_FAILURE/);
+    assert.deepEqual(await business(f),before,'rollback at '+stage);
+   }
+   const result=await project(f,q=>sql.push(q));
+   assert.equal(sql.filter(q=>q.startsWith('SELECT payment_projection.terminalize_expired')).length,1);
+   assert.equal(sql.filter(q=>q.startsWith('UPDATE rental_payment_attempts')).length,0);
+   assert.equal(result.decision,status==='FAILED'?'APPLY_FAILED':'APPLY_CANCELED');assert.equal(result.bookingState,'CANCELLED');assert.equal(result.attemptState,'FAILED');
+   const after=await business(f);assert.equal(after.attempt.provider_id,l.observation.providerId);assert.equal(after.attempt.provider_state,status);assert.equal(after.hold.state,'RELEASED');
+   assert.equal(after.cancellations.length,1);assert.equal(after.cancellations[0].maximum_refund_jpy,0);assert.equal(after.cancellations[0].payment_uncertain,false);assert.equal(after.refunds,null);
+   assert.equal(after.outbox.filter((r:{event_type:string})=>r.event_type==='BOOKING_CANCELLED').length,1);
+   assert.ok(after.claims.every((r:{state:string})=>r.state==='RELEASED'));
+   for(const table of ['events','heads','receipts'])assert.equal(after[table].length,1);
+   assert.deepEqual(after.events[0].new_state,{booking:'CANCELLED',attempt:'FAILED',hold:'RELEASED',holdPayment:after.hold.payment_state});
+   assert.equal((await project(f)).duplicate,true);assert.deepEqual(await business(f),after);assert.deepEqual(calls.map(c=>c.method),['GET']);
+  });
+  await check('0053 SQL independently rejects wrong identity/source, active HOLD, collected money, bound provider and non-Production',async()=>{
+   const l=await lostFixture('2035-04-03'),truth=await reconcileLost(l,[],'FAILED'),f={...l,...truth};await clock(new Date(now.getTime()+700000));
+   const unchanged=await business(f);
+   const reject=async(patch:{index?:number;value?:unknown;actor?:string;reason?:string;setup?:(c:PoolClient)=>Promise<void>})=>{
+    const c=await owner.connect();try{
+     await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason',$2,true)",[actor!,patch.reason??'PAYMENT_PROJECTION_LOCAL']);
+     await patch.setup?.(c);
+     if(patch.actor!==undefined)await c.query("SELECT set_config('zao.actor',$1,true)",[patch.actor]);
+     await c.query('SET LOCAL ROLE '+projector.options.user);
+     const args=terminalArgs(f);if(patch.index!==undefined)args[patch.index]=patch.value;
+     await assert.rejects(c.query(terminalSql,args),error=>['23514','42501','22023'].includes(String((error as {code:string}).code)));
+    }finally{await c.query('ROLLBACK');c.release();}
+    assert.deepEqual(await business(f),unchanged);
+   };
+   await reject({actor:'wrong-actor'});await reject({reason:'wrong-reason'});
+   for(const [index,value] of [[0,randomUUID()],[1,randomUUID()],[2,randomUUID()],[3,'OTHER-MERCHANT'],[4,'other-payment'],[5,2],[6,'f'.repeat(64)]] as const)await reject({index,value});
+   await reject({setup:async c=>{await c.query("UPDATE inventory_holds SET expires_at=inventory_clock()+interval '1 minute',version=version+1 WHERE id=$1",[l.holdId]);}});
+   await reject({setup:async c=>{await c.query('UPDATE rental_payment_attempts SET provider_id=$2 WHERE id=$1',[l.attemptId,l.observation.providerId]);}});
+   await reject({setup:async c=>{await c.query("UPDATE rental_payment_attempts SET state='COMPLETED',provider_id=$2,provider_state='COMPLETED',completed_at=inventory_clock() WHERE id=$1",[l.attemptId,l.observation.providerId]);assert.equal((await c.query('SELECT count(*)::int n FROM ops_collected_payments WHERE booking_id=$1',[l.bookingId])).rows[0].n,1);}});
+   await reject({setup:async c=>{
+    // Inconsistent historical collection: seed an actual additional payment in this disposable transaction.
+    // Keep the original attempt UNKNOWN/unbound so the zero-collected guard itself is exercised.
+    const amendment=randomUUID();
+    await c.query(`INSERT INTO ops_amendment_quotes(id,booking_id,actor,request_key,fingerprint,expected_hold_version,before_conditions,conditions,quote,quote_sha256,loan_versions,assignment,reason,expires_at)
+     VALUES($1,$2,$3,$4,repeat('a',64),1,'{}','{}','{"additionalChargeJpy":1}',repeat('a',64),'{}','{}','SYNTHETIC collected-payment counterexample',inventory_clock()+interval '1 minute')`,[amendment,l.bookingId,actor!,randomUUID()]);
+    await c.query('ALTER TABLE ops_amendments DISABLE TRIGGER ops_accept_amendment');
+    await c.query("INSERT INTO ops_amendments(id,booking_id,actor,request_key,fingerprint,fit_evidence) VALUES($1,$2,$3,$4,repeat('a',64),'SYNTHETIC')",[amendment,l.bookingId,actor!,randomUUID()]);
+    await c.query('ALTER TABLE ops_amendments ENABLE TRIGGER ops_accept_amendment');
+    await c.query('ALTER TABLE ops_charge_requests DISABLE TRIGGER ops_charge_guard');
+    await c.query("INSERT INTO ops_charge_requests(id,booking_id,amendment_id,actor,idempotency_key,merchant_id,location_id,amount_jpy,currency,state,provider_id,completed_at) VALUES($1,$2,$3,$4,$5,$6,$7,1,'JPY','COMPLETED','synthetic-additional',inventory_clock())",[randomUUID(),l.bookingId,amendment,actor!,randomUUID(),merchant,l.locationId]);
+    await c.query('ALTER TABLE ops_charge_requests ENABLE TRIGGER ops_charge_guard');
+    assert.equal((await c.query('SELECT count(*)::int n FROM ops_collected_payments WHERE booking_id=$1',[l.bookingId])).rows[0].n,1);
+   }});
+   // Deliberately corrupt immutable identity only within a rolled-back owner fixture, then invoke as the restricted role.
+   await reject({setup:async c=>{await c.query('ALTER TABLE rental_bookings DISABLE TRIGGER rental_booking_guard');await c.query("UPDATE rental_bookings SET mode='SQUARE_SANDBOX',price_snapshot=jsonb_set(price_snapshot,'{chargeReady}','false'),version=version+1 WHERE id=$1",[l.bookingId]);await c.query('ALTER TABLE rental_bookings ENABLE TRIGGER rental_booking_guard');}});
+   await reject({setup:async c=>{await c.query('UPDATE payment_reconciliation.jobs SET decision=NULL WHERE id=$1',[truth.ref.jobId]);}});
+   for(const status of ['COMPLETED','PENDING'] as const){
+    const other=await lostFixture(status==='COMPLETED'?'2035-04-04':'2035-04-05'),t=await reconcileLost(other,[],status),candidate={...other,...t};await clock(new Date(now.getTime()+700000));
+    const c=await projector.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','PAYMENT_PROJECTION_LOCAL',true)",[actor!]);await denied(()=>c.query(terminalSql,terminalArgs(candidate)),'23514');}finally{await c.query('ROLLBACK');c.release();}
+   }
   });
  }finally{await owner.query(originalClock);}
 }

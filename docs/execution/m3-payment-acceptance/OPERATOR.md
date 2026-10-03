@@ -26,8 +26,10 @@ Every command also accepts `--plan /absolute/non-secret-plan.json`: exactly `rel
 only `configuration.deployment.releaseId` follows the plan). Merchant, locations, hosts, roles, credentials and
 origin cannot be supplied. `reconcile-one` uses the exact-payment Production functions of migration 0052 so an older
 unrelated inbox event is never dispatched; a lost checkout response (attempt `UNKNOWN`, `provider_id` null) is
-recoverable only through one `GetPayment` that matches every persisted fact, and its payment may bind only after
-the booking is already cancelled. See `docs/execution/m3-targeted-recovery/PLAN.md`.
+recoverable only through one `GetPayment` that matches every persisted fact, and its payment may bind after
+the booking is already cancelled. Migration 0053 additionally admits an unbound FAILED/CANCELED
+Production payment with an exact expired HOLD through the guarded zero-refund cancellation path.
+See `docs/execution/m3-targeted-recovery/PLAN.md` and `docs/execution/m3-expired-failed-terminalization/PLAN.md`.
 
 The input is an owner-owned regular file, mode 0600, outside the checkout, at most
 64 KiB. No ambient environment activation or credential fallback exists. Assemble

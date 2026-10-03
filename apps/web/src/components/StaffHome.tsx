@@ -134,7 +134,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  const manifestError=manifestMessage?loadErrorText('本日の業務',manifestMessage):'';
  const manifestKind=manifestError?'error':manifestRows===null||manifestBusy?'loading':manifestRows.length?'ready':'empty';
  const manifestStatus=manifestError||(manifestRows===null?'本日の業務を読み込んでいます…':manifestBusy?'最新の状態を読み込んでいます…':'');
- return <main className="holds staff-home"><header className="staff-home-header"><div><p className="staff-secondary">ZAO Rental · 合成データ専用</p><h1>スタッフホーム</h1></div><nav><a href="/staff/logout">ログアウト</a></nav></header>
+ return <main className="holds staff-home"><header className="staff-home-header"><div><p className="staff-secondary">ZAO Rental · スタッフ業務</p><h1>スタッフホーム</h1></div><nav><a href="/staff/logout">ログアウト</a></nav></header>
  {canBookingView&&<section aria-label="店舗・営業日" className="staff-context">
   {showManifest&&<label>対象店舗<select aria-label="対象店舗" value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{storeName(s)}</option>)}</select></label>}
   <p className="staff-context-date"><span>営業日</span><strong>{manifestDate?manifestDate+'（JST）':'確認しています…'}</strong></p>

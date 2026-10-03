@@ -12,6 +12,7 @@ import {skiSet} from '../inventory/fixture';
 import type {HoldConditions} from '../../packages/contracts/src/hold';
 let failed=false,stage='setup';const reports:unknown[]=[];
 for(const totalWear of [200,400]){
+ stage='setup-'+totalWear;
  const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');let app:Awaited<ReturnType<typeof startFlowApp>>|undefined;
  try{app=await startFlowApp();await seedRecommendation(app.db.pool,true);await bootstrapDevelopmentAdmin(app.db.pool,{email:'wear-mixed-root@example.invalid',displayName:'SYNTHETIC mixed root',password});const {origin}=app,db=app.db.pool;
  const clock=async(t:string)=>{assert.match(t,/^20[0-9-]+T[0-9:]+Z$/);await db.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${t}'::timestamptz$$`);};await clock('2035-01-01T01:00:00Z');

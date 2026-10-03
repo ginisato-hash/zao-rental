@@ -123,7 +123,7 @@ receives and handles alerts; no unapproved third-party notification endpoint is 
 
 Before deploy: record main/head/tree, exact review/CI, full source migration registry, environment-name
 delta, current alias/protection and accepted rollback ID. The current candidate adds only migrations0054/0055. All0001–0053 bytes are unchanged.
-Use the fixed installer below after backup; the four new EXECUTE grants are a separate held delta. Set build/runtime `PRODUCTION_RELEASE_ID` and
+Use the fixed installer below after backup; the four new EXECUTE grants are a separately authorized delta, conditional on TD PASS, CI SUCCESS and a completed pre-migration backup. Set build/runtime `PRODUCTION_RELEASE_ID` and
 `VERCEL_GIT_COMMIT_SHA` to exact merged main in the single deployment. Verify READY, source metadata,
 alias, `/api/readiness`, normal staff/guest display and unchanged noindex/protection.
 
@@ -156,7 +156,7 @@ Authority: Issue47 updated body and comment5969785059, base main
 `502ab44f6d97c0a0bd5b0643e6f50642b46fc2d3`. A new candidate is reviewed independently.
 2026-10-03T14:30Z readback: Production still uses rollback deployment/source above, protection is
 `all`, registry53 matches the unchanged source prefix, commercial10 roles remain LOGIN/infinity.
-The five F2 roles have naturally expired (metadata proven; a fresh login refusal is not yet proven).
+The five F2 roles have naturally expired. At2026-10-03T14:43:29Z each existing credential was tried once with a fresh TLS connection; all five were rejected with SQLSTATE28P01, with no business SQL or credential change.
 No credential, old payment, outbox or Production stock has been changed during this continuation.
 Source A/B total151 buckets/1421 units; Source B shared-size decision is accepted. Physical assets,
 poles, wear pools and public policy rows remain0. Current price covers only the acceptance date.
@@ -212,9 +212,11 @@ GRANT EXECUTE ON FUNCTION payment_projection.normal_candidates(text,timestamptz,
 GRANT EXECUTE ON FUNCTION notification_due_normal(timestamptz,integer) TO neondb_operations;
 ```
 
-Production application of these grants is HELD: Issue47 prohibits unapproved privilege expansion.
-There are no new table/DML grants, memberships, roles or credential changes. After specific authorization,
-apply once and read back exact per-function ACLs and denial for other roles/PUBLIC. Rollback revokes only
+The Owner explicitly approved these four grants at2026-10-03T14:44:27Z, recorded in Issue47
+comment5970223877. Application remains conditional on exact-candidate TD PASS, natural CI SUCCESS
+and a completed pre-migration Production backup; it has not been performed. There are no new table/DML
+grants, memberships, roles or credential changes. After those conditions, apply once and read back exact
+per-function ACLs and denial for other roles/PUBLIC. Rollback revokes only
 these four grants and keeps the schema/protection; do not change existing privileges or F2 credentials.
 Backup/restore protected sinks and separate key custody remain prerequisites; a prior automatic-approval
 rejection of BACKUP/AGE value read/export is retained as a hard block, not retried via another path.

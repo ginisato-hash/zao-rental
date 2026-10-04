@@ -11,7 +11,7 @@ import {migrate, migrationPlan} from '../../packages/db/src/index';
 import {EXPECTED_PRODUCTION_BUCKET, encryptFileToFileStreaming, fingerprintHost} from '../../scripts/production-backup';
 import {
   DISPOSABLE_DATABASE_PATTERN, assertCustodyConfirmed, assertDisposableTarget, assertEmptyTarget, assertPgRestoreVersion, decryptBackupToFile,
-  loadAgeIdentity, r2FetchAdapter, runPgRestore, runRestoreDrill, verifyRestoredDatabase,
+  loadAgeIdentity, localCiphertextAdapter, r2FetchAdapter, runPgRestore, runRestoreDrill, selectCiphertextSource, verifyRestoredDatabase,
   type CustodyConfirmation, type DrillAdapters, type RestoreTarget,
 } from '../../scripts/production-restore-drill';
 import {startIsolatedPostgres} from '../../scripts/postgres';
@@ -156,6 +156,22 @@ try {
   });
 
   failedStage = 'static boundary';
+  await check('a local ciphertext file replaces the R2 read: regular caller-owned absolute file only, source untouched; exactly one source is accepted', async () => {
+    const src = join(root, 'local-source.dump.age'); await copyFile(cipherPath, src);
+    const out = join(root, 'local-copy.dump.age');
+    const got = await localCiphertextAdapter(src)(KEY, out);
+    assert.equal(got.bytes, (await lstat(src)).size); assert.equal(sha(await readFile(out)), sha(await readFile(cipherPath)));
+    await rejects(() => localCiphertextAdapter(src)(KEY, out), 'EEXIST'); // never overwrites an existing work file
+    const link = join(root, 'local-link.dump.age'); await symlink(src, link);
+    await rejects(() => localCiphertextAdapter(link)(KEY, join(root, 'l1')), 'RESTORE_CIPHERTEXT_FILE_INVALID');
+    await rejects(() => localCiphertextAdapter(root)(KEY, join(root, 'l2')), 'RESTORE_CIPHERTEXT_FILE_INVALID');
+    const empty = join(root, 'empty.dump.age'); await writeFile(empty, '');
+    await rejects(() => localCiphertextAdapter(empty)(KEY, join(root, 'l3')), 'RESTORE_CIPHERTEXT_FILE_INVALID');
+    await rejects(() => localCiphertextAdapter('relative/path')(KEY, join(root, 'l4')), 'RESTORE_CIPHERTEXT_FILE_INVALID');
+    assert.equal(selectCiphertextSource({ciphertextPath: src}), 'LOCAL'); assert.equal(selectCiphertextSource({r2: {}}), 'R2');
+    for (const bad of [{}, {r2: {}, ciphertextPath: src}, {ciphertextPath: 'relative'}, {ciphertextPath: 5}]) assert.throws(() => selectCiphertextSource(bad as never), /RESTORE_INPUT_SOURCE_INVALID/);
+  });
+
   await check('restore module has no R2 write/delete command, no Production connection and never reads the dump into memory', async () => {
     const source = await readFile(new URL('../../scripts/production-restore-drill.ts', import.meta.url), 'utf8');
     for (const forbidden of [/PutObject/, /DeleteObject/, /CopyObject/, /DeleteBucket/, /neon\.tech/, /sslmode=/i, /PRODUCTION_[A-Z_]*PASSWORD/, /readFile\([^)]*(dump|cipher|plain)/i])

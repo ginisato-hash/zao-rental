@@ -211,8 +211,27 @@ export function r2FetchAdapter(client: S3Client, bucket: string = EXPECTED_PRODU
   };
 }
 
+/** Local ciphertext source: the object was already read from R2 (for example with the Owner-authorized wrangler OAuth read) into a caller-owned regular
+ * file, so no R2 credential has to be handed to this process. The age authentication tags and the expected plaintext hash still gate every byte. */
+export function localCiphertextAdapter(sourcePath: string): DrillAdapters['fetchCiphertext'] {
+  return async (_key, outPath) => {
+    if (!isAbsolute(sourcePath)) throw new Error('RESTORE_CIPHERTEXT_FILE_INVALID');
+    const stat = await lstat(sourcePath);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size < 1 || (process.getuid && stat.uid !== process.getuid())) throw new Error('RESTORE_CIPHERTEXT_FILE_INVALID');
+    await pipeline(createReadStream(sourcePath), createWriteStream(outPath, {flags: 'wx', mode: 0o600}));
+    return {bytes: (await lstat(outPath)).size};
+  };
+}
+
+/** Exactly one ciphertext source: the read-only R2 adapter or a local file. */
+export function selectCiphertextSource(input: {r2?: unknown; ciphertextPath?: unknown}): 'R2' | 'LOCAL' {
+  if ((input.r2 === undefined) === (input.ciphertextPath === undefined)) throw new Error('RESTORE_INPUT_SOURCE_INVALID');
+  if (input.ciphertextPath !== undefined && (typeof input.ciphertextPath !== 'string' || !isAbsolute(input.ciphertextPath))) throw new Error('RESTORE_INPUT_SOURCE_INVALID');
+  return input.r2 !== undefined ? 'R2' : 'LOCAL';
+}
+
 interface CliInput {
-  r2: {accountId: string; accessKeyId: string; secretAccessKey: string}; key: string; scheduledAt: string;
+  r2?: {accountId: string; accessKeyId: string; secretAccessKey: string}; ciphertextPath?: string; key: string; scheduledAt: string;
   expected: {sha256: string; bytes?: number}; identityPath: string; custody: CustodyConfirmation; pgRestorePath: string; target: RestoreTarget;
   expectedMigrations?: number;
 }
@@ -233,10 +252,12 @@ export async function main(argv: string[]): Promise<void> {
   const checkoutRoot = process.cwd();
   const input = await readCliInput(path, checkoutRoot);
   const identity = await loadAgeIdentity(input.identityPath, checkoutRoot);
-  const client = new S3Client({region: 'auto', endpoint: `https://${input.r2.accountId}.r2.cloudflarestorage.com`,
-    credentials: {accessKeyId: input.r2.accessKeyId, secretAccessKey: input.r2.secretAccessKey}});
+  const source = selectCiphertextSource(input);
+  const fetchCiphertext = source === 'LOCAL' ? localCiphertextAdapter(input.ciphertextPath!)
+    : r2FetchAdapter(new S3Client({region: 'auto', endpoint: `https://${input.r2!.accountId}.r2.cloudflarestorage.com`,
+      credentials: {accessKeyId: input.r2!.accessKeyId, secretAccessKey: input.r2!.secretAccessKey}}));
   const adapters: DrillAdapters = {
-    fetchCiphertext: r2FetchAdapter(client),
+    fetchCiphertext,
     restore: (dumpPath, target) => runPgRestore({pgRestorePath: input.pgRestorePath, dumpPath, target}),
     openTarget: t => new Pool({host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, max: 4}),
     toolVersion: () => assertPgRestoreVersion(input.pgRestorePath),

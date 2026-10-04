@@ -35,8 +35,9 @@ export async function runNormalProductionTick(plan:NormalWorkerPlan,ports:Normal
    try{await ports.project(candidate);projected++;}catch(e){if((e as {code?:string}).code==='STALE_PROJECTION_REVISION'){deferred++;continue;}throw e;}
   }
   if(ports.refunds)for(const r of active()?await ports.refundCandidates(plan.batchSize):[]){if(!active())break;
-   if(r.dispatched_at){if(r.provider_id){await ports.refunds.reconcile(r.id);refundLookups++;}}
-   else if(r.state==='PENDING'&&refundCreates<plan.refundCreateLimit&&refundJpy+Number(r.amount_jpy)<=plan.refundBudgetJpy){await ports.refunds.dispatch(r.id);refundCreates++;refundJpy+=Number(r.amount_jpy);}
+   // UNKNOWN without a provider ID remains durable history; it cannot be re-POSTed or looked up.
+   if(r.dispatched_at!==null&&r.dispatched_at!==undefined){if(r.provider_id){await ports.refunds.reconcile(r.id);refundLookups++;}continue;}
+   if(r.state==='PENDING'&&refundCreates<plan.refundCreateLimit&&refundJpy+Number(r.amount_jpy)<=plan.refundBudgetJpy){await ports.refunds.dispatch(r.id);refundCreates++;refundJpy+=Number(r.amount_jpy);}
   }
   const notifications=ports.notifications&&active()?await ports.notifications.runBatch({since:plan.acceptedBookingsAfter,limit:plan.notificationLimit,deadline:new Date(plan.deadline)}):{state:'NOT_RUN',processed:0};
   return {state:'COMPLETED',reconciliation,projected,deferred,refundCreates,refundLookups,refundJpy,notifications};

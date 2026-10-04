@@ -13,6 +13,7 @@ import {provisionNotificationRole} from '../../scripts/notification-roles';
 import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
 import {CancellationRefundWorker} from '../../packages/core/src/payment/cancellation-refund-worker';
 import {requestFor,variants} from '../inventory/fixture';
+import {normalRefundCandidates} from '../../packages/db/src/normal-production-worker';
 
 /** Real normal SQL/worker flow with fake lookup/delivery. Does not mint Production identity. */
 export async function normalWorkerAcceptance(x:Awaited<ReturnType<typeof flowFixture>>){
@@ -84,5 +85,16 @@ export async function normalWorkerAcceptance(x:Awaited<ReturnType<typeof flowFix
   await runNormalProductionTick(refundablePlan(),refundPorts);assert.equal(posts,1);
   assert.equal((await refundPorts.refundCandidates())[0].state,'UNKNOWN');
   console.log('PASS normal worker: real refund durable claim with two consumers and response loss; one fake POST, UNKNOWN never resent');
+  for(const booking of [a,b]){const c=await pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[x.actor]);const preview=(await c.query('SELECT booking_cancellation_preview($1) v',[booking.bookingId])).rows[0].v;await c.query('SELECT booking_cancel($1,$2,$3)',[booking.bookingId,randomUUID(),preview]);await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}}
+  const refunds=(await pool.query('SELECT id,booking_id FROM booking_cancellation_refunds WHERE booking_id=ANY($1::uuid[]) ORDER BY created_at,id',[[a.bookingId,b.bookingId]])).rows;
+  assert.equal(refunds.length,2);await pool.query('SELECT cancellation_refund_claim($1)',[refunds[0].id]);
+  let actionablePosts=0;
+  const actionablePorts={...ports,notifications:null,refundCandidates:(limit:number)=>normalRefundCandidates(pool,syntheticMerchant,[a.locationId,b.locationId],since,limit),refunds:{async dispatch(id:string){const claimed=(await pool.query('SELECT cancellation_refund_claim($1) v',[id])).rows[0].v;if(claimed){actionablePosts++;return {state:'UNKNOWN'};}return {state:'NOT_CLAIMED'};},async reconcile(){throw Error('UNKNOWN_WITHOUT_ID_MUST_NOT_LOOKUP');}}};
+  const actionablePlan=()=>({...plan(),batchSize:1,notificationLimit:0,refundCreateLimit:1,refundBudgetJpy:100000});
+  await Promise.all([runNormalProductionTick(actionablePlan(),actionablePorts),runNormalProductionTick(actionablePlan(),actionablePorts)]);
+  await runNormalProductionTick(actionablePlan(),actionablePorts);
+  assert.equal(actionablePosts,1,'older unbound UNKNOWN must not starve the later PENDING refund');
+  assert.deepEqual((await pool.query('SELECT state,provider_id FROM booking_cancellation_refunds WHERE id=ANY($1::uuid[])',[refunds.map(r=>r.id)])).rows,[{state:'UNKNOWN',provider_id:null},{state:'UNKNOWN',provider_id:null}]);
+  console.log('PASS normal worker: batch1 skips older unbound UNKNOWN, later PENDING is claimed once across two consumers/two ticks; no UNKNOWN resend');
  }finally{await notificationRole.close();await access.close();await x.clock(previous);}
 }

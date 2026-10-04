@@ -429,14 +429,14 @@
   {
    "id": "0054",
    "file": "0054_provisional_receipt_capacity.sql",
-   "sha256": "667a861a8632e08cad0d2a75429cd7814c35a4ed7b98e83e4436669eda2d1aff",
+   "sha256": "6aefbc51e167b2c070c35212e27a83d5a49545cd7012ecbb67ab9c7edfb5aea8",
    "runtimeGuards": 0,
    "guard": null
   },
   {
    "id": "0055",
    "file": "0055_normal_production_worker.sql",
-   "sha256": "a7acdea75b28a936562a2202f15346a7ce796a80d714fc30e8e47b2b51159b8e",
+   "sha256": "ef13d125dd5a7a516e437f97a8e7e2c418fbe8f6fd70973f1917428e2cfc9f03",
    "runtimeGuards": 0,
    "guard": null
   }

@@ -51,13 +51,13 @@ END$$;
 REVOKE ALL ON FUNCTION payment_reconciliation.dispatch_normal(text,integer,timestamptz),payment_reconciliation.claim_normal(text,integer,text,timestamptz) FROM PUBLIC;
 
 CREATE FUNCTION payment_projection.normal_candidates(p_merchant text,p_since timestamptz,p_limit integer) RETURNS SETOF jsonb
-LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
  SELECT jsonb_build_object('bookingId',b.id,'attemptId',a.id,'jobId',j.id,'paymentId',a.provider_id,
   'truthRevision',s.truth_revision,'truthFingerprint',j.decision_fingerprint,'observation',s.latest,'expectedRevision',coalesce(h.revision,0))
  FROM payment_reconciliation.jobs j JOIN payment_reconciliation.streams s
   ON s.environment=j.environment AND s.merchant_id=j.merchant_id AND s.payment_id=j.payment_id
- JOIN rental_payment_attempts a ON a.provider_id=j.payment_id AND a.merchant_id=j.merchant_id
- JOIN rental_bookings b ON b.id=a.booking_id
+ JOIN public.rental_payment_attempts a ON a.provider_id=j.payment_id AND a.merchant_id=j.merchant_id
+ JOIN public.rental_bookings b ON b.id=a.booking_id
  LEFT JOIN payment_projection.heads h ON h.attempt_id=a.id
  WHERE j.environment='PRODUCTION' AND j.merchant_id=p_merchant AND b.mode='SQUARE_PRODUCTION' AND b.created_at>=p_since
   AND j.state='RECONCILED' AND NOT j.security_blocked AND j.generation=s.generation AND j.decision_fingerprint IS NOT NULL

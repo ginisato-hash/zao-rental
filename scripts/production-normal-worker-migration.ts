@@ -1,7 +1,7 @@
 import type {PoolClient} from 'pg';
 import {bootstrapPlan} from './production-bootstrap';
 const refused='PRODUCTION_NORMAL_WORKER_RECONCILIATION_REQUIRED';
-const functions=['provisional_capacity_receive_import()','payment_reconciliation.dispatch_normal(text,integer,timestamptz)','payment_reconciliation.claim_normal(text,integer,text,timestamptz)','payment_projection.normal_candidates(text,timestamptz,integer)','notification_due_normal(timestamptz,integer)'];
+const functions=['provisional_capacity_receive_import()','provisional_receipt_claim_guard()','payment_reconciliation.dispatch_normal(text,integer,timestamptz)','payment_reconciliation.claim_normal(text,integer,text,timestamptz)','payment_projection.normal_candidates(text,timestamptz,integer)','notification_due_normal(timestamptz,integer)'];
 /** Fixed 0053→0055 additive transaction. The operator must first verify backup, exact
  * accepted main, pinned owner/TLS and protection. No grants, credentials or business writes. */
 export async function applyProductionNormalWorkerMigration(c:PoolClient,database:string,owner:string){
@@ -14,12 +14,13 @@ export async function applyProductionNormalWorkerMigration(c:PoolClient,database
  const proof=async()=>{
   for(const fn of functions){
    const row=(await c.query(`SELECT p.prosecdef,pg_get_userbyid(p.proowner)=$1 owner_ok,
-    p.proconfig @> ARRAY[CASE WHEN p.pronamespace='payment_reconciliation'::regnamespace THEN 'search_path=pg_catalog, pg_temp' ELSE 'search_path=pg_catalog, public, pg_temp' END] path_ok,
+    p.proconfig @> ARRAY[CASE WHEN p.pronamespace IN ('payment_reconciliation'::regnamespace,'payment_projection'::regnamespace) THEN 'search_path=pg_catalog, pg_temp' ELSE 'search_path=pg_catalog, public, pg_temp' END] path_ok,
     NOT EXISTS(SELECT 1 FROM aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE a.privilege_type='EXECUTE' AND a.grantee<>p.proowner) owner_only
     FROM pg_proc p WHERE p.oid=$2::regprocedure`,[owner,fn])).rows[0];
    if(!row||Object.values(row).some(v=>v!==true))throw Error(refused);
   }
   const guards=(await c.query(`SELECT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.ops_import_commits'::regclass AND tgname='provisional_capacity_receive_import' AND tgenabled='O') receipt_trigger,
+   (SELECT count(*)=3 FROM pg_trigger WHERE tgname IN ('provisional_receipt_physical_guard','provisional_receipt_wear_guard','provisional_receipt_provisional_guard') AND tgenabled='O' AND tgdeferrable AND tginitdeferred) claim_guards,
    position('PROVISIONAL_MATERIALIZATION_NOT_ACTIVATED' in pg_get_functiondef('public.provisional_capacity_materialize_bucket(uuid,integer,uuid)'::regprocedure))>0 legacy_guard,
    (SELECT count(*)=0 FROM public.provisional_capacity_receipts) no_business_writes`)).rows[0];
   if(!guards||Object.values(guards).some(v=>v!==true))throw Error(refused);

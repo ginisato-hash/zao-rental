@@ -55,8 +55,13 @@ the Issue proof. Never combine a shared boot size into two independent quantity 
 The active commercial book is revision2, `ZAO_2026_27_V1`, accepted equipment source digest
 `ffd9fb8b8022952a397dd15693fd23b28e2f063b84f83c6a053e208863c948f8`, tables digest
 `12a7a493f33dc4ea46a12c7f0dc2f770938b81598721d78672985469fccd64d5` and the existing wear v1.2
-authority. Its current rental period is **2027-01-15 only**, an acceptance date. Do not treat that as
-the public season, silently enlarge it, apply a tax adjustment, or replace the immutable price snapshot.
+authority. Direct Owner approval in the Primary task authorized the normal API copy/activation
+for **2026-12-12 through2027-03-31 inclusive**, both stores, no closures, Asia/Tokyo.
+On2026-10-03 the new book201c1396-e653-47c1-8f3d-e5dbb47cd1d5 was created once and activated once
+(revision2, activation79f40960-ff88-407f-b5cf-9a625fdcece8, effective17:13:13.033Z).
+The original acceptance book, existing quotes/bookings/payments, prices and source digest are unchanged.
+The previous automatic-approval denial remains historical; this direct approval satisfied its missing
+authorization condition through the same normal API route. No retry or alternate write route was used.
 The earlier two adult-M wear variants have been extended by the approved 18 variants; physical assets/poles/wear pools and
 approved public-policy rows are zero. Later receipts must distinguish added catalog from physical stock.
 
@@ -67,11 +72,11 @@ Use the existing source/receipt/photo templates rather than duplicating inventor
 
 | Input | Minimum answer / prepared action | Acceptance condition |
 |---|---|---|
-| Public rental season | `rentalFrom`, `rentalUntil`, any store/date closures | Accepted commercial book/activation covers intended dates at both stores; fresh quote matches pinned arithmetic |
-| Equipment catalog / sizes | Tier per source/model; reuse the approved size mapping, including shared `N/N.5` as one quantity pool | Exact variant/bucket matching and guest recommendation; no double capacity, premium/model-promise substitution or guessed tier |
+| Public rental season — applied | 2026-12-12 through2027-03-31 inclusive; both stores no closures | Normal API draft1/activate1, unchanged price/source; local quote boundaries verify both endpoints, outside dates and crossing periods |
+| Equipment catalog / sizes | Preserve classified models; unclassified gear REGULAR, wear STANDARD; shared `N/N.5` stays one quantity pool | Exact variant/bucket matching and guest recommendation; no double capacity, premium/model-promise substitution or guessed tier |
 | Physical equipment | Final received-source file, approved count per row, store allocation, existing label numbering if any | Independent source approval, dry-run/import receipt, inspection before AVAILABLE; BSL remains unverified until measured; no inferred DIN |
 | Wear receipt | Confirm received jacket/pants counts by age/size/store using existing receipt template | Provisional pools and real wear pools reconciled separately; physical handoff gate remains enforced |
-| Commercial wording | Approved JA/EN tax-display basis, terms/cancellation/privacy and business/store information | Reviewed content becomes approved policy; no unapproved tax arithmetic or legal statement |
+| Commercial wording | Owner delegates JA/EN text aligned with existing rules and clear tax-inclusive totals; verify source tax basis without arithmetic changes | Reviewed content becomes approved policy; no unapproved tax arithmetic or legal statement |
 | Photos / rights | Approved files, source/right holder, permitted public use, model binding | No synthetic/unknown image is presented as a real guaranteed product; use existing rights manifest |
 | Staff operations | Named operators, store scopes and required explicit booking/checkout/return/operations permissions | Authorized administrator applies exact access delta; real login, session isolation, denied-permission and recovery cases checked |
 | Live payment / refund | Explicit new owner/card, exact booking/quote/location, JPY ceiling and remaining POST counts | No F2 budget reuse. Prepare a fresh quote; perform only the separately approved one payment/refund chain; UNKNOWN means read-only reconciliation |
@@ -175,9 +180,12 @@ Exact clean current main/Production identity, real TLS and role metadata are che
 `preflight` performs no Provider call or role mutation. A tick dispatches/claims only bound commercial
 payments created after the cutoff, selects persisted truth for projection, then bounded refunds and
 notifications. Merchant/location come from persisted attempts and the pinned two-store configuration.
-No M3 `*-one` call, attended unbound recovery, scheduler, startup side effect or default location exists.
+No M3 `*-one` call, attended unbound recovery, startup side effect or default location exists.
+Deployment of a scheduler remains unproved; the accepted operating policy is24h, every minute, one finite tick.
 Deadline stops new items; an in-flight operation finishes/settles under its existing timeout. Lease expiry
-handles unprocessed claimed items. UNKNOWN without provider identity never causes another refund POST.
+handles unprocessed claimed items. The SQL candidate limit excludes dispatched UNKNOWN without provider
+identity, preserving its history while allowing later PENDING refunds to progress. The core never
+re-POSTs it. Two consumers/two ticks with batch1 yield older POST0/later fake POST1/duplicates0.
 Keep notification/refund limits0 until the particular live window has explicit recipient/count/budget
 acceptance. Existing F2 cutoffs are additionally excluded. Normal operation credential/sink lifecycle is
 still required; never extend, rotate or repurpose the expired F2 window to make preflight pass.
@@ -185,7 +193,10 @@ still required; never extend, rotate or repurpose the expired F2 window to make 
 For paid provisional fulfillment, use the existing inventory import stage/commit API (or staff inventory
 form) with the original `provisionalSourceId`. A stage binds that ID into its immutable hash. Each actually
 imported SHOP_RECEIPT/ADD row deducts the matching mapped source bucket in the same transaction as physical
-stock; duplicate/concurrent commits do not deduct twice. Ambiguous/missing provenance or excess quantity
+stock; duplicate/concurrent commits do not deduct twice. A deferred final-claim guard reserves
+received compatible stock for existing provisional promises before new physical/wear claims can commit.
+It checks the combined compatible family/age/shared-size/day public95% and hard ceiling across stores,
+while preserving stricter per-variant/per-store limits and atomic paid amendment conversion. Ambiguous/missing provenance or excess quantity
 rolls back the physical import. Received units may remain unavailable pending inspection. This is distinct
 from publication/real-data acceptance and does not activate the historical0041 materialization function.
 Then request the normal amendment quote with unchanged conditions; the server permits this only for an
@@ -199,7 +210,9 @@ After accepted candidate, backup proof and pinned owner/TLS checks, call
 `applyProductionNormalWorkerMigration(client, 'neondb', 'neondb_owner')` from
 `scripts/production-normal-worker-migration.ts`. It accepts only the exact53-entry checksum prefix,
 applies0054/0055 atomically under registry/inventory locks, checks owner-only ACLs and retained0041 guard,
-and reads back55 checksums. No grants, credentials or business rows are changed. A lost COMMIT means
+and reads back55 checksums. It also proves all three deferred claim guards and the fixed payment-schema
+search_path=pg_catalog,pg_temp; normal_candidates fully qualifies public tables.
+No grants, credentials or business rows are changed. A lost COMMIT means
 read-only reconciliation; never rerun. On pre-COMMIT error the transaction rolls back. After commit,
 keep the additive schema and return to the accepted protected deployment; no destructive down.
 

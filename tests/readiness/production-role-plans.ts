@@ -117,6 +117,7 @@ try {
   // 0050→0053 installer proofs. Live installers still require their exact historical database prefix.
   await production.query('DROP FUNCTION payment_reconciliation.dispatch_normal(text,integer,timestamptz),payment_reconciliation.claim_normal(text,integer,text,timestamptz),payment_projection.normal_candidates(text,timestamptz,integer),notification_due_normal(timestamptz,integer)');
   await production.query('DROP TRIGGER provisional_capacity_receive_import ON ops_import_commits; DROP FUNCTION provisional_capacity_receive_import(); DROP TABLE provisional_capacity_receipts');
+  await production.query('DROP TRIGGER provisional_receipt_physical_guard ON inventory_claims; DROP TRIGGER provisional_receipt_wear_guard ON wear_claims; DROP TRIGGER provisional_receipt_provisional_guard ON provisional_capacity_claims; DROP FUNCTION provisional_receipt_claim_guard()');
   const legacy=readFileSync('packages/db/migrations/0041_provisional_booking_capacity.sql','utf8');
   const start=legacy.indexOf('CREATE FUNCTION provisional_capacity_effective_quantity('),end=legacy.indexOf('$$;',start)+3;
   await production.query(legacy.slice(start,end).replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION'));

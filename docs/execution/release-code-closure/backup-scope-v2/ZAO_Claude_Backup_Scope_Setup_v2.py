@@ -2,9 +2,11 @@
 """Owner-run, case-scoped Claude Code settings ADDITION ZAO_R49_BACKUP_V1, v2 (ZAO Rental pre-migration Production backup).
 
 v2 (Technical Director, Issue #47 comment 5981827674): three GitHub variables in scope incl. AGE_BACKUP_RECIPIENT; NO raw
-Neon reset_password POST rule - only the secret-safe helper `scripts/production-backup-credential.ts` (four exact
+Neon reset_password POST rule - only the secret-safe helper `scripts/production-backup-credential.ts` (four exact lifecycle
 `npm run backup:*` commands) is allowed, and this installer refuses to run unless that helper and its direct imports are
-byte-identical to the reviewed versions pinned below; backup-role lifecycle with a 90-minute database-clock LOGIN lease.
+byte-identical to the reviewed versions pinned below; backup-role lifecycle with a 90-minute database-clock LOGIN lease;
+the produced ciphertext is fetched only through one pinned read-only wrapper (`npm run backup:object-get`), never by a raw
+`wrangler r2 object get` (TD review of PR #50, M1).
 
 Additive to ZAO_R49_AUTONOMY_V1 (it refuses to run unless that policy is already saved). No network, package installation,
 repository edit, git mutation, secret-store write, deployment, or test execution is performed. Preview is the default;
@@ -55,10 +57,12 @@ WORKFLOW = "production-backup.yml"
 LEASE_MINUTES = 90
 NEON_BIN = Path(".npm/_npx/978debf9b3a75271/node_modules/.bin/neon")
 WRANGLER_BIN = Path(".npm/_npx/32026684e21afda6/node_modules/.bin/wrangler")
-# Reviewed helper (commit 26788ed74f71a88d8687e55376452fa625f5672c on codex/release-worker-provisional-47) and its direct imports.
+# Reviewed helper and read-only download wrapper (commit e803f57 on codex/release-worker-provisional-47, TD review of PR #50) and the helper's direct imports.
 HELPER = "scripts/production-backup-credential.ts"
+OBJECT_GET = "scripts/production-backup-object-get.ts"
 PINNED_FILES = {
-    HELPER: "8b261b532c0c6e84b7928594e96bc0e43333bcc360a13d63f2389a3335f13d77",
+    HELPER: "e71a9ca8e9e283c619fa4591c9ddd2d28223b7d2ba1515cd9025cd27fb1e5c72",
+    OBJECT_GET: "64fca6e2628a485394fc9a2b0fa4642e2fab412993985782526eb78056813c08",
     "scripts/production-credential-activation.ts": "f4f96805ccf5d92f4382d545135121b6e3f411cc366c9dc1a113f3b6f7278abf",
     "scripts/production-backup.ts": "a571e89675c70c38d342c54441db66313c976c55b1d31e1be873ece2105596e6",
 }
@@ -67,6 +71,7 @@ HELPER_COMMANDS = {  # package.json script name -> required exact command
     "backup:role-provision": "node --import tsx scripts/production-backup-credential.ts provision",
     "backup:role-finalize": "node --import tsx scripts/production-backup-credential.ts finalize",
     "backup:role-contain": "node --import tsx scripts/production-backup-credential.ts contain",
+    "backup:object-get": "node --import tsx scripts/production-backup-object-get.ts",
 }
 EVIDENCE_DIR = ".local/evidence/production-backup"  # age-recipient.txt (public), restore-pass.json, reset-attempt.json (helper guard)
 # Primary writes this one directly (value on stdin). The five PG sinks are written ONLY by the helper; the two R2
@@ -167,7 +172,7 @@ def verify_worktree(home: Path) -> Path:
     scripts = package.get("scripts")
     if package.get("name") != "zao-rental" or not isinstance(scripts, dict):
         raise SetupError("package.json does not identify the expected ZAO Rental project.")
-    # The only commands this policy allows are these four package scripts; they must be exactly the reviewed ones.
+    # The only commands this policy allows are these package scripts (four lifecycle commands and the read-only object download); they must be exactly the reviewed ones.
     if any(scripts.get(name) != expected for name, expected in HELPER_COMMANDS.items()):
         raise SetupError("The backup helper package scripts differ from the reviewed ones; no file was changed.")
     # The helper and its direct imports must be byte-identical to what the Technical Director reviewed.
@@ -214,7 +219,7 @@ def classifier_allow_entries(home: Path) -> list[str]:
         f"{MARKER} Backup-role credential lifecycle (Technical Director accepted, v2): {scope}, permit ONLY the reviewed secret-safe helper, through exactly four commands run for {wt}: npm --prefix {wt} run backup:set-age-recipient | backup:role-provision | backup:role-finalize | backup:role-contain. The helper ({HELPER}, sha256 {PINNED_FILES[HELPER][:12]}...; direct imports scripts/production-credential-activation.ts and scripts/production-backup.ts also pinned) is the sole route to the Neon reset_password POST for role {r}: a raw `neon api ... reset_password -X POST`, reveal_password, or any other direct POST/PUT/PATCH/DELETE to Neon is not authorized, and neither is editing the helper or its pinned imports under this entry. Inside, the helper: captures every Neon response in memory (child stdout is never inherited); claims a durable local guard and makes exactly one POST to {base}/branches/{b}/roles/{r}/reset_password, never resending it after an unknown outcome; obtains the owner role's connection URI for database {d} on the exact branch through the Neon API into process memory only (host must equal the exact endpoint host; never printed or stored), solely to run the reviewed role-lifecycle statements (SET LOCAL ROLE {d}_role_admin; ALTER ROLE {r} ...) and read-only role-posture readbacks, with no application-table read; sets the temporary password only while the role is NOLOGIN and never puts a secret in argv; leases LOGIN to a database-clock deadline of {LEASE_MINUTES} minutes (the first Production Backup workflow has a 30-minute timeout); proves a fresh direct TLS verify-full, channel-binding login and read-only posture (no business row is read); sends the new password only to gh secret set PRODUCTION_BACKUP_PGPASSWORD over stdin; sets PRODUCTION_BACKUP_ACTIVATION last; and on any failure contains the role (NOLOGIN PASSWORD NULL VALID UNTIL 'infinity') and deletes that secret and the activation variable. finalize (VALID UNTIL 'infinity') runs only after a restore PASS record exists.",
         f"{MARKER} GitHub Environment {GH_ENV}: {scope}, three variables are in scope: PRODUCTION_BACKUP_BUCKET (= {BUCKET}); AGE_BACKUP_RECIPIENT, the Owner's public age1... recipient, which Claude sets through npm run backup:set-age-recipient only after the helper validates it as a public recipient (a private AGE-SECRET-KEY value is rejected) and never overwrites with a different value; and PRODUCTION_BACKUP_ACTIVATION = R4_APPROVED, set by the provision helper strictly last after every precondition and sink is read back (deleted to stop). Secrets: the helper alone writes {', '.join(HELPER_SECRETS)} (PGHOST is the direct non-pooled host of the exact branch's endpoint and must match the committed Production fingerprint; PGPORT 5432; PGDATABASE {d}; PGUSER {r}); Claude may also write {CLAUDE_DIRECT_SECRET} (a non-secret Cloudflare account id) with gh secret set over stdin. Metadata readback with gh secret list and gh variable list. Not authorized: any other secret or variable, repository- or organization-level secrets, other environments, the Owner-only {', '.join(OWNER_ONLY_SECRETS)}, changing environment protection or the branch policy, or reading a secret value.",
         f"{MARKER} Production Backup run: {scope}, permit exactly one gh workflow run {WORKFLOW} --repo {REPO} --ref main -f scheduled_at=<canonical UTC ISO-8601> after the provision helper reports PROVISIONED and before the LOGIN lease deadline it printed, and read-only inspection (gh run list/view/log, artifacts) of that run. Not authorized: a rerun, a retry after a failed run without a reported cause, another workflow or ref, or a dispatch while PRODUCTION_BACKUP_ACTIVATION is unset. A failed run is read and reported.",
-        f"{MARKER} Cloudflare R2: {scope}, permit wrangler ({wrangler}) read-only operations on bucket {BUCKET}: r2 bucket info, r2 bucket lifecycle list, and r2 object get {BUCKET}/<key> --remote --file <path> for the object the Production Backup run produced (hourly/YYYY/MM/DD/<timestamp>.dump.age) into the mode-0700 directory below the worktree's .local/; plus one wrangler whoami to read the Cloudflare account id (non-secret) for {CLAUDE_DIRECT_SECRET}. Not authorized: object put or delete, bucket create or delete, lifecycle/CORS/domain/public-access changes, token or API-key creation, other buckets or accounts.",
+        f"{MARKER} Cloudflare R2: {scope}, permit wrangler ({wrangler}) read-only operations on bucket {BUCKET}: r2 bucket info and r2 bucket lifecycle list, plus one wrangler whoami to read the Cloudflare account id (non-secret) for {CLAUDE_DIRECT_SECRET}. The produced ciphertext is downloaded ONLY through the pinned read-only wrapper npm --prefix {wt} run backup:object-get ({OBJECT_GET}, sha256 {PINNED_FILES[OBJECT_GET][:12]}...): no arguments; the key comes from {wt}/{EVIDENCE_DIR}/object-key.txt and must match the producer's contract (hourly/ or daily/ YYYY/MM/DD/<UTC timestamp>.dump.age); the only wrangler operation is r2 object get {BUCKET}/<key> --remote --file into {wt}/{EVIDENCE_DIR}/<basename> (git-ignored, never overwritten). A raw wrangler r2 object get, object put or delete, bucket create or delete, lifecycle/CORS/domain/public-access changes, token or API-key creation, other buckets or accounts are not authorized.",
         f"{MARKER} Restore proof: {scope}, permit preparing the Owner's input file and one exact restore command (existing npm run restore:production-drill with the PG18 client from npm run setup:pg18-client), the post-restore registry/checksum/critical-fingerprint/row-count checks and RPO/RTO measurement against an owned loopback disposable PostgreSQL, recording the sanitized PASS (object key, ciphertext sha256) and the Owner's public recipient only under {wt}/{EVIDENCE_DIR}/, and cleanup of those owned resources and of Claude's local ciphertext copies. The Owner runs the single decrypt-and-restore command because it needs the private age identity; Claude never asks to read it.",
     ]
 

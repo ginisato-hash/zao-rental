@@ -5,11 +5,13 @@
 // No Production connection, credential or provider call.
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
-import {Pool} from 'pg';
+import {Client,Pool} from 'pg';
+import {fingerprintHost} from '../../scripts/production-backup';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {migrate} from '../../packages/db/src/index';
 import {productionCredentialTemporaryPasswordSql,productionCredentialRollbackSql,productionCredentialTemporaryPassword,productionCredentialBaseline,productionCredentialContainmentComplete} from '../../scripts/production-credential-activation';
+import * as backupCredential from '../../scripts/production-backup-credential';
 import {bootstrapProductionFoundation,runFoundationPlan,productionFoundationPlan,schemaFingerprint,securityFingerprint,fingerprintDelta,deltaMismatch,
  FOUNDATION_FAULT_STAGES,type FoundationPlan} from '../../scripts/production-bootstrap';
 
@@ -138,6 +140,69 @@ try{
    await tx(productionCredentialRollbackSql(DB,'content_read'));
    assert.deepEqual(await state(),normalized);assert.equal(productionCredentialBaseline(await state()),'READY_NORMALIZED');assert.equal(productionCredentialContainmentComplete(await state()),true);
   }
+ });
+ await check('backup role lifecycle (production-backup-credential) on the real foundation role: provision, finalize, contain and the unknown-reset path',async()=>{
+  const T=backupCredential.BACKUP_CREDENTIAL_TARGET,HOST='ep-synthetic-0000.us-east-2.aws.neon.tech',AGE='age1'+'q'.repeat(58),OP='3f2b8c1e-9d4a-4e1b-8c7d-0a1b2c3d4e5f';
+  const port=(a.neon.options as {port:number}).port;
+  const sunk:Record<string,string>={},vars:Record<string,string>={PRODUCTION_BACKUP_BUCKET:backupCredential.BACKUP_BUCKET,AGE_BACKUP_RECIPIENT:AGE};
+  const secrets=new Set<string>(backupCredential.BACKUP_OWNER_SECRETS);
+  let claimed=false,posts=0,resetFails=false;
+  const ports:backupCredential.BackupCredentialPorts={
+   neon:{
+    async get(path){
+     if(path===`/projects/${T.project}`)return {project:{id:T.project,history_retention_seconds:21600}};
+     if(path===`/projects/${T.project}/branches/${T.branch}`)return {branch:{id:T.branch}};
+     if(path.endsWith('/databases/'+T.database))return {database:{name:T.database,owner_name:T.owner}};
+     if(path.endsWith('/roles'))return {roles:[{name:T.role},{name:T.manager},{name:T.owner}]};
+     if(path.endsWith('/endpoints'))return {endpoints:[{id:'ep-synthetic-0000',type:'read_write',branch_id:T.branch,host:HOST}]};
+     if(path.endsWith('/connection_uri'))return {uri:(()=>{const u=new URL('postgresql://placeholder/');u.hostname=HOST;u.username=T.owner;u.password='synthetic';u.pathname='/'+T.database;return u.toString();})()};
+     if(path.includes('/operations/'))return {operation:{id:OP,status:'finished'}};
+     throw new Error('unexpected GET '+path);
+    },
+    async post(path){
+     assert.equal(path,backupCredential.backupResetPath());posts++;
+     if(resetFails)throw new Error('socket hang up');
+     const password=randomBytes(24).toString('base64url');
+     await a.canonical.query(`ALTER ROLE ${T.role} PASSWORD '${password}'`); // what Neon's reset_password does to the role
+     return {role:{name:T.role,password},operations:[{id:OP,status:'running'}]};
+    },
+   },
+   github:{
+    async secretNames(){return [...secrets];},async variables(){return {...vars};},
+    async setSecret(n,v){secrets.add(n);sunk[n]=v;},async setVariable(n,v){vars[n]=v;},
+    async deleteSecret(n){secrets.delete(n);delete sunk[n];},async deleteVariable(n){delete vars[n];},
+   },
+   async connectOwner(){const c=await a.neon.connect();return {query:((sql:string,p?:unknown[])=>c.query(sql,p)) as never,end:async()=>c.release()};},
+   async connectBackup(cfg){const c=new Client({host:'127.0.0.1',port,user:cfg.user,password:cfg.password,database:cfg.database});await c.connect();return {query:((sql:string,p?:unknown[])=>c.query(sql,p)) as never,end:()=>c.end()};},
+   guard:{exists:()=>claimed,claim:()=>{if(claimed)throw new Error('BACKUP_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed=true;}},
+   async sleep(){},now:()=>new Date(),expectTls:false,containmentSchedule:[0,0],expectedHostFingerprint:fingerprintHost(HOST),
+  };
+  const state=async()=>(await a.canonical.query(`SELECT r.rolcanlogin,a.rolpassword IS NULL AS "passwordIsNull",CASE WHEN isfinite(r.rolvaliduntil) THEN 'finite' ELSE r.rolvaliduntil::text END AS "validUntil",
+   extract(epoch FROM (r.rolvaliduntil-clock_timestamp()))/60 AS minutes FROM pg_roles r JOIN pg_authid a ON a.oid=r.oid WHERE r.rolname=$1`,[T.role])).rows[0] as {rolcanlogin:boolean;passwordIsNull:boolean;validUntil:string;minutes:number};
+  const login=async(password:string)=>{const c=new Client({host:'127.0.0.1',port,user:T.role,password,database:T.database});await c.connect();try{return (await c.query('SELECT current_user AS u')).rows[0].u as string;}finally{await c.end();}};
+  const pristine=await state();assert.deepEqual([pristine.rolcanlogin,pristine.passwordIsNull,pristine.validUntil],[false,true,null]);
+  // provision: exactly one provider reset, LOGIN with a database-clock lease that covers the 30-minute workflow, password only in the stdin sink
+  const ev=await backupCredential.provisionBackupCredential(ports);
+  assert.equal(ev.state,'PROVISIONED');assert.equal(posts,1);assert.equal(ev.passwordReadback,'READABLE','the Neon-shaped owner reads pg_authid through the provider parent\'s pg_read_all_data');
+  const leased=await state();assert.equal(leased.rolcanlogin,true);assert.equal(leased.validUntil,'finite');assert.ok(leased.minutes>85&&leased.minutes<=90.1,String(leased.minutes));
+  assert.equal(await login(sunk[backupCredential.BACKUP_SINKS.password]!),T.role);
+  assert.deepEqual(Object.keys(sunk).sort(),Object.values(backupCredential.BACKUP_SINKS).sort());assert.equal(vars.PRODUCTION_BACKUP_ACTIVATION,'R4_APPROVED');
+  await assert.rejects(backupCredential.provisionBackupCredential(ports),/BACKUP_CREDENTIAL_RESET_ALREADY_ATTEMPTED/);assert.equal(posts,1);
+  // finalize only with the restore PASS record, then steady state: LOGIN, VALID UNTIL infinity, the same password still works
+  await assert.rejects(backupCredential.finalizeBackupCredential(ports,{result:'PASS'}),/BACKUP_CREDENTIAL_RESTORE_PASS_REQUIRED/);
+  await backupCredential.finalizeBackupCredential(ports,{result:'PASS',objectKey:'hourly/2026/10/04/2026-10-04T16:10:00.000Z.dump.age',objectSha256:'a'.repeat(64)});
+  const steady=await state();assert.deepEqual([steady.rolcanlogin,steady.validUntil],[true,'infinity']);assert.equal(await login(sunk[backupCredential.BACKUP_SINKS.password]!),T.role);
+  // containment: NOLOGIN, no password, VALID UNTIL infinity, sink and activation removed, the old password is refused
+  const oldPassword=sunk[backupCredential.BACKUP_SINKS.password]!;
+  const contained=await backupCredential.containBackupCredential(ports);
+  assert.deepEqual([contained.state,contained.sinkDeleted,contained.activationDeleted],['CONTAINED',true,true]);
+  const after=await state();assert.deepEqual([after.rolcanlogin,after.passwordIsNull,after.validUntil],[false,true,'infinity']);
+  await assert.rejects(login(oldPassword));assert.ok(!(backupCredential.BACKUP_SINKS.password in sunk));assert.ok(!('PRODUCTION_BACKUP_ACTIVATION' in vars));
+  // a fresh authorization with an unknown provider outcome: contained, one POST, never resent
+  claimed=false;posts=0;resetFails=true;
+  await assert.rejects(backupCredential.provisionBackupCredential(ports),(e:Error&{contained?:{state:string}})=>{assert.equal(e.message,'BACKUP_CREDENTIAL_RESET_OUTCOME_UNKNOWN');assert.equal(e.contained?.state,'CONTAINED');return true;});
+  assert.equal(posts,1);const unknown=await state();assert.deepEqual([unknown.rolcanlogin,unknown.passwordIsNull,unknown.validUntil],[false,true,'infinity']);
+  evidence.backupCredentialLifecycle={provisionPosts:1,leaseMinutesMax:90,finalized:true,contained:true,unknownOutcomeResent:false};
  });
  await check('a second foundation bootstrap is refused on the non-empty database',async()=>{
   await assert.rejects(bootstrapProductionFoundation(a.neon,DB),/PRODUCTION_DATABASE_NOT_EMPTY/);

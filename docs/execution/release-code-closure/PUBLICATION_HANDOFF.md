@@ -186,6 +186,14 @@ Deadline stops new items; an in-flight operation finishes/settles under its exis
 handles unprocessed claimed items. The SQL candidate limit excludes dispatched UNKNOWN without provider
 identity, preserving its history while allowing later PENDING refunds to progress. The core never
 re-POSTs it. Two consumers/two ticks with batch1 yield older POST0/later fake POST1/duplicates0.
+CREATE and LOOKUP each have at most batchSize candidates (combined maximum40), with CREATE
+first and the existing shared deadline/create-count/JPY limits. An older provider-ID PENDING
+lookup therefore cannot occupy the later CREATE slot. The real-PG batch1 acceptance keeps the
+older observation PENDING across three consumer ticks while later fake POST1/duplicates0 and
+older POST0 hold; each tick performs at most one CREATE and one LOOKUP.
+The local logical restore contract includes provisional_capacity_receipts as durable data;
+its normal-import fixture proves a nonempty receipt survives and effective capacity stays19/20
+after restore. This synthetic drill does not substitute for the required Production backup.
 Keep notification/refund limits0 until the particular live window has explicit recipient/count/budget
 acceptance. Existing F2 cutoffs are additionally excluded. Normal operation credential/sink lifecycle is
 still required; never extend, rotate or repurpose the expired F2 window to make preflight pass.

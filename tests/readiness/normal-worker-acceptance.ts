@@ -96,5 +96,22 @@ export async function normalWorkerAcceptance(x:Awaited<ReturnType<typeof flowFix
   assert.equal(actionablePosts,1,'older unbound UNKNOWN must not starve the later PENDING refund');
   assert.deepEqual((await pool.query('SELECT state,provider_id FROM booking_cancellation_refunds WHERE id=ANY($1::uuid[])',[refunds.map(r=>r.id)])).rows,[{state:'UNKNOWN',provider_id:null},{state:'UNKNOWN',provider_id:null}]);
   console.log('PASS normal worker: batch1 skips older unbound UNKNOWN, later PENDING is claimed once across two consumers/two ticks; no UNKNOWN resend');
+  // A legitimate provider PENDING observation must not monopolize the CREATE lane.
+  const waiting=(await pool.query('SELECT cancellation_refund_row($1) v',[refunds[0].id])).rows[0].v;
+  const pendingObservation={id:'synthetic-pending-refund',paymentProviderId:waiting.payment_provider_id,merchantId:waiting.merchant_id,locationId:waiting.location_id,amountJpy:Number(waiting.amount_jpy),currency:'JPY',status:'PENDING',updatedAt:x.now().toISOString()};
+  await pool.query('SELECT cancellation_refund_observe($1,$2::jsonb)',[waiting.id,JSON.stringify(pendingObservation)]);
+  await x.clock(new Date(x.now().getTime()+1000).toISOString());
+  const cancellation=await pool.connect();try{await cancellation.query('BEGIN');await cancellation.query("SELECT set_config('zao.actor',$1,true)",[x.actor]);const preview=(await cancellation.query('SELECT booking_cancellation_preview($1) v',[crash.bookingId])).rows[0].v;await cancellation.query('SELECT booking_cancel($1,$2,$3)',[crash.bookingId,randomUUID(),preview]);await cancellation.query('COMMIT');}catch(e){await cancellation.query('ROLLBACK');throw e;}finally{cancellation.release();}
+  const later=(await pool.query('SELECT id FROM booking_cancellation_refunds WHERE booking_id=$1',[crash.bookingId])).rows[0];
+  const posted:string[]=[];let pendingLookups=0;
+  const fairPorts={...actionablePorts,refunds:{async dispatch(id:string){const claimed=(await pool.query('SELECT cancellation_refund_claim($1) v',[id])).rows[0].v;if(claimed)posted.push(id);return {state:claimed?'UNKNOWN':'NOT_CLAIMED'};},async reconcile(id:string){assert.equal(id,waiting.id);pendingLookups++;await pool.query('SELECT cancellation_refund_observe($1,$2::jsonb)',[id,JSON.stringify(pendingObservation)]);return {state:'PENDING'};}}};
+  for(const restriction of [{refundCreateLimit:0},{refundBudgetJpy:0}]){const tick=await runNormalProductionTick({...actionablePlan(),...restriction},fairPorts);assert.equal(tick.refundCreates,0);assert.equal(tick.refundLookups,1);assert.deepEqual(posted,[]);}
+  const fairTicks=await Promise.all([runNormalProductionTick(actionablePlan(),fairPorts),runNormalProductionTick(actionablePlan(),fairPorts)]);
+  fairTicks.push(await runNormalProductionTick(actionablePlan(),fairPorts));
+  assert.deepEqual(posted,[later.id],'provider PENDING lookup must not starve a later CREATE, including concurrent consumers');
+  assert.equal(pendingLookups,5);assert.ok(fairTicks.every(t=>t.refundCreates<=1&&t.refundLookups<=1));
+  assert.deepEqual((await pool.query('SELECT state,provider_id FROM booking_cancellation_refunds WHERE id=$1',[waiting.id])).rows[0],{state:'PENDING',provider_id:pendingObservation.id});
+  assert.deepEqual((await pool.query('SELECT state,provider_id FROM booking_cancellation_refunds WHERE id=$1',[later.id])).rows[0],{state:'UNKNOWN',provider_id:null});
+  console.log('PASS normal worker: batch1 has bounded CREATE and LOOKUP lanes; repeated provider PENDING keeps progressing while later refund fake POST1/duplicate0, waiting refund POST0');
  }finally{await notificationRole.close();await access.close();await x.clock(previous);}
 }

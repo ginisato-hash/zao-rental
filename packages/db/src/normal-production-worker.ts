@@ -15,10 +15,14 @@ import type {CancellationRefundWorker} from '../../core/src/payment/cancellation
 
 export type ProductionWorkerInput={plan:unknown;databaseUrls:Record<'dispatcher'|'worker'|'projector',string>;lookup:PaymentTruthProvider;preflight?:boolean};
 export async function normalRefundCandidates(operations:Pick<Pool,'query'>,merchant:string,locations:string[],since:string,limit:number){
- return (await operations.query(`SELECT r.id,r.amount_jpy,r.provider_id,r.dispatched_at,r.state FROM booking_cancellation_refunds r JOIN rental_bookings b ON b.id=r.booking_id
+ return (await operations.query(`WITH eligible AS (SELECT r.id,r.amount_jpy,r.provider_id,r.dispatched_at,r.state,r.created_at FROM booking_cancellation_refunds r JOIN rental_bookings b ON b.id=r.booking_id
   WHERE b.mode='SQUARE_PRODUCTION' AND b.created_at>=$1 AND r.merchant_id=$2 AND r.location_id=ANY($3::text[]) AND r.state IN ('PENDING','UNKNOWN')
-   AND ((r.state='PENDING' AND r.dispatched_at IS NULL) OR (r.dispatched_at IS NOT NULL AND r.provider_id IS NOT NULL))
-  ORDER BY r.created_at,r.id LIMIT $4`,[since,merchant,locations,limit])).rows;
+   AND ((r.state='PENDING' AND r.dispatched_at IS NULL) OR (r.dispatched_at IS NOT NULL AND r.provider_id IS NOT NULL)))
+  SELECT id,amount_jpy,provider_id,dispatched_at,state FROM (
+   (SELECT * FROM eligible WHERE dispatched_at IS NULL ORDER BY created_at,id LIMIT $4)
+   UNION ALL
+   (SELECT * FROM eligible WHERE dispatched_at IS NOT NULL ORDER BY created_at,id LIMIT $4)
+  ) candidates ORDER BY dispatched_at NULLS FIRST,created_at,id`,[since,merchant,locations,limit])).rows;
 }
 /** Explicit finite factory only. No web startup/scheduler. Every pool is identity-checked before lookup. */
 export async function runProductionWorker(identity:ExactProductionIdentity,input:ProductionWorkerInput,operations:Pool,notifications:BookingNotificationWorker|null,refunds:CancellationRefundWorker|null){

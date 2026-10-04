@@ -21,6 +21,7 @@ export type NormalWorkerPorts={
  project:(candidate:NormalProjectionCandidate)=>Promise<ProjectionResult>;
  notifications:Pick<BookingNotificationWorker,'runBatch'>|null;
  refunds:Pick<CancellationRefundWorker,'dispatch'|'reconcile'>|null;
+ // Separate bounded CREATE/LOOKUP lanes: at most limit rows each, CREATE first.
  refundCandidates:(limit:number)=>Promise<{id:string;amount_jpy:number;provider_id:string|null;dispatched_at:unknown;state:string}[]>;
  close:()=>Promise<void>;
 };

@@ -1,14 +1,20 @@
 import assert from 'node:assert/strict';
-import {randomUUID,randomBytes} from 'node:crypto';
+import {randomUUID,randomBytes,createHash} from 'node:crypto';
 import {writeFile,rm,mkdir} from 'node:fs/promises';
 import {flowFixture} from '../flow/fixture';
-import {loadStaff} from '../../packages/auth/src/staff-auth';
+import {loadStaff,ledgerPrincipal} from '../../packages/auth/src/staff-auth';
+import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority';
+import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
+import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconcile-protection';
 import {provisionOperationsRole} from '../../scripts/operations-roles';
 import {provisionNotificationRole} from '../../scripts/notification-roles';
 import {provisionBookingAccessRole} from '../../scripts/booking-access-role';
 import {OperationsContext} from '../../packages/core/src/operations/context';
 import {OperationsConsole} from '../../packages/core/src/operations/console-service';
 import {FinancialOperations} from '../../packages/core/src/operations/financial';
+import {InventoryOperations} from '../../packages/core/src/operations/inventory-service';
+import {ProvisionalCapacitySourceOperations} from '../../packages/core/src/operations/provisional-capacity-source';
+import {STOCK_IMPORT_HEADER_V3} from '../../packages/contracts/src/stock-import';
 import {BookingNotificationWorker} from '../../packages/core/src/notification/worker';
 import {BookingRecovery} from '../../packages/core/src/guest/booking-recovery';
 import {LoopbackDeliveryAdapter} from '../notification/loopback';
@@ -47,6 +53,18 @@ try{
  // Observed operational exceptions, one of them acknowledged.
  const page=await console_.list({store:'MOUNTAIN_BASE',type:null,severity:null,ageHours:0,status:'UNACKNOWLEDGED',beforeTime:null,beforeId:null});
  assert.ok(page.exceptions.length>0);await console_.acknowledge(randomUUID(),{id:page.exceptions[0]!.id,store:'MOUNTAIN_BASE',reason:'TRIAGED'});
+
+ // A real normal import path gives the new durable receipt table nonempty restore proof.
+ const ledger=new LedgerService(x.roles.ledgerPool,ledgerPrincipal(x.principal),(c,stores,global)=>verifyLedgerWrite(c,x.roles.authPool,x.signed.identity,stores,global),(resource,id,version)=>reconcileLedgerProtection(x.roles.transferPool,x.roles.authPool,x.signed.identity,resource,id,version));
+ const provenance={sourceKind:'SYNTHETIC',sourceDocument:'SYNTHETIC restore catalog',sourceLocator:'restore',notes:''};
+ const model=await ledger.create('models',{...provenance,code:'RESTORE-SKI',name:'SYNTHETIC restore ski',brand:'SYNTHETIC',family:'SKI',catalogSeason:'2026/27'});
+ const variant=await ledger.create('variants',{...provenance,modelId:model.id,family:'SKI',age:'ADULT',tier:'REGULAR',size:'RESTORE-150'});
+ const sku={id:variant.id,model_id:model.id,size:'RESTORE-150',name:'SYNTHETIC restore ski',brand:'SYNTHETIC'};
+ const csv=STOCK_IMPORT_HEADER_V3.join(',')+'\n'+['SHOP_RECEIPT','ADD',sku.model_id,'2026/27',sku.id,'',1,'ASSET_PAIR',randomUUID(),'MOUNTAIN_BASE','SYNTHETIC restore receipt','row-restore','SKI',sku.size,'REGULAR','','AVAILABLE',sku.brand,sku.name,''].join(',')+'\n';
+ const source=await new ProvisionalCapacitySourceOperations(ctx).register(randomUUID(),{sourceSha256:createHash('sha256').update(csv).digest('hex'),originalFilename:'SYNTHETIC restore receipt',buckets:[{family:'SKI',age:'ADULT',sourceSize:sku.size,bookingSize:sku.size,quantity:20,provenance:'SYNTHETIC restore source'}]});
+ const inventory=new InventoryOperations(ctx),staged=await inventory.stageImport(randomUUID(),{csv,sheet:'SYNTHETIC restore receipt',provisionalSourceId:source.sourceId});
+ assert.equal(staged.ready,true,JSON.stringify(staged.unresolved));await inventory.commitImport(randomUUID(),{id:staged.id,stageSha256:staged.stageSha256,reason:'SYNTHETIC restore receipt'});
+ assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM provisional_capacity_receipts WHERE commit_id=$1',[staged.id])).rows[0].n,1);
 
  const before=await criticalFingerprint(x.db.pool);
  const envelope=await exportOwnedDatabase(x.db.pool,x.db.identity);
@@ -87,10 +105,11 @@ try{
 
  await check('critical business and audit rows survive the restore verbatim',async()=>{
   assert.deepEqual(await criticalFingerprint(restored!.pool),before);
-  for(const table of ['provisional_capacity_sources','provisional_capacity_buckets','provisional_capacity_adjustments','provisional_capacity_materializations','provisional_capacity_claims','inventory_buffer_override_log','inventory_pole_exemptions','booking_cancellation_policies','booking_cancellations','booking_cancellation_refunds']){
+  for(const table of ['provisional_capacity_sources','provisional_capacity_buckets','provisional_capacity_adjustments','provisional_capacity_materializations','provisional_capacity_receipts','provisional_capacity_claims','inventory_buffer_override_log','inventory_pole_exemptions','booking_cancellation_policies','booking_cancellations','booking_cancellation_refunds']){
    const sql=`SELECT to_jsonb(t) v FROM ${table} t ORDER BY to_jsonb(t)::text`;
    assert.deepEqual((await restored!.pool.query(sql)).rows,(await x.db.pool.query(sql)).rows,table);
   }
+  for(const db of [x.db.pool,restored!.pool])assert.equal((await db.query('SELECT provisional_capacity_effective_quantity(id) n FROM provisional_capacity_buckets WHERE source_id=$1',[source.sourceId])).rows[0].n,19,'restored receipt still deducts received supply');
   const uncertain=(await restored!.pool.query('SELECT state,dispatched_at FROM booking_cancellation_refunds WHERE id=$1',[refund.id])).rows[0];assert.equal(uncertain.state,'UNKNOWN');assert.ok(uncertain.dispatched_at);
  });
 

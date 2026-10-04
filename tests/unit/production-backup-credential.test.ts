@@ -24,6 +24,8 @@ function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[
  const vars:Record<string,string>={PRODUCTION_BACKUP_BUCKET:m.BACKUP_BUCKET,AGE_BACKUP_RECIPIENT:AGE,...(over.vars??{})};
  const st={...initialState(),...(over.state??{})};
  let posts=0,opPolls=0,containSqlFails=over.containSqlFails??0;
+ // GitHub failure injection for the containment tests: failed deletes (counted), readbacks that throw.
+ const flags={deleteSecretFails:0,deleteVariableFails:0,secretReadbackThrows:false,variableReadbackThrows:false};
  const ops=[...(over.opStatuses??['running','finished'])];
  const neon={
   async get(path:string,query?:Record<string,string>):Promise<unknown>{
@@ -44,12 +46,12 @@ function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[
   },
  };
  const github={
-  async secretNames(){return [...secrets];},
-  async variables(){return {...vars};},
+  async secretNames(){if(flags.secretReadbackThrows)throw new Error('gh failed');return [...secrets];},
+  async variables(){if(flags.variableReadbackThrows)throw new Error('gh failed');return {...vars};},
   async setSecret(n:string,v:string){if(over.secretSetFails===n)throw new Error('gh failed');log.push('gh.setSecret '+n);secrets.add(n);sunk[n]=v;},
   async setVariable(n:string,v:string){log.push('gh.setVariable '+n+'='+(n==='PRODUCTION_BACKUP_ACTIVATION'?v:'<value>'));vars[n]=v;},
-  async deleteSecret(n:string){log.push('gh.deleteSecret '+n);secrets.delete(n);delete sunk[n];},
-  async deleteVariable(n:string){log.push('gh.deleteVariable '+n);delete vars[n];},
+  async deleteSecret(n:string){log.push('gh.deleteSecret '+n);if(flags.deleteSecretFails>0){flags.deleteSecretFails--;throw new Error('gh failed');}secrets.delete(n);delete sunk[n];},
+  async deleteVariable(n:string){log.push('gh.deleteVariable '+n);if(flags.deleteVariableFails>0){flags.deleteVariableFails--;throw new Error('gh failed');}delete vars[n];},
  };
  const alter=(sql:string)=>{
   if(/NOLOGIN PASSWORD NULL VALID UNTIL 'infinity'/.test(sql)){if(containSqlFails>0){containSqlFails--;throw new Error('boom');}st.rolcanlogin=false;st.passwordIsNull=true;st.rolvaliduntil='infinity';}
@@ -90,7 +92,7 @@ function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[
   async connectBackup(c){backupConfigs.push(c);log.push('connectBackup '+c.user);return backupSession();},
   guard:{exists:()=>claimed,claim:()=>{if(claimed)throw new Error('BACKUP_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed=true;log.push('guard.claim');}},
   async sleep(ms){sleeps.push(ms);},now:()=>new Date(1_000_000+sleeps.length*1000),expectTls:true,containmentSchedule:[0,0,0],expectedHostFingerprint:fingerprintHost(HOST)};
- return {ports,log,sunk,secrets,vars,statements,st,backupConfigs,get posts(){return posts;},get opPolls(){return opPolls;}};
+ return {ports,log,sunk,secrets,vars,statements,st,backupConfigs,flags,get posts(){return posts;},get opPolls(){return opPolls;}};
 }
 function initialState(){return {rolcanlogin:false,rolvaliduntil:null as string|null,passwordIsNull:true as boolean,posture:{...POSTURE}};}
 const everything=(w:World)=>JSON.stringify({log:w.log});
@@ -217,6 +219,41 @@ test('containment is bounded, idempotent and reports failure instead of claiming
  const again=await m.containBackupCredential(ok.ports);assert.equal(again.state,'CONTAINED');
  // password presence unreadable: containment is judged on NOLOGIN, VALID UNTIL infinity and the issued statement
  const blind=world({passwordUnreadable:true});assert.equal((await m.containBackupCredential(blind.ports)).state,'CONTAINED');
+});
+
+test('CONTAINED needs the role read back AND the PGPASSWORD secret AND the activation variable read back absent; failed or unknown GitHub steps are CONTAINMENT_FAILED',async()=>{
+ const provisioned=async(setup:(x:World)=>void)=>{const x=world();await m.provisionBackupCredential(x.ports);setup(x);return x;};
+ // everything present and removable: all three conditions hold
+ const ok=await provisioned(()=>undefined);
+ const done=await m.containBackupCredential(ok.ports);
+ assert.deepEqual([done.state,done.roleContained,done.sinkDeleted,done.activationDeleted],['CONTAINED',true,true,true]);
+ assert.ok(!(m.BACKUP_SINKS.password in ok.sunk)&&!('PRODUCTION_BACKUP_ACTIVATION' in ok.vars));
+ // the secret never existed / the variable never existed: absent is success
+ const absent=world();const fresh=await m.containBackupCredential(absent.ports);
+ assert.deepEqual([fresh.state,fresh.sinkDeleted,fresh.activationDeleted],['CONTAINED',true,true]);
+ // a persistent secret deletion failure: the role is contained but the result is not
+ const secretStuck=await provisioned(x=>{x.flags.deleteSecretFails=99;});
+ const a=await m.containBackupCredential(secretStuck.ports);
+ assert.deepEqual([a.state,a.roleContained,a.sinkDeleted,a.activationDeleted],['CONTAINMENT_FAILED',true,false,true]);
+ assert.ok(m.BACKUP_SINKS.password in secretStuck.sunk);
+ // a persistent variable deletion failure
+ const variableStuck=await provisioned(x=>{x.flags.deleteVariableFails=99;});
+ const b=await m.containBackupCredential(variableStuck.ports);
+ assert.deepEqual([b.state,b.roleContained,b.sinkDeleted,b.activationDeleted],['CONTAINMENT_FAILED',true,true,false]);
+ // an unknown readback is not success, even when the delete call itself worked
+ const secretUnknown=await provisioned(x=>{x.flags.secretReadbackThrows=true;});
+ const c=await m.containBackupCredential(secretUnknown.ports);
+ assert.deepEqual([c.state,c.sinkDeleted,c.activationDeleted],['CONTAINMENT_FAILED',false,true]);
+ const variableUnknown=await provisioned(x=>{x.flags.variableReadbackThrows=true;});
+ const d=await m.containBackupCredential(variableUnknown.ports);
+ assert.deepEqual([d.state,d.sinkDeleted,d.activationDeleted],['CONTAINMENT_FAILED',true,false]);
+ // a transient GitHub failure is retried on the bounded schedule and then succeeds
+ const flaky=await provisioned(x=>{x.flags.deleteSecretFails=1;x.flags.deleteVariableFails=2;});
+ const e=await m.containBackupCredential(flaky.ports);
+ assert.equal(e.state,'CONTAINED');assert.ok(e.attempts>=3);
+ // a provision failure whose sink deletion also fails reports CONTAINMENT_FAILED instead of a clean containment
+ const failing=world({probeDenied:'00000'});failing.flags.deleteSecretFails=99;
+ await assert.rejects(m.provisionBackupCredential(failing.ports),(err:Error&{contained?:{state:string;roleContained:boolean}})=>{assert.equal(err.message,'BACKUP_CREDENTIAL_PROBE_FAILED');assert.equal(err.contained?.roleContained,true);return true;});
 });
 
 test('finalize needs a restore PASS record and a live sink; a failed finalization contains',async()=>{

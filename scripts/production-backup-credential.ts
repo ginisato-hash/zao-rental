@@ -160,27 +160,40 @@ async function ownerSession(p:BackupCredentialPorts,host:string):Promise<SqlSess
 }
 
 // ---------------------------------------------------------------- containment
-export type ContainResult={state:'CONTAINED'|'CONTAINMENT_FAILED';sinkDeleted:boolean;activationDeleted:boolean;attempts:number};
+export type ContainResult={state:'CONTAINED'|'CONTAINMENT_FAILED';roleContained:boolean;sinkDeleted:boolean;activationDeleted:boolean;attempts:number};
+/** CONTAINED needs all three: the role read back as NOLOGIN / no password / VALID UNTIL infinity, the PGPASSWORD secret read back as absent, and the
+ * activation variable read back as absent. A secret or variable that never existed counts as absent; a delete that failed or a readback that failed
+ * or is unknown is NOT success. GitHub deletion and its readback are retried on the same bounded schedule as the database containment. */
 export async function containBackupCredential(p:BackupCredentialPorts):Promise<ContainResult>{
- let sinkDeleted=false,activationDeleted=false,attempts=0;
- // Stop consumers first: activation variable, then the password sink. Absent is success; the readback decides.
- try{await p.github.deleteVariable('PRODUCTION_BACKUP_ACTIVATION');}catch{/* verified below */}
- try{await p.github.deleteSecret(BACKUP_SINKS.password);}catch{/* verified below */}
- try{activationDeleted=!('PRODUCTION_BACKUP_ACTIVATION' in await p.github.variables());}catch{/* unknown stays false */}
- try{sinkDeleted=!(await p.github.secretNames()).includes(BACKUP_SINKS.password);}catch{/* unknown stays false */}
+ let roleContained=false,sinkDeleted=false,activationDeleted=false,attempts=0;
  const schedule=p.containmentSchedule??productionCredentialContainmentSchedule();
  let session:SqlSession|undefined;
+ const removeGitHubSide=async()=>{
+  // Stop consumers first: activation variable, then the password sink. The metadata readback decides, not the delete call.
+  if(!activationDeleted){
+   try{await p.github.deleteVariable('PRODUCTION_BACKUP_ACTIVATION');}catch{/* the readback decides */}
+   try{activationDeleted=!('PRODUCTION_BACKUP_ACTIVATION' in await p.github.variables());}catch{activationDeleted=false;}
+  }
+  if(!sinkDeleted){
+   try{await p.github.deleteSecret(BACKUP_SINKS.password);}catch{/* the readback decides */}
+   try{sinkDeleted=!(await p.github.secretNames()).includes(BACKUP_SINKS.password);}catch{sinkDeleted=false;}
+  }
+ };
  try{
   for(let i=0;i<=schedule.length;i++){
    attempts++;
-   try{
-    if(!session){const target=await verifyTarget(p);session=await ownerSession(p,target.host);}
-    await tx(session,backupContainSql());
-    if(containedOf(await readRoleState(session)))return {state:'CONTAINED',sinkDeleted,activationDeleted,attempts};
-   }catch{try{await session?.end();}catch{/* ignore */}session=undefined;}
+   await removeGitHubSide();
+   if(!roleContained){
+    try{
+     if(!session){const target=await verifyTarget(p);session=await ownerSession(p,target.host);}
+     await tx(session,backupContainSql());
+     roleContained=containedOf(await readRoleState(session));
+    }catch{try{await session?.end();}catch{/* ignore */}session=undefined;}
+   }
+   if(roleContained&&sinkDeleted&&activationDeleted)return {state:'CONTAINED',roleContained,sinkDeleted,activationDeleted,attempts};
    if(i<schedule.length)await p.sleep(schedule[i]!*1000);
   }
-  return {state:'CONTAINMENT_FAILED',sinkDeleted,activationDeleted,attempts};
+  return {state:'CONTAINMENT_FAILED',roleContained,sinkDeleted,activationDeleted,attempts};
  }finally{try{await session?.end();}catch{/* ignore */}}
 }
 

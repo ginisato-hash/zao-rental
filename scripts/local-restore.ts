@@ -18,7 +18,7 @@ export const RESTORE_REQUIRED=[
  'public.wear_pools','public.wear_claims','public.wear_loans','public.wear_receipts','public.wear_return_batches','public.wear_transfers','public.wear_transfer_receipts','public.wear_unresolved_returns','public.wear_history','public.wear_requests',
  'public.ops_amendments','public.ops_amendment_quotes','public.ops_charge_requests','public.ops_refund_requests','public.ops_financial_alerts','public.ops_history','public.ops_stocktakes','public.ops_stocktake_reconciliations','public.ops_receipt_terms','public.ops_exceptions','public.field_acceptance_records','public.ops_import_sources','public.ops_import_stages','public.ops_import_commits','public.real_inventory_sources','public.real_data_acceptance',
  'public.booking_notification_outbox',
- 'public.provisional_capacity_sources','public.provisional_capacity_buckets','public.provisional_capacity_adjustments','public.provisional_capacity_materializations','public.provisional_capacity_claims','public.inventory_buffer_override_log','public.inventory_pole_exemptions',
+ 'public.provisional_capacity_sources','public.provisional_capacity_buckets','public.provisional_capacity_adjustments','public.provisional_capacity_materializations','public.provisional_capacity_receipts','public.provisional_capacity_claims','public.inventory_buffer_override_log','public.inventory_pole_exemptions',
  'public.booking_cancellation_policies','public.booking_cancellations','public.booking_cancellation_refunds',
  'square_webhook.inbox','payment_reconciliation.streams','payment_reconciliation.jobs','payment_reconciliation.events','payment_reconciliation.audit','payment_reconciliation.provider_stops',
 ] as const;

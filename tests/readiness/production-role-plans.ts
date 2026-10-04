@@ -6,18 +6,20 @@
 // boundary pg_dump depends on, exactly as the original R4 branch did.
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import {Pool} from 'pg';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {bootstrapProductionSchema} from '../../scripts/production-bootstrap';
 import {productionCredentialReadDatabaseClock,productionCredentialLeaseDeadline} from '../../scripts/production-credential-activation';
 import {productionBackupRoleSql} from '../../scripts/production-backup-role';
-import {productionPaymentRoleNames, productionPaymentRoleCreateSql, productionPaymentActivationGrants} from '../../scripts/production-payment-roles';
+import {productionPaymentRoleNames, productionPaymentRoleCreateSql, productionPaymentActivationGrants,productionNormalWorkerGrants} from '../../scripts/production-payment-roles';
 import {productionAppRoleNames, productionAppRoleCreateSql, productionAppRoleGrantSql} from '../../scripts/production-app-roles';
 import {verifyProductionDatabase} from '../../packages/db/src/production-connection';
 import {PgSquareProductionWebhookInbox, PgSquareWebhookInbox} from '../../packages/db/src/square-webhook-inbox';
 import {productionServices, type ProductionConfiguration} from '../../packages/auth/src/production-config';
 import {productionProjectionChecks} from './production-projection-checks';
+import {applyProductionNormalWorkerMigration} from '../../scripts/production-normal-worker-migration';
 import {applyProductionPaymentRuntimeMigration} from '../../scripts/production-payment-runtime-migration';
 import {applyProductionExpiredFailedTerminalizationMigration} from '../../scripts/production-expired-failed-terminalization-migration';
 import {applyProductionTargetedReconciliationMigration} from '../../scripts/production-targeted-reconciliation-migration';
@@ -111,6 +113,15 @@ try {
   const names = productionPaymentRoleNames(TARGET);
   for (const sql of productionPaymentRoleCreateSql(TARGET)) await production.query(sql);
   for (const sql of productionPaymentActivationGrants(TARGET)) await production.query(sql);
+  // Only this owned disposable fixture rewinds the two new migrations for historical
+  // 0050→0053 installer proofs. Live installers still require their exact historical database prefix.
+  await production.query('DROP FUNCTION payment_reconciliation.dispatch_normal(text,integer,timestamptz),payment_reconciliation.claim_normal(text,integer,text,timestamptz),payment_projection.normal_candidates(text,timestamptz,integer),notification_due_normal(timestamptz,integer)');
+  await production.query('DROP TRIGGER provisional_capacity_receive_import ON ops_import_commits; DROP FUNCTION provisional_capacity_receive_import(); DROP TABLE provisional_capacity_receipts');
+  await production.query('DROP TRIGGER provisional_receipt_physical_guard ON inventory_claims; DROP TRIGGER provisional_receipt_wear_guard ON wear_claims; DROP TRIGGER provisional_receipt_provisional_guard ON provisional_capacity_claims; DROP FUNCTION provisional_receipt_claim_guard()');
+  const legacy=readFileSync('packages/db/migrations/0041_provisional_booking_capacity.sql','utf8');
+  const start=legacy.indexOf('CREATE FUNCTION provisional_capacity_effective_quantity('),end=legacy.indexOf('$$;',start)+3;
+  await production.query(legacy.slice(start,end).replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION'));
+  await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055')");
   await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
     const c=await production!.connect();try{
       const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0050'")).rows[0].checksum;
@@ -199,11 +210,41 @@ try {
       assert.equal(commits,1);assert.equal(await absent(),false);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,53);
     }finally{c.release();}
   });
+  await check('0053→0055 installer rejects drift, rolls back failure, adds no grants/data, rejects replay and requires readback after lost COMMIT',async()=>{
+    const c=await production!.connect();try{
+      const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0053'")).rows[0].checksum;
+      await c.query("UPDATE foundation_migrations SET checksum=repeat('0',64) WHERE id='0053'");
+      await assert.rejects(applyProductionNormalWorkerMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
+      await c.query("UPDATE foundation_migrations SET checksum=$1 WHERE id='0053'",[checksum]);
+      const failing=Object.create(c) as typeof c;
+      failing.query=(async(...args:unknown[])=>{if(String(args[0]).startsWith('INSERT INTO public.foundation_migrations'))throw Error('SYNTHETIC_AFTER_DDL_FAILURE');return Reflect.apply(c.query,c,args);}) as typeof c.query;
+      await assert.rejects(applyProductionNormalWorkerMigration(failing,TARGET,db.identity.user),/SYNTHETIC_AFTER_DDL_FAILURE/);
+      assert.equal((await c.query("SELECT to_regclass('provisional_capacity_receipts') IS NULL absent")).rows[0].absent,true);
+      let commits=0;const lost=Object.create(c) as typeof c;
+      lost.query=(async(...args:unknown[])=>{const result=await Reflect.apply(c.query,c,args);if(args[0]==='COMMIT'){commits++;throw Error('SYNTHETIC_COMMIT_ACK_LOSS');}return result;}) as typeof c.query;
+      await assert.rejects(applyProductionNormalWorkerMigration(lost,TARGET,db.identity.user),/COMMIT_UNKNOWN_READBACK_REQUIRED/);
+      assert.equal(commits,1);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,55);
+      assert.equal((await c.query('SELECT count(*)::int n FROM provisional_capacity_receipts')).rows[0].n,0);
+      for(const role of Object.values(names))assert.equal((await c.query("SELECT has_function_privilege($1,'notification_due_normal(timestamptz,integer)','EXECUTE') allowed",[role])).rows[0].allowed,false);
+      await assert.rejects(applyProductionNormalWorkerMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
+    }finally{c.release();}
+  });
+  // Normal payment identities reuse their existing roles. The operations grant is tested
+  // when that role is provisioned below; no broader schema/table privilege is introduced.
+  for(const sql of productionNormalWorkerGrants(TARGET,TARGET+'_operations').slice(0,3))await production.query(sql);
   const receiver = await loginRole(production, db.identity.dbPort, TARGET, names.receiver); opened.push(receiver);
   const dispatcher = await loginRole(production, db.identity.dbPort, TARGET, names.dispatcher); opened.push(dispatcher);
   const worker = await loginRole(production, db.identity.dbPort, TARGET, names.worker); opened.push(worker);
   const diagnostic = await loginRole(production, db.identity.dbPort, TARGET, names.diagnostic); opened.push(diagnostic);
   const projector = await loginRole(production, db.identity.dbPort, TARGET, names.projector); opened.push(projector);
+  await check('normal worker functions are role separated and PUBLIC cannot invoke them',async()=>{
+    assert.equal((await dispatcher.pool.query('SELECT payment_reconciliation.dispatch_normal($1,1,clock_timestamp()) n',['synthetic-normal'])).rows[0].n,0);
+    assert.equal((await worker.pool.query('SELECT payment_reconciliation.claim_normal($1,1,$2,clock_timestamp())',['synthetic-normal-worker','synthetic-normal'])).rowCount,0);
+    assert.equal((await projector.pool.query('SELECT payment_projection.normal_candidates($1,clock_timestamp(),1)',['synthetic-normal'])).rowCount,0);
+    await denied(()=>worker.pool.query('SELECT payment_reconciliation.dispatch_normal($1,1,clock_timestamp())',['synthetic-normal']));
+    await denied(()=>dispatcher.pool.query('SELECT payment_projection.normal_candidates($1,clock_timestamp(),1)',['synthetic-normal']));
+    for(const fn of ['payment_reconciliation.dispatch_normal(text,integer,timestamptz)','payment_reconciliation.claim_normal(text,integer,text,timestamptz)','payment_projection.normal_candidates(text,timestamptz,integer)','notification_due_normal(timestamptz,integer)'])assert.equal((await production!.query("SELECT has_function_privilege('public',$1,'EXECUTE') allowed",[fn])).rows[0].allowed,false);
+  });
 
   await check('_pay_receipt (F4): can receive_production() but not the generic Sandbox-capable receive(), nor dispatch/claim/finalize/context-load', async () => {
     const r = await receiver.pool.query("SELECT square_webhook.receive_production('evt-p-1','payment.created','merchant-1','pay-1',repeat('a',64)) AS v");
@@ -273,6 +314,7 @@ try {
   const appNames = productionAppRoleNames(TARGET);
   for (const sql of productionAppRoleCreateSql(TARGET)) await production.query(sql);
   for (const sql of productionAppRoleGrantSql(TARGET)) await production.query(sql);
+  await production.query(productionNormalWorkerGrants(TARGET,appNames.operations)[3]!);
   const auth = await loginRole(production, db.identity.dbPort, TARGET, appNames.auth); opened.push(auth);
   const ledger = await loginRole(production, db.identity.dbPort, TARGET, appNames.ledger); opened.push(ledger);
   const hold = await loginRole(production, db.identity.dbPort, TARGET, appNames.hold); opened.push(hold);
@@ -317,6 +359,12 @@ try {
   await check('R3 app roles: recommendation can read/write its own tables but has no pricing access', async () => {
     await recommendation.pool.query('SELECT count(*) FROM recommendation_previews');
     await denied(() => recommendation.pool.query('SELECT count(*) FROM price_books'));
+  });
+  await check('normal notification selector is operations-only and receipt history remains private',async()=>{
+    assert.equal((await operations.pool.query('SELECT notification_due_normal(clock_timestamp(),1)')).rowCount,0);
+    await denied(()=>hold.pool.query('SELECT notification_due_normal(clock_timestamp(),1)'));
+    await denied(()=>operations.pool.query('SELECT * FROM provisional_capacity_receipts'));
+    await denied(()=>operations.pool.query('UPDATE provisional_capacity_receipts SET quantity=quantity'));
   });
   await check('R3 app roles: operations has the broad read surface its console needs but no staff/auth access', async () => {
     await operations.pool.query('SELECT count(*) FROM rental_bookings');

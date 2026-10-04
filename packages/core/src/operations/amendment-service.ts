@@ -22,6 +22,10 @@ type SavedQuote={id:string;booking_id:string;actor:string;expected_hold_version:
 // Preview is advisory; acceptance revalidates under the same inventory transaction.
 export class AmendmentService{
  constructor(private ctx:OperationsContext){}
+ private async conditions(c:OpsConnection,b:Contract,value:unknown,now:Date){
+  const provisional=(await c.query("SELECT 1 FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE' LIMIT 1",[b.hold_id])).rowCount!>0;
+  return amendmentConditions(b.conditions,value,now,provisional);
+ }
  private async source(c:OpsConnection,id:string){
   flowId(id);const b=(await c.query<Contract>(`SELECT b.id,b.hold_id,b.state,b.mode,b.price_snapshot,b.price_sha256,h.conditions,h.version,h.allocation_stage,h.transfer_attention,h.payment_state,h.state AS hold_state,h.buffer_override FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1`,[id])).rows[0];
   if(!b)throw new FlowError('BOOKING_NOT_FOUND',404);await this.ctx.authorize('BOOKING_VIEW',[b.conditions.pickupStore,b.conditions.returnStore]);
@@ -54,7 +58,7 @@ export class AmendmentService{
   const override=v.bufferOverride===undefined?null:flowObject(v.bufferOverride,['useReserve','reason']);if(override&&typeof override.useReserve!=='boolean')throw new FlowError('INVALID_INPUT',422);const explicitReason=override?operationalReason(override.reason):null;
   await this.ctx.authorize('RENTAL_AMEND');const before=await this.source(this.ctx.pool,v.bookingId);
   return this.ctx.transaction('RENTAL_AMEND',[before.conditions.pickupStore,before.conditions.returnStore],reason,(c,now)=>this.ctx.idempotent(c,key,{op:'amendmentQuote',v},async()=>{
-   const b=await this.source(c,v.bookingId as string);if(b.version!==v.expectedHoldVersion)throw new FlowError('STALE_VERSION',409);const conditions=amendmentConditions(b.conditions,v.conditions,now),useReserve=override?override.useReserve===true:b.buffer_override,overrideReason=explicitReason??(useReserve?'PRESERVE_EXISTING_OVERRIDE_AMENDMENT':null);if(useReserve||b.buffer_override||override)await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['INVENTORY_BUFFER_OVERRIDE',[conditions.pickupStore,conditions.returnStore,b.conditions.pickupStore,b.conditions.returnStore],this.ctx.identity.subject]);const {assignment,loans}=await this.plan(c,b,conditions,now,useReserve);
+   const b=await this.source(c,v.bookingId as string);if(b.version!==v.expectedHoldVersion)throw new FlowError('STALE_VERSION',409);const conditions=await this.conditions(c,b,v.conditions,now),useReserve=override?override.useReserve===true:b.buffer_override,overrideReason=explicitReason??(useReserve?'PRESERVE_EXISTING_OVERRIDE_AMENDMENT':null);if(useReserve||b.buffer_override||override)await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['INVENTORY_BUFFER_OVERRIDE',[conditions.pickupStore,conditions.returnStore,b.conditions.pickupStore,b.conditions.returnStore],this.ctx.identity.subject]);const {assignment,loans}=await this.plan(c,b,conditions,now,useReserve);
    const book=(await c.query<{table_jpy:PriceTable;rental_from:string;rental_until:string}>('SELECT table_jpy,rental_from::text,rental_until::text FROM price_books WHERE id=$1',[b.price_snapshot.priceBookId])).rows[0];
    if(!book||conditions.period.startDate<book.rental_from||conditions.period.endDate>book.rental_until)throw new FlowError('ORIGINAL_PRICE_BOOK_UNAVAILABLE',409);
    const payment=(await c.query<{completed_at:Date}>('SELECT completed_at FROM rental_payment_attempts WHERE booking_id=$1 AND state=\'COMPLETED\'',[b.id])).rows[0];if(!payment)throw new FlowError('COMPLETED_PAYMENT_REQUIRED',409);
@@ -73,7 +77,7 @@ export class AmendmentService{
   return this.ctx.transaction('RENTAL_AMEND',[source.conditions.pickupStore,source.conditions.returnStore],reason,(c,now)=>this.ctx.idempotent(c,key,{op:'acceptAmendment',v},async()=>{
    const q=(await c.query<SavedQuote>('SELECT * FROM ops_amendment_quotes WHERE id=$1',[v.quoteId])).rows[0]!,b=await this.source(c,q.booking_id);
    if(q.expires_at<=now||q.expected_hold_version!==b.version||flowHash(q.quote)!==q.quote_sha256||canonical(q.before_conditions)!==canonical(b.conditions))throw new FlowError('AMENDMENT_QUOTE_STALE',409);
-   amendmentConditions(b.conditions,q.conditions,now);if(q.buffer_override||b.buffer_override||q.buffer_override_reason)await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['INVENTORY_BUFFER_OVERRIDE',[b.conditions.pickupStore,b.conditions.returnStore,q.conditions.pickupStore,q.conditions.returnStore],this.ctx.identity.subject]);const {plan,assignment,loans}=await this.plan(c,b,q.conditions,now,q.buffer_override);
+   await this.conditions(c,b,q.conditions,now);if(q.buffer_override||b.buffer_override||q.buffer_override_reason)await c.query('SELECT ops_assert_actor($1,$2::text[],$3)',['INVENTORY_BUFFER_OVERRIDE',[b.conditions.pickupStore,b.conditions.returnStore,q.conditions.pickupStore,q.conditions.returnStore],this.ctx.identity.subject]);const {plan,assignment,loans}=await this.plan(c,b,q.conditions,now,q.buffer_override);
    if(canonical(loans)!==canonical(q.loan_versions)||canonical(assignment)!==canonical(q.assignment))throw new FlowError('AMENDMENT_ASSIGNMENT_CHANGED',409);
    const changedEquipment=loans.equipment.filter(l=>l.state==='OUT'&&!assignment.equipment.some(i=>i.key===l.requirement_key&&i.asset===l.asset_id&&i.pole===l.pole_id));
    const changedWear=loans.wear.filter(l=>l.returned<l.quantity&&!assignment.wear.some(i=>i.key===l.requirement_key&&i.pool===l.pool_id));

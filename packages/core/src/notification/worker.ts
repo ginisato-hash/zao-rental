@@ -36,5 +36,11 @@ export class BookingNotificationWorker{
   // No missing-result lookup or operator action can silently authorize another send.
   if(result.state==='ACCEPTED')await this.pool.query('SELECT notification_reconciled($1,$2)',[id,result.providerMessageId]);return {state:result.state==='ACCEPTED'?'SENT':'UNKNOWN'};
  }
- async runBatch(){await this.synchronize();if(!this.adapter)return {state:'UNCONNECTED',processed:0};const rows=(await this.pool.query('SELECT id,action FROM notification_due()')).rows;for(const row of rows)if(row.action==='LOOKUP')await this.reconcile(row.id);else await this.dispatch(row.id);return {state:'PROCESSED',processed:rows.length};}
+ async runBatch(normal?:{since:string;limit:number;deadline:Date}){
+  if(normal&&(!Number.isFinite(Date.parse(normal.since))||!Number.isInteger(normal.limit)||normal.limit<0||normal.limit>20||!Number.isFinite(normal.deadline.getTime())))throw new FlowError('NOTIFICATION_CONFIGURATION_INVALID',503);
+  if(!normal)await this.synchronize();if(!this.adapter)return {state:'UNCONNECTED',processed:0};
+  const rows=(await this.pool.query(normal?'SELECT id,action FROM notification_due_normal($1,$2)':'SELECT id,action FROM notification_due()',normal?[normal.since,normal.limit]:[])).rows;let processed=0;
+  for(const row of rows){if(normal&&Date.now()>=normal.deadline.getTime())break;if(row.action==='LOOKUP')await this.reconcile(row.id);else await this.dispatch(row.id);processed++;}
+  return {state:'PROCESSED',processed};
+ }
 }

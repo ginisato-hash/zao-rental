@@ -184,7 +184,7 @@
     "locale": "ja",
     "title": "レンタル料金と見積の見方",
     "heading": "条件を選び、総額を確認。",
-    "summary": "半日から10日まで、商品・人数・日数をもとに見積を確認します。税込・税別の表示基準は公開前の確認事項です。",
+    "summary": "半日から10日まで、商品・人数・日数をもとに見積を確認します。表示料金はすべて税込です。",
     "bullets": [
       "ブラウザの入力金額で料金を確定しません",
       "事前決済5％調整の資格は前日15:00 JSTまでの決済完了で判定",
@@ -197,7 +197,7 @@
     "locale": "en",
     "title": "Rental prices & estimates",
     "heading": "Choose your options. Review the total.",
-    "summary": "Review an estimate for half-day through ten-day rentals, using products, people and duration. The tax display basis remains subject to pre-publication confirmation.",
+    "summary": "Review an estimate for half-day through ten-day rentals, using products, people and duration. All prices include Japanese consumption tax.",
     "bullets": [
       "Amounts are evaluated on the server",
       "Advance 5% eligibility requires payment completion by 15:00 JST the previous day",

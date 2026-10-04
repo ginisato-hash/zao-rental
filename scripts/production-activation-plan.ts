@@ -16,6 +16,7 @@ import {productionPaymentRoleNames,productionPaymentRoleCreateSql,productionPaym
 import {productionBackupRoleSql} from './production-backup-role';
 import {productionCredentialActivationPlan} from './production-credential-activation';
 import {EXPECTED_PRODUCTION_DATABASE_NAME,EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,EXPECTED_PRODUCTION_VERCEL_PROJECT_FINGERPRINT_SHA256} from '../packages/auth/src/production-identity';
+import {WORKER_TICK_ACTIVATION,WORKER_TICK_ENV_KEYS} from '../packages/core/src/payment/worker-tick';
 import {COMMERCIAL_ACTIVATION_TOKEN,COMMERCIAL_ALLOWLISTED_KEYS,COMMERCIAL_SECRET_KEYS,commercialGuestConfiguration} from '../packages/core/src/guest/production-commercial-composition';
 import {guestConfigurationHash} from '../packages/contracts/src/production-guest';
 import {PUBLICATION_ORIGIN} from '../packages/auth/src/publication-authority';
@@ -56,6 +57,10 @@ export async function productionActivationPlan(source:{head:string;tree:string;c
     nonSecretDerived:{PRODUCTION_DB_NAME:db,PRODUCTION_GUEST_POLICY_SHA256:guestConfigurationHash(commercialGuestConfiguration()),PRODUCTION_RELEASE_ID:source.head},
     mustBeAbsentUntilPublicationGo:['PRODUCTION_PUBLICATION_APPROVAL'],publicationOrigin:PUBLICATION_ORIGIN},
    webhookIngress:{classification:'PRODUCTION_WEBHOOK_INGRESS_ONLY',names:['PRODUCTION_WEBHOOK_INGRESS_CLASSIFICATION','PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL','PRODUCTION_SQUARE_MERCHANT_ID','PRODUCTION_SQUARE_WEBHOOK_SIGNATURE_KEY','PRODUCTION_RECEIVER_DATABASE_URL'],secretNames:['PRODUCTION_SQUARE_WEBHOOK_SIGNATURE_KEY','PRODUCTION_RECEIVER_DATABASE_URL'],receiverRole:productionPaymentRoleNames(db).receiver},
+   normalWorker:{scheduler:'VERCEL_CRON',route:'/api/internal/worker-tick',schedule:'* * * * *',names:[...WORKER_TICK_ENV_KEYS],secretNames:['CRON_SECRET','PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER','PRODUCTION_WORKER_DB_PASSWORD_WORKER','PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR'],mustBeAbsentUntilActivation:['PRODUCTION_WORKER_TICK_ACTIVATION'],activationToken:WORKER_TICK_ACTIVATION,
+    // The route checks Authorization before activation and logs nothing when unauthorized: CRON_SECRET is bound first so the dormant line can exist.
+    activationOrder:['BIND_CRON_SECRET','DEPLOY_ACCEPTED_RELEASE_DARK','VERIFY_REAL_CRON_DORMANT_LOG','ACTIVATE_WORKER_ROLE_CREDENTIALS','BIND_ACCEPTED_AFTER_CUTOFF','BIND_ACTIVATION_TOKEN_LAST'],
+    darkReachProof:{boundBefore:['CRON_SECRET'],mustBeAbsent:['PRODUCTION_WORKER_TICK_ACTIVATION','PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER','PRODUCTION_WORKER_DB_PASSWORD_WORKER','PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR','PRODUCTION_WORKER_ACCEPTED_AFTER'],expectedLogEvent:'normal_worker_tick_dormant',forbidden:['PROTECTION_REMOVAL','MANUAL_REQUEST_AS_SCHEDULER_PROOF','ACTIVATION_BEFORE_PROOF'],envReachesRuntimeOnlyByNewDeployment:true},fixedLimits:{notificationLimit:0,refundCreateLimit:0,refundBudgetJpy:0},plan:'docs/execution/release-code-closure/NORMAL_WORKER_ROLES_PLAN.md'},
    backupWorkflow:{secretNames:workflowNames('secrets'),variableNames:workflowNames('vars')},
   },
   nextWriteStep:{

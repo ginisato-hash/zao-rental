@@ -7,13 +7,14 @@ import type {Pool} from 'pg';
 import type {HoldConditions} from '../../packages/contracts/src/hold';
 type CommercialFixture=Pick<Awaited<ReturnType<typeof flowFixture>>,'actor'|'holds'|'quotes'|'now'>&{db:{pool:Pool}};
 export const syntheticMerchant='SYNTHETIC-PRODUCTION-MERCHANT';
+export async function pendingCommercialBookingFixture(x:CommercialFixture,day:string,supplied?:HoldConditions){return createBooking(x,day,supplied,false);}
 /** `lost` models a checkout whose provider response never reached the app: the attempt is UNKNOWN with no provider_id. */
 async function createBooking(x:CommercialFixture,day:string,supplied:HoldConditions|undefined,lost:boolean){
  const conditions=supplied??skiSet(day),hold=await x.holds.command('create',randomUUID(),conditions,undefined,undefined,supplied?undefined:{reason:'SYNTHETIC commercial transport proof'});
  if(hold.result!=='CREATED')throw Error('FIXTURE_STOCK_REQUIRED');
  const ordinary=(await x.quotes.create(randomUUID(),{conditions,holdId:hold.holdId,couponCode:null,wantAdvance:false})).quote;
  const book=(await x.db.pool.query<CommercialPriceBook>('SELECT * FROM price_books WHERE id=$1',[ordinary.snapshot.priceBookId])).rows[0]!;
- const snapshot={...ordinary.snapshot,totalJpy:Number(ordinary.snapshot.totalJpy),chargeReady:true,commercialApproval:deriveApprovedCommercialPriceFacts(book)},quoteId=randomUUID(),bookingId=conditions.reservationId,attemptId=randomUUID(),key=randomUUID(),merchantId=syntheticMerchant,locationId='SYNTHETIC-PRODUCTION-LOCATION';
+ const snapshot={...ordinary.snapshot,totalJpy:Number(ordinary.snapshot.totalJpy),chargeReady:true,commercialApproval:deriveApprovedCommercialPriceFacts(book)},quoteId=randomUUID(),bookingId=conditions.reservationId,attemptId=randomUUID(),key=randomUUID(),merchantId=syntheticMerchant,locationId=conditions.pickupStore==='ONSEN_BASE'?'SYNTHETIC-PRODUCTION-ONSEN':'SYNTHETIC-PRODUCTION-LOCATION';
  await x.db.pool.query("SELECT set_config('zao.actor',$1,false)",[x.actor]);
  await x.db.pool.query(`INSERT INTO price_quotes(id,actor,request_key,request_fingerprint,book_id,activation_id,coupon_id,hold_id,hold_version,conditions,snapshot,snapshot_sha256,expires_at)
  SELECT $2,actor,$3,request_fingerprint,book_id,activation_id,coupon_id,hold_id,hold_version,conditions,$4,$5,expires_at FROM price_quotes WHERE id=$1`,[ordinary.id,quoteId,randomUUID(),JSON.stringify(snapshot),flowHash(snapshot)]);

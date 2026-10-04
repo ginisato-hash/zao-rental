@@ -23,10 +23,10 @@ export class FakeGateway implements PaymentGateway{
  async create(r:PaymentRequest){this.calls.push(r);const old=this.receipts.get(r.attemptId);if(old)return old;const o:PaymentObservation={providerId:'sim_'+r.attemptId,referenceId:r.bookingId,idempotencyKey:r.idempotencyKey,merchantId:r.merchantId,locationId:r.locationId,amountJpy:r.amountJpy,currency:r.currency,status:this.status,updatedAt:this.now().toISOString(),completedAt:this.status==='COMPLETED'?this.now().toISOString():null,...this.patch};this.receipts.set(r.attemptId,o);if(this.failAfterSave)throw new Error('SIMULATED_RESPONSE_LOST');return o;}
  async lookup(r:PaymentRequest){return this.receipts.get(r.attemptId)??null;}
 }
-export async function flowFixture(){
+export async function flowFixture(initialTime='2035-01-01T10:00:00+09:00'){
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined,flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
  try{await migrate(db.pool);await seedRecommendation(db.pool);roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);
- const password=randomBytes(24).toString('base64url'),origin='http://127.0.0.1:34567';let now=new Date('2035-01-01T10:00:00+09:00');
+ const password=randomBytes(24).toString('base64url'),origin='http://127.0.0.1:34567';let now=new Date(initialTime);
  async function clock(t:string){now=new Date(t);await db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${now.toISOString()}'::timestamptz$$`);}
  await clock(now.toISOString());const root=await bootstrapDevelopmentAdmin(db.pool,{email:'flow-root@example.invalid',displayName:'SYNTHETIC Admin',password}),bp=(await loadStaff(db.pool,root))!;
  // INVENTORY_BUFFER_OVERRIDE (release-code-closure): granting this ADMIN test actor the

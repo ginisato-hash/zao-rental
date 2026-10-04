@@ -18,6 +18,7 @@ import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconci
 import {InventoryOperations} from '../../packages/core/src/operations/inventory-service';
 import {STOCK_IMPORT_HEADER_V3} from '../../packages/contracts/src/stock-import';
 import {CustodyService} from '../../packages/core/src/rental/custody-service';
+import {AmendmentService} from '../../packages/core/src/operations/amendment-service';
 import type {HoldConditions} from '../../packages/contracts/src/hold';
 
 let failed = false, stage = 'fixture', count = 0;
@@ -705,6 +706,137 @@ try {
     assert.ok(prepared.preparation); // succeeded — no PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED, no other rejection
   });
 
+  await check('P12 paid: same-source receipt preserves capacity and paid contract through normal amendment and checkout', async () => {
+    const {model, variant, size} = await physicalSkuFor('p12-paid', 0);
+    const assetIds = Array.from({length: 10}, () => randomUUID());
+    const sourceDocument = 'SYNTHETIC same-source paid receipt';
+    const row = ['SHOP_RECEIPT', 'ADD', model.id, '2026/27', variant.id, '', 10, 'ASSET_PAIR', assetIds.join('|'), 'MOUNTAIN_BASE', sourceDocument, 'row-paid', 'SKI', size, 'REGULAR', '', 'AVAILABLE', 'SYNTHETIC', 'PBC product-path p12-paid', ''].join(',');
+    const csv = STOCK_IMPORT_HEADER_V3.join(',') + '\n' + row + '\n';
+    const source = await src.register(randomUUID(), {sourceSha256: createHash('sha256').update(csv).digest('hex'), originalFilename: sourceDocument,
+      buckets: [{family: 'SKI', age: 'ADULT', sourceSize: size, bookingSize: size, quantity: 20, provenance: 'SYNTHETIC original provisional source, partially received'}]});
+    const conditions = singleSkiCondition('2035-06-17', variant.id), built = await x.draft(undefined, conditions);
+    await x.service.startPayment(built.booking.id, randomUUID());
+    const before = (await x.db.pool.query('SELECT to_jsonb(b) value FROM rental_bookings b WHERE id=$1', [built.booking.id])).rows[0].value;
+    const payment = (await x.db.pool.query('SELECT to_jsonb(p) value FROM rental_payment_attempts p WHERE booking_id=$1', [built.booking.id])).rows;
+    await assert.rejects(x.holds.command('reassign', randomUUID(), {assetId: assetIds[0], requirementKey: 'p:SKI'}, built.holdId), {code: 'PAYMENT_RECONCILIATION_REQUIRED'});
+    const unbound = await inventoryOps.stageImport(randomUUID(), {csv, sheet: 'SYNTHETIC paid receipt'});
+    await assert.rejects(inventoryOps.commitImport(randomUUID(), {id: unbound.id, stageSha256: unbound.stageSha256, reason: 'SYNTHETIC missing original source'}), {code: 'OPERATION_CONFLICT'});
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM ledger_assets WHERE variant_id=$1', [variant.id])).rows[0].n, 0, 'rejected capacity binding rolls back physical receipt');
+    const staged = await inventoryOps.stageImport(randomUUID(), {csv, sheet: 'SYNTHETIC paid receipt', provisionalSourceId: source.sourceId});
+    assert.equal(staged.ready, true, JSON.stringify(staged.unresolved));
+    const key = randomUUID(), input = {id: staged.id, stageSha256: staged.stageSha256, reason: 'SYNTHETIC same-source receipt'};
+    const [receipt, concurrentReceipt] = await Promise.all([inventoryOps.commitImport(key, input), inventoryOps.commitImport(key, input)]);
+    assert.deepEqual(concurrentReceipt, receipt);
+    assert.equal(receipt.assetsAdded, 10);
+    assert.deepEqual(await inventoryOps.commitImport(key, input), receipt);
+    const overflow=row.split(',');overflow[6]='11';overflow[8]=Array.from({length:11},()=>randomUUID()).join('|');overflow[11]='row-paid-overflow';
+    const excess=await inventoryOps.stageImport(randomUUID(),{csv:STOCK_IMPORT_HEADER_V3.join(',')+'\n'+overflow.join(',')+'\n',sheet:'SYNTHETIC excess receipt',provisionalSourceId:source.sourceId});
+    await assert.rejects(inventoryOps.commitImport(randomUUID(),{id:excess.id,stageSha256:excess.stageSha256,reason:'SYNTHETIC capacity overflow rejection'}),{code:'OPERATION_CONFLICT'});
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM ledger_assets WHERE variant_id=$1',[variant.id])).rows[0].n,10);
+
+    await x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'RENTAL_AMEND',true)", [x.actor]);
+    Object.assign(x.principal, (await loadStaff(x.roles.authPool, x.actor))!);
+    const amend = new AmendmentService(ctx), current = await amend.view(built.booking.id);
+    const q = await amend.quote(randomUUID(), {bookingId: built.booking.id, expectedHoldVersion: current.holdVersion, conditions: current.conditions, reason: 'SYNTHETIC paid fulfillment'});
+    assert.equal(q.quote.additionalChargeJpy, 0);
+    const acceptKey = randomUUID(), acceptInput = {quoteId: q.id, fitEvidence: '', reason: 'SYNTHETIC paid fulfillment'};
+    const accepted = await amend.accept(acceptKey, acceptInput);
+    assert.deepEqual(await amend.accept(acceptKey, acceptInput), accepted);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [built.holdId])).rows[0].n, 0);
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [built.holdId])).rows[0].n, 1);
+    assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(b) value FROM rental_bookings b WHERE id=$1', [built.booking.id])).rows[0].value, before);
+    assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(p) value FROM rental_payment_attempts p WHERE booking_id=$1', [built.booking.id])).rows, payment);
+    assert.deepEqual((await amend.view(built.booking.id)).conditions, current.conditions);
+    const remaining = (await x.db.pool.query('SELECT sum(provisional_capacity_effective_quantity(id))::int n FROM provisional_capacity_buckets WHERE source_id=$1', [source.sourceId])).rows[0].n;
+    assert.equal(10 + remaining, 20, 'same Source physical + provisional must stay 20, not 30');
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM provisional_capacity_receipts WHERE commit_id=$1', [staged.id])).rows[0].n, 1);
+    assert.deepEqual(await inventoryOps.commitImport(randomUUID(), input), receipt);
+    // Existing policy rounds each physical/provisional pool down: 9 + 9 <= floor(20 * .95).
+    for (let n = 0; n < 17; n++) assert.equal((await x.holds.command('create', randomUUID(), singleSkiCondition('2035-06-17', variant.id))).result, 'CREATED');
+    assert.notEqual((await x.holds.command('create', randomUUID(), singleSkiCondition('2035-06-17', variant.id))).result, 'CREATED', 'existing pool ceilings remain 9 + 9, never above SKU/day floor(20 * .95)');
+    const previousClock = x.now().toISOString();
+    await x.clock('2035-06-17T10:00:00+09:00');
+    const custody = new CustodyService(role!.operationsPool, x.roles.authPool, x.signed.identity), view = await custody.checkoutView(built.booking.id);
+    const prepared = await custody.prepare(randomUUID(), {bookingId: built.booking.id, expectedBookingVersion: view.bookingVersion, expectedHoldVersion: view.holdVersion, selections: view.items.map(i => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: i.pole_id})), fitEvidence: 'SYNTHETIC fit'});
+    assert.equal((await custody.checkout(randomUUID(), {bookingId: built.booking.id, expectedPreparationVersion: prepared.preparation.version})).loans.length, 1);
+    await x.clock(previousClock);
+  });
+
+  await check('P12 saturated: 19 paid promises survive staged receipt, concurrent new claims, partial amendment and replay without reselling their backing', async () => {
+    const {model,variant,size}=await physicalSkuFor('p12-saturated',0),day='2035-06-18';
+    const source=await src.register(randomUUID(),{sourceSha256:createHash('sha256').update('p12-saturated').digest('hex'),originalFilename:'SYNTHETIC saturated source',buckets:[{family:'SKI',age:'ADULT',sourceSize:size,bookingSize:size,quantity:20,provenance:'SYNTHETIC prior paid promises'}]});
+    const bookings:Awaited<ReturnType<typeof x.draft>>[]=[];
+    for(let n=0;n<19;n++){const built=await x.draft(undefined,singleSkiCondition(day,variant.id));await x.service.startPayment(built.booking.id,randomUUID());bookings.push(built);}
+    const ids=bookings.map(b=>b.booking.id),snapshot=async()=>({bookings:(await x.db.pool.query('SELECT to_jsonb(b) v FROM rental_bookings b WHERE id=ANY($1::uuid[]) ORDER BY id',[ids])).rows,payments:(await x.db.pool.query('SELECT to_jsonb(p) v FROM rental_payment_attempts p WHERE booking_id=ANY($1::uuid[]) ORDER BY id',[ids])).rows});
+    const before=await snapshot();
+    const promised=async()=>(await x.db.pool.query(`SELECT
+      (SELECT coalesce(sum(c.quantity),0)::int FROM provisional_capacity_claims c JOIN provisional_capacity_buckets b ON b.id=c.bucket_id WHERE b.source_id=$1 AND c.state='ACTIVE' AND c.day=$3)+
+      (SELECT count(*)::int FROM inventory_claims c JOIN ledger_assets a ON a.id=c.asset_id WHERE a.variant_id=$2 AND c.active AND c.day=$3) n`,[source.sourceId,variant.id,day])).rows[0].n;
+    async function receive(tag:string){
+      const row=['SHOP_RECEIPT','ADD',model.id,'2026/27',variant.id,'',10,'ASSET_PAIR',Array.from({length:10},()=>randomUUID()).join('|'),'MOUNTAIN_BASE','SYNTHETIC saturated receipt',tag,'SKI',size,'REGULAR','','AVAILABLE','SYNTHETIC',model.name,''].join(',');
+      const staged=await inventoryOps.stageImport(randomUUID(),{csv:STOCK_IMPORT_HEADER_V3.join(',')+'\n'+row+'\n',sheet:'SYNTHETIC',provisionalSourceId:source.sourceId});
+      assert.equal(staged.ready,true,JSON.stringify(staged.unresolved));
+      const key=randomUUID(),input={id:staged.id,stageSha256:staged.stageSha256,reason:'SYNTHETIC staged receipt'};
+      const [first,replay]=await Promise.all([inventoryOps.commitImport(key,input),inventoryOps.commitImport(key,input)]);assert.deepEqual(replay,first);assert.equal(first.assetsAdded,10);
+    }
+    await receive('first10');assert.equal(await promised(),19);
+    const blocked=await Promise.allSettled([0,1].map(()=>x.holds.command('create',randomUUID(),singleSkiCondition(day,variant.id))));
+    assert.ok(blocked.every(r=>r.status==='rejected'&&(r.reason as {code:string}).code==='CONFLICT'));assert.equal(await promised(),19);
+    assert.equal((await x.holds.command('create',randomUUID(),singleSkiCondition('2035-06-19',variant.id))).result,'CREATED','other dates remain usable');
+    const reserve=await x.holds.command('create',randomUUID(),singleSkiCondition(day,variant.id),undefined,undefined,{reason:'SYNTHETIC final one-unit buffer'});assert.equal(reserve.result,'CREATED');assert.equal(await promised(),20);
+    await assert.rejects(x.holds.command('create',randomUUID(),singleSkiCondition(day,variant.id),undefined,undefined,{reason:'SYNTHETIC hard ceiling attempt'}),{code:'CONFLICT'});
+    const amend=new AmendmentService(ctx);
+    async function fulfill(n:number){const current=await amend.view(bookings[n]!.booking.id),q=await amend.quote(randomUUID(),{bookingId:bookings[n]!.booking.id,expectedHoldVersion:current.holdVersion,conditions:current.conditions,reason:'SYNTHETIC staged fulfillment'}),key=randomUUID(),input={quoteId:q.id,fitEvidence:'',reason:'SYNTHETIC fulfillment'};const first=await amend.accept(key,input);assert.equal(first.additionalChargeJpy,0);assert.deepEqual(await amend.accept(key,input),first);assert.equal(await promised(),20);}
+    for(let n=0;n<9;n++)await fulfill(n);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=ANY($1::uuid[]) AND state='ACTIVE'",[bookings.map(b=>b.holdId)])).rows[0].n,10);
+    await receive('second10');for(let n=9;n<19;n++)await fulfill(n);
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=ANY($1::uuid[]) AND state='ACTIVE'",[bookings.map(b=>b.holdId)])).rows[0].n,0);
+    assert.deepEqual(await snapshot(),before);assert.equal(await promised(),20);
+  });
+
+  await check('P12 boundaries: shared boot size plus jacket/pants, two-store receipt versus new hold, staged paid amendment and both ceilings', async () => {
+    const day='2035-06-20',stock:{family:'SKI_BOOT'|'WEAR_JACKET'|'WEAR_PANTS';wear:boolean;size:string;tier:string;model:Awaited<ReturnType<typeof ledger.create>>;variant:Awaited<ReturnType<typeof ledger.create>>}[]=[];
+    for(const family of ['SKI_BOOT','WEAR_JACKET','WEAR_PANTS'] as const){
+      const wear=family!=='SKI_BOOT',size=wear?'PBC-SHARED-WEAR':'29/29.5',tier=wear?'STANDARD':'REGULAR';
+      const model=await ledger.create('models',{sourceKind:'SYNTHETIC',sourceDocument:'P12 boundaries',sourceLocator:family,code:'P12-BOUNDARY-'+family,name:'P12 '+family,brand:'SYNTHETIC',family,notes:'',catalogSeason:'2026/27'});
+      const variant=await ledger.create('variants',{sourceKind:'SYNTHETIC',sourceDocument:'P12 boundaries',sourceLocator:family,modelId:model.id,family,age:'ADULT',tier,size,notes:'',...(wear?{compatibleSports:['SKI','SNOWBOARD']}:{})});
+      stock.push({family,wear,size,tier,model,variant});
+    }
+    const source=await src.register(randomUUID(),{sourceSha256:createHash('sha256').update('P12 shared-size two-store').digest('hex'),originalFilename:'SYNTHETIC P12 shared-size',buckets:stock.map(s=>({family:s.family,age:'ADULT',sourceSize:s.size,bookingSize:s.size,quantity:20,provenance:'one shared pool, never duplicated for half size or store'}))});
+    const conditions=(store:'MOUNTAIN_BASE'|'ONSEN_BASE'):HoldConditions=>({contractVersion:'INTEGRATED_V1_2',reservationId:randomUUID(),pickupStore:store,returnStore:store,period:{startDate:day,endDate:day,slot:'DAY'},members:[{key:'boot',product:'SINGLE',age:'ADULT',tier:'REGULAR',items:[{family:'SKI_BOOT',variantIds:[stock[0]!.variant.id]}]},{key:'wear',product:'WEAR_SET',age:'ADULT',tier:'STANDARD',wearSport:'SKI',items:stock.slice(1).map(s=>({family:s.family,variantIds:[s.variant.id]}))}]});
+    const bookings:Awaited<ReturnType<typeof x.draft>>[]=[];
+    for(let n=0;n<19;n++){const built=await x.draft(undefined,conditions(n%2?'ONSEN_BASE':'MOUNTAIN_BASE'));await x.service.startPayment(built.booking.id,randomUUID());bookings.push(built);}
+    const ids=bookings.map(b=>b.booking.id),snapshot=async()=>(await x.db.pool.query('SELECT to_jsonb(b) booking,(SELECT jsonb_agg(to_jsonb(p) ORDER BY id) FROM rental_payment_attempts p WHERE p.booking_id=b.id) payments FROM rental_bookings b WHERE id=ANY($1::uuid[]) ORDER BY id',[ids])).rows,before=await snapshot();
+    const promised=async()=>{
+      const rows=(await x.db.pool.query(`SELECT family,sum(n)::int n FROM (
+        SELECT b.family,sum(c.quantity)::int n FROM provisional_capacity_claims c JOIN provisional_capacity_buckets b ON b.id=c.bucket_id WHERE b.source_id=$1 AND c.state='ACTIVE' AND c.day=$3 GROUP BY b.family
+        UNION ALL SELECT a.family,count(*)::int FROM inventory_claims c JOIN ledger_assets a ON a.id=c.asset_id WHERE a.variant_id=ANY($2::uuid[]) AND c.active AND c.day=$3 GROUP BY a.family
+        UNION ALL SELECT v.family,sum(c.quantity)::int FROM wear_claims c JOIN wear_pools p ON p.id=c.pool_id JOIN ledger_variants v ON v.id=p.variant_id WHERE p.variant_id=ANY($2::uuid[]) AND c.active AND c.day=$3 GROUP BY v.family
+      ) claims GROUP BY family ORDER BY family`,[source.sourceId,stock.map(s=>s.variant.id),day])).rows;
+      return rows.map(r=>r.n);
+    };
+    async function receive(tag:string,race=false){
+      const rows=stock.flatMap(s=>['MOUNTAIN_BASE','ONSEN_BASE'].map(store=>['SHOP_RECEIPT','ADD',s.model.id,'2026/27',s.variant.id,'',5,s.wear?'PIECE_QUANTITY':'ASSET_PAIR',s.wear?'':Array.from({length:5},()=>randomUUID()).join('|'),store,'SYNTHETIC P12 boundaries',tag+'-'+s.family+'-'+store,s.family,s.size,s.tier,'','AVAILABLE','SYNTHETIC',s.model.name,''].join(',')));
+      const staged=await inventoryOps.stageImport(randomUUID(),{csv:STOCK_IMPORT_HEADER_V3.join(',')+'\n'+rows.join('\n')+'\n',sheet:'SYNTHETIC',provisionalSourceId:source.sourceId});assert.equal(staged.ready,true,JSON.stringify(staged.unresolved));
+      const key=randomUUID(),input={id:staged.id,stageSha256:staged.stageSha256,reason:'SYNTHETIC shared pool receipt'};
+      const results=await Promise.allSettled([inventoryOps.commitImport(key,input),...(race?[x.holds.command('create',randomUUID(),conditions('ONSEN_BASE'))]:[])]);
+      assert.equal(results[0]!.status,'fulfilled');if(race){const hold=results[1]!;assert.ok(hold.status==='rejected'?(hold.reason as {code:string}).code==='CONFLICT':hold.value.result!=='CREATED');}
+      assert.deepEqual(await inventoryOps.commitImport(key,input),(results[0] as PromiseFulfilledResult<unknown>).value);
+      assert.deepEqual(await promised(),[19,19,19]);assert.deepEqual(await snapshot(),before);
+    }
+    await receive('first10',true);
+    for(const store of ['MOUNTAIN_BASE','ONSEN_BASE'] as const)await assert.rejects(x.holds.command('create',randomUUID(),conditions(store)),{code:'CONFLICT'});
+    const amend=new AmendmentService(ctx);
+    async function fulfill(n:number){const view=await amend.view(bookings[n]!.booking.id),q=await amend.quote(randomUUID(),{bookingId:bookings[n]!.booking.id,expectedHoldVersion:view.holdVersion,conditions:view.conditions,reason:'SYNTHETIC two-store fulfillment'}),key=randomUUID(),input={quoteId:q.id,fitEvidence:'',reason:'SYNTHETIC paid fulfillment'};const result=await amend.accept(key,input);assert.equal(result.additionalChargeJpy,0);assert.deepEqual(await amend.accept(key,input),result);assert.deepEqual(await promised(),[19,19,19]);assert.deepEqual(await snapshot(),before);}
+    for(let n=0;n<8;n++)await fulfill(n);
+    await receive('second10');for(let n=8;n<18;n++)await fulfill(n);
+    // Per-store wear floor(10*.95)=9 remains intact: the final Mountain promise is
+    // retained until normal stock movement makes its assigned store feasible.
+    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'",[bookings[18]!.holdId])).rows[0].n,3);
+    const override={reason:'SYNTHETIC shared pool final buffer'};assert.equal((await x.holds.command('create',randomUUID(),conditions('ONSEN_BASE'),undefined,undefined,override)).result,'CREATED');assert.deepEqual(await promised(),[20,20,20]);
+    await assert.rejects(x.holds.command('create',randomUUID(),conditions('MOUNTAIN_BASE'),undefined,undefined,override),{code:'CONFLICT'});assert.deepEqual(await promised(),[20,20,20]);assert.deepEqual(await snapshot(),before);
+  });
+
   // ---- P13/P14: adversarial multi-item competition (P7 correction) — the greedy re-inclusion
   // simplification must stay conservative: a false negative (routing more to provisional than a
   // perfect solver would) is accepted, but never a false FEASIBLE (oversell). Two members compete
@@ -807,7 +939,7 @@ try {
     assert.equal((await guestHolds.command('create', randomUUID(), singleSkiCondition('2037-01-05', variant.id))).result, 'CREATED');
   });
 
-  console.log(JSON.stringify({status: 'PASS', cases: count, realDataImports: 3, realAssetIdsGenerated: 9, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));
+  console.log(JSON.stringify({status: 'PASS', cases: count, syntheticImportCommits: (await x.db.pool.query('SELECT count(*)::int n FROM ops_import_commits')).rows[0].n, productionDbWrites: 0, squareCalls: 0, payments: 0, customerNotifications: 0}));
 } catch (e) {
   failed = true;
   console.error(JSON.stringify({status: 'FAIL', stage, code: (e as {code?: string}).code ?? (e as Error).name, detail: (e as Error).message.slice(0, 500)}));

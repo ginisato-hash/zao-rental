@@ -47,7 +47,7 @@ test('every invalid or ambiguous input fails closed with a value-free code',()=>
  const cases:Record<string,string|undefined>[]=[
   {VERCEL_ENV:'preview'},{VERCEL_ENV:undefined},{VERCEL_PROJECT_ID:undefined},
   {PRODUCTION_RELEASE_ID:undefined},{PRODUCTION_RELEASE_ID:'main'},{VERCEL_GIT_COMMIT_SHA:'f'.repeat(40)},
-  {PRODUCTION_PUBLIC_ORIGIN:undefined},{PRODUCTION_PUBLIC_ORIGIN:'http://salomonzao.rent'},{PRODUCTION_PUBLIC_ORIGIN:'https://salomonzao.rent/'},{PRODUCTION_PUBLIC_ORIGIN:'https://salomonzao.rent:8443'},{PRODUCTION_PUBLIC_ORIGIN:'https://www.salomonzao.rent'},{PRODUCTION_PUBLIC_ORIGIN:'https://attacker.example'},{PRODUCTION_PUBLIC_ORIGIN:'https://x.vercel.app.attacker.example'},
+  {PRODUCTION_PUBLIC_ORIGIN:undefined},{PRODUCTION_PUBLIC_ORIGIN:'http://salomon-rental.yuge-zao.com'},{PRODUCTION_PUBLIC_ORIGIN:'https://salomon-rental.yuge-zao.com/'},{PRODUCTION_PUBLIC_ORIGIN:'https://salomon-rental.yuge-zao.com:8443'},{PRODUCTION_PUBLIC_ORIGIN:'https://www.salomon-rental.yuge-zao.com'},{PRODUCTION_PUBLIC_ORIGIN:'https://yuge-zao.com'},{PRODUCTION_PUBLIC_ORIGIN:'https://other.yuge-zao.com'},{PRODUCTION_PUBLIC_ORIGIN:'https://salomon-rental.yuge-zao.com.attacker.example'},{PRODUCTION_PUBLIC_ORIGIN:'https://salomonzao.rent'},{PRODUCTION_PUBLIC_ORIGIN:'https://attacker.example'},{PRODUCTION_PUBLIC_ORIGIN:'https://x.vercel.app.attacker.example'},
   {PRODUCTION_DB_HOST:undefined},{PRODUCTION_DB_HOST:'db.example.invalid'},{PRODUCTION_DB_ROLE_GUEST:undefined},{PRODUCTION_DB_ROLE_GUEST:'neondb_owner'},
   {PRODUCTION_DB_PASSWORD_OPERATIONS:undefined},{PRODUCTION_DB_PASSWORD_LEDGER:'short'},
   {PRODUCTION_GUEST_KEY:'not-hex'},{PRODUCTION_RECOVERY_KEY:'a'.repeat(64)},{PRODUCTION_ACCESS_KEY_VERSION:''},
@@ -89,7 +89,7 @@ test('runtime input binds routed Square, refund router, Resend and a header-scop
  assert.equal(input.payment!.gateway.kind,'SQUARE_PRODUCTION');assert.equal(input.refunds!.kind,'SQUARE_PRODUCTION');assert.equal(input.payment!.applicationId,'sq0idp-syntheticAppId0001');
  assert.deepEqual(await input.payment!.credentials(),{environment:'PRODUCTION',merchantId:'SYNTHETIC-MERCHANT',token:TOKEN,revoked:false});
  assert.equal(input.notification!.providerId,'RESEND');assert.equal(input.publication,undefined);assert.equal(fetches,0);
- const peer=input.verifiedPeer(new Request('https://zao-rental-synthetic.vercel.app/',{headers:{'x-vercel-forwarded-for':'203.0.113.7','x-forwarded-for':'198.51.100.1','host':'salomonzao.rent'}}));
+ const peer=input.verifiedPeer(new Request('https://zao-rental-synthetic.vercel.app/',{headers:{'x-vercel-forwarded-for':'203.0.113.7','x-forwarded-for':'198.51.100.1','host':'salomon-rental.yuge-zao.com'}}));
  assert.deepEqual(peer,{provider:'VERCEL',environment:'production',projectId:'synthetic-project',releaseId:RELEASE,origin:'https://zao-rental-synthetic.vercel.app',address:'203.0.113.7'});
  for(const headers of [{'x-forwarded-for':'198.51.100.1'},{'x-vercel-forwarded-for':'203.0.113.7, 198.51.100.1'}] as Record<string,string>[])assert.equal(input.verifiedPeer(new Request('https://x.invalid/',{headers})),undefined);
 });

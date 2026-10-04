@@ -1,5 +1,5 @@
 import {exactProductionIdentityConfiguration,type ExactProductionIdentity} from './production-identity';
-export const PUBLICATION_ORIGIN='https://salomonzao.rent';
+export const PUBLICATION_ORIGIN='https://salomon-rental.yuge-zao.com';
 export type PublicationApproval=Readonly<{state:'PUBLICATION_APPROVED';origin:typeof PUBLICATION_ORIGIN;releaseId:string;approvedBy:string;approvedAt:string}>;
 export type PublicationAuthority=Readonly<{kind:'PUBLICATION_AUTHORITY'}>;
 const issued=new WeakMap<PublicationAuthority,PublicationApproval>();

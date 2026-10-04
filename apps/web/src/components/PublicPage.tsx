@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {canonicalPath,publicPages,pageSchema,safeJsonLd,type Locale} from '../../../../packages/core/src/content/public-pages';
+import {publicationApproved} from '../../../../packages/auth/src/publication-authority';
 import './public.css';
 export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup:string;models?:{slug:string;name:string;season:string}[];page:typeof publicPages[number];locale:Locale;origin:string}){const ja=locale==='ja',path=page.path,isRentalHub=path==='rental';
  // UX4R-01: on the /rental hub, Regular vs Premium must be the first substantive content --
@@ -9,7 +10,7 @@ export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup
  const explore=isRentalHub?<details className="public-explore public-secondary"><summary>{ja?'用品カテゴリから選ぶ':'Browse by equipment category'}</summary>{cards}</details>:<section className="public-explore"><div><p className="public-kicker">EXPLORE</p><h2>{ja?'一人ずつ選ぶ。みんなで楽しむ。':'Individual choices. One group.'}</h2></div>{cards}</section>;
  return <div className="public-shell" lang={locale}><header className="public-header"><Link className="wordmark" href={'/'+locale}>ZAO<span>RENTAL</span></Link><nav aria-label={ja?'メインナビゲーション':'Main navigation'}><Link href={'/'+locale+'/rental'}>{ja?'道具とウェア':'Equipment & wear'}</Link><Link href={'/'+locale+'/pickup-return'}>{ja?'受取・返却':'Pickup & return'}</Link><Link href={canonicalPath(ja?'en':'ja',path)} hrefLang={ja?'en':'ja'}>{ja?'EN':'日本語'}</Link></nav></header>
  <main className="public-main"><p className="public-kicker">ZAO · SKI / SNOWBOARD / WEAR</p><div className={'public-hero'+(isRentalHub?' public-hero--compact':'')}><div><h1>{page.heading}</h1><p className="public-lead">{page.summary}</p><Link className="public-cta" href={'/'+locale+'/book'}>{ja?'日程から選ぶ':'Start with dates'} <span aria-hidden>↗</span></Link></div>{!isRentalHub&&<div className="public-mountain" aria-hidden="true"><span>蔵王</span><small>CHOOSE YOUR NEXT SNOW DAY</small></div>}</div>
- <p className="public-preview-note">{ja?'予約受付前の開発プレビューです。実決済・本番予約は行いません。':'Development preview before booking launch. No real payment or production booking.'}</p>
+ {!publicationApproved()&&<p className="public-preview-note">{ja?'予約受付前の開発プレビューです。実決済・本番予約は行いません。':'Development preview before booking launch. No real payment or production booking.'}</p>}
  {isRentalHub&&compare}
  <section className="public-detail"><h2>{page.title}</h2><ul>{page.bullets.map(b=><li key={b}>{b}</li>)}</ul>{['pickup-return','faq'].includes(path)&&<aside><h3>{ja?'複数日予約の後日受取':'Late collection for multi-day bookings'}</h3><p>{latePickup}</p><small>{ja?'公開文言・利用規約は公開前確認中です。':'Public wording and terms remain subject to review.'}</small></aside>}</section>
  {explore}

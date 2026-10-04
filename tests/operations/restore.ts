@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import {randomUUID,randomBytes,createHash} from 'node:crypto';
-import {writeFile,rm,mkdir} from 'node:fs/promises';
+import {writeFile,rm,mkdir,mkdtemp,readdir,readFile,copyFile,lstat} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {Pool} from 'pg';
+import * as age from 'age-encryption';
+import {encryptFileToFileStreaming} from '../../scripts/production-backup';
+import {assertPgRestoreVersion,runPgRestore,runRestoreDrill,type DrillAdapters,type RestoreTarget} from '../../scripts/production-restore-drill';
+import {resolvePg18Tools,run as runTool} from '../readiness/pg18-tools';
 import {flowFixture} from '../flow/fixture';
 import {loadStaff,ledgerPrincipal} from '../../packages/auth/src/staff-auth';
 import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority';
@@ -20,7 +27,7 @@ import {BookingRecovery} from '../../packages/core/src/guest/booking-recovery';
 import {LoopbackDeliveryAdapter} from '../notification/loopback';
 import {exportOwnedDatabase,restoreIntoFreshDatabase,verifyEnvelope,criticalFingerprint,validateRestored,RESTORE_REQUIRED,NOT_RESTORED,BACKUP_LABEL} from '../../scripts/local-restore';
 import {requestFor,fid} from '../inventory/fixture';
-let failed=false,stage='fixture',count=0;const x=await flowFixture();
+let failed=false,stage='fixture',count=0,realToolLeg='NOT_RUN';const x=await flowFixture();
 let ops:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined,notify:Awaited<ReturnType<typeof provisionNotificationRole>>|undefined,access:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined;
 let restored:Awaited<ReturnType<typeof restoreIntoFreshDatabase>>|undefined;
 const backupPath='.local/backup-drill/m17-logical-backup.json';
@@ -127,7 +134,55 @@ try{
   console.log(JSON.stringify({receipt:'M1.7_LOCAL_LOGICAL_RESTORE',label:BACKUP_LABEL,sourceIdentity:envelope.sourceIdentity,restoredIdentity:restored!.database,backupSha256:envelope.sha256,migrations:envelope.migrations.length,restoredTables:envelope.tables.length,excludedTables:Object.keys(NOT_RESTORED).length,productionPitrProven:false,providerBackup:0}));
  });
 
- console.log(JSON.stringify({status:'PASS',cases:count,hostedDb:0,providerBackup:0,productionRestoreClaimed:false}));
+ await check('real pg_dump, age encryption, real pg_restore into an isolated empty owned database reproduce the same non-empty state; failures leave no plaintext',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'restore-real-'));
+  try{
+   const {tools,reason}=await resolvePg18Tools(dir);
+   if(!tools){
+    if(process.env.CI==='true')throw new Error('RESTORE_REAL_TOOLS_UNAVAILABLE_IN_CI: '+reason);
+    realToolLeg='SKIPPED';console.log('SKIP real pg_dump/pg_restore leg: '+reason+'. NOT counted as PASS; disallowed whenever CI=true.');return;
+   }
+   const password=String((x.db.pool.options as {password?:string}).password),pgEnv={PGHOST:'127.0.0.1',PGPORT:String(x.db.identity.dbPort),PGDATABASE:x.db.identity.database,PGUSER:x.db.identity.user,PGPASSWORD:password,PGSSLMODE:'disable'};
+   const dump=join(dir,'source.dump'),cipher=join(dir,'source.dump.age');
+   const dumped=await runTool(join(tools.binDir,'pg_dump'),['-Fc','--no-owner','--no-acl','-f',dump],pgEnv);assert.equal(dumped.code,0,'pg_dump failed: '+dumped.stderr);
+   const identity=await age.generateIdentity(),recipient=await age.identityToRecipient(identity),other=await age.generateIdentity();
+   const enc=await encryptFileToFileStreaming(dump,cipher,recipient);await rm(dump);
+   const pgRestorePath=join(tools.binDir,'pg_restore'),newTarget=async():Promise<RestoreTarget>=>{const database='zr_'+randomBytes(6).toString('hex');await x.db.pool.query(`CREATE DATABASE ${database}`);return {host:'127.0.0.1',port:x.db.identity.dbPort,user:x.db.identity.user,password,database};};
+   const calls={fetch:0,restore:0},work=join(dir,'work');await mkdir(work);
+   const adapters=(source:string):DrillAdapters=>({fetchCiphertext:async(_k,out)=>{calls.fetch++;await copyFile(source,out);return {bytes:(await lstat(out)).size};},restore:async(dumpPath,t)=>{calls.restore++;await runPgRestore({pgRestorePath,dumpPath,target:t});},
+    openTarget:t=>new Pool({host:t.host,port:t.port,user:t.user,password:t.password,database:t.database,max:4}),toolVersion:()=>assertPgRestoreVersion(pgRestorePath),now:()=>new Date()});
+   const key='hourly/2026/10/04/2026-10-04T05-17-00-000Z.dump.age',base={dataClass:'SYNTHETIC' as const,key,scheduledAt:'2026-10-04T05:17:00.000Z',identity,workParent:work};
+   const input=(target:RestoreTarget,extra:Record<string,unknown>={})=>({...base,expected:{sha256:enc.sha256},target,...extra}) as Parameters<typeof runRestoreDrill>[1];
+   // 1. Wrong key and tampered ciphertext stop before pg_restore; nothing is left behind.
+   const wrongTarget=await newTarget();
+   await assert.rejects(runRestoreDrill(adapters(cipher),input(wrongTarget,{identity:other})),/RESTORE_WRONG_KEY_REJECTED/);
+   const bytes=await readFile(cipher);bytes[bytes.length-100]=bytes[bytes.length-100]!^0xff;const tampered=join(dir,'tampered.age');await writeFile(tampered,bytes);
+   await assert.rejects(runRestoreDrill(adapters(tampered),input(wrongTarget)),/RESTORE_CIPHERTEXT_INVALID/);
+   assert.equal(calls.restore,0);assert.deepEqual(await readdir(work),[]);
+   // 2. A correctly decrypted but unreadable archive fails in the real pg_restore, rolls back, and leaves no plaintext.
+   const garbage=randomBytes(4096),garbagePlain=join(dir,'garbage.bin'),garbageCipher=join(dir,'garbage.age');await writeFile(garbagePlain,garbage);const garbageEnc=await encryptFileToFileStreaming(garbagePlain,garbageCipher,recipient);
+   await assert.rejects(runRestoreDrill(adapters(garbageCipher),input(wrongTarget,{expected:{sha256:garbageEnc.sha256}})),/RESTORE_PG_RESTORE_FAILED/);
+   assert.deepEqual(await readdir(work),[]);const probe=new Pool({host:'127.0.0.1',port:wrongTarget.port,user:wrongTarget.user,password,database:wrongTarget.database,max:1});
+   try{assert.equal(Number((await probe.query("SELECT count(*)::int n FROM pg_class c JOIN pg_namespace s ON s.oid=c.relnamespace WHERE s.nspname NOT IN ('pg_catalog','information_schema') AND s.nspname !~ '^pg_toast'")).rows[0].n),0);}finally{await probe.end();}
+   // 3. The source (non-empty) database is never accepted as a restore target.
+   const before=calls.fetch;await assert.rejects(runRestoreDrill(adapters(cipher),input({host:'127.0.0.1',port:x.db.identity.dbPort,user:x.db.identity.user,password,database:x.db.identity.database})),/RESTORE_TARGET_NOT_EMPTY_REJECTED/);assert.equal(calls.fetch,before);
+   // 4. The real round trip.
+   const target=await newTarget(),result=await runRestoreDrill(adapters(cipher),input(target));
+   assert.equal(result.status,'DRILL_PASS');assert.equal(result.plaintextSha256,enc.sha256);assert.match(result.toolVersion,/^pg_restore \(PostgreSQL\) 18\./);assert.equal(result.productionRpoRtoApproved,false);
+   assert.deepEqual(result.verification.critical,await criticalFingerprint(x.db.pool));
+   assert.ok(result.verification.foreignKeys>50&&result.verification.sequences>0&&result.verification.migrations===envelope.migrations.length);
+   const restoredPool=new Pool({host:'127.0.0.1',port:target.port,user:target.user,password,database:target.database,max:2});
+   try{
+    for(const table of RESTORE_REQUIRED){const sql=`SELECT to_jsonb(t) v FROM ${table} t ORDER BY to_jsonb(t)::text`;assert.deepEqual((await restoredPool.query(sql)).rows,(await x.db.pool.query(sql)).rows,table);}
+    for(const db of [x.db.pool,restoredPool])assert.equal((await db.query('SELECT provisional_capacity_effective_quantity(id) n FROM provisional_capacity_buckets WHERE source_id=$1',[source.sourceId])).rows[0].n,19,'real restore keeps the received receipt deduction');
+    assert.equal(Number((await restoredPool.query('SELECT count(*)::int n FROM provisional_capacity_receipts')).rows[0].n),Number((await x.db.pool.query('SELECT count(*)::int n FROM provisional_capacity_receipts')).rows[0].n));
+   }finally{await restoredPool.end();}
+   assert.deepEqual(await readdir(work),[]);
+   realToolLeg='PASS via '+tools.label;
+  }finally{await rm(dir,{recursive:true,force:true});}
+ });
+
+ console.log(JSON.stringify({status:'PASS',cases:count,hostedDb:0,providerBackup:0,realPgToolLeg:realToolLeg,productionRestoreClaimed:false}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??(e as Error).name,detail:(e as Error).message.slice(0,500)}));}
 finally{await rm(backupPath,{force:true});await restored?.stop();await access?.close();await notify?.close();await ops?.close();await x.close();}
 if(failed)process.exit(1);

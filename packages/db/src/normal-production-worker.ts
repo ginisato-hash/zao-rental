@@ -24,6 +24,14 @@ export async function normalRefundCandidates(operations:Pick<Pool,'query'>,merch
    (SELECT * FROM eligible WHERE dispatched_at IS NOT NULL ORDER BY created_at,id LIMIT $4)
   ) candidates ORDER BY dispatched_at NULLS FIRST,created_at,id`,[since,merchant,locations,limit])).rows;
 }
+/** Read-only backlog after a tick: provider-bound production payments the worker can still progress (non-terminal), counted
+ * and aged from creation. An unbound lost-response attempt is durable history that no tick can move, so it is not counted. */
+export async function normalBacklog(operations:Pick<Pool,'query'>,merchant:string,locations:string[],since:string){
+ const row=(await operations.query(`SELECT count(*)::int pending,COALESCE(EXTRACT(EPOCH FROM (clock_timestamp()-min(a.created_at))),0)::int oldest_age_seconds
+  FROM rental_payment_attempts a JOIN rental_bookings b ON b.id=a.booking_id
+  WHERE b.mode='SQUARE_PRODUCTION' AND b.created_at>=$1 AND a.merchant_id=$2 AND a.location_id=ANY($3::text[]) AND a.provider_id IS NOT NULL AND a.state IN ('SUBMITTING','UNKNOWN','PENDING','REVIEW')`,[since,merchant,locations])).rows[0];
+ return {pendingPayments:Number(row.pending),oldestPendingAgeSeconds:Number(row.oldest_age_seconds)};
+}
 /** Explicit finite factory only. No web startup/scheduler. Every pool is identity-checked before lookup. */
 export async function runProductionWorker(identity:ExactProductionIdentity,input:ProductionWorkerInput,operations:Pool,notifications:BookingNotificationWorker|null,refunds:CancellationRefundWorker|null){
  const c=exactProductionIdentityConfiguration(identity),plan=normalWorkerPlan(input.plan),pools:Pool[]=[];
@@ -50,7 +58,7 @@ export async function runProductionWorker(identity:ExactProductionIdentity,input
   const authority=issueProductionReconciliationAuthority(identity),dispatcher=new PgPaymentReconciliation(opened.dispatcher,undefined,authority,undefined,plan.acceptedBookingsAfter),worker=new PgPaymentReconciliation(opened.worker,undefined,authority,undefined,plan.acceptedBookingsAfter);
   const contexts={async load(claim:Parameters<typeof worker.load>[0]){const context=await worker.load(claim);return context&&context.expected.merchantId===c.payment!.merchantId&&Object.values(c.payment!.locations).includes(context.expected.locationId)?context:null;}};
   const reconciliation=new PaymentReconciliationWorker({dispatch:(e,n)=>dispatcher.dispatch(e,n),claimBatch:(e,id,n)=>worker.claimBatch(e,id,n),finalize:(claim,outcome)=>worker.finalize(claim,outcome),diagnostics:async()=>[]},contexts,{async lookupPayment(request){if(Date.now()>=Date.parse(plan.deadline))return {kind:'FAILED',code:'NETWORK_RETRYABLE'};return input.lookup.lookupPayment(request);}},undefined,undefined,(run,ms)=>boundedLookup(run,Math.min(ms,Math.max(1,Date.parse(plan.deadline)-Date.now()))));
-  return await runNormalProductionTick(plan,{
+  const tick=await runNormalProductionTick(plan,{
    reconciliation,
    candidates:async limit=>(await opened.projector.query<{v:NormalProjectionCandidate}>('SELECT payment_projection.normal_candidates($1,$2,$3) v',[c.payment!.merchantId,plan.acceptedBookingsAfter,limit])).rows.map(r=>r.v),
    project:async candidate=>{
@@ -62,5 +70,6 @@ export async function runProductionWorker(identity:ExactProductionIdentity,input
    refundCandidates:limit=>normalRefundCandidates(operations,c.payment!.merchantId,Object.values(c.payment!.locations),plan.acceptedBookingsAfter,limit),
    close:async()=>{},
   });
+  return {...tick,backlog:await normalBacklog(operations,c.payment!.merchantId,Object.values(c.payment!.locations),plan.acceptedBookingsAfter)};
  }finally{await close();}
 }

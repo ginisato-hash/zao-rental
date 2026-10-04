@@ -134,14 +134,16 @@ alias, `/api/readiness`, normal staff/guest display and unchanged noindex/protec
 
 Apply the already granted Owner GO after the input/acceptance gates above:
 
-1. Verify domain ownership and the exact DNS records returned for `salomonzao.rent` by the existing
+1. Owner decision 2026-10-04 (Issue 47): the public origin is `https://salomon-rental.yuge-zao.com`
+   (parent domain `yuge-zao.com` is Owner-owned); the earlier `salomonzao.rent` plan is retired. Verify DNS
+   control and the exact DNS record returned for `salomon-rental.yuge-zao.com` by the existing
    Vercel project. Prepare the actual values immediately before approved DNS work; never guess an IP.
-2. Bind/verify that domain and use `PRODUCTION_PUBLIC_ORIGIN=https://salomonzao.rent` for the accepted
+2. Bind/verify that host and use `PRODUCTION_PUBLIC_ORIGIN=https://salomon-rental.yuge-zao.com` for the accepted
    release, retaining protection until protected-host checks pass. No alternate merchant/DB/origin.
 3. Install the final Owner record in the existing publication sink:
 
 ```json
-{"state":"PUBLICATION_APPROVED","origin":"https://salomonzao.rent","releaseId":"<exact accepted source SHA>","approvedBy":"<Owner identifier>","approvedAt":"2026-10-03T07:51:19Z"}
+{"state":"PUBLICATION_APPROVED","origin":"https://salomon-rental.yuge-zao.com","releaseId":"<exact accepted source SHA>","approvedBy":"<Owner identifier>","approvedAt":"2026-10-03T07:51:19Z"}
 ```
 
 4. Apply the approved release/alias and protection change once. Verify JA/EN public pages, customer
@@ -165,7 +167,7 @@ The five F2 roles have naturally expired. At2026-10-03T14:43:29Z each existing c
 No credential, old payment, outbox or Production stock has been changed during this continuation.
 Source A/B total151 buckets/1421 units; Source B shared-size decision is accepted. Physical assets,
 poles, wear pools and public policy rows remain0. Current price covers only the acceptance date.
-Only zao-rental.vercel.app is attached; salomonzao.rent ownership/attachment remains unproved.
+Only zao-rental.vercel.app is attached; the Owner-decided public host salomon-rental.yuge-zao.com is not attached yet.
 
 The finite normal entrypoint is `scripts/production-worker.ts preflight|run-once --input <absolute-file>`
 (run with `node --import tsx`). The input must be a caller-owned0600 regular file outside the checkout.
@@ -241,3 +243,22 @@ per-function ACLs and denial for other roles/PUBLIC. Rollback revokes only
 these four grants and keeps the schema/protection; do not change existing privileges or F2 credentials.
 Backup/restore protected sinks and separate key custody remain prerequisites; a prior automatic-approval
 rejection of BACKUP/AGE value read/export is retained as a hard block, not retried via another path.
+
+## Continuation 2026-10-04 (Primary: Claude) — scheduler, restore drill, display
+
+- **Scheduler.** The minute scheduler is Vercel Cron (Pro plan, project has no Git link, protection All Deployments) calling
+  `GET /api/internal/worker-tick`, one finite tick of the existing `runWorker`. Plan, roles, sinks, start/stop/drain/rollback and
+  monitoring: `NORMAL_WORKER_ROLES_PLAN.md`. The code and the synthetic real-PostgreSQL acceptance exist; the real scheduler's
+  arrival under protection and the Vercel runtime's TLS environment are still unproved until the first dark deployment.
+  `scripts/production-worker.ts` stays as the attended CLI. No GitHub Actions per-minute workflow is created.
+- **Restore drill.** `scripts/production-restore-drill.ts` (read-only R2 `GetObject`, age decryption, `pg_restore` into an empty
+  loopback `zr_<12 hex>` database, registry/FK/fingerprint verification, plaintext always removed) with a real
+  `pg_dump -Fc` → age → decrypt → `pg_restore` leg in `tests/operations/restore.ts` (non-empty synthetic state, receipt and
+  effective quantity compared). PG18 client tools: `npm run setup:pg18-client` (official tarball pinned by SHA-256, user-space
+  only), resolved by `tests/readiness/pg18-tools.ts`; CI falls back to the Production Backup workflow's pinned container.
+  A synthetic pass is not a Production restore and approves no RPO/RTO. A Production-class drill requires the Owner's
+  off-Mac custody confirmation (`CUSTODY_CONFIRMED`, recipient prefix) to match the identity file.
+- **Display and origin.** The public origin is `https://salomon-rental.yuge-zao.com`. All displayed prices are consumption-tax
+  inclusive final payment totals (Owner decision 2026-10-04); the wording is shown on the guest, saved-booking, staff and public
+  price pages. Price tables, digests, arithmetic and existing snapshots are unchanged. `/` and `/customer` lead to the public
+  site; development notices disappear when publication authority is installed.

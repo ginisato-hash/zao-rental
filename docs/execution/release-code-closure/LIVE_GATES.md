@@ -68,7 +68,7 @@ requires verified provider reconciliation; UNKNOWN Resend cannot be looked up by
 must not be blindly requeued. Do not activate batch processing, cron or backups here.
 
 Future publication additionally supplies the exact per-release owner approval to runtime:
-`{state:'PUBLICATION_APPROVED', origin:'https://salomonzao.rent', releaseId, approvedBy,
+`{state:'PUBLICATION_APPROVED', origin:'https://salomon-rental.yuge-zao.com', releaseId, approvedBy,
 approvedAt}`. Verify indexing behavior in each deployed request isolate and roll back to
 no approval on any mismatch. A token-shaped object, environment flag, other hostname,
 private path or query must not enable indexing. Domain purchase/binding/DNS is a separate

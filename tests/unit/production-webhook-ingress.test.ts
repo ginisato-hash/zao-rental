@@ -30,7 +30,7 @@ test('Production ingress parse binds classification, own domain, merchant, signa
 test('Production ingress rejects wrong environment, domain, merchant, key, role, database or TLS shape',()=>{
  for(const patch of [
   {PRODUCTION_WEBHOOK_INGRESS_CLASSIFICATION:INGRESS_CLASSIFICATION},{PRODUCTION_WEBHOOK_INGRESS_CLASSIFICATION:undefined},{VERCEL_ENV:'preview'},
-  {VERCEL_PROJECT_PRODUCTION_URL:'other.vercel.app'},{PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL:notificationUrl+'/'},{PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL:`https://salomonzao.rent${WEBHOOK_PATH}`},
+  {VERCEL_PROJECT_PRODUCTION_URL:'other.vercel.app'},{PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL:notificationUrl+'/'},{PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL:`https://salomon-rental.yuge-zao.com${WEBHOOK_PATH}`},
   {PRODUCTION_SQUARE_MERCHANT_ID:undefined},{PRODUCTION_SQUARE_MERCHANT_ID:'bad merchant'},{PRODUCTION_SQUARE_WEBHOOK_SIGNATURE_KEY:'short'},
   {PRODUCTION_RECEIVER_DATABASE_URL:receiverUrl({user:'neondb_pay_projection'})},{PRODUCTION_RECEIVER_DATABASE_URL:receiverUrl({user:'neondb_owner'})},
   {PRODUCTION_RECEIVER_DATABASE_URL:receiverUrl({database:'zr_0123456789ab'})},{PRODUCTION_RECEIVER_DATABASE_URL:receiverUrl({database:'otherdb'})},

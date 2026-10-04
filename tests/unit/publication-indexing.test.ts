@@ -23,7 +23,7 @@ test('indexing matrix: only authority + exact public origin + allowlisted query-
  for(const path of publicPaths)assert.equal(indexablePage(true,PUBLICATION_ORIGIN,path),true,path);
  for(const path of privatePaths)assert.equal(indexablePage(true,PUBLICATION_ORIGIN,path),false,path);
  for(const path of publicPaths)assert.equal(indexablePage(true,PUBLICATION_ORIGIN,path,'?date=2035-01-05'),false,path);
- for(const origin of ['https://zao-rental.vercel.app','http://salomonzao.rent','https://www.salomonzao.rent'])assert.equal(indexablePage(true,origin,'/ja'),false,origin);
+ for(const origin of ['https://zao-rental.vercel.app','http://salomon-rental.yuge-zao.com','https://www.salomon-rental.yuge-zao.com','https://yuge-zao.com','https://other.yuge-zao.com','https://salomon-rental.yuge-zao.com.attacker.example','https://evil-salomon-rental.yuge-zao.com','https://salomonzao.rent'])assert.equal(indexablePage(true,origin,'/ja'),false,origin);
 });
 test('without installed authority the proxy marks every page noindex, public ones included',()=>{
  assert.equal(publicationApproved(),false);

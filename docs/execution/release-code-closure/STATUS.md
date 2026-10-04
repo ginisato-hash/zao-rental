@@ -72,7 +72,7 @@ UNKNOWN remains unresolved without evidence and cannot authorize blind resend.
 No real email, payment or refund ran.
 
 **F — Publication.** Exact-identity/release-bound PublicationAuthority requires an
-explicit PUBLICATION_APPROVED record for https://salomonzao.rent. Environment flags,
+explicit PUBLICATION_APPROVED record for https://salomon-rental.yuge-zao.com. Environment flags,
 forged objects, alternate hosts, queries and private paths cannot publish. JA/EN
 metadata/robots/sitemap are dynamic; dark/noindex is the default including APIs.
 The existing dark host installs no publication authority. Per-isolate live acceptance

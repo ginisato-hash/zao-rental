@@ -208,6 +208,30 @@ try {
     const probe = openTarget(target); try { await assert.doesNotReject(() => verifyRestoredDatabase(probe)); await rejects(() => assertEmptyTarget(probe), 'RESTORE_TARGET_NOT_EMPTY_REJECTED'); } finally { await probe.end(); }
   });
 
+  await check('a pre-0054 Production backup restores against its own 53-entry registry; the default, a longer registry and an invalid count are refused', async () => {
+    // Emulates a dump taken before 0054/0055: registry holds the first 53 entries and the 0054 table does not exist.
+    const toPre0054 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055')"); await p.query('DROP TABLE provisional_capacity_receipts CASCADE'); };
+    const target = await newTarget(); counters.fetch = counters.restore = 0;
+    const result = await runRestoreDrill(adapters(toPre0054), input(target, {expectedMigrations: 53}), fingerprintHost('production.invalid'));
+    assert.equal(result.verification.migrations, 53);
+    assert.ok(!('public.provisional_capacity_receipts' in result.verification.critical) && Object.keys(result.verification.critical).length > 0);
+    assert.deepEqual(await readdir(work), []);
+    const defaultRun = await newTarget();
+    await rejects(() => runRestoreDrill(adapters(toPre0054), input(defaultRun), fingerprintHost('production.invalid')), 'RESTORE_MIGRATION_REGISTRY_MISMATCH');
+    const longer = await newTarget();
+    await rejects(() => runRestoreDrill(adapters(), input(longer, {expectedMigrations: 53}), fingerprintHost('production.invalid')), 'RESTORE_MIGRATION_REGISTRY_MISMATCH');
+    const drift = await newTarget();
+    await rejects(() => runRestoreDrill(adapters(async p => { await toPre0054(p); await p.query("UPDATE foundation_migrations SET checksum='0'||substr(checksum,2) WHERE id='0053'"); }), input(drift, {expectedMigrations: 53}), fingerprintHost('production.invalid')), 'RESTORE_MIGRATION_REGISTRY_MISMATCH');
+    counters.fetch = counters.restore = 0;
+    for (const bad of [0, 56, 1.5, -1]) {
+      const badTarget = await newTarget();
+      await rejects(() => runRestoreDrill(adapters(), input(badTarget, {expectedMigrations: bad}), fingerprintHost('production.invalid')), 'RESTORE_EXPECTED_MIGRATIONS_INVALID');
+    }
+    assert.deepEqual(counters, {fetch: 0, restore: 0}, 'an invalid count stops before any download or restore');
+    const probe = openTarget(await newTarget());
+    try { await rejects(() => verifyRestoredDatabase(probe, 0), 'RESTORE_EXPECTED_MIGRATIONS_INVALID'); } finally { await probe.end(); }
+  });
+
   await check('migration registry drift after restore is rejected and cleaned up', async () => {
     const target = await newTarget(); counters.fetch = counters.restore = 0;
     await rejects(() => runRestoreDrill(adapters(p => p.query("UPDATE foundation_migrations SET checksum='0'||substr(checksum,2) WHERE id='0001'").then(() => undefined)), input(target)), 'RESTORE_MIGRATION_REGISTRY_MISMATCH');

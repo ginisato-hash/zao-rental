@@ -11,7 +11,7 @@ import {GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import {Pool} from 'pg';
 import {migrationPlan, migrationsDirectory} from '../packages/db/src/index';
 import {EXPECTED_PRODUCTION_BUCKET, EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256, fingerprintHost, redactSecrets} from './production-backup';
-import {criticalFingerprint, validateRestored} from './local-restore';
+import {CRITICAL, criticalFingerprint, validateRestored} from './local-restore';
 
 // Production backup RESTORE drill. Read-only against R2 (GetObject only), restores only into an
 // empty, loopback, disposable `zr_<12 hex>` database and never into Production. A SYNTHETIC drill and
@@ -130,15 +130,23 @@ export async function runPgRestore(a: {pgRestorePath: string; dumpPath: string; 
 }
 
 /** Registry equals the source migration set byte-for-byte, relationships hold, contract-critical rows are fingerprinted (counts + digests only). */
-export async function verifyRestoredDatabase(pool: Pool) {
+/** Contract-critical tables that a backup taken before the given migration cannot contain. */
+const CRITICAL_TABLE_ADDED_BY: Readonly<Record<string, string>> = {'public.provisional_capacity_receipts': '0054'};
+
+/** `expectedMigrations` is the number of source migrations the DUMP was taken at: a pre-0054 Production backup holds the first 53, not the current 55.
+ * The registry must equal that exact prefix byte-for-byte (id and checksum); later migrations are never expected, and a registry with more rows than expected is refused. */
+export async function verifyRestoredDatabase(pool: Pool, expectedMigrations: number = migrationPlan.length) {
+  if (!Number.isInteger(expectedMigrations) || expectedMigrations < 1 || expectedMigrations > migrationPlan.length) throw new Error('RESTORE_EXPECTED_MIGRATIONS_INVALID');
   const registry = (await pool.query<{id: string; checksum: string}>('SELECT id,checksum FROM foundation_migrations ORDER BY id')).rows;
-  if (registry.length !== migrationPlan.length) throw new Error('RESTORE_MIGRATION_REGISTRY_MISMATCH');
-  for (const [i, entry] of migrationPlan.entries()) {
+  if (registry.length !== expectedMigrations) throw new Error('RESTORE_MIGRATION_REGISTRY_MISMATCH');
+  for (const [i, entry] of migrationPlan.slice(0, expectedMigrations).entries()) {
     const expected = createHash('sha256').update(await readFile(`${migrationsDirectory}/${entry.file}`, 'utf8')).digest('hex');
     if (registry[i]!.id !== entry.id || registry[i]!.checksum !== expected) throw new Error('RESTORE_MIGRATION_REGISTRY_MISMATCH');
   }
+  const applied = new Set<string>(migrationPlan.slice(0, expectedMigrations).map(e => e.id));
+  const tables = CRITICAL.filter(t => { const by = CRITICAL_TABLE_ADDED_BY[t]; return by === undefined || applied.has(by); });
   const relations = await validateRestored(pool);
-  return {migrations: registry.length, ...relations, critical: await criticalFingerprint(pool)};
+  return {migrations: registry.length, ...relations, critical: await criticalFingerprint(pool, tables)};
 }
 
 export interface DrillAdapters {
@@ -151,6 +159,8 @@ export interface DrillAdapters {
 export interface DrillInput {
   dataClass: DataClass; key: string; scheduledAt: string; expected: {sha256: string; bytes?: number};
   identity: string; custody?: CustodyConfirmation; target: RestoreTarget; workParent?: string;
+  /** Source migrations the dump was taken at (default: all). A pre-0054 Production backup is 53. */
+  expectedMigrations?: number;
 }
 export interface DrillResult {
   status: 'DRILL_PASS'; dataClass: DataClass; key: string; backupScheduledAt: string; plaintextSha256: string; plaintextBytes: number;
@@ -160,6 +170,8 @@ export interface DrillResult {
 
 export async function runRestoreDrill(adapters: DrillAdapters, input: DrillInput, productionHostFingerprint: string = EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256): Promise<DrillResult> {
   if (!BACKUP_KEY_PATTERN.test(input.key)) throw new Error('RESTORE_BACKUP_KEY_INVALID');
+  const expectedMigrations = input.expectedMigrations ?? migrationPlan.length;
+  if (!Number.isInteger(expectedMigrations) || expectedMigrations < 1 || expectedMigrations > migrationPlan.length) throw new Error('RESTORE_EXPECTED_MIGRATIONS_INVALID');
   const scheduledAt = new Date(input.scheduledAt);
   if (Number.isNaN(scheduledAt.getTime())) throw new Error('RESTORE_SCHEDULED_AT_INVALID');
   assertDisposableTarget(input.target, productionHostFingerprint);
@@ -175,7 +187,7 @@ export async function runRestoreDrill(adapters: DrillAdapters, input: DrillInput
     const {bytes: ciphertextBytes} = await adapters.fetchCiphertext(input.key, ciphertextPath);
     const plain = await decryptBackupToFile({ciphertextPath, plaintextPath, identity: input.identity, expectedSha256: input.expected.sha256, expectedBytes: input.expected.bytes});
     await adapters.restore(plaintextPath, input.target);
-    const verification = await verifyRestoredDatabase(pool);
+    const verification = await verifyRestoredDatabase(pool, expectedMigrations);
     const finishedAt = adapters.now();
     return {status: 'DRILL_PASS', dataClass: input.dataClass, key: input.key, backupScheduledAt: scheduledAt.toISOString(), plaintextSha256: plain.sha256, plaintextBytes: plain.bytes,
       ciphertextBytes, toolVersion, startedAt: startedAt.toISOString(), finishedAt: finishedAt.toISOString(),
@@ -202,6 +214,7 @@ export function r2FetchAdapter(client: S3Client, bucket: string = EXPECTED_PRODU
 interface CliInput {
   r2: {accountId: string; accessKeyId: string; secretAccessKey: string}; key: string; scheduledAt: string;
   expected: {sha256: string; bytes?: number}; identityPath: string; custody: CustodyConfirmation; pgRestorePath: string; target: RestoreTarget;
+  expectedMigrations?: number;
 }
 
 async function readCliInput(path: string, checkoutRoot: string): Promise<CliInput> {
@@ -230,7 +243,7 @@ export async function main(argv: string[]): Promise<void> {
     now: () => new Date(),
   };
   const result = await runRestoreDrill(adapters, {dataClass: 'PRODUCTION', key: input.key, scheduledAt: input.scheduledAt, expected: input.expected,
-    identity, custody: input.custody, target: input.target});
+    identity, custody: input.custody, target: input.target, ...(input.expectedMigrations === undefined ? {} : {expectedMigrations: input.expectedMigrations})});
   console.log(JSON.stringify(result));
 }
 

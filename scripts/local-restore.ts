@@ -155,9 +155,9 @@ export async function validateRestored(pool:Pool){
 }
 /** Contract-critical rows compared verbatim between source and restored database. */
 export const CRITICAL=['public.rental_bookings','public.price_quotes','public.rental_payment_attempts','public.inventory_holds','public.inventory_claims','public.rental_loan_items','public.rental_receipts','public.transfer_batches','public.transfer_pieces','public.ops_amendments','public.ops_refund_requests','public.ops_exceptions','public.field_acceptance_records','public.real_data_acceptance','public.booking_notification_outbox','public.rental_history','public.ops_history'] as const;
-export async function criticalFingerprint(pool:Pool){
+export async function criticalFingerprint(pool:Pool,tables:readonly string[]=CRITICAL){
  const out:Record<string,{rows:number;sha256:string}>={};
- for(const name of CRITICAL){
+ for(const name of tables){
   const rows=(await pool.query(`SELECT to_jsonb(t) v FROM ${name} t ORDER BY to_jsonb(t)::text`)).rows.map(r=>r.v);
   out[name]={rows:rows.length,sha256:hash(JSON.stringify(rows))};
  }

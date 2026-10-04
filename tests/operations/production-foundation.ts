@@ -12,6 +12,7 @@ import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {migrate} from '../../packages/db/src/index';
 import {productionCredentialTemporaryPasswordSql,productionCredentialRollbackSql,productionCredentialTemporaryPassword,productionCredentialBaseline,productionCredentialContainmentComplete} from '../../scripts/production-credential-activation';
 import * as backupCredential from '../../scripts/production-backup-credential';
+import {applyProductionNormalWorkerGrants,normalWorkerExecuteTargets} from '../../scripts/production-normal-worker-grants';
 import {bootstrapProductionFoundation,runFoundationPlan,productionFoundationPlan,schemaFingerprint,securityFingerprint,fingerprintDelta,deltaMismatch,
  FOUNDATION_FAULT_STAGES,type FoundationPlan} from '../../scripts/production-bootstrap';
 
@@ -203,6 +204,33 @@ try{
   await assert.rejects(backupCredential.provisionBackupCredential(ports),(e:Error&{contained?:{state:string}})=>{assert.equal(e.message,'BACKUP_CREDENTIAL_RESET_OUTCOME_UNKNOWN');assert.equal(e.contained?.state,'CONTAINED');return true;});
   assert.equal(posts,1);const unknown=await state();assert.deepEqual([unknown.rolcanlogin,unknown.passwordIsNull,unknown.validUntil],[false,true,'infinity']);
   evidence.backupCredentialLifecycle={provisionPosts:1,leaseMinutesMax:90,finalized:true,contained:true,unknownOutcomeResent:false};
+ });
+ await check('normal worker grants: exactly the four approved EXECUTE grants, role separated; drift and replay are refused',async()=>{
+  const targets=normalWorkerExecuteTargets(DB),claim=targets[1]!.fn;
+  const c=await a.neon.connect();
+  try{
+   // A pre-existing PUBLIC EXECUTE is drift: the installer refuses and rolls back.
+   await a.neon.query(`GRANT EXECUTE ON FUNCTION ${claim} TO PUBLIC`);
+   await assert.rejects(applyProductionNormalWorkerGrants(c,DB,OWNER),/PRODUCTION_NORMAL_WORKER_GRANTS_REFUSED/);
+   await a.neon.query(`REVOKE EXECUTE ON FUNCTION ${claim} FROM PUBLIC`);
+   const holders=async(fn:string)=>(await a.neon.query(`SELECT r.rolname FROM pg_roles r WHERE r.rolname<>$2 AND NOT r.rolsuper AND has_function_privilege(r.oid,$1::regprocedure,'EXECUTE') ORDER BY 1`,[fn,OWNER])).rows.map(r=>r.rolname);
+   for(const t of targets)assert.deepEqual(await holders(t.fn),[],'no grant exists before the installer');
+   const result=await applyProductionNormalWorkerGrants(c,DB,OWNER);
+   assert.equal(result.status,'PRODUCTION_NORMAL_WORKER_GRANTS_INSTALLED');assert.deepEqual(result.grants,targets.map(t=>({fn:t.fn,role:t.role})));
+   assert.deepEqual([result.otherAclChanges,result.schemaChanges,result.credentialChanges,result.businessWrites],[0,0,0,0]);
+   for(const t of targets){
+    assert.deepEqual(await holders(t.fn),[t.role]);
+    assert.equal(await scalar(a.neon,`SELECT has_function_privilege('public',$1::regprocedure,'EXECUTE')`,[t.fn]),false);
+   }
+   // role separation: the dispatcher cannot claim, the worker cannot dispatch, nobody else can project or read due notifications
+   assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_dispatch',$1::regprocedure,'EXECUTE')`,[targets[1]!.fn]),false);
+   assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_truth',$1::regprocedure,'EXECUTE')`,[targets[0]!.fn]),false);
+   assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_receipt',$1::regprocedure,'EXECUTE')`,[targets[2]!.fn]),false);
+   // replay: the owner-only precondition no longer holds, so a second run changes nothing
+   await assert.rejects(applyProductionNormalWorkerGrants(c,DB,OWNER),/PRODUCTION_NORMAL_WORKER_GRANTS_REFUSED/);
+   for(const t of targets)assert.deepEqual(await holders(t.fn),[t.role]);
+   evidence.normalWorkerGrants={installed:4,replayRefused:true};
+  }finally{c.release();}
  });
  await check('a second foundation bootstrap is refused on the non-empty database',async()=>{
   await assert.rejects(bootstrapProductionFoundation(a.neon,DB),/PRODUCTION_DATABASE_NOT_EMPTY/);

@@ -3,7 +3,7 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import QRCode from 'qrcode';
 import {requestFor} from '../inventory/fixture';
 import {mkdir} from 'node:fs/promises';
-import {chromium,expect,type Page} from '@playwright/test';
+import {chromium,expect as baseExpect,type Page} from '@playwright/test';
 import {startFlowApp} from '../flow/launcher';
 import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {seedRecommendation} from '../recommendation/fixture';
@@ -13,6 +13,9 @@ import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority'
 import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconcile-protection';
 import {WearService} from '../../packages/core/src/wear/service';
 import {registerWear} from '../wear/fixture';
+// Playwright's expect() waits 5 s unless configured, while this file's actions get 15 s (context.setDefaultTimeout). A dev-mode Next server on a busy host
+// can stall a click-to-render round trip past 5 s even though the transaction already committed, so assertions use the same 15 s budget.
+const expect=baseExpect.configure({timeout:15000});
 let stage='startup',count=0,failed=false;const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,page:Page|undefined;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 try{
@@ -68,4 +71,4 @@ try{
   await p.getByRole('button',{name:'保存済み返却作業を読込'}).click();await expect(p.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();assert.equal((await context.request.get('/api/custody/booking/'+bookingId)).status(),401);
  });
  console.log(`CUSTODY ordinary UI/API/real PostgreSQL: ${count} passed, no skipped. Synthetic payment and data; synthetic camera frames and manual QR input, viewport only, no real phone/Square.`);
-}catch(e){failed=true;console.error('CUSTODY_UI_FAILED '+stage+' '+(e as Error).name);if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').filter(l=>l.includes('/tests/custody/')).join('\n'));if(page){console.error('LAST_PAGE '+new URL(page.url()).pathname);console.error('UI_ALERT '+(await page.getByRole('alert').allTextContents()).join(' ').slice(0,400));}}finally{await browser.close();await app?.stop();console.log('Owned custody Web/browser/PostgreSQL stopped.');}if(failed)process.exit(1);
+}catch(e){failed=true;console.error('CUSTODY_UI_FAILED '+stage+' '+(e as Error).name+' '+String((e as Error).message??'').replace(/\s+/g,' ').slice(0,400));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').filter(l=>l.includes('/tests/custody/')).join('\n'));if(page){console.error('LAST_PAGE '+new URL(page.url()).pathname);console.error('UI_ALERT '+(await page.getByRole('alert').allTextContents()).join(' ').slice(0,400));}}finally{await browser.close();await app?.stop();console.log('Owned custody Web/browser/PostgreSQL stopped.');}if(failed)process.exit(1);

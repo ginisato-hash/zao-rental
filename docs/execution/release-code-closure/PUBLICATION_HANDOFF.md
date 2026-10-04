@@ -247,7 +247,9 @@ rejection of BACKUP/AGE value read/export is retained as a hard block, not retri
 ## Continuation 2026-10-04 (Primary: Claude) — scheduler, restore drill, display
 
 - **Scheduler.** The minute scheduler is Vercel Cron (Pro plan, project has no Git link, protection All Deployments) calling
-  `GET /api/internal/worker-tick`, one finite tick of the existing `runWorker`. Plan, roles, sinks, start/stop/drain/rollback and
+  `GET /api/internal/worker-tick`, one finite tick of the existing `runWorker`. `CRON_SECRET` is bound first, the accepted release
+  is deployed dark with activation absent, and the real scheduler's `normal_worker_tick_dormant` line is the reach proof before any
+  role credential, cutoff or activation token is bound. Plan, roles, sinks, order, start/stop/drain/rollback and
   monitoring: `NORMAL_WORKER_ROLES_PLAN.md`. The code and the synthetic real-PostgreSQL acceptance exist; the real scheduler's
   arrival under protection and the Vercel runtime's TLS environment are still unproved until the first dark deployment.
   `scripts/production-worker.ts` stays as the attended CLI. No GitHub Actions per-minute workflow is created.

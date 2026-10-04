@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {productionActivationPlan} from '../../scripts/production-activation-plan';
+import {readFile} from 'node:fs/promises';
 import {migrationPlan} from '../../packages/db/src/index';
 
 const source={head:'0'.repeat(40),tree:'1'.repeat(40),clean:true};
@@ -27,4 +28,17 @@ test('credentials are listed by name only; a secret present in the environment n
  const p=await productionActivationPlan(source);
  for(const name of p.credentials.webApp.secretNames)assert.ok(p.credentials.webApp.names.includes(name));
  assert.deepEqual(p.credentials.webApp.mustBeAbsentUntilPublicationGo,['PRODUCTION_PUBLICATION_APPROVAL']);
+});
+test('worker activation order lets the dark reach proof exist: CRON_SECRET first, activation absent until after the real dormant log',async()=>{
+ const worker=(await productionActivationPlan(source)).credentials.normalWorker,order=worker.activationOrder;
+ assert.deepEqual(order,['BIND_CRON_SECRET','DEPLOY_ACCEPTED_RELEASE_DARK','VERIFY_REAL_CRON_DORMANT_LOG','ACTIVATE_WORKER_ROLE_CREDENTIALS','BIND_ACCEPTED_AFTER_CUTOFF','BIND_ACTIVATION_TOKEN_LAST']);
+ assert.deepEqual(worker.darkReachProof.boundBefore,['CRON_SECRET']);assert.equal(worker.darkReachProof.expectedLogEvent,'normal_worker_tick_dormant');
+ for(const name of ['PRODUCTION_WORKER_TICK_ACTIVATION','PRODUCTION_WORKER_ACCEPTED_AFTER','PRODUCTION_WORKER_DB_PASSWORD_WORKER'])assert.ok(worker.darkReachProof.mustBeAbsent.includes(name),name);
+ assert.ok(!worker.darkReachProof.mustBeAbsent.includes('CRON_SECRET'));assert.ok(worker.secretNames.includes('CRON_SECRET'));
+ assert.ok(worker.darkReachProof.forbidden.includes('PROTECTION_REMOVAL')&&worker.darkReachProof.forbidden.includes('MANUAL_REQUEST_AS_SCHEDULER_PROOF')&&worker.darkReachProof.forbidden.includes('ACTIVATION_BEFORE_PROOF'));
+ assert.equal(worker.darkReachProof.envReachesRuntimeOnlyByNewDeployment,true);
+ // The written plan carries the same order, so the document and the machine plan cannot drift apart.
+ const doc=await readFile(new URL('../../docs/execution/release-code-closure/NORMAL_WORKER_ROLES_PLAN.md',import.meta.url),'utf8');
+ const block=doc.match(/```\nACTIVATION_ORDER\n([\s\S]*?)```/)?.[1]??'';
+ assert.deepEqual(block.trim().split('\n').map(line=>line.replace(/^\d+\.\s*/,'')),order);
 });

@@ -24,7 +24,7 @@ Other new names (environment of project `zao-rental`, Production target):
 
 | Name | Kind | Meaning |
 |---|---|---|
-| `CRON_SECRET` | sensitive, random ≥32 characters | Vercel sends it as `Authorization: Bearer`; the route compares in constant time |
+| `CRON_SECRET` | sensitive, random ≥32 characters | Vercel sends it as `Authorization: Bearer`; the route compares in constant time. **Bound first** (step 1), before any activation, so the dark reach proof can exist |
 | `PRODUCTION_WORKER_ACCEPTED_AFTER` | plain, UTC `YYYY-MM-DDTHH:MM:SSZ` | Cutoff after the F2 window (never earlier than 2026-10-03T09:14:39Z, never in the future) |
 | `PRODUCTION_WORKER_TICK_ACTIVATION` | plain, exactly `NORMAL_WORKER_TICK_APPROVED` | Start switch; absent means the route answers `NOT_ACTIVATED` without touching the database or provider. Set last |
 
@@ -50,11 +50,34 @@ running deployment only through the next deployment of the already accepted rele
 Vercel Cron (Pro plan confirmed) calls `GET /api/internal/worker-tick` every minute; one finite tick (`maxDuration` 60 s, plan
 deadline 50 s, batch 20). No GitHub Actions workflow and no copy of the commercial secrets are created.
 
-Order: (1) accepted release deployed dark with the cron definition present and `PRODUCTION_WORKER_TICK_ACTIVATION` absent;
-(2) confirm in runtime logs that the real scheduler reached the route (`normal_worker_tick_dormant` lines, no database work).
-Whether Vercel Cron passes the project's All Deployments protection is **not documented and not yet verified** — the dormant
-lines are the proof; a manual `curl` never substitutes for it, and protection is not removed to make it pass. (3) credentials per
-section 2; (4) `CRON_SECRET`, `PRODUCTION_WORKER_ACCEPTED_AFTER`, activation token last; (5) watch the first ticks.
+The route checks the `Authorization: Bearer` header **before** it checks activation, and an unauthorized call logs nothing. So a
+dormant log line can only exist when the deployment already carries `CRON_SECRET` and the platform sent the matching header:
+`CRON_SECRET` is bound first and independently of any database or provider activation. Fixed order (machine-checked against
+`scripts/production-activation-plan.ts`):
+
+```
+ACTIVATION_ORDER
+1. BIND_CRON_SECRET
+2. DEPLOY_ACCEPTED_RELEASE_DARK
+3. VERIFY_REAL_CRON_DORMANT_LOG
+4. ACTIVATE_WORKER_ROLE_CREDENTIALS
+5. BIND_ACCEPTED_AFTER_CUTOFF
+6. BIND_ACTIVATION_TOKEN_LAST
+```
+
+1. Bind `CRON_SECRET` (Production, sensitive, random ≥32 characters). Nothing else of this plan is bound: no worker role password,
+   no cutoff, **no `PRODUCTION_WORKER_TICK_ACTIVATION`**.
+2. Deploy the accepted release dark (cron definition present). Environment is bound at build, so a later environment change
+   reaches the runtime only through a new deployment of the same accepted release (environment-only, no code change).
+3. **Dark reach proof:** the real Vercel scheduler calls the route with its own `Authorization: Bearer <CRON_SECRET>` and the runtime
+   logs show one `normal_worker_tick_dormant` line per minute, no `normal_worker_tick` line and no database or provider work.
+   Whether Vercel Cron passes the project's All Deployments protection is **not documented and not yet verified**; the dormant
+   lines are the only proof. Their absence is never success (it means the scheduler is not arriving or not authorized). A manual
+   `curl` — even with the secret — never substitutes for the scheduler, protection is not removed to make it pass, and activation
+   is never bound ahead of this proof.
+4. Only after step 3: worker role credentials per section 2 (sinks written, probes passed).
+5. `PRODUCTION_WORKER_ACCEPTED_AFTER`.
+6. `PRODUCTION_WORKER_TICK_ACTIVATION` last, in the final environment-only deployment, then watch the first ticks.
 
 Also unverified until that first dark run: that the Vercel Node runtime carries none of `NODE_TLS_REJECT_UNAUTHORIZED`,
 `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `SSL_CERT_DIR` (the worker refuses to run if any is set).

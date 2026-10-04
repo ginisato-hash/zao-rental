@@ -3,7 +3,7 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import QRCode from 'qrcode';
 import {requestFor} from '../inventory/fixture';
 import {mkdir} from 'node:fs/promises';
-import {chromium,expect as baseExpect,type Page} from '@playwright/test';
+import {chromium,expect,type Page} from '@playwright/test';
 import {startFlowApp} from '../flow/launcher';
 import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {seedRecommendation} from '../recommendation/fixture';
@@ -13,11 +13,21 @@ import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority'
 import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconcile-protection';
 import {WearService} from '../../packages/core/src/wear/service';
 import {registerWear} from '../wear/fixture';
-// Playwright's expect() waits 5 s unless configured, while this file's actions get 15 s (context.setDefaultTimeout). A dev-mode Next server on a busy host
-// can stall a click-to-render round trip past 5 s even though the transaction already committed, so assertions use the same 15 s budget.
-const expect=baseExpect.configure({timeout:15000});
 let stage='startup',count=0,failed=false;const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,page:Page|undefined;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
+/** The reconcile click sends one POST /api/bookings/<uuid>/payment. Wait for that exact response first (same app origin, POST, UUID path; up to 60 s), check HTTP 200 and a
+ * fully read body for the same booking, and only then assert the screen with the normal expect budget. An API stall and a render failure therefore fail with different codes. */
+async function reconcileThroughUi(p:Page,origin:string){
+ const pending=p.waitForResponse(r=>{const u=new URL(r.url());return u.origin===origin&&r.request().method()==='POST'&&/^\/api\/bookings\/[0-9a-f-]{36}\/payment$/.test(u.pathname);},{timeout:60000}).catch(()=>null);
+ await p.getByRole('button',{name:'テストアダプタへ照合要求'}).click();
+ const response=await pending;if(!response)throw new Error('PAYMENT_API_NO_RESPONSE_60S');
+ const bookingId=new URL(response.url()).pathname.split('/')[3];
+ if(response.status()!==200)throw new Error('PAYMENT_API_STATUS_'+response.status());
+ const body=await response.json().catch(()=>{throw new Error('PAYMENT_API_BODY_UNREADABLE');}) as {id?:unknown};
+ if(body.id!==bookingId)throw new Error('PAYMENT_API_BOOKING_MISMATCH');
+ try{await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('CONFIRMED_DEV');}
+ catch(e){throw new Error('UI_NOT_CONFIRMED_AFTER_PAYMENT_API_OK '+String((e as Error).message).replace(/\s+/g,' ').slice(0,300));}
+}
 try{
  app=await startFlowApp();await seedRecommendation(app.db.pool);await bootstrapDevelopmentAdmin(app.db.pool,{email:'custody-ui-root@example.invalid',displayName:'SYNTHETIC Root',password});const {origin}=app;
  async function clock(time:string){await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${time}'::timestamptz$$`);}await clock('2035-01-01T01:00:00Z');
@@ -37,7 +47,7 @@ try{
   await p.getByLabel('クラス 1',{exact:true}).selectOption('PREMIUM');await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption(fixtures.variants['POLE-110 cm']!);
   await p.getByLabel('指定モデル・シーズン 1',{exact:true}).selectOption(fixtures.models.SKI!+'|2026/27');
   await p.getByLabel('ウェア上下セットを追加 1',{exact:true}).check();await p.getByLabel('上サイズ 1',{exact:true}).selectOption(fixtures.selection.jacketVariantId);await p.getByLabel('下サイズ 1',{exact:true}).selectOption(fixtures.selection.pantsVariantId);
-  await p.getByRole('button',{name:'推薦候補を確認',exact:true}).click();await p.getByRole('button',{name:'おすすめを選ぶ 1',exact:true}).click();await p.getByRole('checkbox',{name:'表示したモデル契約・サイズ・ウェア構成を選択条件とすることを確認'}).check();await p.getByRole('button',{name:'全員分をHOLDして見積を保存',exact:true}).click();await expect(p.getByRole('region',{name:'見積詳細',exact:true})).toBeVisible();await p.getByRole('link',{name:'予約情報・決済結果へ'}).click();await p.getByLabel('合成氏名').fill('SYNTHETIC Custody Mixed');await p.getByLabel('架空メール宛先').fill('synthetic-custody@example.invalid');await p.getByLabel('開発用の合成予約であり、営業規約・請求の確定ではないことを確認').check();await p.getByRole('button',{name:'合成予約情報を保存',exact:true}).click();await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('DRAFT');await p.getByRole('button',{name:'テストアダプタへ照合要求'}).click();await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('CONFIRMED_DEV');
+  await p.getByRole('button',{name:'推薦候補を確認',exact:true}).click();await p.getByRole('button',{name:'おすすめを選ぶ 1',exact:true}).click();await p.getByRole('checkbox',{name:'表示したモデル契約・サイズ・ウェア構成を選択条件とすることを確認'}).check();await p.getByRole('button',{name:'全員分をHOLDして見積を保存',exact:true}).click();await expect(p.getByRole('region',{name:'見積詳細',exact:true})).toBeVisible();await p.getByRole('link',{name:'予約情報・決済結果へ'}).click();await p.getByLabel('合成氏名').fill('SYNTHETIC Custody Mixed');await p.getByLabel('架空メール宛先').fill('synthetic-custody@example.invalid');await p.getByLabel('開発用の合成予約であり、営業規約・請求の確定ではないことを確認').check();await p.getByRole('button',{name:'合成予約情報を保存',exact:true}).click();await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('DRAFT');await reconcileThroughUi(p,origin);
   const b=(await app!.db.pool.query('SELECT b.*,h.expires_at FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id')).rows[0];bookingId=b.id;holdId=b.hold_id;ttl=b.expires_at.toISOString();snapshot=b.price_sha256;assert.equal(b.price_snapshot.chargeReady,false);assert.equal(b.price_snapshot.totalJpy,13000);
  });
  await check('wrong Premium model or length rejected; normal screen prepares exact witness and records all serialized equipment',async()=>{

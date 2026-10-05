@@ -70,7 +70,7 @@ function world(over:{failResetFor?:string;probeFails?:string;noDark?:boolean;noC
   async probe(role,password){probes++;log.push('probe '+role.key);if(over.probeFails===role.role)throw new Error('WORKER_CREDENTIAL_PROBE_FAILED');assert.equal(password,passwords[role.role]);return {tlsVerified:true,roleChecks:'PASS',signature:'EXECUTE',leaseValid:true};},
   guard:{exists:k=>claimed.has(k),claim:k=>{if(claimed.has(k))throw new Error('WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed.add(k);log.push('guard.claim '+k);}},
   async sleep(){},now:()=>new Date(1_000_000+log.length),containmentSchedule:[0,0,0],expectedHostFingerprint:fingerprintHost(HOST),
-  async darkProofVerified(){if(over.noDark)throw new Error('WORKER_DORMANT_PROOF_PROOF_MISSING');}};
+  async darkProofVerified(){log.push('dark.verify');if(over.noDark)throw new Error('WORKER_DORMANT_PROOF_PROOF_MISSING');}};
  return {ports,log,sunk,rows,states,statements,passwords,get posts(){return posts;},get probes(){return probes;}};
 }
 const everything=(x:ReturnType<typeof world>)=>JSON.stringify(x.log);
@@ -118,6 +118,7 @@ test('preconditions refuse before any session, ALTER or POST: dark proof, CRON_S
   const x=world(over);
   await assert.rejects(w.provisionWorkerRoles(x.ports),(e:Error&{contained?:unknown})=>{assert.equal(e.message,code,name);assert.equal(e.contained,undefined,name);return true;});
   assert.equal(x.posts,0,name);assert.ok(!x.log.includes('connectOwner'),name);assert.equal(x.statements.filter(s=>s.startsWith('ALTER')).length,0,name);
+  if(name==='no dark proof')assert.deepEqual(x.log,['dark.verify'],'the gate is the only thing that ran: no Neon read, Vercel call or guard claim before it');
  }
  const y=world();y.ports.guard.claim('worker');
  await assert.rejects(w.provisionWorkerRoles(y.ports),/WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED/);assert.equal(y.posts,0);
@@ -193,4 +194,63 @@ test('guards are exclusive per role, SQL builders are exact and the CLI takes no
  assert.deepEqual(w.WORKER_ROLES.map(r=>r.sink),['PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER','PRODUCTION_WORKER_DB_PASSWORD_WORKER','PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR']);
  await assert.rejects(w.main(['provision','--force']),/WORKER_CREDENTIAL_ARGUMENTS_REFUSED/);
  assert.deepEqual(w.workerPostureDrift({rolcanlogin:false,rolvaliduntil:null,passwordIsNull:true,...POSTURE}),[]);
+});
+
+test('the dark proof gate runs first and alone; any failure of it, whatever its text, is the coded refusal with nothing contained and nothing leaked',async()=>{
+ const ok=world();await w.provisionWorkerRoles(ok.ports);
+ assert.equal(ok.log[0],'dark.verify');assert.equal(ok.log.filter(l=>l==='dark.verify').length,1,'checked once, before the first Neon read, Vercel read, guard claim or session');
+ const failures:Array<[string,()=>Promise<void>|void]>=[
+  ['coded verifier error',()=>{throw new Error('WORKER_DORMANT_PROOF_STALE');}],
+  ['error text with a connection string',()=>{throw new Error('postgresql://user:SecretPassw0rd@host/db');}],
+  ['rejected promise of a non-error',()=>Promise.reject('plain string')],
+  ['synchronous throw',()=>{throw new TypeError('x');}],
+ ];
+ for(const [name,gate] of failures){
+  const x=world();x.ports.darkProofVerified=gate as never;
+  await assert.rejects(w.provisionWorkerRoles(x.ports),(e:Error&{contained?:unknown;steps?:unknown})=>{
+   assert.equal(e.message,'WORKER_CREDENTIAL_DARK_PROOF_REQUIRED',name);assert.equal(e.contained,undefined,name);assert.deepEqual(e.steps,[],name);
+   assert.ok(!JSON.stringify([e.message,e.contained,e.steps]).includes('SecretPassw0rd'),name);return true;});
+  assert.deepEqual(x.log,[],name+': no Neon read, Vercel call, guard claim, session or containment');
+  assert.equal(x.statements.length,0,name);assert.equal(x.posts,0,name);assert.deepEqual(Object.keys(x.sunk),[],name);assert.deepEqual(x.rows.map(r=>r.key),['CRON_SECRET'],name);
+  for(const r of w.WORKER_ROLES)assert.equal(x.ports.guard.exists(r.key),false,name);
+ }
+ // a gate that is not even a function is the same refusal
+ const y=world();(y.ports as unknown as {darkProofVerified?:unknown}).darkProofVerified=undefined;
+ await assert.rejects(w.provisionWorkerRoles(y.ports),(e:Error&{contained?:unknown})=>{assert.equal(e.message,'WORKER_CREDENTIAL_DARK_PROOF_REQUIRED');assert.equal(e.contained,undefined);return true;});
+ assert.deepEqual(y.log,[]);
+});
+
+test('production wiring: the gate is the recorded-proof verifier and the accepted main commit comes from assertAcceptedMainRelease',()=>{
+ const read=(f:string)=>readFileSync(join(process.cwd(),'scripts',f),'utf8');
+ const dormant=read('production-worker-dormant-proof.ts'),cred=read('production-worker-credential.ts');
+ assert.match(dormant,/import \{assertAcceptedMainRelease\} from '\.\/lib\/production-owner-session';/);
+ assert.match(dormant,/export async function verifyRecordedDormantProof\(root:string=process\.cwd\(\),port:DormantProofPort=vercelProofCliPort\(\),releaseSha:string=assertAcceptedMainRelease\(\)/);
+ assert.match(dormant,/const releaseSha=assertAcceptedMainRelease\(\);/);
+ assert.match(cred,/darkProofVerified:async\(\)=>\{\s*await \(await import\('\.\/production-worker-dormant-proof'\)\)\.verifyRecordedDormantProof\(root\);\s*\}/);
+ // inside provisionWorkerRoles the gate is the first statement of the try block, before the guard check and every port call
+ const body=cred.slice(cred.indexOf('export async function provisionWorkerRoles'),cred.indexOf('const SAFE_CODE'));
+ assert.match(body,/try\{\s*try\{await p\.darkProofVerified\(\);\}catch\{throw fail\('WORKER_CREDENTIAL_DARK_PROOF_REQUIRED'\);\}\s*for\(const r of WORKER_ROLES\)if\(p\.guard\.exists\(r\.key\)\)/);
+ assert.ok(body.indexOf('p.darkProofVerified()')<body.search(/p\.(neon|vercel|guard|connectOwner|probe)/),'no port other than the gate is touched before it');
+});
+
+test('the Vercel env reader refuses anything but the complete list: another page, hidden production variables, no list, a row without a key',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'zao-vercel-env-'));
+ try{
+  const body=join(dir,'body.json'),bin=join(dir,'vercel');
+  writeFileSync(bin,`#!/bin/sh\ncat '${body}'\n`);chmodSync(bin,0o755);
+  const port=w.vercelCliPort(bin,{PATH:process.env.PATH??''} as unknown as NodeJS.ProcessEnv);
+  const cron={key:'CRON_SECRET',type:'sensitive',target:['production'],value:'LEAKME'};
+  const read=async(value:unknown)=>{writeFileSync(body,typeof value==='string'?value:JSON.stringify(value));return port.envRows();};
+  const expected=[{key:'CRON_SECRET',type:'sensitive',target:['production']}];
+  // the documented complete shapes
+  assert.deepEqual(await read({envs:[cron],pagination:{count:1,next:null,prev:null}}),expected);
+  assert.deepEqual(await read({envs:[cron],hiddenProductionEnvCount:0}),expected);
+  assert.deepEqual(await read({envs:[cron]}),expected);
+  assert.deepEqual(await read({envs:[]}),[]);
+  // incomplete: refused instead of being read as "nothing else bound"
+  for(const incomplete of [{envs:[cron],pagination:{count:1,next:1759600000000,prev:null}},{envs:[cron],hiddenProductionEnvCount:1},{envs:[cron],hiddenProductionEnvCount:'0'}])
+   await assert.rejects(read(incomplete),/WORKER_CREDENTIAL_VERCEL_RESPONSE_INCOMPLETE/);
+  for(const unreadable of ['not json','null','[]','"x"',{},{error:{code:'forbidden'}},cron,{envs:'x'},{envs:[cron,{type:'plain',target:['production']}]},{envs:[cron,null]},{envs:[cron,{key:'',type:'plain',target:[]}]}])
+   await assert.rejects(read(unreadable),/WORKER_CREDENTIAL_VERCEL_RESPONSE_UNPARSEABLE/);
+ }finally{rmSync(dir,{recursive:true,force:true});}
 });

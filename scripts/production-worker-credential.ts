@@ -4,7 +4,8 @@
 // reset_password is POSTed at most once per role behind a durable local guard and never resent, any failure contains the role and removes its sink.
 // Per role, strictly serial: clean NOLOGIN baseline -> temporary password (memory only, while NOLOGIN, through the manager) -> ONE reset_password -> operations
 // finished -> 20-minute LOGIN lease from the DATABASE clock -> direct verify-full + channel-binding login with the worker's own role checks -> Production sensitive
-// sink + metadata readback -> VALID UNTIL 'infinity' with one readback. Roles are activated only after the dark cron reach proof record exists.
+// sink + metadata readback -> VALID UNTIL 'infinity' with one readback. In `provision` nothing (no Neon call, no Vercel call, no guard claim) happens before `darkProofVerified()`: the roles are
+// activated only after the dark cron reach proof recorded by production-worker-dormant-proof has been re-derived from live Vercel readbacks for the accepted main commit.
 import {spawn} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
 import {closeSync,existsSync,mkdirSync,openSync,writeSync} from 'node:fs';
@@ -224,9 +225,16 @@ export function vercelCliPort(bin:string=VERCEL_BIN,env:NodeJS.ProcessEnv=proces
  return {
   envRows:async()=>{
    const raw=await run(['api',`/v10/projects/${VERCEL_TARGET.project}/env`,'--raw','--scope',VERCEL_TARGET.scope],undefined,true);
-   let parsed:{envs?:Array<{key?:unknown;type?:unknown;target?:unknown}>};try{parsed=JSON.parse(raw);}catch{throw fail('WORKER_CREDENTIAL_VERCEL_RESPONSE_UNPARSEABLE');}
+   let parsed:{envs?:unknown;pagination?:{next?:unknown}|null;hiddenProductionEnvCount?:unknown}|null;try{parsed=JSON.parse(raw);}catch{throw fail('WORKER_CREDENTIAL_VERCEL_RESPONSE_UNPARSEABLE');}
+   // The documented answer is `{envs}` with either `pagination` or `hiddenProductionEnvCount` (or one bare variable). Absence claims ("no worker sink, cutoff or activation name") need the
+   // whole list: anything but a complete `envs` array - a further page, hidden production variables, no array - is refused instead of read as "nothing bound".
+   if(!parsed||typeof parsed!=='object'||!Array.isArray(parsed.envs))throw fail('WORKER_CREDENTIAL_VERCEL_RESPONSE_UNPARSEABLE');
+   if(parsed.pagination?.next!=null||(parsed.hiddenProductionEnvCount!==undefined&&parsed.hiddenProductionEnvCount!==0))throw fail('WORKER_CREDENTIAL_VERCEL_RESPONSE_INCOMPLETE');
    // Only name, type and target are kept; any value field the API might return is dropped here and never leaves this function.
-   return (parsed.envs??[]).map(e=>({key:String(e.key),type:String(e.type),target:Array.isArray(e.target)?e.target.map(String):[String(e.target)]}));
+   return (parsed.envs as Array<{key?:unknown;type?:unknown;target?:unknown}|null>).map(e=>{
+    if(typeof e?.key!=='string'||!e.key)throw fail('WORKER_CREDENTIAL_VERCEL_RESPONSE_UNPARSEABLE');
+    return {key:e.key,type:String(e.type),target:Array.isArray(e.target)?e.target.map(String):[String(e.target)]};
+   });
   },
   setSensitive:async(n,v)=>{await run(['env','add',allowed(n),VERCEL_TARGET.environment,'--sensitive','--yes',...scope],v);},
   remove:async n=>{await run(['env','rm',allowed(n),VERCEL_TARGET.environment,'--yes',...scope]);},

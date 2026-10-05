@@ -11,9 +11,9 @@ import type {DeploymentFacts,DormantProofPort,ProjectFacts,RequestLog} from '../
 const SHA='a'.repeat(40),DEP='dpl_AbCdEfGh12345678',NOW=Date.parse('2026-10-04T17:30:30.000Z');
 const FACTS={releaseSha:SHA,deploymentId:DEP};
 const fail=(code:string)=>new RegExp('WORKER_DORMANT_PROOF_'+code+'$');
-// One real-looking scheduler minute: GET 200, the dormant event, this deployment.
-const tick=(minutesAgo:number,over:Partial<RequestLog>={}):RequestLog=>({timestamp:NOW-minutesAgo*60_000-20_000,deploymentId:DEP,requestMethod:'GET',requestPath:CRON_PATH,responseStatusCode:200,
- messages:[JSON.stringify({event:DORMANT_EVENT})],...over});
+// One real-looking scheduler minute: GET 200, the dormant event, this deployment, this project, production.
+const tick=(minutesAgo:number,over:Partial<RequestLog>={}):RequestLog=>({timestamp:NOW-minutesAgo*60_000-20_000,deploymentId:DEP,projectId:VERCEL_TARGET.project,environment:'production',
+ requestMethod:'GET',requestPath:CRON_PATH,responseStatusCode:200,messages:[JSON.stringify({event:DORMANT_EVENT})],...over});
 const cleanTicks=()=>[tick(4),tick(3),tick(2),tick(1),tick(0)];
 
 function fakePort(over:{dep?:Partial<DeploymentFacts>;project?:Partial<ProjectFacts>;env?:VercelEnvRow[];logs?:RequestLog[];windows?:number[]}={}){
@@ -69,6 +69,14 @@ test('the wrong event, a manual or unauthorised call, another method or another 
  await assert.rejects(collectDormantProof(fakePort({logs:[...base,tick(0,{timestamp:NOW-5_000,responseStatusCode:500})]}).port,FACTS,fixed),fail('UNEXPECTED_REQUEST'));
  await assert.rejects(collectDormantProof(fakePort({logs:[...base,tick(0,{timestamp:NOW-5_000,requestMethod:'POST'})]}).port,FACTS,fixed),fail('UNEXPECTED_REQUEST'));
  await assert.rejects(collectDormantProof(fakePort({logs:[...base,tick(0,{timestamp:NOW-5_000,deploymentId:'dpl_OtherDeployment1'})]}).port,FACTS,fixed),fail('UNEXPECTED_REQUEST'));
+ await assert.rejects(collectDormantProof(fakePort({logs:[...base,tick(0,{timestamp:NaN})]}).port,FACTS,fixed),fail('UNEXPECTED_REQUEST'));
+ // project and environment are enforced wherever the row carries them (and only then)
+ await assert.rejects(collectDormantProof(fakePort({logs:[...base,tick(0,{timestamp:NOW-5_000,projectId:'prj_other'})]}).port,FACTS,fixed),fail('UNEXPECTED_REQUEST'));
+ await assert.rejects(collectDormantProof(fakePort({logs:[...base,tick(0,{timestamp:NOW-5_000,environment:'preview'})]}).port,FACTS,fixed),fail('UNEXPECTED_REQUEST'));
+ await collectDormantProof(fakePort({logs:base.map(l=>({...l,projectId:null,environment:null}))}).port,FACTS,fixed);
+ // an activated tick that is truncated, reformatted or not JSON at all still counts as activation, even beside a good dormant line
+ for(const hidden of ['{"event":"normal_worker_tick","state":"COMP','normal_worker_tick state=COMPLETED',JSON.stringify({event:'normal_worker_tick'})])
+  await assert.rejects(collectDormantProof(fakePort({logs:[...base,tick(0,{timestamp:NOW-5_000,messages:[JSON.stringify({event:DORMANT_EVENT}),hidden]})]}).port,FACTS,fixed),fail('ACTIVATED_TICK_OBSERVED'));
 });
 
 test('a stale, wrong or not-current deployment is not proof',async()=>{
@@ -80,6 +88,8 @@ test('a stale, wrong or not-current deployment is not proof',async()=>{
  await assert.rejects(collectDormantProof(fakePort({dep:{readyState:'ERROR'}}).port,FACTS,fixed),fail('DEPLOYMENT_NOT_READY_PRODUCTION'));
  await assert.rejects(collectDormantProof(fakePort({dep:{crons:[]}}).port,FACTS,fixed),fail('CRON_NOT_DEFINED'));
  await assert.rejects(collectDormantProof(fakePort({dep:{crons:[{path:CRON_PATH,schedule:'0 * * * *'}]}}).port,FACTS,fixed),fail('CRON_NOT_DEFINED'));
+ await assert.rejects(collectDormantProof(fakePort({dep:{crons:[{path:'/api/other',schedule:'* * * * *'}]}}).port,FACTS,fixed),fail('CRON_NOT_DEFINED'));
+ await assert.rejects(collectDormantProof(fakePort({dep:{createdAt:NaN}}).port,FACTS,fixed),fail('DEPLOYMENT_FACTS_INCOMPLETE'));
  await assert.rejects(collectDormantProof(fakePort().port,{releaseSha:SHA,deploymentId:'not-a-deployment'},fixed),fail('FACTS_INVALID'));
  await assert.rejects(collectDormantProof(fakePort().port,{releaseSha:'abc',deploymentId:DEP},fixed),fail('FACTS_INVALID'));
 });
@@ -99,7 +109,7 @@ test('CRON_SECRET must be bound first and alone: no worker password sink, no cut
 });
 
 test('protection must still read All Deployments; it is never relaxed to obtain a proof',async()=>{
- for(const protectionType of [null,'preview','prod_deployment_urls_and_all_previews'])
+ for(const protectionType of [null,'preview','prod_deployment_urls_and_all_previews','all_except_custom_domains'])
   await assert.rejects(collectDormantProof(fakePort({project:{protectionType}}).port,FACTS,fixed),fail('PROTECTION_NOT_ALL'));
  // the cron could not pass protection => no requests => no proof (and nothing here would ever change the setting)
  await assert.rejects(collectDormantProof(fakePort({logs:[]}).port,FACTS,fixed),fail('NO_REQUESTS_OBSERVED'));
@@ -195,32 +205,164 @@ test('provisionWorkerRoles refuses before any mutation unless the strict verifie
  }finally{rmSync(root,{recursive:true,force:true});}
 });
 
-test('the production port is read-only: fixed argv, bounded output, never a write verb or a token',async()=>{
+// ---------------------------------------------------------------- the production adapter, driven through a fake `vercel` binary printing the documented / observed shapes
+// REST: GET /v13/deployments/{id} (owner view), GET /v9/projects/{id}, GET /v10/projects/{id}/env; CLI: `vercel logs --json` rows (JSON Lines). Nothing here talks to Vercel.
+type Json=Record<string,unknown>;
+const depBody=():Json=>({id:DEP,projectId:VERCEL_TARGET.project,target:'production',readyState:'READY',status:'READY',createdAt:NOW-3_600_000,meta:{gitCommitSha:SHA},crons:[{path:CRON_PATH,schedule:'* * * * *'}]});
+const projBody=():Json=>({id:VERCEL_TARGET.project,targets:{production:{id:DEP}},ssoProtection:{deploymentType:'all'}});
+const envBody=():Json=>({envs:[{key:'CRON_SECRET',type:'sensitive',target:['production']},{key:'PLAIN_OTHER',type:'plain',target:['production'],value:'LEAKME'}],pagination:{count:2,next:null,prev:null}});
+const row=(minutesAgo:number,over:Json={},seq=0)=>JSON.stringify({id:`log_synthetic_${minutesAgo}_${seq}`,timestamp:NOW-minutesAgo*60_000-20_000+seq,deploymentId:DEP,projectId:VERCEL_TARGET.project,level:'info',message:'',source:'serverless',
+ domain:'zao.example.invalid',requestMethod:'GET',requestPath:CRON_PATH,responseStatusCode:200,environment:'production',branch:'main',cache:'MISS',logs:[{message:JSON.stringify({event:DORMANT_EVENT})}],...over});
+const rows=(over:Json={})=>[4,3,2,1,0].map(m=>row(m,over)).join('\n')+'\n';
+const edit=(base:Json,fn:(copy:Json)=>void)=>{const copy=JSON.parse(JSON.stringify(base)) as Json;fn(copy);return copy;};
+type CliOver={dep?:unknown;proj?:unknown;env?:unknown;logs?:string;exit?:Partial<Record<'dep'|'proj'|'env'|'logs',number>>};
+function cli(over:CliOver={}){
  const dir=mkdtempSync(join(tmpdir(),'zao-dormant-cli-'));
+ const put=(name:string,value:unknown)=>{writeFileSync(join(dir,name),typeof value==='string'?value:JSON.stringify(value)+'\n');return `'${join(dir,name)}'`;};
+ const f={dep:put('dep.json',over.dep??depBody()),proj:put('proj.json',over.proj??projBody()),env:put('env.json',over.env??envBody()),logs:put('logs.txt',over.logs??rows())};
+ const code=(k:'dep'|'proj'|'env'|'logs')=>over.exit?.[k]??0;
+ const bin=join(dir,'vercel'),argv=join(dir,'argv');
+ writeFileSync(bin,`#!/bin/sh\nprintf '%s\\n' "--" "$@" >> '${argv}'\ncase "$2" in\n/v13/deployments/*) cat ${f.dep}; exit ${code('dep')};;\n/v9/projects/*) cat ${f.proj}; exit ${code('proj')};;\n/v10/projects/*/env) cat ${f.env}; exit ${code('env')};;\n*) cat ${f.logs}; exit ${code('logs')};;\nesac\n`);
+ chmodSync(bin,0o755);
+ return {dir,argv,port:vercelProofCliPort(bin,{PATH:process.env.PATH??''} as unknown as NodeJS.ProcessEnv),done:()=>rmSync(dir,{recursive:true,force:true})};
+}
+async function viaCli(over:CliOver){const c=cli(over);try{return await collectDormantProof(c.port,FACTS,fixed);}finally{c.done();}}
+async function refusedViaCli(over:CliOver,code:string,name:string){const c=cli(over);try{await assert.rejects(collectDormantProof(c.port,FACTS,fixed),fail(code),name);}finally{c.done();}}
+
+test('the production port is read-only: fixed argv, bounded output, never a write verb or a token',async()=>{
+ const c=cli({logs:'Fetching logs...\n'+rows()});
  try{
-  const bin=join(dir,'vercel'),argv=join(dir,'argv');
-  const out=(name:string,value:unknown)=>{writeFileSync(join(dir,name),typeof value==='string'?value:JSON.stringify(value)+'\n');return `'${join(dir,name)}'`;};
-  const dep=out('dep.json',{id:DEP,projectId:VERCEL_TARGET.project,target:'production',readyState:'READY',createdAt:1000,meta:{gitCommitSha:SHA},crons:[{path:CRON_PATH,schedule:'* * * * *'}]});
-  const proj=out('proj.json',{id:VERCEL_TARGET.project,targets:{production:{id:DEP}},ssoProtection:{deploymentType:'all'}});
-  const env=out('env.json',{envs:[{key:'CRON_SECRET',type:'sensitive',target:['production'],value:'LEAKME'}]});
-  const logFile=out('logs.txt','Fetching logs...\n'+JSON.stringify({timestamp:5,deploymentId:DEP,requestMethod:'GET',requestPath:CRON_PATH,responseStatusCode:200,message:'',logs:[{message:JSON.stringify({event:DORMANT_EVENT})}]})+'\n');
-  writeFileSync(bin,`#!/bin/sh\nprintf '%s\\n' "--" "$@" >> '${argv}'\ncase "$2" in\n/v13/deployments/*) cat ${dep};;\n/v9/projects/*) cat ${proj};;\n/v10/projects/*/env) cat ${env};;\n*) cat ${logFile};;\nesac\n`);
-  chmodSync(bin,0o755);
-  const port=vercelProofCliPort(bin,{PATH:process.env.PATH??''} as unknown as NodeJS.ProcessEnv);
-  const d=await port.deployment(DEP);assert.deepEqual([d.id,d.target,d.readyState,d.gitCommitSha,d.gitDirty,d.crons],[DEP,'production','READY',SHA,false,[{path:CRON_PATH,schedule:'* * * * *'}]]);
-  const p=await port.project();assert.deepEqual(p,{id:VERCEL_TARGET.project,productionDeploymentId:DEP,protectionType:'all'});
-  const rows=await port.envRows();assert.deepEqual(rows,[{key:'CRON_SECRET',type:'sensitive',target:['production']}]);assert.ok(!JSON.stringify(rows).includes('LEAKME'));
-  const logs=await port.requestLogs(DEP,15);assert.equal(logs.length,1);assert.deepEqual(logs[0]!.messages,[JSON.stringify({event:DORMANT_EVENT})]);
-  const calls=readFileSync(argv,'utf8').split('--\n').filter(Boolean).map(c=>c.trimEnd().split('\n'));
+  const d=await c.port.deployment(DEP);assert.deepEqual([d.id,d.projectId,d.target,d.readyState,d.createdAt,d.gitCommitSha,d.gitDirty,d.crons],[DEP,VERCEL_TARGET.project,'production','READY',NOW-3_600_000,SHA,false,[{path:CRON_PATH,schedule:'* * * * *'}]]);
+  const p=await c.port.project();assert.deepEqual(p,{id:VERCEL_TARGET.project,productionDeploymentId:DEP,protectionType:'all'});
+  const envs=await c.port.envRows();assert.deepEqual(envs,[{key:'CRON_SECRET',type:'sensitive',target:['production']},{key:'PLAIN_OTHER',type:'plain',target:['production']}]);assert.ok(!JSON.stringify(envs).includes('LEAKME'));
+  const logs=await c.port.requestLogs(DEP,15);assert.equal(logs.length,5);assert.deepEqual(logs[0]!.messages,[JSON.stringify({event:DORMANT_EVENT})]);
+  assert.deepEqual([logs[0]!.projectId,logs[0]!.environment,logs[0]!.requestMethod,logs[0]!.requestPath,logs[0]!.responseStatusCode],[VERCEL_TARGET.project,'production','GET',CRON_PATH,200]);
+  const calls=readFileSync(c.argv,'utf8').split('--\n').filter(Boolean).map(x=>x.trimEnd().split('\n'));
   assert.equal(calls.length,4);
-  for(const c of calls){
-   if(c[0]==='api'){
+  for(const call of calls){
+   if(call[0]==='api'){
     // only GET reads of fixed paths; no method, field, input or token flag
-    assert.match(c[1]!,/^\/(v13\/deployments\/dpl_[A-Za-z0-9]+|v9\/projects\/prj_[A-Za-z0-9]+|v10\/projects\/prj_[A-Za-z0-9]+\/env)$/);
-    assert.deepEqual(c.slice(2),['--raw','--scope',VERCEL_TARGET.scope]);
+    assert.match(call[1]!,/^\/(v13\/deployments\/dpl_[A-Za-z0-9]+|v9\/projects\/prj_[A-Za-z0-9]+|v10\/projects\/prj_[A-Za-z0-9]+\/env)$/);
+    assert.deepEqual(call.slice(2),['--raw','--scope',VERCEL_TARGET.scope]);
    }else{
-    assert.deepEqual(c,['logs','--json','--project',VERCEL_TARGET.project,'--scope',VERCEL_TARGET.scope,'--deployment',DEP,'--since','15m','--limit','1000']);
+    assert.deepEqual(call,['logs','--json','--project',VERCEL_TARGET.project,'--scope',VERCEL_TARGET.scope,'--deployment',DEP,'--since','15m','--limit','1000']);
    }
   }
- }finally{rmSync(dir,{recursive:true,force:true});}
+ }finally{c.done();}
+});
+
+test('the documented and observed Vercel shapes, read through the real adapter, yield a proof (and a pagination block with next=null or no hidden envs is complete)',async()=>{
+ const proof=await viaCli({});
+ assert.equal(proof.observations.count,5);assert.equal(proof.releaseSha,SHA);assert.equal(proof.deploymentId,DEP);
+ await viaCli({env:edit(envBody(),e=>{delete e.pagination;e.hiddenProductionEnvCount=0;})});
+ // rows without the optional project / environment fields are accepted; rows of other paths do not matter
+ await viaCli({logs:[...[4,3,2,1,0].map(m=>row(m,{projectId:undefined,environment:undefined})),row(0,{requestPath:'/api/session',responseStatusCode:401,logs:[]},7)].join('\n')+'\n'});
+});
+
+test('unparseable, non-JSON or failing Vercel output is never a proof',async()=>{
+ const garbage=['not json at all','<html>502 Bad Gateway</html>','[]','null','"string"','{"envs":'];
+ for(const g of garbage){
+  await refusedViaCli({dep:g},'VERCEL_RESPONSE_UNPARSEABLE','deployment '+g);
+  await refusedViaCli({proj:g},'VERCEL_RESPONSE_UNPARSEABLE','project '+g);
+  await refusedViaCli({env:g},'VERCEL_RESPONSE_UNPARSEABLE','env '+g);
+ }
+ // an error body printed with exit status 0 carries none of the required fields
+ await refusedViaCli({dep:{error:{code:'forbidden',message:'Not authorized'}}},'DEPLOYMENT_MISMATCH','deployment error body');
+ await refusedViaCli({proj:{error:{code:'forbidden',message:'Not authorized'}}},'NOT_CURRENT_DEPLOYMENT','project error body');
+ await refusedViaCli({env:{error:{code:'forbidden',message:'Not authorized'}}},'VERCEL_RESPONSE_UNPARSEABLE','env error body');
+ // non-zero exit of any call, even when stdout looks fine
+ for(const k of ['dep','proj','env','logs'] as const)await refusedViaCli({exit:{[k]:1}},'VERCEL_CALL_FAILED','exit '+k);
+ await assert.rejects(collectDormantProof(vercelProofCliPort('/nonexistent/vercel',{PATH:process.env.PATH??''} as unknown as NodeJS.ProcessEnv),FACTS,fixed),fail('VERCEL_CALL_FAILED'));
+ // the log: non-JSON output, a corrupt row among good ones, a row that cannot be attributed, an unknown log item shape
+ await refusedViaCli({logs:'Error: something went wrong\n'},'VERCEL_RESPONSE_UNPARSEABLE','logs text');
+ await refusedViaCli({logs:rows()+'{"timestamp":123,"deploymentId":\n'},'VERCEL_RESPONSE_UNPARSEABLE','logs corrupt row');
+ await refusedViaCli({logs:rows()+'{"timestamp":123,"deploymentId":"dpl_x","projectId":"prj_x"\n'},'VERCEL_RESPONSE_UNPARSEABLE','logs truncated last row');
+ await refusedViaCli({logs:rows()+JSON.stringify({timestamp:NOW,deploymentId:DEP,requestMethod:'GET',responseStatusCode:200,message:''})+'\n'},'LOG_ROW_INVALID','row without requestPath');
+ await refusedViaCli({logs:rows()+row(0,{logs:'x'},9)+'\n'},'LOG_ROW_INVALID','logs not an array');
+ for(const item of [5,[],{text:'x'},{message:['x']},null])await refusedViaCli({logs:rows()+row(0,{logs:[item]},9)+'\n'},'LOG_ROW_INVALID','log item '+JSON.stringify(item));
+ await refusedViaCli({logs:''},'NO_REQUESTS_OBSERVED','empty log');
+});
+
+test('a reduced, partial or foreign deployment, project or env readback fails closed',async()=>{
+ // deployment: missing or wrong crons / project / readyState / target / createdAt / source
+ await refusedViaCli({dep:edit(depBody(),d=>{delete d.crons;})},'CRON_NOT_DEFINED','crons missing');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.crons=null;})},'CRON_NOT_DEFINED','crons null');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.crons=[{path:CRON_PATH}];})},'CRON_NOT_DEFINED','cron without schedule');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.projectId='prj_otherProject';})},'DEPLOYMENT_MISMATCH','deployment of another project');
+ await refusedViaCli({dep:edit(depBody(),d=>{delete d.projectId;delete d.crons;delete d.createdAt;delete d.meta;})},'DEPLOYMENT_MISMATCH','reduced deployment view');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.id='dpl_SomethingElse12';})},'DEPLOYMENT_MISMATCH','another deployment id');
+ await refusedViaCli({dep:edit(depBody(),d=>{delete d.readyState;})},'DEPLOYMENT_NOT_READY_PRODUCTION','readyState missing (status READY does not stand in)');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.readyState='BUILDING';})},'DEPLOYMENT_NOT_READY_PRODUCTION','readyState BUILDING');
+ for(const target of [undefined,null,'staging','preview','Production'])await refusedViaCli({dep:edit(depBody(),d=>{if(target===undefined)delete d.target;else d.target=target;})},'DEPLOYMENT_NOT_READY_PRODUCTION','target '+String(target));
+ for(const createdAt of [undefined,null,'1540257589405'])await refusedViaCli({dep:edit(depBody(),d=>{if(createdAt===undefined)delete d.createdAt;else d.createdAt=createdAt;})},'DEPLOYMENT_FACTS_INCOMPLETE','createdAt '+String(createdAt));
+ await refusedViaCli({dep:edit(depBody(),d=>{delete d.meta;})},'WRONG_SOURCE','meta missing');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.meta={};})},'WRONG_SOURCE','no gitCommitSha');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.meta={gitCommitSha:'b'.repeat(40)};})},'WRONG_SOURCE','another commit');
+ await refusedViaCli({dep:edit(depBody(),d=>{d.meta={gitCommitSha:SHA,gitDirty:'1'};})},'WRONG_SOURCE','dirty checkout');
+ // project: wrong id, no current production deployment, protection field missing or weaker
+ await refusedViaCli({proj:edit(projBody(),p=>{p.id='prj_otherProject';})},'NOT_CURRENT_DEPLOYMENT','project id');
+ await refusedViaCli({proj:edit(projBody(),p=>{delete p.id;})},'NOT_CURRENT_DEPLOYMENT','project id missing');
+ await refusedViaCli({proj:edit(projBody(),p=>{delete p.targets;})},'NOT_CURRENT_DEPLOYMENT','targets missing');
+ await refusedViaCli({proj:edit(projBody(),p=>{p.targets={production:null};})},'NOT_CURRENT_DEPLOYMENT','production target null');
+ await refusedViaCli({proj:edit(projBody(),p=>{p.targets={production:{id:'dpl_NewerDeployment9'}};})},'NOT_CURRENT_DEPLOYMENT','newer production deployment');
+ await refusedViaCli({proj:edit(projBody(),p=>{delete p.ssoProtection;})},'PROTECTION_NOT_ALL','ssoProtection missing');
+ await refusedViaCli({proj:edit(projBody(),p=>{p.ssoProtection=null;})},'PROTECTION_NOT_ALL','ssoProtection null (protection disabled)');
+ await refusedViaCli({proj:edit(projBody(),p=>{p.ssoProtection={};})},'PROTECTION_NOT_ALL','deploymentType missing');
+ for(const deploymentType of ['preview','prod_deployment_urls_and_all_previews','all_except_custom_domains',7])
+  await refusedViaCli({proj:edit(projBody(),p=>{p.ssoProtection={deploymentType};})},'PROTECTION_NOT_ALL','deploymentType '+String(deploymentType));
+ // env: duplicate / absent CRON_SECRET, an activation name, and a list that is not the whole list
+ const cron={key:'CRON_SECRET',type:'sensitive',target:['production']};
+ await refusedViaCli({env:{envs:[cron,cron]}},'CRON_SECRET_NOT_FIRST_AND_SENSITIVE','duplicate CRON_SECRET');
+ await refusedViaCli({env:{envs:[cron,{...cron,target:['preview']}]}},'CRON_SECRET_NOT_FIRST_AND_SENSITIVE','CRON_SECRET also bound for preview');
+ await refusedViaCli({env:{envs:[]}},'CRON_SECRET_NOT_FIRST_AND_SENSITIVE','no CRON_SECRET');
+ await refusedViaCli({env:{envs:[{...cron,type:'encrypted'}]}},'CRON_SECRET_NOT_FIRST_AND_SENSITIVE','CRON_SECRET not sensitive');
+ await refusedViaCli({env:{envs:[{...cron,target:['production','development']}]}},'CRON_SECRET_NOT_FIRST_AND_SENSITIVE','CRON_SECRET also bound for development');
+ await viaCli({env:{envs:[{...cron,target:'production'}]}}); // the documented single-string target reads as exactly production
+ await refusedViaCli({env:{envs:[cron,{key:'PRODUCTION_WORKER_TICK_ACTIVATION',type:'sensitive',target:['production']}]}},'ACTIVATION_NAME_ALREADY_BOUND','activation token bound');
+ await refusedViaCli({env:{envs:[cron,{key:WORKER_ROLES[1]!.sink,type:'sensitive',target:['production']}]}},'ACTIVATION_NAME_ALREADY_BOUND','worker sink bound');
+ await refusedViaCli({env:{envs:[cron],pagination:{count:1,next:1759600000000,prev:null}}},'ENV_READBACK_INCOMPLETE','another env page exists');
+ await refusedViaCli({env:{envs:[cron],hiddenProductionEnvCount:3}},'ENV_READBACK_INCOMPLETE','production variables hidden from the caller');
+ await refusedViaCli({env:{envs:[cron],hiddenProductionEnvCount:'0'}},'ENV_READBACK_INCOMPLETE','hidden count of another type');
+ await refusedViaCli({env:{key:'CRON_SECRET',type:'sensitive',target:['production'],value:'x'}},'VERCEL_RESPONSE_UNPARSEABLE','a single bare variable instead of a list');
+ await refusedViaCli({env:{envs:'x'}},'VERCEL_RESPONSE_UNPARSEABLE','envs not an array');
+ await refusedViaCli({env:{envs:[cron,{type:'plain',target:['production']}]}},'VERCEL_RESPONSE_UNPARSEABLE','a row without a key could hide an activation name');
+ await refusedViaCli({env:{envs:[cron,null]}},'VERCEL_RESPONSE_UNPARSEABLE','a null row');
+});
+
+test('the request log is read whole or not at all: limit reached, rows of another project or environment, missing row fields',async()=>{
+ // exactly the limit means the log may have been cut: refused; one below is complete
+ const spread=(n:number)=>Array.from({length:n},(_,i)=>row(4-(i%5),{},i)).join('\n')+'\n';
+ await refusedViaCli({logs:spread(1000)},'LOG_TRUNCATED','1000 rows');
+ await refusedViaCli({logs:spread(1200)},'LOG_TRUNCATED','1200 rows');
+ assert.equal((await viaCli({logs:spread(999)})).observations.count,999);
+ // rows of other paths count towards the limit too (the whole deployment log was cut)
+ await refusedViaCli({logs:rows()+Array.from({length:995},(_,i)=>row(0,{requestPath:'/api/session'},i)).join('\n')+'\n'},'LOG_TRUNCATED','other paths fill the limit');
+ await refusedViaCli({logs:rows()+row(0,{projectId:'prj_otherProject'},9)+'\n'},'UNEXPECTED_REQUEST','row of another project');
+ await refusedViaCli({logs:rows()+row(0,{environment:'preview'},9)+'\n'},'UNEXPECTED_REQUEST','row of preview');
+ for(const field of ['deploymentId','requestMethod','responseStatusCode','timestamp'])
+  await refusedViaCli({logs:rows()+JSON.stringify(edit(JSON.parse(row(0,{},9)) as Json,r=>{delete r[field];}))+'\n'},'UNEXPECTED_REQUEST','row without '+field);
+ await refusedViaCli({logs:rows()+row(0,{logs:[]},9)+'\n'},'REQUEST_WITHOUT_DORMANT_EVENT','row without any log line');
+});
+
+test('a record whose first observation is older than the log window reaches is not in the log (the window is bounded)',async()=>{
+ const proof=await collectDormantProof(fakePort().port,FACTS,fixed);
+ const windows:number[]=[];
+ // a port that applies --since the way the CLI does: rows older than the window are simply not returned
+ const windowed=(logs:RequestLog[],now:number):DormantProofPort=>({...fakePort({logs:[]}).port,async requestLogs(_id,since){windows.push(since);return logs.filter(l=>l.timestamp>=now-since*60_000);}});
+ const first=Date.parse(proof.observations.firstAt);
+ // the real record: the window reaches back to the first observation (plus slack), so it verifies
+ assert.deepEqual(await verifyDormantProof(JSON.parse(JSON.stringify(proof)),windowed(cleanTicks(),NOW),FACTS,fixed),proof);
+ assert.equal(windows[0],Math.ceil((NOW-first)/60_000)+2);
+ // a well-formed record that claims an earlier first observation (and one more request) than the window can return
+ const older=JSON.parse(JSON.stringify(proof)) as {observations:{firstAt:string;count:number}};
+ older.observations.firstAt=new Date(NOW-9*60_000).toISOString();older.observations.count=6;
+ await assert.rejects(verifyDormantProof(older,windowed(cleanTicks(),NOW),FACTS,fixed),fail('RECORD_NOT_IN_LOG'));
+ // beyond the 60 minute cap the window stops growing: a record claiming a first observation 59.5 minutes back (just after the deployment was created) asks for 62 minutes of log
+ windows.length=0;
+ const ancient=JSON.parse(JSON.stringify(proof)) as {observations:{firstAt:string;count:number}};
+ ancient.observations.firstAt=new Date(NOW-59*60_000-30_000).toISOString();ancient.observations.count=6;
+ await assert.rejects(verifyDormantProof(ancient,windowed(cleanTicks(),NOW),FACTS,fixed),fail('RECORD_NOT_IN_LOG'));
+ assert.equal(windows[0],60);
+ // the log no longer reaches the record's last observation (rows gone from the window): refused
+ await assert.rejects(verifyDormantProof(proof,windowed(cleanTicks().slice(0,3),NOW),FACTS,fixed),fail('RECORD_NOT_IN_LOG'));
 });

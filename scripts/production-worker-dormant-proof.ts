@@ -6,10 +6,15 @@
 //   - the exact dark deployment: READY, production target, the CURRENT production deployment of the project, with the worker-tick cron defined
 //   - CRON_SECRET bound first and alone: sensitive, production only; no worker password sink, no cutoff, no activation token
 //   - real scheduler traffic: the route authorises the Bearer secret BEFORE it logs anything, and CRON_SECRET is generated in memory and never shown to a person, so a
-//     dormant line can only come from the platform scheduler. Beyond that, every request to the route in the window must be a GET answered 200 by this deployment with the
-//     dormant event, at least three distinct minutes, one-minute cadence (a burst of manual calls is refused), the latest observation fresh, and no activated tick event
+//     dormant line can only come from a caller that holds the secret, i.e. Vercel's own cron dispatcher. The event name alone never decides, and neither does a user agent: Vercel
+//     documents `vercel-cron/1.0`, the `x-vercel-cron-schedule` header and a `cron` request type, but none of them is a field of the `vercel logs --json` rows, so nothing here
+//     reads or trusts them. Instead every request to the route in the window must be a GET answered 200 by this deployment with the dormant event (project and environment too,
+//     wherever the row carries them), at least three distinct minutes at one-minute cadence (delivery is documented as best effort: a minute may arrive twice or not at all, so
+//     a duplicate or one missed minute is tolerated, a burst or a wider gap is refused), the latest observation fresh, and no activated tick event. A platform-side on-demand run
+//     (dashboard "Run", `vercel crons run`) is not distinguishable from the schedule in this log; the cadence rule only makes faking it by hand impractical.
 //   - protection unchanged: the project's deployment protection still reads `all`
-// Anything that cannot be read back or does not match is NOT a pass; protection is never touched to obtain a proof.
+// Anything that cannot be read back, is incomplete (a reduced deployment view, a missing field, a paginated or partly hidden env list, an unparseable or truncated log) or does not
+// match is NOT a pass; protection is never touched to obtain a proof.
 import {spawn} from 'node:child_process';
 import {closeSync,existsSync,fchmodSync,mkdirSync,openSync,readFileSync,renameSync,rmSync,writeSync} from 'node:fs';
 import {join} from 'node:path';
@@ -31,7 +36,8 @@ const DEPLOYMENT_ID=/^dpl_[A-Za-z0-9]{8,64}$/;
 
 export type DeploymentFacts={id:string;projectId:string;target:string;readyState:string;createdAt:number;gitCommitSha:string|null;gitDirty:boolean;crons:Array<{path:string;schedule:string}>};
 export type ProjectFacts={id:string;productionDeploymentId:string|null;protectionType:string|null};
-export type RequestLog={timestamp:number;deploymentId:string;requestMethod:string;requestPath:string;responseStatusCode:number;messages:string[]};
+/** One `vercel logs --json` row. `projectId` / `environment` are observed row fields: null when the row does not carry them, enforced when it does. */
+export type RequestLog={timestamp:number;deploymentId:string;projectId:string|null;environment:string|null;requestMethod:string;requestPath:string;responseStatusCode:number;messages:string[]};
 export interface DormantProofPort{
  deployment(id:string):Promise<DeploymentFacts>;
  project():Promise<ProjectFacts>;
@@ -48,6 +54,7 @@ async function liveState(port:DormantProofPort,facts:ProofFacts){
  if(!/^[a-f0-9]{40}$/.test(facts.releaseSha)||!DEPLOYMENT_ID.test(facts.deploymentId))throw fail('FACTS_INVALID');
  const dep=await port.deployment(facts.deploymentId);
  if(dep.id!==facts.deploymentId||dep.projectId!==VERCEL_TARGET.project)throw fail('DEPLOYMENT_MISMATCH');
+ if(!Number.isFinite(dep.createdAt))throw fail('DEPLOYMENT_FACTS_INCOMPLETE');
  if(dep.target!=='production'||dep.readyState!=='READY')throw fail('DEPLOYMENT_NOT_READY_PRODUCTION');
  if(dep.gitCommitSha!==facts.releaseSha||dep.gitDirty)throw fail('WRONG_SOURCE');
  if(!dep.crons.some(c=>c.path===CRON_PATH&&c.schedule===CRON_SCHEDULE))throw fail('CRON_NOT_DEFINED');
@@ -61,6 +68,8 @@ async function liveState(port:DormantProofPort,facts:ProofFacts){
  return dep;
 }
 const eventOf=(message:string)=>{try{const v=JSON.parse(message) as {event?:unknown};return typeof v?.event==='string'?v.event:null;}catch{return null;}};
+// Any mention of the activated tick event, parseable or not (a truncated or reformatted line must not hide it); `normal_worker_tick_dormant` is the only longer name that starts with it.
+const ACTIVATED_TICK=/normal_worker_tick(?!_dormant)/;
 
 /** Reads the dark deployment's request log for the route and applies every rule to ALL of it; returns only what the rules proved. */
 async function observe(port:DormantProofPort,facts:ProofFacts,windowMinutes:number,now:Date){
@@ -68,11 +77,11 @@ async function observe(port:DormantProofPort,facts:ProofFacts,windowMinutes:numb
  const logs=(await port.requestLogs(facts.deploymentId,windowMinutes)).filter(l=>l.requestPath===CRON_PATH);
  if(!logs.length)throw fail('NO_REQUESTS_OBSERVED');
  // Every request to the route must be a GET answered 200 by this deployment with the dormant event. A 401 (a call without the secret), another status, another method or a
- // 200 without the event means something other than the dormant scheduler path was reached; that is not proof.
- for(const l of logs)if(l.requestMethod!=='GET'||l.responseStatusCode!==200||l.deploymentId!==facts.deploymentId||!Number.isFinite(l.timestamp))throw fail('UNEXPECTED_REQUEST');
- const names=logs.map(l=>l.messages.map(eventOf));
- if(names.some(n=>n.includes('normal_worker_tick')))throw fail('ACTIVATED_TICK_OBSERVED');
- if(names.some(n=>!n.includes(DORMANT_EVENT)))throw fail('REQUEST_WITHOUT_DORMANT_EVENT');
+ // 200 without the event means something other than the dormant scheduler path was reached; that is not proof. Project and environment must match wherever the row carries them.
+ for(const l of logs)if(l.requestMethod!=='GET'||l.responseStatusCode!==200||l.deploymentId!==facts.deploymentId||!Number.isFinite(l.timestamp)
+  ||(l.projectId!==null&&l.projectId!==VERCEL_TARGET.project)||(l.environment!==null&&l.environment!==VERCEL_TARGET.environment))throw fail('UNEXPECTED_REQUEST');
+ if(logs.some(l=>l.messages.some(m=>ACTIVATED_TICK.test(m))))throw fail('ACTIVATED_TICK_OBSERVED');
+ if(logs.some(l=>!l.messages.some(m=>eventOf(m)===DORMANT_EVENT)))throw fail('REQUEST_WITHOUT_DORMANT_EVENT');
  const times=logs.map(l=>l.timestamp).sort((a,b)=>a-b);
  // The scheduler fires once a minute (it may deliver a minute twice or skip one): distinct minutes, no gap wider than one missed tick.
  const minutes=[...new Set(times.map(t=>Math.floor(t/60_000)))];
@@ -115,40 +124,64 @@ export async function verifyDormantProof(raw:unknown,port:DormantProofPort,facts
 }
 
 // ---------------------------------------------------------------- production port (Vercel CLI, read-only; stdout captured in memory)
+// Shapes follow the Vercel REST reference (GET /v13/deployments/{id}, /v9/projects/{id}, /v10/projects/{id}/env) and the observed `vercel logs --json` rows. A field that is
+// missing or of another type becomes a value no rule accepts (never a default that could pass), so a reduced deployment view, an error body or a partial answer fails closed.
+const text=(v:unknown)=>typeof v==='string'?v:'';
+const record=(v:unknown)=>(v&&typeof v==='object'&&!Array.isArray(v)?v:{}) as Record<string,unknown>;
 export function vercelProofCliPort(bin:string=VERCEL_BIN,env:NodeJS.ProcessEnv=process.env):DormantProofPort{
  const run=(args:string[])=>new Promise<string>((resolve,reject)=>{
   const child=spawn(bin,args,{env,stdio:['ignore','pipe','pipe'],windowsHide:true});let out='';
   child.stdout.on('data',d=>{if(out.length<16<<20)out+=String(d);});child.stderr.on('data',()=>{});
   child.on('error',()=>reject(fail('VERCEL_CALL_FAILED')));child.on('close',code=>code===0?resolve(out):reject(fail('VERCEL_CALL_FAILED')));
  });
- const json=async(args:string[])=>{try{return JSON.parse(await run(args)) as Record<string,unknown>;}catch(e){throw (e as Error).message.startsWith('WORKER_DORMANT_PROOF_')?e:fail('VERCEL_RESPONSE_UNPARSEABLE');}};
+ const json=async(args:string[])=>{
+  let v:unknown;try{v=JSON.parse(await run(args));}catch(e){throw (e as Error).message.startsWith('WORKER_DORMANT_PROOF_')?e:fail('VERCEL_RESPONSE_UNPARSEABLE');}
+  if(!v||typeof v!=='object'||Array.isArray(v))throw fail('VERCEL_RESPONSE_UNPARSEABLE');
+  return v as Record<string,unknown>;
+ };
  const scope=['--scope',VERCEL_TARGET.scope];
  return {
   async deployment(id){
    const d=await json(['api',`/v13/deployments/${id}`,'--raw',...scope]);
-   const meta=(d.meta&&typeof d.meta==='object'?d.meta:{}) as Record<string,unknown>;
-   const crons=Array.isArray(d.crons)?(d.crons as Array<Record<string,unknown>>).map(c=>({path:String(c.path),schedule:String(c.schedule)})):[];
-   return {id:String(d.id),projectId:String(d.projectId),target:String(d.target),readyState:String(d.readyState??d.status),createdAt:Number(d.createdAt),
+   const meta=record(d.meta);
+   const crons=Array.isArray(d.crons)?(d.crons as unknown[]).map(c=>({path:text(record(c).path),schedule:text(record(c).schedule)})):[];
+   return {id:text(d.id),projectId:text(d.projectId),target:text(d.target),readyState:text(d.readyState),createdAt:typeof d.createdAt==='number'?d.createdAt:NaN,
     gitCommitSha:typeof meta.gitCommitSha==='string'?meta.gitCommitSha:null,gitDirty:meta.gitDirty!==undefined&&meta.gitDirty!=='0'&&meta.gitDirty!==false,crons};
   },
   async project(){
    const p=await json(['api',`/v9/projects/${VERCEL_TARGET.project}`,'--raw',...scope]);
-   const targets=(p.targets&&typeof p.targets==='object'?p.targets:{}) as Record<string,{id?:unknown}|null>;
-   const sso=p.ssoProtection&&typeof p.ssoProtection==='object'?(p.ssoProtection as {deploymentType?:unknown}).deploymentType:null;
-   return {id:String(p.id),productionDeploymentId:typeof targets.production?.id==='string'?targets.production.id:null,protectionType:typeof sso==='string'?sso:null};
+   const production=record(record(p.targets).production).id,sso=record(p.ssoProtection).deploymentType;
+   return {id:text(p.id),productionDeploymentId:typeof production==='string'?production:null,protectionType:typeof sso==='string'?sso:null};
   },
-  envRows:()=>vercelCliPort(bin,env).envRows(),
+  // The env list backs a negative claim (no worker sink, cutoff or activation name): a paginated, partly hidden or malformed list is refused by the shared reader.
+  envRows:async()=>{
+   try{return await vercelCliPort(bin,env).envRows();}
+   catch(e){const m=String((e as Error)?.message??'');throw fail(/_INCOMPLETE$/.test(m)?'ENV_READBACK_INCOMPLETE':/_UNPARSEABLE$/.test(m)?'VERCEL_RESPONSE_UNPARSEABLE':'VERCEL_CALL_FAILED');}
+  },
   async requestLogs(deploymentId,sinceMinutes){
-   const text=await run(['logs','--json','--project',VERCEL_TARGET.project,...scope,'--deployment',deploymentId,'--since',`${sinceMinutes}m`,'--limit',String(LOG_LIMIT)]);
+   const raw=await run(['logs','--json','--project',VERCEL_TARGET.project,...scope,'--deployment',deploymentId,'--since',`${sinceMinutes}m`,'--limit',String(LOG_LIMIT)]);
    const out:RequestLog[]=[];
-   for(const line of text.split('\n')){
+   // JSON Lines. A banner line that is not an object is skipped, but a line that opens an object and does not parse, a row that cannot be attributed to a path and a log item of an
+   // unknown shape are refused: a request that cannot be read must not drop out of "every request to the route".
+   for(const line of raw.split('\n')){
     if(!line.startsWith('{'))continue;
-    let e:Record<string,unknown>;try{e=JSON.parse(line);}catch{continue;}
+    let e:Record<string,unknown>;try{e=JSON.parse(line) as Record<string,unknown>;}catch{throw fail('VERCEL_RESPONSE_UNPARSEABLE');}
+    if(typeof e.requestPath!=='string')throw fail('LOG_ROW_INVALID');
     const messages:string[]=[];
     if(typeof e.message==='string'&&e.message)messages.push(e.message);
-    if(Array.isArray(e.logs))for(const l of e.logs)if(typeof l==='string')messages.push(l);else if(l&&typeof (l as {message?:unknown}).message==='string')messages.push((l as {message:string}).message);
-    out.push({timestamp:Number(e.timestamp),deploymentId:String(e.deploymentId),requestMethod:String(e.requestMethod),requestPath:String(e.requestPath),responseStatusCode:Number(e.responseStatusCode),messages});
+    if(e.logs!==undefined&&e.logs!==null){
+     if(!Array.isArray(e.logs))throw fail('LOG_ROW_INVALID');
+     for(const l of e.logs){
+      const m=typeof l==='string'?l:typeof record(l).message==='string'?record(l).message as string:null;
+      if(m===null)throw fail('LOG_ROW_INVALID');
+      if(m)messages.push(m);
+     }
+    }
+    const optional=(v:unknown)=>v===undefined||v===null?null:String(v);
+    out.push({timestamp:Number(e.timestamp),deploymentId:text(e.deploymentId),projectId:optional(e.projectId),environment:optional(e.environment),requestMethod:text(e.requestMethod),
+     requestPath:e.requestPath,responseStatusCode:Number(e.responseStatusCode),messages});
    }
+   if(!out.length&&raw.trim())throw fail('VERCEL_RESPONSE_UNPARSEABLE');
    if(out.length>=LOG_LIMIT)throw fail('LOG_TRUNCATED');
    return out;
   },

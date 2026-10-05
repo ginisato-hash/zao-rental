@@ -84,6 +84,18 @@ ACTIVATION_ORDER
    cadence, the latest within five minutes, with no `normal_worker_tick` line. `provisionWorkerRoles` does not read the file as
    truth: it re-derives every claim from live readbacks, so a stale, hand-written or minimal file, a deployment that is no longer
    current, an activation name already bound or a protection change all refuse before any mutation.
+   Readbacks are all-or-nothing: a reduced deployment view (no `projectId`, `crons`, `createdAt` or `meta`), a missing `readyState`,
+   `target`, `crons` or protection field, a non-zero CLI exit, unparseable output, an env list with a further page or hidden
+   production variables (`pagination.next`, `hiddenProductionEnvCount` — an absence claim needs the whole list), a log that reached
+   its `--limit`, a log row without a path or a log item of an unknown shape are each a refusal, never a default. Log rows that carry
+   a `projectId` / `environment` must match this project / production.
+   **What "real Cron" rests on.** Vercel documents the scheduler's `vercel-cron/1.0` user agent, the `x-vercel-cron-schedule` header and
+   a `cron` request type, but none of them is a field of the `vercel logs --json` rows (the REST runtime-log schema has none either), so
+   they are neither read nor trusted and the event name alone never decides. The proof rests on the Bearer secret (checked before the
+   dormant line, generated in memory and never shown), the deployment being production and current, and the cadence rule; delivery is
+   documented as best effort (a minute can arrive twice or be missed, which the cadence rule tolerates up to one missed minute).
+   A platform-side on-demand run (dashboard "Run", `vercel crons run`) cannot be told apart from the schedule in this log: the
+   cadence rule only makes faking it by hand impractical, and they must not be used during the proof window.
 4. Only after step 3: worker role credentials per section 2 (sinks written, probes passed).
 5. `PRODUCTION_WORKER_ACCEPTED_AFTER`.
 6. `PRODUCTION_WORKER_TICK_ACTIVATION` last, in the final environment-only deployment, then watch the first ticks.

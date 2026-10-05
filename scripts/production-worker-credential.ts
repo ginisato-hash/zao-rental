@@ -218,6 +218,7 @@ const NEON_BIN=join(homedir(),'.npm/_npx/978debf9b3a75271/node_modules/.bin/neon
 // worker roles of that project and branch. Anything else (the backup, owner or manager role, another project/branch/role, any other verb or suffix) is refused before a process starts.
 const NEON_WORKER_GET=[new RegExp(`^/projects/${T.project}$`),new RegExp(`^/projects/${T.project}/branches/${T.branch}$`),new RegExp(`^/projects/${T.project}/branches/${T.branch}/(databases/${T.database}|roles|endpoints)$`),
  new RegExp(`^/projects/${T.project}/connection_uri$`),new RegExp(`^/projects/${T.project}/operations/[a-f0-9-]{36}$`)];
+const NEON_URI_QUERY=['branch_id','database_name','role_name','pooled'];
 export const workerResetPaths=()=>WORKER_ROLES.map(r=>workerResetPath(r.role));
 /** The child's stdout is captured here (parsed, returned to the caller, never inherited or logged); only fixed codes leave this function. */
 export function neonWorkerCliPort(bin:string=NEON_BIN,env:NodeJS.ProcessEnv=process.env):NeonPort{
@@ -226,9 +227,14 @@ export function neonWorkerCliPort(bin:string=NEON_BIN,env:NodeJS.ProcessEnv=proc
   try{resolve(JSON.parse(stdout));}catch{reject(fail('WORKER_CREDENTIAL_NEON_RESPONSE_UNPARSEABLE'));}
  }));
  return {
-  get:(path,query)=>{if(!NEON_WORKER_GET.some(r=>r.test(path)))return Promise.reject(fail('WORKER_CREDENTIAL_NEON_PATH_REFUSED'));
-   return run(['api',path,...Object.entries(query??{}).flatMap(([k,v])=>['-Q',`${k}=${v}`])]);},
-  post:path=>{if(!workerResetPaths().includes(path))return Promise.reject(fail('WORKER_CREDENTIAL_NEON_PATH_REFUSED'));return run(['api',path,'-X','POST']);},
+  // A path must be a plain string (a value that stringifies differently on a second use must not pass the check and then reach the process). A query is accepted only for the owner
+  // connection URI and only with its four fixed keys.
+  get:(path,query)=>{
+   if(typeof path!=='string'||!NEON_WORKER_GET.some(r=>r.test(path)))return Promise.reject(fail('WORKER_CREDENTIAL_NEON_PATH_REFUSED'));
+   const entries=Object.entries(query??{});
+   if(entries.length&&(path!==`/projects/${T.project}/connection_uri`||entries.some(([k,v])=>!NEON_URI_QUERY.includes(k)||typeof v!=='string')))return Promise.reject(fail('WORKER_CREDENTIAL_NEON_PATH_REFUSED'));
+   return run(['api',path,...entries.flatMap(([k,v])=>['-Q',`${k}=${v}`])]);},
+  post:path=>{if(typeof path!=='string'||!workerResetPaths().includes(path))return Promise.reject(fail('WORKER_CREDENTIAL_NEON_PATH_REFUSED'));return run(['api',path,'-X','POST']);},
  };
 }
 const SINK_NAMES=new Set<string>([CRON_SECRET_NAME,...WORKER_ROLES.map(r=>r.sink)]);

@@ -21,7 +21,7 @@ function inChild(dir:string,bin:string,body:string){
  const mod=pathToFileURL(join(process.cwd(),'scripts','production-worker-credential.ts')).href;
  const code=`import * as w from ${JSON.stringify(mod)};const ports=w.productionWorkerPorts(${JSON.stringify(dir)},{neon:${JSON.stringify(bin)},vercel:process.execPath});`
   +`(async()=>{${body}})().then(()=>process.stdout.write('DONE'),e=>process.stdout.write('ERR:'+e.message));`;
- return spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',code],{encoding:'utf8',cwd:process.cwd(),env:{PATH:process.env.PATH??'',HOME:process.env.HOME??''} as unknown as NodeJS.ProcessEnv});
+ return spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',code],{encoding:'utf8',timeout:60_000,cwd:process.cwd(),env:{PATH:process.env.PATH??'',HOME:process.env.HOME??''} as unknown as NodeJS.ProcessEnv});
 }
 
 test('the production factory selects the worker adapter: each of the three worker reset paths reaches the executable exactly once, nothing is printed',async()=>withDir(async dir=>{
@@ -99,3 +99,23 @@ test('the production factory refuses to start when a CLI is missing and uses the
  assert.throws(()=>w.productionWorkerPorts(process.cwd(),{neon:'/nonexistent/neon'}),/WORKER_CREDENTIAL_CLI_MISSING/);
  assert.throws(()=>w.productionWorkerPorts(process.cwd(),{neon:process.execPath,vercel:'/nonexistent/vercel'}),/WORKER_CREDENTIAL_CLI_MISSING/);
 });
+
+test('a path that is not a plain string never reaches the executable, and a query is accepted only for the owner connection URI with its four fixed keys',async()=>withDir(async dir=>{
+ const stand=neonStandIn(dir,{get:{[P]:{project:{id:T.project}},[`${P}/connection_uri`]:{uri:'redacted'}},post:{}});
+ const ports=w.productionWorkerPorts(dir,{neon:stand.bin,vercel:process.execPath});
+ let n=0;
+ const shifty={toString(){return n++===0?P:'/projects/other/anything';}} as unknown as string;
+ const nonStrings=[shifty,[P] as unknown as string,{} as unknown as string,undefined as unknown as string,null as unknown as string,1 as unknown as string,new String(P) as unknown as string];
+ for(const bad of nonStrings){
+  await assert.rejects(ports.neon.get(bad),refused);
+  await assert.rejects(ports.neon.post(bad),refused);
+ }
+ // a query on any other path, an unknown key or a non-string value is refused before a process starts
+ await assert.rejects(ports.neon.get(P,{pooled:'false'}),refused);
+ await assert.rejects(ports.neon.get(`${P}/connection_uri`,{branch_id:T.branch,extra:'x'}),refused);
+ await assert.rejects(ports.neon.get(`${P}/connection_uri`,{pooled:false as unknown as string}),refused);
+ assert.deepEqual(stand.calls(),[]);
+ // the owner query of connectOwner is still accepted
+ await ports.neon.get(`${P}/connection_uri`,{branch_id:T.branch,database_name:T.database,role_name:T.owner,pooled:'false'});
+ assert.equal(stand.calls().length,1);
+}));

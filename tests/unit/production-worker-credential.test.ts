@@ -8,6 +8,7 @@ import {BACKUP_CREDENTIAL_TARGET as T} from '../../scripts/production-backup-cre
 import type {SqlSession} from '../../scripts/production-backup-credential';
 import * as w from '../../scripts/production-worker-credential';
 import type {VercelEnvRow,WorkerCredentialPorts} from '../../scripts/production-worker-credential';
+import {neonStandIn} from './support/neon-stand-in';
 
 const HOST='ep-synthetic-0000.us-east-2.aws.neon.tech';
 const OPS=['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','33333333-3333-4333-8333-333333333333'];
@@ -258,5 +259,41 @@ test('the Vercel env reader refuses anything but the complete list: another page
    await assert.rejects(read(incomplete),/WORKER_CREDENTIAL_VERCEL_RESPONSE_INCOMPLETE/);
   for(const unreadable of ['not json','null','[]','"x"',{},{error:{code:'forbidden'}},cron,{envs:'x'},{envs:[cron,{type:'plain',target:['production']}]},{envs:[cron,null]},{envs:[cron,{key:'',type:'plain',target:[]}]}])
    await assert.rejects(read(unreadable),/WORKER_CREDENTIAL_VERCEL_RESPONSE_UNPARSEABLE/);
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+test('the lifecycle through the real worker Neon adapter and a stand-in executable: one POST per role, an unknown outcome contains the role, and a rerun never POSTs again',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'zao-worker-lifecycle-'));
+ try{
+  // what the in-memory Neon answers, served by a real executable instead
+  const ref=world();
+  const getPaths=[`/projects/${T.project}`,`/projects/${T.project}/branches/${T.branch}`,`/projects/${T.project}/branches/${T.branch}/databases/${T.database}`,`/projects/${T.project}/branches/${T.branch}/roles`,
+   `/projects/${T.project}/branches/${T.branch}/endpoints`,...OPS.map(id=>`/projects/${T.project}/operations/${id}`)];
+  const get:Record<string,unknown>={};for(const path of getPaths)get[path]=await ref.ports.neon.get(path);
+  const password=(r:typeof w.WORKER_ROLES[number])=>'NeonPassword'+r.key+'0123456789abcdef';
+  const post=Object.fromEntries(w.WORKER_ROLES.map((r,i)=>[w.workerResetPath(r.role),{role:{name:r.role,password:password(r)},operations:[{id:OPS[i]}]}]));
+  const isPost=(a:string[])=>a.includes('-X');
+  const wire=(stand:ReturnType<typeof neonStandIn>)=>{const x=world();x.ports.neon=w.neonWorkerCliPort(stand.bin);for(const r of w.WORKER_ROLES)x.passwords[r.role]=password(r);return x;};
+
+  // success: three POSTs, one per role in order, each reaching the executable once; a rerun is refused by the one-shot guards before any POST
+  const ok=neonStandIn(mkdtempSync(join(dir,'ok-')),{get,post});
+  const x=wire(ok);
+  const ev=await w.provisionWorkerRoles(x.ports);
+  assert.equal(ev.state,'WORKER_ROLES_ACTIVE');
+  assert.deepEqual(ok.calls().filter(isPost),w.WORKER_ROLES.map(r=>['api',w.workerResetPath(r.role),'-X','POST']));
+  await assert.rejects(w.provisionWorkerRoles(x.ports),/WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED/);
+  assert.equal(ok.calls().filter(isPost).length,3,'the rerun sent no POST');
+  for(const secret of Object.values(x.passwords))assert.ok(!JSON.stringify(ev).includes(secret));
+
+  // unknown outcome of the second role: the executable fails after the guard was claimed. The failing role is contained, the third role is never touched, and a rerun does not POST again
+  const truthPath=w.workerResetPath(w.WORKER_ROLES[1]!.role);
+  const failing=neonStandIn(mkdtempSync(join(dir,'fail-')),{get,post:{...post,[truthPath]:{__exit:1}}});
+  const y=wire(failing);
+  await assert.rejects(w.provisionWorkerRoles(y.ports),(e:Error)=>{assert.equal(e.message,'WORKER_CREDENTIAL_RESET_OUTCOME_UNKNOWN');return true;});
+  assert.deepEqual(failing.calls().filter(isPost).map(a=>a[1]),[w.workerResetPath(w.WORKER_ROLES[0]!.role),truthPath]);
+  assert.ok(y.ports.guard.exists('worker'),'the one-shot guard of the unknown role stays claimed');assert.equal(y.ports.guard.exists('projector'),false);
+  assert.ok(y.statements.some(s=>s.startsWith('ALTER ROLE "neondb_pay_truth" NOLOGIN PASSWORD NULL')),'the unknown role is contained');
+  await assert.rejects(w.provisionWorkerRoles(y.ports),/WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED/);
+  assert.equal(failing.calls().filter(isPost).length,2,'no POST after an unknown outcome, and none for the untouched role');
  }finally{rmSync(dir,{recursive:true,force:true});}
 });

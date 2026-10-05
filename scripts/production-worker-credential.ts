@@ -6,7 +6,7 @@
 // finished -> 20-minute LOGIN lease from the DATABASE clock -> direct verify-full + channel-binding login with the worker's own role checks -> Production sensitive
 // sink + metadata readback -> VALID UNTIL 'infinity' with one readback. In `provision` nothing (no Neon call, no Vercel call, no guard claim) happens before `darkProofVerified()`: the roles are
 // activated only after the dark cron reach proof recorded by production-worker-dormant-proof has been re-derived from live Vercel readbacks for the accepted main commit.
-import {spawn} from 'node:child_process';
+import {execFile,spawn} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
 import {closeSync,existsSync,mkdirSync,openSync,writeSync} from 'node:fs';
 import {homedir} from 'node:os';
@@ -14,7 +14,7 @@ import {join} from 'node:path';
 import {Client,Pool} from 'pg';
 import {productionCredentialCompleteReset,productionCredentialPasswordFromResetResponse,productionCredentialTemporaryPassword,productionCredentialBaseline,
  productionCredentialContainmentComplete,productionCredentialContainmentSchedule} from './production-credential-activation';
-import {BACKUP_CREDENTIAL_TARGET as T,backupLeaseDeadline,neonCliPort,type NeonPort,type SqlSession} from './production-backup-credential';
+import {BACKUP_CREDENTIAL_TARGET as T,backupLeaseDeadline,type NeonPort,type SqlSession} from './production-backup-credential';
 import {assertProductionHost,assertProductionHostFingerprint,assertProductionPort,fingerprintHost} from './production-backup';
 import {productionPaymentRoleNames} from './production-payment-roles';
 import {acceptanceDatabaseConfig,verifyAcceptanceRole} from './lib/production-payment-acceptance';
@@ -213,6 +213,24 @@ function safeCode(e:unknown):string{const m=String((e as Error)?.message??'');re
 // ---------------------------------------------------------------- production adapters (stdout is captured, never inherited)
 export const VERCEL_BIN=join(homedir(),'.npm/_npx/69f9afb961c37556/node_modules/.bin/vercel');
 const NEON_BIN=join(homedir(),'.npm/_npx/978debf9b3a75271/node_modules/.bin/neon');
+// The worker's own Neon adapter. The backup helper's `neonCliPort` POSTs only the backup role's reset path, so it can never serve these three roles; it stays backup-only and is not used here.
+// Same read-only GET surface (exact project, branch, database, role list, endpoints, owner connection URI, operation readback); the ONLY write is `reset_password` on exactly the three
+// worker roles of that project and branch. Anything else (the backup, owner or manager role, another project/branch/role, any other verb or suffix) is refused before a process starts.
+const NEON_WORKER_GET=[new RegExp(`^/projects/${T.project}$`),new RegExp(`^/projects/${T.project}/branches/${T.branch}$`),new RegExp(`^/projects/${T.project}/branches/${T.branch}/(databases/${T.database}|roles|endpoints)$`),
+ new RegExp(`^/projects/${T.project}/connection_uri$`),new RegExp(`^/projects/${T.project}/operations/[a-f0-9-]{36}$`)];
+export const workerResetPaths=()=>WORKER_ROLES.map(r=>workerResetPath(r.role));
+/** The child's stdout is captured here (parsed, returned to the caller, never inherited or logged); only fixed codes leave this function. */
+export function neonWorkerCliPort(bin:string=NEON_BIN,env:NodeJS.ProcessEnv=process.env):NeonPort{
+ const run=(args:string[])=>new Promise<unknown>((resolve,reject)=>execFile(bin,args,{env,maxBuffer:1<<20,timeout:90_000,encoding:'utf8',windowsHide:true},(error,stdout)=>{
+  if(error)return reject(fail('WORKER_CREDENTIAL_NEON_CALL_FAILED'));
+  try{resolve(JSON.parse(stdout));}catch{reject(fail('WORKER_CREDENTIAL_NEON_RESPONSE_UNPARSEABLE'));}
+ }));
+ return {
+  get:(path,query)=>{if(!NEON_WORKER_GET.some(r=>r.test(path)))return Promise.reject(fail('WORKER_CREDENTIAL_NEON_PATH_REFUSED'));
+   return run(['api',path,...Object.entries(query??{}).flatMap(([k,v])=>['-Q',`${k}=${v}`])]);},
+  post:path=>{if(!workerResetPaths().includes(path))return Promise.reject(fail('WORKER_CREDENTIAL_NEON_PATH_REFUSED'));return run(['api',path,'-X','POST']);},
+ };
+}
 const SINK_NAMES=new Set<string>([CRON_SECRET_NAME,...WORKER_ROLES.map(r=>r.sink)]);
 export function vercelCliPort(bin:string=VERCEL_BIN,env:NodeJS.ProcessEnv=process.env):VercelPort{
  const scope=['--project',VERCEL_TARGET.project,'--scope',VERCEL_TARGET.scope];
@@ -273,10 +291,12 @@ async function realProbe(role:WorkerRole,password:string,host:string):Promise<Pr
  }catch(e){throw fail(String((e as Error)?.message??'').startsWith('WORKER_CREDENTIAL_')?String((e as Error).message):'WORKER_CREDENTIAL_PROBE_FAILED');}
  finally{await pool.end().catch(()=>undefined);}
 }
-export function productionWorkerPorts(root:string=process.cwd()):WorkerCredentialPorts{
- if(!existsSync(NEON_BIN)||!existsSync(VERCEL_BIN))throw fail('WORKER_CREDENTIAL_CLI_MISSING');
- const neon=neonCliPort(NEON_BIN),dir=evidenceDirectory(root);
- return {neon,vercel:vercelCliPort(),guard:workerFileGuard(dir),sleep:ms=>new Promise(r=>setTimeout(r,ms)),now:()=>new Date(),darkProofVerified:async()=>{await (await import('./production-worker-dormant-proof')).verifyRecordedDormantProof(root);},probe:realProbe,
+/** `bins` exists so a test can run the real factory against stand-in executables; production passes nothing. */
+export function productionWorkerPorts(root:string=process.cwd(),bins:{neon?:string;vercel?:string}={}):WorkerCredentialPorts{
+ const neonBin=bins.neon??NEON_BIN,vercelBin=bins.vercel??VERCEL_BIN;
+ if(!existsSync(neonBin)||!existsSync(vercelBin))throw fail('WORKER_CREDENTIAL_CLI_MISSING');
+ const neon=neonWorkerCliPort(neonBin),dir=evidenceDirectory(root);
+ return {neon,vercel:vercelCliPort(vercelBin),guard:workerFileGuard(dir),sleep:ms=>new Promise(r=>setTimeout(r,ms)),now:()=>new Date(),darkProofVerified:async()=>{await (await import('./production-worker-dormant-proof')).verifyRecordedDormantProof(root);},probe:realProbe,
   connectOwner:async host=>{
    const uri=obj(await neon.get(`/projects/${T.project}/connection_uri`,{branch_id:T.branch,database_name:T.database,role_name:T.owner,pooled:'false'}),'WORKER_CREDENTIAL_OWNER_SESSION_INVALID').uri;
    if(typeof uri!=='string')throw fail('WORKER_CREDENTIAL_OWNER_SESSION_INVALID');

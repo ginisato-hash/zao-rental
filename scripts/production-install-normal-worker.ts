@@ -7,21 +7,27 @@ import {join} from 'node:path';
 import {neonCliPort} from './production-backup-credential';
 import {applyProductionNormalWorkerMigration} from './production-normal-worker-migration';
 import {applyProductionNormalWorkerGrants} from './production-normal-worker-grants';
-import {assertAcceptedMainRelease,assertNoTlsOverrides,openOwnerSession,requireRestorePass} from './lib/production-owner-session';
+import {assertAcceptedMainRelease,assertNoTlsOverrides,openOwnerSession,requireRestorePass,type OwnerSession} from './lib/production-owner-session';
 
 const COMMANDS=['migrate','grants'] as const;
 type Command=typeof COMMANDS[number];
 const NEON_BIN=join(homedir(),'.npm/_npx/978debf9b3a75271/node_modules/.bin/neon');
 const SAFE_CODE=/^PRODUCTION_(INSTALL|NORMAL_WORKER|FIRST_ADMIN|STAFF_BOOTSTRAP|CREDENTIAL)_[A-Z0-9_]{1,80}$|^BACKUP_(CREDENTIAL|HOST|PORT)_[A-Z0-9_]{1,80}$/;
 
-export async function main(argv:string[],root:string=process.cwd()){
+/** The two steps that reach outside the checkout: the git/origin release check and the Neon owner session. Tests substitute both to prove admission refuses before any Neon call. */
+export type InstallSeams={release:()=>string;openSession:()=>Promise<OwnerSession>};
+const productionSeams:InstallSeams={release:()=>assertAcceptedMainRelease(),openSession:async()=>{
+ if(!existsSync(NEON_BIN))throw new Error('PRODUCTION_INSTALL_NEON_CLI_MISSING');
+ return openOwnerSession(neonCliPort(NEON_BIN));
+}};
+
+export async function main(argv:string[],root:string=process.cwd(),seams:InstallSeams=productionSeams){
  const [command,...rest]=argv;
  if(rest.length||!COMMANDS.includes(command as Command))throw new Error('PRODUCTION_INSTALL_ARGUMENTS_REJECTED');
  assertNoTlsOverrides();
- const head=assertAcceptedMainRelease();
+ const head=seams.release();
  await requireRestorePass(root);
- if(!existsSync(NEON_BIN))throw new Error('PRODUCTION_INSTALL_NEON_CLI_MISSING');
- const session=await openOwnerSession(neonCliPort(NEON_BIN));
+ const session=await seams.openSession();
  try{
   const result=command==='migrate'?await applyProductionNormalWorkerMigration(session.client,'neondb','neondb_owner'):await applyProductionNormalWorkerGrants(session.client,'neondb','neondb_owner');
   console.log(JSON.stringify({sourceSha:head,command,...result}));

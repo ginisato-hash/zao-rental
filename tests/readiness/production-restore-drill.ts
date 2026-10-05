@@ -14,6 +14,7 @@ import {
   loadAgeIdentity, localCiphertextAdapter, r2FetchAdapter, runPgRestore, runRestoreDrill, selectCiphertextSource, verifyRestoredDatabase,
   type CustodyConfirmation, type DrillAdapters, type RestoreTarget,
 } from '../../scripts/production-restore-drill';
+import {expectedPre0054RegistrySha256, validateDrillResult} from '../../scripts/production-restore-evidence';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 
 // Synthetic fixtures only: random bytes stand in for a pg_dump archive, an embedded loopback cluster stands in for
@@ -90,7 +91,8 @@ try {
   await check('decrypt verifies key, ciphertext integrity and plaintext hash, and never leaves unverified plaintext', async () => {
     const out = join(root, 'ok.dump');
     const r = await decryptBackupToFile({ciphertextPath: cipherPath, plaintextPath: out, identity, expectedSha256: sha(plain), expectedBytes: plain.length});
-    assert.deepEqual(r, {sha256: sha(plain), bytes: plain.length});
+    // The ciphertext hash and size are those of the exact encrypted bytes the decrypter read.
+    assert.deepEqual(r, {sha256: sha(plain), bytes: plain.length, ciphertextSha256: sha(await readFile(cipherPath)), ciphertextBytes: (await lstat(cipherPath)).size});
     assert.ok((await readFile(out)).equals(plain));
     await rm(out);
     const bad = join(root, 'bad.dump');
@@ -208,6 +210,8 @@ try {
     assert.equal(result.status, 'DRILL_PASS'); assert.equal(result.dataClass, 'SYNTHETIC');
     assert.equal(result.plaintextSha256, sha(plain)); assert.equal(result.plaintextBytes, plain.length);
     assert.equal(result.verification.migrations, migrationPlan.length);
+    assert.equal(result.ciphertextSha256, sha(await readFile(cipherPath))); assert.equal(result.ciphertextBytes, (await lstat(cipherPath)).size);
+    assert.match(result.verification.registrySha256, /^[a-f0-9]{64}$/); assert.notEqual(result.verification.registrySha256, expectedPre0054RegistrySha256(), 'the full registry is not the pre-0054 one');
     assert.ok(result.verification.foreignKeys > 0 && Object.keys(result.verification.critical).length > 0);
     assert.equal(result.restoreSeconds, 42); assert.equal(result.observedBackupAgeSeconds, 13 * 60 + 42);
     assert.equal(result.productionRpoRtoApproved, false);
@@ -230,6 +234,11 @@ try {
     const target = await newTarget(); counters.fetch = counters.restore = 0;
     const result = await runRestoreDrill(adapters(toPre0054), input(target, {expectedMigrations: 53}), fingerprintHost('production.invalid'));
     assert.equal(result.verification.migrations, 53);
+    // The drill output is exactly what the restore-evidence finalizer accepts for this object (data class swapped: a SYNTHETIC result is never accepted, the shape and bindings are under test).
+    assert.equal(result.verification.registrySha256, expectedPre0054RegistrySha256());
+    assert.equal(validateDrillResult({...result, dataClass: 'PRODUCTION'}, {key: KEY, ciphertextBytes: (await lstat(cipherPath)).size, ciphertextSha256: sha(await readFile(cipherPath))}).plaintextSha256, sha(plain));
+    assert.throws(() => validateDrillResult(result, {key: KEY, ciphertextBytes: result.ciphertextBytes, ciphertextSha256: result.ciphertextSha256}), /RESTORE_EVIDENCE_NOT_PRODUCTION_DRILL_PASS/);
+    assert.throws(() => validateDrillResult({...result, dataClass: 'PRODUCTION'}, {key: KEY, ciphertextBytes: result.ciphertextBytes, ciphertextSha256: sha('another ciphertext')}), /RESTORE_EVIDENCE_CIPHERTEXT_MISMATCH/);
     assert.ok(!('public.provisional_capacity_receipts' in result.verification.critical) && Object.keys(result.verification.critical).length > 0);
     assert.deepEqual(await readdir(work), []);
     const defaultRun = await newTarget();
@@ -267,6 +276,13 @@ try {
     assert.deepEqual(counters, {fetch: 0, restore: 0});
     const result = await runRestoreDrill(adapters(), input(target, {dataClass: 'PRODUCTION', custody}));
     assert.equal(result.dataClass, 'PRODUCTION'); assert.equal(result.productionRpoRtoApproved, false);
+  });
+
+  await check('an adapter that misreports the ciphertext size is refused: the recorded size and hash always describe the same bytes', async () => {
+    const target = await newTarget(); counters.fetch = counters.restore = 0;
+    const lying: DrillAdapters = {...adapters(), fetchCiphertext: async (_key, out) => { await copyFile(cipherPath, out); return {bytes: (await lstat(out)).size + 1}; }};
+    await rejects(() => runRestoreDrill(lying, input(target)), 'RESTORE_CIPHERTEXT_INVALID');
+    assert.equal(counters.restore, 0); assert.deepEqual(await readdir(work), []);
   });
 
   await check('invalid backup keys and non-disposable targets are rejected up front', async () => {

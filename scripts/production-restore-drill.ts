@@ -12,6 +12,7 @@ import {Pool} from 'pg';
 import {migrationPlan, migrationsDirectory} from '../packages/db/src/index';
 import {EXPECTED_PRODUCTION_BUCKET, EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256, fingerprintHost, redactSecrets} from './production-backup';
 import {CRITICAL, criticalFingerprint, validateRestored} from './local-restore';
+import {registryDigest} from './production-restore-evidence';
 
 // Production backup RESTORE drill. Read-only against R2 (GetObject only), restores only into an
 // empty, loopback, disposable `zr_<12 hex>` database and never into Production. A SYNTHETIC drill and
@@ -69,18 +70,24 @@ export async function assertCustodyConfirmed(identity: string, confirmation: Cus
   if (createHash('sha256').update(recipient).digest('hex').slice(0, 12) !== c.recipientSha256Prefix) throw new Error('RESTORE_CUSTODY_RECIPIENT_MISMATCH');
 }
 
-/** Streams age ciphertext -> plaintext file, hashing on the way. A partial or unverified plaintext is always removed. */
-export async function decryptBackupToFile(a: {ciphertextPath: string; plaintextPath: string; identity: string; expectedSha256: string; expectedBytes?: number | undefined}): Promise<{sha256: string; bytes: number}> {
+/** Streams age ciphertext -> plaintext file, hashing on the way. A partial or unverified plaintext is always removed.
+ * The ciphertext is hashed as it is read by the decrypter, so `ciphertextSha256` is the sha256 of the exact encrypted bytes that were decrypted, whichever adapter wrote the file. */
+export async function decryptBackupToFile(a: {ciphertextPath: string; plaintextPath: string; identity: string; expectedSha256: string; expectedBytes?: number | undefined}): Promise<{sha256: string; bytes: number; ciphertextSha256: string; ciphertextBytes: number}> {
   if (!SHA256_PATTERN.test(a.expectedSha256)) throw new Error('RESTORE_EXPECTED_SHA256_INVALID');
   const hash = createHash('sha256');
   let bytes = 0;
   const counting = new Transform({transform(chunk: Buffer, _enc, cb) { hash.update(chunk); bytes += chunk.length; cb(null, chunk); }});
+  const cipherHash = createHash('sha256');
+  let cipherBytes = 0;
+  const cipherTap = new Transform({transform(chunk: Buffer, _enc, cb) { cipherHash.update(chunk); cipherBytes += chunk.length; cb(null, chunk); }});
   // Never remove (or overwrite) a file this call did not create.
   if (await lstat(a.plaintextPath).then(() => true, () => false)) throw new Error('RESTORE_PLAINTEXT_PATH_EXISTS');
+  const source = createReadStream(a.ciphertextPath);
+  source.on('error', error => cipherTap.destroy(error));
   try {
     const decrypter = new Decrypter();
     decrypter.addIdentity(a.identity);
-    const cipher = Readable.toWeb(createReadStream(a.ciphertextPath)) as unknown as ReadableStream<Uint8Array>;
+    const cipher = Readable.toWeb(source.pipe(cipherTap)) as unknown as ReadableStream<Uint8Array>;
     let plain: ReadableStream<Uint8Array>;
     try { plain = await decrypter.decrypt(cipher); } catch { throw new Error('RESTORE_WRONG_KEY_REJECTED'); }
     try {
@@ -88,8 +95,9 @@ export async function decryptBackupToFile(a: {ciphertextPath: string; plaintextP
     } catch { throw new Error('RESTORE_CIPHERTEXT_INVALID'); }
     const sha256 = hash.digest('hex');
     if (sha256 !== a.expectedSha256 || (a.expectedBytes !== undefined && bytes !== a.expectedBytes)) throw new Error('RESTORE_PLAINTEXT_INTEGRITY_MISMATCH');
-    return {sha256, bytes};
+    return {sha256, bytes, ciphertextSha256: cipherHash.digest('hex'), ciphertextBytes: cipherBytes};
   } catch (error) {
+    source.destroy(); cipherTap.destroy();
     await rm(a.plaintextPath, {force: true});
     throw error;
   }
@@ -146,7 +154,8 @@ export async function verifyRestoredDatabase(pool: Pool, expectedMigrations: num
   const applied = new Set<string>(migrationPlan.slice(0, expectedMigrations).map(e => e.id));
   const tables = CRITICAL.filter(t => { const by = CRITICAL_TABLE_ADDED_BY[t]; return by === undefined || applied.has(by); });
   const relations = await validateRestored(pool);
-  return {migrations: registry.length, ...relations, critical: await criticalFingerprint(pool, tables)};
+  // `registrySha256` lets the restore evidence be matched to the migration files of the release that will install 0054/0055 on this registry.
+  return {migrations: registry.length, registrySha256: registryDigest(registry), ...relations, critical: await criticalFingerprint(pool, tables)};
 }
 
 export interface DrillAdapters {
@@ -164,7 +173,7 @@ export interface DrillInput {
 }
 export interface DrillResult {
   status: 'DRILL_PASS'; dataClass: DataClass; key: string; backupScheduledAt: string; plaintextSha256: string; plaintextBytes: number;
-  ciphertextBytes: number; toolVersion: string; startedAt: string; finishedAt: string; restoreSeconds: number; observedBackupAgeSeconds: number;
+  ciphertextBytes: number; ciphertextSha256: string; toolVersion: string; startedAt: string; finishedAt: string; restoreSeconds: number; observedBackupAgeSeconds: number;
   verification: Awaited<ReturnType<typeof verifyRestoredDatabase>>; productionRpoRtoApproved: false;
 }
 
@@ -186,11 +195,13 @@ export async function runRestoreDrill(adapters: DrillAdapters, input: DrillInput
     const ciphertextPath = join(work, 'backup.dump.age'), plaintextPath = join(work, 'backup.dump');
     const {bytes: ciphertextBytes} = await adapters.fetchCiphertext(input.key, ciphertextPath);
     const plain = await decryptBackupToFile({ciphertextPath, plaintextPath, identity: input.identity, expectedSha256: input.expected.sha256, expectedBytes: input.expected.bytes});
+    // The hash and the byte count describe the same encrypted bytes the adapter wrote and the decrypter read.
+    if (plain.ciphertextBytes !== ciphertextBytes) throw new Error('RESTORE_CIPHERTEXT_INVALID');
     await adapters.restore(plaintextPath, input.target);
     const verification = await verifyRestoredDatabase(pool, expectedMigrations);
     const finishedAt = adapters.now();
     return {status: 'DRILL_PASS', dataClass: input.dataClass, key: input.key, backupScheduledAt: scheduledAt.toISOString(), plaintextSha256: plain.sha256, plaintextBytes: plain.bytes,
-      ciphertextBytes, toolVersion, startedAt: startedAt.toISOString(), finishedAt: finishedAt.toISOString(),
+      ciphertextBytes, ciphertextSha256: plain.ciphertextSha256, toolVersion, startedAt: startedAt.toISOString(), finishedAt: finishedAt.toISOString(),
       restoreSeconds: (finishedAt.getTime() - startedAt.getTime()) / 1000, observedBackupAgeSeconds: (finishedAt.getTime() - scheduledAt.getTime()) / 1000,
       verification, productionRpoRtoApproved: false};
   } finally {

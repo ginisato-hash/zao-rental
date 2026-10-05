@@ -15,6 +15,19 @@ import {WearService} from '../../packages/core/src/wear/service';
 import {registerWear} from '../wear/fixture';
 let stage='startup',count=0,failed=false;const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,page:Page|undefined;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
+/** The reconcile click sends one POST /api/bookings/<uuid>/payment. Wait for that exact response first (same app origin, POST, UUID path; up to 60 s), check HTTP 200 and a
+ * fully read body for the same booking, and only then assert the screen with the normal expect budget. An API stall and a render failure therefore fail with different codes. */
+async function reconcileThroughUi(p:Page,origin:string){
+ const pending=p.waitForResponse(r=>{const u=new URL(r.url());return u.origin===origin&&r.request().method()==='POST'&&/^\/api\/bookings\/[0-9a-f-]{36}\/payment$/.test(u.pathname);},{timeout:60000}).catch(()=>null);
+ await p.getByRole('button',{name:'テストアダプタへ照合要求'}).click();
+ const response=await pending;if(!response)throw new Error('PAYMENT_API_NO_RESPONSE_60S');
+ const bookingId=new URL(response.url()).pathname.split('/')[3];
+ if(response.status()!==200)throw new Error('PAYMENT_API_STATUS_'+response.status());
+ const body=await response.json().catch(()=>{throw new Error('PAYMENT_API_BODY_UNREADABLE');}) as {id?:unknown};
+ if(body.id!==bookingId)throw new Error('PAYMENT_API_BOOKING_MISMATCH');
+ try{await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('CONFIRMED_DEV');}
+ catch(e){throw new Error('UI_NOT_CONFIRMED_AFTER_PAYMENT_API_OK '+String((e as Error).message).replace(/\s+/g,' ').slice(0,300));}
+}
 try{
  app=await startFlowApp();await seedRecommendation(app.db.pool);await bootstrapDevelopmentAdmin(app.db.pool,{email:'custody-ui-root@example.invalid',displayName:'SYNTHETIC Root',password});const {origin}=app;
  async function clock(time:string){await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${time}'::timestamptz$$`);}await clock('2035-01-01T01:00:00Z');
@@ -34,7 +47,7 @@ try{
   await p.getByLabel('クラス 1',{exact:true}).selectOption('PREMIUM');await p.getByLabel('ポールのサイズ 1',{exact:true}).selectOption(fixtures.variants['POLE-110 cm']!);
   await p.getByLabel('指定モデル・シーズン 1',{exact:true}).selectOption(fixtures.models.SKI!+'|2026/27');
   await p.getByLabel('ウェア上下セットを追加 1',{exact:true}).check();await p.getByLabel('上サイズ 1',{exact:true}).selectOption(fixtures.selection.jacketVariantId);await p.getByLabel('下サイズ 1',{exact:true}).selectOption(fixtures.selection.pantsVariantId);
-  await p.getByRole('button',{name:'推薦候補を確認',exact:true}).click();await p.getByRole('button',{name:'おすすめを選ぶ 1',exact:true}).click();await p.getByRole('checkbox',{name:'表示したモデル契約・サイズ・ウェア構成を選択条件とすることを確認'}).check();await p.getByRole('button',{name:'全員分をHOLDして見積を保存',exact:true}).click();await expect(p.getByRole('region',{name:'見積詳細',exact:true})).toBeVisible();await p.getByRole('link',{name:'予約情報・決済結果へ'}).click();await p.getByLabel('合成氏名').fill('SYNTHETIC Custody Mixed');await p.getByLabel('架空メール宛先').fill('synthetic-custody@example.invalid');await p.getByLabel('開発用の合成予約であり、営業規約・請求の確定ではないことを確認').check();await p.getByRole('button',{name:'合成予約情報を保存',exact:true}).click();await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('DRAFT');await p.getByRole('button',{name:'テストアダプタへ照合要求'}).click();await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('CONFIRMED_DEV');
+  await p.getByRole('button',{name:'推薦候補を確認',exact:true}).click();await p.getByRole('button',{name:'おすすめを選ぶ 1',exact:true}).click();await p.getByRole('checkbox',{name:'表示したモデル契約・サイズ・ウェア構成を選択条件とすることを確認'}).check();await p.getByRole('button',{name:'全員分をHOLDして見積を保存',exact:true}).click();await expect(p.getByRole('region',{name:'見積詳細',exact:true})).toBeVisible();await p.getByRole('link',{name:'予約情報・決済結果へ'}).click();await p.getByLabel('合成氏名').fill('SYNTHETIC Custody Mixed');await p.getByLabel('架空メール宛先').fill('synthetic-custody@example.invalid');await p.getByLabel('開発用の合成予約であり、営業規約・請求の確定ではないことを確認').check();await p.getByRole('button',{name:'合成予約情報を保存',exact:true}).click();await expect(p.getByRole('region',{name:'開発予約詳細'})).toContainText('DRAFT');await reconcileThroughUi(p,origin);
   const b=(await app!.db.pool.query('SELECT b.*,h.expires_at FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id')).rows[0];bookingId=b.id;holdId=b.hold_id;ttl=b.expires_at.toISOString();snapshot=b.price_sha256;assert.equal(b.price_snapshot.chargeReady,false);assert.equal(b.price_snapshot.totalJpy,13000);
  });
  await check('wrong Premium model or length rejected; normal screen prepares exact witness and records all serialized equipment',async()=>{
@@ -68,4 +81,4 @@ try{
   await p.getByRole('button',{name:'保存済み返却作業を読込'}).click();await expect(p.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();assert.equal((await context.request.get('/api/custody/booking/'+bookingId)).status(),401);
  });
  console.log(`CUSTODY ordinary UI/API/real PostgreSQL: ${count} passed, no skipped. Synthetic payment and data; synthetic camera frames and manual QR input, viewport only, no real phone/Square.`);
-}catch(e){failed=true;console.error('CUSTODY_UI_FAILED '+stage+' '+(e as Error).name);if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').filter(l=>l.includes('/tests/custody/')).join('\n'));if(page){console.error('LAST_PAGE '+new URL(page.url()).pathname);console.error('UI_ALERT '+(await page.getByRole('alert').allTextContents()).join(' ').slice(0,400));}}finally{await browser.close();await app?.stop();console.log('Owned custody Web/browser/PostgreSQL stopped.');}if(failed)process.exit(1);
+}catch(e){failed=true;console.error('CUSTODY_UI_FAILED '+stage+' '+(e as Error).name+' '+String((e as Error).message??'').replace(/\s+/g,' ').slice(0,400));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').filter(l=>l.includes('/tests/custody/')).join('\n'));if(page){console.error('LAST_PAGE '+new URL(page.url()).pathname);console.error('UI_ALERT '+(await page.getByRole('alert').allTextContents()).join(' ').slice(0,400));}}finally{await browser.close();await app?.stop();console.log('Owned custody Web/browser/PostgreSQL stopped.');}if(failed)process.exit(1);

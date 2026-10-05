@@ -69,6 +69,7 @@
     "backup:role-provision": "node --import tsx scripts/production-backup-credential.ts provision",
     "backup:role-finalize": "node --import tsx scripts/production-backup-credential.ts finalize",
     "backup:role-contain": "node --import tsx scripts/production-backup-credential.ts contain",
+    "backup:object-get": "node --import tsx scripts/production-backup-object-get.ts",
     "production:install-normal-worker-migration": "node --import tsx scripts/production-install-normal-worker.ts migrate",
     "production:install-normal-worker-grants": "node --import tsx scripts/production-install-normal-worker.ts grants",
     "production:worker-bind-cron-secret": "node --import tsx scripts/production-worker-credential.ts bind-cron-secret",

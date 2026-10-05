@@ -11,7 +11,8 @@ import {GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import {Pool} from 'pg';
 import {migrationPlan, migrationsDirectory} from '../packages/db/src/index';
 import {EXPECTED_PRODUCTION_BUCKET, EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256, fingerprintHost, redactSecrets} from './production-backup';
-import {criticalFingerprint, validateRestored} from './local-restore';
+import {CRITICAL, criticalFingerprint, validateRestored} from './local-restore';
+import {registryDigest} from './lib/registry-digest';
 
 // Production backup RESTORE drill. Read-only against R2 (GetObject only), restores only into an
 // empty, loopback, disposable `zr_<12 hex>` database and never into Production. A SYNTHETIC drill and
@@ -69,18 +70,24 @@ export async function assertCustodyConfirmed(identity: string, confirmation: Cus
   if (createHash('sha256').update(recipient).digest('hex').slice(0, 12) !== c.recipientSha256Prefix) throw new Error('RESTORE_CUSTODY_RECIPIENT_MISMATCH');
 }
 
-/** Streams age ciphertext -> plaintext file, hashing on the way. A partial or unverified plaintext is always removed. */
-export async function decryptBackupToFile(a: {ciphertextPath: string; plaintextPath: string; identity: string; expectedSha256: string; expectedBytes?: number | undefined}): Promise<{sha256: string; bytes: number}> {
+/** Streams age ciphertext -> plaintext file, hashing on the way. A partial or unverified plaintext is always removed.
+ * The ciphertext is hashed as it is read by the decrypter, so `ciphertextSha256` is the sha256 of the exact encrypted bytes that were decrypted, whichever adapter wrote the file. */
+export async function decryptBackupToFile(a: {ciphertextPath: string; plaintextPath: string; identity: string; expectedSha256: string; expectedBytes?: number | undefined}): Promise<{sha256: string; bytes: number; ciphertextSha256: string; ciphertextBytes: number}> {
   if (!SHA256_PATTERN.test(a.expectedSha256)) throw new Error('RESTORE_EXPECTED_SHA256_INVALID');
   const hash = createHash('sha256');
   let bytes = 0;
   const counting = new Transform({transform(chunk: Buffer, _enc, cb) { hash.update(chunk); bytes += chunk.length; cb(null, chunk); }});
+  const cipherHash = createHash('sha256');
+  let cipherBytes = 0;
+  const cipherTap = new Transform({transform(chunk: Buffer, _enc, cb) { cipherHash.update(chunk); cipherBytes += chunk.length; cb(null, chunk); }});
   // Never remove (or overwrite) a file this call did not create.
   if (await lstat(a.plaintextPath).then(() => true, () => false)) throw new Error('RESTORE_PLAINTEXT_PATH_EXISTS');
+  const source = createReadStream(a.ciphertextPath);
+  source.on('error', error => cipherTap.destroy(error));
   try {
     const decrypter = new Decrypter();
     decrypter.addIdentity(a.identity);
-    const cipher = Readable.toWeb(createReadStream(a.ciphertextPath)) as unknown as ReadableStream<Uint8Array>;
+    const cipher = Readable.toWeb(source.pipe(cipherTap)) as unknown as ReadableStream<Uint8Array>;
     let plain: ReadableStream<Uint8Array>;
     try { plain = await decrypter.decrypt(cipher); } catch { throw new Error('RESTORE_WRONG_KEY_REJECTED'); }
     try {
@@ -88,8 +95,9 @@ export async function decryptBackupToFile(a: {ciphertextPath: string; plaintextP
     } catch { throw new Error('RESTORE_CIPHERTEXT_INVALID'); }
     const sha256 = hash.digest('hex');
     if (sha256 !== a.expectedSha256 || (a.expectedBytes !== undefined && bytes !== a.expectedBytes)) throw new Error('RESTORE_PLAINTEXT_INTEGRITY_MISMATCH');
-    return {sha256, bytes};
+    return {sha256, bytes, ciphertextSha256: cipherHash.digest('hex'), ciphertextBytes: cipherBytes};
   } catch (error) {
+    source.destroy(); cipherTap.destroy();
     await rm(a.plaintextPath, {force: true});
     throw error;
   }
@@ -130,15 +138,24 @@ export async function runPgRestore(a: {pgRestorePath: string; dumpPath: string; 
 }
 
 /** Registry equals the source migration set byte-for-byte, relationships hold, contract-critical rows are fingerprinted (counts + digests only). */
-export async function verifyRestoredDatabase(pool: Pool) {
+/** Contract-critical tables that a backup taken before the given migration cannot contain. */
+const CRITICAL_TABLE_ADDED_BY: Readonly<Record<string, string>> = {'public.provisional_capacity_receipts': '0054'};
+
+/** `expectedMigrations` is the number of source migrations the DUMP was taken at: a pre-0054 Production backup holds the first 53, not the current 55.
+ * The registry must equal that exact prefix byte-for-byte (id and checksum); later migrations are never expected, and a registry with more rows than expected is refused. */
+export async function verifyRestoredDatabase(pool: Pool, expectedMigrations: number = migrationPlan.length) {
+  if (!Number.isInteger(expectedMigrations) || expectedMigrations < 1 || expectedMigrations > migrationPlan.length) throw new Error('RESTORE_EXPECTED_MIGRATIONS_INVALID');
   const registry = (await pool.query<{id: string; checksum: string}>('SELECT id,checksum FROM foundation_migrations ORDER BY id')).rows;
-  if (registry.length !== migrationPlan.length) throw new Error('RESTORE_MIGRATION_REGISTRY_MISMATCH');
-  for (const [i, entry] of migrationPlan.entries()) {
+  if (registry.length !== expectedMigrations) throw new Error('RESTORE_MIGRATION_REGISTRY_MISMATCH');
+  for (const [i, entry] of migrationPlan.slice(0, expectedMigrations).entries()) {
     const expected = createHash('sha256').update(await readFile(`${migrationsDirectory}/${entry.file}`, 'utf8')).digest('hex');
     if (registry[i]!.id !== entry.id || registry[i]!.checksum !== expected) throw new Error('RESTORE_MIGRATION_REGISTRY_MISMATCH');
   }
+  const applied = new Set<string>(migrationPlan.slice(0, expectedMigrations).map(e => e.id));
+  const tables = CRITICAL.filter(t => { const by = CRITICAL_TABLE_ADDED_BY[t]; return by === undefined || applied.has(by); });
   const relations = await validateRestored(pool);
-  return {migrations: registry.length, ...relations, critical: await criticalFingerprint(pool)};
+  // `registrySha256` lets the restore evidence be matched to the migration files of the release that will install 0054/0055 on this registry.
+  return {migrations: registry.length, registrySha256: registryDigest(registry), ...relations, critical: await criticalFingerprint(pool, tables)};
 }
 
 export interface DrillAdapters {
@@ -151,15 +168,19 @@ export interface DrillAdapters {
 export interface DrillInput {
   dataClass: DataClass; key: string; scheduledAt: string; expected: {sha256: string; bytes?: number};
   identity: string; custody?: CustodyConfirmation; target: RestoreTarget; workParent?: string;
+  /** Source migrations the dump was taken at (default: all). A pre-0054 Production backup is 53. */
+  expectedMigrations?: number;
 }
 export interface DrillResult {
   status: 'DRILL_PASS'; dataClass: DataClass; key: string; backupScheduledAt: string; plaintextSha256: string; plaintextBytes: number;
-  ciphertextBytes: number; toolVersion: string; startedAt: string; finishedAt: string; restoreSeconds: number; observedBackupAgeSeconds: number;
+  ciphertextBytes: number; ciphertextSha256: string; toolVersion: string; startedAt: string; finishedAt: string; restoreSeconds: number; observedBackupAgeSeconds: number;
   verification: Awaited<ReturnType<typeof verifyRestoredDatabase>>; productionRpoRtoApproved: false;
 }
 
 export async function runRestoreDrill(adapters: DrillAdapters, input: DrillInput, productionHostFingerprint: string = EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256): Promise<DrillResult> {
   if (!BACKUP_KEY_PATTERN.test(input.key)) throw new Error('RESTORE_BACKUP_KEY_INVALID');
+  const expectedMigrations = input.expectedMigrations ?? migrationPlan.length;
+  if (!Number.isInteger(expectedMigrations) || expectedMigrations < 1 || expectedMigrations > migrationPlan.length) throw new Error('RESTORE_EXPECTED_MIGRATIONS_INVALID');
   const scheduledAt = new Date(input.scheduledAt);
   if (Number.isNaN(scheduledAt.getTime())) throw new Error('RESTORE_SCHEDULED_AT_INVALID');
   assertDisposableTarget(input.target, productionHostFingerprint);
@@ -174,11 +195,13 @@ export async function runRestoreDrill(adapters: DrillAdapters, input: DrillInput
     const ciphertextPath = join(work, 'backup.dump.age'), plaintextPath = join(work, 'backup.dump');
     const {bytes: ciphertextBytes} = await adapters.fetchCiphertext(input.key, ciphertextPath);
     const plain = await decryptBackupToFile({ciphertextPath, plaintextPath, identity: input.identity, expectedSha256: input.expected.sha256, expectedBytes: input.expected.bytes});
+    // The hash and the byte count describe the same encrypted bytes the adapter wrote and the decrypter read.
+    if (plain.ciphertextBytes !== ciphertextBytes) throw new Error('RESTORE_CIPHERTEXT_INVALID');
     await adapters.restore(plaintextPath, input.target);
-    const verification = await verifyRestoredDatabase(pool);
+    const verification = await verifyRestoredDatabase(pool, expectedMigrations);
     const finishedAt = adapters.now();
     return {status: 'DRILL_PASS', dataClass: input.dataClass, key: input.key, backupScheduledAt: scheduledAt.toISOString(), plaintextSha256: plain.sha256, plaintextBytes: plain.bytes,
-      ciphertextBytes, toolVersion, startedAt: startedAt.toISOString(), finishedAt: finishedAt.toISOString(),
+      ciphertextBytes, ciphertextSha256: plain.ciphertextSha256, toolVersion, startedAt: startedAt.toISOString(), finishedAt: finishedAt.toISOString(),
       restoreSeconds: (finishedAt.getTime() - startedAt.getTime()) / 1000, observedBackupAgeSeconds: (finishedAt.getTime() - scheduledAt.getTime()) / 1000,
       verification, productionRpoRtoApproved: false};
   } finally {
@@ -199,9 +222,29 @@ export function r2FetchAdapter(client: S3Client, bucket: string = EXPECTED_PRODU
   };
 }
 
+/** Local ciphertext source: the object was already read from R2 (for example with the Owner-authorized wrangler OAuth read) into a caller-owned regular
+ * file, so no R2 credential has to be handed to this process. The age authentication tags and the expected plaintext hash still gate every byte. */
+export function localCiphertextAdapter(sourcePath: string): DrillAdapters['fetchCiphertext'] {
+  return async (_key, outPath) => {
+    if (!isAbsolute(sourcePath)) throw new Error('RESTORE_CIPHERTEXT_FILE_INVALID');
+    const stat = await lstat(sourcePath);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size < 1 || (process.getuid && stat.uid !== process.getuid())) throw new Error('RESTORE_CIPHERTEXT_FILE_INVALID');
+    await pipeline(createReadStream(sourcePath), createWriteStream(outPath, {flags: 'wx', mode: 0o600}));
+    return {bytes: (await lstat(outPath)).size};
+  };
+}
+
+/** Exactly one ciphertext source: the read-only R2 adapter or a local file. */
+export function selectCiphertextSource(input: {r2?: unknown; ciphertextPath?: unknown}): 'R2' | 'LOCAL' {
+  if ((input.r2 === undefined) === (input.ciphertextPath === undefined)) throw new Error('RESTORE_INPUT_SOURCE_INVALID');
+  if (input.ciphertextPath !== undefined && (typeof input.ciphertextPath !== 'string' || !isAbsolute(input.ciphertextPath))) throw new Error('RESTORE_INPUT_SOURCE_INVALID');
+  return input.r2 !== undefined ? 'R2' : 'LOCAL';
+}
+
 interface CliInput {
-  r2: {accountId: string; accessKeyId: string; secretAccessKey: string}; key: string; scheduledAt: string;
+  r2?: {accountId: string; accessKeyId: string; secretAccessKey: string}; ciphertextPath?: string; key: string; scheduledAt: string;
   expected: {sha256: string; bytes?: number}; identityPath: string; custody: CustodyConfirmation; pgRestorePath: string; target: RestoreTarget;
+  expectedMigrations?: number;
 }
 
 async function readCliInput(path: string, checkoutRoot: string): Promise<CliInput> {
@@ -220,17 +263,19 @@ export async function main(argv: string[]): Promise<void> {
   const checkoutRoot = process.cwd();
   const input = await readCliInput(path, checkoutRoot);
   const identity = await loadAgeIdentity(input.identityPath, checkoutRoot);
-  const client = new S3Client({region: 'auto', endpoint: `https://${input.r2.accountId}.r2.cloudflarestorage.com`,
-    credentials: {accessKeyId: input.r2.accessKeyId, secretAccessKey: input.r2.secretAccessKey}});
+  const source = selectCiphertextSource(input);
+  const fetchCiphertext = source === 'LOCAL' ? localCiphertextAdapter(input.ciphertextPath!)
+    : r2FetchAdapter(new S3Client({region: 'auto', endpoint: `https://${input.r2!.accountId}.r2.cloudflarestorage.com`,
+      credentials: {accessKeyId: input.r2!.accessKeyId, secretAccessKey: input.r2!.secretAccessKey}}));
   const adapters: DrillAdapters = {
-    fetchCiphertext: r2FetchAdapter(client),
+    fetchCiphertext,
     restore: (dumpPath, target) => runPgRestore({pgRestorePath: input.pgRestorePath, dumpPath, target}),
     openTarget: t => new Pool({host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, max: 4}),
     toolVersion: () => assertPgRestoreVersion(input.pgRestorePath),
     now: () => new Date(),
   };
   const result = await runRestoreDrill(adapters, {dataClass: 'PRODUCTION', key: input.key, scheduledAt: input.scheduledAt, expected: input.expected,
-    identity, custody: input.custody, target: input.target});
+    identity, custody: input.custody, target: input.target, ...(input.expectedMigrations === undefined ? {} : {expectedMigrations: input.expectedMigrations})});
   console.log(JSON.stringify(result));
 }
 

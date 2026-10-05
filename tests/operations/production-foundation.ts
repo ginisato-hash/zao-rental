@@ -4,7 +4,7 @@
 // holds pg_read_all_data WITH ADMIN OPTION (as neon_superuser does), createrole_self_grant=''.
 // No Production connection, credential or provider call.
 import assert from 'node:assert/strict';
-import {randomBytes} from 'node:crypto';
+import {randomBytes,randomUUID} from 'node:crypto';
 import {Client,Pool} from 'pg';
 import {fingerprintHost} from '../../scripts/production-backup';
 import {startIsolatedPostgres} from '../../scripts/postgres';
@@ -12,6 +12,8 @@ import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {migrate} from '../../packages/db/src/index';
 import {productionCredentialTemporaryPasswordSql,productionCredentialRollbackSql,productionCredentialTemporaryPassword,productionCredentialBaseline,productionCredentialContainmentComplete} from '../../scripts/production-credential-activation';
 import * as backupCredential from '../../scripts/production-backup-credential';
+import {applyProductionNormalWorkerGrants,normalWorkerExecuteTargets} from '../../scripts/production-normal-worker-grants';
+import * as workerCredential from '../../scripts/production-worker-credential';
 import {bootstrapProductionFoundation,runFoundationPlan,productionFoundationPlan,schemaFingerprint,securityFingerprint,fingerprintDelta,deltaMismatch,
  FOUNDATION_FAULT_STAGES,type FoundationPlan} from '../../scripts/production-bootstrap';
 
@@ -203,6 +205,103 @@ try{
   await assert.rejects(backupCredential.provisionBackupCredential(ports),(e:Error&{contained?:{state:string}})=>{assert.equal(e.message,'BACKUP_CREDENTIAL_RESET_OUTCOME_UNKNOWN');assert.equal(e.contained?.state,'CONTAINED');return true;});
   assert.equal(posts,1);const unknown=await state();assert.deepEqual([unknown.rolcanlogin,unknown.passwordIsNull,unknown.validUntil],[false,true,'infinity']);
   evidence.backupCredentialLifecycle={provisionPosts:1,leaseMinutesMax:90,finalized:true,contained:true,unknownOutcomeResent:false};
+ });
+ await check('normal worker grants: exactly the four approved EXECUTE grants, role separated; drift and replay are refused',async()=>{
+  const targets=normalWorkerExecuteTargets(DB),claim=targets[1]!.fn;
+  const c=await a.neon.connect();
+  try{
+   // A pre-existing PUBLIC EXECUTE is drift: the installer refuses and rolls back.
+   await a.neon.query(`GRANT EXECUTE ON FUNCTION ${claim} TO PUBLIC`);
+   await assert.rejects(applyProductionNormalWorkerGrants(c,DB,OWNER),/PRODUCTION_NORMAL_WORKER_GRANTS_REFUSED/);
+   await a.neon.query(`REVOKE EXECUTE ON FUNCTION ${claim} FROM PUBLIC`);
+   const holders=async(fn:string)=>(await a.neon.query(`SELECT r.rolname FROM pg_roles r WHERE r.rolname<>$2 AND NOT r.rolsuper AND has_function_privilege(r.oid,$1::regprocedure,'EXECUTE') ORDER BY 1`,[fn,OWNER])).rows.map(r=>r.rolname);
+   for(const t of targets)assert.deepEqual(await holders(t.fn),[],'no grant exists before the installer');
+   const result=await applyProductionNormalWorkerGrants(c,DB,OWNER);
+   assert.equal(result.status,'PRODUCTION_NORMAL_WORKER_GRANTS_INSTALLED');assert.deepEqual(result.grants,targets.map(t=>({fn:t.fn,role:t.role})));
+   assert.deepEqual([result.otherAclChanges,result.schemaChanges,result.credentialChanges,result.businessWrites],[0,0,0,0]);
+   for(const t of targets){
+    assert.deepEqual(await holders(t.fn),[t.role]);
+    assert.equal(await scalar(a.neon,`SELECT has_function_privilege('public',$1::regprocedure,'EXECUTE')`,[t.fn]),false);
+   }
+   // role separation: the dispatcher cannot claim, the worker cannot dispatch, nobody else can project or read due notifications
+   assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_dispatch',$1::regprocedure,'EXECUTE')`,[targets[1]!.fn]),false);
+   assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_truth',$1::regprocedure,'EXECUTE')`,[targets[0]!.fn]),false);
+   assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_receipt',$1::regprocedure,'EXECUTE')`,[targets[2]!.fn]),false);
+   // replay: the owner-only precondition no longer holds, so a second run changes nothing
+   await assert.rejects(applyProductionNormalWorkerGrants(c,DB,OWNER),/PRODUCTION_NORMAL_WORKER_GRANTS_REFUSED/);
+   for(const t of targets)assert.deepEqual(await holders(t.fn),[t.role]);
+   evidence.normalWorkerGrants={installed:4,replayRefused:true};
+  }finally{c.release();}
+ });
+ await check('worker role lifecycle (production-worker-credential) on the real foundation roles: three roles, direct-login probes against the approved EXECUTE grants, containment, unknown-reset path',async()=>{
+  const T=backupCredential.BACKUP_CREDENTIAL_TARGET,HOST='ep-synthetic-0000.us-east-2.aws.neon.tech';
+  const port=(a.neon.options as {port:number}).port;
+  const rows:workerCredential.VercelEnvRow[]=[{key:'CRON_SECRET',type:'sensitive',target:['production']}],sunk:Record<string,string>={};
+  let claimed=new Set<string>(),posts=0,failTruth=false;
+  const ports:workerCredential.WorkerCredentialPorts={
+   neon:{
+    async get(path){
+     if(path===`/projects/${T.project}`)return {project:{id:T.project}};
+     if(path===`/projects/${T.project}/branches/${T.branch}`)return {branch:{id:T.branch}};
+     if(path.endsWith('/databases/'+T.database))return {database:{name:T.database,owner_name:T.owner}};
+     if(path.endsWith('/roles'))return {roles:[{name:T.manager},{name:T.owner},...workerCredential.WORKER_ROLES.map(r=>({name:r.role}))]};
+     if(path.endsWith('/endpoints'))return {endpoints:[{type:'read_write',branch_id:T.branch,host:HOST}]};
+     if(path.includes('/operations/'))return {operation:{id:path.split('/').pop(),status:'finished'}};
+     throw new Error('unexpected GET '+path);
+    },
+    async post(path){
+     posts++;const role=workerCredential.WORKER_ROLES.find(r=>path===workerCredential.workerResetPath(r.role));assert.ok(role);
+     if(failTruth&&role!.key==='worker')throw new Error('socket hang up');
+     const password=randomBytes(24).toString('base64url');
+     await a.canonical.query(`ALTER ROLE ${role!.role} PASSWORD '${password}'`); // what Neon's reset_password does
+     return {role:{name:role!.role,password},operations:[{id:randomUUID()}]};
+    },
+   },
+   vercel:{
+    async envRows(){return rows.map(r=>({...r}));},
+    async setSensitive(n,v){sunk[n]=v;rows.push({key:n,type:'sensitive',target:['production']});},
+    async remove(n){delete sunk[n];const i=rows.findIndex(r=>r.key===n);if(i>=0)rows.splice(i,1);},
+   },
+   async connectOwner(){const c=await a.neon.connect();return {query:((sql:string,p?:unknown[])=>c.query(sql,p)) as never,end:async()=>c.release()};},
+   async probe(role,password){
+    const c=new Client({host:'127.0.0.1',port,user:role.role,password,database:T.database});await c.connect();
+    try{
+     const who=(await c.query('SELECT current_user AS u')).rows[0].u;
+     const check=(await c.query("SELECT has_function_privilege(current_user,$1,'EXECUTE') allowed,rolvaliduntil IS NULL OR rolvaliduntil>clock_timestamp() lease FROM pg_roles WHERE rolname=current_user",[role.signature])).rows[0];
+     if(who!==role.role||check.allowed!==true||check.lease!==true)throw new Error('WORKER_CREDENTIAL_PROBE_FAILED');
+     return {tlsVerified:false as unknown as true,roleChecks:'PASS' as const,signature:'EXECUTE' as const,leaseValid:true as const};
+    }finally{await c.end();}
+   },
+   guard:{exists:k=>claimed.has(k),claim:k=>{if(claimed.has(k))throw new Error('WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed.add(k);}},
+   async sleep(){},now:()=>new Date(),containmentSchedule:[0,0],expectedHostFingerprint:fingerprintHost(HOST),async darkProofVerified(){},
+  };
+  const state=async(role:string)=>(await a.canonical.query(`SELECT r.rolcanlogin,a.rolpassword IS NULL AS "passwordIsNull",CASE WHEN isfinite(r.rolvaliduntil) THEN 'finite' ELSE r.rolvaliduntil::text END AS "validUntil" FROM pg_roles r JOIN pg_authid a ON a.oid=r.oid WHERE r.rolname=$1`,[role])).rows[0] as {rolcanlogin:boolean;passwordIsNull:boolean;validUntil:string|null};
+  const login=async(role:string,password:string)=>{const c=new Client({host:'127.0.0.1',port,user:role,password,database:T.database});await c.connect();try{return (await c.query('SELECT current_user AS u')).rows[0].u as string;}finally{await c.end();}};
+  for(const r of workerCredential.WORKER_ROLES){const st=await state(r.role);assert.deepEqual([st.rolcanlogin,st.passwordIsNull,st.validUntil],[false,true,null]);}
+  // provision: three roles, one POST each, each probed against its own approved EXECUTE grant, sunk, then VALID UNTIL infinity
+  const ev=await workerCredential.provisionWorkerRoles(ports);
+  assert.equal(ev.state,'WORKER_ROLES_ACTIVE');assert.equal(posts,3);
+  for(const r of workerCredential.WORKER_ROLES){
+   const st=await state(r.role);assert.deepEqual([st.rolcanlogin,st.validUntil],[true,'infinity']);
+   assert.equal(await login(r.role,sunk[r.sink]!),r.role);
+  }
+  assert.deepEqual(Object.keys(sunk).sort(),workerCredential.WORKER_ROLES.map(r=>r.sink).sort());
+  // role separation holds for the real logins: the dispatcher cannot execute the worker's claim function
+  const dispatcher=new Client({host:'127.0.0.1',port,user:'neondb_pay_dispatch',password:sunk.PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER!,database:T.database});await dispatcher.connect();
+  try{assert.equal((await dispatcher.query("SELECT has_function_privilege(current_user,'payment_reconciliation.claim_normal(text,integer,text,timestamptz)','EXECUTE') AS x")).rows[0].x,false);}finally{await dispatcher.end();}
+  // containment: NOLOGIN, no password, VALID UNTIL infinity, sinks removed, old passwords refused
+  const old={...sunk};
+  const contained=await workerCredential.containWorkerRoles(ports);
+  assert.equal(contained.state,'CONTAINED');assert.deepEqual(Object.keys(sunk),[]);
+  for(const r of workerCredential.WORKER_ROLES){const st=await state(r.role);assert.deepEqual([st.rolcanlogin,st.passwordIsNull,st.validUntil],[false,true,'infinity']);await assert.rejects(login(r.role,old[r.sink]!));}
+  // a fresh authorization with an unknown provider outcome for the second role: only that role is contained, the first stays active
+  claimed=new Set();posts=0;failTruth=true;
+  await assert.rejects(workerCredential.provisionWorkerRoles(ports),(e:Error&{contained?:{state:string;rolesContained:string[]}})=>{assert.equal(e.message,'WORKER_CREDENTIAL_RESET_OUTCOME_UNKNOWN');assert.equal(e.contained?.state,'CONTAINED');assert.deepEqual(e.contained?.rolesContained,['neondb_pay_truth']);return true;});
+  assert.equal(posts,2);
+  assert.equal((await state('neondb_pay_dispatch')).rolcanlogin,true);assert.equal((await state('neondb_pay_truth')).rolcanlogin,false);assert.equal((await state('neondb_pay_projection')).rolcanlogin,false);
+  assert.deepEqual(Object.keys(sunk),['PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER']);
+  await workerCredential.containWorkerRoles(ports);
+  evidence.workerCredentialLifecycle={roles:3,postsPerRole:1,contained:true,unknownOutcomeResent:false};
  });
  await check('a second foundation bootstrap is refused on the non-empty database',async()=>{
   await assert.rejects(bootstrapProductionFoundation(a.neon,DB),/PRODUCTION_DATABASE_NOT_EMPTY/);

@@ -75,6 +75,30 @@ ACTIVATION_ORDER
    lines are the only proof. Their absence is never success (it means the scheduler is not arriving or not authorized). A manual
    `curl` — even with the secret — never substitutes for the scheduler, protection is not removed to make it pass, and activation
    is never bound ahead of this proof.
+   The proof is **machine-collected**: the exact dark deployment id is written to `.local/evidence/production-worker/dark-deployment-id.txt`
+   (the deploy is run from the clean accepted-main checkout with `vercel deploy --prod`, so Vercel records the commit itself), then
+   `npm run production:worker-dormant-proof` (read-only: three `vercel api` GETs and `vercel logs --json`) builds `dormant-proof.json`
+   only if that deployment is READY, the project's current production deployment, built from the accepted `origin/main` commit with the
+   cron defined, protection still `all`, `CRON_SECRET` the only sensitive Production binding of this plan, and the route's whole
+   request log in a 15-minute window is GET 200 `normal_worker_tick_dormant` over at least three distinct minutes at one-minute
+   cadence, the latest within 150 seconds, with no `normal_worker_tick` line. `provisionWorkerRoles` does not read the file as
+   truth: it re-derives every claim from live readbacks, so a stale, hand-written or minimal file, a deployment that is no longer
+   current, an activation name already bound or a protection change all refuse before any mutation. The record is valid for 30
+   minutes; verification reads the log back to the record's first observation (at most 60 minutes) and applies the rules to the rows
+   from that observation on, so an older tick or stray call before it is not part of the record. A refusal prints a fixed reason code
+   (`reason`), never log or response text.
+   Readbacks are all-or-nothing: a reduced deployment view (no `projectId`, `crons`, `createdAt` or `meta`), a missing `readyState`,
+   `target`, `crons` or protection field, a non-zero CLI exit, unparseable output, an env list with a further page or hidden
+   production variables (`pagination.next`, `hiddenProductionEnvCount` — an absence claim needs the whole list), a log that reached
+   its `--limit`, a log row without a path or a log item of an unknown shape are each a refusal, never a default. Log rows that carry
+   a `projectId` / `environment` must match this project / production.
+   **What "real Cron" rests on.** Vercel documents the scheduler's `vercel-cron/1.0` user agent, the `x-vercel-cron-schedule` header and
+   a `cron` request type, but none of them is a field of the `vercel logs --json` rows (the REST runtime-log schema has none either), so
+   they are neither read nor trusted and the event name alone never decides. The proof rests on the Bearer secret (checked before the
+   dormant line, generated in memory and never shown), the deployment being production and current, and the cadence rule; delivery is
+   documented as best effort (a minute can arrive twice or be missed, which the cadence rule tolerates up to one missed minute).
+   A platform-side on-demand run (dashboard "Run", `vercel crons run`) cannot be told apart from the schedule in this log: the
+   cadence rule only makes faking it by hand impractical, and they must not be used during the proof window.
 4. Only after step 3: worker role credentials per section 2 (sinks written, probes passed).
 5. `PRODUCTION_WORKER_ACCEPTED_AFTER`.
 6. `PRODUCTION_WORKER_TICK_ACTIVATION` last, in the final environment-only deployment, then watch the first ticks.

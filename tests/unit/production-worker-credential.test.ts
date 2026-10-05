@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {chmodSync,mkdirSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
+import {chmodSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fingerprintHost} from '../../scripts/production-backup';
@@ -70,7 +70,7 @@ function world(over:{failResetFor?:string;probeFails?:string;noDark?:boolean;noC
   async probe(role,password){probes++;log.push('probe '+role.key);if(over.probeFails===role.role)throw new Error('WORKER_CREDENTIAL_PROBE_FAILED');assert.equal(password,passwords[role.role]);return {tlsVerified:true,roleChecks:'PASS',signature:'EXECUTE',leaseValid:true};},
   guard:{exists:k=>claimed.has(k),claim:k=>{if(claimed.has(k))throw new Error('WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed.add(k);log.push('guard.claim '+k);}},
   async sleep(){},now:()=>new Date(1_000_000+log.length),containmentSchedule:[0,0,0],expectedHostFingerprint:fingerprintHost(HOST),
-  darkProofRecorded:()=>!over.noDark};
+  async darkProofVerified(){if(over.noDark)throw new Error('WORKER_DORMANT_PROOF_PROOF_MISSING');}};
  return {ports,log,sunk,rows,states,statements,passwords,get posts(){return posts;},get probes(){return probes;}};
 }
 const everything=(x:ReturnType<typeof world>)=>JSON.stringify(x.log);
@@ -178,17 +178,12 @@ test('the Vercel adapter sends a value over stdin only, accepts only the four si
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
 
-test('guards are exclusive per role, the dark proof record is shape-checked, SQL builders are exact and the CLI takes no arguments',async()=>{
+test('guards are exclusive per role, SQL builders are exact and the CLI takes no arguments',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'zao-worker-guard-'));
  try{
   const g=w.workerFileGuard(join(dir,'ev'));assert.equal(g.exists('worker'),false);g.claim('worker');
   assert.equal(w.workerFileGuard(join(dir,'ev')).exists('worker'),true);assert.equal(g.exists('dispatcher'),false);
   assert.throws(()=>g.claim('worker'),/WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED/);
-  assert.equal(w.darkProofRecorded(join(dir,'ev')),false);
-  mkdirSync(join(dir,'ev'),{recursive:true});
-  for(const bad of ['{}','not json',JSON.stringify({result:'DORMANT_LOG_OBSERVED',event:'normal_worker_tick',deploymentId:'dpl_abcdefgh1234'}),JSON.stringify({result:'DORMANT_LOG_OBSERVED',event:'normal_worker_tick_dormant',deploymentId:'x'})]){writeFileSync(w.darkProofFile(join(dir,'ev')),bad);assert.equal(w.darkProofRecorded(join(dir,'ev')),false);}
-  writeFileSync(w.darkProofFile(join(dir,'ev')),JSON.stringify({result:'DORMANT_LOG_OBSERVED',event:'normal_worker_tick_dormant',deploymentId:'dpl_abcdefgh1234'}));
-  assert.equal(w.darkProofRecorded(join(dir,'ev')),true);
  }finally{rmSync(dir,{recursive:true,force:true});}
  assert.deepEqual(w.workerContainSql('neondb_pay_truth'),['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_pay_truth" NOLOGIN PASSWORD NULL VALID UNTIL \'infinity\'']);
  assert.deepEqual(w.workerFinalizeSql('neondb_pay_truth'),['SET LOCAL ROLE "neondb_role_admin"','ALTER ROLE "neondb_pay_truth" VALID UNTIL \'infinity\'']);

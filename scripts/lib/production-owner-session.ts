@@ -3,12 +3,13 @@
 // fingerprint, normalised to verify-full with channel binding, and handed to the same admission helpers the earlier first-admin and targeted
 // installers use. It is never printed, written, put in argv or placed in an environment variable.
 import {execFileSync} from 'node:child_process';
-import {existsSync,readFileSync,realpathSync} from 'node:fs';
-import {dirname,join,resolve} from 'node:path';
+import {realpathSync} from 'node:fs';
+import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Pool,type PoolClient} from 'pg';
 import {assertFirstAdminDatabaseOwner,assertFirstAdminRelease,assertFirstAdminTls,firstAdminDatabaseConfig} from './first-admin-bootstrap';
-import {BACKUP_CREDENTIAL_TARGET as T,assertRestorePass,evidenceDirectory,type NeonPort} from '../production-backup-credential';
+import {BACKUP_CREDENTIAL_TARGET as T,type NeonPort} from '../production-backup-credential';
+import {verifyRestorePassRecord} from '../production-restore-evidence';
 import {assertProductionHost,assertProductionHostFingerprint,assertProductionPort} from '../production-backup';
 
 const refuse=(suffix:string):never=>{throw new Error('PRODUCTION_INSTALL_'+suffix);};
@@ -25,11 +26,10 @@ export function assertAcceptedMainRelease(root:string=resolve(dirname(fileURLToP
 export function assertNoTlsOverrides(env:NodeJS.ProcessEnv=process.env){
  if(TLS_OVERRIDES.some(k=>env[k]!==undefined))refuse('TLS_REJECTED');
 }
-/** The Production restore PASS record (sanitised object key and ciphertext hash) must exist before any schema or grant change. */
-export function readRestorePassRecord(root:string=process.cwd()){
- const path=join(evidenceDirectory(root),'restore-pass.json');
- if(!existsSync(path))return refuse('RESTORE_PASS_REQUIRED');
- try{const record:unknown=JSON.parse(readFileSync(path,'utf8'));assertRestorePass(record);return record;}catch{return refuse('RESTORE_PASS_REQUIRED');}
+/** The versioned restore PASS record is derived by `production-restore-evidence` from the real Production restore result and the downloaded ciphertext; this gate
+ * re-verifies every binding (drill result hash, object key, pre-0054 registry, ciphertext) and the 24-hour freshness. A hand-written file is refused. */
+export async function requireRestorePass(root:string=process.cwd()){
+ try{return await verifyRestorePassRecord(root);}catch{return refuse('RESTORE_PASS_REQUIRED');}
 }
 
 export type OwnerSession={client:PoolClient;close():Promise<void>};

@@ -273,7 +273,7 @@ try{
     }finally{await c.end();}
    },
    guard:{exists:k=>claimed.has(k),claim:k=>{if(claimed.has(k))throw new Error('WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed.add(k);}},
-   async sleep(){},now:()=>new Date(),containmentSchedule:[0,0],expectedHostFingerprint:fingerprintHost(HOST),darkProofRecorded:()=>true,
+   async sleep(){},now:()=>new Date(),containmentSchedule:[0,0],expectedHostFingerprint:fingerprintHost(HOST),async darkProofVerified(){},
   };
   const state=async(role:string)=>(await a.canonical.query(`SELECT r.rolcanlogin,a.rolpassword IS NULL AS "passwordIsNull",CASE WHEN isfinite(r.rolvaliduntil) THEN 'finite' ELSE r.rolvaliduntil::text END AS "validUntil" FROM pg_roles r JOIN pg_authid a ON a.oid=r.oid WHERE r.rolname=$1`,[role])).rows[0] as {rolcanlogin:boolean;passwordIsNull:boolean;validUntil:string|null};
   const login=async(role:string,password:string)=>{const c=new Client({host:'127.0.0.1',port,user:role,password,database:T.database});await c.connect();try{return (await c.query('SELECT current_user AS u')).rows[0].u as string;}finally{await c.end();}};

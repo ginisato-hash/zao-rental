@@ -75,6 +75,15 @@ ACTIVATION_ORDER
    lines are the only proof. Their absence is never success (it means the scheduler is not arriving or not authorized). A manual
    `curl` — even with the secret — never substitutes for the scheduler, protection is not removed to make it pass, and activation
    is never bound ahead of this proof.
+   The proof is **machine-collected**: the exact dark deployment id is written to `.local/evidence/production-worker/dark-deployment-id.txt`
+   (the deploy is run from the clean accepted-main checkout with `vercel deploy --prod`, so Vercel records the commit itself), then
+   `npm run production:worker-dormant-proof` (read-only: three `vercel api` GETs and `vercel logs --json`) builds `dormant-proof.json`
+   only if that deployment is READY, the project's current production deployment, built from the accepted `origin/main` commit with the
+   cron defined, protection still `all`, `CRON_SECRET` the only sensitive Production binding of this plan, and the route's whole
+   request log in a 15-minute window is GET 200 `normal_worker_tick_dormant` over at least three distinct minutes at one-minute
+   cadence, the latest within five minutes, with no `normal_worker_tick` line. `provisionWorkerRoles` does not read the file as
+   truth: it re-derives every claim from live readbacks, so a stale, hand-written or minimal file, a deployment that is no longer
+   current, an activation name already bound or a protection change all refuse before any mutation.
 4. Only after step 3: worker role credentials per section 2 (sinks written, probes passed).
 5. `PRODUCTION_WORKER_ACCEPTED_AFTER`.
 6. `PRODUCTION_WORKER_TICK_ACTIVATION` last, in the final environment-only deployment, then watch the first ticks.

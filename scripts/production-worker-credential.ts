@@ -7,7 +7,7 @@
 // sink + metadata readback -> VALID UNTIL 'infinity' with one readback. Roles are activated only after the dark cron reach proof record exists.
 import {spawn} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
-import {closeSync,existsSync,mkdirSync,openSync,readFileSync,writeSync} from 'node:fs';
+import {closeSync,existsSync,mkdirSync,openSync,writeSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
 import {Client,Pool} from 'pg';
@@ -84,8 +84,9 @@ export interface WorkerCredentialPorts{neon:NeonPort;vercel:VercelPort;connectOw
  /** Opens the worker's own role over verify-full TLS with channel binding and runs the worker's own checks (verifyAcceptanceRole, signature EXECUTE, lease). */
  probe(role:WorkerRole,password:string,host:string):Promise<ProbeEvidence>;
  guard:WorkerGuardStore;sleep(ms:number):Promise<void>;now():Date;containmentSchedule?:number[];expectedHostFingerprint?:string;
- /** The dark reach proof record (real Vercel Cron `normal_worker_tick_dormant`); roles are never activated without it. */
- darkProofRecorded():boolean}
+ /** Resolves only when a machine-collected dark reach proof (real Vercel Cron `normal_worker_tick_dormant`, see production-worker-dormant-proof) is fresh and still true against
+  *  live Vercel state for the accepted source; roles are never activated otherwise. A shape-only file never satisfies it. */
+ darkProofVerified():Promise<void>}
 
 type Json=Record<string,unknown>;
 const obj=(v:unknown,code:string):Json=>{if(!v||typeof v!=='object'||Array.isArray(v))throw fail(code);return v as Json;};
@@ -183,7 +184,7 @@ export type ProvisionEvidence=Readonly<{version:string;state:'WORKER_ROLES_ACTIV
 export async function provisionWorkerRoles(p:WorkerCredentialPorts):Promise<ProvisionEvidence>{
  const steps:string[]=[];let owner:SqlSession|undefined,mutated:WorkerRole[]=[],tls=true;
  try{
-  if(!p.darkProofRecorded())throw fail('WORKER_CREDENTIAL_DARK_PROOF_REQUIRED');
+  try{await p.darkProofVerified();}catch{throw fail('WORKER_CREDENTIAL_DARK_PROOF_REQUIRED');}
   for(const r of WORKER_ROLES)if(p.guard.exists(r.key))throw fail('WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED');
   const rows=await p.vercel.envRows();
   if(!sinkMetadataOk(rows,CRON_SECRET_NAME))throw fail('WORKER_CREDENTIAL_CRON_SECRET_REQUIRED');
@@ -207,7 +208,7 @@ const SAFE_CODE=/^(WORKER|BACKUP)_(CREDENTIAL|HOST|PORT)_[A-Z0-9_]{1,80}$/;
 function safeCode(e:unknown):string{const m=String((e as Error)?.message??'');return SAFE_CODE.test(m)||/^PRODUCTION_CREDENTIAL_[A-Z0-9_]{1,80}$/.test(m)?m:'WORKER_CREDENTIAL_FAILED';}
 
 // ---------------------------------------------------------------- production adapters (stdout is captured, never inherited)
-const VERCEL_BIN=join(homedir(),'.npm/_npx/69f9afb961c37556/node_modules/.bin/vercel');
+export const VERCEL_BIN=join(homedir(),'.npm/_npx/69f9afb961c37556/node_modules/.bin/vercel');
 const NEON_BIN=join(homedir(),'.npm/_npx/978debf9b3a75271/node_modules/.bin/neon');
 const SINK_NAMES=new Set<string>([CRON_SECRET_NAME,...WORKER_ROLES.map(r=>r.sink)]);
 export function vercelCliPort(bin:string=VERCEL_BIN,env:NodeJS.ProcessEnv=process.env):VercelPort{
@@ -241,11 +242,6 @@ export function workerFileGuard(dir:string):WorkerGuardStore{
   try{writeSync(fd,JSON.stringify({version:WORKER_CREDENTIAL_VERSION,role:key,claimedAt:new Date().toISOString()})+'\n');}finally{closeSync(fd);}
  }};
 }
-export function darkProofFile(dir:string){return join(dir,'dormant-proof.json');}
-/** The record is written only after real Vercel Cron `normal_worker_tick_dormant` lines were observed; shape-checked here, never trusted beyond its presence. */
-export function darkProofRecorded(dir:string):boolean{
- try{const r=JSON.parse(readFileSync(darkProofFile(dir),'utf8')) as {result?:unknown;event?:unknown;deploymentId?:unknown};return r.result==='DORMANT_LOG_OBSERVED'&&r.event==='normal_worker_tick_dormant'&&typeof r.deploymentId==='string'&&/^dpl_[A-Za-z0-9]{8,64}$/.test(r.deploymentId);}catch{return false;}
-}
 async function realProbe(role:WorkerRole,password:string,host:string):Promise<ProbeEvidence>{
  if(TLS_OVERRIDES.some(k=>process.env[k]!==undefined))throw fail('WORKER_CREDENTIAL_TLS_REJECTED');
  const url=new URL('postgresql://placeholder/');url.hostname=host;url.username=role.role;url.password=password;url.pathname='/'+T.database;url.search='?sslmode=verify-full';
@@ -270,7 +266,7 @@ async function realProbe(role:WorkerRole,password:string,host:string):Promise<Pr
 export function productionWorkerPorts(root:string=process.cwd()):WorkerCredentialPorts{
  if(!existsSync(NEON_BIN)||!existsSync(VERCEL_BIN))throw fail('WORKER_CREDENTIAL_CLI_MISSING');
  const neon=neonCliPort(NEON_BIN),dir=evidenceDirectory(root);
- return {neon,vercel:vercelCliPort(),guard:workerFileGuard(dir),sleep:ms=>new Promise(r=>setTimeout(r,ms)),now:()=>new Date(),darkProofRecorded:()=>darkProofRecorded(dir),probe:realProbe,
+ return {neon,vercel:vercelCliPort(),guard:workerFileGuard(dir),sleep:ms=>new Promise(r=>setTimeout(r,ms)),now:()=>new Date(),darkProofVerified:async()=>{await (await import('./production-worker-dormant-proof')).verifyRecordedDormantProof(root);},probe:realProbe,
   connectOwner:async host=>{
    const uri=obj(await neon.get(`/projects/${T.project}/connection_uri`,{branch_id:T.branch,database_name:T.database,role_name:T.owner,pooled:'false'}),'WORKER_CREDENTIAL_OWNER_SESSION_INVALID').uri;
    if(typeof uri!=='string')throw fail('WORKER_CREDENTIAL_OWNER_SESSION_INVALID');

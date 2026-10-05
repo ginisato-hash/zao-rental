@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {fingerprintHost} from '../../scripts/production-backup';
 import {BACKUP_CREDENTIAL_TARGET as T,evidenceDirectory,type NeonPort} from '../../scripts/production-backup-credential';
 import {main} from '../../scripts/production-install-normal-worker';
-import {assertNoTlsOverrides,openOwnerSession,readRestorePassRecord} from '../../scripts/lib/production-owner-session';
+import {assertNoTlsOverrides,openOwnerSession,requireRestorePass} from '../../scripts/lib/production-owner-session';
 import {normalWorkerExecuteTargets} from '../../scripts/production-normal-worker-grants';
 import {productionNormalWorkerGrants} from '../../scripts/production-payment-roles';
 
@@ -57,12 +57,11 @@ test('admission: arguments, TLS overrides and the restore PASS record are refuse
  assertNoTlsOverrides({} as unknown as NodeJS.ProcessEnv);
  const root=mkdtempSync(join(tmpdir(),'zao-install-'));
  try{
-  assert.throws(()=>readRestorePassRecord(root),/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/);
+  // the gate is the machine-derived record: absent, hand-written (even in the legacy shape) and malformed files are all refused; the strict verifier is tested in production-restore-evidence.test.ts
+  await assert.rejects(requireRestorePass(root),/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/);
   mkdirSync(evidenceDirectory(root),{recursive:true});
   const path=join(evidenceDirectory(root),'restore-pass.json');
-  for(const bad of ['{}','not json',JSON.stringify({result:'FAIL',objectKey:'hourly/2026/10/04/2026-10-04T16:10:00.000Z.dump.age',objectSha256:'a'.repeat(64)})]){writeFileSync(path,bad);assert.throws(()=>readRestorePassRecord(root),/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/);}
-  writeFileSync(path,JSON.stringify({result:'PASS',objectKey:'hourly/2026/10/04/2026-10-04T16:10:00.000Z.dump.age',objectSha256:'a'.repeat(64)}));
-  assert.equal(readRestorePassRecord(root).result,'PASS');
+  for(const bad of ['{}','not json',JSON.stringify({result:'PASS',objectKey:'hourly/2026/10/04/2026-10-04T16-17-00-000Z.dump.age',objectSha256:'a'.repeat(64)})]){writeFileSync(path,bad);await assert.rejects(requireRestorePass(root),/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/);}
  }finally{rmSync(root,{recursive:true,force:true});}
 });
 

@@ -12,7 +12,7 @@ import {Pool} from 'pg';
 import {migrationPlan, migrationsDirectory} from '../packages/db/src/index';
 import {EXPECTED_PRODUCTION_BUCKET, EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256, fingerprintHost, redactSecrets} from './production-backup';
 import {CRITICAL, criticalFingerprint, validateRestored} from './local-restore';
-import {registryDigest} from './production-restore-evidence';
+import {registryDigest} from './lib/registry-digest';
 
 // Production backup RESTORE drill. Read-only against R2 (GetObject only), restores only into an
 // empty, loopback, disposable `zr_<12 hex>` database and never into Production. A SYNTHETIC drill and

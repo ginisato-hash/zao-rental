@@ -185,7 +185,7 @@ export type ProvisionEvidence=Readonly<{version:string;state:'WORKER_ROLES_ACTIV
 export async function provisionWorkerRoles(p:WorkerCredentialPorts):Promise<ProvisionEvidence>{
  const steps:string[]=[];let owner:SqlSession|undefined,mutated:WorkerRole[]=[],tls=true;
  try{
-  try{await p.darkProofVerified();}catch{throw fail('WORKER_CREDENTIAL_DARK_PROOF_REQUIRED');}
+  try{await p.darkProofVerified();}catch(e){throw Object.assign(fail('WORKER_CREDENTIAL_DARK_PROOF_REQUIRED'),{reason:safeReason(e)});}
   for(const r of WORKER_ROLES)if(p.guard.exists(r.key))throw fail('WORKER_CREDENTIAL_RESET_ALREADY_ATTEMPTED');
   const rows=await p.vercel.envRows();
   if(!sinkMetadataOk(rows,CRON_SECRET_NAME))throw fail('WORKER_CREDENTIAL_CRON_SECRET_REQUIRED');
@@ -201,11 +201,13 @@ export async function provisionWorkerRoles(p:WorkerCredentialPorts):Promise<Prov
   // Contain the failing role and every role not yet finished; roles already ACTIVE stay (their sinks are bound), the failure is reported.
   const failing=mutated.filter(r=>!steps.includes(r.key+':ACTIVE'));
   const contained=failing.length?await containRoles(p,failing):undefined;
-  throw Object.assign(fail(code),{contained,steps});
+  throw Object.assign(fail(code),{contained,steps,reason:(e as {reason?:unknown}).reason??null});
  }finally{try{await owner?.end();}catch{/* ignore */}}
 }
 
 const SAFE_CODE=/^(WORKER|BACKUP)_(CREDENTIAL|HOST|PORT)_[A-Z0-9_]{1,80}$/;
+/** A fixed reason code of the dark-proof verifier (never its text), so a refusal says why. */
+function safeReason(e:unknown):string|null{const m=String((e as Error)?.message??'');return /^WORKER_DORMANT_PROOF_[A-Z_]{1,60}$/.test(m)?m:null;}
 function safeCode(e:unknown):string{const m=String((e as Error)?.message??'');return SAFE_CODE.test(m)||/^PRODUCTION_CREDENTIAL_[A-Z0-9_]{1,80}$/.test(m)?m:'WORKER_CREDENTIAL_FAILED';}
 
 // ---------------------------------------------------------------- production adapters (stdout is captured, never inherited)
@@ -216,10 +218,10 @@ export function vercelCliPort(bin:string=VERCEL_BIN,env:NodeJS.ProcessEnv=proces
  const scope=['--project',VERCEL_TARGET.project,'--scope',VERCEL_TARGET.scope];
  const allowed=(n:string)=>{if(!SINK_NAMES.has(n))throw fail('WORKER_CREDENTIAL_VERCEL_NAME_REFUSED');return n;};
  const run=(args:string[],stdin?:string,capture=false)=>new Promise<string>((resolve,reject)=>{
-  const child=spawn(bin,args,{env,stdio:['pipe','pipe','pipe'],windowsHide:true});let out='';
-  child.stdout.on('data',d=>{if(capture&&out.length<4<<20)out+=String(d);});child.stderr.on('data',()=>{});
+  const child=spawn(bin,args,{env,stdio:['pipe','pipe','pipe'],windowsHide:true});let out='',truncated=false;
+  child.stdout.on('data',d=>{if(capture){if(out.length<4<<20)out+=String(d);else truncated=true;}});child.stderr.on('data',()=>{});
   child.on('error',()=>reject(fail('WORKER_CREDENTIAL_VERCEL_CALL_FAILED')));
-  child.on('close',code=>code===0?resolve(out):reject(fail('WORKER_CREDENTIAL_VERCEL_CALL_FAILED')));
+  child.on('close',code=>code===0&&!truncated?resolve(out):reject(fail('WORKER_CREDENTIAL_VERCEL_CALL_FAILED')));
   child.stdin.on('error',()=>{});child.stdin.end(stdin??'');
  });
  return {
@@ -302,8 +304,8 @@ export async function main(argv:string[],root:string=process.cwd()):Promise<void
 }
 if(process.argv[1]&&new URL(import.meta.url).pathname===process.argv[1]){
  main(process.argv.slice(2)).then(()=>{process.exitCode=0;},error=>{
-  const e=error as {contained?:unknown;steps?:unknown};
-  console.error(JSON.stringify({state:'FAILED',code:safeCode(error),contained:e.contained??null,steps:Array.isArray(e.steps)?e.steps:[]}));
+  const e=error as {contained?:unknown;steps?:unknown;reason?:unknown};
+  console.error(JSON.stringify({state:'FAILED',code:safeCode(error),reason:/^WORKER_DORMANT_PROOF_[A-Z_]{1,60}$/.test(String(e.reason))?e.reason:null,contained:e.contained??null,steps:Array.isArray(e.steps)?e.steps:[]}));
   process.exitCode=1;
  });
 }

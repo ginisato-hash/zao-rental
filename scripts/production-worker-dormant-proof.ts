@@ -1,15 +1,16 @@
 // Dark reach proof collector (Issue 47, TD review of PR #51, M2). The worker role credentials may be activated only after the REAL Vercel scheduler has called the dark
 // deployment's /api/internal/worker-tick and the route answered `normal_worker_tick_dormant`. This module builds that proof from read-only Vercel readbacks - never from a
 // hand-written file - and `provisionWorkerRoles` re-derives every claim of the record from live readbacks again (a record only names what to re-check). What it binds:
-//   - the accepted merged source: the deployment's git commit (derived by the Vercel CLI from the clean checkout it deployed, never typed by a person) equals the clean,
-//     current origin/main HEAD of this checkout, and the deployment is not marked dirty
+//   - the accepted merged source: the git commit Vercel reports for the deployment (metadata the CLI derives from the checkout it deployed from; this is not proof of the built
+//     content) equals the clean, current origin/main HEAD of this checkout, and the deployment is not marked dirty. Deploy from the clean accepted-main checkout and never pass
+//     `--meta gitCommitSha=...`
 //   - the exact dark deployment: READY, production target, the CURRENT production deployment of the project, with the worker-tick cron defined
-//   - CRON_SECRET bound first and alone: sensitive, production only; no worker password sink, no cutoff, no activation token
+//   - CRON_SECRET present exactly once, sensitive, production only, and none of the later names (worker password sinks, cutoff, activation token) is bound
 //   - real scheduler traffic: the route authorises the Bearer secret BEFORE it logs anything, and CRON_SECRET is generated in memory and never shown to a person, so a
 //     dormant line can only come from a caller that holds the secret, i.e. Vercel's own cron dispatcher. The event name alone never decides, and neither does a user agent: Vercel
 //     documents `vercel-cron/1.0`, the `x-vercel-cron-schedule` header and a `cron` request type, but none of them is a field of the `vercel logs --json` rows, so nothing here
 //     reads or trusts them. Instead every request to the route in the window must be a GET answered 200 by this deployment with the dormant event (project and environment too,
-//     wherever the row carries them), at least three distinct minutes at one-minute cadence (delivery is documented as best effort: a minute may arrive twice or not at all, so
+//     wherever the row carries them; the installed CLI fills those two from its query, so they add little beyond the server-side deployment filter), at least three distinct minutes at one-minute cadence (delivery is documented as best effort: a minute may arrive twice or not at all, so
 //     a duplicate or one missed minute is tolerated, a burst or a wider gap is refused), the latest observation fresh, and no activated tick event. A platform-side on-demand run
 //     (dashboard "Run", `vercel crons run`) is not distinguishable from the schedule in this log; the cadence rule only makes faking it by hand impractical.
 //   - protection unchanged: the project's deployment protection still reads `all`
@@ -27,7 +28,7 @@ export const CRON_PATH='/api/internal/worker-tick';
 export const CRON_SCHEDULE='* * * * *';
 export const OBSERVATION_WINDOW_MINUTES=15;
 export const MIN_DISTINCT_MINUTES=3;
-export const OBSERVATION_FRESH_SECONDS=300;
+export const OBSERVATION_FRESH_SECONDS=150;
 export const PROOF_MAX_AGE_MINUTES=30;
 const LOG_LIMIT=1000;
 const ABSENT=Object.freeze([...WORKER_ROLES.map(r=>r.sink),'PRODUCTION_WORKER_ACCEPTED_AFTER','PRODUCTION_WORKER_TICK_ACTIVATION']);
@@ -72,9 +73,11 @@ const eventOf=(message:string)=>{try{const v=JSON.parse(message) as {event?:unkn
 const ACTIVATED_TICK=/normal_worker_tick(?!_dormant)/;
 
 /** Reads the dark deployment's request log for the route and applies every rule to ALL of it; returns only what the rules proved. */
-async function observe(port:DormantProofPort,facts:ProofFacts,windowMinutes:number,now:Date){
+async function observe(port:DormantProofPort,facts:ProofFacts,windowMinutes:number,now:Date,notBefore?:number){
  const dep=await liveState(port,facts);
- const logs=(await port.requestLogs(facts.deploymentId,windowMinutes)).filter(l=>l.requestPath===CRON_PATH);
+ // `notBefore` (verification only) leaves out rows older than the record's first observation: the window reaches a little further back than the record and an older tick is not part of it.
+ // A row without a usable timestamp is never dropped here; it fails the rules below.
+ const logs=(await port.requestLogs(facts.deploymentId,windowMinutes)).filter(l=>l.requestPath===CRON_PATH&&(notBefore===undefined||!(l.timestamp<notBefore)));
  if(!logs.length)throw fail('NO_REQUESTS_OBSERVED');
  // Every request to the route must be a GET answered 200 by this deployment with the dormant event. A 401 (a call without the secret), another status, another method or a
  // 200 without the event means something other than the dormant scheduler path was reached; that is not proof. Project and environment must match wherever the row carries them.
@@ -115,11 +118,11 @@ export async function verifyDormantProof(raw:unknown,port:DormantProofPort,facts
  const first=t(o.firstAt),last=t(o.lastAt),observed=t(r.observedAt),created=t(r.deploymentCreatedAt),at=now();
  if(first>last||last>observed||created>first)throw fail('SHAPE_INVALID');
  if(at.getTime()-observed>PROOF_MAX_AGE_MINUTES*60_000||observed-at.getTime()>60_000)throw fail('STALE');
- // Re-derive from the log, over a window that reaches back to the record's first observation.
+ // Re-derive from the log, over a window that reaches back to the record's first observation; the rules apply to every row from there on.
  const window=Math.min(60,Math.ceil((at.getTime()-first)/60_000)+2);
- const live=await observe(port,facts,window,at);
- const covered=live.times.filter(x=>x<=last);
- if(live.times[0]!==first||covered.length!==o.count||new Date(live.dep.createdAt).toISOString()!==r.deploymentCreatedAt)throw fail('RECORD_NOT_IN_LOG');
+ const live=await observe(port,facts,window,at,first);
+ const inRecord=live.times.filter(x=>x<=last);
+ if(live.times[0]!==first||inRecord.length!==o.count||new Date(live.dep.createdAt).toISOString()!==r.deploymentCreatedAt)throw fail('RECORD_NOT_IN_LOG');
  return r as unknown as DormantProof;
 }
 
@@ -130,9 +133,10 @@ const text=(v:unknown)=>typeof v==='string'?v:'';
 const record=(v:unknown)=>(v&&typeof v==='object'&&!Array.isArray(v)?v:{}) as Record<string,unknown>;
 export function vercelProofCliPort(bin:string=VERCEL_BIN,env:NodeJS.ProcessEnv=process.env):DormantProofPort{
  const run=(args:string[])=>new Promise<string>((resolve,reject)=>{
-  const child=spawn(bin,args,{env,stdio:['ignore','pipe','pipe'],windowsHide:true});let out='';
-  child.stdout.on('data',d=>{if(out.length<16<<20)out+=String(d);});child.stderr.on('data',()=>{});
-  child.on('error',()=>reject(fail('VERCEL_CALL_FAILED')));child.on('close',code=>code===0?resolve(out):reject(fail('VERCEL_CALL_FAILED')));
+  // A hung CLI is killed (the call fails, nothing is read); output beyond the cap is a failure, never a silent cut.
+  const child=spawn(bin,args,{env,stdio:['ignore','pipe','pipe'],windowsHide:true,timeout:90_000});let out='',truncated=false;
+  child.stdout.on('data',d=>{if(out.length<16<<20)out+=String(d);else truncated=true;});child.stderr.on('data',()=>{});
+  child.on('error',()=>reject(fail('VERCEL_CALL_FAILED')));child.on('close',code=>code===0&&!truncated?resolve(out):reject(fail('VERCEL_CALL_FAILED')));
  });
  const json=async(args:string[])=>{
   let v:unknown;try{v=JSON.parse(await run(args));}catch(e){throw (e as Error).message.startsWith('WORKER_DORMANT_PROOF_')?e:fail('VERCEL_RESPONSE_UNPARSEABLE');}
@@ -211,11 +215,11 @@ export async function verifyRecordedDormantProof(root:string=process.cwd(),port:
  return verifyDormantProof(raw,port,{releaseSha,deploymentId:readDeploymentId(dir)},now);
 }
 
-export async function main(argv:string[],root:string=process.cwd(),port?:DormantProofPort){
+export async function main(argv:string[],root:string=process.cwd(),port?:DormantProofPort,release:()=>string=()=>assertAcceptedMainRelease()){
  if(argv.length)throw fail('ARGUMENTS_REFUSED');
  const dir=evidenceDirectory(root);
  if(!existsSync(deploymentIdFile(dir)))throw fail('DEPLOYMENT_ID_MISSING');
- const releaseSha=assertAcceptedMainRelease();
+ const releaseSha=release();
  const chosen=port??vercelProofCliPort();
  try{
   const proof=await collectDormantProof(chosen,{releaseSha,deploymentId:readDeploymentId(dir)});

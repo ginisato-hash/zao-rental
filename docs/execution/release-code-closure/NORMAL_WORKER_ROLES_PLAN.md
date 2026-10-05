@@ -81,9 +81,12 @@ ACTIVATION_ORDER
    only if that deployment is READY, the project's current production deployment, built from the accepted `origin/main` commit with the
    cron defined, protection still `all`, `CRON_SECRET` the only sensitive Production binding of this plan, and the route's whole
    request log in a 15-minute window is GET 200 `normal_worker_tick_dormant` over at least three distinct minutes at one-minute
-   cadence, the latest within five minutes, with no `normal_worker_tick` line. `provisionWorkerRoles` does not read the file as
+   cadence, the latest within 150 seconds, with no `normal_worker_tick` line. `provisionWorkerRoles` does not read the file as
    truth: it re-derives every claim from live readbacks, so a stale, hand-written or minimal file, a deployment that is no longer
-   current, an activation name already bound or a protection change all refuse before any mutation.
+   current, an activation name already bound or a protection change all refuse before any mutation. The record is valid for 30
+   minutes; verification reads the log back to the record's first observation (at most 60 minutes) and applies the rules to the rows
+   from that observation on, so an older tick or stray call before it is not part of the record. A refusal prints a fixed reason code
+   (`reason`), never log or response text.
    Readbacks are all-or-nothing: a reduced deployment view (no `projectId`, `crons`, `createdAt` or `meta`), a missing `readyState`,
    `target`, `crons` or protection field, a non-zero CLI exit, unparseable output, an env list with a further page or hidden
    production variables (`pagination.next`, `hiddenProductionEnvCount` — an absence claim needs the whole list), a log that reached

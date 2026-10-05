@@ -26,10 +26,12 @@ export function assertAcceptedMainRelease(root:string=resolve(dirname(fileURLToP
 export function assertNoTlsOverrides(env:NodeJS.ProcessEnv=process.env){
  if(TLS_OVERRIDES.some(k=>env[k]!==undefined))refuse('TLS_REJECTED');
 }
-/** The versioned restore PASS record is derived by `production-restore-evidence` from the real Production restore result and the downloaded ciphertext; this gate
- * re-verifies every binding (drill result hash, object key, pre-0054 registry, ciphertext) and the 24-hour freshness. A hand-written file is refused. */
+/** The versioned restore PASS record is derived by `production-restore-evidence` from the Owner's restore result and the downloaded ciphertext; this gate re-verifies every binding
+ * (drill result hash, object key, ciphertext, pre-0054 registry) and the freshness. A shape-only or edited file is refused. It is not a signature: see the evidence module header.
+ * The refusal carries the evidence module's fixed reason code (never text from the evidence) so the operator can see why. */
 export async function requireRestorePass(root:string=process.cwd()){
- try{return await verifyRestorePassRecord(root);}catch{return refuse('RESTORE_PASS_REQUIRED');}
+ try{return await verifyRestorePassRecord(root);}
+ catch(e){const m=String((e as Error)?.message??'');throw Object.assign(new Error('PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED'),{reason:/^RESTORE_EVIDENCE_[A-Z_]{1,40}$/.test(m)?m:null});}
 }
 
 export type OwnerSession={client:PoolClient;close():Promise<void>};

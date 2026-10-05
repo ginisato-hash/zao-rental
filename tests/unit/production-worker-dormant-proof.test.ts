@@ -366,3 +366,42 @@ test('a record whose first observation is older than the log window reaches is n
  // the log no longer reaches the record's last observation (rows gone from the window): refused
  await assert.rejects(verifyDormantProof(proof,windowed(cleanTicks().slice(0,3),NOW),FACTS,fixed),fail('RECORD_NOT_IN_LOG'));
 });
+
+test('a deployment that has been ticking for longer than the collection window still verifies; ticks before the record are not part of it',async()=>{
+ const windowed=(logs:RequestLog[],now:number):DormantProofPort=>({...fakePort({logs:[]}).port,async requestLogs(_id,since){return logs.filter(l=>l.timestamp>=now-since*60_000);}});
+ // 40 minutes of scheduler ticks, one per minute, and one stray unauthorised call (401) that is older than the record's first observation
+ const ticks=Array.from({length:41},(_,i)=>tick(40-i));
+ const stray=tick(0,{timestamp:NOW-16*60_000-30_000,responseStatusCode:401,messages:[]});
+ const logs=[...ticks,stray];
+ const proof=await collectDormantProof(windowed(logs,NOW),FACTS,fixed);
+ assert.ok(proof.observations.count>=14&&proof.observations.count<=16,'the collection window is 15 minutes');
+ // the record verifies at once and a few minutes later (new ticks keep arriving after it)
+ const later=(min:number)=>[...logs,...Array.from({length:min},(_,i)=>tick(-(i+1)))];
+ assert.deepEqual(await verifyDormantProof(JSON.parse(JSON.stringify(proof)),windowed(logs,NOW),FACTS,fixed),proof);
+ for(const min of [1,2])assert.deepEqual(await verifyDormantProof(JSON.parse(JSON.stringify(proof)),windowed(later(min),NOW+min*60_000),FACTS,()=>new Date(NOW+min*60_000)),proof);
+ // a stray unauthorised call AFTER the record's first observation still blocks it
+ const after=[...ticks,tick(0,{timestamp:NOW-5*60_000-30_000,responseStatusCode:401,messages:[]})];
+ await assert.rejects(collectDormantProof(windowed(after,NOW),FACTS,fixed),fail('UNEXPECTED_REQUEST'));
+});
+
+test('the collector command writes the proof from the real adapter path and the gate then accepts it; it refuses without the deployment id file',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'zao-dormant-main-'));
+ try{
+  const base=Date.now();
+  const rows=Array.from({length:5},(_,i)=>tick(0,{timestamp:base-(4-i)*60_000-20_000}));
+  const dir=evidenceDirectory(root);mkdirSync(dir,{recursive:true,mode:0o700});
+  const live=fakePort({logs:rows,dep:{createdAt:base-3_600_000}}).port;
+  await assert.rejects(main([],root,live,()=>SHA),fail('DEPLOYMENT_ID_MISSING'));
+  writeFileSync(deploymentIdFile(dir),DEP+'\n');
+  await main([],root,live,()=>SHA);
+  const written=JSON.parse(readFileSync(proofFile(dir),'utf8')) as {deploymentId:string;releaseSha:string;observations:{count:number}};
+  assert.deepEqual([written.deploymentId,written.releaseSha,written.observations.count],[DEP,SHA,5]);
+  assert.equal((await verifyRecordedDormantProof(root,live,SHA)).deploymentId,DEP);
+  // the accepted-main sha comes from the injected release check: a different accepted main is a different source
+  await assert.rejects(verifyRecordedDormantProof(root,live,'b'.repeat(40)),fail('WRONG_SOURCE'));
+  // a failing collection leaves the earlier record untouched
+  const before=readFileSync(proofFile(dir),'utf8');
+  await assert.rejects(main([],root,fakePort({logs:[]}).port,()=>SHA),fail('NO_REQUESTS_OBSERVED'));
+  assert.equal(readFileSync(proofFile(dir),'utf8'),before);
+ }finally{rmSync(root,{recursive:true,force:true});}
+});

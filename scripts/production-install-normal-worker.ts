@@ -37,7 +37,8 @@ export async function main(argv:string[],root:string=process.cwd(),seams:Install
 if(process.argv[1]&&new URL(import.meta.url).pathname===process.argv[1]){
  main(process.argv.slice(2)).catch(error=>{
   const message=String((error as Error)?.message??'');
-  console.error(JSON.stringify({status:'STOP',code:SAFE_CODE.test(message)?message:'PRODUCTION_INSTALL_OPERATION_FAILED'}));
+  const reason=String((error as {reason?:unknown})?.reason??'');
+  console.error(JSON.stringify({status:'STOP',code:SAFE_CODE.test(message)?message:'PRODUCTION_INSTALL_OPERATION_FAILED',reason:/^RESTORE_EVIDENCE_[A-Z_]{1,40}$/.test(reason)?reason:null}));
   process.exitCode=1;
  });
 }

@@ -201,7 +201,7 @@ test('the dark proof gate runs first and alone; any failure of it, whatever its 
  assert.equal(ok.log[0],'dark.verify');assert.equal(ok.log.filter(l=>l==='dark.verify').length,1,'checked once, before the first Neon read, Vercel read, guard claim or session');
  const failures:Array<[string,()=>Promise<void>|void]>=[
   ['coded verifier error',()=>{throw new Error('WORKER_DORMANT_PROOF_STALE');}],
-  ['error text with a connection string',()=>{throw new Error('postgresql://user:SecretPassw0rd@host/db');}],
+  ['error text with a connection string',()=>{const u=new URL('postgresql://placeholder/db');u.username='user';u.password='SecretPassw0rd';throw new Error(u.toString());}],
   ['rejected promise of a non-error',()=>Promise.reject('plain string')],
   ['synchronous throw',()=>{throw new TypeError('x');}],
  ];
@@ -214,6 +214,11 @@ test('the dark proof gate runs first and alone; any failure of it, whatever its 
   assert.equal(x.statements.length,0,name);assert.equal(x.posts,0,name);assert.deepEqual(Object.keys(x.sunk),[],name);assert.deepEqual(x.rows.map(r=>r.key),['CRON_SECRET'],name);
   for(const r of w.WORKER_ROLES)assert.equal(x.ports.guard.exists(r.key),false,name);
  }
+ // the refusal says why by a fixed reason code only; text of any other error (here a connection string) never becomes the reason
+ for(const [thrown,reason] of [[new Error('WORKER_DORMANT_PROOF_STALE'),'WORKER_DORMANT_PROOF_STALE'],[new Error('some other text'),null]] as Array<[Error,string|null]>){
+  const r=world();r.ports.darkProofVerified=(async()=>{throw thrown;}) as never;
+  await assert.rejects(w.provisionWorkerRoles(r.ports),(e:Error&{reason?:unknown})=>{assert.equal(e.message,'WORKER_CREDENTIAL_DARK_PROOF_REQUIRED');assert.equal(e.reason,reason);return true;});
+ }
  // a gate that is not even a function is the same refusal
  const y=world();(y.ports as unknown as {darkProofVerified?:unknown}).darkProofVerified=undefined;
  await assert.rejects(w.provisionWorkerRoles(y.ports),(e:Error&{contained?:unknown})=>{assert.equal(e.message,'WORKER_CREDENTIAL_DARK_PROOF_REQUIRED');assert.equal(e.contained,undefined);return true;});
@@ -225,11 +230,12 @@ test('production wiring: the gate is the recorded-proof verifier and the accepte
  const dormant=read('production-worker-dormant-proof.ts'),cred=read('production-worker-credential.ts');
  assert.match(dormant,/import \{assertAcceptedMainRelease\} from '\.\/lib\/production-owner-session';/);
  assert.match(dormant,/export async function verifyRecordedDormantProof\(root:string=process\.cwd\(\),port:DormantProofPort=vercelProofCliPort\(\),releaseSha:string=assertAcceptedMainRelease\(\)/);
- assert.match(dormant,/const releaseSha=assertAcceptedMainRelease\(\);/);
+ assert.match(dormant,/release:\(\)=>string=\(\)=>assertAcceptedMainRelease\(\)\)/);
+ assert.match(dormant,/const releaseSha=release\(\);/);
  assert.match(cred,/darkProofVerified:async\(\)=>\{\s*await \(await import\('\.\/production-worker-dormant-proof'\)\)\.verifyRecordedDormantProof\(root\);\s*\}/);
  // inside provisionWorkerRoles the gate is the first statement of the try block, before the guard check and every port call
  const body=cred.slice(cred.indexOf('export async function provisionWorkerRoles'),cred.indexOf('const SAFE_CODE'));
- assert.match(body,/try\{\s*try\{await p\.darkProofVerified\(\);\}catch\{throw fail\('WORKER_CREDENTIAL_DARK_PROOF_REQUIRED'\);\}\s*for\(const r of WORKER_ROLES\)if\(p\.guard\.exists\(r\.key\)\)/);
+ assert.match(body,/try\{\s*try\{await p\.darkProofVerified\(\);\}catch\(e\)\{throw Object\.assign\(fail\('WORKER_CREDENTIAL_DARK_PROOF_REQUIRED'\),\{reason:safeReason\(e\)\}\);\}\s*for\(const r of WORKER_ROLES\)if\(p\.guard\.exists\(r\.key\)\)/);
  assert.ok(body.indexOf('p.darkProofVerified()')<body.search(/p\.(neon|vercel|guard|connectOwner|probe)/),'no port other than the gate is touched before it');
 });
 

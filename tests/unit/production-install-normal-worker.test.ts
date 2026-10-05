@@ -61,7 +61,7 @@ test('admission: arguments, TLS overrides and the restore PASS record are refuse
  const root=mkdtempSync(join(tmpdir(),'zao-install-'));
  try{
   // the gate is the machine-derived record: absent, hand-written (even in the legacy shape) and malformed files are all refused; the strict verifier is tested in production-restore-evidence.test.ts
-  await assert.rejects(requireRestorePass(root),/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/);
+  await assert.rejects(requireRestorePass(root),(e:Error&{reason?:unknown})=>{assert.match(e.message,/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/);assert.equal(e.reason,'RESTORE_EVIDENCE_FILE_MISSING','the refusal carries the evidence module\'s fixed reason code');return true;});
   mkdirSync(evidenceDirectory(root),{recursive:true});
   const path=join(evidenceDirectory(root),'restore-pass.json');
   for(const bad of ['{}','not json',JSON.stringify({result:'PASS',objectKey:'hourly/2026/10/04/2026-10-04T16-17-00-000Z.dump.age',objectSha256:'a'.repeat(64)})]){writeFileSync(path,bad);await assert.rejects(requireRestorePass(root),/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/);}
@@ -69,20 +69,25 @@ test('admission: arguments, TLS overrides and the restore PASS record are refuse
 });
 
 // Restore evidence fixtures for the installer admission test. The strict verifier is exercised field by field in production-restore-evidence.test.ts; here only the installer's order matters.
-const KEY=objectKey('hourly',new Date('2026-10-04T16:17:00.000Z'));
-const OTHER_KEY=objectKey('hourly',new Date('2026-10-04T15:17:00.000Z'));
+// Freshness is measured from the drill's `finishedAt`: every drill timestamp is relative to the real clock.
+const T0=Date.now();
+const SCHEDULED=new Date(T0-30*3600_000),OTHER_SCHEDULED=new Date(SCHEDULED.getTime()-3600_000);
+const KEY=objectKey('hourly',SCHEDULED);
+const OTHER_KEY=objectKey('hourly',OTHER_SCHEDULED);
+const FINISHED=T0-10*60_000;
 const CIPHER=Buffer.from('SYNTHETIC-CIPHERTEXT-OF-THE-BACKUP');
 const sha=(b:Buffer|string)=>createHash('sha256').update(b).digest('hex');
 const verification=(over:Record<string,unknown>={})=>({migrations:53,registrySha256:expectedPre0054RegistrySha256(),foreignKeys:120,sequences:3,critical:{'public.rental_bookings':{rows:2,sha256:'c'.repeat(64)}},...over});
-const drill=(over:Record<string,unknown>={})=>({status:'DRILL_PASS',dataClass:'PRODUCTION',key:KEY,backupScheduledAt:'2026-10-04T16:17:00.000Z',plaintextSha256:'b'.repeat(64),plaintextBytes:1000,ciphertextBytes:CIPHER.length,ciphertextSha256:sha(CIPHER),
- toolVersion:'pg_restore (PostgreSQL) 18.6',startedAt:'2026-10-04T16:50:00.000Z',finishedAt:'2026-10-04T16:50:42.000Z',restoreSeconds:42,observedBackupAgeSeconds:2000,verification:verification(),productionRpoRtoApproved:false,...over});
+const timing=(finished:number,scheduled:Date=SCHEDULED)=>({backupScheduledAt:scheduled.toISOString(),startedAt:new Date(finished-42_000).toISOString(),finishedAt:new Date(finished).toISOString(),restoreSeconds:42,observedBackupAgeSeconds:(finished-scheduled.getTime())/1000});
+const drill=(over:Record<string,unknown>={},finished:number=FINISHED)=>({status:'DRILL_PASS',dataClass:'PRODUCTION',key:KEY,...timing(finished),plaintextSha256:'b'.repeat(64),plaintextBytes:1000,ciphertextBytes:CIPHER.length,ciphertextSha256:sha(CIPHER),
+ toolVersion:'pg_restore (PostgreSQL) 18.6',verification:verification(),productionRpoRtoApproved:false,...over});
 const hours=(h:number)=>new Date(Date.now()+h*3600_000);
 type Evidence={pass:string;drill:string;key:string;cipher:string};
 /** A complete evidence set finalized by the real finalizer at `at`. */
-async function finalized(root:string,at:Date=new Date()):Promise<Evidence>{
+async function finalized(root:string,at:Date=new Date(),finished:number=FINISHED):Promise<Evidence>{
  const dir=evidenceDirectory(root);mkdirSync(dir,{recursive:true});
  const e={pass:join(dir,'restore-pass.json'),drill:join(dir,'restore-drill-result.json'),key:join(dir,'object-key.txt'),cipher:plannedOutput(root,KEY)};
- writeFileSync(e.key,KEY+'\n');writeFileSync(e.cipher,CIPHER,{mode:0o600});writeFileSync(e.drill,JSON.stringify(drill()));
+ writeFileSync(e.key,KEY+'\n');writeFileSync(e.cipher,CIPHER,{mode:0o600});writeFileSync(e.drill,JSON.stringify(drill({},finished)));
  await finalizeRestoreEvidence(root,()=>at);
  return e;
 }
@@ -107,7 +112,7 @@ test('admission refuses every bad restore PASS before any Neon or database call;
   ['status not DRILL_PASS',async root=>forge(await finalized(root),{status:'STOP'})],
   ['drill result edited after finalization',async root=>{const e=await finalized(root);writeFileSync(e.drill,JSON.stringify(drill({restoreSeconds:1})));}],
   ['another object key in the key file',async root=>{const e=await finalized(root);writeFileSync(e.key,OTHER_KEY+'\n');}],
-  ['drill result of another object',async root=>forge(await finalized(root),{key:OTHER_KEY,backupScheduledAt:'2026-10-04T15:17:00.000Z'})],
+  ['drill result of another object',async root=>forge(await finalized(root),{key:OTHER_KEY,...timing(FINISHED,OTHER_SCHEDULED)})],
   ['ciphertext of another size',async root=>{const e=await finalized(root);writeFileSync(e.cipher,Buffer.concat([CIPHER,Buffer.from('!')]));}],
   ['ciphertext of the same size and other content',async root=>{const e=await finalized(root);writeFileSync(e.cipher,Buffer.from(CIPHER.toString().toLowerCase()));}],
   ['drill ciphertext sha256 of other bytes',async root=>forge(await finalized(root),{ciphertextSha256:sha('another ciphertext')})],
@@ -124,7 +129,7 @@ test('admission refuses every bad restore PASS before any Neon or database call;
   ['oversize record',async root=>breakFile((await finalized(root)).pass,'oversize')],
   ['missing drill result',async root=>breakFile((await finalized(root)).drill,'missing')],
   ['symlinked ciphertext',async root=>breakFile((await finalized(root)).cipher,'symlink')],
-  ['stale record (finalized 25 hours ago)',async root=>{await finalized(root,hours(-25));}],
+  ['stale record (the restore finished 25 hours ago)',async root=>{const finished=T0-25*3600_000;await finalized(root,new Date(finished+60_000),finished);}],
   ['future record (finalized in 2 hours)',async root=>{await finalized(root,hours(2));}],
  ];
  try{

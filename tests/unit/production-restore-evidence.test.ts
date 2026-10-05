@@ -11,18 +11,21 @@ import {plannedOutput} from '../../scripts/production-backup-object-get';
 import {PRE_0054_MIGRATIONS,RESTORE_PASS_MAX_AGE_HOURS,RESTORE_PASS_VERSION,expectedPre0054RegistrySha256,finalizeRestoreEvidence,main,registryDigest,validateDrillResult,verifyRestorePassRecord} from '../../scripts/production-restore-evidence';
 import {requireRestorePass} from '../../scripts/lib/production-owner-session';
 
-const KEY=objectKey('hourly',new Date('2026-10-04T16:17:00.000Z'));
-const OTHER_KEY=objectKey('hourly',new Date('2026-10-04T15:17:00.000Z'));
+// Real current time: the installer gate (`requireRestorePass`) reads the real clock, and freshness is measured from the drill's `finishedAt`, so every drill timestamp is relative to NOW.
+const NOW=new Date();
+const SCHEDULED=new Date(NOW.getTime()-30*3600_000);
+const KEY=objectKey('hourly',SCHEDULED);
+const OTHER_SCHEDULED=new Date(SCHEDULED.getTime()-3600_000);
+const OTHER_KEY=objectKey('hourly',OTHER_SCHEDULED);
+const FINISHED=NOW.getTime()-10*60_000;
 const CIPHER=Buffer.from('CIPHERTEXT-OF-THE-PRODUCTION-BACKUP');
 const sha=(b:Buffer|string)=>createHash('sha256').update(b).digest('hex');
-// Real current time: the installer gate (`requireRestorePass`) reads the real clock, so a record finalized at NOW must be fresh for it and a stale one must be refused for staleness alone.
-const NOW=new Date();
 // Independent of the module under test: sha256 over `id:checksum` of the first 53 migration files of this checkout.
 const REGISTRY=sha(migrationPlan.slice(0,PRE_0054_MIGRATIONS).map(e=>e.id+':'+sha(readFileSync(join(migrationsDirectory,e.file),'utf8'))).join('\n'));
 const verification=(over:Record<string,unknown>={})=>({migrations:53,registrySha256:REGISTRY,foreignKeys:120,sequences:3,critical:{'public.rental_bookings':{rows:2,sha256:'c'.repeat(64)},'public.price_quotes':{rows:5,sha256:'d'.repeat(64)}},...over});
-const drillOk=(over:Record<string,unknown>={})=>({status:'DRILL_PASS',dataClass:'PRODUCTION',key:KEY,backupScheduledAt:'2026-10-04T16:17:00.000Z',plaintextSha256:'b'.repeat(64),plaintextBytes:1000,ciphertextBytes:CIPHER.length,ciphertextSha256:sha(CIPHER),
- toolVersion:'pg_restore (PostgreSQL) 18.6',startedAt:'2026-10-04T16:50:00.000Z',finishedAt:'2026-10-04T16:50:42.000Z',restoreSeconds:42,observedBackupAgeSeconds:2000,
- verification:verification(),productionRpoRtoApproved:false,...over});
+const timing=(finished:number,scheduled:Date=SCHEDULED)=>({backupScheduledAt:scheduled.toISOString(),startedAt:new Date(finished-42_000).toISOString(),finishedAt:new Date(finished).toISOString(),restoreSeconds:42,observedBackupAgeSeconds:(finished-scheduled.getTime())/1000});
+const drillOk=(over:Record<string,unknown>={})=>({status:'DRILL_PASS',dataClass:'PRODUCTION',key:KEY,...timing(FINISHED),plaintextSha256:'b'.repeat(64),plaintextBytes:1000,ciphertextBytes:CIPHER.length,ciphertextSha256:sha(CIPHER),
+ toolVersion:'pg_restore (PostgreSQL) 18.6',verification:verification(),productionRpoRtoApproved:false,...over});
 function setup(root:string,drill:unknown=drillOk(),withCipher=true,key=KEY){
  const dir=evidenceDirectory(root);mkdirSync(dir,{recursive:true});
  writeFileSync(join(dir,'object-key.txt'),key+'\n');
@@ -78,7 +81,11 @@ test('SYNTHETIC, a wrong registry (52/54/55 or other migration files), a wrong k
   ['55 migrations',{verification:verification({migrations:55})},/MIGRATIONS_MISMATCH/],
   ['no registry digest',{verification:verification({registrySha256:undefined})},/SHAPE_INVALID/],['malformed registry digest',{verification:verification({registrySha256:'nope'})},/SHAPE_INVALID/],
   ['registry digest of other migration files',{verification:verification({registrySha256:sha('another registry')})},/MIGRATIONS_MISMATCH/],
-  ['wrong key',{key:OTHER_KEY,backupScheduledAt:'2026-10-04T15:17:00.000Z'},/KEY_MISMATCH/],['schedule not the key time',{backupScheduledAt:'2026-10-04T16:18:00.000Z'},/KEY_MISMATCH/],
+  ['wrong key',{key:OTHER_KEY,...timing(FINISHED,OTHER_SCHEDULED)},/KEY_MISMATCH/],['schedule not the key time',{backupScheduledAt:new Date(SCHEDULED.getTime()+60_000).toISOString()},/KEY_MISMATCH/],
+  ['start not an ISO time',{startedAt:'yesterday'},/SHAPE_INVALID/],['finish not an ISO time',{finishedAt:undefined},/SHAPE_INVALID/],['finished before started',{...timing(FINISHED),startedAt:new Date(FINISHED+1000).toISOString()},/SHAPE_INVALID/],
+  ['started before the backup',{...timing(FINISHED),startedAt:new Date(SCHEDULED.getTime()-1000).toISOString(),restoreSeconds:(FINISHED-SCHEDULED.getTime()+1000)/1000},/SHAPE_INVALID/],
+  ['restore duration is not finished minus started',{restoreSeconds:43},/SHAPE_INVALID/],['backup age is not finished minus scheduled',{observedBackupAgeSeconds:1},/SHAPE_INVALID/],
+  ['restore finished 25 hours ago (re-finalizing an old result cannot refresh it)',{...timing(NOW.getTime()-25*3600_000)},/STALE/],['restore finished in the future',{...timing(NOW.getTime()+3600_000)},/STALE/],
   ['wrong ciphertext size',{ciphertextBytes:CIPHER.length+1},/CIPHERTEXT_MISMATCH/],['wrong ciphertext sha256',{ciphertextSha256:sha('other ciphertext')},/CIPHERTEXT_MISMATCH/],
   ['no ciphertext sha256 (a result from before the hash was recorded)',{ciphertextSha256:undefined},/SHAPE_INVALID/],['malformed ciphertext sha256',{ciphertextSha256:'xyz'},/SHAPE_INVALID/],['uppercase ciphertext sha256',{ciphertextSha256:sha(CIPHER).toUpperCase()},/SHAPE_INVALID/],
   ['0054 table present',{verification:verification({critical:{'public.provisional_capacity_receipts':{rows:0,sha256:'e'.repeat(64)}}})},/SHAPE_INVALID/],
@@ -143,12 +150,12 @@ test('the gate refuses hand-written or tampered records: old shape, wrong versio
   await assert.rejects(verifyRestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_SHAPE_INVALID/),JSON.stringify(handWritten));
   await assert.rejects(requireRestorePass(root),code(/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/));
  }
- for(const [name,mut] of [['version',{version:'production-restore-pass/0'}],['migrations 55',{migrations:55}],['migrations 52',{migrations:52}],['extra key',{extra:1}],['result',{result:'FAIL'}],['hash shape',{objectSha256:'nope'}],['finalizedAt shape',{finalizedAt:'yesterday'}]] as Array<[string,Record<string,unknown>]>){
+ for(const [name,mut] of [['version',{version:'production-restore-pass/0'}],['migrations 55',{migrations:55}],['migrations 52',{migrations:52}],['extra key',{extra:1}],['result',{result:'FAIL'}],['hash shape',{objectSha256:'nope'}],['finalizedAt shape',{finalizedAt:'yesterday'}],['finishedAt shape',{finishedAt:'soon'}],['finishedAt removed',{finishedAt:undefined}]] as Array<[string,Record<string,unknown>]>){
   write({...record,...mut});await assert.rejects(verifyRestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_/),name);
  }
  // every bound field of the record edited to another well-formed value is refused, also through the installer gate
  const edited:Record<string,unknown>={objectKey:OTHER_KEY,objectSha256:sha('another object'),ciphertextBytes:record.ciphertextBytes+1,plaintextSha256:sha('another plaintext'),drillResultSha256:sha('another drill result'),
-  backupScheduledAt:'2026-10-04T16:18:00.000Z',restoreSeconds:record.restoreSeconds+1,observedBackupAgeSeconds:record.observedBackupAgeSeconds+1};
+  backupScheduledAt:new Date(SCHEDULED.getTime()+60_000).toISOString(),restoreSeconds:record.restoreSeconds+1,observedBackupAgeSeconds:record.observedBackupAgeSeconds+1,finishedAt:new Date(FINISHED-1000).toISOString()};
  for(const [field,value] of Object.entries(edited)){
   write({...record,[field]:value});
   await assert.rejects(verifyRestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_(BINDING|CIPHERTEXT|KEY)_MISMATCH/),field);
@@ -182,8 +189,8 @@ test('the gate refuses hand-written or tampered records: old shape, wrong versio
  const other=objectKey('daily',new Date('2026-10-05T00:17:00.000Z'));writeFileSync(join(dir,'object-key.txt'),other+'\n');
  await assert.rejects(verifyRestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_BINDING_MISMATCH|RESTORE_EVIDENCE_KEY_MISMATCH/));
  writeFileSync(join(dir,'object-key.txt'),KEY+'\n');
- // freshness: valid up to 24 hours (and 60 seconds of clock skew), older than that or from the future is stale
- const hours=(h:number,extraMs=0)=>new Date(NOW.getTime()+h*3600_000+extraMs);
+ // freshness is measured from the end of the restore: valid up to 24 hours after it (and 60 seconds of clock skew), older than that or from the future is stale
+ const hours=(h:number,extraMs=0)=>new Date(FINISHED+h*3600_000+extraMs);
  assert.deepEqual(await verifyRestorePassRecord(root,()=>hours(RESTORE_PASS_MAX_AGE_HOURS)),record);
  assert.deepEqual(await verifyRestorePassRecord(root,()=>new Date(NOW.getTime()-60_000)),record);
  await assert.rejects(verifyRestorePassRecord(root,()=>hours(RESTORE_PASS_MAX_AGE_HOURS,1)),code(/RESTORE_EVIDENCE_STALE/));
@@ -191,7 +198,7 @@ test('the gate refuses hand-written or tampered records: old shape, wrong versio
  await assert.rejects(verifyRestorePassRecord(root,()=>new Date(NOW.getTime()-60_001)),code(/RESTORE_EVIDENCE_STALE/));
  await assert.rejects(verifyRestorePassRecord(root,()=>new Date(NOW.getTime()-3600_000)),code(/RESTORE_EVIDENCE_STALE/));
  // a record that claims to be finalized in the future or long ago is stale from the reader's clock, whatever else it holds
- for(const finalizedAt of [hours(2),hours(-25),hours(-24*365)]){
+ for(const finalizedAt of [new Date(NOW.getTime()+2*3600_000),new Date(FINISHED-1000),hours(-25),hours(-24*365)]){
   write({...record,finalizedAt:finalizedAt.toISOString()});
   await assert.rejects(verifyRestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_STALE/),finalizedAt.toISOString());
  }

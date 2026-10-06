@@ -67,6 +67,14 @@ test('every invalid or ambiguous input fails closed with a value-free code',()=>
   for(const secret of [TOKEN,RESEND,'a'.repeat(64),pw('operations')])assert.ok(!error.message.includes(secret));
  }
 });
+test('release identity: a CLI deployment reports no Git SHA as an empty string (accepted), an equal SHA is accepted, any other non-empty value fails closed',()=>{
+ for(const sha of [undefined,'',RELEASE])assert.equal(commercialProductionPlan(env({VERCEL_GIT_COMMIT_SHA:sha}))!.configuration.deployment.releaseId,RELEASE,String(sha));
+ for(const sha of ['f'.repeat(40),' ',RELEASE+' ','main',RELEASE.toUpperCase()]){
+  assert.throws(()=>commercialProductionPlan(env({VERCEL_GIT_COMMIT_SHA:sha})),/^Error: PRODUCTION_COMMERCIAL_RELEASE_IDENTITY_INVALID$/,JSON.stringify(sha));
+ }
+ // the release id itself is still required, 40 lowercase hex, whatever the platform reports
+ for(const rel of [undefined,'',RELEASE.toUpperCase(),RELEASE.slice(1)])assert.throws(()=>commercialProductionPlan(env({PRODUCTION_RELEASE_ID:rel,VERCEL_GIT_COMMIT_SHA:''})),/RELEASE_IDENTITY_INVALID/,String(rel));
+});
 test('Square token expiry: exactly "never" is provider-confirmed non-expiring (null); a future UTC timestamp stays a Date',async()=>{
  assert.equal(commercialProductionPlan(env({PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT:'never'}))!.square.expiresAt,null);
  assert.equal(commercialProductionPlan(env())!.square.expiresAt!.toISOString(),'2099-01-01T00:00:00.000Z');

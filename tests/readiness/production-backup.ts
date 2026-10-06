@@ -454,8 +454,108 @@ async function main(): Promise<void> {
     assert.equal(result.PATH, '/usr/bin');
   });
 
+  // ---- F9: the pinned postgres:18 job container has no CA bundle; the workflow prepares exactly the root the backup verifies against ----
+  const workflowSteps = async (): Promise<{yaml: string; steps: Map<string, string>}> => {
+    const yaml = await readFile(join(import.meta.dirname, '../../.github/workflows/production-backup.yml'), 'utf8');
+    const steps = new Map<string, string>();
+    for (const block of yaml.split(/\n      - name: /).slice(1)) steps.set(block.split('\n')[0]!.trim(), block);
+    return {yaml, steps};
+  };
+  const CA_STEP = 'Prepare CA root (secret-free)';
+
+  await check('35 (F9-A). workflow has a secret-free CA preparation step, gated by the activation gate output', async () => {
+    const {steps} = await workflowSteps();
+    const block = steps.get(CA_STEP);
+    assert.ok(block, 'CA preparation step must exist');
+    assert.match(block, /if: steps\.gate\.outputs\.passed == 'true'/);
+    assert.match(block, /set -eu\b/);
+  });
+
+  await check('36 (F9-B). CA preparation runs after the activation gate and before any step that references a secret (including the Production backup step)', async () => {
+    const {steps} = await workflowSteps();
+    const order = [...steps.keys()];
+    const ca = order.indexOf(CA_STEP);
+    const gate = order.findIndex((n) => n.startsWith('Activation gate'));
+    const backup = order.indexOf('Run production backup');
+    assert.ok(gate >= 0 && ca > gate && backup > ca, `order must be gate < CA < backup, got ${order.join(' | ')}`);
+    const firstSecretStep = order.findIndex((n) => /secrets\./.test(steps.get(n)!));
+    assert.ok(firstSecretStep > ca, 'no step that references a secret may precede the CA preparation');
+  });
+
+  await check('37 (F9-C). CA preparation installs only ca-certificates without recommends, then proves the exact root is an ordinary readable file', async () => {
+    const {steps} = await workflowSteps();
+    const block = steps.get(CA_STEP)!;
+    assert.match(block, /DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates\n/);
+    const installs = block.match(/apt-get install[^\n]*/g) ?? [];
+    assert.equal(installs.length, 1, 'exactly one install command');
+    for (const probe of ['test -f', 'test ! -L', 'test -r']) {
+      assert.ok(block.includes(`${probe} ${EXPECTED_PRODUCTION_CA_ROOT}\n`), `${probe} on the exact root path`);
+    }
+    assert.equal(EXPECTED_PRODUCTION_CA_ROOT, '/etc/ssl/certs/ca-certificates.crt');
+  });
+
+  await check('38 (F9-D). CA preparation references no secret, var or env', async () => {
+    const {steps} = await workflowSteps();
+    const block = steps.get(CA_STEP)!;
+    assert.ok(!/secrets\./.test(block), 'no secrets.* in the CA step');
+    assert.ok(!/vars\./.test(block) && !/\n\s+env:/.test(block), 'no vars/env in the CA step');
+  });
+
+  await check('39 (F9-E). TLS stays verify-full + channel binding on the fixed root; no fallback CA path, ambient PGSSLROOTCERT, sslmode downgrade or image change', async () => {
+    const {yaml} = await workflowSteps();
+    assert.match(yaml, /image: postgres:18@sha256:86c951e05bf56c93d95d397747fb8820ac76cc3bedb78f43abd83eedbe3666ae\n/);
+    for (const forbidden of ['PGSSLROOTCERT', 'PGSSLMODE', 'sslmode', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'NODE_EXTRA_CA_CERTS', 'NODE_TLS_REJECT_UNAUTHORIZED', 'update-ca-certificates']) {
+      assert.ok(!yaml.includes(forbidden), `the workflow must not mention ${forbidden}`);
+    }
+    const childEnv = buildPgDumpChildEnv(baseEnv(), EXPECTED_PRODUCTION_CA_ROOT, {PATH: '/usr/bin', PGSSLROOTCERT: '/tmp/ambient.pem'} as unknown as NodeJS.ProcessEnv);
+    assert.equal(childEnv.PGSSLMODE, 'verify-full');
+    assert.equal(childEnv.PGCHANNELBINDING, 'require');
+    assert.equal(childEnv.PGSSLROOTCERT, EXPECTED_PRODUCTION_CA_ROOT);
+  });
+
   await goAgeInteroperabilityProof();
   await syntheticPg18IntegrationProof();
+  await caRootPinnedImageProof();
+}
+
+// ---- F9: secret-free proof that the workflow's CA preparation yields the exact root in the pinned image ----
+
+async function dockerRun(args: string[]): Promise<{code: number | null; out: string}> {
+  // Docker client settings only; no Production credential or other env is ever passed to the client or the container.
+  const env: Record<string, string | undefined> = {PATH: process.env.PATH, HOME: process.env.HOME};
+  for (const k of ['DOCKER_HOST', 'DOCKER_CONFIG', 'DOCKER_CONTEXT']) if (process.env[k]) env[k] = process.env[k];
+  return new Promise((resolve) => {
+    const child = spawn('docker', args, {env: env as NodeJS.ProcessEnv, stdio: ['ignore', 'pipe', 'pipe']});
+    let out = '';
+    child.stdout?.on('data', (c: Buffer) => { out += c.toString(); });
+    child.stderr?.on('data', (c: Buffer) => { out += c.toString(); });
+    child.on('close', (code: number | null) => resolve({code, out}));
+    child.on('error', () => resolve({code: null, out}));
+  });
+}
+
+async function caRootPinnedImageProof(): Promise<void> {
+  const root = EXPECTED_PRODUCTION_CA_ROOT;
+  if ((await commandOutput('docker', ['--version'])) === null) {
+    const reason = 'Docker is unavailable';
+    if (process.env.CI === 'true') throw new Error(`BACKUP_TEST_CA_ROOT_PROOF_UNAVAILABLE_IN_CI: ${reason}`);
+    console.log(`SKIP mandatory pinned-image CA root proof: ${reason}. Expected only in this local sandbox; this SKIP is disallowed whenever CI=true. NOT counted as PASS.`);
+    return;
+  }
+  const yaml = await readFile(join(import.meta.dirname, '../../.github/workflows/production-backup.yml'), 'utf8');
+  const block = yaml.split(/\n      - name: /).find((b) => b.startsWith('Prepare CA root (secret-free)'));
+  assert.ok(block, 'CA preparation step must exist');
+  const script = (block.split('        run: |\n')[1] ?? '').split('\n').map((l) => l.replace(/^ {10}/, '')).join('\n').trim();
+  assert.ok(script.includes('apt-get install'), 'the exact workflow script is what runs in the image');
+  // The defect this step fixes: the pinned image has no CA bundle at the exact path the backup verifies against.
+  const before = await dockerRun(['run', '--rm', '--entrypoint', 'sh', PINNED_PG18_IMAGE, '-c', `test ! -e ${root}`]);
+  assert.equal(before.code, 0, `the pinned image is expected to lack ${root} before preparation (docker output: ${before.out.slice(0, 300)})`);
+  // The exact workflow script, with no env and no credential, then an independent ordinary-file proof.
+  const after = await dockerRun(['run', '--rm', '--entrypoint', 'sh', PINNED_PG18_IMAGE, '-c', `${script}\nstat -c '%F' ${root}`]);
+  assert.equal(after.code, 0, `CA preparation failed in the pinned image (docker output: ${after.out.slice(-400)})`);
+  assert.ok(after.out.trim().endsWith('regular file'), 'the exact root is an ordinary file after preparation');
+  passed++;
+  console.log(`PASS F9. the workflow's CA preparation, run unchanged in ${PINNED_PG18_IMAGE} with no credential/env, turns an absent ${root} into an ordinary readable file (secret-free)`);
 }
 
 // ---- F2: mandatory cross-implementation proof against the official Go age CLI ----

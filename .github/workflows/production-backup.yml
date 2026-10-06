@@ -43,6 +43,21 @@ jobs:
           fi
           echo "passed=true" >> "$GITHUB_OUTPUT"
 
+      # The pinned postgres:18 image ships without the Debian CA bundle, but the backup's pg_dump verifies the server
+      # (full verification, channel binding required) against exactly this root (EXPECTED_PRODUCTION_CA_ROOT in
+      # scripts/production-backup.ts; no fallback path, no ambient root override, no downgrade). This step references no
+      # secret and runs before any step that does.
+      - name: Prepare CA root (secret-free)
+        if: steps.gate.outputs.passed == 'true'
+        run: |
+          set -eu
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates
+          test -f /etc/ssl/certs/ca-certificates.crt
+          test ! -L /etc/ssl/certs/ca-certificates.crt
+          test -r /etc/ssl/certs/ca-certificates.crt
+          rm -rf /var/lib/apt/lists/*
+
       - name: Checkout
         if: steps.gate.outputs.passed == 'true'
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, verified upstream

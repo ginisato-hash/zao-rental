@@ -87,7 +87,7 @@ LIFECYCLE_COMMANDS = {  # package.json script name -> required exact command
 FRESHNESS_FLAGS = ["--expected-active", "--intentional-stop"]
 # The Backup installer's pinned files must still be the reviewed ones (this policy builds on the backup chain's helper and evidence directory).
 BACKUP_PINNED_FILES = {
-    "scripts/production-backup-credential.ts": "e71a9ca8e9e283c619fa4591c9ddd2d28223b7d2ba1515cd9025cd27fb1e5c72",
+    "scripts/production-backup-credential.ts": "ce064babfd6b1dae15e3d7370858b1d82ba65e4d9e66c02df29986604be08da7",
     "scripts/production-backup-object-get.ts": "64fca6e2628a485394fc9a2b0fa4642e2fab412993985782526eb78056813c08",
     "scripts/production-credential-activation.ts": "f4f96805ccf5d92f4382d545135121b6e3f411cc366c9dc1a113f3b6f7278abf",
     "scripts/production-backup.ts": "a571e89675c70c38d342c54441db66313c976c55b1d31e1be873ece2105596e6",

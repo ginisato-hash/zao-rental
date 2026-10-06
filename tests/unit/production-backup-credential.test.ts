@@ -78,12 +78,13 @@ function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[
   },
   async end(){log.push('owner.end');},
  });
- const backupConfigs:ConnectionConfig[]=[];
+ const backupConfigs:ConnectionConfig[]=[],backendSslAsked:string[]=[];
  const backupSession=():SqlSession=>({
   async query(sql:string){
    if(sql==='BEGIN'||sql==='ROLLBACK')return {rows:[]} as never;
-   // The backend's pg_stat_ssl is NOT consulted: behind Neon's proxy it is false on a verified connection (the Neon-shaped case this fake models by never returning it).
-   if(sql.includes('current_user,session_user'))return {rows:[{current_user:over.probeUser??T.role,session_user:over.probeUser??T.role}]} as never;
+   // The accepted Neon model: the backend's pg_stat_ssl row is FALSE on a verified verify-full connection (Neon's proxy talks to compute without TLS). Any probe that asks for it fails here.
+   if(sql.includes('pg_stat_ssl'))backendSslAsked.push(sql);
+   if(sql.includes('current_user,session_user'))return {rows:[{current_user:over.probeUser??T.role,session_user:over.probeUser??T.role,ssl:false}]} as never;
    if(sql.includes('pg_read_all_data'))return {rows:[over.probeFlags??{read_all:true,write_all:false,flags:false}]} as never;
    if(sql.includes('FROM pg_class'))return {rows:over.noTable?[]:[{relname:'bookings'}]} as never;
    if(sql.startsWith('SELECT 1 FROM public.'))return {rows:[]} as never;
@@ -99,7 +100,7 @@ function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[
   async connectBackup(c){backupConfigs.push(c);log.push('connectBackup '+c.user);return backupSession();},
   guard:{exists:()=>claimed,claim:()=>{if(claimed)throw new Error('BACKUP_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed=true;log.push('guard.claim');}},
   async sleep(ms){sleeps.push(ms);},now:()=>new Date(1_000_000+sleeps.length*1000),expectTls:true,containmentSchedule:[0,0,0],expectedHostFingerprint:fingerprintHost(HOST)};
- return {ports,log,sunk,secrets,vars,statements,st,backupConfigs,flags,get posts(){return posts;},get opPolls(){return opPolls;}};
+ return {ports,log,sunk,secrets,vars,statements,st,backupConfigs,backendSslAsked,flags,get posts(){return posts;},get opPolls(){return opPolls;}};
 }
 function initialState(){return {rolcanlogin:false,rolvaliduntil:null as string|null,passwordIsNull:true as boolean,posture:{...POSTURE}};}
 const everything=(w:World)=>JSON.stringify({log:w.log});
@@ -219,6 +220,7 @@ test('a failed probe or sink contains the role, deletes the password sink and ne
 test('the TLS proof is the established client transport, never the backend pg_stat_ssl row; every probe refusal names its check by a fixed reason and contains the role',async()=>{
  // a verified client transport passes even though the (Neon proxy-to-compute) backend row is never consulted
  const ok=world();const ev=await m.provisionBackupCredential(ok.ports);
+ assert.deepEqual(ok.backendSslAsked,[],'the backend pg_stat_ssl row is never queried (it is false on the accepted Neon model)');
  assert.equal(ev.tlsVerified,true);assert.ok(ev.probes.includes('TLS_VERIFY_FULL_CHANNEL_BINDING'));
  const cases:Array<[string,Parameters<typeof world>[0],string]>=[
   ['no client TLS proof',{noClientTls:true},'BACKUP_PROBE_TLS'],['another user',{probeUser:'neondb_owner'},'BACKUP_PROBE_IDENTITY'],

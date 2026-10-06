@@ -1,4 +1,9 @@
 import test from 'node:test';
+import {TLSSocket,connect as tlsConnect,createServer as tlsServer} from 'node:tls';
+import {spawnSync} from 'node:child_process';
+import {mkdtempSync as mkTmp,readFileSync as readTmp,rmSync as rmTmp} from 'node:fs';
+import {tmpdir as osTmp} from 'node:os';
+import {join as joinTmp} from 'node:path';
 import assert from 'node:assert/strict';
 import {chmodSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -18,7 +23,7 @@ const POSTURE={attributes:'super=f,createdb=f,createrole=f,repl=f,bypassrls=f,in
 type World=ReturnType<typeof world>;
 /** An in-memory Neon/GitHub/PostgreSQL. Everything it records is secret-free by construction; the tests assert that. */
 function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[];probeDenied?:string;endpoints?:unknown[];preSecrets?:string[];vars?:Record<string,string>;
-  secretSetFails?:string;state?:Partial<ReturnType<typeof initialState>>;uri?:string;passwordUnreadable?:boolean;containSqlFails?:number}={}){
+  secretSetFails?:string;state?:Partial<ReturnType<typeof initialState>>;uri?:string;passwordUnreadable?:boolean;containSqlFails?:number;noClientTls?:boolean;probeFlags?:{read_all:boolean;write_all:boolean;flags:boolean};probeUser?:string;noTable?:boolean}={}){
  const log:string[]=[],sunk:Record<string,string>={},statements:string[]=[];
  const secrets=new Set<string>(over.preSecrets??[...m.BACKUP_OWNER_SECRETS]);
  const vars:Record<string,string>={PRODUCTION_BACKUP_BUCKET:m.BACKUP_BUCKET,AGE_BACKUP_RECIPIENT:AGE,...(over.vars??{})};
@@ -73,18 +78,21 @@ function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[
   },
   async end(){log.push('owner.end');},
  });
- const backupConfigs:ConnectionConfig[]=[];
+ const backupConfigs:ConnectionConfig[]=[],backendSslAsked:string[]=[];
  const backupSession=():SqlSession=>({
   async query(sql:string){
    if(sql==='BEGIN'||sql==='ROLLBACK')return {rows:[]} as never;
-   if(sql.includes('current_user,session_user'))return {rows:[{current_user:T.role,session_user:T.role,ssl:true}]} as never;
-   if(sql.includes('pg_read_all_data'))return {rows:[{read_all:true,write_all:false,flags:false}]} as never;
-   if(sql.includes('FROM pg_class'))return {rows:[{relname:'bookings'}]} as never;
+   // The accepted Neon model: the backend's pg_stat_ssl row is FALSE on a verified verify-full connection (Neon's proxy talks to compute without TLS). Any probe that asks for it fails here.
+   if(sql.includes('pg_stat_ssl'))backendSslAsked.push(sql);
+   if(sql.includes('current_user,session_user'))return {rows:[{current_user:over.probeUser??T.role,session_user:over.probeUser??T.role,ssl:false}]} as never;
+   if(sql.includes('pg_read_all_data'))return {rows:[over.probeFlags??{read_all:true,write_all:false,flags:false}]} as never;
+   if(sql.includes('FROM pg_class'))return {rows:over.noTable?[]:[{relname:'bookings'}]} as never;
    if(sql.startsWith('SELECT 1 FROM public.'))return {rows:[]} as never;
    if(sql.startsWith('DELETE FROM public.'))throw Object.assign(new Error('permission denied for table bookings'),{code:over.probeDenied??'42501'});
    throw new Error('unexpected backup SQL '+sql);
   },
   async end(){log.push('backup.end');},
+  transportVerified:()=>over.noClientTls!==true,
  });
  let claimed=false;const sleeps:number[]=[];
  const ports:BackupCredentialPorts={neon,github,
@@ -92,7 +100,7 @@ function world(over:{resetBody?:unknown;resetThrows?:boolean;opStatuses?:string[
   async connectBackup(c){backupConfigs.push(c);log.push('connectBackup '+c.user);return backupSession();},
   guard:{exists:()=>claimed,claim:()=>{if(claimed)throw new Error('BACKUP_CREDENTIAL_RESET_ALREADY_ATTEMPTED');claimed=true;log.push('guard.claim');}},
   async sleep(ms){sleeps.push(ms);},now:()=>new Date(1_000_000+sleeps.length*1000),expectTls:true,containmentSchedule:[0,0,0],expectedHostFingerprint:fingerprintHost(HOST)};
- return {ports,log,sunk,secrets,vars,statements,st,backupConfigs,flags,get posts(){return posts;},get opPolls(){return opPolls;}};
+ return {ports,log,sunk,secrets,vars,statements,st,backupConfigs,backendSslAsked,flags,get posts(){return posts;},get opPolls(){return opPolls;}};
 }
 function initialState(){return {rolcanlogin:false,rolvaliduntil:null as string|null,passwordIsNull:true as boolean,posture:{...POSTURE}};}
 const everything=(w:World)=>JSON.stringify({log:w.log});
@@ -207,6 +215,36 @@ test('a failed probe or sink contains the role, deletes the password sink and ne
  await assert.rejects(m.provisionBackupCredential(sink.ports),Error);
  assert.equal(sink.st.rolcanlogin,false);assert.ok(!sink.sunk[m.BACKUP_SINKS.password]);assert.ok(!('PRODUCTION_BACKUP_ACTIVATION' in sink.vars));
  assert.equal(sink.posts,1);
+});
+
+test('the TLS proof is the established client transport, never the backend pg_stat_ssl row; every probe refusal names its check by a fixed reason and contains the role',async()=>{
+ // a verified client transport passes even though the (Neon proxy-to-compute) backend row is never consulted
+ const ok=world();const ev=await m.provisionBackupCredential(ok.ports);
+ assert.deepEqual(ok.backendSslAsked,[],'the backend pg_stat_ssl row is never queried (it is false on the accepted Neon model)');
+ assert.equal(ev.tlsVerified,true);assert.ok(ev.probes.includes('TLS_VERIFY_FULL_CHANNEL_BINDING'));
+ const cases:Array<[string,Parameters<typeof world>[0],string]>=[
+  ['no client TLS proof',{noClientTls:true},'BACKUP_PROBE_TLS'],['another user',{probeUser:'neondb_owner'},'BACKUP_PROBE_IDENTITY'],
+  ['no pg_read_all_data',{probeFlags:{read_all:false,write_all:false,flags:false}},'BACKUP_PROBE_ROLE_FLAGS'],['write-all',{probeFlags:{read_all:true,write_all:true,flags:false}},'BACKUP_PROBE_ROLE_FLAGS'],
+  ['elevated flag',{probeFlags:{read_all:true,write_all:false,flags:true}},'BACKUP_PROBE_ROLE_FLAGS'],['no public table',{noTable:true},'BACKUP_PROBE_TABLE'],['write not denied',{probeDenied:'00000'},'BACKUP_PROBE_WRITE_NOT_DENIED'],
+ ];
+ for(const [name,over,reason] of cases){
+  const w=world(over);
+  await assert.rejects(m.provisionBackupCredential(w.ports),(e:Error&{reason?:unknown;contained?:{state:string}})=>{assert.equal(e.message,'BACKUP_CREDENTIAL_PROBE_FAILED',name);assert.equal(e.reason,reason,name);assert.equal(e.contained?.state,'CONTAINED',name);return true;});
+  assert.equal(w.st.rolcanlogin,false,name);assert.ok(!w.sunk[m.BACKUP_SINKS.password],name);assert.ok(!('PRODUCTION_BACKUP_ACTIVATION' in w.vars),name);assert.equal(w.posts,1,name+': one POST, never resent');
+ }
+ // the client transport reader: only an encrypted, authorized TLSSocket of the exact host with no process-level override
+ const sock=(own:Record<string,unknown>)=>Object.assign(Object.create(TLSSocket.prototype) as object,{encrypted:true},own);
+ const client=(stream:unknown)=>({connection:{stream}});
+ const good=sock({authorized:true,servername:HOST});
+ assert.equal(m.clientTransportVerified(client(good),HOST,{} as unknown as NodeJS.ProcessEnv),true);
+ for(const [name,c,host,env] of [
+  ['unauthorized',client(sock({authorized:false,servername:HOST})),HOST,{}],['other SNI',client(sock({authorized:true,servername:'other.example'})),HOST,{}],['no SNI',client(sock({authorized:true})),HOST,{}],
+  ['plain socket',client({authorized:true,encrypted:true,servername:HOST}),HOST,{}],['not encrypted',client(sock({encrypted:false,authorized:true,servername:HOST})),HOST,{}],['no stream',{connection:{}},HOST,{}],['no connection',{},HOST,{}],['null',null,HOST,{}],
+  ['TLS verification disabled',client(good),HOST,{NODE_TLS_REJECT_UNAUTHORIZED:'0'}],['custom CA',client(good),HOST,{NODE_EXTRA_CA_CERTS:'/x.pem'}],['other host',client(good),'ep-other.example',{}],
+ ] as Array<[string,unknown,string,Record<string,string>]>)assert.equal(m.clientTransportVerified(c,host,env as unknown as NodeJS.ProcessEnv),false,name);
+ // the production session exposes it; a session without it never satisfies expectTls
+ const bare=world({});(bare.ports as {connectBackup:unknown}).connectBackup=async()=>({async query(){return {rows:[{current_user:T.role,session_user:T.role}]} as never;},async end(){}});
+ await assert.rejects(m.provisionBackupCredential(bare.ports),/BACKUP_CREDENTIAL_PROBE_FAILED/);
 });
 
 test('containment is bounded, idempotent and reports failure instead of claiming success',async()=>{
@@ -354,4 +392,25 @@ test('the CLI accepts only the four fixed commands and no arguments, and every f
  const pkg=JSON.parse(readFileSync('package.json','utf8')) as {scripts:Record<string,string>};
  for(const c of ['provision','finalize','contain','set-age-recipient'])
   assert.equal(pkg.scripts[c==='set-age-recipient'?'backup:set-age-recipient':'backup:role-'+c],`node --import tsx scripts/production-backup-credential.ts ${c}`);
+});
+
+test('clientTransportVerified against a REAL Node TLS socket: only a verified connection to the exact host counts',{skip:spawnSync('openssl',['version']).status!==0},async()=>{
+ const dir=mkTmp(joinTmp(osTmp(),'zao-tls-'));
+ try{
+  assert.equal(spawnSync('openssl',['req','-x509','-newkey','ec','-pkeyopt','ec_paramgen_curve:prime256v1','-nodes','-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost','-keyout',joinTmp(dir,'k.pem'),'-out',joinTmp(dir,'c.pem')],{stdio:'ignore'}).status,0);
+  const key=readTmp(joinTmp(dir,'k.pem')),cert=readTmp(joinTmp(dir,'c.pem'));
+  const server=tlsServer({key,cert},sock=>{sock.on('error',()=>undefined);sock.on('data',()=>undefined);});
+  await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));
+  const port=(server.address() as {port:number}).port;
+  const open=(over:Record<string,unknown>)=>new Promise<TLSSocket>((resolve,reject)=>{const s=tlsConnect({port,host:'127.0.0.1',...over},()=>resolve(s));s.on('error',reject);});
+  try{
+   const good=await open({servername:'localhost',ca:cert});
+   assert.equal(m.clientTransportVerified({connection:{stream:good}},'localhost',{} as unknown as NodeJS.ProcessEnv),true,'verified TLS to the expected host');
+   assert.equal(m.clientTransportVerified({connection:{stream:good}},'other.example',{} as unknown as NodeJS.ProcessEnv),false,'another expected host');
+   assert.equal(m.clientTransportVerified({connection:{stream:good}},'localhost',{NODE_TLS_REJECT_UNAUTHORIZED:'0'} as unknown as NodeJS.ProcessEnv),false,'verification override');
+   const unverified=await open({servername:'localhost',rejectUnauthorized:false});
+   assert.equal(unverified.authorized,false);assert.equal(m.clientTransportVerified({connection:{stream:unverified}},'localhost',{} as unknown as NodeJS.ProcessEnv),false,'unauthorized (no CA) connection');
+   good.destroy();unverified.destroy();
+  }finally{await new Promise<void>(r=>server.close(()=>r()));}
+ }finally{rmTmp(dir,{recursive:true,force:true});}
 });

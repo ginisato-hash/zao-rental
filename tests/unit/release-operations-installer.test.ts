@@ -27,7 +27,8 @@ test('the installer pins exactly the files it reviews, and its package scripts a
  // the reviewed lifecycle commands of this policy
  assert.deepEqual(Object.keys(scripts).sort(),['monitor:worker-freshness','production:install-normal-worker-grants','production:install-normal-worker-migration','production:restore-evidence-finalize','production:worker-bind-cron-secret','production:worker-dormant-proof','production:worker-roles-contain','production:worker-roles-provision']);
  // the backup installer's pins are the ones PR #50 merged (not re-pinned here)
- assert.equal(pinned['scripts/production-backup-credential.ts'],'e71a9ca8e9e283c619fa4591c9ddd2d28223b7d2ba1515cd9025cd27fb1e5c72');
+ // (the repository copy is pinned to the corrected helper; the settings already applied from the earlier installer bytes stay effective and are not re-applied)
+ assert.equal(pinned['scripts/production-backup-credential.ts'],'ce064babfd6b1dae15e3d7370858b1d82ba65e4d9e66c02df29986604be08da7');
  // text-level guards: no raw POST / PATCH / protection / password verbs anywhere in what the file writes
  for(const forbidden of ['reset_password','-X POST','-X PATCH','ssoProtection','--sensitive ','env pull','vercel login','--token'])assert.ok(!text.includes(forbidden)||forbidden==='--sensitive ' ,forbidden);
 });

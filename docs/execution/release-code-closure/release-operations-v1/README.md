@@ -29,7 +29,7 @@ The lifecycle code of PR #51 (merged source), the fixed SQL, and the four files 
 | `scripts/production-worker-freshness.ts` | `255c1d2618dfad7edec87231bdfa1b88224f333c3741a8c5b2190f89b78ac70c` |
 | `packages/db/migrations/0054_provisional_receipt_capacity.sql` | `6aefbc51e167b2c070c35212e27a83d5a49545cd7012ecbb67ab9c7edfb5aea8` |
 | `packages/db/migrations/0055_normal_production_worker.sql` | `ef13d125dd5a7a516e437f97a8e7e2c418fbe8f6fd70973f1917428e2cfc9f03` |
-| `scripts/production-backup-credential.ts` (PR #50 pin) | `e71a9ca8e9e283c619fa4591c9ddd2d28223b7d2ba1515cd9025cd27fb1e5c72` |
+| `scripts/production-backup-credential.ts` (PR #50 helper, corrected by the client-TLS probe fix; the applied installer bytes pinned `e71a9ca8…`) | `ce064babfd6b1dae15e3d7370858b1d82ba65e4d9e66c02df29986604be08da7` |
 | `scripts/production-backup-object-get.ts` (PR #50 pin) | `64fca6e2628a485394fc9a2b0fa4642e2fab412993985782526eb78056813c08` |
 | `scripts/production-credential-activation.ts` (PR #50 pin) | `f4f96805ccf5d92f4382d545135121b6e3f411cc366c9dc1a113f3b6f7278abf` |
 | `scripts/production-backup.ts` (PR #50 pin) | `a571e89675c70c38d342c54441db66313c976c55b1d31e1be873ece2105596e6` |

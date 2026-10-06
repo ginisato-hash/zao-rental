@@ -58,10 +58,12 @@ LEASE_MINUTES = 90
 NEON_BIN = Path(".npm/_npx/978debf9b3a75271/node_modules/.bin/neon")
 WRANGLER_BIN = Path(".npm/_npx/32026684e21afda6/node_modules/.bin/wrangler")
 # Reviewed helper and read-only download wrapper (commit e803f57 on codex/release-worker-provisional-47, TD review of PR #50) and the helper's direct imports.
+# The helper pin is the corrected helper (the post-reset probe proves the client TLS transport instead of the backend pg_stat_ssl row; Issue #47 comment 6007581098);
+# the originally applied bytes of this installer pinned e71a9ca8e9e2....
 HELPER = "scripts/production-backup-credential.ts"
 OBJECT_GET = "scripts/production-backup-object-get.ts"
 PINNED_FILES = {
-    HELPER: "e71a9ca8e9e283c619fa4591c9ddd2d28223b7d2ba1515cd9025cd27fb1e5c72",
+    HELPER: "ce064babfd6b1dae15e3d7370858b1d82ba65e4d9e66c02df29986604be08da7",
     OBJECT_GET: "64fca6e2628a485394fc9a2b0fa4642e2fab412993985782526eb78056813c08",
     "scripts/production-credential-activation.ts": "f4f96805ccf5d92f4382d545135121b6e3f411cc366c9dc1a113f3b6f7278abf",
     "scripts/production-backup.ts": "a571e89675c70c38d342c54441db66313c976c55b1d31e1be873ece2105596e6",

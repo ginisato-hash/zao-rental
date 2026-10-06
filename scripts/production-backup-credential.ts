@@ -18,6 +18,7 @@ import {createHash} from 'node:crypto';
 import {closeSync,existsSync,mkdirSync,openSync,readFileSync,writeSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
+import {TLSSocket} from 'node:tls';
 import {Client} from 'pg';
 import {productionCredentialBaseline,productionCredentialCompleteReset,productionCredentialContainmentComplete,productionCredentialContainmentSchedule,
  productionCredentialPasswordFromResetResponse,productionCredentialTemporaryPassword} from './production-credential-activation';
@@ -43,6 +44,8 @@ const OPERATION_ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12
 const qi=(v:string)=>{if(!/^[a-z][a-z0-9_]{2,62}$/.test(v))throw new Error('BACKUP_CREDENTIAL_NAME_INVALID');return '"'+v+'"';};
 const sha=(v:string)=>createHash('sha256').update(v).digest('hex');
 const fail=(code:string)=>new Error(code);
+/** A probe refusal keeps its one fixed code and names the failed check by a fixed reason, so a failure is diagnosable without exposing any value. */
+const probeFail=(check:string)=>Object.assign(fail('BACKUP_CREDENTIAL_PROBE_FAILED'),{reason:'BACKUP_PROBE_'+check});
 
 // ---------------------------------------------------------------- pure contract
 export function assertAgeRecipient(value:unknown):asserts value is string{
@@ -93,7 +96,9 @@ export function assertRestorePass(v:unknown):asserts v is RestorePass{
 export interface NeonPort{get(path:string,query?:Record<string,string>):Promise<unknown>;post(path:string):Promise<unknown>}
 export interface GitHubPort{secretNames():Promise<string[]>;variables():Promise<Record<string,string>>;setSecret(name:string,value:string):Promise<void>;
  setVariable(name:string,value:string):Promise<void>;deleteSecret(name:string):Promise<void>;deleteVariable(name:string):Promise<void>}
-export interface SqlSession{query<R=Record<string,unknown>>(sql:string,params?:unknown[]):Promise<{rows:R[]}>;end():Promise<void>}
+/** `transportVerified` is the established CLIENT transport read from the driver's own socket (production sessions provide it). Neon terminates TLS at its proxy, so the backend's pg_stat_ssl row is false
+ *  even on a verified verify-full connection and is not an oracle (packages/db/src/neon-tls.ts, docs/execution/SCOPE.md). */
+export interface SqlSession{query<R=Record<string,unknown>>(sql:string,params?:unknown[]):Promise<{rows:R[]}>;end():Promise<void>;transportVerified?():boolean}
 export type ConnectionConfig={host:string;port:number;database:string;user:string;password:string};
 export interface GuardStore{claim():void;exists():boolean}
 export interface BackupCredentialPorts{neon:NeonPort;github:GitHubPort;connectOwner(c:ConnectionConfig):Promise<SqlSession>;connectBackup(c:ConnectionConfig):Promise<SqlSession>;
@@ -257,22 +262,23 @@ export async function provisionBackupCredential(p:BackupCredentialPorts):Promise
   steps.push('LOGIN_LEASE_'+BACKUP_LOGIN_LEASE_MINUTES+'M_DB_CLOCK');
   // 9-10. Fresh direct login with the real client path, then read-only posture probes (no business row is read).
   backup=await p.connectBackup({host:target.host,port:Number(T.port),database:T.database,user:T.role,password:credential.password});
-  const who=await backup.query<{current_user:string;session_user:string;ssl:boolean|null}>('SELECT current_user,session_user,(SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()) AS ssl');
-  if(who.rows[0]?.current_user!==T.role||who.rows[0].session_user!==T.role||(p.expectTls&&who.rows[0].ssl!==true))throw fail('BACKUP_CREDENTIAL_PROBE_FAILED');
+  const who=await backup.query<{current_user:string;session_user:string}>('SELECT current_user,session_user');
+  if(who.rows[0]?.current_user!==T.role||who.rows[0].session_user!==T.role)throw probeFail('IDENTITY');
+  if(p.expectTls&&backup.transportVerified?.()!==true)throw probeFail('TLS');
   const probes:string[]=['IDENTITY'];if(p.expectTls)probes.push('TLS_VERIFY_FULL_CHANNEL_BINDING');
   const flags=await backup.query<{read_all:boolean;write_all:boolean;flags:boolean}>(`SELECT pg_has_role(current_user,'pg_read_all_data','USAGE') AS read_all,pg_has_role(current_user,'pg_write_all_data','USAGE') AS write_all,
    (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls) AS flags FROM pg_roles r WHERE r.rolname=current_user`);
-  if(flags.rows[0]?.read_all!==true||flags.rows[0].write_all!==false||flags.rows[0].flags!==false)throw fail('BACKUP_CREDENTIAL_PROBE_FAILED');
+  if(flags.rows[0]?.read_all!==true||flags.rows[0].write_all!==false||flags.rows[0].flags!==false)throw probeFail('ROLE_FLAGS');
   probes.push('PG_READ_ALL_DATA_ONLY');
   const table=await backup.query<{relname:string}>(`SELECT c.relname FROM pg_class c WHERE c.relkind='r' AND c.relnamespace='public'::regnamespace ORDER BY c.relname LIMIT 1`);
   const name=table.rows[0]?.relname;
-  if(typeof name!=='string'||!/^[a-z_][a-z0-9_]*$/.test(name))throw fail('BACKUP_CREDENTIAL_PROBE_FAILED');
+  if(typeof name!=='string'||!/^[a-z_][a-z0-9_]*$/.test(name))throw probeFail('TABLE');
   await backup.query(`SELECT 1 FROM public.${qi(name)} LIMIT 0`);probes.push('READ_PRIVILEGE_NO_ROWS');
   let denied:string|undefined;
   await backup.query('BEGIN');
   try{await backup.query(`DELETE FROM public.${qi(name)} WHERE false`);}catch(e){denied=(e as {code?:string})?.code;}
   try{await backup.query('ROLLBACK');}catch{/* session already aborted */}
-  if(denied!=='42501')throw fail('BACKUP_CREDENTIAL_PROBE_FAILED');
+  if(denied!=='42501')throw probeFail('WRITE_NOT_DENIED');
   probes.push('WRITE_DENIED_42501');
   await backup.end();backup=undefined;
   const afterLogin=await readRoleState(owner);
@@ -298,7 +304,7 @@ export async function provisionBackupCredential(p:BackupCredentialPorts):Promise
   try{await owner?.end();}catch{/* ignore */}
   owner=undefined;
   const contained=mutated?await containBackupCredential(p):undefined;
-  throw Object.assign(fail(code),{contained,steps});
+  throw Object.assign(fail(code),{contained,steps,reason:(e as {reason?:unknown})?.reason??null});
  }finally{try{await owner?.end();}catch{/* ignore */}}
 }
 
@@ -374,12 +380,21 @@ export function gitHubCliPort(bin:string='gh',env:NodeJS.ProcessEnv=process.env)
   deleteVariable:async n=>{await run(['variable','delete',allowed(n),...GH_SCOPE]);},
  };
 }
+const TLS_OVERRIDES=['NODE_TLS_REJECT_UNAUTHORIZED','NODE_EXTRA_CA_CERTS','SSL_CERT_FILE','SSL_CERT_DIR'] as const;
+/** True only for an established, encrypted, authorized TLS socket of this client whose SNI is the expected host, with no process-level TLS override. pg's internals are pinned: any other shape is false. */
+export function clientTransportVerified(client:unknown,host:string,env:NodeJS.ProcessEnv=process.env):boolean{
+ try{
+  if(TLS_OVERRIDES.some(k=>env[k]!==undefined))return false;
+  const stream=(client as {connection?:{stream?:unknown}}).connection?.stream;
+  return stream instanceof TLSSocket&&stream.encrypted===true&&stream.authorized===true&&Reflect.get(stream,'servername')===host;
+ }catch{return false;}
+}
 const pgSession=async(c:ConnectionConfig,statementTimeout:number):Promise<SqlSession>=>{
  const client=new Client({host:c.host,port:c.port,database:c.database,user:c.user,password:c.password,ssl:{rejectUnauthorized:true},enableChannelBinding:true,
   connectionTimeoutMillis:15_000,statement_timeout:statementTimeout,application_name:'zao_backup_credential'});
  client.on('error',()=>{});
  await client.connect();
- return {query:(sql,params)=>client.query(sql,params as unknown[]) as never,end:()=>client.end()};
+ return {query:(sql,params)=>client.query(sql,params as unknown[]) as never,end:()=>client.end(),transportVerified:()=>clientTransportVerified(client,c.host)};
 };
 export function evidenceDirectory(root:string=process.cwd()){return join(root,'.local','evidence','production-backup');}
 export function fileGuard(dir:string):GuardStore{
@@ -413,8 +428,8 @@ export async function main(argv:string[],root:string=process.cwd()):Promise<void
 if(process.argv[1]&&new URL(import.meta.url).pathname===process.argv[1]){
  main(process.argv.slice(2)).then(()=>{process.exitCode=0;},error=>{
   // Only a fixed code and the sanitised containment/step report; never a provider error, URI, host or value.
-  const e=error as {contained?:unknown;steps?:unknown};
-  console.error(JSON.stringify({state:'FAILED',code:safeCode(error),contained:e.contained??null,steps:Array.isArray(e.steps)?e.steps:[]}));
+  const e=error as {contained?:unknown;steps?:unknown;reason?:unknown};
+  console.error(JSON.stringify({state:'FAILED',code:safeCode(error),reason:/^BACKUP_PROBE_[A-Z_]{1,24}$/.test(String(e.reason))?e.reason:null,contained:e.contained??null,steps:Array.isArray(e.steps)?e.steps:[]}));
   process.exitCode=1;
  });
 }

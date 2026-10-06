@@ -91,9 +91,10 @@ export function commercialProductionPlan(env:Env,now=new Date()):CommercialPlan|
  if(e.VERCEL_ENV!=='production')fail('PRODUCTION_COMMERCIAL_WRONG_VERCEL_ENVIRONMENT');
  if(!e.VERCEL_PROJECT_ID)fail('PRODUCTION_COMMERCIAL_DEPLOYMENT_IDENTITY_MISSING');
  // Release identity is the reviewed source commit, declared before deploy so a per-release
- // publication approval can name it; when Vercel reports the built commit it must agree.
+ // publication approval can name it; when Vercel reports the built commit it must agree. A CLI deployment without Git metadata carries the variable as an
+ // empty string: that is "not reported" (same as absent), never a commit; any non-empty value must equal the release.
  const releaseId=e.PRODUCTION_RELEASE_ID;
- if(!releaseId||!/^[a-f0-9]{40}$/.test(releaseId)||e.VERCEL_GIT_COMMIT_SHA!==undefined&&e.VERCEL_GIT_COMMIT_SHA!==releaseId)fail('PRODUCTION_COMMERCIAL_RELEASE_IDENTITY_INVALID');
+ if(!releaseId||!/^[a-f0-9]{40}$/.test(releaseId)||e.VERCEL_GIT_COMMIT_SHA!==undefined&&e.VERCEL_GIT_COMMIT_SHA!==''&&e.VERCEL_GIT_COMMIT_SHA!==releaseId)fail('PRODUCTION_COMMERCIAL_RELEASE_IDENTITY_INVALID');
  const origin=parseProductionPublicOrigin(e.PRODUCTION_PUBLIC_ORIGIN);
  if(!e.PRODUCTION_DB_HOST||!e.PRODUCTION_DB_NAME)fail('PRODUCTION_COMMERCIAL_DB_IDENTITY_MISSING');
  const roles={} as Record<ProductionService,string>;

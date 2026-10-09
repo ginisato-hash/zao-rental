@@ -1,11 +1,16 @@
 name: Production Backup Freshness
-# Missing-backup detection for the GitHub `schedule:` scheduler source. Reads only GitHub Actions run metadata
-# with the read-only GITHUB_TOKEN (actions: read). It references no secret, no environment and no repository
-# variable other than the scheduler-source selector, and never touches Production, R2 or the database.
+# Missing-backup detection for the GitHub `schedule:` scheduler source. Reads only GitHub Actions run/job metadata
+# with the read-only GITHUB_TOKEN (actions: read). It references no secret and no environment, and never touches
+# Production, R2 or the database.
+# A run only counts as a backup when its `Run production backup` STEP concluded success — a scheduled run that was
+# skipped by the activation gate is overall "success" but made no backup and is NOT counted.
 # It goes RED (GitHub's failed-workflow notification) when
-#   - the backup workflow is not active (e.g. disabled_inactivity after 60 days without repository activity), or
-#   - no successful scheduled backup run exists in the last 100 minutes, or
-#   - no successful scheduled run happened in the 09:17-10:16 UTC window of the last 25 hours (daily promotion).
+#   - the backup workflow is not `active` (e.g. disabled_inactivity), or
+#   - no run with a successful backup step was created in the last 100 minutes, or
+#   - no such run for a 09:17 UTC slot (daily promotion) was created in the last 25 hours.
+# Limits (not a guaranteed hourly RPO): GitHub may delay or drop scheduled runs, and THIS workflow is itself a scheduled
+# workflow, so it stops with the 60-day auto-disable it reports — see docs/execution/p6/backup-github-schedule/OPERATING_GATE.md
+# for the independent Owner operating control that must exist before acceptance.
 # Inert unless vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE == GITHUB_SCHEDULE.
 on:
   schedule:
@@ -16,7 +21,7 @@ permissions:
 jobs:
   freshness:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check scheduled backup freshness
         env:
@@ -34,22 +39,26 @@ jobs:
             echo "::error::production-backup.yml is not active (state=$state); scheduled backups are NOT running."
             exit 1
           fi
-          runs="$(gh run list --repo "$REPO" --workflow production-backup.yml --event schedule --status success --limit 100 --json createdAt --jq '.[].createdAt')"
+          runs="$(gh run list --repo "$REPO" --workflow production-backup.yml --event schedule --status success --limit 40 --json databaseId,createdAt --jq '.[] | "\(.databaseId) \(.createdAt)"')"
           now="$(date -u +%s)"
           newest=0; daily=0
-          for t in $runs; do
+          while read -r id t; do
+            [ -n "$id" ] || continue
+            ok="$(gh api "repos/$REPO/actions/runs/$id/jobs" --jq '[.jobs[].steps[]? | select(.name == "Run production backup" and .conclusion == "success")] | length')"
+            [ "$ok" -ge 1 ] || continue
             e="$(date -u -d "$t" +%s)"
             [ "$e" -gt "$newest" ] && newest="$e"
-            age=$(( now - e ))
-            hm="$(date -u -d "$t" +%H%M)"
-            if [ "$age" -le 90000 ] && [ "$hm" -ge 0917 ] && [ "$hm" -le 1016 ]; then daily=1; fi
-          done
+            slot=$(( e / 3600 * 3600 + 17 * 60 )); if [ "$slot" -gt "$e" ]; then slot=$(( slot - 3600 )); fi
+            if [ $(( now - e )) -le 90000 ] && [ "$(date -u -d "@$slot" +%H)" = "09" ]; then daily=1; fi
+          done <<EOF_RUNS
+          $runs
+          EOF_RUNS
           if [ "$newest" -eq 0 ] || [ $(( now - newest )) -gt 6000 ]; then
-            echo "::error::No successful scheduled production backup in the last 100 minutes."
+            echo "::error::No scheduled production backup with a successful backup step in the last 100 minutes."
             exit 1
           fi
           if [ "$daily" -ne 1 ]; then
-            echo "::error::No successful scheduled backup run in the 09:17-10:16 UTC window within the last 25 hours; the daily copy may be missing."
+            echo "::error::No successful backup for a 09:17 UTC slot within the last 25 hours; the daily copy may be missing."
             exit 1
           fi
           echo "Backup freshness OK."

@@ -5,14 +5,15 @@ name: Production Backup
 # which exist yet. A dispatch before that activation fails/skips before any
 # Production secret is read.
 #
-# Scheduler source (exclusive): exactly ONE source may start backups.
-#   - vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE unset / CLOUDFLARE_DISPATCH: the Cloudflare Worker dispatches
-#     (workflow_dispatch); the GitHub `schedule:` trigger below is inert (skips before any secret).
-#   - vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE = GITHUB_SCHEDULE: only the `schedule:` trigger runs; a
-#     workflow_dispatch (e.g. from a revived Cloudflare Cron) is refused (red) before any secret, so a
-#     slot can never be backed up twice by two sources.
-# For `schedule:` the scheduled_at is the latest :17 UTC slot not after the runner clock (see the slot step);
-# for dispatch it is the authoritative input sent by the Worker.
+# Scheduler source (exclusive, fail closed): vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE must be set EXPLICITLY.
+#   - CLOUDFLARE_DISPATCH: only the Cloudflare Worker's workflow_dispatch runs; the `schedule:` trigger is inert.
+#   - GITHUB_SCHEDULE:     only the `schedule:` trigger runs; a workflow_dispatch is refused (red).
+#   - unset / any other value: every event is refused (red) before any secret. Selecting the source is a separate,
+#     approved release step — there is no implicit default.
+# scheduled_at: dispatch = the Worker's authoritative input, unchanged. schedule = the latest :17 UTC slot not after
+# the run's IMMUTABLE created_at (read via the Actions API in the `slot` job), so a re-run, a queue delay inside the
+# hour or the runner clock never moves the slot or the R2 key. GitHub exposes no scheduled-occurrence timestamp, so
+# this is best effort: a run created more than 45 minutes after its slot is refused (ambiguous) instead of guessed.
 on:
   schedule:
     - cron: '17 * * * *'
@@ -28,7 +29,50 @@ concurrency:
   group: production-backup
   cancel-in-progress: false
 jobs:
+  # Secret-free, no checkout. Only reads this run's own metadata (actions: read); the backup job's permissions are unchanged.
+  slot:
+    if: github.event_name == 'workflow_dispatch' || vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE == 'GITHUB_SCHEDULE'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      scheduled_at: ${{ steps.slot.outputs.scheduled_at }}
+    steps:
+      - name: Resolve scheduled_at (secret-free)
+        id: slot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLOT_EVENT: ${{ github.event_name }}
+          SLOT_INPUT: ${{ inputs.scheduled_at }}
+          SLOT_REPO: ${{ github.repository }}
+          SLOT_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -eu
+          if [ "$SLOT_EVENT" = "schedule" ]; then
+            created="$(gh api "repos/$SLOT_REPO/actions/runs/$SLOT_RUN_ID" --jq .created_at)"
+            case "$created" in
+              [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z) ;;
+              *) echo "::error::Run created_at is missing or malformed; refusing."; exit 1 ;;
+            esac
+            at="$(date -u -d "$created" +%s)"
+            slot=$(( at / 3600 * 3600 + 17 * 60 ))
+            if [ "$slot" -gt "$at" ]; then slot=$(( slot - 3600 )); fi
+            if [ $(( at - slot )) -gt 2700 ]; then
+              echo "::error::Run was created $(( (at - slot) / 60 )) minutes after its :17 slot (limit 45); the slot is ambiguous, refusing to guess."
+              exit 1
+            fi
+            scheduled_at="$(date -u -d "@$slot" +%Y-%m-%dT%H:%M:%S.000Z)"
+          else
+            scheduled_at="$SLOT_INPUT"
+          fi
+          echo "scheduled_at=$scheduled_at" >> "$GITHUB_OUTPUT"
+          echo "scheduled_at resolved: $scheduled_at"
+
   backup:
+    needs: slot
+    # slot is skipped when the selected source is not GitHub (a skipped need must not skip the gate); a failed slot does.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production-backup
@@ -57,17 +101,25 @@ jobs:
             echo "passed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          case "$GATE_SOURCE" in
+            CLOUDFLARE_DISPATCH|GITHUB_SCHEDULE) ;;
+            *)
+              echo "::error::Scheduler source is not explicitly selected (PRODUCTION_BACKUP_SCHEDULER_SOURCE must be CLOUDFLARE_DISPATCH or GITHUB_SCHEDULE); refusing before any secret."
+              echo "passed=false" >> "$GITHUB_OUTPUT"
+              exit 1
+              ;;
+          esac
           case "$GATE_EVENT" in
             schedule)
               if [ "$GATE_SOURCE" != "GITHUB_SCHEDULE" ]; then
-                echo "GitHub schedule is not the selected scheduler source (PRODUCTION_BACKUP_SCHEDULER_SOURCE != GITHUB_SCHEDULE); skipping before any secret."
+                echo "GitHub schedule is not the selected scheduler source; skipping before any secret."
                 echo "passed=false" >> "$GITHUB_OUTPUT"
                 exit 0
               fi
               ;;
             workflow_dispatch)
-              if [ "$GATE_SOURCE" = "GITHUB_SCHEDULE" ]; then
-                echo "::error::Dispatch refused: the scheduler source is GITHUB_SCHEDULE; a second source would back up the same slot twice."
+              if [ "$GATE_SOURCE" != "CLOUDFLARE_DISPATCH" ]; then
+                echo "::error::Dispatch refused: the scheduler source is $GATE_SOURCE; a second source would back up the same slot twice."
                 echo "passed=false" >> "$GITHUB_OUTPUT"
                 exit 1
               fi
@@ -79,29 +131,6 @@ jobs:
               ;;
           esac
           echo "passed=true" >> "$GITHUB_OUTPUT"
-
-      # Secret-free. dispatch: the Worker's authoritative input is passed through unchanged (scripts/production-backup.ts
-      # validates it strictly). schedule: the latest hh:17:00.000Z UTC slot that is not after the runner clock. A delayed
-      # run therefore still maps to the slot it was scheduled for (same deterministic R2 key on a retry of that slot);
-      # only a delay of one hour or more maps to a later slot.
-      - name: Resolve scheduled_at (secret-free)
-        if: steps.gate.outputs.passed == 'true'
-        id: slot
-        env:
-          SLOT_EVENT: ${{ github.event_name }}
-          SLOT_INPUT: ${{ inputs.scheduled_at }}
-        run: |
-          set -eu
-          if [ "$SLOT_EVENT" = "schedule" ]; then
-            now="$(date -u +%s)"
-            slot=$(( now / 3600 * 3600 + 17 * 60 ))
-            if [ "$slot" -gt "$now" ]; then slot=$(( slot - 3600 )); fi
-            scheduled_at="$(date -u -d "@$slot" +%Y-%m-%dT%H:%M:%S.000Z)"
-          else
-            scheduled_at="$SLOT_INPUT"
-          fi
-          echo "scheduled_at=$scheduled_at" >> "$GITHUB_OUTPUT"
-          echo "scheduled_at resolved: $scheduled_at"
 
       # The pinned postgres:18 image ships without the Debian CA bundle, but the backup's pg_dump verifies the server
       # (full verification, channel binding required) against exactly this root (EXPECTED_PRODUCTION_CA_ROOT in
@@ -139,7 +168,7 @@ jobs:
         env:
           BACKUP_MODE: production
           BACKUP_CLASS: hourly
-          SCHEDULED_AT: ${{ steps.slot.outputs.scheduled_at }}
+          SCHEDULED_AT: ${{ needs.slot.outputs.scheduled_at }}
           PRODUCTION_BACKUP_ACTIVATION: ${{ vars.PRODUCTION_BACKUP_ACTIVATION }}
           PRODUCTION_BACKUP_BUCKET: ${{ vars.PRODUCTION_BACKUP_BUCKET }}
           AGE_BACKUP_RECIPIENT: ${{ vars.AGE_BACKUP_RECIPIENT }}

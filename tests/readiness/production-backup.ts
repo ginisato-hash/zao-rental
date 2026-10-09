@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import {spawn} from 'node:child_process';
+import {spawn, spawnSync} from 'node:child_process';
 import {createHash, randomBytes} from 'node:crypto';
 import {access, chmod, mkdir, mkdtemp, readFile, symlink, writeFile, rm} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import * as age from 'age-encryption';
@@ -14,6 +15,59 @@ import {
 } from '../../scripts/production-backup';
 import worker, {TARGET_REF, TARGET_REPO, TARGET_WORKFLOW, dispatchProductionBackup} from '../../apps/backup-scheduler-worker/src/index';
 import {startIsolatedPostgres} from '../../scripts/postgres';
+
+// ── GitHub `schedule:` scheduler source: the workflow shell is executed for real (extracted from the YAML) ──
+const WORKFLOWS = join(import.meta.dirname, '../../.github/workflows');
+const readWorkflow = (name: string): string => readFileSync(join(WORKFLOWS, name), 'utf8');
+/** Returns the `run: |` script of the step with the given name (indentation stripped). */
+function stepScript(yaml: string, stepName: string): string {
+  const lines = yaml.split('\n');
+  const start = lines.findIndex(l => l.includes(`- name: ${stepName}`));
+  assert.ok(start >= 0, `step not found: ${stepName}`);
+  const run = lines.findIndex((l, i) => i > start && /^\s+run: \|\s*$/.test(l));
+  assert.ok(run > start, `no run block in step: ${stepName}`);
+  const indent = (lines[run + 1]!.match(/^\s*/) ?? [''])[0].length;
+  const out: string[] = [];
+  for (let i = run + 1; i < lines.length; i++) {
+    const l = lines[i]!;
+    if (l.trim() !== '' && (l.match(/^\s*/) ?? [''])[0].length < indent) break;
+    out.push(l.slice(indent));
+  }
+  return out.join('\n');
+}
+/** A `date` shim (GNU-compatible subset, also on macOS) and a `gh` shim so the YAML shell runs on any host. */
+async function shimDir(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'bk-sched-'));
+  await writeFile(join(dir, 'date'), `#!/usr/bin/env node
+const a = process.argv.slice(2).filter(x => x !== '-u');
+let t = Number(process.env.FAKE_NOW_EPOCH) * 1000, fmt = '';
+for (let i = 0; i < a.length; i++) {
+  if (a[i] === '-d') { const v = a[++i]; t = v.startsWith('@') ? Number(v.slice(1)) * 1000 : Date.parse(v); }
+  else if (a[i].startsWith('+')) fmt = a[i].slice(1);
+}
+const d = new Date(t), p = (n, w = 2) => String(n).padStart(w, '0');
+process.stdout.write(fmt.replace(/%([sYmdHMS])/g, (_, c) => ({s: String(Math.floor(t / 1000)), Y: p(d.getUTCFullYear(), 4), m: p(d.getUTCMonth() + 1),
+  d: p(d.getUTCDate()), H: p(d.getUTCHours()), M: p(d.getUTCMinutes()), S: p(d.getUTCSeconds())})[c]) + '\\n');
+`, {mode: 0o755});
+  await writeFile(join(dir, 'gh'), `#!/bin/sh
+case "$1" in
+  api) printf '%s\\n' "$FAKE_STATE" ;;
+  run) printf '%s' "$FAKE_RUNS" ;;
+  *) exit 99 ;;
+esac
+`, {mode: 0o755});
+  return dir;
+}
+function runShell(script: string, env: Record<string, string>, shims: string): {code: number | null; output: Record<string, string>; stdout: string} {
+  const out = join(shims, 'github_output');
+  const r = spawnSync('bash', ['-c', script], {env: {PATH: `${shims}:${process.env.PATH ?? ''}`, GITHUB_OUTPUT: out, ...env} as unknown as NodeJS.ProcessEnv, encoding: 'utf8'});
+  let raw = '';
+  try { raw = readFileSync(out, 'utf8'); } catch { /* no output written */ }
+  const output = Object.fromEntries(raw.split('\n').filter(Boolean).map(l => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]));
+  try { spawnSync('rm', ['-f', out]); } catch { /* ignore */ }
+  return {code: r.status, output, stdout: r.stdout + r.stderr};
+}
+const epoch = (iso: string): string => String(Date.parse(iso) / 1000);
 
 let passed = 0;
 async function check(name: string, fn: () => Promise<void>): Promise<void> {
@@ -222,12 +276,13 @@ async function main(): Promise<void> {
     assert.match(yaml, /cancel-in-progress:\s*false/);
   });
 
-  await check('17. workflow has no schedule/push/pull_request/pull_request_target trigger, and declares scheduled_at', async () => {
+  await check('17. workflow triggers are exactly one hourly :17 schedule + workflow_dispatch (no push/pull_request), and declare scheduled_at', async () => {
     const yaml = await readFile(join(import.meta.dirname, '../../.github/workflows/production-backup.yml'), 'utf8');
     const onBlock = yaml.match(/^on:\n((?:[ \t]+.*\n?)*)/m)?.[1] ?? '';
     assert.ok(onBlock.includes('workflow_dispatch'), 'on: block must include workflow_dispatch');
     assert.ok(onBlock.includes('scheduled_at'), 'on: block must declare the scheduled_at input (F5)');
-    for (const forbidden of ['schedule:', 'push:', 'pull_request:', 'pull_request_target:']) {
+    assert.deepEqual([...onBlock.matchAll(/- cron: '([^']+)'/g)].map(m => m[1]), ['17 * * * *'], 'exactly one cron, minute 17 hourly');
+    for (const forbidden of ['push:', 'pull_request:', 'pull_request_target:']) {
       assert.ok(!onBlock.includes(forbidden), `on: block must not include ${forbidden}`);
     }
   });
@@ -237,6 +292,99 @@ async function main(): Promise<void> {
     assert.match(yaml, /PRODUCTION_BACKUP_ACTIVATION/);
     assert.match(yaml, /R4_APPROVED/);
     assert.match(yaml, /refs\/heads\/main/);
+  });
+
+  await check('S1. exclusive scheduler-source gate: only the selected source may run; every other combination stops before any secret', async () => {
+    const shims = await shimDir();
+    try {
+      const gate = stepScript(readWorkflow('production-backup.yml'), 'Activation gate (must run before any secret is referenced)');
+      const run = (event: string, source: string, ref = 'refs/heads/main', activation = 'R4_APPROVED') =>
+        runShell(gate, {GATE_EVENT: event, GATE_REF: ref, GATE_ACTIVATION: activation, GATE_SOURCE: source}, shims);
+      const expectRun = (r: ReturnType<typeof run>, code: number, passedOut: string, label: string) => {
+        assert.equal(r.code, code, `${label}: exit code (${r.stdout})`);
+        assert.equal(r.output.passed, passedOut, `${label}: passed output`);
+      };
+      expectRun(run('schedule', ''), 0, 'false', 'schedule, no source selected => inert');
+      expectRun(run('schedule', 'CLOUDFLARE_DISPATCH'), 0, 'false', 'schedule, Cloudflare selected => inert');
+      expectRun(run('schedule', 'GITHUB_SCHEDULE'), 0, 'true', 'schedule, GitHub selected => runs');
+      expectRun(run('workflow_dispatch', ''), 0, 'true', 'dispatch, no source (current live behaviour) => runs');
+      expectRun(run('workflow_dispatch', 'CLOUDFLARE_DISPATCH'), 0, 'true', 'dispatch, Cloudflare selected => runs');
+      expectRun(run('workflow_dispatch', 'GITHUB_SCHEDULE'), 1, 'false', 'dispatch while GitHub is the source => refused (red)');
+      expectRun(run('push', 'GITHUB_SCHEDULE'), 1, 'false', 'unsupported event => refused');
+      expectRun(run('schedule', 'GITHUB_SCHEDULE', 'refs/heads/feature'), 1, 'false', 'non-main ref => refused');
+      expectRun(run('schedule', 'GITHUB_SCHEDULE', 'refs/heads/main', ''), 0, 'false', 'activation not approved => inert');
+      expectRun(run('workflow_dispatch', 'GITHUB_SCHEDULE', 'refs/heads/main', ''), 0, 'false', 'activation not approved wins over the source check');
+    } finally { await rm(shims, {recursive: true, force: true}); }
+  });
+
+  await check('S2. scheduled_at for the schedule source is the latest :17 UTC slot not after the runner clock; it feeds the unchanged key/promotion logic', async () => {
+    const shims = await shimDir();
+    try {
+      const slot = stepScript(readWorkflow('production-backup.yml'), 'Resolve scheduled_at (secret-free)');
+      const resolve = (event: string, now: string, input = '') =>
+        runShell(slot, {SLOT_EVENT: event, SLOT_INPUT: input, FAKE_NOW_EPOCH: epoch(now)}, shims).output.scheduled_at;
+      const cases: Array<[string, string]> = [
+        ['2026-09-21T09:17:00.000Z', '2026-09-21T09:17:00.000Z'],   // exactly on the slot
+        ['2026-09-21T09:16:59.000Z', '2026-09-21T08:17:00.000Z'],   // one second early => previous slot
+        ['2026-09-21T09:24:31.000Z', '2026-09-21T09:17:00.000Z'],   // typical GitHub delay
+        ['2026-09-21T10:16:59.000Z', '2026-09-21T09:17:00.000Z'],   // delayed by almost an hour: still its own slot
+        ['2026-09-21T10:17:00.000Z', '2026-09-21T10:17:00.000Z'],   // an hour late: the next slot (documented limit)
+        ['2026-09-21T00:03:00.000Z', '2026-09-20T23:17:00.000Z'],   // across midnight
+      ];
+      for (const [now, want] of cases) assert.equal(resolve('schedule', now), want, `now=${now}`);
+      assert.equal(resolve('workflow_dispatch', '2026-09-21T09:24:00.000Z', '2026-09-21T05:17:00.000Z'), '2026-09-21T05:17:00.000Z', 'dispatch input passes through unchanged');
+      for (const [now] of cases) {
+        const at = parseScheduledAt(resolve('schedule', now));               // the unchanged backup script accepts it...
+        assert.equal(at.getUTCMinutes(), 17);
+        assert.match(objectKey('hourly', at), /^hourly\/\d{4}\/\d{2}\/\d{2}\/\d{4}-\d{2}-\d{2}T\d{2}-17-00-000Z\.dump\.age$/);
+      }
+      assert.equal(isDesignatedDailyRun(parseScheduledAt(resolve('schedule', '2026-09-21T09:24:31.000Z'))), true, '09:17 slot is promoted to daily');
+      assert.equal(isDesignatedDailyRun(parseScheduledAt(resolve('schedule', '2026-09-21T05:20:00.000Z'))), false, '05:17 slot is not promoted');
+      // a retry/re-run of the same slot resolves to the same deterministic object key
+      assert.equal(objectKey('hourly', parseScheduledAt(resolve('schedule', '2026-09-21T09:18:00.000Z'))), objectKey('hourly', parseScheduledAt(resolve('schedule', '2026-09-21T09:50:00.000Z'))));
+    } finally { await rm(shims, {recursive: true, force: true}); }
+  });
+
+  await check('S3. the backup step consumes only the resolved scheduled_at; scripts/production-backup.ts is byte-identical to the pinned version', async () => {
+    const yaml = readWorkflow('production-backup.yml');
+    assert.match(yaml, /SCHEDULED_AT: \$\{\{ steps\.slot\.outputs\.scheduled_at \}\}/);
+    assert.ok(!/SCHEDULED_AT: \$\{\{ inputs\./.test(yaml), 'the backup step must not read the raw input');
+    const sha = createHash('sha256').update(readFileSync(join(import.meta.dirname, '../../scripts/production-backup.ts'))).digest('hex');
+    assert.equal(sha, 'a571e89675c70c38d342c54441db66313c976c55b1d31e1be873ece2105596e6');
+    // secrets/permissions of the backup job are unchanged: the gate and slot steps reference none, and the secret set is exactly the original 8
+    for (const name of ['Activation gate (must run before any secret is referenced)', 'Resolve scheduled_at (secret-free)']) {
+      const lines = yaml.split('\n'); const i = lines.findIndex(l => l.includes(`- name: ${name}`));
+      const end = lines.findIndex((l, j) => j > i && /^\s+- name:/.test(l));
+      assert.ok(!lines.slice(i, end).join('\n').includes('secrets.'), `${name} must not reference secrets`);
+    }
+    assert.deepEqual([...new Set([...yaml.matchAll(/secrets\.(\w+)/g)].map(m => m[1]))].sort(), [
+      'PRODUCTION_BACKUP_PGDATABASE', 'PRODUCTION_BACKUP_PGHOST', 'PRODUCTION_BACKUP_PGPASSWORD', 'PRODUCTION_BACKUP_PGPORT', 'PRODUCTION_BACKUP_PGUSER',
+      'PRODUCTION_BACKUP_R2_ACCESS_KEY_ID', 'PRODUCTION_BACKUP_R2_ACCOUNT_ID', 'PRODUCTION_BACKUP_R2_SECRET_ACCESS_KEY']);
+    assert.match(yaml, /permissions:\n  contents: read\n/);
+    assert.match(yaml, /environment: production-backup/);
+  });
+
+  await check('S4. freshness workflow: read-only, secret-free, inert unless GitHub is the source, and goes red on missing/stale/disabled backups', async () => {
+    const yaml = readWorkflow('production-backup-freshness.yml');
+    assert.match(yaml, /permissions:\n  actions: read\n/);
+    assert.ok(!/secrets\./.test(yaml) && !/environment:/.test(yaml), 'no secret, no environment');
+    assert.ok(!/\n(\s*)(push|pull_request|pull_request_target):/.test(yaml));
+    const shims = await shimDir();
+    try {
+      const script = stepScript(yaml, 'Check scheduled backup freshness');
+      const NOW = '2026-09-21T11:47:00.000Z';
+      const run = (source: string, state: string, runs: string[]) =>
+        runShell(script, {FRESH_SOURCE: source, GH_TOKEN: 'x', REPO: 'o/r', FAKE_NOW_EPOCH: epoch(NOW), FAKE_STATE: state, FAKE_RUNS: runs.join('\n')}, shims);
+      const healthy = ['2026-09-21T11:24:00Z', '2026-09-21T10:23:00Z', '2026-09-21T09:25:00Z', '2026-09-21T08:22:00Z'];
+      assert.equal(run('', 'active', []).code, 0, 'inert when GitHub is not the source (even with no runs)');
+      assert.equal(run('CLOUDFLARE_DISPATCH', 'disabled_inactivity', []).code, 0, 'inert for the Cloudflare source');
+      assert.equal(run('GITHUB_SCHEDULE', 'active', healthy).code, 0, 'fresh + daily window present => green');
+      assert.equal(run('GITHUB_SCHEDULE', 'disabled_inactivity', healthy).code, 1, '60-day inactivity auto-disable => red');
+      assert.equal(run('GITHUB_SCHEDULE', 'active', []).code, 1, 'no successful scheduled run at all => red');
+      assert.equal(run('GITHUB_SCHEDULE', 'active', ['2026-09-21T09:25:00Z', '2026-09-21T08:22:00Z']).code, 1, 'newest successful run older than 100 minutes => red');
+      assert.equal(run('GITHUB_SCHEDULE', 'active', ['2026-09-21T11:24:00Z', '2026-09-21T10:23:00Z', '2026-09-21T08:22:00Z', '2026-09-20T07:22:00Z']).code, 1, 'recent runs but no 09:17-10:16 UTC run in 25h => red');
+      assert.equal(run('GITHUB_SCHEDULE', 'active', ['2026-09-21T11:24:00Z', '2026-09-21T09:17:00Z']).code, 0, 'boundary 09:17 counts as the daily window');
+    } finally { await rm(shims, {recursive: true, force: true}); }
   });
 
   await check('19. Worker dispatch target/ref/workflow are fixed constants, never request-controlled', async () => {

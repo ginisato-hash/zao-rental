@@ -208,7 +208,7 @@ try{
   evidence.backupCredentialLifecycle={provisionPosts:1,leaseMinutesMax:90,finalized:true,contained:true,unknownOutcomeResent:false};
  });
  await check('normal worker grants: frozen 0055 installer refuses on the 0056 plan; the four approved grants stay role separated; 0056 grants are exactly three and replay is refused',async()=>{
-  const targets=normalWorkerExecuteTargets(DB),claim=targets[1]!.fn;
+  const targets=normalWorkerExecuteTargets(DB);
   const c=await a.neon.connect();
   try{
    // The frozen 0053→0055 grants installer (applied to Production on 2026-10-06) refuses now that the canonical plan contains 0056:

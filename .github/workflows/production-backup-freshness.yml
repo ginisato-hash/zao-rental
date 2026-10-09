@@ -7,7 +7,7 @@ name: Production Backup Freshness
 # It goes RED (GitHub's failed-workflow notification) when
 #   - the backup workflow is not `active` (e.g. disabled_inactivity), or
 #   - no run with a successful backup step was created in the last 100 minutes, or
-#   - no such run for a 09:17 UTC slot (daily promotion) was created in the last 25 hours.
+#   - no such run created in UTC hour 09 (the daily-promotion hour of its scheduled_at = created_at) in the last 25 hours.
 # Limits (not a guaranteed hourly RPO): GitHub may delay or drop scheduled runs, and THIS workflow is itself a scheduled
 # workflow, so it stops with the 60-day auto-disable it reports — see docs/execution/p6/backup-github-schedule/OPERATING_GATE.md
 # for the independent Owner operating control that must exist before acceptance.
@@ -48,8 +48,7 @@ jobs:
             [ "$ok" -ge 1 ] || continue
             e="$(date -u -d "$t" +%s)"
             [ "$e" -gt "$newest" ] && newest="$e"
-            slot=$(( e / 3600 * 3600 + 17 * 60 )); if [ "$slot" -gt "$e" ]; then slot=$(( slot - 3600 )); fi
-            if [ $(( now - e )) -le 90000 ] && [ "$(date -u -d "@$slot" +%H)" = "09" ]; then daily=1; fi
+            if [ $(( now - e )) -le 90000 ] && [ "$(date -u -d "@$e" +%H)" = "09" ]; then daily=1; fi
           done <<EOF_RUNS
           $runs
           EOF_RUNS
@@ -58,7 +57,7 @@ jobs:
             exit 1
           fi
           if [ "$daily" -ne 1 ]; then
-            echo "::error::No successful backup for a 09:17 UTC slot within the last 25 hours; the daily copy may be missing."
+            echo "::error::No successful backup created in UTC hour 09 within the last 25 hours; the daily copy may be missing."
             exit 1
           fi
           echo "Backup freshness OK."

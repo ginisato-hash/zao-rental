@@ -10,10 +10,15 @@ name: Production Backup
 #   - GITHUB_SCHEDULE:     only the `schedule:` trigger runs; a workflow_dispatch is refused (red).
 #   - unset / any other value: every event is refused (red) before any secret. Selecting the source is a separate,
 #     approved release step — there is no implicit default.
-# scheduled_at: dispatch = the Worker's authoritative input, unchanged. schedule = the latest :17 UTC slot not after
-# the run's IMMUTABLE created_at (read via the Actions API in the `slot` job), so a re-run, a queue delay inside the
-# hour or the runner clock never moves the slot or the R2 key. GitHub exposes no scheduled-occurrence timestamp, so
-# this is best effort: a run created more than 45 minutes after its slot is refused (ambiguous) instead of guessed.
+# scheduled_at: dispatch = the Worker's authoritative input, unchanged. schedule = the run's immutable GitHub
+# `created_at`, used AS-IS (to the second) — a best-effort GitHub-side effective timestamp, NOT GitHub's intended
+# scheduled occurrence (GitHub does not expose it) and NOT the moment the dump is taken. No :17 occurrence is invented,
+# so a delayed event is never mapped to another hour's slot. Re-runs keep the same created_at (same R2 key); two runs
+# always have distinct created_at (distinct keys). A run whose job starts more than 30 minutes after its created_at
+# (long queue, or a re-run much later) is refused rather than labelled with a stale time; the next scheduled run covers.
+# The daily promotion (UTC hour 9 of scheduled_at) therefore follows the creation time: a 09:17 event created at 10:18
+# is NOT promoted. The selector variable is read at repository level by the `selector` job and by the gate (environment
+# resolution); the gate fails closed unless both see the same value.
 on:
   schedule:
     - cron: '17 * * * *'
@@ -29,9 +34,22 @@ concurrency:
   group: production-backup
   cancel-in-progress: false
 jobs:
+  # Repository-level view of the selector (no environment). The backup gate must see the same value.
+  selector:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      source: ${{ steps.sel.outputs.source }}
+    steps:
+      - id: sel
+        env:
+          SEL_SOURCE: ${{ vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE }}
+        run: echo "source=$SEL_SOURCE" >> "$GITHUB_OUTPUT"
+
   # Secret-free, no checkout. Only reads this run's own metadata (actions: read); the backup job's permissions are unchanged.
   slot:
-    if: github.event_name == 'workflow_dispatch' || vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE == 'GITHUB_SCHEDULE'
+    needs: selector
+    if: github.event_name == 'workflow_dispatch' || needs.selector.outputs.source == 'GITHUB_SCHEDULE'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -56,13 +74,12 @@ jobs:
               *) echo "::error::Run created_at is missing or malformed; refusing."; exit 1 ;;
             esac
             at="$(date -u -d "$created" +%s)"
-            slot=$(( at / 3600 * 3600 + 17 * 60 ))
-            if [ "$slot" -gt "$at" ]; then slot=$(( slot - 3600 )); fi
-            if [ $(( at - slot )) -gt 2700 ]; then
-              echo "::error::Run was created $(( (at - slot) / 60 )) minutes after its :17 slot (limit 45); the slot is ambiguous, refusing to guess."
+            now="$(date -u +%s)"
+            if [ "$at" -gt $(( now + 300 )) ] || [ $(( now - at )) -gt 1800 ]; then
+              echo "::error::Run created_at is $(( now - at ))s old (allowed: -300s..1800s); refusing to label a backup with a stale or future time."
               exit 1
             fi
-            scheduled_at="$(date -u -d "@$slot" +%Y-%m-%dT%H:%M:%S.000Z)"
+            scheduled_at="$(date -u -d "@$at" +%Y-%m-%dT%H:%M:%S.000Z)"
           else
             scheduled_at="$SLOT_INPUT"
           fi
@@ -70,7 +87,7 @@ jobs:
           echo "scheduled_at resolved: $scheduled_at"
 
   backup:
-    needs: slot
+    needs: [selector, slot]
     # slot is skipped when the selected source is not GitHub (a skipped need must not skip the gate); a failed slot does.
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-24.04
@@ -89,6 +106,7 @@ jobs:
           GATE_REF: ${{ github.ref }}
           GATE_ACTIVATION: ${{ vars.PRODUCTION_BACKUP_ACTIVATION }}
           GATE_SOURCE: ${{ vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE }}
+          GATE_REPO_SOURCE: ${{ needs.selector.outputs.source }}
         run: |
           if [ "$GATE_REF" != "refs/heads/main" ]; then
             echo "::error::Production backup refused: ref is not refs/heads/main"
@@ -100,6 +118,11 @@ jobs:
             echo "Skipping before any Production secret is accessed. This is expected until a separate R4 authority."
             echo "passed=false" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+          if [ "$GATE_SOURCE" != "$GATE_REPO_SOURCE" ]; then
+            echo "::error::Scheduler source differs between repository and environment scope; refusing before any secret (the variable must exist at repository level only)."
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
           case "$GATE_SOURCE" in
             CLOUDFLARE_DISPATCH|GITHUB_SCHEDULE) ;;

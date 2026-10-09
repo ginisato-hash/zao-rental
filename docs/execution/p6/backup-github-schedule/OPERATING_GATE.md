@@ -12,5 +12,12 @@ guaranteed hourly RPO, and acceptance needs an independent control:
    freshness run is green. If either shows `disabled_inactivity`, re-enable it and treat the gap as missing backups.
 3. Repository activity (a commit/PR merge) at least every 50 days keeps scheduled workflows enabled.
 4. A red `Production Backup Freshness` run, or a red `Production Backup` run (including a refused ambiguous slot:
-   created > 45 min after its :17 slot), means a slot may be missing; the next on-time run restores coverage.
+   job started > 30 min after its created_at), means a slot may be missing; the next on-time run restores coverage.
 5. If an independent monitor outside GitHub is wanted, it is a new Owner-approved component (not part of this change).
+6. Timestamp semantics (best effort, not authoritative): for the GitHub source `scheduled_at` is the run's `created_at`
+   as GitHub recorded it — neither GitHub's intended scheduled occurrence (not exposed) nor the moment the dump is taken.
+   The daily copy follows the creation hour (UTC 09); a 09:17 event delayed past 10:00 is simply not promoted that day
+   (the freshness workflow turns red). Re-runs within 30 minutes keep the same R2 key; later re-runs are refused.
+7. The selector variable must exist at repository level only (no same-named environment variable): the gate compares the
+   repository-level value with the environment-resolved one and fails closed if they differ. Release proof = a run of both
+   jobs after setting it.

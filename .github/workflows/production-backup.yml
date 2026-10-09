@@ -4,7 +4,27 @@ name: Production Backup
 # the production-backup GitHub Environment secrets referenced below — none of
 # which exist yet. A dispatch before that activation fails/skips before any
 # Production secret is read.
+#
+# Scheduler source (exclusive, fail closed): vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE must be set EXPLICITLY.
+#   - CLOUDFLARE_DISPATCH: only the Cloudflare Worker's workflow_dispatch runs; `schedule:` runs skip the backup job.
+#   - GITHUB_SCHEDULE:     only the `schedule:` trigger runs; a workflow_dispatch is refused (red) in the `slot` job.
+#   - unset / any other value: nothing backs up — `schedule:` runs skip the backup job, a dispatch is refused (red) in
+#     `slot`. Selecting the source is a separate, approved release step — there is no implicit default.
+# The protected `backup` job (environment production-backup) is admitted at JOB level only for the selected pair, so a
+# non-selected run never reaches environment protection rules; the in-job activation gate remains as a second check.
+# scheduled_at: dispatch = the Worker's authoritative input, unchanged. schedule = the run's immutable GitHub
+# `created_at`, used AS-IS (to the second) — a best-effort GitHub-side effective timestamp, NOT GitHub's intended
+# scheduled occurrence (GitHub does not expose it) and NOT the moment the dump is taken. No :17 occurrence is invented,
+# so a delayed event is never mapped to another hour's slot. Re-runs keep the same created_at (same R2 key). Different
+# runs normally have different created_at, but it has one-second precision and uniqueness is NOT guaranteed: two runs
+# created in the same second would share a key and the later upload would overwrite the earlier object. A run whose job starts more than 30 minutes after its created_at
+# (long queue, or a re-run much later) is refused rather than labelled with a stale time; the next scheduled run covers.
+# The daily promotion (UTC hour 9 of scheduled_at) therefore follows the creation time: a 09:17 event created at 10:18
+# is NOT promoted. The selector variable is read at repository level by the `selector` job and by the gate (environment
+# resolution); the gate fails closed unless both see the same value.
 on:
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       scheduled_at:
@@ -17,7 +37,75 @@ concurrency:
   group: production-backup
   cancel-in-progress: false
 jobs:
+  # Repository-level view of the selector (no environment). The backup gate must see the same value.
+  selector:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      source: ${{ steps.sel.outputs.source }}
+    steps:
+      - id: sel
+        env:
+          SEL_SOURCE: ${{ vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE }}
+        run: echo "source=$SEL_SOURCE" >> "$GITHUB_OUTPUT"
+
+  # Secret-free, no checkout. Only reads this run's own metadata (actions: read); the backup job's permissions are unchanged.
+  slot:
+    needs: selector
+    if: github.event_name == 'workflow_dispatch' || needs.selector.outputs.source == 'GITHUB_SCHEDULE'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      scheduled_at: ${{ steps.slot.outputs.scheduled_at }}
+    steps:
+      - name: Resolve scheduled_at (secret-free)
+        id: slot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLOT_EVENT: ${{ github.event_name }}
+          SLOT_INPUT: ${{ inputs.scheduled_at }}
+          SLOT_REPO: ${{ github.repository }}
+          SLOT_RUN_ID: ${{ github.run_id }}
+          SLOT_SOURCE: ${{ needs.selector.outputs.source }}
+        run: |
+          set -eu
+          # A dispatch is admitted only when the Cloudflare source is selected; otherwise it is refused HERE (red, visible)
+          # in this environment-free job, so the protected backup job is never entered.
+          if [ "$SLOT_EVENT" = "workflow_dispatch" ] && [ "$SLOT_SOURCE" != "CLOUDFLARE_DISPATCH" ]; then
+            echo "::error::Dispatch refused: scheduler source is '$SLOT_SOURCE' (dispatch requires CLOUDFLARE_DISPATCH)."
+            exit 1
+          fi
+          if [ "$SLOT_EVENT" = "schedule" ]; then
+            created="$(gh api "repos/$SLOT_REPO/actions/runs/$SLOT_RUN_ID" --jq .created_at)"
+            case "$created" in
+              [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z) ;;
+              *) echo "::error::Run created_at is missing or malformed; refusing."; exit 1 ;;
+            esac
+            at="$(date -u -d "$created" +%s)"
+            now="$(date -u +%s)"
+            if [ "$at" -gt $(( now + 300 )) ] || [ $(( now - at )) -gt 1800 ]; then
+              echo "::error::Run created_at is $(( now - at ))s old (allowed: -300s..1800s); refusing to label a backup with a stale or future time."
+              exit 1
+            fi
+            scheduled_at="$(date -u -d "@$at" +%Y-%m-%dT%H:%M:%S.000Z)"
+          else
+            scheduled_at="$SLOT_INPUT"
+          fi
+          echo "scheduled_at=$scheduled_at" >> "$GITHUB_OUTPUT"
+          echo "scheduled_at resolved: $scheduled_at"
+
   backup:
+    needs: [selector, slot]
+    # Job-level admission BEFORE the protected environment is entered (environment protection rules are evaluated before
+    # a job runs): only the selected source/event pair with a successful slot. Every other combination — unset/invalid
+    # selector, the non-selected source, a skipped/failed/cancelled slot — SKIPS (or stays red in `slot`) without
+    # touching `production-backup`. The in-job activation gate and environment/repository equality check remain.
+    if: >-
+      needs.slot.result == 'success' && (
+      (github.event_name == 'schedule' && needs.selector.outputs.source == 'GITHUB_SCHEDULE') ||
+      (github.event_name == 'workflow_dispatch' && needs.selector.outputs.source == 'CLOUDFLARE_DISPATCH'))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production-backup
@@ -29,18 +117,58 @@ jobs:
     steps:
       - name: Activation gate (must run before any secret is referenced)
         id: gate
+        env:
+          GATE_EVENT: ${{ github.event_name }}
+          GATE_REF: ${{ github.ref }}
+          GATE_ACTIVATION: ${{ vars.PRODUCTION_BACKUP_ACTIVATION }}
+          GATE_SOURCE: ${{ vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE }}
+          GATE_REPO_SOURCE: ${{ needs.selector.outputs.source }}
         run: |
-          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+          if [ "$GATE_REF" != "refs/heads/main" ]; then
             echo "::error::Production backup refused: ref is not refs/heads/main"
             echo "passed=false" >> "$GITHUB_OUTPUT"
             exit 1
           fi
-          if [ "${{ vars.PRODUCTION_BACKUP_ACTIVATION }}" != "R4_APPROVED" ]; then
+          if [ "$GATE_ACTIVATION" != "R4_APPROVED" ]; then
             echo "Production backup activation gate not approved (PRODUCTION_BACKUP_ACTIVATION != R4_APPROVED)."
             echo "Skipping before any Production secret is accessed. This is expected until a separate R4 authority."
             echo "passed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          if [ "$GATE_SOURCE" != "$GATE_REPO_SOURCE" ]; then
+            echo "::error::Scheduler source differs between repository and environment scope; refusing before any secret (the variable must exist at repository level only)."
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          case "$GATE_SOURCE" in
+            CLOUDFLARE_DISPATCH|GITHUB_SCHEDULE) ;;
+            *)
+              echo "::error::Scheduler source is not explicitly selected (PRODUCTION_BACKUP_SCHEDULER_SOURCE must be CLOUDFLARE_DISPATCH or GITHUB_SCHEDULE); refusing before any secret."
+              echo "passed=false" >> "$GITHUB_OUTPUT"
+              exit 1
+              ;;
+          esac
+          case "$GATE_EVENT" in
+            schedule)
+              if [ "$GATE_SOURCE" != "GITHUB_SCHEDULE" ]; then
+                echo "GitHub schedule is not the selected scheduler source; skipping before any secret."
+                echo "passed=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              ;;
+            workflow_dispatch)
+              if [ "$GATE_SOURCE" != "CLOUDFLARE_DISPATCH" ]; then
+                echo "::error::Dispatch refused: the scheduler source is $GATE_SOURCE; a second source would back up the same slot twice."
+                echo "passed=false" >> "$GITHUB_OUTPUT"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::Production backup refused: unsupported event $GATE_EVENT"
+              echo "passed=false" >> "$GITHUB_OUTPUT"
+              exit 1
+              ;;
+          esac
           echo "passed=true" >> "$GITHUB_OUTPUT"
 
       # The pinned postgres:18 image ships without the Debian CA bundle, but the backup's pg_dump verifies the server
@@ -79,7 +207,7 @@ jobs:
         env:
           BACKUP_MODE: production
           BACKUP_CLASS: hourly
-          SCHEDULED_AT: ${{ inputs.scheduled_at }}
+          SCHEDULED_AT: ${{ needs.slot.outputs.scheduled_at }}
           PRODUCTION_BACKUP_ACTIVATION: ${{ vars.PRODUCTION_BACKUP_ACTIVATION }}
           PRODUCTION_BACKUP_BUCKET: ${{ vars.PRODUCTION_BACKUP_BUCKET }}
           AGE_BACKUP_RECIPIENT: ${{ vars.AGE_BACKUP_RECIPIENT }}

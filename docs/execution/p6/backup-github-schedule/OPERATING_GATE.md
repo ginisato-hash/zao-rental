@@ -21,3 +21,18 @@ guaranteed hourly RPO, and acceptance needs an independent control:
 7. The selector variable must exist at repository level only (no same-named environment variable): the gate compares the
    repository-level value with the environment-resolved one and fails closed if they differ. Release proof = a run of both
    jobs after setting it.
+8. Key uniqueness is not guaranteed: `created_at` has one-second precision, so two different runs created in the same second
+   would write the same R2 key and the later upload overwrites the earlier one. Re-runs of one run share its key by design.
+
+## Release procedure (separate approved step; nothing here is done by PR #56)
+Preconditions: PR #56 merged by Owner/TD decision after natural CI success + review; `PRODUCTION_BACKUP_ACTIVATION=R4_APPROVED` already in place.
+1. Set the selector at REPOSITORY level only (Settings → Secrets and variables → Actions → Variables → Repository variables):
+   `PRODUCTION_BACKUP_SCHEDULER_SOURCE` = `GITHUB_SCHEDULE` (or `CLOUDFLARE_DISPATCH` to keep the Cloudflare source).
+   Confirm there is no same-named variable under the `production-backup` environment or the organisation.
+2. Verify the job branches in production without a backup being taken by choosing the value deliberately:
+   - With the value unset/garbage, a run of `Production Backup` must go red in the `Activation gate` step (no secret step runs).
+   - With `GITHUB_SCHEDULE`: the next natural `schedule` run must show `selector` ✓, `slot` ✓ (its `scheduled_at` output equals the run `created_at`),
+     `backup` ✓ with the `Run production backup` step ✓. A `workflow_dispatch` must be refused red at the gate (do not dispatch manually without separate authority).
+   - With `CLOUDFLARE_DISPATCH`: a natural `schedule` run shows `slot` skipped and `backup` gate skip (green, no backup); only the Worker's dispatch backs up.
+3. Acceptance evidence: object read-back in R2 for the key derived from the run's `created_at`, plus a green `Production Backup Freshness` run.
+4. Owner acceptance of the monitoring limits (items above: 60-day auto-disable, no guaranteed RPO) is recorded in Issue #47.

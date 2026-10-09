@@ -325,7 +325,7 @@ async function main(): Promise<void> {
     } finally { await rm(shims, {recursive: true, force: true}); }
   });
 
-  await check('S2. schedule scheduled_at = the immutable run created_at as-is (no invented :17 slot); delays, reruns, distinct runs, daily promotion; stale/future refused', async () => {
+  await check('S2. schedule scheduled_at = the immutable run created_at as-is (no invented :17 slot); delays, reruns, per-second keys, daily promotion; stale/future refused', async () => {
     const shims = await shimDir();
     try {
       const yaml = readWorkflow('production-backup.yml');
@@ -344,7 +344,7 @@ async function main(): Promise<void> {
       const first = at('2026-09-21T09:24:31Z', '2026-09-21T09:25:00Z')!, rerun = at('2026-09-21T09:24:31Z', '2026-09-21T09:50:00Z')!;
       assert.equal(first, rerun);
       assert.equal(objectKey('hourly', parseScheduledAt(first)), objectKey('hourly', parseScheduledAt(rerun)));
-      // distinct runs have distinct created_at => distinct keys (no collision, even inside one hour or when delayed together)
+      // runs created in different seconds get different keys (same-second creation is NOT excluded by design: it would overwrite)
       const keys = ['2026-09-21T10:18:00Z', '2026-09-21T10:18:01Z', '2026-09-21T10:40:00Z'].map(c => objectKey('hourly', parseScheduledAt(at(c)!)));
       assert.equal(new Set(keys).size, 3);
       assert.match(keys[0]!, /^hourly\/2026\/09\/21\/2026-09-21T10-18-00-000Z\.dump\.age$/);

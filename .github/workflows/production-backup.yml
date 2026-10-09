@@ -13,8 +13,9 @@ name: Production Backup
 # scheduled_at: dispatch = the Worker's authoritative input, unchanged. schedule = the run's immutable GitHub
 # `created_at`, used AS-IS (to the second) — a best-effort GitHub-side effective timestamp, NOT GitHub's intended
 # scheduled occurrence (GitHub does not expose it) and NOT the moment the dump is taken. No :17 occurrence is invented,
-# so a delayed event is never mapped to another hour's slot. Re-runs keep the same created_at (same R2 key); two runs
-# always have distinct created_at (distinct keys). A run whose job starts more than 30 minutes after its created_at
+# so a delayed event is never mapped to another hour's slot. Re-runs keep the same created_at (same R2 key). Different
+# runs normally have different created_at, but it has one-second precision and uniqueness is NOT guaranteed: two runs
+# created in the same second would share a key and the later upload would overwrite the earlier object. A run whose job starts more than 30 minutes after its created_at
 # (long queue, or a re-run much later) is refused rather than labelled with a stale time; the next scheduled run covers.
 # The daily promotion (UTC hour 9 of scheduled_at) therefore follows the creation time: a 09:17 event created at 10:18
 # is NOT promoted. The selector variable is read at repository level by the `selector` job and by the gate (environment

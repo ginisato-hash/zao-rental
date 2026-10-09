@@ -24,9 +24,11 @@ Base: main `e664e02`. Branch: `codex/launch-blockers-47`. No production operatio
    its JA **and** EN versions are both `OWNER_APPROVED` with approver, past UTC approval time and non-empty sections; otherwise 404 and no
    link. Route `/[locale]/legal/[doc]`, footer/checkout links, sitemap, indexing allowlist (`legal/*` indexable only with publication
    authority on the exact origin; book/booking/staff stay noindex). The "under review" notices disappear only when all four are approved.
-   **Server-side gate:** the production runtime passes `legalCheckoutReady` to `GuestBookingService`; a commercial checkout is refused with
-   `LEGAL_DOCUMENTS_NOT_APPROVED` (503) until all four documents are approved in both locales — a ticked checkbox cannot complete a real
-   charge. All documents ship as `OWNER_TEXT_REQUIRED`; no legal wording, seller data or disclaimer is authored here. Tax-inclusive totals,
+   **Server-side gate:** the production runtime passes `legalCheckoutReady` to `GuestBookingService`; the shared private `prepare()` (used by
+  both `POST /api/guest/prepare-payment` and `POST /api/guest/checkout`) and the checkout entry refuse a commercial charge with
+   `LEGAL_DOCUMENTS_NOT_APPROVED` (503) before any HOLD/booking/payment attempt/Square call, until all four documents are approved in both
+   locales — a ticked checkbox cannot complete a real charge. Existing-booking lookup/cancellation and non-commercial flows are not gated; the
+   UI shows a payment-unavailable notice and disables payment while blocked. All documents ship as `OWNER_TEXT_REQUIRED`; no legal wording, seller data or disclaimer is authored here. Tax-inclusive totals,
    the rental period and the 48-hour cancellation rule are already shown before payment, and the review step (price-change acceptance,
    back/edit) precedes payment.
 4. `config/production/launch-gates.json`: only `TAX` records the Owner's 2026-10-04 tax-inclusive decision (head/policyRevision null, so the

@@ -46,16 +46,36 @@ test('JA/EN parity: a document approved in only one locale is published in neith
   assert.equal(legalCheckoutReady(), false, 'committed content: real checkout is blocked');
 });
 
-test('server-side: a commercial checkout is refused while the legal documents are not approved (a ticked checkbox is not enough)', async () => {
-  const bookings = {commercialEnabled: () => true} as unknown as ConstructorParameters<typeof GuestBookingService>[3];
-  const make = (ready?: () => boolean) => new GuestBookingService({} as never, {} as never, {} as never, bookings, async () => ({}) as never,
-    {applicationId: 'sq0idp-x', locations: {}}, ready);
-  const body = {draftId: 'd', expectedRevision: 1, contact: {displayName: 'A', email: 'a@example.test', termsAccepted: true}, reviewHash: 'h', paymentSource: 'cnon:x'};
-  await assert.rejects(make(() => false).checkout(body), (e: Error & {code?: string}) => e.code === 'LEGAL_DOCUMENTS_NOT_APPROVED');
-  await assert.rejects(make(legalCheckoutReady).checkout(body), (e: Error & {code?: string}) => e.code === 'LEGAL_DOCUMENTS_NOT_APPROVED', 'committed content blocks a real charge');
-  // with approval the gate is passed (the call then fails later on the fake draft, not on the legal gate)
-  await assert.rejects(make(() => true).checkout(body), (e: Error & {code?: string}) => e.code !== 'LEGAL_DOCUMENTS_NOT_APPROVED');
-  // non-commercial (simulated/fixture) checkout is not affected by the gate
-  const sim = new GuestBookingService({} as never, {} as never, {} as never, {commercialEnabled: () => false} as never, async () => ({}) as never, undefined, () => false);
+test('server-side: both commercial entrypoints (prepare-payment, checkout) are refused before any HOLD/booking/attempt/Square work while legal documents are unapproved', async () => {
+  const touched: string[] = [];
+  const spy = (name: string) => new Proxy({}, {get: (_t, k) => (k === 'then' ? undefined : (..._a: unknown[]) => { touched.push(`${name}.${String(k)}`); throw new Error('TOUCHED'); })});
+  const bookings = new Proxy({commercialEnabled: () => true}, {get: (t, k) => (k in t ? (t as Record<string, unknown>)[k as string] : k === 'then' ? undefined : (..._a: unknown[]) => { touched.push(`bookings.${String(k)}`); throw new Error('TOUCHED'); })});
+  const make = (ready?: () => boolean) => new GuestBookingService(spy('contexts') as never, spy('actor') as never, spy('recommendations') as never, bookings as never,
+    async () => { touched.push('catalog'); throw new Error('TOUCHED'); }, {applicationId: 'sq0idp-x', locations: {}}, ready);
+  const prepare = {draftId: 'd', expectedRevision: 1, contact: {displayName: 'A', email: 'a@example.test', termsAccepted: true}, reviewHash: 'h'};
+  const isLegal = (e: Error & {code?: string; status?: number}) => e.code === 'LEGAL_DOCUMENTS_NOT_APPROVED' && e.status === 503;
+  for (const ready of [() => false, legalCheckoutReady]) {
+    await assert.rejects(make(ready).preparePayment(prepare), isLegal);
+    await assert.rejects(make(ready).checkout({...prepare, paymentSource: 'cnon:x'}), isLegal);
+  }
+  assert.deepEqual(touched, [], 'no recommendation/HOLD/booking/payment-attempt/Square call happened');
+  // approved => the gate is passed (the fake then fails on its first real dependency, not on the legal gate)
+  await assert.rejects(make(() => true).preparePayment(prepare), (e: Error & {code?: string}) => e.code !== 'LEGAL_DOCUMENTS_NOT_APPROVED');
+  assert.ok(touched.length > 0);
+  // existing-booking operations are not gated: cancellation preview/cancel still reach their own logic
+  touched.length = 0;
+  await assert.rejects(make(() => false).cancellationPreview(), (e: Error & {code?: string}) => e.code !== 'LEGAL_DOCUMENTS_NOT_APPROVED');
+  // non-commercial (simulated/fixture) flows are unaffected by the gate
+  const sim = new GuestBookingService(spy('c') as never, spy('a') as never, spy('r') as never, {commercialEnabled: () => false} as never, async () => ({}) as never, undefined, () => false);
+  await assert.rejects(sim.preparePayment(prepare), (e: Error & {code?: string}) => e.code !== 'LEGAL_DOCUMENTS_NOT_APPROVED');
   await assert.rejects(sim.checkout({draftId: 'd', expectedRevision: 1, contact: {}, reviewHash: 'h'}), (e: Error & {code?: string}) => e.code !== 'LEGAL_DOCUMENTS_NOT_APPROVED');
+});
+
+test('the production runtime wires the legal gate into the guest service, and the guest HTTP routes reach the gated methods', () => {
+  const runtime = readFileSync(new URL('../../packages/core/src/guest/production-runtime.ts', import.meta.url), 'utf8');
+  assert.match(runtime, /locations:c\.payment!\.locations\}:undefined,legalCheckoutReady\)/);
+  const http = readFileSync(new URL('../../apps/web/src/lib/guest-http.ts', import.meta.url), 'utf8');
+  assert.match(http, /'\/prepare-payment'/); assert.match(http, /'\/checkout'/);
+  const service = readFileSync(new URL('../../packages/core/src/guest/service.ts', import.meta.url), 'utf8');
+  assert.equal((service.match(/this\.assertLegalForCommercialCharge\(\)/g) ?? []).length, 2, 'gate in shared prepare() and at checkout entry');
 });

@@ -24,7 +24,8 @@ try{
   return x.login(email);
  }
  const full=await account('manifest-http-full@example.invalid','ALL',[],{BOOKING_VIEW:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,OPERATIONS_VIEW:true});
- const noPerm=await account('manifest-http-none@example.invalid','ASSIGNED',['MOUNTAIN_BASE'],{});
+ // 0056 gives STAFF booking view by role default; an explicit denial still removes it.
+ const noPerm=await account('manifest-http-none@example.invalid','ASSIGNED',['MOUNTAIN_BASE'],{BOOKING_VIEW:false});
  const wrongStore=await account('manifest-http-onsen@example.invalid','ASSIGNED',['ONSEN_BASE'],{BOOKING_VIEW:true});
  const get=(query:string,cookie?:string,extraHeaders?:Record<string,string>)=>handler(new Request(x.origin+'/api/operations/manifest'+query,{headers:{...(cookie?{cookie}:{}),...extraHeaders}}));
  const post=(cookie?:string,body?:unknown)=>handler(new Request(x.origin+'/api/operations/manifest',{method:'POST',headers:{...(cookie?{cookie}:{}),origin:x.origin,'content-type':'application/json'},body:JSON.stringify(body??{requestKey:randomUUID(),input:{}})}));

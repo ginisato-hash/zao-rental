@@ -330,8 +330,8 @@ async function main(): Promise<void> {
     try {
       const yaml = readWorkflow('production-backup.yml');
       const slot = stepScript(yaml, 'Resolve scheduled_at (secret-free)');
-      const resolve = (event: string, created: string, now: string, input = '') =>
-        runShell(slot, {SLOT_EVENT: event, SLOT_INPUT: input, SLOT_REPO: 'o/r', SLOT_RUN_ID: '1', FAKE_CREATED: created, FAKE_NOW_EPOCH: epoch(now)}, shims);
+      const resolve = (event: string, created: string, now: string, input = '', source = event === 'schedule' ? 'GITHUB_SCHEDULE' : 'CLOUDFLARE_DISPATCH') =>
+        runShell(slot, {SLOT_EVENT: event, SLOT_INPUT: input, SLOT_REPO: 'o/r', SLOT_RUN_ID: '1', SLOT_SOURCE: source, FAKE_CREATED: created, FAKE_NOW_EPOCH: epoch(now)}, shims);
       const at = (created: string, now = created) => resolve('schedule', created, now).output.scheduled_at;
       // created_at is used as-is, whatever the delay of the event (no modulo-hour mapping)
       for (const c of ['2026-09-21T09:17:00Z', '2026-09-21T09:24:31Z', '2026-09-21T10:18:00Z', '2026-09-21T11:49:59Z', '2026-09-21T00:01:00Z'])
@@ -356,47 +356,72 @@ async function main(): Promise<void> {
       assert.equal(resolve('schedule', '2026-09-21T09:24:31Z', '2026-09-21T09:20:00Z').code, 0, 'small clock skew tolerated');
       for (const bad of ['', 'null', '2026-09-21 09:17:00', 'garbage']) assert.equal(resolve('schedule', bad, '2026-09-21T09:30:00Z').code, 1, `malformed created_at ${JSON.stringify(bad)}`);
       assert.equal(resolve('workflow_dispatch', 'ignored', '2030-01-01T00:00:00Z', '2026-09-21T05:17:00.000Z').output.scheduled_at, '2026-09-21T05:17:00.000Z', 'Cloudflare dispatch input passes through unchanged');
+      for (const source of ['', 'garbage', 'GITHUB_SCHEDULE']) {
+        const r = resolve('workflow_dispatch', 'ignored', '2030-01-01T00:00:00Z', '2026-09-21T05:17:00.000Z', source);
+        assert.equal(r.code, 1, `dispatch with source ${JSON.stringify(source)} is refused red in the environment-free slot job`);
+        assert.equal(r.output.scheduled_at, undefined);
+      }
       assert.match(yaml, /\n  slot:\n[\s\S]*?permissions:\n      actions: read\n/, 'only the slot job has actions: read');
       assert.match(yaml, /needs\.slot\.outputs\.scheduled_at/);
     } finally { await rm(shims, {recursive: true, force: true}); }
   });
 
-  await check('S2b. job graph semantics: slot/backup conditions across selector x event x slot result (evaluated from the YAML expressions)', async () => {
+  await check('S2b. job graph: the protected backup job is admitted at JOB level only for the selected source/event with a successful slot; otherwise it never enters the environment', async () => {
     const yaml = readWorkflow('production-backup.yml');
+    const jobBlock = (job: string): string => {
+      const start = yaml.indexOf(`\n  ${job}:\n`); assert.ok(start >= 0, `job ${job}`);
+      const rest = yaml.slice(start + 1); const end = rest.slice(1).search(/\n  [a-z]+:\n/);
+      return end < 0 ? rest : rest.slice(0, end + 1);
+    };
     const cond = (job: string): string => {
-      const start = yaml.indexOf(`\n  ${job}:`); const rest = yaml.slice(start + 1);
-      const end = rest.slice(1).search(/\n  [a-z]+:\n/);
-      const text = end < 0 ? rest : rest.slice(0, end + 1);
-      return text.match(/\n    if: (.*)\n/)?.[1]?.replace(/^\$\{\{\s*|\s*\}\}$/g, '') ?? '';
+      const lines = jobBlock(job).split('\n'); const i = lines.findIndex(l => /^    if: /.test(l));
+      if (i < 0) return '';
+      const first = lines[i]!.replace(/^    if: /, '');
+      if (first !== '>-') return first.replace(/^\$\{\{\s*|\s*\}\}$/g, '');
+      const out: string[] = [];
+      for (let j = i + 1; j < lines.length && /^      /.test(lines[j]!); j++) out.push(lines[j]!.trim());
+      return out.join(' ');
     };
     const slotIf = cond('slot'), backupIf = cond('backup');
     assert.ok(slotIf && backupIf, 'both jobs declare an if');
-    // a tiny evaluator for exactly the expression forms used (github.event_name, needs.selector.outputs.source, ==, ||, &&, !, failure(), cancelled())
+    // GitHub semantics: an `if` without a status function is implicitly `success() && (...)`, i.e. every need must have succeeded.
     const evalIf = (expr: string, ctx: {event: string; source: string; needs: Record<string, string>}): boolean => {
+      const usesStatus = /\b(success|failure|cancelled|always)\(\)/.test(expr);
       const js = expr
         .replace(/github\.event_name/g, JSON.stringify(ctx.event))
         .replace(/needs\.selector\.outputs\.source/g, JSON.stringify(ctx.source))
+        .replace(/needs\.(\w+)\.result/g, (_, n: string) => JSON.stringify(ctx.needs[n] ?? 'skipped'))
         .replace(/failure\(\)/g, String(Object.values(ctx.needs).includes('failure')))
         .replace(/cancelled\(\)/g, String(Object.values(ctx.needs).includes('cancelled')))
         .replace(/==/g, '===');
       assert.ok(/^[\s!&|()='a-z_"A-Z0-9]*$/.test(js), `unexpected expression form: ${js}`);
-      return Function(`"use strict"; return (${js});`)() as boolean;
+      const value = Function(`"use strict"; return (${js});`)() as boolean;
+      return usesStatus ? value : value && Object.values(ctx.needs).every(r => r === 'success');
     };
-    const SOURCES = ['', 'garbage', 'CLOUDFLARE_DISPATCH', 'GITHUB_SCHEDULE'];
-    for (const source of SOURCES) for (const event of ['schedule', 'workflow_dispatch']) {
+    const admitted = (event: string, source: string) =>
+      (event === 'schedule' && source === 'GITHUB_SCHEDULE') || (event === 'workflow_dispatch' && source === 'CLOUDFLARE_DISPATCH');
+    for (const source of ['', 'garbage', 'github_schedule', 'CLOUDFLARE_DISPATCH', 'GITHUB_SCHEDULE']) for (const event of ['schedule', 'workflow_dispatch']) {
       const slotRuns = evalIf(slotIf, {event, source, needs: {selector: 'success'}});
       assert.equal(slotRuns, event === 'workflow_dispatch' || source === 'GITHUB_SCHEDULE', `slot runs? event=${event} source=${source}`);
       for (const slotResult of slotRuns ? ['success', 'failure', 'cancelled'] : ['skipped']) {
-        const backupRuns = evalIf(backupIf, {event, source, needs: {selector: 'success', slot: slotResult}});
-        assert.equal(backupRuns, slotResult === 'success' || slotResult === 'skipped', `backup runs? event=${event} source=${source} slot=${slotResult}`);
+        const enters = evalIf(backupIf, {event, source, needs: {selector: 'success', slot: slotResult}});
+        assert.equal(enters, slotResult === 'success' && admitted(event, source),
+          `backup (environment production-backup) entered? event=${event} source=${JSON.stringify(source)} slot=${slotResult}`);
       }
+      // a failed selector job never admits the backup job either
+      assert.equal(evalIf(backupIf, {event, source, needs: {selector: 'failure', slot: 'success'}}), false);
     }
-    // the cases that matter: Cloudflare dispatch still reaches the gate (slot runs and succeeds); a skipped slot (schedule while Cloudflare is the source) still reaches the gate, which then skips; a failed/cancelled slot never reaches any secret
-    assert.equal(evalIf(backupIf, {event: 'workflow_dispatch', source: 'CLOUDFLARE_DISPATCH', needs: {selector: 'success', slot: 'success'}}), true);
-    assert.equal(evalIf(backupIf, {event: 'schedule', source: 'CLOUDFLARE_DISPATCH', needs: {selector: 'success', slot: 'skipped'}}), true);
-    assert.equal(evalIf(backupIf, {event: 'schedule', source: 'GITHUB_SCHEDULE', needs: {selector: 'success', slot: 'failure'}}), false);
-    assert.match(yaml, /\n  backup:\n    needs: \[selector, slot\]\n/);
-    assert.ok(!/\n  selector:[\s\S]*?\n    environment:[\s\S]*?\n  slot:/.test(yaml), 'selector job has no environment (repository scope)');
+    // inert by default: an unselected/unset schedule run skips the protected job (no hourly environment activity)
+    assert.equal(evalIf(backupIf, {event: 'schedule', source: '', needs: {selector: 'success', slot: 'skipped'}}), false);
+    assert.equal(evalIf(backupIf, {event: 'schedule', source: 'CLOUDFLARE_DISPATCH', needs: {selector: 'success', slot: 'skipped'}}), false);
+    const backup = jobBlock('backup');
+    assert.match(backup, /\n    needs: \[selector, slot\]\n/);
+    assert.ok(backup.indexOf('    if: ') < backup.indexOf('    environment: production-backup'), 'admission is declared on the job that owns the environment');
+    assert.ok(!/environment:/.test(jobBlock('selector')) && !/environment:/.test(jobBlock('slot')), 'selector and slot never enter an environment');
+    assert.ok(!/\b(always|failure|cancelled)\(\)/.test(backupIf), 'no status function that could admit the job after a skipped/failed need');
+    // the in-job activation gate and the environment/repository equality check are still present
+    assert.match(backup, /GATE_REPO_SOURCE: \$\{\{ needs\.selector\.outputs\.source \}\}/);
+    assert.match(backup, /PRODUCTION_BACKUP_ACTIVATION/);
   });
 
   await check('S3. the backup job consumes only the resolved scheduled_at; scripts/production-backup.ts, secrets, permissions and environment are unchanged', async () => {

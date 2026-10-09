@@ -6,10 +6,12 @@ name: Production Backup
 # Production secret is read.
 #
 # Scheduler source (exclusive, fail closed): vars.PRODUCTION_BACKUP_SCHEDULER_SOURCE must be set EXPLICITLY.
-#   - CLOUDFLARE_DISPATCH: only the Cloudflare Worker's workflow_dispatch runs; the `schedule:` trigger is inert.
-#   - GITHUB_SCHEDULE:     only the `schedule:` trigger runs; a workflow_dispatch is refused (red).
-#   - unset / any other value: every event is refused (red) before any secret. Selecting the source is a separate,
-#     approved release step — there is no implicit default.
+#   - CLOUDFLARE_DISPATCH: only the Cloudflare Worker's workflow_dispatch runs; `schedule:` runs skip the backup job.
+#   - GITHUB_SCHEDULE:     only the `schedule:` trigger runs; a workflow_dispatch is refused (red) in the `slot` job.
+#   - unset / any other value: nothing backs up — `schedule:` runs skip the backup job, a dispatch is refused (red) in
+#     `slot`. Selecting the source is a separate, approved release step — there is no implicit default.
+# The protected `backup` job (environment production-backup) is admitted at JOB level only for the selected pair, so a
+# non-selected run never reaches environment protection rules; the in-job activation gate remains as a second check.
 # scheduled_at: dispatch = the Worker's authoritative input, unchanged. schedule = the run's immutable GitHub
 # `created_at`, used AS-IS (to the second) — a best-effort GitHub-side effective timestamp, NOT GitHub's intended
 # scheduled occurrence (GitHub does not expose it) and NOT the moment the dump is taken. No :17 occurrence is invented,
@@ -66,8 +68,15 @@ jobs:
           SLOT_INPUT: ${{ inputs.scheduled_at }}
           SLOT_REPO: ${{ github.repository }}
           SLOT_RUN_ID: ${{ github.run_id }}
+          SLOT_SOURCE: ${{ needs.selector.outputs.source }}
         run: |
           set -eu
+          # A dispatch is admitted only when the Cloudflare source is selected; otherwise it is refused HERE (red, visible)
+          # in this environment-free job, so the protected backup job is never entered.
+          if [ "$SLOT_EVENT" = "workflow_dispatch" ] && [ "$SLOT_SOURCE" != "CLOUDFLARE_DISPATCH" ]; then
+            echo "::error::Dispatch refused: scheduler source is '$SLOT_SOURCE' (dispatch requires CLOUDFLARE_DISPATCH)."
+            exit 1
+          fi
           if [ "$SLOT_EVENT" = "schedule" ]; then
             created="$(gh api "repos/$SLOT_REPO/actions/runs/$SLOT_RUN_ID" --jq .created_at)"
             case "$created" in
@@ -89,8 +98,14 @@ jobs:
 
   backup:
     needs: [selector, slot]
-    # slot is skipped when the selected source is not GitHub (a skipped need must not skip the gate); a failed slot does.
-    if: ${{ !failure() && !cancelled() }}
+    # Job-level admission BEFORE the protected environment is entered (environment protection rules are evaluated before
+    # a job runs): only the selected source/event pair with a successful slot. Every other combination — unset/invalid
+    # selector, the non-selected source, a skipped/failed/cancelled slot — SKIPS (or stays red in `slot`) without
+    # touching `production-backup`. The in-job activation gate and environment/repository equality check remain.
+    if: >-
+      needs.slot.result == 'success' && (
+      (github.event_name == 'schedule' && needs.selector.outputs.source == 'GITHUB_SCHEDULE') ||
+      (github.event_name == 'workflow_dispatch' && needs.selector.outputs.source == 'CLOUDFLARE_DISPATCH'))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production-backup

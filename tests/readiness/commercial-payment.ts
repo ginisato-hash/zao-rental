@@ -10,10 +10,12 @@ import {decidePaymentProjection,verifyProjectionSource} from '../../packages/cor
 import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {normalWorkerAcceptance} from './normal-worker-acceptance';
 import {normalWorkerContinuity} from './normal-worker-continuity';
+import {refundAutomationAcceptance} from './refund-automation';
 const x=await flowFixture(new Date().toISOString());let operations:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;
 try{
  await normalWorkerAcceptance(x);
  await normalWorkerContinuity(x);
+ await refundAutomationAcceptance(x);
  const f=await commercialBookingFixture(x);
  // Public authority remains closed even with valid-looking configuration/capability shapes.
  assert.throws(()=>new BookingService(x.flow.flowPool,x.roles.authPool,x.signed.identity,{kind:'SQUARE_PRODUCTION',async create(){throw Error('UNREACHABLE');},async lookup(){throw Error('UNREACHABLE');}},null,{kind:'EXACT_PRODUCTION_IDENTITY'}),{code:'PRODUCTION_PAYMENT_AUTHORITY_REQUIRED'});

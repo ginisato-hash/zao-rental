@@ -15,6 +15,7 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  await owner.query(`GRANT UPDATE(conditions,starts_at,due_at,occupancy_start,occupancy_end,allocation_stage,version,buffer_override) ON inventory_holds TO ${user}`);
  if((await owner.query("SELECT to_regclass('public.provisional_capacity_claims') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT UPDATE(state,released_at) ON provisional_capacity_claims TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('inventory_buffer_override_record(uuid,text)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT EXECUTE ON FUNCTION inventory_buffer_override_record(uuid,text) TO ${user}`);
+ if((await owner.query("SELECT to_regprocedure('ops_refund_claim(uuid)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT EXECUTE ON FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb) TO ${user}`);
  await owner.query(`GRANT INSERT,UPDATE(active) ON inventory_claims,wear_claims TO ${user}`);
  await owner.query(`GRANT SELECT ON wear_claims TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT,UPDATE ON wear_loans,wear_receipts,wear_unresolved_returns,wear_transfers,wear_transfer_receipts,wear_return_batches TO ${user}`);

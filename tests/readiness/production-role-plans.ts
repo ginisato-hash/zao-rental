@@ -10,7 +10,8 @@ import {readFileSync} from 'node:fs';
 import {Pool} from 'pg';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
-import {bootstrapProductionSchema} from '../../scripts/production-bootstrap';
+import {bootstrapProductionSchema,bootstrapPlan} from '../../scripts/production-bootstrap';
+import {applyProductionRefundAutomationMigration,applyProductionRefundAutomationGrants} from '../../scripts/production-refund-automation';
 import {productionCredentialReadDatabaseClock,productionCredentialLeaseDeadline} from '../../scripts/production-credential-activation';
 import {productionBackupRoleSql} from '../../scripts/production-backup-role';
 import {productionPaymentRoleNames, productionPaymentRoleCreateSql, productionPaymentActivationGrants,productionNormalWorkerGrants} from '../../scripts/production-payment-roles';
@@ -121,7 +122,9 @@ try {
   const legacy=readFileSync('packages/db/migrations/0041_provisional_booking_capacity.sql','utf8');
   const start=legacy.indexOf('CREATE FUNCTION provisional_capacity_effective_quantity('),end=legacy.indexOf('$$;',start)+3;
   await production.query(legacy.slice(start,end).replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION'));
-  await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055')");
+  // 0056 (refund automation) is rewound the same way so the historical installers see their exact prefix.
+  await production.query('DROP FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb); DROP TABLE staff_permission_override_removals, rental_internal.ops_refund_effects');
+  await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056')");
   await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
     const c=await production!.connect();try{
       const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0050'")).rows[0].checksum;
@@ -210,23 +213,38 @@ try {
       assert.equal(commits,1);assert.equal(await absent(),false);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,53);
     }finally{c.release();}
   });
-  await check('0053→0055 installer rejects drift, rolls back failure, adds no grants/data, rejects replay and requires readback after lost COMMIT',async()=>{
+  await check('the frozen 0053→0055 installer refuses once the plan contains 0056 (never applies a later migration); 0054/0055 are restored exactly as reviewed',async()=>{
     const c=await production!.connect();try{
-      const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0053'")).rows[0].checksum;
-      await c.query("UPDATE foundation_migrations SET checksum=repeat('0',64) WHERE id='0053'");
       await assert.rejects(applyProductionNormalWorkerMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
-      await c.query("UPDATE foundation_migrations SET checksum=$1 WHERE id='0053'",[checksum]);
+      assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,53);
+      // Owned disposable fixture only: re-apply the two already-installed migrations from the canonical plan (their reviewed checksums).
+      const plan=await bootstrapPlan(TARGET);assert.deepEqual(plan.entries.slice(53,56).map(e=>e.id),['0054','0055','0056']);
+      await c.query('BEGIN');for(const e of plan.entries.slice(53,55)){await c.query(e.sql);await c.query('INSERT INTO foundation_migrations(id,checksum) VALUES($1,$2)',[e.id,e.checksum]);}await c.query('COMMIT');
+      assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,55);
+    }finally{c.release();}
+  });
+  await check('0055→0056 installer: exact registry/checksum, rejects drift, rolls back a failure, records removed denials, requires readback after lost COMMIT, refuses replay',async()=>{
+    const c=await production!.connect();try{
+      const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0055'")).rows[0].checksum;
+      await c.query("UPDATE foundation_migrations SET checksum=repeat('0',64) WHERE id='0055'");
+      await assert.rejects(applyProductionRefundAutomationMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
+      await c.query("UPDATE foundation_migrations SET checksum=$1 WHERE id='0055'",[checksum]);
+      await c.query("INSERT INTO foundation_migrations(id,checksum) VALUES('0099',repeat('1',64))");
+      await assert.rejects(applyProductionRefundAutomationMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/,'an unknown extra registry row is refused');
+      await c.query("DELETE FROM foundation_migrations WHERE id='0099'");
       const failing=Object.create(c) as typeof c;
       failing.query=(async(...args:unknown[])=>{if(String(args[0]).startsWith('INSERT INTO public.foundation_migrations'))throw Error('SYNTHETIC_AFTER_DDL_FAILURE');return Reflect.apply(c.query,c,args);}) as typeof c.query;
-      await assert.rejects(applyProductionNormalWorkerMigration(failing,TARGET,db.identity.user),/SYNTHETIC_AFTER_DDL_FAILURE/);
-      assert.equal((await c.query("SELECT to_regclass('provisional_capacity_receipts') IS NULL absent")).rows[0].absent,true);
+      await assert.rejects(applyProductionRefundAutomationMigration(failing,TARGET,db.identity.user),/SYNTHETIC_AFTER_DDL_FAILURE/);
+      assert.equal((await c.query("SELECT to_regprocedure('ops_refund_claim(uuid)') IS NULL absent")).rows[0].absent,true,'failure rolled back the whole 0056');
       let commits=0;const lost=Object.create(c) as typeof c;
       lost.query=(async(...args:unknown[])=>{const result=await Reflect.apply(c.query,c,args);if(args[0]==='COMMIT'){commits++;throw Error('SYNTHETIC_COMMIT_ACK_LOSS');}return result;}) as typeof c.query;
-      await assert.rejects(applyProductionNormalWorkerMigration(lost,TARGET,db.identity.user),/COMMIT_UNKNOWN_READBACK_REQUIRED/);
-      assert.equal(commits,1);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,55);
-      assert.equal((await c.query('SELECT count(*)::int n FROM provisional_capacity_receipts')).rows[0].n,0);
-      for(const role of Object.values(names))assert.equal((await c.query("SELECT has_function_privilege($1,'notification_due_normal(timestamptz,integer)','EXECUTE') allowed",[role])).rows[0].allowed,false);
-      await assert.rejects(applyProductionNormalWorkerMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/);
+      await assert.rejects(applyProductionRefundAutomationMigration(lost,TARGET,db.identity.user),/COMMIT_UNKNOWN_READBACK_REQUIRED/);
+      assert.equal(commits,1);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,56);
+      for(const fn of ['ops_refund_row(uuid)','ops_refund_claim(uuid)','ops_refund_observe(uuid,jsonb)'])
+        assert.equal((await c.query("SELECT count(*)::int n FROM pg_roles r WHERE r.rolname<>$2 AND NOT r.rolsuper AND has_function_privilege(r.oid,$1::regprocedure,'EXECUTE')",[fn,db.identity.user])).rows[0].n,0,'no grant is added by the migration');
+      assert.deepEqual((await c.query("SELECT role,permission FROM staff_role_permissions WHERE permission IN ('BOOKING_VIEW','REFUND_OVERRIDE') ORDER BY 1,2")).rows,
+        [{role:'ADMIN',permission:'BOOKING_VIEW'},{role:'ADMIN',permission:'REFUND_OVERRIDE'},{role:'MANAGER',permission:'BOOKING_VIEW'},{role:'MANAGER',permission:'REFUND_OVERRIDE'},{role:'STAFF',permission:'BOOKING_VIEW'},{role:'STAFF',permission:'REFUND_OVERRIDE'}]);
+      await assert.rejects(applyProductionRefundAutomationMigration(c,TARGET,db.identity.user),/RECONCILIATION_REQUIRED/,'replay refused');
     }finally{c.release();}
   });
   // Normal payment identities reuse their existing roles. The operations grant is tested
@@ -315,6 +333,15 @@ try {
   for (const sql of productionAppRoleCreateSql(TARGET)) await production.query(sql);
   for (const sql of productionAppRoleGrantSql(TARGET)) await production.query(sql);
   await production.query(productionNormalWorkerGrants(TARGET,appNames.operations)[3]!);
+  await check('0056 grants: exactly three EXECUTE grants to the operations role, no other ACL change, replay refused',async()=>{
+    const c=await production!.connect();try{
+      const result=await applyProductionRefundAutomationGrants(c,TARGET,db.identity.user);
+      assert.equal(result.status,'PRODUCTION_REFUND_AUTOMATION_GRANTS_INSTALLED');assert.equal(result.grants.length,3);
+      for(const fn of ['ops_refund_row(uuid)','ops_refund_claim(uuid)','ops_refund_observe(uuid,jsonb)'])
+        assert.equal((await c.query("SELECT has_function_privilege($1,$2::regprocedure,'EXECUTE') ok",[appNames.operations,fn])).rows[0].ok,true);
+      await assert.rejects(applyProductionRefundAutomationGrants(c,TARGET,db.identity.user),/GRANTS_REFUSED/);
+    }finally{c.release();}
+  });
   const auth = await loginRole(production, db.identity.dbPort, TARGET, appNames.auth); opened.push(auth);
   const ledger = await loginRole(production, db.identity.dbPort, TARGET, appNames.ledger); opened.push(ledger);
   const hold = await loginRole(production, db.identity.dbPort, TARGET, appNames.hold); opened.push(hold);

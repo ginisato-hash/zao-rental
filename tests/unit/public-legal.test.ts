@@ -8,15 +8,22 @@ const NOW = Date.parse('2026-10-09T12:00:00Z');
 const ok = (over: Record<string, unknown> = {}) => ({doc: 'terms', locale: 'ja', title: '利用規約', state: 'OWNER_APPROVED', approvedBy: 'Owner', approvedAt: '2026-10-09T00:00:00Z',
   sections: [{heading: '第1条', paragraphs: ['本文']}], ...over});
 
-test('the committed legal content publishes nothing until the Owner supplies and approves text', () => {
-  const raw = JSON.parse(readFileSync(new URL('../../config/content/public-legal.json', import.meta.url), 'utf8')) as {documents: {doc: string; locale: string; state: string; sections: unknown[]}[]};
+test('the committed legal content is the Owner-approved version (8 documents, JA+EN) with provenance; it publishes and opens the gate', () => {
+  const raw = JSON.parse(readFileSync(new URL('../../config/content/public-legal.json', import.meta.url), 'utf8')) as {note: string; documents: {doc: string; locale: string; state: string; approvedBy: string; approvedAt: string; sections: unknown[]}[]};
   assert.deepEqual(raw.documents.map(d => d.doc + ':' + d.locale).sort(), LEGAL_DOCS.flatMap(d => [d + ':en', d + ':ja']).sort(), 'every document exists in JA and EN');
-  for (const d of raw.documents) { assert.equal(d.state, 'OWNER_TEXT_REQUIRED'); assert.deepEqual(d.sections, []); }
-  for (const locale of ['ja', 'en'] as const) {
-    assert.deepEqual(approvedLegalDocs(locale), []);
-    assert.equal(legalPublicationComplete(locale), false, 'the "under review" notices stay visible');
-    for (const doc of LEGAL_DOCS) assert.equal(legalDocument(locale, doc), null);
+  for (const d of raw.documents) {
+    assert.equal(d.state, 'OWNER_APPROVED'); assert.equal(d.approvedBy, '佐藤慎太郎'); assert.equal(d.approvedAt, '2026-10-09T22:53:05Z');
+    assert.ok(d.sections.length > 0);
   }
+  assert.match(raw.note, /6090629658/); assert.match(raw.note, /668d895c917ac6b07a3743a26ac36ef1d826f05cb1b6d45198e89e964f24e2d6/);
+  for (const locale of ['ja', 'en'] as const) {
+    assert.deepEqual(approvedLegalDocs(locale), [...LEGAL_DOCS]);
+    assert.equal(legalPublicationComplete(locale), true);
+  }
+  assert.equal(legalCheckoutReady(), true);
+  const tokusho = legalDocument('ja', 'commercial-disclosure')!;
+  const text = JSON.stringify(tokusho.sections);
+  for (const fact of ['株式会社Yuge', '佐藤慎太郎', '070-4440-4813', 'rentalstation@yuge-zao.com', '〒990-2301 山形県山形市蔵王温泉973-7']) assert.ok(text.includes(fact), fact);
 });
 
 test('only a complete, Owner-approved document validates (fail closed on anything missing or malformed)', () => {
@@ -43,7 +50,6 @@ test('JA/EN parity: a document approved in only one locale is published in neith
   const enMissingPrivacy = [...ja, ...en.filter(d => d.doc !== 'privacy')];
   assert.deepEqual(approvedLegalDocs('ja', enMissingPrivacy), ['terms', 'commercial-disclosure', 'cancellation']);
   assert.equal(legalCheckoutReady(enMissingPrivacy), false);
-  assert.equal(legalCheckoutReady(), false, 'committed content: real checkout is blocked');
 });
 
 test('server-side: both commercial entrypoints (prepare-payment, checkout) are refused before any HOLD/booking/attempt/Square work while legal documents are unapproved', async () => {
@@ -54,7 +60,9 @@ test('server-side: both commercial entrypoints (prepare-payment, checkout) are r
     async () => { touched.push('catalog'); throw new Error('TOUCHED'); }, {applicationId: 'sq0idp-x', locations: {}}, ready);
   const prepare = {draftId: 'd', expectedRevision: 1, contact: {displayName: 'A', email: 'a@example.test', termsAccepted: true}, reviewHash: 'h'};
   const isLegal = (e: Error & {code?: string; status?: number}) => e.code === 'LEGAL_DOCUMENTS_NOT_APPROVED' && e.status === 503;
-  for (const ready of [() => false, legalCheckoutReady]) {
+  const unapproved = LEGAL_DOCS.flatMap(doc => [ok({doc, state: 'DRAFT_FOR_OWNER_REVIEW'}), ok({doc, locale: 'en', state: 'DRAFT_FOR_OWNER_REVIEW'})]);
+  const oneLocale = LEGAL_DOCS.map(doc => ok({doc}));
+  for (const ready of [() => false, () => legalCheckoutReady(unapproved), () => legalCheckoutReady(oneLocale), undefined, () => { throw new Error('boom'); }, (() => 'yes') as unknown as () => boolean]) {
     await assert.rejects(make(ready).preparePayment(prepare), isLegal);
     await assert.rejects(make(ready).checkout({...prepare, paymentSource: 'cnon:x'}), isLegal);
   }

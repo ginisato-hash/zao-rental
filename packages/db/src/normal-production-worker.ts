@@ -14,11 +14,14 @@ import type {BookingNotificationWorker} from '../../core/src/notification/worker
 import type {CancellationRefundWorker} from '../../core/src/payment/cancellation-refund-worker';
 
 export type ProductionWorkerInput={plan:unknown;databaseUrls:Record<'dispatcher'|'worker'|'projector',string>;lookup:PaymentTruthProvider;preflight?:boolean};
-export async function normalRefundCandidates(operations:Pick<Pool,'query'>,merchant:string,locations:string[],since:string,limit:number){
- return (await operations.query(`WITH eligible AS (SELECT r.id,r.amount_jpy,r.provider_id,r.dispatched_at,r.state,r.created_at FROM booking_cancellation_refunds r JOIN rental_bookings b ON b.id=r.booking_id
+/** Refund rows the tick may progress: online cancellation refunds (0045) and, only when the 0056 role delta is present, staff refunds
+ * (ops_refund_requests). PENDING-undispatched rows may be created; dispatched rows are looked up only with a provider ID. */
+export async function normalRefundCandidates(operations:Pick<Pool,'query'>,merchant:string,locations:string[],since:string,limit:number,staffLane=false){
+ const lane=(table:string,name:string)=>`SELECT r.id,r.amount_jpy,r.provider_id,r.dispatched_at,r.state,r.created_at,'${name}'::text lane FROM ${table} r JOIN rental_bookings b ON b.id=r.booking_id
   WHERE b.mode='SQUARE_PRODUCTION' AND b.created_at>=$1 AND r.merchant_id=$2 AND r.location_id=ANY($3::text[]) AND r.state IN ('PENDING','UNKNOWN')
-   AND ((r.state='PENDING' AND r.dispatched_at IS NULL) OR (r.dispatched_at IS NOT NULL AND r.provider_id IS NOT NULL)))
-  SELECT id,amount_jpy,provider_id,dispatched_at,state FROM (
+   AND ((r.state='PENDING' AND r.dispatched_at IS NULL) OR (r.dispatched_at IS NOT NULL AND r.provider_id IS NOT NULL))`;
+ return (await operations.query(`WITH eligible AS (${lane('booking_cancellation_refunds','CANCELLATION')}${staffLane?' UNION ALL '+lane('ops_refund_requests','STAFF'):''})
+  SELECT id,amount_jpy,provider_id,dispatched_at,state,lane FROM (
    (SELECT * FROM eligible WHERE dispatched_at IS NULL ORDER BY created_at,id LIMIT $4)
    UNION ALL
    (SELECT * FROM eligible WHERE dispatched_at IS NOT NULL ORDER BY created_at,id LIMIT $4)
@@ -54,7 +57,9 @@ export async function runProductionWorker(identity:ExactProductionIdentity,input
    if(check?.allowed!==true||check?.lease!==true)throw Error('NORMAL_WORKER_ROLE_NOT_READY');
   }
   if((await operations.query("SELECT has_function_privilege(current_user,'notification_due_normal(timestamptz,integer)','EXECUTE') allowed")).rows[0]?.allowed!==true)throw Error('NORMAL_WORKER_ROLE_NOT_READY');
-  if(input.preflight)return {state:'PREFLIGHT_PASS',providerCalls:0,roleMutations:0};
+  // Staff refund lane only once the 0056 role delta grants all three functions; otherwise staff rows are simply not offered.
+  const staffLane=(await operations.query("SELECT has_function_privilege(current_user,'ops_refund_claim(uuid)','EXECUTE') AND has_function_privilege(current_user,'ops_refund_observe(uuid,jsonb)','EXECUTE') AND has_function_privilege(current_user,'ops_refund_row(uuid)','EXECUTE') allowed")).rows[0]?.allowed===true;
+  if(input.preflight)return {state:'PREFLIGHT_PASS',providerCalls:0,roleMutations:0,staffRefundLane:staffLane};
   const authority=issueProductionReconciliationAuthority(identity),dispatcher=new PgPaymentReconciliation(opened.dispatcher,undefined,authority,undefined,plan.acceptedBookingsAfter),worker=new PgPaymentReconciliation(opened.worker,undefined,authority,undefined,plan.acceptedBookingsAfter);
   const contexts={async load(claim:Parameters<typeof worker.load>[0]){const context=await worker.load(claim);return context&&context.expected.merchantId===c.payment!.merchantId&&Object.values(c.payment!.locations).includes(context.expected.locationId)?context:null;}};
   const reconciliation=new PaymentReconciliationWorker({dispatch:(e,n)=>dispatcher.dispatch(e,n),claimBatch:(e,id,n)=>worker.claimBatch(e,id,n),finalize:(claim,outcome)=>worker.finalize(claim,outcome),diagnostics:async()=>[]},contexts,{async lookupPayment(request){if(Date.now()>=Date.parse(plan.deadline))return {kind:'FAILED',code:'NETWORK_RETRYABLE'};return input.lookup.lookupPayment(request);}},undefined,undefined,(run,ms)=>boundedLookup(run,Math.min(ms,Math.max(1,Date.parse(plan.deadline)-Date.now()))));
@@ -67,7 +72,7 @@ export async function runProductionWorker(identity:ExactProductionIdentity,input
     return new TransactionalPaymentProjection(repository,undefined,permit).project(ref);
    },
    notifications,refunds,
-   refundCandidates:limit=>normalRefundCandidates(operations,c.payment!.merchantId,Object.values(c.payment!.locations),plan.acceptedBookingsAfter,limit),
+   refundCandidates:limit=>normalRefundCandidates(operations,c.payment!.merchantId,Object.values(c.payment!.locations),plan.acceptedBookingsAfter,limit,staffLane),
    close:async()=>{},
   });
   return {...tick,backlog:await normalBacklog(operations,c.payment!.merchantId,Object.values(c.payment!.locations),plan.acceptedBookingsAfter)};

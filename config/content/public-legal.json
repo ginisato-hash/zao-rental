@@ -1,78 +1,394 @@
 {
  "schemaVersion": 1,
- "note": "Public legal/policy documents. A document is published ONLY with state OWNER_APPROVED, a non-empty approvedBy/approvedAt and body text supplied or approved by the Owner. Never author legal wording here without that approval.",
+ "note": "Public legal/policy documents. A document is published ONLY with state OWNER_APPROVED (both JA and EN), a non-empty approvedBy/approvedAt and non-empty sections. Current text: approved by the Owner (佐藤慎太郎) on 2026-10-09T22:53:05Z, Issue #47 comment 6090629658, approving the exact version posted in comment 6090581287 (updated_at 2026-10-09T22:49:00Z, body sha256 668d895c917ac6b07a3743a26ac36ef1d826f05cb1b6d45198e89e964f24e2d6); every title/heading/paragraph here was verified to occur verbatim in that post. This approval covers only this text; any new fee, disclaimer, refund condition or data use needs a new approval. Business address source: https://www.yuge-zao.com/ (company address, not a store pickup location).",
  "documents": [
   {
    "doc": "terms",
    "locale": "ja",
    "title": "利用規約",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "適用",
+     "paragraphs": [
+      "この規約は、株式会社Yuge（以下「当社」）が運営するスキー・スノーボード用品およびウェアのレンタル予約サービス（以下「本サービス」）の利用に適用します。"
+     ]
+    },
+    {
+     "heading": "予約の成立",
+     "paragraphs": [
+      "予約内容と税込総額を確認画面でご確認のうえお支払いいただき、決済が完了した時点で予約が成立します。"
+     ]
+    },
+    {
+     "heading": "料金",
+     "paragraphs": [
+      "料金は確認画面に表示する消費税込みの総額です。"
+     ]
+    },
+    {
+     "heading": "受取・返却",
+     "paragraphs": [
+      "予約時に選択した店舗で、予約した日時の枠に従って受取・返却してください。貸出期間は2026年12月12日から2027年3月31日までです。",
+      "複数日の予約は開始日より後に受け取ることもできますが、返却期限と料金は変わらず、未利用日分の返金はありません。"
+     ]
+    },
+    {
+     "heading": "キャンセル",
+     "paragraphs": [
+      "キャンセルと返金は「キャンセル・返金規定」に従います。"
+     ]
+    },
+    {
+     "heading": "お問い合わせ",
+     "paragraphs": [
+      "電話 070-4440-4813　メール rentalstation@yuge-zao.com"
+     ]
+    }
+   ]
   },
   {
    "doc": "terms",
    "locale": "en",
    "title": "Terms of use",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "Scope",
+     "paragraphs": [
+      "These terms apply to the ski, snowboard and wear rental booking service (the \"Service\") operated by Yuge Co., Ltd. (株式会社Yuge) (\"we\")."
+     ]
+    },
+    {
+     "heading": "Booking",
+     "paragraphs": [
+      "A booking is concluded when you have reviewed the details and the tax-inclusive total on the review screen and the payment has completed."
+     ]
+    },
+    {
+     "heading": "Price",
+     "paragraphs": [
+      "The price is the total including Japanese consumption tax shown on the review screen."
+     ]
+    },
+    {
+     "heading": "Pickup and return",
+     "paragraphs": [
+      "Collect and return the equipment at the store chosen when booking, within the booked time slot. The rental season runs from 12 December 2026 to 31 March 2027.",
+      "A multi-day booking may be collected after its start date, but the return deadline and price do not change and unused days are not refunded."
+     ]
+    },
+    {
+     "heading": "Cancellation",
+     "paragraphs": [
+      "Cancellations and refunds follow the Cancellation and refund policy."
+     ]
+    },
+    {
+     "heading": "Contact",
+     "paragraphs": [
+      "Tel 070-4440-4813 · Email rentalstation@yuge-zao.com"
+     ]
+    }
+   ]
   },
   {
    "doc": "privacy",
    "locale": "ja",
    "title": "プライバシーポリシー",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "取扱事業者",
+     "paragraphs": [
+      "株式会社Yuge（運営責任者：佐藤慎太郎）"
+     ]
+    },
+    {
+     "heading": "取得する情報",
+     "paragraphs": [
+      "お名前、メールアドレス、予約内容（利用日・店舗・用品・サイズ）、用品選びのためにご入力いただく身長・足のサイズ等、決済の結果に関する情報。カード番号は当社では保存せず、決済代行会社が処理します。"
+     ]
+    },
+    {
+     "heading": "利用目的",
+     "paragraphs": [
+      "予約の受付・確認・変更・キャンセル、用品の準備と貸出・返却、返金、予約に関するご連絡、お問い合わせへの対応のために利用します。"
+     ]
+    },
+    {
+     "heading": "外部サービスへの委託",
+     "paragraphs": [
+      "決済にSquare、メール送信にResend、サイトとデータの運用にVercelおよびNeonを利用しており、上記の目的に必要な範囲で情報を取り扱わせます。"
+     ]
+    },
+    {
+     "heading": "第三者提供",
+     "paragraphs": [
+      "法令に基づく場合を除き、ご本人の同意なく第三者に提供しません。"
+     ]
+    },
+    {
+     "heading": "開示・訂正・削除のご請求",
+     "paragraphs": [
+      "ご本人からのご請求には、法令に従い対応します。お問い合わせ：電話 070-4440-4813　メール rentalstation@yuge-zao.com"
+     ]
+    }
+   ]
   },
   {
    "doc": "privacy",
    "locale": "en",
    "title": "Privacy policy",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "Operator",
+     "paragraphs": [
+      "Yuge Co., Ltd. (株式会社Yuge) (person responsible: Shintaro Sato)"
+     ]
+    },
+    {
+     "heading": "Information we collect",
+     "paragraphs": [
+      "Your name, email address, booking details (dates, store, equipment, sizes), height, foot size and similar details you enter to choose equipment, and the result of your payment. We do not store card numbers; they are processed by our payment provider."
+     ]
+    },
+    {
+     "heading": "How we use it",
+     "paragraphs": [
+      "To accept, confirm, change and cancel bookings, prepare, hand over and receive equipment, process refunds, contact you about your booking and answer enquiries."
+     ]
+    },
+    {
+     "heading": "Service providers",
+     "paragraphs": [
+      "We use Square for payments, Resend for email, and Vercel and Neon to run the site and its data, and let them handle information only as needed for the purposes above."
+     ]
+    },
+    {
+     "heading": "Disclosure to third parties",
+     "paragraphs": [
+      "We do not share your information with third parties without your consent, except where required by law."
+     ]
+    },
+    {
+     "heading": "Access, correction and deletion",
+     "paragraphs": [
+      "We respond to requests from you in accordance with the law. Contact: Tel 070-4440-4813 · Email rentalstation@yuge-zao.com"
+     ]
+    }
+   ]
   },
   {
    "doc": "commercial-disclosure",
    "locale": "ja",
    "title": "特定商取引法に基づく表記",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "販売事業者",
+     "paragraphs": [
+      "株式会社Yuge"
+     ]
+    },
+    {
+     "heading": "運営責任者",
+     "paragraphs": [
+      "佐藤慎太郎"
+     ]
+    },
+    {
+     "heading": "所在地",
+     "paragraphs": [
+      "〒990-2301 山形県山形市蔵王温泉973-7"
+     ]
+    },
+    {
+     "heading": "電話番号",
+     "paragraphs": [
+      "070-4440-4813"
+     ]
+    },
+    {
+     "heading": "メールアドレス",
+     "paragraphs": [
+      "rentalstation@yuge-zao.com"
+     ]
+    },
+    {
+     "heading": "販売価格",
+     "paragraphs": [
+      "各予約の確認画面に表示する金額（消費税込みの総額）です。"
+     ]
+    },
+    {
+     "heading": "代金の支払方法・支払時期",
+     "paragraphs": [
+      "クレジットカード決済（Square）。予約確定時にお支払いいただきます。"
+     ]
+    },
+    {
+     "heading": "サービスの提供時期",
+     "paragraphs": [
+      "予約した利用開始日に、予約時に選択した店舗（Mountain Base／Onsen Base）でお渡しします。貸出期間は2026年12月12日から2027年3月31日までです。"
+     ]
+    },
+    {
+     "heading": "キャンセル・返金",
+     "paragraphs": [
+      "利用開始の48時間前まで（48時間ちょうどを含む）のキャンセルは全額を返金します。それ以降のオンラインでのキャンセルには返金はありません。詳細は「キャンセル・返金規定」をご覧ください。"
+     ]
+    }
+   ]
   },
   {
    "doc": "commercial-disclosure",
    "locale": "en",
    "title": "Commercial disclosure (Specified Commercial Transactions Act)",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "Seller",
+     "paragraphs": [
+      "Yuge Co., Ltd. (株式会社Yuge)"
+     ]
+    },
+    {
+     "heading": "Person responsible",
+     "paragraphs": [
+      "Shintaro Sato"
+     ]
+    },
+    {
+     "heading": "Address",
+     "paragraphs": [
+      "973-7 Zao Onsen, Yamagata-shi, Yamagata 990-2301, Japan"
+     ]
+    },
+    {
+     "heading": "Telephone",
+     "paragraphs": [
+      "070-4440-4813"
+     ]
+    },
+    {
+     "heading": "Email",
+     "paragraphs": [
+      "rentalstation@yuge-zao.com"
+     ]
+    },
+    {
+     "heading": "Price",
+     "paragraphs": [
+      "The amount shown on each booking review screen (total including Japanese consumption tax)."
+     ]
+    },
+    {
+     "heading": "Payment method and timing",
+     "paragraphs": [
+      "Credit card payment via Square, charged when the booking is confirmed."
+     ]
+    },
+    {
+     "heading": "Delivery of the service",
+     "paragraphs": [
+      "Equipment is handed over on the booked start date at the store chosen when booking (Mountain Base / Onsen Base). The rental season runs from 12 December 2026 to 31 March 2027."
+     ]
+    },
+    {
+     "heading": "Cancellation and refunds",
+     "paragraphs": [
+      "Cancellations made at least 48 hours before the rental starts (exactly 48 hours included) are refunded in full. Online cancellations after that are not refunded. See the Cancellation and refund policy."
+     ]
+    }
+   ]
   },
   {
    "doc": "cancellation",
    "locale": "ja",
    "title": "キャンセル・返金規定",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "オンラインでのキャンセル",
+     "paragraphs": [
+      "予約はご予約確認ページからキャンセルできます。",
+      "利用開始の48時間前まで（48時間ちょうどを含む）にキャンセルされた場合、お支払いいただいた金額の全額を、お支払いに使用したカードへ自動で返金します。",
+      "利用開始の48時間前を過ぎたキャンセルには、オンラインでの返金はありません。返金できない理由はキャンセル時の画面に表示します。",
+      "返金の可否はキャンセルを受け付けた時点で判定します。返金処理の実行が遅れても、受付時に返金対象だったキャンセルが対象外になることはありません。"
+     ]
+    },
+    {
+     "heading": "返金の時期",
+     "paragraphs": [
+      "返金の手続きは当社で自動的に行います。カード明細への反映時期はご利用のカード会社によって異なります。"
+     ]
+    },
+    {
+     "heading": "店頭でのご相談",
+     "paragraphs": [
+      "店頭では、スタッフがご事情を伺い、個別に対応することがあります。"
+     ]
+    },
+    {
+     "heading": "お問い合わせ",
+     "paragraphs": [
+      "株式会社Yuge　電話 070-4440-4813　メール rentalstation@yuge-zao.com"
+     ]
+    }
+   ]
   },
   {
    "doc": "cancellation",
    "locale": "en",
    "title": "Cancellation and refund policy",
-   "state": "OWNER_TEXT_REQUIRED",
-   "approvedBy": null,
-   "approvedAt": null,
-   "sections": []
+   "state": "OWNER_APPROVED",
+   "approvedBy": "佐藤慎太郎",
+   "approvedAt": "2026-10-09T22:53:05Z",
+   "sections": [
+    {
+     "heading": "Cancelling online",
+     "paragraphs": [
+      "You can cancel a booking from your booking page.",
+      "If you cancel at least 48 hours before the rental starts (exactly 48 hours included), the full amount paid is refunded automatically to the card used for payment.",
+      "Online cancellations later than 48 hours before the start are not refunded. The reason is shown on the cancellation screen.",
+      "Eligibility is decided when the cancellation is accepted. A delay in processing never makes a cancellation that was eligible when accepted ineligible."
+     ]
+    },
+    {
+     "heading": "When the refund arrives",
+     "paragraphs": [
+      "We start the refund automatically. When it appears on your statement depends on your card issuer."
+     ]
+    },
+    {
+     "heading": "At the store",
+     "paragraphs": [
+      "At the store, our staff may review your circumstances and respond individually."
+     ]
+    },
+    {
+     "heading": "Contact",
+     "paragraphs": [
+      "Yuge Co., Ltd. (株式会社Yuge) · Tel 070-4440-4813 · Email rentalstation@yuge-zao.com"
+     ]
+    }
+   ]
   }
  ]
 }

@@ -314,7 +314,7 @@ export function GuestBooking({locale,legal}:{locale:Locale;legal?:GuestLegalLink
  const holdEnded=Boolean(draft&&!draft.booking&&draft.hold&&draft.hold.state!=='ACTIVE');
  const stockFailed=Boolean(draft&&!draft.booking&&draft.locked&&!draft.hold);
  const priceChanged=Boolean(draft&&!draft.booking&&!holdEnded&&draft.priceReviewRequired&&draft.quote?.validity==='VALID_PRIVATE_ESTIMATE');
- const legalBlocked=Boolean(draft?.checkout)&&legal!==undefined&&!legal.complete;const payBlocked=!contractSynced||Boolean(draft?.priceReviewRequired)||holdEnded||stockFailed||legalBlocked;
+ const legalBlocked=Boolean(draft?.checkout)&&legal?.complete!==true;const payBlocked=!contractSynced||Boolean(draft?.priceReviewRequired)||holdEnded||stockFailed||legalBlocked;
  function closeContext(){void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput();clearDraftInputs();setRestoredNotice(false);setSavedInputJson(null);location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
  const checkoutBody=()=>({locale,draftId:draft!.id,expectedRevision:draft!.revision,reviewHash:draft!.reviewHash,contact:{displayName:contact.displayName,email:contact.email,termsAccepted:contact.termsAccepted}});
  // The field name is the label's whole text, so exact label matching and the accessible name stay

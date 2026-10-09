@@ -1,3 +1,4 @@
+import {syntheticLegalReady} from '../fixtures/approved-legal';
 import assert from 'node:assert/strict';
 import {mock} from 'node:test';
 import type {ProductionConfiguration} from '../../packages/auth/src/production-config';
@@ -40,7 +41,7 @@ try{
  const stock=await registerWear(ledger,new WearService(x.flow.flowPool,x.roles.authPool,x.signed.identity));
  const variants=await x.holds.recommendationCatalog(),catalog={revision:'synthetic-prepare',models:[],sizes:variants.filter(v=>['WEAR_JACKET','WEAR_PANTS'].includes(v.family)).map(v=>({key:v.id,label:v.size,variant:v}))};
  const contexts=new GuestContexts(x.guestRole.guestPool),origin='https://synthetic-prepare.invalid';
- const api=guestHandler(contexts,actor=>{const holds=new HoldService(x.roles.holdPool,actor),quotes=new QuoteService(x.roles.pricingPool,actor,undefined,authority),recommendations=new RecommendationService(x.roles.recommendationPool,actor,holds,quotes),booking=new BookingService(x.flow.flowPool,x.guestRole.guestPool,actor,gateway,null,identity);return new GuestBookingService(contexts,actor,recommendations,booking,async()=>catalog);},origin);
+ const api=guestHandler(contexts,actor=>{const holds=new HoldService(x.roles.holdPool,actor),quotes=new QuoteService(x.roles.pricingPool,actor,undefined,authority),recommendations=new RecommendationService(x.roles.recommendationPool,actor,holds,quotes),booking=new BookingService(x.flow.flowPool,x.guestRole.guestPool,actor,gateway,null,identity);return new GuestBookingService(contexts,actor,recommendations,booking,async()=>catalog,undefined,syntheticLegalReady);},origin);
  let serial=3;
  async function fixture(){
   const c=await api(new Request(origin+'/api/guest/context',{method:'POST',headers:{origin,'content-type':'application/json'},body:'{}'}));assert.equal(c.status,201);

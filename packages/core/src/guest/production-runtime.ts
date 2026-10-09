@@ -6,6 +6,7 @@ import {productionNotificationDelivery,type ProductionNotificationBinding} from 
 import {exactProductionIdentityConfiguration,type ExactProductionIdentity} from '../../../auth/src/production-identity';
 import {issueCommercialPriceAuthority} from '../pricing/commercial-price-authority';
 import {createHash} from 'node:crypto';
+import {legalCheckoutReady} from '../content/public-legal';
 import type {Pool} from 'pg';
 import {exact} from '../../../contracts/src/pricing';
 import {canonical} from '../../../contracts/src/hold';
@@ -81,7 +82,7 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   const service=(actor:GuestActor)=>{if(!guest)throw new ProductionStartupError('FEATURE_FLAGS');const holds=new HoldService(required('hold'),actor),quotes=new QuoteService(required('pricing'),actor,undefined,priceAuthority),recommendations=new RecommendationService(required('recommendation'),actor,holds,quotes,async variants=>guestVariants(await guestCatalog(required('content_read'),variants),variants));
    // Read existing canonical payment/booking state even with Avatar/media absent.
    // Commercial create authority remains the existing payment activation boundary.
-   const bookings=new BookingService(required('operations'),required('guest'),actor,commercialIdentity?validatedPayment:null,null,commercialIdentity);return new GuestBookingService(guest.contexts,actor,recommendations,bookings,async()=>guestCatalog(required('content_read'),await holds.recommendationCatalog()),commercialIdentity?{applicationId:input.payment!.applicationId!,locations:c.payment!.locations}:undefined);};
+   const bookings=new BookingService(required('operations'),required('guest'),actor,commercialIdentity?validatedPayment:null,null,commercialIdentity);return new GuestBookingService(guest.contexts,actor,recommendations,bookings,async()=>guestCatalog(required('content_read'),await holds.recommendationCatalog()),commercialIdentity?{applicationId:input.payment!.applicationId!,locations:c.payment!.locations}:undefined,legalCheckoutReady);};
   stage='BOOKING_ACCESS';const access=guest?new BookingAccess(required('booking_access'),Buffer.from(secrets.accessKey,'hex'),secrets.accessKeyVersion):null;
   const recovery=guest&&c.flags.guestRecovery?new BookingRecovery(required('booking_access'),Buffer.from(secrets.recoveryKey,'hex'),secrets.recoveryKeyVersion,undefined,5000,true):null;
   const refundWorker=input.refunds&&commercialIdentity?new CancellationRefundWorker(required('operations'),input.refunds,commercialIdentity):null;

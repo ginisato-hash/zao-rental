@@ -4,7 +4,13 @@ import {normalWorkerPlan,type NormalWorkerPlan} from './normal-production-worker
 
 /** One finite worker tick behind an authenticated scheduler request (Vercel Cron). It reuses the already-composed,
  * exact-identity Production runtime and `runWorker`; it adds no scheduling loop, no retry and no new provider call.
- * Notification, refund-create and refund-budget limits are fixed at 0 here: a live window needs a reviewed change. */
+ * The notification limit defaults to 0 (no customer mail). A live window is opened only by explicitly setting the bounded
+ * `PRODUCTION_WORKER_NOTIFICATION_LIMIT` in the production environment — an approved production operation, never a code
+ * default; a malformed or out-of-range value stops the tick (fail closed). Delivery keeps the existing contract: only
+ * SQUARE_PRODUCTION bookings created at/after the cutoff, durable claim, provider idempotency key, UNKNOWN => lookup only.
+ * Refund CREATE stays fixed at 0 here: a per-tick budget resets every minute and is not a cumulative spending limit, and no
+ * durable refund budget/approval window exists. Refunds go through the supervised, per-target operator path
+ * (`production:payment-acceptance cancellation-refund-one`). */
 export const WORKER_TICK_ACTIVATION = 'NORMAL_WORKER_TICK_APPROVED';
 /** Inside the 60 s hard ceiling that `normalWorkerPlan` enforces; an in-flight lookup still settles under its own timeout. */
 export const WORKER_TICK_BUDGET_MS = 50_000;
@@ -13,7 +19,10 @@ export const WORKER_TICK_BATCH_SIZE = 20;
 export const WORKER_TICK_ENV_KEYS = Object.freeze([
   'CRON_SECRET', 'PRODUCTION_WORKER_TICK_ACTIVATION', 'PRODUCTION_WORKER_ACCEPTED_AFTER',
   'PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER', 'PRODUCTION_WORKER_DB_PASSWORD_WORKER', 'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR',
+  'PRODUCTION_WORKER_NOTIFICATION_LIMIT',
 ] as const);
+/** Upper bound, identical to the one `normalWorkerPlan` enforces. */
+export const WORKER_TICK_LIMIT_BOUNDS = Object.freeze({PRODUCTION_WORKER_NOTIFICATION_LIMIT: 20} as const);
 export type WorkerTickEnv = Partial<Record<(typeof WORKER_TICK_ENV_KEYS)[number], string | undefined>>;
 type Source = Readonly<Record<string, string | undefined>>;
 
@@ -30,13 +39,24 @@ export function authorizeWorkerTick(authorization: string | null, secret: string
   return expected.length === got.length && timingSafeEqual(expected, got);
 }
 
+/** Unset => 0. Otherwise a plain non-negative decimal integer within its bound, or the tick stops. */
+export function workerTickLimit(env: WorkerTickEnv, key: keyof typeof WORKER_TICK_LIMIT_BOUNDS): number {
+  const raw = env[key];
+  if (raw === undefined) return 0;
+  if (!/^(0|[1-9][0-9]{0,8})$/.test(raw)) throw new Error('WORKER_TICK_LIMIT_INVALID');
+  const value = Number(raw);
+  if (value > WORKER_TICK_LIMIT_BOUNDS[key]) throw new Error('WORKER_TICK_LIMIT_INVALID');
+  return value;
+}
+
 export function workerTickPlan(env: WorkerTickEnv, now: Date): NormalWorkerPlan {
   const after = env.PRODUCTION_WORKER_ACCEPTED_AFTER;
   if (!after || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(after)) throw new Error('WORKER_TICK_CUTOFF_INVALID');
   return normalWorkerPlan({
     workerId: 'normal-tick-' + now.toISOString().slice(0, 16).replace(/[^0-9]/g, ''), acceptedBookingsAfter: after,
     deadline: new Date(now.getTime() + WORKER_TICK_BUDGET_MS).toISOString(), batchSize: WORKER_TICK_BATCH_SIZE,
-    notificationLimit: 0, refundCreateLimit: 0, refundBudgetJpy: 0,
+    notificationLimit: workerTickLimit(env, 'PRODUCTION_WORKER_NOTIFICATION_LIMIT'),
+    refundCreateLimit: 0, refundBudgetJpy: 0,
   }, now.getTime());
 }
 

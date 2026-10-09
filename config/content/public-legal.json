@@ -1,0 +1,78 @@
+{
+ "schemaVersion": 1,
+ "note": "Public legal/policy documents. A document is published ONLY with state OWNER_APPROVED, a non-empty approvedBy/approvedAt and body text supplied or approved by the Owner. Never author legal wording here without that approval.",
+ "documents": [
+  {
+   "doc": "terms",
+   "locale": "ja",
+   "title": "利用規約",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  },
+  {
+   "doc": "terms",
+   "locale": "en",
+   "title": "Terms of use",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  },
+  {
+   "doc": "privacy",
+   "locale": "ja",
+   "title": "プライバシーポリシー",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  },
+  {
+   "doc": "privacy",
+   "locale": "en",
+   "title": "Privacy policy",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  },
+  {
+   "doc": "commercial-disclosure",
+   "locale": "ja",
+   "title": "特定商取引法に基づく表記",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  },
+  {
+   "doc": "commercial-disclosure",
+   "locale": "en",
+   "title": "Commercial disclosure (Specified Commercial Transactions Act)",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  },
+  {
+   "doc": "cancellation",
+   "locale": "ja",
+   "title": "キャンセル・返金規定",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  },
+  {
+   "doc": "cancellation",
+   "locale": "en",
+   "title": "Cancellation and refund policy",
+   "state": "OWNER_TEXT_REQUIRED",
+   "approvedBy": null,
+   "approvedAt": null,
+   "sections": []
+  }
+ ]
+}

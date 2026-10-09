@@ -6,7 +6,7 @@ import {productionPaymentRoleNames} from '../../scripts/production-payment-roles
 import type {ProductionConfiguration} from '../../packages/auth/src/production-config';
 import {
   WORKER_TICK_ACTIVATION, WORKER_TICK_BUDGET_MS, WORKER_TICK_ENV_KEYS, authorizeWorkerTick, handleWorkerTick, readWorkerTickEnv,
-  workerTickDatabaseUrls, workerTickPlan, type WorkerTickEnv, type WorkerTickInput,
+  workerTickDatabaseUrls, workerTickLimit, workerTickPlan, type WorkerTickEnv, type WorkerTickInput,
 } from '../../packages/core/src/payment/worker-tick';
 
 const SECRET = 'cron-secret-' + 'x'.repeat(24);
@@ -38,14 +38,44 @@ test('only an exact Bearer CRON_SECRET of at least 32 characters authorizes a ti
   ] as const) assert.equal(authorizeWorkerTick(header, secret), false, String(header));
 });
 
-test('the tick reads exactly its six named variables and nothing else from the environment', () => {
+test('the tick reads exactly its seven named variables and nothing else from the environment (no refund variable exists)', () => {
   assert.deepEqual([...WORKER_TICK_ENV_KEYS].sort(), ['CRON_SECRET', 'PRODUCTION_WORKER_ACCEPTED_AFTER', 'PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER',
-    'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR', 'PRODUCTION_WORKER_DB_PASSWORD_WORKER', 'PRODUCTION_WORKER_TICK_ACTIVATION']);
-  const read = readWorkerTickEnv({...env, PRODUCTION_DB_PASSWORD_GUEST: 'unrelated-secret', PRODUCTION_SQUARE_ACCESS_TOKEN: 'unrelated-token', PRODUCTION_WORKER_DB_PASSWORD_EXTRA: 'x'});
+    'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR', 'PRODUCTION_WORKER_DB_PASSWORD_WORKER', 'PRODUCTION_WORKER_NOTIFICATION_LIMIT', 'PRODUCTION_WORKER_TICK_ACTIVATION']);
+  const read = readWorkerTickEnv({...env, PRODUCTION_WORKER_NOTIFICATION_LIMIT: '1', PRODUCTION_WORKER_REFUND_CREATE_LIMIT: '20', PRODUCTION_WORKER_REFUND_BUDGET_JPY: '100000000',
+    PRODUCTION_DB_PASSWORD_GUEST: 'unrelated-secret', PRODUCTION_SQUARE_ACCESS_TOKEN: 'unrelated-token', PRODUCTION_WORKER_DB_PASSWORD_EXTRA: 'x'});
   assert.deepEqual(Object.keys(read).sort(), [...WORKER_TICK_ENV_KEYS].sort());
 });
 
-test('plan is finite and keeps notification, refund-create and refund-budget limits at zero', () => {
+test('notification limit: unset => 0; bounded integer opens it; malformed/out of range stops the tick. Refund CREATE is always 0', () => {
+  const zero = workerTickPlan(env, NOW);
+  assert.deepEqual([zero.notificationLimit, zero.refundCreateLimit, zero.refundBudgetJpy], [0, 0, 0]);
+  for (const [raw, want] of [['0', 0], ['1', 1], ['5', 5], ['20', 20]] as const) {
+    const plan = workerTickPlan({...env, PRODUCTION_WORKER_NOTIFICATION_LIMIT: raw}, NOW);
+    assert.deepEqual([plan.notificationLimit, plan.refundCreateLimit, plan.refundBudgetJpy], [want, 0, 0], raw);
+  }
+  for (const bad of ['', ' 1', '1 ', '-1', '+1', '01', '1.0', '1e1', '0x10', 'NaN', 'Infinity', 'twenty', '1,0', '９', '21', '1000000000'])
+    assert.throws(() => workerTickPlan({...env, PRODUCTION_WORKER_NOTIFICATION_LIMIT: bad}, NOW), /WORKER_TICK_LIMIT_INVALID/, JSON.stringify(bad));
+  // refund variables, even if present in the platform environment, are never read: CREATE and budget stay 0
+  const sneaky = readWorkerTickEnv({...env, PRODUCTION_WORKER_REFUND_CREATE_LIMIT: '20', PRODUCTION_WORKER_REFUND_BUDGET_JPY: '100000000'});
+  const plan = workerTickPlan(sneaky, NOW);
+  assert.deepEqual([plan.refundCreateLimit, plan.refundBudgetJpy], [0, 0]);
+  assert.equal(workerTickLimit({}, 'PRODUCTION_WORKER_NOTIFICATION_LIMIT'), 0);
+});
+
+test('two consecutive ticks each carry the same bounded notification limit and refund CREATE 0 (per-tick, nothing accumulates or escalates)', async () => {
+  const live = {...env, PRODUCTION_WORKER_TICK_ACTIVATION: WORKER_TICK_ACTIVATION, PRODUCTION_WORKER_NOTIFICATION_LIMIT: '3'};
+  const h1 = harness({env: live, now: NOW}), h2 = harness({env: live, now: new Date(NOW.getTime() + 60_000)});
+  for (const h of [h1, h2]) assert.equal((await handleWorkerTick(h.input)).status, 200);
+  const plans = [h1, h2].map(h => (h.calls.run[0] as {plan: {notificationLimit: number; refundCreateLimit: number; refundBudgetJpy: number; workerId: string}}).plan);
+  for (const p of plans) assert.deepEqual([p.notificationLimit, p.refundCreateLimit, p.refundBudgetJpy], [3, 0, 0]);
+  assert.notEqual(plans[0]!.workerId, plans[1]!.workerId, 'each tick is its own finite worker');
+  const off = harness({env: {...live, PRODUCTION_WORKER_NOTIFICATION_LIMIT: 'x'}});
+  const stopped = await handleWorkerTick(off.input);
+  assert.equal(stopped.status, 500); assert.equal(off.calls.run.length, 0, 'an invalid limit stops before any worker/provider call');
+  assert.equal((stopped.body as {code?: string}).code, 'WORKER_TICK_LIMIT_INVALID');
+});
+
+test('plan is finite and, with no limit variables set, keeps notification, refund-create and refund-budget limits at zero', () => {
   const plan = workerTickPlan(env, NOW);
   assert.equal(plan.batchSize, 20);
   assert.deepEqual([plan.notificationLimit, plan.refundCreateLimit, plan.refundBudgetJpy], [0, 0, 0]);
@@ -151,5 +181,8 @@ test('scheduler wiring is exactly one per-minute cron on the protected GET route
   assert.ok(!/export (async )?function (POST|PUT|PATCH|DELETE)/.test(route));
   const source = await readFile(new URL('../../packages/core/src/payment/worker-tick.ts', import.meta.url), 'utf8');
   assert.ok(!/process\.env/.test(source), 'environment is passed in, never scanned');
-  assert.ok(/notificationLimit: 0, refundCreateLimit: 0, refundBudgetJpy: 0/.test(source), 'live limits are fixed in code, not configurable by environment');
+  // Only the notification limit is configurable (bounded, default 0); refund CREATE/budget are fixed at 0 in code.
+  assert.equal((source.match(/workerTickLimit\(env, '/g) ?? []).length, 1, 'only the notification limit is read through the bounded parser');
+  assert.ok(/if \(raw === undefined\) return 0;/.test(source), 'an unset limit is 0');
+  assert.ok(/refundCreateLimit: 0, refundBudgetJpy: 0,/.test(source), 'refund CREATE is never enabled by the scheduled worker');
 });

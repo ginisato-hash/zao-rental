@@ -67,9 +67,9 @@ try{
  const pS1=await schemaFingerprint(neon),pX1=await securityFingerprint(neon);
  evidence.securityFingerprintAfter=pX1.sha256;evidence.bootstrapRole=result.ownerCompatibility.bootstrapRole;evidence.planSha256=result.planSha256;
 
- await check('E3 Neon-shaped non-superuser owner completes all 55 migrations in one committed transaction',async()=>{
-  assert.equal(result.applied,55);assert.equal(result.guardsRewritten,12);
-  assert.equal(await scalar(neon,'SELECT count(*)::int FROM foundation_migrations'),55);
+ await check('E3 Neon-shaped non-superuser owner completes all 56 migrations in one committed transaction',async()=>{
+  assert.equal(result.applied,56);assert.equal(result.guardsRewritten,12);
+  assert.equal(await scalar(neon,'SELECT count(*)::int FROM foundation_migrations'),56);
   assert.ok(Number(await occupied(neon))>0);
   assert.equal(result.ownerCompatibility.strategy,'EPHEMERAL_ROLE_CREATOR');assert.equal(result.ownerCompatibility.migration,'0015');
  });
@@ -140,9 +140,9 @@ try{
  // M4 (redefined, PG18 compatibility proof): no database CREATE is required or granted. Immediately
  // before the rest of 0015 (first transfer: ALTER SCHEMA rental_internal OWNER TO <db>_custody_executor)
  // the fixture measures from catalogs that the executor lacks database CREATE and has no direct CREATE
- // ACL on the database; all 55 migrations must still commit and the predicate must stay false. PG18
+ // ACL on the database; all 56 migrations must still commit and the predicate must stay false. PG18
  // checks database CREATE for ALTER SCHEMA ... OWNER against the invoking user, not the new owner.
- await check('M4 PG18 compatibility: executor never holds database CREATE and all 55 migrations commit',async()=>{
+ await check('M4 PG18 compatibility: executor never holds database CREATE and all 56 migrations commit',async()=>{
   const target='zao_rental_m_m4',pool=await neonShaped(target),plan=await bootstrapPlan(target),notices:string[]=[],executor=target+'_custody_executor';
   pool.on('connect',c=>{c.on('notice',n=>{if(String(n.message).startsWith('M4 '))notices.push(String(n.message).slice(3));});});
   const probe=`DO $$BEGIN RAISE NOTICE 'M4 %',json_build_object(
@@ -158,7 +158,7 @@ try{
   evidence.m4={outcome:'COMMITTED',transferStatement:`ALTER SCHEMA rental_internal OWNER TO ${executor}`,...measured};mutationResults.M4='PASS_PG18_COMPATIBILITY';
   assert.equal(measured.executor_database_create,false);
   assert.ok(!measured.database_acl.some(a=>a.grantee===executor),JSON.stringify(measured.database_acl));
-  assert.equal(r.applied,55);assert.equal(await scalar(pool,'SELECT count(*)::int FROM foundation_migrations'),55);
+  assert.equal(r.applied,56);assert.equal(await scalar(pool,'SELECT count(*)::int FROM foundation_migrations'),56);
   assert.equal(await scalar(pool,"SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname='rental_internal'"),executor);
   assert.equal(await scalar(pool,"SELECT has_database_privilege($1,current_database(),'CREATE')",[executor]),false);
   assert.equal(await ownerMemberships(pool,target),0);

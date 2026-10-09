@@ -291,7 +291,8 @@ try{
    const row=rows.find(r=>r.registry===registry);
    assert.ok(row,registry);assert.ok(mustBeEmpty(registry),registry);assert.equal(row!.rows,0,registry);
   }
-  assert.equal(rows.find(r=>r.registry==='public.staff_role_permissions')!.rows,7);
+  // 7 baseline role defaults (0003) + the 6 Owner-decided 0056 defaults (STAFF/MANAGER/ADMIN × BOOKING_VIEW/REFUND_OVERRIDE, Issue #47 comment 6090166024).
+  assert.equal(rows.find(r=>r.registry==='public.staff_role_permissions')!.rows,13);
  });
 
  await check('the migration registry matches the canonical one exactly',async()=>{

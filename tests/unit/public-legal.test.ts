@@ -48,8 +48,8 @@ test('JA/EN parity: a document approved in only one locale is published in neith
 
 test('server-side: both commercial entrypoints (prepare-payment, checkout) are refused before any HOLD/booking/attempt/Square work while legal documents are unapproved', async () => {
   const touched: string[] = [];
-  const spy = (name: string) => new Proxy({}, {get: (_t, k) => (k === 'then' ? undefined : (..._a: unknown[]) => { touched.push(`${name}.${String(k)}`); throw new Error('TOUCHED'); })});
-  const bookings = new Proxy({commercialEnabled: () => true}, {get: (t, k) => (k in t ? (t as Record<string, unknown>)[k as string] : k === 'then' ? undefined : (..._a: unknown[]) => { touched.push(`bookings.${String(k)}`); throw new Error('TOUCHED'); })});
+  const spy = (name: string) => new Proxy({}, {get: (_t, k) => (k === 'then' ? undefined : () => { touched.push(`${name}.${String(k)}`); throw new Error('TOUCHED'); })});
+  const bookings = new Proxy({commercialEnabled: () => true}, {get: (t, k) => (k in t ? (t as Record<string, unknown>)[k as string] : k === 'then' ? undefined : () => { touched.push(`bookings.${String(k)}`); throw new Error('TOUCHED'); })});
   const make = (ready?: () => boolean) => new GuestBookingService(spy('contexts') as never, spy('actor') as never, spy('recommendations') as never, bookings as never,
     async () => { touched.push('catalog'); throw new Error('TOUCHED'); }, {applicationId: 'sq0idp-x', locations: {}}, ready);
   const prepare = {draftId: 'd', expectedRevision: 1, contact: {displayName: 'A', email: 'a@example.test', termsAccepted: true}, reviewHash: 'h'};

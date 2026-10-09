@@ -43,5 +43,13 @@ Preconditions: PR #56 merged by Owner/TD decision after natural CI success + rev
    `backup` ✓ with `Activation gate` passed=true (repository and environment values equal) and `Run production backup` ✓.
 3. Read back the R2 object for the key derived from that `scheduled_at` (and the daily copy when created in UTC hour 09).
 4. Observe a green `Production Backup Freshness` run.
-5. Owner records acceptance of the monitoring limits (items 1–8 above) in Issue #47. Rollback = delete the variable
-   (schedule runs skip again); no code change needed.
+5. Owner records acceptance of the monitoring limits (items 1–8 above) in Issue #47.
+
+### C. Emergency stop and switching back (not a rollback)
+- Deleting `PRODUCTION_BACKUP_SCHEDULER_SOURCE` is an **emergency stop of BOTH sources**: `schedule:` runs skip the
+  backup job AND every Cloudflare dispatch is refused in `slot`. From that moment **no production backup is taken at all**
+  until a source is selected again. Record the stop time in Issue #47 and treat the gap as missing backups.
+- Returning to the Cloudflare source is a separate, explicitly approved switch, not an automatic fallback. Before setting
+  `CLOUDFLARE_DISPATCH`, the Cloudflare scheduler must be proven to be actually firing and dispatching (observed Cron
+  events and resulting dispatched runs), because its earlier failure to fire is unresolved. Then Owner/TD approve the
+  switch, set the repository variable, and verify the first dispatched run end to end (gate, backup step, R2 read-back).

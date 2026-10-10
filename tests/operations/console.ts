@@ -7,7 +7,7 @@ import {OperationsConsole} from '../../packages/core/src/operations/console-serv
 import {observeOperationalFailure} from '../../packages/core/src/operations/ops-signal';
 import {writeAccount} from '../../packages/auth/src/accounts';
 import {requestFor} from '../inventory/fixture';
-const SAFE=['id','eventType','correlationId','bookingId','assetId','store','severity','status','occurredAt','resolvedAt','resolutionActor','resolutionReason','sourceConditionActive'].sort().join();
+const SAFE=['id','eventType','correlationId','bookingId','assetId','store','severity','status','occurredAt','resolvedAt','resolutionActor','resolutionReason','sourceConditionActive','sourceType','refund'].sort().join();
 const BUSINESS=['rental_bookings','rental_payment_attempts','rental_history','inventory_holds','inventory_claims','price_quotes','ops_charge_requests','ops_refund_requests','booking_notification_outbox'];
 let failed=false,stage='fixture',count=0;const x=await flowFixture();let role:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}

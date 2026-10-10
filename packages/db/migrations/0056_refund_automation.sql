@@ -8,17 +8,17 @@
 INSERT INTO staff_role_permissions(role,permission) VALUES
  ('STAFF','BOOKING_VIEW'),('STAFF','REFUND_OVERRIDE'),('MANAGER','BOOKING_VIEW'),('MANAGER','REFUND_OVERRIDE'),('ADMIN','BOOKING_VIEW'),('ADMIN','REFUND_OVERRIDE')
  ON CONFLICT DO NOTHING;
--- Only explicit REFUND_OVERRIDE *denials* of STAFF/MANAGER/ADMIN members are removed (other permissions, VIEWER rows, account
--- state, store access and history are untouched). The removed rows are kept as evidence with the pre-change state.
+-- Only explicit REFUND_OVERRIDE *denials* of ACTIVE STAFF/MANAGER/ADMIN members are removed (inactive accounts, VIEWER rows, other
+-- permissions such as BOOKING_VIEW denials, account state, store access and history are untouched). The removed rows are kept as evidence with the pre-change state.
 CREATE TABLE staff_permission_override_removals(
  staff_id text NOT NULL REFERENCES staff_members(id),permission text NOT NULL,allowed boolean NOT NULL,staff_role text NOT NULL,staff_active boolean NOT NULL,
  migration text NOT NULL,removed_at timestamptz NOT NULL DEFAULT inventory_clock(),PRIMARY KEY(staff_id,permission,migration));
 REVOKE ALL ON staff_permission_override_removals FROM PUBLIC;
 INSERT INTO staff_permission_override_removals(staff_id,permission,allowed,staff_role,staff_active,migration)
  SELECT o.staff_id,o.permission,o.allowed,s.role,s.active,'0056' FROM staff_permission_overrides o JOIN staff_members s ON s.id=o.staff_id
- WHERE o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.role IN ('STAFF','MANAGER','ADMIN');
+ WHERE o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.active AND s.role IN ('STAFF','MANAGER','ADMIN');
 DELETE FROM staff_permission_overrides o USING staff_members s
- WHERE s.id=o.staff_id AND o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.role IN ('STAFF','MANAGER','ADMIN');
+ WHERE s.id=o.staff_id AND o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.active AND s.role IN ('STAFF','MANAGER','ADMIN');
 
 CREATE OR REPLACE FUNCTION ops_financial_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE b rental_bookings;paid record;reserved bigint;BEGIN
  PERFORM pg_advisory_xact_lock(71820600);
@@ -93,3 +93,44 @@ BEGIN
  DELETE FROM rental_internal.ops_refund_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND refund_id=p_id;
 END $$;
 REVOKE ALL ON FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb) FROM PUBLIC;
+
+-- R57-06: online (cancellation) refunds appear in the existing operations exception console next to store refunds, so an UNKNOWN
+-- without provider id (never re-POSTed) is visible for manual investigation. Read-only: listing never calls the provider.
+ALTER TABLE ops_exceptions DROP CONSTRAINT ops_exceptions_source_type_check;
+ALTER TABLE ops_exceptions ADD CONSTRAINT ops_exceptions_source_type_check CHECK(source_type IN ('PAYMENT','ADDITIONAL_PAYMENT','WEBHOOK','HOLD','TRANSFER','INSPECTION','STOCKTAKE','REFUND','NOTIFICATION','RUNTIME','ONLINE_REFUND'));
+CREATE OR REPLACE VIEW ops_exception_sources AS
+ SELECT CASE WHEN p.state IN ('UNKNOWN','REVIEW') THEN 'PAYMENT_UNKNOWN' ELSE 'PAYMENT_PENDING' END AS event_type,'PAYMENT'::text AS source_type,p.id AS source_id,md5(p.state||':'||p.updated_at::text) AS source_version,p.id AS correlation_id,b.id AS booking_id,NULL::uuid AS asset_id,b.conditions->>'pickupStore' AS store_id,CASE WHEN p.state IN ('UNKNOWN','REVIEW') THEN 'ERROR' ELSE 'WARN' END AS severity,p.updated_at AS occurred_at
+ FROM rental_payment_attempts p JOIN rental_bookings b ON b.id=p.booking_id WHERE p.state IN ('SUBMITTING','PENDING','UNKNOWN','REVIEW')
+ UNION ALL SELECT CASE WHEN c.state IN ('UNKNOWN','REVIEW') THEN 'PAYMENT_UNKNOWN' ELSE 'PAYMENT_PENDING' END,'ADDITIONAL_PAYMENT',c.id,md5(c.state||':'||c.updated_at::text),c.id,b.id,NULL,b.conditions->>'pickupStore',CASE WHEN c.state IN ('UNKNOWN','REVIEW') THEN 'ERROR' ELSE 'WARN' END,c.updated_at
+ FROM ops_charge_requests c JOIN rental_bookings b ON b.id=c.booking_id WHERE c.state IN ('PENDING','UNKNOWN','REVIEW')
+ UNION ALL SELECT CASE WHEN j.state IN ('BLOCKED','DEAD') THEN 'WEBHOOK_FAILED' ELSE 'WEBHOOK_RECONCILIATION_REQUIRED' END,'WEBHOOK',j.id,md5(j.state||':'||j.updated_at::text),j.id,b.id,NULL,coalesce(b.conditions->>'pickupStore','SYSTEM'),CASE WHEN j.state IN ('BLOCKED','DEAD') THEN 'ERROR' ELSE 'WARN' END,j.updated_at
+ FROM payment_reconciliation.jobs j LEFT JOIN rental_payment_attempts p ON p.provider_id=j.payment_id AND p.merchant_id=j.merchant_id LEFT JOIN rental_bookings b ON b.id=p.booking_id WHERE j.state<>'RECONCILED'
+ UNION ALL SELECT 'HOLD_EXPIRED','HOLD',h.id,md5(h.expires_at::text),h.id,b.id,NULL,h.pickup_store,'INFO',h.expires_at
+ FROM inventory_holds h LEFT JOIN rental_bookings b ON b.hold_id=h.id WHERE h.expires_at<=inventory_clock() AND h.payment_state IN ('NONE','FAILURE') AND h.allocation_stage='PROVISIONAL' AND h.state IN ('ACTIVE','EXPIRED')
+ UNION ALL SELECT 'TRANSFER_DELAYED','TRANSFER',t.id,md5(t.version::text),t.id,NULL,NULL,s.store_id,'WARN',t.planned_ready_at
+ FROM transfer_batches t CROSS JOIN LATERAL unnest(ARRAY[t.source_store,t.destination_store]) s(store_id) WHERE t.state<>'CANCELLED' AND t.planned_ready_at<inventory_clock() AND EXISTS(SELECT 1 FROM transfer_pieces p WHERE p.batch_id=t.id AND p.state NOT IN ('READY','CLOSED','CANCELLED'))
+ UNION ALL SELECT 'RETURN_INSPECTION_REQUIRED','INSPECTION',r.id,md5(r.id::text),r.id,l.booking_id,l.asset_id,r.received_store,'WARN',r.actual_received_at
+ FROM rental_receipts r JOIN rental_loan_items l ON l.id=r.loan_item_id WHERE NOT EXISTS(SELECT 1 FROM rental_inspections i WHERE i.loan_item_id=l.id)
+ UNION ALL SELECT 'INVENTORY_INVARIANT_FAILED','STOCKTAKE',k.id,md5(k.revision::text),k.id,NULL,NULL,k.store_id,'ERROR',k.created_at
+ FROM ops_stocktakes k WHERE k.state='REVIEW_REQUIRED'
+ UNION ALL SELECT CASE WHEN f.state IN ('UNKNOWN','REVIEW') THEN 'REFUND_UNKNOWN' ELSE 'REFUND_PENDING' END,'REFUND',f.id,md5(f.state||':'||f.updated_at::text),f.id,f.booking_id,NULL,f.acting_store,CASE WHEN f.state IN ('UNKNOWN','REVIEW') THEN 'ERROR' ELSE 'WARN' END,f.updated_at
+ FROM ops_refund_requests f WHERE f.state IN ('PENDING','UNKNOWN','REVIEW')
+ UNION ALL SELECT CASE WHEN n.event_type='BOOKING_RECOVERY' THEN 'BOOKING_RECOVERY_FAILED' ELSE 'NOTIFICATION_FAILED' END,'NOTIFICATION',n.id,md5(n.status||':'||n.attempt_count::text),n.id,n.booking_id,NULL,b.conditions->>'pickupStore',CASE WHEN n.status IN ('UNKNOWN','PERMANENT_FAILURE') THEN 'ERROR' ELSE 'WARN' END,n.created_at
+ FROM booking_notification_outbox n JOIN rental_bookings b ON b.id=n.booking_id WHERE n.status IN ('UNKNOWN','PERMANENT_FAILURE','RETRYABLE_FAILURE')
+ UNION ALL SELECT CASE WHEN r.state IN ('UNKNOWN','REVIEW') THEN 'REFUND_UNKNOWN' ELSE 'REFUND_PENDING' END,'ONLINE_REFUND',r.id,md5(r.state||':'||coalesce(r.provider_id,'')||':'||coalesce(r.dispatched_at::text,'')),r.id,r.booking_id,NULL,b.conditions->>'pickupStore',CASE WHEN r.state IN ('UNKNOWN','REVIEW') THEN 'ERROR' ELSE 'WARN' END,coalesce(r.dispatched_at,r.created_at)
+ FROM booking_cancellation_refunds r JOIN rental_bookings b ON b.id=r.booking_id WHERE r.state IN ('PENDING','UNKNOWN','REVIEW');
+REVOKE ALL ON ops_exception_sources FROM PUBLIC;
+CREATE OR REPLACE FUNCTION ops_list_exceptions(p_store text,p_type text,p_severity text,p_age integer,p_status text,p_before_time timestamptz,p_before_id uuid) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE result jsonb;BEGIN
+ PERFORM ops_assert_console_store(p_store,'OPERATIONS_VIEW');
+ IF p_age IS NULL OR p_age<0 OR p_age>8760 OR p_status IS NULL OR p_status NOT IN ('UNACKNOWLEDGED','ACKNOWLEDGED','ALL') OR (p_before_time IS NULL)<>(p_before_id IS NULL) OR (p_type IS NOT NULL AND p_type NOT IN ('PAYMENT_PENDING','PAYMENT_UNKNOWN','WEBHOOK_RECONCILIATION_REQUIRED','WEBHOOK_FAILED','HOLD_EXPIRED','TRANSFER_DELAYED','RETURN_INSPECTION_REQUIRED','INVENTORY_INVARIANT_FAILED','REFUND_PENDING','REFUND_UNKNOWN','NOTIFICATION_FAILED','STORAGE_FAILED','BOOKING_RECOVERY_FAILED','DB_UNAVAILABLE','PROVIDER_TIMEOUT')) OR (p_severity IS NOT NULL AND p_severity NOT IN ('INFO','WARN','ERROR')) THEN RAISE EXCEPTION 'OPS_FILTER_INVALID' USING ERRCODE='23514';END IF;
+ SELECT coalesce(jsonb_agg(x ORDER BY x."occurredAt" DESC,x.id DESC),'[]'::jsonb) INTO result FROM (
+  SELECT e.id,e.event_type AS "eventType",e.correlation_id AS "correlationId",e.booking_id AS "bookingId",e.asset_id AS "assetId",e.store_id AS store,e.severity,e.status,e.occurred_at AS "occurredAt",e.resolved_at AS "resolvedAt",e.resolution_actor AS "resolutionActor",e.resolution_reason AS "resolutionReason",
+  e.source_type AS "sourceType",
+  CASE WHEN e.source_type='REFUND' THEN (SELECT jsonb_build_object('channel','STORE','amountJpy',f.amount_jpy,'state',f.state,'dispatched',f.dispatched_at IS NOT NULL,'providerIdPresent',f.provider_id IS NOT NULL) FROM ops_refund_requests f WHERE f.id=e.source_id)
+       WHEN e.source_type='ONLINE_REFUND' THEN (SELECT jsonb_build_object('channel','ONLINE','amountJpy',r.amount_jpy,'state',r.state,'dispatched',r.dispatched_at IS NOT NULL,'providerIdPresent',r.provider_id IS NOT NULL) FROM booking_cancellation_refunds r WHERE r.id=e.source_id) END AS "refund",
+  CASE WHEN e.source_type='RUNTIME' THEN NULL ELSE EXISTS(SELECT 1 FROM ops_exception_sources s WHERE (s.event_type,s.source_type,s.source_id,s.source_version,s.store_id)=(e.event_type,e.source_type,e.source_id,e.source_version,e.store_id)) END AS "sourceConditionActive"
+  FROM ops_exceptions e WHERE e.store_id=p_store AND (p_type IS NULL OR e.event_type=p_type) AND (p_severity IS NULL OR e.severity=p_severity) AND e.occurred_at<=inventory_clock()-make_interval(hours=>p_age) AND (p_status='ALL' OR e.status=p_status) AND (p_before_time IS NULL OR (e.occurred_at,e.id)<(p_before_time,p_before_id)) ORDER BY e.occurred_at DESC,e.id DESC LIMIT 51
+ ) x;RETURN result;
+END$$;
+REVOKE ALL ON FUNCTION ops_list_exceptions(text,text,text,integer,text,timestamptz,uuid) FROM PUBLIC;

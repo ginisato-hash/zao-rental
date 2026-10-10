@@ -36,7 +36,8 @@ export async function applyProductionRefundAutomationMigration(c:PoolClient,data
    NOT EXISTS(SELECT 1 FROM public.staff_role_permissions WHERE role='VIEWER' AND permission IN ('BOOKING_VIEW','REFUND_OVERRIDE')) viewer,
    position('rental_internal.ops_refund_effects' in pg_get_functiondef('public.ops_financial_guard()'::regprocedure))>0 guard,
    to_regclass('rental_internal.ops_refund_effects') IS NOT NULL effects,
-   NOT EXISTS(SELECT 1 FROM public.staff_permission_overrides o JOIN public.staff_members s ON s.id=o.staff_id WHERE o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.role IN ('STAFF','MANAGER','ADMIN')) no_denials`)).rows[0];
+   position('ONLINE_REFUND' in pg_get_viewdef('public.ops_exception_sources'::regclass))>0 console,
+   NOT EXISTS(SELECT 1 FROM public.staff_permission_overrides o JOIN public.staff_members s ON s.id=o.staff_id WHERE o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.active AND s.role IN ('STAFF','MANAGER','ADMIN')) no_denials`)).rows[0];
   if(!state||Object.values(state).some(v=>v!==true))throw Error(refused);
  };
  let committing=false,committed=false;
@@ -46,7 +47,7 @@ export async function applyProductionRefundAutomationMigration(c:PoolClient,data
   await registry(c,plan,55,refused);
   for(const fn of FUNCTIONS)if((await c.query('SELECT to_regprocedure($1) IS NULL absent',[fn])).rows[0]?.absent!==true)throw Error(refused);
   if((await c.query("SELECT to_regclass('public.staff_permission_override_removals') IS NULL AND to_regclass('rental_internal.ops_refund_effects') IS NULL absent")).rows[0]?.absent!==true)throw Error(refused);
-  const denialsBefore=Number((await c.query(`SELECT count(*)::int n FROM public.staff_permission_overrides o JOIN public.staff_members s ON s.id=o.staff_id WHERE o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.role IN ('STAFF','MANAGER','ADMIN')`)).rows[0].n);
+  const denialsBefore=Number((await c.query(`SELECT count(*)::int n FROM public.staff_permission_overrides o JOIN public.staff_members s ON s.id=o.staff_id WHERE o.permission='REFUND_OVERRIDE' AND NOT o.allowed AND s.active AND s.role IN ('STAFF','MANAGER','ADMIN')`)).rows[0].n);
   await c.query(entry.sql);
   await c.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);
   const archived=Number((await c.query(`SELECT count(*)::int n FROM public.staff_permission_override_removals WHERE migration='0056'`)).rows[0].n);

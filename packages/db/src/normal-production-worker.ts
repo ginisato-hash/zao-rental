@@ -14,6 +14,16 @@ import type {BookingNotificationWorker} from '../../core/src/notification/worker
 import type {CancellationRefundWorker} from '../../core/src/payment/cancellation-refund-worker';
 
 export type ProductionWorkerInput={plan:unknown;databaseUrls:Record<'dispatcher'|'worker'|'projector',string>;lookup:PaymentTruthProvider;preflight?:boolean};
+/** The 0056 staff-refund surface, resolved by exact schema-qualified signature. */
+export const STAFF_REFUND_FUNCTIONS=['public.ops_refund_row(uuid)','public.ops_refund_claim(uuid)','public.ops_refund_observe(uuid,jsonb)'] as const;
+/** True only when every 0056 function exists and the current role may execute each. A missing function (pre-0056 database) resolves to a
+ * NULL OID and is reported as unavailable without ever handing a name to has_function_privilege; CASE fixes the evaluation order. */
+export async function staffRefundLaneAvailable(db:Pick<Pool,'query'>):Promise<boolean>{
+ const rows=(await db.query<{fn:string;oid:string|null;allowed:boolean}>(`SELECT f AS fn,to_regprocedure(f)::oid::text AS oid,
+   CASE WHEN to_regprocedure(f) IS NULL THEN false ELSE has_function_privilege(current_user,to_regprocedure(f),'EXECUTE') END AS allowed
+   FROM unnest($1::text[]) AS f`,[[...STAFF_REFUND_FUNCTIONS]])).rows;
+ return rows.length===STAFF_REFUND_FUNCTIONS.length&&rows.every(r=>r.oid!==null&&r.allowed===true);
+}
 /** Refund rows the tick may progress: online cancellation refunds (0045) and, only when the 0056 role delta is present, staff refunds
  * (ops_refund_requests). PENDING-undispatched rows may be created; dispatched rows are looked up only with a provider ID. */
 export async function normalRefundCandidates(operations:Pick<Pool,'query'>,merchant:string,locations:string[],since:string,limit:number,staffLane=false){
@@ -57,8 +67,8 @@ export async function runProductionWorker(identity:ExactProductionIdentity,input
    if(check?.allowed!==true||check?.lease!==true)throw Error('NORMAL_WORKER_ROLE_NOT_READY');
   }
   if((await operations.query("SELECT has_function_privilege(current_user,'notification_due_normal(timestamptz,integer)','EXECUTE') allowed")).rows[0]?.allowed!==true)throw Error('NORMAL_WORKER_ROLE_NOT_READY');
-  // Staff refund lane only once the 0056 role delta grants all three functions; otherwise staff rows are simply not offered.
-  const staffLane=(await operations.query("SELECT has_function_privilege(current_user,'ops_refund_claim(uuid)','EXECUTE') AND has_function_privilege(current_user,'ops_refund_observe(uuid,jsonb)','EXECUTE') AND has_function_privilege(current_user,'ops_refund_row(uuid)','EXECUTE') allowed")).rows[0]?.allowed===true;
+  // Staff refund lane only once 0056 exists AND the role delta grants all three functions; otherwise staff rows are simply not offered.
+  const staffLane=await staffRefundLaneAvailable(operations);
   if(input.preflight)return {state:'PREFLIGHT_PASS',providerCalls:0,roleMutations:0,staffRefundLane:staffLane};
   const authority=issueProductionReconciliationAuthority(identity),dispatcher=new PgPaymentReconciliation(opened.dispatcher,undefined,authority,undefined,plan.acceptedBookingsAfter),worker=new PgPaymentReconciliation(opened.worker,undefined,authority,undefined,plan.acceptedBookingsAfter);
   const contexts={async load(claim:Parameters<typeof worker.load>[0]){const context=await worker.load(claim);return context&&context.expected.merchantId===c.payment!.merchantId&&Object.values(c.payment!.locations).includes(context.expected.locationId)?context:null;}};

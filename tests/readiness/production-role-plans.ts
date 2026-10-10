@@ -236,10 +236,18 @@ try {
       failing.query=(async(...args:unknown[])=>{if(String(args[0]).startsWith('INSERT INTO public.foundation_migrations'))throw Error('SYNTHETIC_AFTER_DDL_FAILURE');return Reflect.apply(c.query,c,args);}) as typeof c.query;
       await assert.rejects(applyProductionRefundAutomationMigration(failing,TARGET,db.identity.user),/SYNTHETIC_AFTER_DDL_FAILURE/);
       assert.equal((await c.query("SELECT to_regprocedure('ops_refund_claim(uuid)') IS NULL absent")).rows[0].absent,true,'failure rolled back the whole 0056');
+      // R57-05: only REFUND_OVERRIDE denials of ACTIVE STAFF/MANAGER/ADMIN are archived and removed; inactive, VIEWER and
+      // other-permission denials are kept untouched.
+      await c.query(`INSERT INTO auth_user(id,name,email,"createdAt","updatedAt") SELECT id,'SYNTHETIC '||id,id||'@example.invalid',now(),now() FROM unnest(ARRAY['r57-active-staff','r57-active-manager','r57-inactive-staff','r57-viewer']) id`);
+      await c.query("INSERT INTO staff_members(id,active,role,scope) VALUES('r57-active-staff',true,'STAFF','ASSIGNED'),('r57-active-manager',true,'MANAGER','ASSIGNED'),('r57-inactive-staff',false,'STAFF','ASSIGNED'),('r57-viewer',true,'VIEWER','ASSIGNED')");
+      await c.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES('r57-active-staff','REFUND_OVERRIDE',false),('r57-active-manager','REFUND_OVERRIDE',false),('r57-inactive-staff','REFUND_OVERRIDE',false),('r57-viewer','REFUND_OVERRIDE',false),('r57-active-staff','HOLD_EDIT',false)");
+      const denials=async()=>(await c.query("SELECT staff_id||':'||permission AS k FROM staff_permission_overrides WHERE staff_id LIKE 'r57-%' AND NOT allowed ORDER BY 1")).rows.map(r=>r.k);
       let commits=0;const lost=Object.create(c) as typeof c;
       lost.query=(async(...args:unknown[])=>{const result=await Reflect.apply(c.query,c,args);if(args[0]==='COMMIT'){commits++;throw Error('SYNTHETIC_COMMIT_ACK_LOSS');}return result;}) as typeof c.query;
       await assert.rejects(applyProductionRefundAutomationMigration(lost,TARGET,db.identity.user),/COMMIT_UNKNOWN_READBACK_REQUIRED/);
       assert.equal(commits,1);assert.equal((await c.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0].n,56);
+      assert.deepEqual(await denials(),['r57-active-staff:HOLD_EDIT','r57-inactive-staff:REFUND_OVERRIDE','r57-viewer:REFUND_OVERRIDE'],'only active STAFF/MANAGER refund denials removed');
+      assert.deepEqual((await c.query("SELECT staff_id FROM staff_permission_override_removals WHERE migration='0056' ORDER BY 1")).rows.map(r=>r.staff_id),['r57-active-manager','r57-active-staff'],'exactly the removed denials are archived');
       for(const fn of ['ops_refund_row(uuid)','ops_refund_claim(uuid)','ops_refund_observe(uuid,jsonb)'])
         assert.equal((await c.query("SELECT count(*)::int n FROM pg_roles r WHERE r.rolname<>$2 AND NOT r.rolsuper AND has_function_privilege(r.oid,$1::regprocedure,'EXECUTE')",[fn,db.identity.user])).rows[0].n,0,'no grant is added by the migration');
       assert.deepEqual((await c.query("SELECT role,permission FROM staff_role_permissions WHERE permission IN ('BOOKING_VIEW','REFUND_OVERRIDE') ORDER BY 1,2")).rows,

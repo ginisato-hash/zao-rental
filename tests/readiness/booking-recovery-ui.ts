@@ -29,7 +29,11 @@ try{
  stage='fresh browser exchange response loss';await recovered.goto('/ja/reservation');await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toHaveCount(0);
  let observed!:()=>void;const lost=new Promise<void>(resolve=>observed=resolve);
  await recovered.route('**/api/booking-access/recovery/exchange',async route=>{const response=await route.fetch();assert.equal(response.status(),200);await route.abort('failed');observed();});
- await recovered.getByLabel('予約復旧コード',{exact:true}).fill(code);await recovered.getByRole('button',{name:'復旧コードで予約を開く',exact:true}).click();await lost;
+ await recovered.getByLabel('予約復旧コード',{exact:true}).fill(code);
+ // Root-cause evidence only (one unreproduced 15 s click timeout in a full run): no retry, no timeout change. Logs Playwright's
+ // actionability log, the button state and the input length (never the code itself).
+ try{await recovered.getByRole('button',{name:'復旧コードで予約を開く',exact:true}).click();}catch(e){console.error(JSON.stringify({code:'TEST_RECOVERY_CLICK_DIAGNOSTIC',playwright:String((e as Error).message).replace(/[A-Za-z0-9_-]{40,}/g,'<redacted>').slice(0,2000),disabled:await recovered.getByRole('button',{name:'復旧コードで予約を開く',exact:true}).isDisabled().catch(()=>null),inputLength:(await recovered.getByLabel('予約復旧コード',{exact:true}).inputValue().catch(()=>'')).length}));throw e;}
+ await lost;
  await expect(recovered.getByRole('region',{name:'予約閲覧の復旧'}).getByRole('status')).toContainText('未確認');
  await recovered.unroute('**/api/booking-access/recovery/exchange');await fresh.clearCookies({name:'zao_booking_access'});await recovered.reload();await recovered.getByLabel('予約復旧コード',{exact:true}).fill(code);
  await recovered.getByRole('button',{name:'復旧コードで予約を開く',exact:true}).click();await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();

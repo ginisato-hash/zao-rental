@@ -7,11 +7,11 @@
   "gates": [
     {
       "id": "TAX",
-      "state": "OWNER_PENDING",
+      "state": "VERIFIED",
       "head": null,
       "policyRevision": null,
-      "evidenceRef": null,
-      "verifiedAt": null,
+      "evidenceRef": "Owner decision 2026-10-04: all displayed prices are consumption-tax-inclusive final payment totals (docs/execution/release-code-closure/PUBLICATION_HANDOFF.md 'Display and origin'). head/policyRevision intentionally null: this records the decision only and does not pass the release gate evaluator.",
+      "verifiedAt": "2026-10-04T00:00:00Z",
       "expiresAt": null
     },
     {

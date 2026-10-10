@@ -208,8 +208,8 @@
   {
     "path": "stores/mountain-base",
     "locale": "ja",
-    "title": "Mountain Baseの受取・返却案内",
-    "heading": "Mountain Base",
+    "title": "Mountain Stationの受取・返却案内",
+    "heading": "Mountain Station",
     "summary": "予約で選んだ受取店舗で用品を照合します。別店舗の返却が可能でも、受取店舗を自由に変えることはできません。",
     "bullets": [
       "営業時間 08:30–17:00",
@@ -220,8 +220,8 @@
   {
     "path": "stores/mountain-base",
     "locale": "en",
-    "title": "Mountain Base pickup & return",
-    "heading": "Mountain Base",
+    "title": "Mountain Station pickup & return",
+    "heading": "Mountain Station",
     "summary": "Collect at the planned pickup store. Cross-store returns do not permit an unplanned change of pickup store.",
     "bullets": [
       "Opening hours 08:30–17:00",
@@ -232,8 +232,8 @@
   {
     "path": "stores/onsen-base",
     "locale": "ja",
-    "title": "Onsen Baseの受取・返却案内",
-    "heading": "Onsen Base",
+    "title": "Central Stationの受取・返却案内",
+    "heading": "Central Station",
     "summary": "予約と用品の所在地を確認して受け渡します。店舗間の移動予定と実際の到着・受領は別に管理します。",
     "bullets": [
       "営業時間 08:30–17:00",
@@ -244,8 +244,8 @@
   {
     "path": "stores/onsen-base",
     "locale": "en",
-    "title": "Onsen Base pickup & return",
-    "heading": "Onsen Base",
+    "title": "Central Station pickup & return",
+    "heading": "Central Station",
     "summary": "Handover requires the booking and equipment to match this store. Planned transfers are distinct from actual arrival and receipt.",
     "bullets": [
       "Opening hours 08:30–17:00",

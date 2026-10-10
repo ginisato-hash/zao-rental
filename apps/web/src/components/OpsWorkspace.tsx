@@ -2,9 +2,14 @@
 import {StaffSessionBoundary} from './StaffSessionBoundary';
 import Link from 'next/link';
 import {useRef,useState} from 'react';
-type Exception={id:string;eventType:string;correlationId:string;bookingId:string|null;assetId:string|null;store:string;severity:string;status:string;occurredAt:string;resolvedAt:string|null;resolutionActor:string|null;resolutionReason:string|null;sourceConditionActive:boolean|null};
+import {storeDisplayName} from '../../../../packages/contracts/src/store-display';
+type Exception={id:string;eventType:string;correlationId:string;bookingId:string|null;assetId:string|null;store:string;severity:string;status:string;occurredAt:string;resolvedAt:string|null;resolutionActor:string|null;resolutionReason:string|null;sourceConditionActive:boolean|null;sourceType?:string;refund?:{channel:'STORE'|'ONLINE';amountJpy:number;state:string;dispatched:boolean;providerIdPresent:boolean}|null};
 type Cursor={beforeTime:string;beforeId:string}|null;
 const TYPES=['PAYMENT_PENDING','PAYMENT_UNKNOWN','WEBHOOK_RECONCILIATION_REQUIRED','WEBHOOK_FAILED','HOLD_EXPIRED','TRANSFER_DELAYED','RETURN_INSPECTION_REQUIRED','INVENTORY_INVARIANT_FAILED','REFUND_PENDING','REFUND_UNKNOWN','NOTIFICATION_FAILED','STORAGE_FAILED','BOOKING_RECOVERY_FAILED','DB_UNAVAILABLE','PROVIDER_TIMEOUT'];
+// Refund rows are observation only: no resend control. An ID-present row is reconciled by GET in the worker; an ID-less dispatched
+// (or REVIEW) row is never re-POSTed and needs manual investigation against the provider dashboard.
+function refundStatus(r:NonNullable<Exception['refund']>){if(r.state==='PENDING'&&!r.dispatched)return '送信待ち（自動処理の対象）';if(r.providerIdPresent&&r.state==='UNKNOWN')return 'Provider IDあり：照合中（自動・再送なし）';return '要手動調査：結果不明'+(r.providerIdPresent?'':'・Provider IDなし')+'（自動再送しません）';}
+function elapsed(at:string){const m=Math.max(0,Math.floor((Date.now()-Date.parse(at))/60000));return m<60?m+'分':m<1440?Math.floor(m/60)+'時間':Math.floor(m/1440)+'日';}
 const COMPONENTS=['APP','DB','GUEST','PAYMENT_ADAPTER','WEBHOOK','MEDIA','NOTIFICATION'];
 export function OpsWorkspace({stamp,stores,systemScope,canAcknowledge}:{stamp:string;stores:readonly string[];systemScope:boolean;canAcknowledge:boolean}){
  const scopes=systemScope?[...stores,'SYSTEM']:[...stores];
@@ -30,7 +35,7 @@ export function OpsWorkspace({stamp,stores,systemScope,canAcknowledge}:{stamp:st
  return <StaffSessionBoundary stamp={stamp}><main><h1>運用例外</h1><nav><Link href="/staff/ledger">スタッフ台帳</Link></nav>
  <p>ここは業務状態の記録ではなく観測です。確認操作は「スタッフが見た」ことだけを残し、入金・返金・予約・在庫・受け渡し・配送の状態は変更しません。実際の状態は必ず各業務画面で確認してください。</p>
  <section aria-label="絞り込み">
-  <label>範囲<select aria-label="範囲" value={store} disabled={busy} onChange={e=>{setStore(e.target.value);setRows([]);setCursor(null);}}>{scopes.map(s=><option key={s}>{s}</option>)}</select></label>
+  <label>範囲<select aria-label="範囲" value={store} disabled={busy} onChange={e=>{setStore(e.target.value);setRows([]);setCursor(null);}}>{scopes.map(s=><option key={s} value={s}>{storeDisplayName(s)}</option>)}</select></label>
   <label>種別<select aria-label="種別" value={type} disabled={busy} onChange={e=>setType(e.target.value)}><option value="">すべて</option>{TYPES.map(t=><option key={t}>{t}</option>)}</select></label>
   <label>重大度<select aria-label="重大度" value={severity} disabled={busy} onChange={e=>setSeverity(e.target.value)}><option value="">すべて</option><option>INFO</option><option>WARN</option><option>ERROR</option></select></label>
   <label>状態<select aria-label="状態" value={status} disabled={busy} onChange={e=>setStatus(e.target.value)}><option value="UNACKNOWLEDGED">未確認</option><option value="ACKNOWLEDGED">確認済み</option><option value="ALL">すべて</option></select></label>
@@ -45,7 +50,8 @@ export function OpsWorkspace({stamp,stores,systemScope,canAcknowledge}:{stamp:st
   <h2>{e.eventType}</h2>
   <p>重大度: {e.severity} / 状態: {e.status==='ACKNOWLEDGED'?'確認済み':'未確認'}</p>
   <p>発生元の状態: {e.sourceConditionActive===null?'実行時の観測（業務状態の照合対象なし）':e.sourceConditionActive?'現在も継続中':'現在は解消（業務画面で確認してください）'}</p>
-  <p>範囲: {e.store} / 照合ID: {e.correlationId}</p>
+  <p>範囲: {storeDisplayName(e.store)} / 照合ID: {e.correlationId}</p>
+  {e.refund&&<p>{e.refund.channel==='ONLINE'?'オンライン返金':'店頭返金'} / 金額: ¥{e.refund.amountJpy.toLocaleString('ja-JP')} / 経過: {elapsed(e.occurredAt)} / {refundStatus(e.refund)}</p>}
   {e.bookingId&&<p>予約: {e.bookingId}</p>}{e.assetId&&<p>資産: {e.assetId}</p>}
   <p>発生: <time>{e.occurredAt}</time>{e.resolvedAt&&<> / 確認: <time>{e.resolvedAt}</time></>}</p>
   {e.status==='ACKNOWLEDGED'&&<p>確認理由: {e.resolutionReason}（業務状態は未変更）</p>}

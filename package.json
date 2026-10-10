@@ -117,6 +117,7 @@
     "production:install-expired-failed-terminalization": "node --import tsx scripts/production-install-expired-failed-terminalization.ts",
     "production:install-targeted-reconciliation": "node --import tsx scripts/production-install-targeted-reconciliation.ts",
     "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts",
+    "production:install-refund-automation": "node --import tsx scripts/production-install-refund-automation.ts",
     "production:complete-first-admin-commercial": "node --import tsx scripts/production-complete-first-admin-commercial.ts",
     "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts"
   },

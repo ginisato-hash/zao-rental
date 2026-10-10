@@ -19,3 +19,22 @@
 @media(max-width:600px){.guest-steps li{font-size:12px;padding:4px 8px 4px 4px}.guest-facts,.guest-facts--compact{grid-template-columns:1fr}.guest-actions{flex-direction:column-reverse;align-items:stretch}.guest-field--narrow{max-width:none}.guest-main button.guest-cta-sticky{position:sticky;bottom:0;z-index:2}}
 @media(min-width:1024px){.guest-main{max-width:1040px}}
 .guest-field{position:relative}.guest-field>.guest-flag{position:absolute;top:1px;right:0}.guest-field>.guest-flag+label .guest-label-text{padding-right:64px}
+/* P85 alignment (Palace-measured system): black/white, square controls, display face for headings and labels. Error, focus and
+   44px hit areas are kept; no logic or state presentation changes. */
+.public-shell .guest-main{color:#000}
+.public-shell .guest-main h1{font-family:var(--pc-display);font-weight:700;font-size:24px;line-height:1.3;margin:0 0 20px}
+.public-shell .guest-main legend{font-family:var(--pc-display);font-weight:700;font-size:16px;text-transform:uppercase}
+.public-shell .guest-main fieldset,.public-shell .guest-main .guest-review{border-radius:0;border-color:#d9d9d9}
+.public-shell .guest-main input,.public-shell .guest-main select{border-radius:0;border-color:#999;color:#000}
+.public-shell .guest-main button{border-radius:0;background:#000;border-color:#000;color:#fff;font-weight:400;padding:15px}
+.public-shell .guest-main .guest-candidates label.guest-candidate{border-radius:0}
+.public-shell .guest-main .guest-candidates label.guest-candidate.guest-candidate--primary{border-color:#000;background:#f2f2f2}
+.public-shell .guest-steps li{border-radius:0;font-family:var(--pc-display);font-weight:700;text-transform:uppercase}
+.public-shell .guest-steps li[aria-current]{border-color:#000;background:#000;color:#fff}
+.public-shell .guest-steps li.guest-step--done{color:#000}
+.public-shell .guest-step-number{border-radius:0}
+.public-shell .guest-steps li[aria-current] .guest-step-number,.public-shell .guest-steps li.guest-step--done .guest-step-number{background:#fff;color:#000}
+.public-shell .guest-secondary>summary,.public-shell .guest-person-toggle>summary{color:#000}
+.public-shell .guest-flag{border-radius:0}
+.public-shell .guest-flag--required{border-color:#000;color:#000}
+.public-shell .guest-compare article,.public-shell .guest-result{background:#f2f2f2}

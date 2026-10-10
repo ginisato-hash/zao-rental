@@ -61,11 +61,13 @@ try{
   const response=await handler(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:input.email,password:input.password})}));assert.equal(response.status,200);
   const cookie=response.headers.getSetCookie().map(x=>x.split(';')[0]).join('; '),state=await resolveStaff(auth,roles.authPool,new Headers({cookie}));assert.equal(state.status,'authorized');
   if(state.status!=='authorized')throw Error('SYNTHETIC_LOGIN_FAILED');
-  assert.equal(state.principal.role,'ADMIN');assert.equal(state.principal.scope,'ALL');assert.deepEqual(state.principal.permissions,['INVENTORY_EDIT','INVENTORY_VIEW','PRICE_EDIT','QUOTE_VIEW','STAFF_MANAGE']);
+  assert.equal(state.principal.role,'ADMIN');assert.equal(state.principal.scope,'ALL');assert.deepEqual(state.principal.permissions,['BOOKING_VIEW','INVENTORY_EDIT','INVENTORY_VIEW','PRICE_EDIT','QUOTE_VIEW','REFUND_OVERRIDE','STAFF_MANAGE']);
   const sessions=(await db.pool.query('SELECT id,"userId" FROM auth_session')).rows;assert.equal(sessions.length,1);assert.equal(sessions[0].userId,state.principal.subject);
   const ctx=new OperationsContext(roles.ledgerPool,roles.authPool,{subject:state.principal.subject,sessionId:sessions[0].id});
   for(const permission of ['INVENTORY_EDIT','PRICE_EDIT','QUOTE_VIEW'] as const)assert.equal((await ctx.authorize(permission)).subject,state.principal.subject);
-  await assert.rejects(ctx.authorize('REFUND_OVERRIDE'),/FORBIDDEN/);
+  // 0056 role default: every active STAFF/MANAGER/ADMIN may refund; a permission outside the role and overrides stays denied.
+  assert.equal((await ctx.authorize('REFUND_OVERRIDE')).subject,state.principal.subject);
+  await assert.rejects(ctx.authorize('OPERATIONS_VIEW'),/FORBIDDEN/);
   await assert.rejects(new OperationsContext(roles.ledgerPool,roles.authPool,{subject:state.principal.subject,sessionId:'fabricated'}).authorize('PRICE_EDIT'),/UNAUTHENTICATED/);
  });
  console.log(JSON.stringify({suite:'first-admin-bootstrap',passed,production_writes:0}));

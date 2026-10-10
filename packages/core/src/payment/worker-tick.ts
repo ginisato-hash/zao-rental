@@ -4,7 +4,15 @@ import {normalWorkerPlan,type NormalWorkerPlan} from './normal-production-worker
 
 /** One finite worker tick behind an authenticated scheduler request (Vercel Cron). It reuses the already-composed,
  * exact-identity Production runtime and `runWorker`; it adds no scheduling loop, no retry and no new provider call.
- * Notification, refund-create and refund-budget limits are fixed at 0 here: a live window needs a reviewed change. */
+ * The notification limit defaults to 0 (no customer mail). A live window is opened only by explicitly setting the bounded
+ * `PRODUCTION_WORKER_NOTIFICATION_LIMIT` in the production environment — an approved production operation, never a code
+ * default; a malformed or out-of-range value stops the tick (fail closed). Delivery keeps the existing contract: only
+ * SQUARE_PRODUCTION bookings created at/after the cutoff, durable claim, provider idempotency key, UNKNOWN => lookup only.
+ * Refunds (Owner decision 2026-10-09): eligible online cancellation refunds and staff refunds are dispatched automatically.
+ * `PRODUCTION_WORKER_REFUND_CREATE_LIMIT` (0–20 per tick, unset = 0) is the review/stop switch and a technical per-tick cap,
+ * not a spending budget: money is capped per original payment (online + store refunds together, COMPLETED/PENDING/UNKNOWN/
+ * REVIEW counted) under advisory lock 71820600, each logical refund is claimed as durable UNKNOWN before its single POST, and
+ * UNKNOWN is never re-POSTed. The per-tick JPY ceiling equals the per-row maximum so it never blocks the first row. */
 export const WORKER_TICK_ACTIVATION = 'NORMAL_WORKER_TICK_APPROVED';
 /** Inside the 60 s hard ceiling that `normalWorkerPlan` enforces; an in-flight lookup still settles under its own timeout. */
 export const WORKER_TICK_BUDGET_MS = 50_000;
@@ -13,7 +21,12 @@ export const WORKER_TICK_BATCH_SIZE = 20;
 export const WORKER_TICK_ENV_KEYS = Object.freeze([
   'CRON_SECRET', 'PRODUCTION_WORKER_TICK_ACTIVATION', 'PRODUCTION_WORKER_ACCEPTED_AFTER',
   'PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER', 'PRODUCTION_WORKER_DB_PASSWORD_WORKER', 'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR',
+  'PRODUCTION_WORKER_NOTIFICATION_LIMIT', 'PRODUCTION_WORKER_REFUND_CREATE_LIMIT',
 ] as const);
+/** Upper bounds, identical to the ones `normalWorkerPlan` enforces. */
+export const WORKER_TICK_LIMIT_BOUNDS = Object.freeze({PRODUCTION_WORKER_NOTIFICATION_LIMIT: 20, PRODUCTION_WORKER_REFUND_CREATE_LIMIT: 20} as const);
+/** Per-row maximum of a refund (`amount_jpy` CHECK in 0033/0045): a technical per-tick ceiling, not a budget. */
+export const WORKER_TICK_REFUND_ROW_MAX_JPY = 100_000_000;
 export type WorkerTickEnv = Partial<Record<(typeof WORKER_TICK_ENV_KEYS)[number], string | undefined>>;
 type Source = Readonly<Record<string, string | undefined>>;
 
@@ -30,13 +43,24 @@ export function authorizeWorkerTick(authorization: string | null, secret: string
   return expected.length === got.length && timingSafeEqual(expected, got);
 }
 
+/** Unset => 0. Otherwise a plain non-negative decimal integer within its bound, or the tick stops. */
+export function workerTickLimit(env: WorkerTickEnv, key: keyof typeof WORKER_TICK_LIMIT_BOUNDS): number {
+  const raw = env[key];
+  if (raw === undefined) return 0;
+  if (!/^(0|[1-9][0-9]{0,8})$/.test(raw)) throw new Error('WORKER_TICK_LIMIT_INVALID');
+  const value = Number(raw);
+  if (value > WORKER_TICK_LIMIT_BOUNDS[key]) throw new Error('WORKER_TICK_LIMIT_INVALID');
+  return value;
+}
+
 export function workerTickPlan(env: WorkerTickEnv, now: Date): NormalWorkerPlan {
   const after = env.PRODUCTION_WORKER_ACCEPTED_AFTER;
   if (!after || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(after)) throw new Error('WORKER_TICK_CUTOFF_INVALID');
   return normalWorkerPlan({
     workerId: 'normal-tick-' + now.toISOString().slice(0, 16).replace(/[^0-9]/g, ''), acceptedBookingsAfter: after,
     deadline: new Date(now.getTime() + WORKER_TICK_BUDGET_MS).toISOString(), batchSize: WORKER_TICK_BATCH_SIZE,
-    notificationLimit: 0, refundCreateLimit: 0, refundBudgetJpy: 0,
+    notificationLimit: workerTickLimit(env, 'PRODUCTION_WORKER_NOTIFICATION_LIMIT'),
+    ...(() => { const n = workerTickLimit(env, 'PRODUCTION_WORKER_REFUND_CREATE_LIMIT'); return {refundCreateLimit: n, refundBudgetJpy: n > 0 ? WORKER_TICK_REFUND_ROW_MAX_JPY : 0}; })(),
   }, now.getTime());
 }
 

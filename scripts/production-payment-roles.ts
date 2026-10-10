@@ -40,6 +40,11 @@ export function productionPaymentRoleNames(databaseName: string) {
 }
 
 /** Additive finite-worker surface only; operator applies after review/backup, never at startup. */
+/** Migration 0056 role delta (Owner decision 2026-10-09): the operations role may run the staff-refund claim/observe surface. */
+export function productionRefundAutomationGrants(databaseName:string,operationsRole:string):string[]{
+ if(!IDENTIFIER.test(databaseName)||!IDENTIFIER.test(operationsRole)||operationsRole!==databaseName+'_operations')throw Error('PRODUCTION_ROLE_NAME_INVALID');
+ return ['ops_refund_row(uuid)','ops_refund_claim(uuid)','ops_refund_observe(uuid,jsonb)'].map(fn=>`GRANT EXECUTE ON FUNCTION ${fn} TO ${operationsRole}`);
+}
 export function productionNormalWorkerGrants(databaseName:string,operationsRole:string):string[]{
  const n=productionPaymentRoleNames(databaseName);if(!IDENTIFIER.test(operationsRole)||operationsRole!==databaseName+'_operations')throw Error('PRODUCTION_ROLE_NAME_INVALID');
  return [

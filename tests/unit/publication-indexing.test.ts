@@ -17,8 +17,8 @@ test('Production headers keep security headers but no static page-wide noindex; 
  }finally{(process.env as Record<string,string|undefined>).NODE_ENV=old;}
 });
 test('indexing matrix: only authority + exact public origin + allowlisted query-free public path may index',()=>{
- const publicPaths=['/ja','/en/','/ja/rental/ski','/en/prices','/ja/stores/onsen-base','/en/faq'];
- const privatePaths=['/staff/login','/admin','/api/health','/api/guest/draft','/ja/book','/ja/booking/abc','/ja/reservation','/preview/avatar','/sitemap.xml','/robots.txt'];
+ const publicPaths=['/ja','/en/','/ja/rental/ski','/en/prices','/ja/stores/onsen-base','/en/faq','/ja/legal/terms','/en/legal/privacy','/ja/legal/commercial-disclosure','/en/legal/cancellation'];
+ const privatePaths=['/ja/legal','/ja/legal/other','/en/legal/terms/x','/ja/legalterms','/staff/login','/admin','/api/health','/api/guest/draft','/ja/book','/ja/booking/abc','/ja/reservation','/preview/avatar','/sitemap.xml','/robots.txt'];
  for(const path of [...publicPaths,...privatePaths])assert.equal(indexablePage(false,PUBLICATION_ORIGIN,path),false,path);
  for(const path of publicPaths)assert.equal(indexablePage(true,PUBLICATION_ORIGIN,path),true,path);
  for(const path of privatePaths)assert.equal(indexablePage(true,PUBLICATION_ORIGIN,path),false,path);

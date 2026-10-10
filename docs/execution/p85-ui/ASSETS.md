@@ -8,9 +8,9 @@
 
 | 原本 | 原本 sha256 | 加工 | 製品ファイル | sha256 | 用途 |
 |---|---|---|---|---|---|
-| 2.png（3000×2121、白・透過） | `aee86bae8d45232641e8b2aa7f215f42ce903c752d5840100c791090e0366e85` | 透過余白をトリム（2444×134、18.24:1）→ 白 → 高さ56pxのWebP（比率維持） | `apps/web/src/components/brand/logo-horizontal-white.webp`（1021×56） | `23bb61e8215b3ba6a166d07fb1876ffe04d7bf12f958f1978535442f240be572` | PCのヘッダーピル（表示高さ14px） |
-| 4.png（SALOMONワードマーク） | `e6ffd876c8b96f41154e42a8fde570a516428476b2c8e2bafacf451b9498d617` | トリム（1889×223、8.47:1）→ 白 → 高さ56px | `logo-wordmark-white.webp`（474×56） | `9fa642e2029595ecbb90f2ba6dbb21c4177aa290f310c06565afbfc175ffc501` | モバイルのヘッダーピル（表示高さ14〜16px） |
-| 3.png（縦組） | `c5aa60ff0ba4a88a4b86957a6959be82ddd74e108bdfab12ea01dbdd9d7a1cb3` | トリム（2532×545、4.65:1）→ 黒 → 幅480px | `logo-stacked-black.webp`（480×103） | `d5b7dad0b2db18eb8c8d1cf26d91c2f2dd7bfcdb153b413ccc09376d959dd4ac` | フッター右端（幅160px。Palaceの回転ロゴと同じ位置、静止画） |
+| 3.png（縦組） | `c5aa60ff0ba4a88a4b86957a6959be82ddd74e108bdfab12ea01dbdd9d7a1cb3` | トリム（2532×545、4.65:1）→ 白 → 高さ112px | `apps/web/src/components/brand/logo-stacked-white.webp`（520×112） | `fa2033cc87eabff2756dbe89095de33e94d697d5b309928b2940587166a893e2` | ヘッダーピル。PC・モバイル・予約画面とも表示高さ26px（P85-03で選定、COMPARISON.md） |
+| 3.png（縦組） | 同上 | トリム → 黒 → 幅480px | `logo-stacked-black.webp`（480×103） | `d5b7dad0b2db18eb8c8d1cf26d91c2f2dd7bfcdb153b413ccc09376d959dd4ac` | フッター右端（幅160px。Palaceの回転ロゴと同じ位置、静止画） |
+| 2.png 横長／4.png ワードマーク | `aee86bae…6e85`／`e6ffd876…d617` | P85-03の比較のためにトリム・白版を作成（`.local/p85/assets/logos/`） | 製品では不使用（初版の派生ファイルは削除） | — | 不採用（理由は COMPARISON.md） |
 
 - 加工は、透過余白のトリム（alpha閾値1）、アルファを保ったRGBの塗り替え、比率を保った縮小だけ。変形はしていない。
 - 3.pngのA・N付近にある微小な半透明の筋は原本の画素なので、加工していない。
@@ -38,7 +38,12 @@
 ## 店名の表示変更（Owner決定：MOUNTAIN_BASE → Mountain Station、ONSEN_BASE → Central Station）
 
 - 変えたのは表示だけ。内部ID・DBキー・Square location・APIの値・URL（`/stores/mountain-base` 等）・履歴・migration・固定ファイルは変更していない。
-- 表示辞書：`apps/web/src/components/guest-format.ts` `STORE_LABEL`（`brand/index.ts` の `STORE_DISPLAY` もここから参照）。台帳画面の表示ラベル（`ledger/LedgerWorkspace.tsx`）も更新。
+- 共通の表示辞書：`packages/contracts/src/store-display.ts`（`STORE_DISPLAY_NAMES`／`storeDisplayName`）。参照しているもの：
+  - 画面：お客様向け（`guest-format.ts` の `STORE_LABEL` はこの辞書の写し）、スタッフ画面の店舗選択・予約詳細・移動・ウェア・運用例外・台帳。
+  - 予約確認メール（JA／EN、`packages/core/src/notification/contracts.ts`）。
+  - 今後追加する帳票も、この辞書を使う。
+- 回帰テスト：`tests/unit/store-display.test.ts`（UIのソースが店舗IDを直接表示しないこと）、`tests/unit/notification.test.ts`（メールに表示名だけが出て、内部IDが出ないこと）。
+- 選択肢の `value` は内部IDのまま（送信値は不変）で、表示ラベルだけを変えた。
 - 承認済みの法定文書は、本文中の店名だけを置換した（他の文言は不変）：
 
 | ファイル | 置換 | 前 sha256 | 後 sha256 |

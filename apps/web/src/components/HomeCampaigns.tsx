@@ -7,17 +7,23 @@ import type {Campaign} from './brand';
 // ±27.5 / ±48.9 / ±65 / ±76.6 px from the active row with opacity .4705 / .1715 / .0370 / 0. The row-shift easing and duration were
 // not measured, so rows change position without an invented animation; only the measured .25 s image cross-fade is used.
 const INTERVAL_MS=5000;
+// Mobile horizontal selection (Palace 390px slides campaigns sideways): a deliberate horizontal swipe only — at least 48px,
+// clearly more horizontal than vertical, within 800ms — so vertical scrolling and short taps never change the campaign.
+const SWIPE_MIN_PX=48,SWIPE_MAX_MS=800,SWIPE_AXIS_RATIO=1.5;
 const ROWS=[{d:-4,y:-76.6,o:0},{d:-3,y:-65,o:.037},{d:-2,y:-48.9,o:.1715},{d:-1,y:-27.5,o:.4705},{d:0,y:0,o:1},{d:1,y:27.5,o:.4705},{d:2,y:48.9,o:.1715},{d:3,y:65,o:.037},{d:4,y:76.6,o:0}];
 
 export function HomeCampaigns({items,heading,ja}:{items:Campaign[];heading:string;ja:boolean}){
  const [active,setActive]=useState(0),[paused,setPaused]=useState(false),[reduced,setReduced]=useState(false);
- const root=useRef<HTMLElement>(null);
+ const root=useRef<HTMLElement>(null),touch=useRef<{x:number;y:number;t:number}|null>(null),swiped=useRef(false);
  useEffect(()=>{const q=matchMedia('(prefers-reduced-motion: reduce)'),f=()=>setReduced(q.matches);f();q.addEventListener('change',f);return ()=>q.removeEventListener('change',f);},[]);
- useEffect(()=>{if(paused||reduced||items.length<2)return;const t=setInterval(()=>{if(!document.hidden)setActive(a=>(a+1)%items.length);},INTERVAL_MS);return ()=>clearInterval(t);},[paused,reduced,items.length]);
+ useEffect(()=>{if(paused||reduced||items.length<2)return;const t=setInterval(()=>{if(!document.hidden)setActive(a=>(a+1)%items.length);},INTERVAL_MS);return ()=>clearInterval(t);},[paused,reduced,items.length,active]);
  const at=(d:number)=>items[((active+d)%items.length+items.length)%items.length]!,current=items[active]!;
  const step=(d:number)=>setActive(a=>((a+d)%items.length+items.length)%items.length);
+ const onTouchStart=(e:React.TouchEvent)=>{const p=e.touches[0];touch.current=e.touches.length===1&&p?{x:p.clientX,y:p.clientY,t:Date.now()}:null;swiped.current=false;};
+ const onTouchEnd=(e:React.TouchEvent)=>{const s0=touch.current,p=e.changedTouches[0];touch.current=null;if(!s0||!p)return;const dx=p.clientX-s0.x,dy=p.clientY-s0.y;
+  if(Math.abs(dx)>=SWIPE_MIN_PX&&Math.abs(dx)>=Math.abs(dy)*SWIPE_AXIS_RATIO&&Date.now()-s0.t<=SWIPE_MAX_MS){swiped.current=true;step(dx<0?1:-1);}};
  return <section ref={root} className="pc-hero" aria-roledescription={ja?'カルーセル':'carousel'} aria-label={heading}
-  onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)} onFocus={()=>setPaused(true)} onBlur={e=>{if(!root.current?.contains(e.relatedTarget as Node))setPaused(false);}}>
+  onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onTouchCancel={()=>{touch.current=null;}} onClickCapture={e=>{if(swiped.current){swiped.current=false;e.preventDefault();e.stopPropagation();}}} onKeyDown={e=>{if(e.key==='ArrowRight'){e.preventDefault();step(1);}else if(e.key==='ArrowLeft'){e.preventDefault();step(-1);}}} onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)} onFocus={()=>setPaused(true)} onBlur={e=>{if(!root.current?.contains(e.relatedTarget as Node))setPaused(false);}}>
   <div className="pc-frame"><div className="pc-clip">
    {items.map((c,i)=><Link key={c.key} href={c.href} className={'pc-slide'+(i===active?' is-active':'')} aria-hidden={i!==active} tabIndex={-1}>
     <picture><source media="(min-width: 768px)" srcSet={c.desktop}/><img src={c.mobile} alt={i===active?c.alt:''} style={{['--pos-d' as string]:c.positionDesktop,['--pos-m' as string]:c.positionMobile}} loading={i===0?'eager':'lazy'} decoding="async"/></picture>

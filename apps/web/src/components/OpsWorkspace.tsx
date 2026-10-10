@@ -2,6 +2,7 @@
 import {StaffSessionBoundary} from './StaffSessionBoundary';
 import Link from 'next/link';
 import {useRef,useState} from 'react';
+import {storeDisplayName} from '../../../../packages/contracts/src/store-display';
 type Exception={id:string;eventType:string;correlationId:string;bookingId:string|null;assetId:string|null;store:string;severity:string;status:string;occurredAt:string;resolvedAt:string|null;resolutionActor:string|null;resolutionReason:string|null;sourceConditionActive:boolean|null;sourceType?:string;refund?:{channel:'STORE'|'ONLINE';amountJpy:number;state:string;dispatched:boolean;providerIdPresent:boolean}|null};
 type Cursor={beforeTime:string;beforeId:string}|null;
 const TYPES=['PAYMENT_PENDING','PAYMENT_UNKNOWN','WEBHOOK_RECONCILIATION_REQUIRED','WEBHOOK_FAILED','HOLD_EXPIRED','TRANSFER_DELAYED','RETURN_INSPECTION_REQUIRED','INVENTORY_INVARIANT_FAILED','REFUND_PENDING','REFUND_UNKNOWN','NOTIFICATION_FAILED','STORAGE_FAILED','BOOKING_RECOVERY_FAILED','DB_UNAVAILABLE','PROVIDER_TIMEOUT'];
@@ -34,7 +35,7 @@ export function OpsWorkspace({stamp,stores,systemScope,canAcknowledge}:{stamp:st
  return <StaffSessionBoundary stamp={stamp}><main><h1>運用例外</h1><nav><Link href="/staff/ledger">スタッフ台帳</Link></nav>
  <p>ここは業務状態の記録ではなく観測です。確認操作は「スタッフが見た」ことだけを残し、入金・返金・予約・在庫・受け渡し・配送の状態は変更しません。実際の状態は必ず各業務画面で確認してください。</p>
  <section aria-label="絞り込み">
-  <label>範囲<select aria-label="範囲" value={store} disabled={busy} onChange={e=>{setStore(e.target.value);setRows([]);setCursor(null);}}>{scopes.map(s=><option key={s}>{s}</option>)}</select></label>
+  <label>範囲<select aria-label="範囲" value={store} disabled={busy} onChange={e=>{setStore(e.target.value);setRows([]);setCursor(null);}}>{scopes.map(s=><option key={s} value={s}>{storeDisplayName(s)}</option>)}</select></label>
   <label>種別<select aria-label="種別" value={type} disabled={busy} onChange={e=>setType(e.target.value)}><option value="">すべて</option>{TYPES.map(t=><option key={t}>{t}</option>)}</select></label>
   <label>重大度<select aria-label="重大度" value={severity} disabled={busy} onChange={e=>setSeverity(e.target.value)}><option value="">すべて</option><option>INFO</option><option>WARN</option><option>ERROR</option></select></label>
   <label>状態<select aria-label="状態" value={status} disabled={busy} onChange={e=>setStatus(e.target.value)}><option value="UNACKNOWLEDGED">未確認</option><option value="ACKNOWLEDGED">確認済み</option><option value="ALL">すべて</option></select></label>
@@ -49,7 +50,7 @@ export function OpsWorkspace({stamp,stores,systemScope,canAcknowledge}:{stamp:st
   <h2>{e.eventType}</h2>
   <p>重大度: {e.severity} / 状態: {e.status==='ACKNOWLEDGED'?'確認済み':'未確認'}</p>
   <p>発生元の状態: {e.sourceConditionActive===null?'実行時の観測（業務状態の照合対象なし）':e.sourceConditionActive?'現在も継続中':'現在は解消（業務画面で確認してください）'}</p>
-  <p>範囲: {e.store} / 照合ID: {e.correlationId}</p>
+  <p>範囲: {storeDisplayName(e.store)} / 照合ID: {e.correlationId}</p>
   {e.refund&&<p>{e.refund.channel==='ONLINE'?'オンライン返金':'店頭返金'} / 金額: ¥{e.refund.amountJpy.toLocaleString('ja-JP')} / 経過: {elapsed(e.occurredAt)} / {refundStatus(e.refund)}</p>}
   {e.bookingId&&<p>予約: {e.bookingId}</p>}{e.assetId&&<p>資産: {e.assetId}</p>}
   <p>発生: <time>{e.occurredAt}</time>{e.resolvedAt&&<> / 確認: <time>{e.resolvedAt}</time></>}</p>

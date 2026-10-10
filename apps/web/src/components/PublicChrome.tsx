@@ -20,19 +20,27 @@ function nav(locale:Locale){const ja=locale==='ja',r='/'+locale;return {
  * the pill holds the logo and MENU, which opens a 10px-inset panel (rgba(0,0,0,.25), blur 50px, radius 30px). */
 export function PublicHeader({locale,alternate,campaigns=[],homeHeading}:{locale:Locale;alternate:string;campaigns?:Campaign[];homeHeading?:string|undefined}){
  const ja=locale==='ja',n=nav(locale),[open,setOpen]=useState(false),toggle=useRef<HTMLButtonElement>(null),panel=useRef<HTMLDivElement>(null);
- useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';panel.current?.querySelector<HTMLElement>('a,button')?.focus();
-  const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){setOpen(false);toggle.current?.focus();}};document.addEventListener('keydown',key);
-  return ()=>{document.body.style.overflow=prev;document.removeEventListener('keydown',key);};},[open]);
+ // Modal menu: background inert, Tab/Shift+Tab cycle between the CLOSE toggle and the panel, Escape closes and returns focus,
+ // scroll lock always restored. No UI library.
+ useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';
+  const shell=panel.current?.closest('.public-shell'),inerted:HTMLElement[]=[];
+  shell?.querySelectorAll<HTMLElement>(':scope > *').forEach(el=>{if(el!==panel.current&&!el.contains(toggle.current)&&!el.inert){el.inert=true;inerted.push(el);}});
+  const pill=toggle.current?.closest('.pc-pill');pill?.querySelectorAll<HTMLElement>('a').forEach(el=>{el.inert=true;inerted.push(el);});
+  const focusables=()=>[toggle.current,...(panel.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled])')??[])].filter((el):el is HTMLElement=>!!el);
+  focusables()[1]?.focus();
+  const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();setOpen(false);toggle.current?.focus();return;}
+   if(e.key!=='Tab')return;const list=focusables();if(!list.length)return;const i=list.indexOf(document.activeElement as HTMLElement);
+   if(e.shiftKey&&(i<=0)){e.preventDefault();list[list.length-1]!.focus();}else if(!e.shiftKey&&(i===-1||i===list.length-1)){e.preventDefault();list[0]!.focus();}};
+  document.addEventListener('keydown',key);
+  return ()=>{document.body.style.overflow=prev;document.removeEventListener('keydown',key);inerted.forEach(el=>{el.inert=false;});};},[open]);
  const close=()=>setOpen(false);
  return <>
   <header className="pc-header">
    <div className={"pc-pill"+(open?" is-open":"")}>
     {homeHeading?<h1><Link className="pc-logo" href={'/'+locale} aria-label={BRAND_NAME+(ja?' ホーム':' home')} onClick={close}>
-     <Image className="pc-logo-d" src={logos.horizontal} alt="" unoptimized priority/>
-     <Image className="pc-logo-m" src={logos.wordmark} alt="" unoptimized priority/>
+     <Image className="pc-logo-img" src={logos.stackedWhite} alt="" unoptimized priority/>
     </Link><span className="pc-sr">{homeHeading}</span></h1>:<Link className="pc-logo" href={'/'+locale} aria-label={BRAND_NAME+(ja?' ホーム':' home')} onClick={close}>
-     <Image className="pc-logo-d" src={logos.horizontal} alt="" unoptimized priority/>
-     <Image className="pc-logo-m" src={logos.wordmark} alt="" unoptimized priority/>
+     <Image className="pc-logo-img" src={logos.stackedWhite} alt="" unoptimized priority/>
     </Link>}
     <nav className="pc-links" aria-label={L(ja,'メインナビゲーション','Main navigation')}>{n.pill.map(l=><Link key={l.href} href={l.href}>{l.label}</Link>)}<Link href={n.book.href}>{n.book.label}</Link></nav>
     <button ref={toggle} type="button" className="pc-menu-btn" aria-expanded={open} aria-controls="pc-menu" aria-label={open?L(ja,'メニューを閉じる','Close menu'):L(ja,'メニューを開く','Open menu')} onClick={()=>setOpen(o=>!o)}>{open?'CLOSE':'MENU'}</button>

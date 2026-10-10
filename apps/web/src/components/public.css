@@ -13,8 +13,7 @@
 .pc-header{position:fixed;top:0;left:0;width:100%;padding-top:var(--pc-header-pad);display:flex;justify-content:center;pointer-events:none;z-index:220}
 .pc-pill{pointer-events:auto;display:flex;height:var(--pc-header-h);background:var(--pc-black);color:var(--pc-white);border-radius:9999px;overflow:hidden}
 .public-shell .pc-logo{display:flex;align-items:center;justify-content:center;height:100%;padding:0 10px 0 20px}
-.pc-logo img{display:block;width:auto;height:14px}
-.pc-logo .pc-logo-m{display:none}
+.pc-logo img{display:block;width:auto;height:26px}
 .pc-links{display:flex;gap:0;height:100%}
 .public-shell .pc-links a{display:flex;align-items:center;height:100%;padding:0 10px;font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;text-transform:uppercase;transition:color .15s cubic-bezier(.4,0,.2,1),background-color .15s cubic-bezier(.4,0,.2,1)}
 .public-shell .pc-links a:last-child{padding-right:20px}
@@ -96,8 +95,7 @@ details.public-secondary>summary::-webkit-details-marker{display:none}
 .public-shell .pc-copy a{font-size:10px;line-height:10px}
 
 @media (max-width:767px){
- .pc-logo .pc-logo-d,.pc-links{display:none}
- .pc-logo .pc-logo-m{display:block;height:16px}
+ .pc-links{display:none}
  .public-shell .pc-logo{padding:0 0 0 20px}
  .pc-menu-btn{display:block}
  .pc-hero .pc-frame{padding:0}
@@ -117,16 +115,15 @@ details.public-secondary>summary::-webkit-details-marker{display:none}
 /* Shared header for pages that render their own header markup (booking): the same pill, CSS only. */
 .public-header{position:fixed;top:var(--pc-header-pad,20px);left:50%;transform:translateX(-50%);z-index:220;height:60px;display:flex;align-items:center;background:#000;color:#fff;border-radius:9999px;overflow:hidden;max-width:calc(100vw - 20px);border:0;padding:0;margin:0}
 .public-shell .public-header .wordmark{display:flex;align-items:center;height:100%;padding:0 10px 0 20px}
-.public-header .wordmark img{height:14px;width:auto;display:block}
+.public-header .wordmark img{height:26px;width:auto;display:block}
 .public-header nav{display:flex;gap:0;height:100%;flex-wrap:nowrap}
 .public-shell .public-header nav a{display:flex;align-items:center;height:100%;padding:0 10px;font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;text-transform:uppercase;white-space:nowrap;min-height:0}
 .public-shell .public-header nav a:last-child{padding-right:20px}
 .public-shell .public-header nav a:hover{color:#9ca3af}
-@media (max-width:767px){.public-header .wordmark img{height:12px}.public-shell .public-header nav a{font-size:14px;padding:0 8px}}
-.public-header .wordmark .pc-logo-m{display:none}
-@media (max-width:767px){.public-header .wordmark .pc-logo-d{display:none}.public-header .wordmark .pc-logo-m{display:block;height:14px}}
+@media (max-width:767px){.public-shell .public-header nav a{font-size:14px;padding:0 8px}}
 /* Booking / saved-booking screens keep their own layout; only clear the fixed header pill. */
 .public-shell .guest-main{padding-top:calc(var(--pc-header-pad) + var(--pc-header-h) + 40px)}
 .public-main .public-preview-note{padding:12px 0 0}
 .pc-pill h1{margin:0;font:inherit;display:flex;height:100%}
 @media (max-width:767px){.pc-pill.is-open .pc-logo{display:none}}
+.pc-hero{touch-action:pan-y}

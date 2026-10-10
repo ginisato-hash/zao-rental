@@ -1,7 +1,6 @@
 /// <reference types="next/image-types/global" />
-import logoHorizontal from './logo-horizontal-white.webp';
-import logoWordmark from './logo-wordmark-white.webp';
 import logoStacked from './logo-stacked-black.webp';
+import logoStackedWhite from './logo-stacked-white.webp';
 import winterDesktop from './campaign-winter-desktop.webp';
 import winterMobile from './campaign-winter-mobile.webp';
 import skiDesktop from './campaign-ski-desktop.webp';
@@ -11,7 +10,7 @@ import wearMobile from './campaign-wear-mobile.webp';
 import type {Locale} from '../../../../../packages/core/src/content/public-pages';
 
 /** Received SALOMON logos (Owner: web use and colour changes permitted). Sources, trims and hashes: docs/execution/p85-ui/ASSETS.md. */
-export const logos={horizontal:logoHorizontal,wordmark:logoWordmark,stacked:logoStacked};
+export const logos={stacked:logoStacked,stackedWhite:logoStackedWhite};
 export const BRAND_NAME='SALOMON rental station ZAO';
 
 import {STORE_LABEL} from '../guest-format';

@@ -1,4 +1,131 @@
-.public-shell{background:#f8fafb;color:#162d38;min-height:100vh;font-size:16px}.public-shell a{border:0;border-radius:0}.public-header{max-width:1240px;margin:auto;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:1px solid #d9e2e7}.public-header .wordmark{padding:0;font-size:25px;font-weight:850;letter-spacing:.1em}.wordmark span{display:block;font-size:10px;letter-spacing:.35em}.public-header nav{gap:4px;align-items:center}.public-header nav a{font-size:14px;min-height:48px}.public-main{max-width:1240px;padding:54px 32px;margin:auto}.public-kicker{font-size:11px;letter-spacing:.16em;font-weight:700;color:#406475}.public-hero{display:grid;grid-template-columns:1.15fr 1fr;align-items:center;gap:48px}.public-main h1{font-size:clamp(32px,4.5vw,58px);line-height:1.3;max-width:15ch;margin:24px 0;letter-spacing:-.035em}.public-lead{max-width:550px;line-height:1.9;color:#445d68}.public-shell .public-cta{background:#166477;color:white;display:inline-flex;gap:45px;padding:16px 22px;border-radius:4px;font-weight:650;min-height:52px}.public-cta:hover{background:#104f60}.public-mountain{min-height:350px;aspect-ratio:1.15;background:linear-gradient(150deg,transparent 45%,#b8cdd4 45%,#e1ebef 72%,transparent 72%),linear-gradient(33deg,#d7e4e9 46%,#eef4f6 46%,#dfeaf0 80%);position:relative;border-radius:2px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:28px}.public-mountain span{writing-mode:vertical-rl;font-size:44px;letter-spacing:.2em;font-weight:250}.public-mountain small{font-size:9px;letter-spacing:.2em}.public-preview-note{font-size:12px;color:#607884;margin-top:32px}.public-main section{border:0;border-radius:0;padding:36px 0;margin:40px 0;background:transparent;border-top:1px solid #d9e2e7}.public-detail{max-width:760px;line-height:1.85}.public-detail h2{font-size:24px}.public-detail li{padding:7px 0}.public-detail aside{background:#eaf1f3;padding:24px;margin-top:24px;border-left:3px solid #166477}.public-detail small{color:#536b78}.public-hero--compact{grid-template-columns:1fr}.public-hero--compact .public-lead{max-width:none}
-.public-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}.public-shell .public-compare-grid article{background:#eff5f7;padding:22px;border:0}.public-compare-grid h3{font-size:21px;margin:0 0 8px}.public-compare-grid p{color:#445d68;margin:0}.public-explore h2{font-size:28px;max-width:720px}
-details.public-secondary{border:0;background:transparent}details.public-secondary>summary{cursor:pointer;font-weight:650;color:#166477;font-size:15px;padding:0 0 16px;list-style:none}details.public-secondary>summary::-webkit-details-marker{display:none}.public-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:28px}.public-shell .public-card{background:white;padding:28px;border:1px solid #dce5ea;position:relative;min-width:0}.public-card span{font-size:11px;color:#397080;letter-spacing:.15em}.public-card h3{font-size:23px;margin:20px 0 12px}.public-card p{color:#516875;font-size:14px;padding-right:24px}.public-card b{position:absolute;bottom:24px;right:24px;font-size:25px}.public-links{border-top:1px solid #dce5ea;padding-top:24px;gap:4px}.public-links a{font-size:14px;min-height:48px}.public-footer{background:#152f3a;color:#ecf3f5;padding:38px max(24px,calc((100vw - 1176px)/2));margin:0;font-size:13px}.public-footer a{color:#ecf3f5;padding-left:0}.public-shell button,.public-shell input,.public-shell select{font:inherit;min-height:48px}.public-shell :focus-visible{outline:3px solid #24899e;outline-offset:3px}@media(max-width:760px){.public-header{padding:16px 20px;align-items:flex-start}.public-header nav{justify-content:flex-end;gap:0}.public-header nav a{font-size:12px;padding:12px 7px}.public-main{padding:32px 20px}.public-hero{grid-template-columns:1fr;gap:30px}.public-main h1{max-width:17ch}.public-mountain{min-height:220px;aspect-ratio:1.8}.public-card-grid{grid-template-columns:1fr}.public-card h3{font-size:21px}.public-detail{max-width:100%}.public-links a{padding:10px 7px}.public-explore h2{font-size:24px}.public-compare-grid{grid-template-columns:1fr}}
-.public-hero>*{min-width:0}.public-mountain{width:100%}@media(max-width:760px){.public-mountain{aspect-ratio:auto;height:220px}}
+/* P85 public system. Every value below traces to the Palace top-page measurements in docs/execution/p85-ui/ELEMENTS.md
+   (1440x900 and 390x844, 2026-10-10). Display face: Barlow Semi Condensed 700 (OFL), chosen because its widths match the
+   measured bold face within 1.1%; the 500 role uses system Helvetica/Arial (within 1.3%). Japanese uses the system gothic. */
+@font-face{font-family:'Barlow Semi Condensed';font-style:normal;font-weight:700;font-display:swap;src:url(./brand/barlow-semi-condensed-700.woff2) format('woff2')}
+.public-shell{--pc-black:#000;--pc-white:#fff;--pc-header-h:60px;--pc-header-pad:20px;--pc-gutter:20px;--pc-display:'Barlow Semi Condensed','Helvetica Neue',Helvetica,Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;--pc-body:'Helvetica Neue',Helvetica,Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;
+ background:var(--pc-white);color:var(--pc-black);min-height:100vh;font-family:var(--pc-body);font-size:16px;line-height:24px;overflow-x:clip}
+.public-shell a{border:0;border-radius:0;padding:0;display:inline;color:inherit;background:none;text-decoration:none}
+.public-shell a:hover{background:none}
+.public-shell :focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.pc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* Header: fixed, padding-top 20px, centred pill 60px, radius full, black, white 16px bold uppercase links. */
+.pc-header{position:fixed;top:0;left:0;width:100%;padding-top:var(--pc-header-pad);display:flex;justify-content:center;pointer-events:none;z-index:220}
+.pc-pill{pointer-events:auto;display:flex;height:var(--pc-header-h);background:var(--pc-black);color:var(--pc-white);border-radius:9999px;overflow:hidden}
+.public-shell .pc-logo{display:flex;align-items:center;justify-content:center;height:100%;padding:0 10px 0 20px}
+.pc-logo img{display:block;width:auto;height:14px}
+.pc-logo .pc-logo-m{display:none}
+.pc-links{display:flex;gap:0;height:100%}
+.public-shell .pc-links a{display:flex;align-items:center;height:100%;padding:0 10px;font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;text-transform:uppercase;transition:color .15s cubic-bezier(.4,0,.2,1),background-color .15s cubic-bezier(.4,0,.2,1)}
+.public-shell .pc-links a:last-child{padding-right:20px}
+.public-shell .pc-links a:hover{color:#9ca3af}
+.pc-menu-btn{display:none;height:100%;padding:0 20px;border:0;background:none;color:inherit;font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;cursor:pointer;min-height:44px}
+
+/* Mobile menu panel: fixed, inset 10px, rgba(0,0,0,.25), blur 50px, radius 30px, padding 10px; 24px bold uppercase list. */
+.pc-menu{position:fixed;inset:10px;z-index:210;padding:10px;background:rgba(0,0,0,.25);-webkit-backdrop-filter:blur(50px);backdrop-filter:blur(50px);border-radius:30px;color:var(--pc-white);display:flex;flex-direction:column;overflow:auto}
+.pc-menu ul{list-style:none;margin:0;padding:0}
+.pc-menu .pc-menu-cats{padding:101px 10px 0}
+.public-shell .pc-menu-cats a{display:block;font-family:var(--pc-display);font-weight:700;font-size:24px;line-height:24px;padding:.5px 0;text-transform:uppercase;min-height:25px}
+.pc-menu-foot{margin-top:auto;padding:20px 10px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.pc-menu-small{display:flex;flex-wrap:wrap;gap:4px 12px}
+.public-shell .pc-menu-small a{font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;text-transform:uppercase;display:inline-block;padding:4px 0}
+.public-shell .pc-menu-book{display:inline-block;background:var(--pc-white);color:var(--pc-black);padding:15px;font-size:16px;line-height:11px;white-space:nowrap}
+.pc-menu-cards{display:flex;gap:10px;overflow-x:auto;padding:20px 10px 10px;scroll-snap-type:x mandatory}
+.public-shell .pc-menu-card{flex:0 0 min(330px,100%);height:80px;background:var(--pc-black);border-radius:12px;overflow:hidden;display:flex;justify-content:space-between;scroll-snap-align:start}
+.pc-menu-card span{display:flex;flex-direction:column;justify-content:space-between;padding:12px;font-family:var(--pc-display);font-weight:700;text-transform:uppercase}
+.pc-menu-card small{font-size:10px;line-height:10px}
+.pc-menu-card img{width:80px;height:80px;object-fit:cover}
+
+/* Home campaign hero: 10px frame, 16px radius clip (desktop); full bleed below 768px. */
+.public-home{margin:0;max-width:none;padding:0}
+.pc-hero{position:relative;height:100vh;height:100dvh;overflow:hidden;border:0;border-radius:0;margin:0;padding:0;background:none}
+.pc-frame{position:absolute;inset:0;padding:10px}
+.pc-clip{position:relative;width:100%;height:100%;border-radius:16px;overflow:hidden;background:#d9d9d9}
+.public-shell .pc-slide{position:absolute;inset:0;display:block;opacity:0;transition:opacity .25s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.public-shell .pc-slide.is-active{opacity:1;pointer-events:auto}
+.pc-slide img{width:100%;height:100%;object-fit:cover;object-position:var(--pos-d,50% 50%);display:block}
+.pc-wheel{position:absolute;top:50%;left:28px;list-style:none;margin:-4px 0 0;padding:0;z-index:2}
+.pc-wheel li{position:absolute;left:0;top:0;transform-origin:left center;white-space:nowrap;margin-top:-12px}
+.pc-wheel button{appearance:none;border:0;background:none;padding:0;font-family:var(--pc-display);font-weight:700;font-size:24px;line-height:24px;text-transform:uppercase;color:inherit;cursor:pointer;text-align:left}
+.pc-title-m{display:none}
+.pc-step{position:absolute;left:19px;bottom:40px;display:flex}
+.pc-step button{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);border:0;padding:0}
+.pc-step button:focus-visible{position:static;width:auto;height:auto;clip-path:none;padding:4px 8px;background:#fff;color:#000}
+.public-shell .pc-view{position:absolute;top:50%;right:28px;transform:translateY(-50%);z-index:2;display:inline-flex;align-items:center;background:var(--btn-bg);color:var(--btn-fg);padding:15px;font-size:16px;line-height:11px;min-height:41px;white-space:nowrap}
+.public-preview-note{font-size:12px;line-height:16px;padding:12px var(--pc-gutter);margin:0;color:#444}
+
+/* Content pages: same gutters and type scale as the measured footer and wheel (16/24 body, 24px bold headings, 10px labels). */
+.public-main{max-width:none;margin:0;padding:calc(var(--pc-header-pad) + var(--pc-header-h) + 60px) var(--pc-gutter) 40px}
+.public-main h1{font-family:var(--pc-display);font-weight:700;font-size:24px;line-height:1.3;letter-spacing:normal;margin:0 0 12px;max-width:none}
+.public-main h2{font-family:var(--pc-display);font-weight:700;font-size:24px;line-height:1.3;margin:0 0 16px}
+.public-main h3{font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:1.5;margin:0 0 8px}
+.public-head{max-width:720px}
+.public-lead{margin:0 0 20px;color:#000}
+.public-shell .public-cta{display:inline-flex;align-items:center;background:var(--pc-black);color:var(--pc-white);padding:15px;font-size:16px;line-height:11px;min-height:44px}
+.public-main section{border:0;border-radius:0;padding:0;margin:40px 0 0;background:transparent}
+.public-detail{max-width:720px}
+.public-detail ul{padding-left:1.2em;margin:0}
+.public-detail li{padding:4px 0}
+.public-detail aside{margin-top:20px}
+.public-detail small{color:#444}
+.public-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px 20px}
+.public-shell .public-compare-grid article{border:0;padding:0;background:none}
+.public-compare-grid p{margin:0}
+.public-card-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px 20px}
+.public-shell .public-card{display:flex;flex-direction:column;gap:8px}
+.public-card span{font-family:var(--pc-display);font-weight:700;font-size:10px;line-height:10px;text-transform:uppercase}
+.public-card b{font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:1.3}
+.public-card small{font-size:14px;line-height:20px;color:#444}
+details.public-secondary{border:0;background:transparent;margin-top:40px}
+details.public-secondary>summary{cursor:pointer;font-family:var(--pc-display);font-weight:700;font-size:16px;padding:0 0 20px;list-style:none;min-height:44px}
+details.public-secondary>summary::-webkit-details-marker{display:none}
+.public-links{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:40px}
+.public-shell .public-links a{font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;text-transform:uppercase;padding:14px 0;display:inline-block}
+.public-legal p{max-width:720px}
+.public-legal-meta{font-size:10px;line-height:10px;margin-top:40px}
+
+/* Footer: padding 80/0/20; inner flex gap 80px with 20px gutters; grid 6 columns, gap 40px 20px; h6 10px bold; links 16px bold. */
+.pc-footer{position:relative;z-index:1;background:var(--pc-white);color:var(--pc-black);padding:80px 0 20px;margin:0;font-size:16px}
+.pc-footer-in{display:flex;gap:80px;padding:0 var(--pc-gutter);align-items:flex-start}
+.pc-footer-grid{flex:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:40px 20px}
+.pc-footer h6{font-family:var(--pc-display);font-size:10px;line-height:10px;font-weight:700;text-transform:uppercase;margin:0 0 20px}
+.pc-footer ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.public-shell .pc-footer a{font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;text-transform:uppercase;display:inline-block}
+.pc-footer-logo{width:160px;height:auto;grid-column:-2/-1;justify-self:end}
+.pc-copy{font-size:10px;line-height:10px;margin:40px 0 0;padding:0 var(--pc-gutter)}
+.public-shell .pc-copy a{font-size:10px;line-height:10px}
+
+@media (max-width:767px){
+ .pc-logo .pc-logo-d,.pc-links{display:none}
+ .pc-logo .pc-logo-m{display:block;height:16px}
+ .public-shell .pc-logo{padding:0 0 0 20px}
+ .pc-menu-btn{display:block}
+ .pc-hero .pc-frame{padding:0}
+ .pc-clip{border-radius:0}
+ .pc-slide img{object-position:var(--pos-m,50% 50%)}
+ .pc-wheel{display:none}
+ .pc-title-m{display:block;position:absolute;left:20px;bottom:29px;margin:0;font-family:var(--pc-display);font-weight:700;font-size:24px;line-height:24px;text-transform:uppercase;z-index:2;max-width:calc(100% - 200px)}
+ .public-shell .pc-view{top:auto;bottom:20px;right:20px;transform:none}
+ .pc-footer-in{flex-direction:column;gap:40px}
+ .pc-footer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .pc-footer-logo{grid-column:1/-1;justify-self:end}
+ .public-compare-grid,.public-card-grid{grid-template-columns:1fr}
+ .public-main{padding-top:calc(var(--pc-header-pad) + var(--pc-header-h) + 40px)}
+}
+@media (prefers-reduced-motion:reduce){.public-shell .pc-slide,.public-shell .pc-links a{transition:none}}
+
+/* Shared header for pages that render their own header markup (booking): the same pill, CSS only. */
+.public-header{position:fixed;top:var(--pc-header-pad,20px);left:50%;transform:translateX(-50%);z-index:220;height:60px;display:flex;align-items:center;background:#000;color:#fff;border-radius:9999px;overflow:hidden;max-width:calc(100vw - 20px);border:0;padding:0;margin:0}
+.public-shell .public-header .wordmark{display:flex;align-items:center;height:100%;padding:0 10px 0 20px}
+.public-header .wordmark img{height:14px;width:auto;display:block}
+.public-header nav{display:flex;gap:0;height:100%;flex-wrap:nowrap}
+.public-shell .public-header nav a{display:flex;align-items:center;height:100%;padding:0 10px;font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;text-transform:uppercase;white-space:nowrap;min-height:0}
+.public-shell .public-header nav a:last-child{padding-right:20px}
+.public-shell .public-header nav a:hover{color:#9ca3af}
+@media (max-width:767px){.public-header .wordmark img{height:12px}.public-shell .public-header nav a{font-size:14px;padding:0 8px}}
+.public-header .wordmark .pc-logo-m{display:none}
+@media (max-width:767px){.public-header .wordmark .pc-logo-d{display:none}.public-header .wordmark .pc-logo-m{display:block;height:14px}}
+/* Booking / saved-booking screens keep their own layout; only clear the fixed header pill. */
+.public-shell .guest-main{padding-top:calc(var(--pc-header-pad) + var(--pc-header-h) + 40px)}
+.public-main .public-preview-note{padding:12px 0 0}
+.pc-hero h1{position:absolute;margin:0}

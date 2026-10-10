@@ -11,6 +11,7 @@ import type {Direction} from '../../../../packages/contracts/src/recommendation'
 import type {Locale} from '../../../../packages/core/src/content/public-pages';
 import './public.css';
 import './guest.css';
+import {BrandMark} from './BrandMark';
 type Member={key:string;sport:string;heightCm:number|null;footCm:number|null;adultAtStart:boolean;tier:string;ski:{weightKg:number;ageAtStart:number;level:string}|null;poleSize:string|null;premiumModel:string|null;jacketSize:string|null;pantsSize:string|null;wearSport:string|null};
 type Input={pickupStore:string;returnStore:string;period:{startDate:string;endDate:string;slot:string};members:Member[]};
 type Options={models:{key:string;name:string;season:string;sport:string;lengths:string[]}[];sizes:{key:string;label:string;family:string;age:string;tier:string}[]};
@@ -320,7 +321,7 @@ export function GuestBooking({locale,legal}:{locale:Locale;legal?:GuestLegalLink
  // The field name is the label's whole text, so exact label matching and the accessible name stay
  // unchanged; the required/optional marker is rendered outside the <label>, beside it.
  const label=(text:string)=><span className="guest-label-text">{text}</span>;
- return <div className="public-shell" lang={locale}><header className="public-header"><Link className="wordmark" href={'/'+locale} onClick={guardNav}>ZAO<span>RENTAL</span></Link><nav aria-label={t('メインナビゲーション','Main navigation')}><Link href={'/'+locale+'/rental'} onClick={guardNav}>{t('プランを見る','View plans')}</Link><Link href={'/'+(ja?'en':'ja')+'/book'} hrefLang={ja?'en':'ja'} onClick={guardNav}>{t('EN','日本語')}</Link></nav></header><main className="guest-main"><p className="public-kicker">YOUR SNOW DAY</p><h1>{t('みんなのレンタルを選ぶ','Plan the group’s rental')}</h1>{draft&&!draft.checkout&&<p className="guest-preview-note">{t('開発プレビューです。架空の情報だけを使用してください。実決済・本番予約は行いません。','Development preview: use synthetic details only. No real payment or production booking.')}</p>}
+ return <div className="public-shell" lang={locale}><header className="public-header"><Link className="wordmark" href={'/'+locale} onClick={guardNav}><BrandMark/></Link><nav aria-label={t('メインナビゲーション','Main navigation')}><Link href={'/'+locale+'/rental'} onClick={guardNav}>{t('プランを見る','View plans')}</Link><Link href={'/'+(ja?'en':'ja')+'/book'} hrefLang={ja?'en':'ja'} onClick={guardNav}>{t('EN','日本語')}</Link></nav></header><main className="guest-main"><h1>{t('みんなのレンタルを選ぶ','Plan the group’s rental')}</h1>{draft&&!draft.checkout&&<p className="guest-preview-note">{t('開発プレビューです。架空の情報だけを使用してください。実決済・本番予約は行いません。','Development preview: use synthetic details only. No real payment or production booking.')}</p>}
  <ol className="guest-steps" aria-label={t('予約の流れ','Booking steps')}>{STEPS.map(([j,e],n)=><li key={n} aria-current={step===n?'step':undefined} className={n<step?'guest-step--done':undefined}><span className="guest-step-number" aria-hidden="true">{n+1}</span><span>{t(j,e)}</span></li>)}</ol>
  {restoredNotice&&step<2&&<p role="status" className="guest-status">{t('未保存の入力を復元しました','Unsaved entries restored')}</p>}
  {showUnsavedHint&&<p role="status" className="guest-status">{t('保存されていない変更があります。移動すると失われます。','You have unsaved changes. Leaving now will lose them.')}</p>}

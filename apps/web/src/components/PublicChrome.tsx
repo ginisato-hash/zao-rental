@@ -26,7 +26,7 @@ export function PublicHeader({locale,alternate,campaigns=[]}:{locale:Locale;alte
  const close=()=>setOpen(false);
  return <>
   <header className="pc-header">
-   <div className="pc-pill">
+   <div className={"pc-pill"+(open?" is-open":"")}>
     <Link className="pc-logo" href={'/'+locale} aria-label={BRAND_NAME+(ja?' ホーム':' home')} onClick={close}>
      <Image className="pc-logo-d" src={logos.horizontal} alt="" unoptimized priority/>
      <Image className="pc-logo-m" src={logos.wordmark} alt="" unoptimized priority/>

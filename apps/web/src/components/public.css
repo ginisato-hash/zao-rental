@@ -129,3 +129,4 @@ details.public-secondary>summary::-webkit-details-marker{display:none}
 .public-shell .guest-main{padding-top:calc(var(--pc-header-pad) + var(--pc-header-h) + 40px)}
 .public-main .public-preview-note{padding:12px 0 0}
 .pc-hero h1{position:absolute;margin:0}
+@media (max-width:767px){.pc-pill.is-open .pc-logo{display:none}}

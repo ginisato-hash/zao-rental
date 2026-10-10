@@ -14,7 +14,7 @@ test('store display dictionary: Owner names, internal IDs unchanged, non-store s
 // Regression guard: UI sources never render a store field or a store option label directly (the value attribute may keep the ID).
 test('UI sources render store fields only through the display dictionary',()=>{
  const dirs=['apps/web/src/components','apps/web/src/components/ledger'],bad:string[]=[];
- const raw=[/(?<![=\w])\{[\w.?!]*(?:\.|_)(?:pickupStore|returnStore|store_id|store|[a-z]+_store)\}/,/\{s\}<\/option>\)\}/,/\{s\}<\/label>/];
+ const raw=[/(?<![=\w])\{[\w.?!]*(?:\.|_)(?:pickupStore|returnStore|store_id|store|[a-z]+_store)\}/,/\{s\}<\/option>\)\}/,/\{s\}<\/label>/,/[\w.?!]*(?:storeIds|stores)\.join\(/];
  for(const d of dirs)for(const f of readdirSync(d).filter(n=>n.endsWith('.tsx'))){const src=readFileSync(join(d,f),'utf8');
   for(const r of raw){const m=src.match(r);if(m&&!/storeDisplayName|storeName/.test(m[0]))bad.push(f+': '+m[0]);}}
  assert.deepEqual(bad.filter(b=>!/PriceAdminWorkspace|StaffManagement.tsx: \{r\}/.test(b)),[]);

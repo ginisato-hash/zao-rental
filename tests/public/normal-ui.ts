@@ -62,14 +62,17 @@ try{
    // Modal menu
    await m.getByRole('button',{name:'メニューを開く'}).click();const dialog=m.getByRole('dialog',{name:'メニュー'});await expect(dialog).toBeVisible();
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'hidden');
-   const inside=()=>m.evaluate(()=>{const a=document.activeElement;return !!a&&(!!a.closest('#pc-menu')||a.classList.contains('pc-menu-btn'));});
-   for(let i=0;i<30;i++){await m.keyboard.press('Tab');assert.equal(await inside(),true,'Tab stays inside the menu');}
-   for(let i=0;i<30;i++){await m.keyboard.press('Shift+Tab');assert.equal(await inside(),true,'Shift+Tab stays inside the menu');}
+   const inside=()=>m.evaluate(()=>{const a=document.activeElement,d=document.querySelector('[role="dialog"][aria-modal="true"]');return !!a&&!!d&&d.contains(a);});
+   assert.equal(await inside(),true,'focus starts inside the dialog');await expect(dialog.getByRole('button',{name:'メニューを閉じる'})).toBeVisible();
+   for(let i=0;i<30;i++){await m.keyboard.press('Tab');assert.equal(await inside(),true,'Tab stays inside the dialog');}
+   for(let i=0;i<30;i++){await m.keyboard.press('Shift+Tab');assert.equal(await inside(),true,'Shift+Tab stays inside the dialog');}
    assert.equal(await m.evaluate(()=>{const f=document.querySelector<HTMLElement>('.pc-footer a');f?.focus();return document.activeElement===f;}),false,'background links are inert while open');
    await m.keyboard.press('Escape');await expect(dialog).toHaveCount(0);
    assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'メニューを開く','focus returns to the toggle');
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released');
    assert.equal(await m.evaluate(()=>!!document.querySelector('.pc-footer a')&&!(document.querySelector('.pc-footer') as HTMLElement).inert),true,'background restored');
+   await m.getByRole('button',{name:'メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('button',{name:'メニューを閉じる'}).click();await expect(m.getByRole('dialog')).toHaveCount(0);
+   assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'メニューを開く','CLOSE returns focus to MENU');assert.equal(await m.evaluate(()=>document.body.style.overflow),'');
    await m.getByRole('button',{name:'メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('link',{name:'SKI',exact:true}).click();
    await m.waitForURL(/\/ja\/rental\/ski$/);assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released after navigating from the menu');
    await touch.close();

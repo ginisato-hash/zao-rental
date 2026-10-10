@@ -20,17 +20,19 @@ function nav(locale:Locale){const ja=locale==='ja',r='/'+locale;return {
  * the pill holds the logo and MENU, which opens a 10px-inset panel (rgba(0,0,0,.25), blur 50px, radius 30px). */
 export function PublicHeader({locale,alternate,campaigns=[],homeHeading}:{locale:Locale;alternate:string;campaigns?:Campaign[];homeHeading?:string|undefined}){
  const ja=locale==='ja',n=nav(locale),[open,setOpen]=useState(false),toggle=useRef<HTMLButtonElement>(null),panel=useRef<HTMLDivElement>(null);
- // Modal menu: background inert, Tab/Shift+Tab cycle between the CLOSE toggle and the panel, Escape closes and returns focus,
- // scroll lock always restored. No UI library.
- useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';
+ // Modal menu: the operable CLOSE lives inside the dialog (drawn where the Palace pill sits); the header pill is hidden and the
+ // rest of the page inert while open. Tab/Shift+Tab cycle inside the dialog only; Escape or CLOSE closes and focus returns to MENU;
+ // the scroll lock is always restored. No UI library.
+ const returnFocus=useRef(false);
+ useEffect(()=>{if(!open){if(returnFocus.current){returnFocus.current=false;toggle.current?.focus();}return;}
+  const prev=document.body.style.overflow;document.body.style.overflow='hidden';
   const shell=panel.current?.closest('.public-shell'),inerted:HTMLElement[]=[];
-  shell?.querySelectorAll<HTMLElement>(':scope > *').forEach(el=>{if(el!==panel.current&&!el.contains(toggle.current)&&!el.inert){el.inert=true;inerted.push(el);}});
-  const pill=toggle.current?.closest('.pc-pill');pill?.querySelectorAll<HTMLElement>('a').forEach(el=>{el.inert=true;inerted.push(el);});
-  const focusables=()=>[toggle.current,...(panel.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled])')??[])].filter((el):el is HTMLElement=>!!el);
-  focusables()[1]?.focus();
-  const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();setOpen(false);toggle.current?.focus();return;}
+  shell?.querySelectorAll<HTMLElement>(':scope > *').forEach(el=>{if(el!==panel.current&&!el.inert){el.inert=true;inerted.push(el);}});
+  const focusables=()=>[...(panel.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled])')??[])];
+  focusables()[0]?.focus();
+  const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();returnFocus.current=true;setOpen(false);return;}
    if(e.key!=='Tab')return;const list=focusables();if(!list.length)return;const i=list.indexOf(document.activeElement as HTMLElement);
-   if(e.shiftKey&&(i<=0)){e.preventDefault();list[list.length-1]!.focus();}else if(!e.shiftKey&&(i===-1||i===list.length-1)){e.preventDefault();list[0]!.focus();}};
+   if(e.shiftKey&&i<=0){e.preventDefault();list[list.length-1]!.focus();}else if(!e.shiftKey&&(i===-1||i===list.length-1)){e.preventDefault();list[0]!.focus();}};
   document.addEventListener('keydown',key);
   return ()=>{document.body.style.overflow=prev;document.removeEventListener('keydown',key);inerted.forEach(el=>{el.inert=false;});};},[open]);
  const close=()=>setOpen(false);
@@ -43,10 +45,11 @@ export function PublicHeader({locale,alternate,campaigns=[],homeHeading}:{locale
      <Image className="pc-logo-img" src={logos.stackedWhite} alt="" unoptimized priority/>
     </Link>}
     <nav className="pc-links" aria-label={L(ja,'メインナビゲーション','Main navigation')}>{n.pill.map(l=><Link key={l.href} href={l.href}>{l.label}</Link>)}<Link href={n.book.href}>{n.book.label}</Link></nav>
-    <button ref={toggle} type="button" className="pc-menu-btn" aria-expanded={open} aria-controls="pc-menu" aria-label={open?L(ja,'メニューを閉じる','Close menu'):L(ja,'メニューを開く','Open menu')} onClick={()=>setOpen(o=>!o)}>{open?'CLOSE':'MENU'}</button>
+    <button ref={toggle} type="button" className="pc-menu-btn" aria-expanded={open} aria-controls="pc-menu" aria-label={L(ja,'メニューを開く','Open menu')} onClick={()=>setOpen(true)}>MENU</button>
    </div>
   </header>
   {open&&<div id="pc-menu" ref={panel} className="pc-menu" role="dialog" aria-modal="true" aria-label={L(ja,'メニュー','Menu')}>
+   <div className="pc-menu-top"><button type="button" className="pc-menu-close" aria-label={L(ja,'メニューを閉じる','Close menu')} onClick={()=>{returnFocus.current=true;setOpen(false);}}>CLOSE</button></div>
    <ul className="pc-menu-cats">{n.categories.map(l=><li key={l.href}><Link href={l.href} onClick={close}>{l.label}</Link></li>)}</ul>
    <div className="pc-menu-foot">
     <ul className="pc-menu-small">{n.small.map(l=><li key={l.href}><Link href={l.href} onClick={close}>{l.label}</Link></li>)}<li><Link href={alternate} hrefLang={ja?'en':'ja'} onClick={close}>{ja?'ENGLISH':'日本語'}</Link></li></ul>

@@ -125,5 +125,8 @@ details.public-secondary>summary::-webkit-details-marker{display:none}
 .public-shell .guest-main{padding-top:calc(var(--pc-header-pad) + var(--pc-header-h) + 40px)}
 .public-main .public-preview-note{padding:12px 0 0}
 .pc-pill h1{margin:0;font:inherit;display:flex;height:100%}
-@media (max-width:767px){.pc-pill.is-open .pc-logo{display:none}}
 .pc-hero{touch-action:pan-y}
+/* P85-06: the dialog owns its CLOSE control, drawn exactly where the Palace pill shows CLOSE (page y 20, centred, 60px high). */
+.pc-pill.is-open{visibility:hidden}
+.pc-menu-top{position:absolute;top:10px;left:0;right:0;display:flex;justify-content:center;pointer-events:none}
+.pc-menu-close{pointer-events:auto;height:60px;padding:0 20px;border:0;border-radius:9999px;background:#000;color:#fff;font-family:var(--pc-display);font-weight:700;font-size:16px;line-height:16px;cursor:pointer;min-width:44px}

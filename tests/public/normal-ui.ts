@@ -62,12 +62,17 @@ try{
    // Modal menu
    await m.getByRole('button',{name:'メニューを開く'}).click();const dialog=m.getByRole('dialog',{name:'メニュー'});await expect(dialog).toBeVisible();
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'hidden');
+   // VIS-01: white menu text stays >= 4.5:1 even if the blurred backdrop were pure white; the page CTA cannot show through.
+   const panel=await m.evaluate(()=>{const p=document.querySelector('.pc-menu')!,bg=getComputedStyle(p).backgroundColor,a=Number(/rgba?\([^)]*,\s*([\d.]+)\)/.exec(bg)?.[1]??1),link=getComputedStyle(document.querySelector('.pc-menu-cats a')!).color,small=getComputedStyle(document.querySelector('.pc-menu-small a')!).color;return {a,link,small,cta:getComputedStyle(document.querySelector('.pc-view')!).visibility};});
+   const lin=(v:number)=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;},worstBg=255*(1-panel.a),ratio=(1.05)/(lin(worstBg)+0.05);
+   assert.equal(panel.link,'rgb(255, 255, 255)');assert.equal(panel.small,'rgb(255, 255, 255)');assert.ok(ratio>=4.5,'menu text contrast over white backdrop '+ratio.toFixed(2));assert.equal(panel.cta,'hidden','campaign CTA hidden behind the dialog');
    const inside=()=>m.evaluate(()=>{const a=document.activeElement,d=document.querySelector('[role="dialog"][aria-modal="true"]');return !!a&&!!d&&d.contains(a);});
    assert.equal(await inside(),true,'focus starts inside the dialog');await expect(dialog.getByRole('button',{name:'メニューを閉じる'})).toBeVisible();
    for(let i=0;i<30;i++){await m.keyboard.press('Tab');assert.equal(await inside(),true,'Tab stays inside the dialog');}
    for(let i=0;i<30;i++){await m.keyboard.press('Shift+Tab');assert.equal(await inside(),true,'Shift+Tab stays inside the dialog');}
    assert.equal(await m.evaluate(()=>{const f=document.querySelector<HTMLElement>('.pc-footer a');f?.focus();return document.activeElement===f;}),false,'background links are inert while open');
    await m.keyboard.press('Escape');await expect(dialog).toHaveCount(0);
+   assert.equal(await m.evaluate(()=>getComputedStyle(document.querySelector('.pc-view')!).visibility),'visible','CTA back after closing');
    assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'メニューを開く','focus returns to the toggle');
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released');
    assert.equal(await m.evaluate(()=>!!document.querySelector('.pc-footer a')&&!(document.querySelector('.pc-footer') as HTMLElement).inert),true,'background restored');
@@ -77,6 +82,10 @@ try{
    await m.waitForURL(/\/ja\/rental\/ski$/);assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released after navigating from the menu');
    await touch.close();
   }
+  // VIS-02: with three campaigns the PC wheel draws each title once (active plus one either side).
+  const pc=await browser.newContext({baseURL:app!.origin,viewport:{width:1440,height:900}});const d=await pc.newPage();await d.goto('/ja');await expect(d.locator('.pc-wheel li[aria-hidden="false"] button')).toBeVisible();
+  const titles=await d.locator('.pc-wheel li button').allTextContents();assert.equal(titles.length,3);assert.equal(new Set(titles).size,3,'no repeated campaign title');
+  assert.equal(await d.locator('.pc-wheel li[aria-hidden="false"]').count(),1);await pc.close();
  });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
   await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole); // option keys come from the server below if catalog prefix differs

@@ -6,6 +6,8 @@ import type {Campaign} from './brand';
 // Palace top (measured 2026-10-10, docs/execution/p85-ui/ELEMENTS.md): the selection advances every 5000 ms; wheel rows sit at
 // ±27.5 / ±48.9 / ±65 / ±76.6 px from the active row with opacity .4705 / .1715 / .0370 / 0. The row-shift easing and duration were
 // not measured, so rows change position without an invented animation; only the measured .25 s image cross-fade is used.
+// VIS-02: with fewer campaigns than wheel rows, only distinct rows are drawn (3 campaigns -> active plus one either side), so a
+// title never repeats and the active one stays dominant.
 const INTERVAL_MS=5000;
 // Mobile horizontal selection (Palace 390px slides campaigns sideways): a deliberate horizontal swipe only — at least 48px,
 // clearly more horizontal than vertical, within 800ms — so vertical scrolling and short taps never change the campaign.
@@ -30,7 +32,7 @@ export function HomeCampaigns({items,heading,ja}:{items:Campaign[];heading:strin
    </Link>)}
   </div></div>
   <ul className="pc-wheel" aria-label={ja?'企画':'Campaigns'}>
-   {ROWS.map(r=>{const c=at(r.d);return <li key={r.d} style={{transform:`translateY(${r.y}px)`,opacity:r.o,color:c.titleColor}} aria-hidden={r.d!==0}>
+   {ROWS.filter(r=>Math.abs(r.d)<=Math.floor((items.length-1)/2)).map(r=>{const c=at(r.d);return <li key={r.d} style={{transform:`translateY(${r.y}px)`,opacity:r.o,color:c.titleColor}} aria-hidden={r.d!==0}>
     <button type="button" tabIndex={r.d===0?0:-1} onClick={()=>step(r.d)} aria-current={r.d===0?'true':undefined}>{c.title}</button></li>;})}
   </ul>
   <p className="pc-title-m" style={{color:current.titleColorMobile}} aria-live={paused?'polite':'off'}>{current.title}</p>

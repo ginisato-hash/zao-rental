@@ -7,6 +7,7 @@ import {StaffSessionBoundary} from './StaffSessionBoundary';
 import {useOperationsRequest} from './useOperationsRequest';
 import './holds.css';
 import './operations.css';
+import {storeDisplayName} from '../../../../packages/contracts/src/store-display';
 type Workspace=Awaited<ReturnType<InventoryOperations['workspace']>>;
 type Stocktake=Awaited<ReturnType<InventoryOperations['get']>>;
 type Stage=Awaited<ReturnType<InventoryOperations['stageImport']>>;
@@ -18,7 +19,7 @@ function Workspace({stamp,stores,canEdit,canReconcile}:{stamp:string;stores:stri
  return <main className="holds operations"><header><h1>棚卸・在庫投入</h1><nav><a href="/admin/assets">用品台帳・ラベル</a> · <a href="/staff/transfers">店舗間移動</a> · <a href="/staff/wear">ウェア</a> · <a href="/staff/rentals">貸出・返却</a></nav></header>
  <p>照合だけでは在庫を変更しません。所在不明は要確認、異なる店舗で見つかった用品は通常の移動・受領で処理します。</p><p role="status">{op.message}</p>
  {op.pending&&<button disabled={op.busy} onClick={()=>void op.send(op.pending!.path,null,()=>{setStage(null);setStocktake(null);},true)}>保存済みの同じ要求を照合</button>}
- <fieldset disabled={op.disabled}><legend>店舗</legend><label>対象店舗<select value={store} onChange={e=>{setStore(e.target.value);setStocktake(null);setWorkspace(null);}}>{stores.map(s=><option key={s}>{s}</option>)}</select></label><button onClick={()=>void op.load<Workspace>('/api/operations/inventory?store='+store,setWorkspace)}>店舗在庫を読み込む</button><button disabled={!canEdit} onClick={()=>void op.send<{id:string}>('/api/operations/stocktake-create',{store},r=>{setLastId(r.id);setStocktake(null);})}>棚卸を開始</button></fieldset>
+ <fieldset disabled={op.disabled}><legend>店舗</legend><label>対象店舗<select value={store} onChange={e=>{setStore(e.target.value);setStocktake(null);setWorkspace(null);}}>{stores.map(s=><option key={s} value={s}>{storeDisplayName(s)}</option>)}</select></label><button onClick={()=>void op.load<Workspace>('/api/operations/inventory?store='+store,setWorkspace)}>店舗在庫を読み込む</button><button disabled={!canEdit} onClick={()=>void op.send<{id:string}>('/api/operations/stocktake-create',{store},r=>{setLastId(r.id);setStocktake(null);})}>棚卸を開始</button></fieldset>
  {lastId&&<p>棚卸ID: {lastId} <button disabled={op.busy} onClick={refresh}>棚卸を読み込む</button></p>}
  {workspace&&<section><h2>保存済み棚卸</h2>{workspace.stocktakes.map(s=><p key={s.id}><button disabled={op.disabled} onClick={()=>void op.load<Stocktake>('/api/operations/stocktake?id='+s.id,openStocktake)}>{s.id} · {s.state}</button></p>)}</section>}
  {stocktake&&<section><h2>棚卸の照合</h2><p>{stocktake.state} · revision {stocktake.revision}</p><AssetQrInput disabled={op.disabled||!canEdit} onAsset={async id=>setAssets(old=>old.includes(id)?old:[...old,id])}/><p>今回の読取: {assets.length}件（まだ保存されていません）</p><ul>{assets.map(id=><li key={id}>{id} <button disabled={op.disabled} onClick={()=>setAssets(a=>a.filter(x=>x!==id))}>読取を取り消す</button></li>)}</ul>

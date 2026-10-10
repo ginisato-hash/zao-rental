@@ -32,11 +32,16 @@ try{
  });
  await check('ADMIN logs in normally and creates a store-scoped STAFF through the actual management UI/API',async()=>{
   adminPage=await login(admin,emails.admin);await adminPage.goto('/staff/users');await adminPage.getByRole('button',{name:'スタッフを作成',exact:true}).click();const form=adminPage.getByRole('form',{name:'スタッフ作成'});
-  await form.getByLabel('表示名',{exact:true}).fill(settings.displayName);await form.getByLabel('メールアドレス',{exact:true}).fill('SYNTHETIC-EDITOR@example.invalid');await form.getByLabel('初期パスワード（15〜128文字）').fill(password);await form.getByLabel('MOUNTAIN_BASE',{exact:true}).check();await form.getByLabel('台帳の登録・更新',{exact:true}).selectOption('allow');await form.getByRole('button',{name:'スタッフ設定を保存'}).click();await expect(adminPage.getByRole('heading',{name:settings.displayName,exact:true})).toBeVisible();
+  await form.getByLabel('表示名',{exact:true}).fill(settings.displayName);await form.getByLabel('メールアドレス',{exact:true}).fill('SYNTHETIC-EDITOR@example.invalid');await form.getByLabel('初期パスワード（15〜128文字）').fill(password);await form.getByLabel('Mountain Station',{exact:true}).check();await form.getByLabel('台帳の登録・更新',{exact:true}).selectOption('allow');await form.getByRole('button',{name:'スタッフ設定を保存'}).click();await expect(adminPage.getByRole('heading',{name:settings.displayName,exact:true})).toBeVisible();
   editorId=(await owner.query('SELECT id FROM staff_users WHERE email=$1',[emails.editor])).rows[0].id;
   const user=(await owner.query('SELECT password_hash FROM staff_users WHERE id=$1',[editorId])).rows[0];assert.ok(user.password_hash.startsWith('$argon2id$v=19$m=65536,t=3,p=1$'));assert.ok(user.password_hash!==password,'plaintext must never be stored');assert.ok(await verifyStaffPassword({hash:user.password_hash,password}));
   assert.equal((await admin.request.post('/api/staff-users',{headers:{origin},data:{...settings,email:emails.editor.toUpperCase(),password}})).status(),409);
   const reader=await admin.request.post('/api/staff-users',{headers:{origin},data:{...settings,displayName:'合成VIEWER',email:emails.reader,password,role:'VIEWER',storeIds:['ONSEN_BASE'],permissions:{}}});assert.equal(reader.status(),201);readerId=(await reader.json()).id;
+  // P85-05: ASSIGNED staff cards show store display names only (form values, DB and scope keep the internal IDs).
+  await adminPage.reload();const cards=adminPage.locator('ul.staff-cards');
+  await expect(cards.locator('li',{has:adminPage.getByRole('heading',{name:settings.displayName,exact:true})})).toContainText('Mountain Station');
+  await expect(cards.locator('li',{has:adminPage.getByRole('heading',{name:'合成VIEWER',exact:true})})).toContainText('Central Station');
+  for(const raw of ['MOUNTAIN_BASE','ONSEN_BASE'])await expect(cards).not.toContainText(raw);
   await adminPage.screenshot({path:'.local/screenshots/e05-staff-management.png',fullPage:true});await adminPage.setViewportSize({width:390,height:844});assert.ok(await adminPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await adminPage.screenshot({path:'.local/screenshots/e05-staff-management-mobile-width.png',fullPage:true});
  });
  const editor=await context();let page:Page;

@@ -215,7 +215,7 @@ try{
   // Families are shown by name (final UI closure: no raw enum), so the SKI task card is found by its label.
   const custodyCard=onsenPage.getByRole('region',{name:'本日の業務'}).locator('.staff-card',{hasText:/^スキー(?!ブーツ)/});
   await expect(custodyCard).toBeVisible();
-  await expect(custodyCard).toContainText('Mountain Base');await expect(custodyCard).toContainText('Onsen Base');for(const raw of ['MOUNTAIN_BASE','ONSEN_BASE'])await expect(custodyCard).not.toContainText(raw);
+  await expect(custodyCard).toContainText('Mountain Station');await expect(custodyCard).toContainText('Central Station');for(const raw of ['MOUNTAIN_BASE','ONSEN_BASE'])await expect(custodyCard).not.toContainText(raw);
   // Not yet inspected: server taskAction=INSPECT -> the 検品 display mapping, read from the
   // server value only, never inferred from inspectionPending/state on the client.
   await expect(custodyCard).toContainText('検品');

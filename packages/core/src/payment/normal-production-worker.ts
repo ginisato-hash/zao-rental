@@ -2,7 +2,7 @@ import {flowHash,flowObject,type PaymentObservation} from '../../../contracts/sr
 import type {PaymentReconciliationWorker} from './payment-reconciliation';
 import type {ProjectionReference,ProjectionResult} from './payment-projection';
 import type {BookingNotificationWorker} from '../notification/worker';
-import type {CancellationRefundWorker} from './cancellation-refund-worker';
+import type {CancellationRefundWorker,RefundLane} from './cancellation-refund-worker';
 
 export type NormalWorkerPlan={workerId:string;acceptedBookingsAfter:string;deadline:string;batchSize:number;notificationLimit:number;refundCreateLimit:number;refundBudgetJpy:number};
 export type NormalProjectionCandidate=ProjectionReference&{paymentId:string;observation:PaymentObservation};
@@ -22,7 +22,7 @@ export type NormalWorkerPorts={
  notifications:Pick<BookingNotificationWorker,'runBatch'>|null;
  refunds:Pick<CancellationRefundWorker,'dispatch'|'reconcile'>|null;
  // Separate bounded CREATE/LOOKUP lanes: at most limit rows each, CREATE first.
- refundCandidates:(limit:number)=>Promise<{id:string;amount_jpy:number;provider_id:string|null;dispatched_at:unknown;state:string}[]>;
+ refundCandidates:(limit:number)=>Promise<{id:string;amount_jpy:number;provider_id:string|null;dispatched_at:unknown;state:string;lane?:RefundLane}[]>;
  close:()=>Promise<void>;
 };
 /** One finite tick. Durable claims/truth/receipts remain authority; no queue rewrite or retry loop. */
@@ -37,8 +37,8 @@ export async function runNormalProductionTick(plan:NormalWorkerPlan,ports:Normal
   }
   if(ports.refunds)for(const r of active()?await ports.refundCandidates(plan.batchSize):[]){if(!active())break;
    // UNKNOWN without a provider ID remains durable history; it cannot be re-POSTed or looked up.
-   if(r.dispatched_at!==null&&r.dispatched_at!==undefined){if(r.provider_id){await ports.refunds.reconcile(r.id);refundLookups++;}continue;}
-   if(r.state==='PENDING'&&refundCreates<plan.refundCreateLimit&&refundJpy+Number(r.amount_jpy)<=plan.refundBudgetJpy){await ports.refunds.dispatch(r.id);refundCreates++;refundJpy+=Number(r.amount_jpy);}
+   if(r.dispatched_at!==null&&r.dispatched_at!==undefined){if(r.provider_id){await ports.refunds.reconcile(r.id,r.lane??'CANCELLATION');refundLookups++;}continue;}
+   if(r.state==='PENDING'&&refundCreates<plan.refundCreateLimit&&refundJpy+Number(r.amount_jpy)<=plan.refundBudgetJpy){await ports.refunds.dispatch(r.id,r.lane??'CANCELLATION');refundCreates++;refundJpy+=Number(r.amount_jpy);}
   }
   const notifications=ports.notifications&&active()?await ports.notifications.runBatch({since:plan.acceptedBookingsAfter,limit:plan.notificationLimit,deadline:new Date(plan.deadline)}):{state:'NOT_RUN',processed:0};
   return {state:'COMPLETED',reconciliation,projected,deferred,refundCreates,refundLookups,refundJpy,notifications};

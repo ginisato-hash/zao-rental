@@ -38,7 +38,8 @@ try{
  const returnOnlyA=await account('manifest-return-a@example.invalid','ASSIGNED',['MOUNTAIN_BASE'],{BOOKING_VIEW:true,RENTAL_RETURN:true});
  const returnOnlyB=await account('manifest-return-b@example.invalid','ASSIGNED',['MOUNTAIN_BASE'],{BOOKING_VIEW:true,RENTAL_RETURN:true});
  const viewOnly=await account('manifest-view@example.invalid','ASSIGNED',['MOUNTAIN_BASE'],{BOOKING_VIEW:true});
- const noPerm=await account('manifest-none@example.invalid','ASSIGNED',['MOUNTAIN_BASE'],{});
+ // 0056 gives STAFF booking view by role default; an explicit denial still removes it (only refund is non-revocable).
+ const noPerm=await account('manifest-none@example.invalid','ASSIGNED',['MOUNTAIN_BASE'],{BOOKING_VIEW:false});
  const onsenOnly=await account('manifest-onsen@example.invalid','ASSIGNED',['ONSEN_BASE'],{BOOKING_VIEW:true,RENTAL_RETURN:true});
  const full=await account('manifest-full@example.invalid','ALL',[],{BOOKING_VIEW:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,OPERATIONS_VIEW:true});
 

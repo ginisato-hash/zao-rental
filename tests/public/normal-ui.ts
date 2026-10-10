@@ -34,6 +34,16 @@ try{
   assert.equal((await context.request.get('/en/not-a-page')).status(),404);
   await page.goto('/ja/rental');await expect(page.getByRole('heading',{level:1})).toBeVisible();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await mkdir('.local/screenshots',{recursive:true});await page.screenshot({path:'.local/screenshots/public-ja-mobile.png',fullPage:true});
  });
+ await check('Owner-approved legal pages render JA/EN with the confirmed seller facts, are linked from the footer, and the under-review notices are gone',async()=>{
+  for(const [locale,doc,fact] of [['ja','commercial-disclosure','株式会社Yuge'],['ja','commercial-disclosure','〒990-2301 山形県山形市蔵王温泉973-7'],['ja','commercial-disclosure','070-4440-4813'],['en','commercial-disclosure','rentalstation@yuge-zao.com'],['ja','terms','利用規約'],['en','terms','Terms of use'],['ja','privacy','Square'],['en','privacy','Resend'],['ja','cancellation','48時間'],['en','cancellation','48 hours']] as const){
+   const response=await context.request.get(`/${locale}/legal/${doc}`);assert.equal(response.status(),200,`${locale}/${doc}`);assert.ok((await response.text()).includes(fact),`${locale}/${doc}: ${fact}`);
+  }
+  assert.equal((await context.request.get('/ja/legal/not-a-doc')).status(),404);
+  const faq=await (await context.request.get('/ja/faq')).text();
+  for(const doc of ['terms','privacy','commercial-disclosure','cancellation'])assert.ok(faq.includes(`href="/ja/legal/${doc}"`),`footer link ${doc}`);
+  assert.ok(!faq.includes('公開文言・利用規約は公開前確認中です'),'the under-review notice disappears once every document is approved');
+  const legalHtml=await (await context.request.get('/ja/legal/terms')).text();assert.match(legalHtml,/<meta name="robots" content="noindex/,'not indexable without publication authority');
+ });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
   await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole); // option keys come from the server below if catalog prefix differs
   await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員のサイズ・モデル条件・ウェア構成を確認した').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('全員分の参考総額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

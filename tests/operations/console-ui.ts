@@ -53,6 +53,26 @@ try{
   assert.ok(body.includes('現在も継続中'));
  });
 
+ await check('refund exceptions show channel, amount, elapsed time and the investigation state, with no resend control',async()=>{
+  // Server listing of ONLINE_REFUND is proven on real PostgreSQL in the refund automation suite; this checks the rendering only.
+  const at=new Date(Date.now()-3*3600000).toISOString(),row=(id:string,refund:object)=>({id,eventType:'REFUND_UNKNOWN',correlationId:id,bookingId:booking.id,assetId:null,store:'MOUNTAIN_BASE',severity:'ERROR',status:'UNACKNOWLEDGED',occurredAt:at,resolvedAt:null,resolutionActor:null,resolutionReason:null,sourceConditionActive:true,sourceType:'ONLINE_REFUND',refund});
+  const rows=[row(randomUUID(),{channel:'ONLINE',amountJpy:7500,state:'UNKNOWN',dispatched:true,providerIdPresent:false}),row(randomUUID(),{channel:'STORE',amountJpy:300,state:'UNKNOWN',dispatched:true,providerIdPresent:true})];
+  const posts:string[]=[],onRequest=(r:import('@playwright/test').Request)=>{if(r.method()==='POST')posts.push(r.url());};page.on('request',onRequest);
+  await page.route(/\/api\/operations\/exceptions\?/,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({exceptions:rows,next:null})}));
+  try{
+   await page.goto('/admin/ops');await page.getByLabel('状態').selectOption('ALL');await page.getByRole('button',{name:'読み込む',exact:true}).click();
+   const list=page.locator('section[aria-label="例外一覧"]');await expect(list.getByText('オンライン返金',{exact:false})).toBeVisible();
+   const text=await list.innerText();
+   for(const want of ['オンライン返金 / 金額: ¥7,500 / 経過: 3時間 / 要手動調査：結果不明・Provider IDなし（自動再送しません）','店頭返金 / 金額: ¥300 / 経過: 3時間 / Provider IDあり：照合中（自動・再送なし）'])assert.ok(text.includes(want),want);
+   await expect(list.getByRole('button',{name:/再送|返金/})).toHaveCount(0);
+   assert.deepEqual(posts,[],'listing sends no POST');
+  }finally{
+   // Restore the real list the later checks act on.
+   page.off('request',onRequest);await page.unroute(/\/api\/operations\/exceptions\?/);
+   await page.goto('/admin/ops');await page.getByRole('button',{name:'読み込む',exact:true}).click();await expect(page.getByRole('heading',{name:'PAYMENT_PENDING'}).first()).toBeVisible();
+  }
+ });
+
  await check('readiness reuses the existing safe component status only',async()=>{
   await page.getByRole('button',{name:'稼働状況',exact:true}).click();
   const health=page.locator('section[aria-label="稼働状況"]');await expect(health).toBeVisible();

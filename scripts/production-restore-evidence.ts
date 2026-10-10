@@ -7,10 +7,7 @@
 // signed or keyed, so a writer of `.local/evidence/production-backup` can forge a self-consistent set (a re-hash or a version string is not authenticity); `finalizedAt` is the record's own
 // clock; the finalizer cannot show that the drill ran on the Owner's machine, that the object in R2 is this file, or that the plaintext hash is the producer's (the producer summary is not
 // local). HEAD is deliberately not bound: the backup precedes 0054/0055 and the installers run from a newer main.
-// Two fixed profiles (R-01, Issue 47): the frozen pre-0054 contract (53 migrations, version /1, used by the 0054/0055 installer) and the pre-0056 contract (55 migrations, the
-// current business tables including public.provisional_capacity_receipts, used by the 0056 installer). Each has its own drill result and record file, so neither can satisfy the other.
 //   no arguments:  .local/evidence/production-backup/{object-key.txt, <basename>, restore-drill-result.json}  ->  restore-pass.json
-//   pre-0056:      .local/evidence/production-backup/{object-key.txt, <basename>, restore-drill-result-pre-0056.json}  ->  restore-pass-pre-0056.json
 import {createHash} from 'node:crypto';
 import {closeSync,createReadStream,fchmodSync,lstatSync,openSync,readFileSync,rmSync,writeSync} from 'node:fs';
 import {join} from 'node:path';
@@ -24,12 +21,6 @@ export {registryDigest};
 export const RESTORE_PASS_VERSION='production-restore-pass/1';
 /** The pre-migration Production backup is taken at the first 53 migrations; 0054/0055 are installed only after this proof. */
 export const PRE_0054_MIGRATIONS=53;
-export type RestoreProfile={readonly version:string;readonly migrations:number;readonly drillFile:string;readonly recordFile:string;readonly receipts:boolean};
-/** Frozen contract of the 0054/0055 installer: a backup taken before 0054 cannot contain provisional_capacity_receipts. */
-export const PRE_0054_PROFILE:RestoreProfile=Object.freeze({version:RESTORE_PASS_VERSION,migrations:PRE_0054_MIGRATIONS,drillFile:'restore-drill-result.json',recordFile:'restore-pass.json',receipts:false});
-/** The 0056 installer runs on 0001-0055; its backup must contain the current receipt-capacity ledger (added by 0054). */
-export const PRE_0056_PROFILE:RestoreProfile=Object.freeze({version:'production-restore-pass-pre-0056/1',migrations:55,drillFile:'restore-drill-result-pre-0056.json',recordFile:'restore-pass-pre-0056.json',receipts:true});
-const RECEIPTS='public.provisional_capacity_receipts';
 /** Freshness is measured from the end of the restore drill (a value inside the hashed drill result), not from the finalizer's own clock, so re-finalizing an old drill result cannot refresh it. */
 export const RESTORE_PASS_MAX_AGE_HOURS=24;
 const SHA256=/^[a-f0-9]{64}$/;
@@ -47,11 +38,8 @@ const keyTimeIso=(key:string)=>{
  if(!m)throw fail('KEY_INVALID');
  return `${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`;
 };
-export function expectedPre0054RegistrySha256(){return expectedRegistrySha256(PRE_0054_MIGRATIONS);}
-export function expectedRegistrySha256(migrations:number){
- // The prefix must be strictly shorter than the source plan: the profile describes the database BEFORE the next migration is installed.
- if(!Number.isInteger(migrations)||migrations<1||migrations>=migrationPlan.length)throw fail('SOURCE_MIGRATIONS_UNREADABLE');
- try{return registryDigest(migrationPlan.slice(0,migrations).map(e=>({id:e.id,checksum:createHash('sha256').update(readFileSync(join(migrationsDirectory,e.file),'utf8')).digest('hex')})));}
+export function expectedPre0054RegistrySha256(){
+ try{return registryDigest(migrationPlan.slice(0,PRE_0054_MIGRATIONS).map(e=>({id:e.id,checksum:createHash('sha256').update(readFileSync(join(migrationsDirectory,e.file),'utf8')).digest('hex')})));}
  catch{throw fail('SOURCE_MIGRATIONS_UNREADABLE');}
 }
 function regularFile(path:string,maxBytes?:number){
@@ -60,8 +48,8 @@ function regularFile(path:string,maxBytes?:number){
  return stat;
 }
 
-/** The drill result must be the PRODUCTION class result for this very object at the profile's registry. Nothing here trusts a free-form field. */
-export function validateDrillResult(raw:unknown,expect:{key:string;ciphertextBytes:number;ciphertextSha256:string},profile:RestoreProfile=PRE_0054_PROFILE){
+/** The drill result must be the PRODUCTION class result for this very object at the pre-0054 registry. Nothing here trusts a free-form field. */
+export function validateDrillResult(raw:unknown,expect:{key:string;ciphertextBytes:number;ciphertextSha256:string}){
  const r=obj(raw);
  if(r.status!=='DRILL_PASS'||r.dataClass!=='PRODUCTION')throw fail('NOT_PRODUCTION_DRILL_PASS');
  if(r.key!==expect.key)throw fail('KEY_MISMATCH');
@@ -78,21 +66,21 @@ export function validateDrillResult(raw:unknown,expect:{key:string;ciphertextByt
  if(typeof r.toolVersion!=='string'||!/^pg_restore \(PostgreSQL\) 18\./.test(r.toolVersion))throw fail('SHAPE_INVALID');
  if(r.productionRpoRtoApproved!==false)throw fail('SHAPE_INVALID');
  const v=obj(r.verification);
- if(v.migrations!==profile.migrations)throw fail('MIGRATIONS_MISMATCH');
+ if(v.migrations!==PRE_0054_MIGRATIONS)throw fail('MIGRATIONS_MISMATCH');
  if(typeof v.registrySha256!=='string'||!SHA256.test(v.registrySha256))throw fail('SHAPE_INVALID');
- if(v.registrySha256!==expectedRegistrySha256(profile.migrations))throw fail('MIGRATIONS_MISMATCH');
+ if(v.registrySha256!==expectedPre0054RegistrySha256())throw fail('MIGRATIONS_MISMATCH');
  if(!Number.isInteger(v.foreignKeys)||(v.foreignKeys as number)<1||!Number.isInteger(v.sequences))throw fail('SHAPE_INVALID');
  const critical=obj(v.critical),tables=Object.keys(critical);
- if(!tables.length||tables.includes(RECEIPTS)!==profile.receipts)throw fail('SHAPE_INVALID');
+ if(!tables.length||tables.includes('public.provisional_capacity_receipts'))throw fail('SHAPE_INVALID');
  for(const t of tables){const c=obj(critical[t]);if(!Number.isInteger(c.rows)||(c.rows as number)<0||typeof c.sha256!=='string'||!SHA256.test(c.sha256))throw fail('SHAPE_INVALID');}
  return {plaintextSha256:r.plaintextSha256 as string,backupScheduledAt:r.backupScheduledAt as string,restoreSeconds:r.restoreSeconds as number,observedBackupAgeSeconds:r.observedBackupAgeSeconds as number,finishedAt:r.finishedAt as string};
 }
 
-async function derive(root:string,profile:RestoreProfile){
+async function derive(root:string){
  const dir=evidenceDirectory(root);
  regularFile(join(dir,'object-key.txt'),512);
  const key=parseObjectKey(readFileSync(join(dir,'object-key.txt'),'utf8'));assertKeyConsistent(key);
- const drillPath=join(dir,profile.drillFile);regularFile(drillPath,65536);
+ const drillPath=join(dir,'restore-drill-result.json');regularFile(drillPath,65536);
  const drillBytes=readFileSync(drillPath);
  let drill:unknown;try{drill=JSON.parse(drillBytes.toString('utf8'));}catch{throw fail('SHAPE_INVALID');}
  return {dir,key,drillBytes,drill,drillSha:createHash('sha256').update(drillBytes).digest('hex')};
@@ -103,15 +91,15 @@ function assertFresh(finishedAt:string,finalizedAt:string,nowMs:number){
  const finished=isoMs(finishedAt),finalized=isoMs(finalizedAt);
  if(finalized<finished||finalized-nowMs>60_000||finished-nowMs>60_000||nowMs-finished>RESTORE_PASS_MAX_AGE_HOURS*3_600_000)throw fail('STALE');
 }
-export async function finalizeRestoreEvidence(root:string=process.cwd(),now:()=>Date=()=>new Date(),profile:RestoreProfile=PRE_0054_PROFILE):Promise<RestorePassRecord>{
- const {dir,key,drill,drillSha}=await derive(root,profile);
+export async function finalizeRestoreEvidence(root:string=process.cwd(),now:()=>Date=()=>new Date()):Promise<RestorePassRecord>{
+ const {dir,key,drill,drillSha}=await derive(root);
  const cipher=plannedOutput(root,key),stat=regularFile(cipher),objectSha256=await sha256File(cipher);
- const summary=validateDrillResult(drill,{key,ciphertextBytes:stat.size,ciphertextSha256:objectSha256},profile);
- const record:RestorePassRecord={version:profile.version as typeof RESTORE_PASS_VERSION,result:'PASS',objectKey:key,objectSha256,ciphertextBytes:stat.size,plaintextSha256:summary.plaintextSha256,
-  migrations:profile.migrations,drillResultSha256:drillSha,backupScheduledAt:summary.backupScheduledAt,restoreSeconds:summary.restoreSeconds,observedBackupAgeSeconds:summary.observedBackupAgeSeconds,
+ const summary=validateDrillResult(drill,{key,ciphertextBytes:stat.size,ciphertextSha256:objectSha256});
+ const record:RestorePassRecord={version:RESTORE_PASS_VERSION,result:'PASS',objectKey:key,objectSha256,ciphertextBytes:stat.size,plaintextSha256:summary.plaintextSha256,
+  migrations:PRE_0054_MIGRATIONS,drillResultSha256:drillSha,backupScheduledAt:summary.backupScheduledAt,restoreSeconds:summary.restoreSeconds,observedBackupAgeSeconds:summary.observedBackupAgeSeconds,
   finishedAt:summary.finishedAt,finalizedAt:now().toISOString()};
  assertFresh(record.finishedAt,record.finalizedAt,now().getTime());
- const path=join(dir,profile.recordFile);
+ const path=join(dir,'restore-pass.json');
  let fd:number;try{fd=openSync(path,'wx',0o600);}catch{throw fail('ALREADY_FINALIZED');}
  // A write that fails half way must not leave a partial record behind (it would block the next finalize).
  try{fchmodSync(fd,0o600);writeSync(fd,JSON.stringify(record)+'\n');}catch(e){try{closeSync(fd);}catch{/* ignore */}rmSync(path,{force:true});throw e;}
@@ -119,14 +107,14 @@ export async function finalizeRestoreEvidence(root:string=process.cwd(),now:()=>
  return record;
 }
 
-/** Strict reader used by every gate (0054/0055 installer with the default profile, 0056 installer with PRE_0056_PROFILE). A shape-only file, an edited record, a changed drill result or a replaced ciphertext fails. */
-export async function verifyRestorePassRecord(root:string=process.cwd(),now:()=>Date=()=>new Date(),profile:RestoreProfile=PRE_0054_PROFILE):Promise<RestorePassRecord>{
+/** Strict reader used by every gate (0054/0055 installer, grants installer). A shape-only file, an edited record, a changed drill result or a replaced ciphertext fails. */
+export async function verifyRestorePassRecord(root:string=process.cwd(),now:()=>Date=()=>new Date()):Promise<RestorePassRecord>{
  const dir=evidenceDirectory(root);
- regularFile(join(dir,profile.recordFile),4096);
- let raw:unknown;try{raw=JSON.parse(readFileSync(join(dir,profile.recordFile),'utf8'));}catch{throw fail('SHAPE_INVALID');}
+ regularFile(join(dir,'restore-pass.json'),4096);
+ let raw:unknown;try{raw=JSON.parse(readFileSync(join(dir,'restore-pass.json'),'utf8'));}catch{throw fail('SHAPE_INVALID');}
  const r=obj(raw);
  if(JSON.stringify(Object.keys(r).sort())!==JSON.stringify(RECORD_KEYS))throw fail('SHAPE_INVALID');
- if(r.version!==profile.version||r.result!=='PASS'||r.migrations!==profile.migrations)throw fail('SHAPE_INVALID');
+ if(r.version!==RESTORE_PASS_VERSION||r.result!=='PASS'||r.migrations!==PRE_0054_MIGRATIONS)throw fail('SHAPE_INVALID');
  if(typeof r.objectKey!=='string')throw fail('SHAPE_INVALID');
  const key=parseObjectKey(r.objectKey);assertKeyConsistent(key);
  for(const f of ['objectSha256','plaintextSha256','drillResultSha256'])if(typeof r[f]!=='string'||!SHA256.test(r[f] as string))throw fail('SHAPE_INVALID');
@@ -134,9 +122,9 @@ export async function verifyRestorePassRecord(root:string=process.cwd(),now:()=>
  isoMs(r.finalizedAt);isoMs(r.finishedAt);
  assertFresh(r.finishedAt as string,r.finalizedAt as string,now().getTime());
  // The record is bound to the drill result file and, while it still exists, to the exact downloaded ciphertext.
- const {drill,drillSha,key:currentKey}=await derive(root,profile);
+ const {drill,drillSha,key:currentKey}=await derive(root);
  if(drillSha!==r.drillResultSha256||currentKey!==key)throw fail('BINDING_MISMATCH');
- const summary=validateDrillResult(drill,{key,ciphertextBytes:r.ciphertextBytes as number,ciphertextSha256:r.objectSha256 as string},profile);
+ const summary=validateDrillResult(drill,{key,ciphertextBytes:r.ciphertextBytes as number,ciphertextSha256:r.objectSha256 as string});
  if(summary.plaintextSha256!==r.plaintextSha256||summary.backupScheduledAt!==r.backupScheduledAt||summary.restoreSeconds!==r.restoreSeconds||summary.observedBackupAgeSeconds!==r.observedBackupAgeSeconds||summary.finishedAt!==r.finishedAt)throw fail('BINDING_MISMATCH');
  const cipher=plannedOutput(root,key);let present=true;try{lstatSync(cipher);}catch{present=false;}
  if(present){const stat=regularFile(cipher);if(stat.size!==r.ciphertextBytes||await sha256File(cipher)!==r.objectSha256)throw fail('BINDING_MISMATCH');}
@@ -144,8 +132,8 @@ export async function verifyRestorePassRecord(root:string=process.cwd(),now:()=>
 }
 
 export async function main(argv:string[],root:string=process.cwd()){
- if(argv.length>1||(argv.length===1&&argv[0]!=='pre-0056'))throw fail('ARGUMENTS_REFUSED');
- const r=await finalizeRestoreEvidence(root,undefined,argv.length?PRE_0056_PROFILE:PRE_0054_PROFILE);
+ if(argv.length)throw fail('ARGUMENTS_REFUSED');
+ const r=await finalizeRestoreEvidence(root);
  console.log(JSON.stringify({version:r.version,state:'RESTORE_PASS_FINALIZED',objectKey:r.objectKey,migrations:r.migrations,ciphertextBytes:r.ciphertextBytes,restoreSeconds:r.restoreSeconds,observedBackupAgeSeconds:r.observedBackupAgeSeconds}));
 }
 if(process.argv[1]&&new URL(import.meta.url).pathname===process.argv[1]){

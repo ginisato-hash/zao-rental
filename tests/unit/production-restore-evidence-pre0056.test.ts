@@ -8,7 +8,8 @@ import {migrationPlan,migrationsDirectory} from '../../packages/db/src/index';
 import {objectKey} from '../../scripts/production-backup';
 import {evidenceDirectory} from '../../scripts/production-backup-credential';
 import {plannedOutput} from '../../scripts/production-backup-object-get';
-import {PRE_0054_PROFILE,PRE_0056_PROFILE,RESTORE_PASS_MAX_AGE_HOURS,finalizeRestoreEvidence,main,verifyRestorePassRecord} from '../../scripts/production-restore-evidence';
+import {RESTORE_PASS_MAX_AGE_HOURS,RESTORE_PASS_VERSION,finalizeRestoreEvidence} from '../../scripts/production-restore-evidence';
+import {PRE_0056_DRILL_FILE,PRE_0056_RESTORE_PASS_VERSION,finalizePre0056RestoreEvidence,main,requirePre0056RestorePass,verifyPre0056RestorePassRecord} from '../../scripts/production-restore-evidence-pre0056';
 import {requireRestorePass} from '../../scripts/lib/production-owner-session';
 import {main as installRefundAutomation} from '../../scripts/production-install-refund-automation';
 
@@ -30,7 +31,7 @@ const drillOk=(over:Record<string,unknown>={},finished=FINISHED,scheduled=SCHEDU
  backupScheduledAt:scheduled.toISOString(),startedAt:new Date(finished-42_000).toISOString(),finishedAt:new Date(finished).toISOString(),restoreSeconds:42,
  observedBackupAgeSeconds:(finished-scheduled.getTime())/1000,plaintextSha256:'b'.repeat(64),plaintextBytes:1000,ciphertextBytes:CIPHER.length,ciphertextSha256:sha(CIPHER),
  toolVersion:'pg_restore (PostgreSQL) 18.6',verification:verification(),productionRpoRtoApproved:false,...over});
-function setup(root:string,drill:unknown=drillOk(),drillFile=PRE_0056_PROFILE.drillFile,key=KEY){
+function setup(root:string,drill:unknown=drillOk(),drillFile=PRE_0056_DRILL_FILE,key=KEY){
  const dir=evidenceDirectory(root);mkdirSync(dir,{recursive:true});
  writeFileSync(join(dir,'object-key.txt'),key+'\n');
  writeFileSync(plannedOutput(root,key),CIPHER,{mode:0o600});
@@ -39,16 +40,16 @@ function setup(root:string,drill:unknown=drillOk(),drillFile=PRE_0056_PROFILE.dr
 }
 const withRoot=async(fn:(root:string)=>Promise<void>)=>{const root=mkdtempSync(join(tmpdir(),'zao-restore-pre0056-'));try{await fn(root);}finally{rmSync(root,{recursive:true,force:true});}};
 const code=(re:RegExp)=>(e:Error)=>{assert.match(e.message,re);return true;};
-const fin=(root:string)=>finalizeRestoreEvidence(root,()=>NOW,PRE_0056_PROFILE);
+const fin=(root:string)=>finalizePre0056RestoreEvidence(root,()=>NOW);
 
 test('pre-0056: a fresh 55-migration drill with the receipt ledger produces its own record that the 0056 gate accepts',()=>withRoot(async root=>{
  const dir=setup(root);
  const record=await fin(root);
- assert.deepEqual([record.version,record.migrations,record.objectKey,record.objectSha256],[PRE_0056_PROFILE.version,55,KEY,sha(CIPHER)]);
- assert.equal(record.drillResultSha256,sha(readFileSync(join(dir,PRE_0056_PROFILE.drillFile))));
+ assert.deepEqual([record.version,record.migrations,record.objectKey,record.objectSha256],[PRE_0056_RESTORE_PASS_VERSION,55,KEY,sha(CIPHER)]);
+ assert.equal(record.drillResultSha256,sha(readFileSync(join(dir,PRE_0056_DRILL_FILE))));
  assert.equal(statSync(join(dir,'restore-pass-pre-0056.json')).mode&0o777,0o600);
- assert.deepEqual(await verifyRestorePassRecord(root,()=>NOW,PRE_0056_PROFILE),record);
- assert.equal((await requireRestorePass(root,PRE_0056_PROFILE)).migrations,55);
+ assert.deepEqual(await verifyPre0056RestorePassRecord(root,()=>NOW),record);
+ assert.equal((await requirePre0056RestorePass(root)).migrations,55);
  // the record does not satisfy the frozen pre-0054 gate, and the pre-0054 record file is not written
  await assert.rejects(requireRestorePass(root),code(/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/));
  assert.throws(()=>statSync(join(dir,'restore-pass.json')));
@@ -57,16 +58,16 @@ test('pre-0056: a fresh 55-migration drill with the receipt ledger produces its 
 
 test('pre-0056: a valid frozen pre-0054 (53) record cannot open the 0056 gate',()=>withRoot(async root=>{
  const REGISTRY53=digest(rows.slice(0,53));
- setup(root,drillOk({verification:{migrations:53,registrySha256:REGISTRY53,foreignKeys:120,sequences:3,critical:{'public.rental_bookings':{rows:2,sha256:'c'.repeat(64)}}}}),PRE_0054_PROFILE.drillFile);
+ setup(root,drillOk({verification:{migrations:53,registrySha256:REGISTRY53,foreignKeys:120,sequences:3,critical:{'public.rental_bookings':{rows:2,sha256:'c'.repeat(64)}}}}),'restore-drill-result.json');
  const old=await finalizeRestoreEvidence(root,()=>NOW);
  assert.equal(old.migrations,53);
  assert.equal((await requireRestorePass(root)).migrations,53,'the frozen contract still works for the 0054/0055 installer');
- await assert.rejects(verifyRestorePassRecord(root,()=>NOW,PRE_0056_PROFILE),code(/RESTORE_EVIDENCE_FILE_MISSING/));
- await assert.rejects(requireRestorePass(root,PRE_0056_PROFILE),code(/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/));
+ await assert.rejects(verifyPre0056RestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_FILE_MISSING/));
+ await assert.rejects(requirePre0056RestorePass(root),code(/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/));
  // renaming the old record into the pre-0056 slot is refused by version/count, not accepted by shape
  const dir=evidenceDirectory(root);
  writeFileSync(join(dir,'restore-pass-pre-0056.json'),readFileSync(join(dir,'restore-pass.json')),{mode:0o600});
- await assert.rejects(verifyRestorePassRecord(root,()=>NOW,PRE_0056_PROFILE),code(/RESTORE_EVIDENCE_SHAPE_INVALID/));
+ await assert.rejects(verifyPre0056RestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_SHAPE_INVALID/));
 }));
 
 test('pre-0056: wrong registry count, missing/extra/altered rows and a 53-row drill are refused',()=>withRoot(async root=>{
@@ -95,39 +96,39 @@ test('pre-0056: the current business integrity must include provisional_capacity
  await assert.rejects(fin(root),code(/RESTORE_EVIDENCE_SHAPE_INVALID/));
  // and the frozen pre-0054 profile still refuses a drill that contains it
  rmSync(evidenceDirectory(root),{recursive:true,force:true});
- setup(root,drillOk({verification:verification({migrations:53,registrySha256:digest(rows.slice(0,53))})}),PRE_0054_PROFILE.drillFile);
+ setup(root,drillOk({verification:verification({migrations:53,registrySha256:digest(rows.slice(0,53))})}),'restore-drill-result.json');
  await assert.rejects(finalizeRestoreEvidence(root,()=>NOW),code(/RESTORE_EVIDENCE_SHAPE_INVALID/));
 }));
 
 test('pre-0056: the 24-hour freshness is not extended and edits after finalization fail',()=>withRoot(async root=>{
  setup(root);const record=await fin(root);
  const at=(h:number,ms=0)=>new Date(FINISHED+h*3600_000+ms);
- assert.deepEqual(await verifyRestorePassRecord(root,()=>at(RESTORE_PASS_MAX_AGE_HOURS),PRE_0056_PROFILE),record);
- await assert.rejects(verifyRestorePassRecord(root,()=>at(RESTORE_PASS_MAX_AGE_HOURS,1),PRE_0056_PROFILE),code(/RESTORE_EVIDENCE_STALE/));
+ assert.deepEqual(await verifyPre0056RestorePassRecord(root,()=>at(RESTORE_PASS_MAX_AGE_HOURS)),record);
+ await assert.rejects(verifyPre0056RestorePassRecord(root,()=>at(RESTORE_PASS_MAX_AGE_HOURS,1)),code(/RESTORE_EVIDENCE_STALE/));
  const dir=evidenceDirectory(root),pass=join(dir,'restore-pass-pre-0056.json');
  const original=readFileSync(pass,'utf8');
  for(const [name,mut,re] of [['finishedAt rewritten',{finishedAt:new Date(FINISHED-60_000).toISOString()},/RESTORE_EVIDENCE_BINDING_MISMATCH/],
   ['finishedAt moved past finalization',{finishedAt:new Date(FINISHED+3600_000).toISOString()},/RESTORE_EVIDENCE_STALE/],
-  ['count only',{migrations:53},/RESTORE_EVIDENCE_SHAPE_INVALID/],['old version',{version:PRE_0054_PROFILE.version},/RESTORE_EVIDENCE_SHAPE_INVALID/],
+  ['count only',{migrations:53},/RESTORE_EVIDENCE_SHAPE_INVALID/],['old version',{version:RESTORE_PASS_VERSION},/RESTORE_EVIDENCE_SHAPE_INVALID/],
   ['other ciphertext hash',{objectSha256:'f'.repeat(64)},/RESTORE_EVIDENCE_(BINDING|CIPHERTEXT)_MISMATCH/]] as const){
   writeFileSync(pass,JSON.stringify({...record,...mut}));
-  await assert.rejects(verifyRestorePassRecord(root,()=>NOW,PRE_0056_PROFILE),code(re),name);
+  await assert.rejects(verifyPre0056RestorePassRecord(root,()=>NOW),code(re),name);
  }
  writeFileSync(pass,original);
- writeFileSync(join(dir,PRE_0056_PROFILE.drillFile),JSON.stringify(drillOk({plaintextSha256:'a'.repeat(64)})));
- await assert.rejects(verifyRestorePassRecord(root,()=>NOW,PRE_0056_PROFILE),code(/RESTORE_EVIDENCE_BINDING_MISMATCH/));
+ writeFileSync(join(dir,PRE_0056_DRILL_FILE),JSON.stringify(drillOk({plaintextSha256:'a'.repeat(64)})));
+ await assert.rejects(verifyPre0056RestorePassRecord(root,()=>NOW),code(/RESTORE_EVIDENCE_BINDING_MISMATCH/));
  // a drill that ended more than 24 hours ago cannot be finalized
  rmSync(dir,{recursive:true,force:true});
  const oldScheduled=new Date(NOW.getTime()-30*3600_000);
- setup(root,drillOk({},NOW.getTime()-(RESTORE_PASS_MAX_AGE_HOURS+1)*3600_000,oldScheduled),PRE_0056_PROFILE.drillFile,objectKey('hourly',oldScheduled));
+ setup(root,drillOk({},NOW.getTime()-(RESTORE_PASS_MAX_AGE_HOURS+1)*3600_000,oldScheduled),PRE_0056_DRILL_FILE,objectKey('hourly',oldScheduled));
  await assert.rejects(fin(root),code(/RESTORE_EVIDENCE_STALE/));
 }));
 
-test('pre-0056: the finalizer CLI takes exactly the profile argument',()=>withRoot(async root=>{
- for(const bad of [['pre-0054'],['pre-0056','x'],['--force']])await assert.rejects(main(bad,root),code(/RESTORE_EVIDENCE_ARGUMENTS_REFUSED/),bad.join(' '));
+test('pre-0056: the finalizer CLI takes no arguments',()=>withRoot(async root=>{
+ for(const bad of [['pre-0054'],['pre-0056'],['--force']])await assert.rejects(main(bad,root),code(/RESTORE_EVIDENCE_ARGUMENTS_REFUSED/),bad.join(' '));
  setup(root);
  const logged:string[]=[];const log=console.log;console.log=(m:string)=>{logged.push(m);};
- try{await main(['pre-0056'],root);}finally{console.log=log;}
+ try{await main([],root);}finally{console.log=log;}
  assert.equal(JSON.parse(logged[0]!).migrations,55);
 }));
 
@@ -135,11 +136,11 @@ test('the 0056 installer gates on the pre-0056 record before opening any owner s
  const opened:string[]=[];
  const seams={release:()=>'f'.repeat(40),openSession:async()=>{opened.push('open');throw new Error('SESSION_STUB');}};
  const REGISTRY53=digest(rows.slice(0,53));
- setup(root,drillOk({verification:{migrations:53,registrySha256:REGISTRY53,foreignKeys:120,sequences:3,critical:{'public.rental_bookings':{rows:2,sha256:'c'.repeat(64)}}}}),PRE_0054_PROFILE.drillFile);
+ setup(root,drillOk({verification:{migrations:53,registrySha256:REGISTRY53,foreignKeys:120,sequences:3,critical:{'public.rental_bookings':{rows:2,sha256:'c'.repeat(64)}}}}),'restore-drill-result.json');
  await finalizeRestoreEvidence(root,()=>NOW);
  for(const command of ['migrate','grants'])await assert.rejects(installRefundAutomation([command],root,seams),code(/PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED/),command);
  assert.deepEqual(opened,[],'a pre-0054 record never reaches the owner session');
- writeFileSync(join(evidenceDirectory(root),PRE_0056_PROFILE.drillFile),JSON.stringify(drillOk()));
+ writeFileSync(join(evidenceDirectory(root),PRE_0056_DRILL_FILE),JSON.stringify(drillOk()));
  await fin(root);
  await assert.rejects(installRefundAutomation(['migrate'],root,seams),code(/SESSION_STUB/));
  assert.deepEqual(opened,['open']);

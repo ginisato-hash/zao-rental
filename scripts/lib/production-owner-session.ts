@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {Pool,type PoolClient} from 'pg';
 import {assertFirstAdminDatabaseOwner,assertFirstAdminRelease,assertFirstAdminTls,firstAdminDatabaseConfig} from './first-admin-bootstrap';
 import {BACKUP_CREDENTIAL_TARGET as T,type NeonPort} from '../production-backup-credential';
-import {PRE_0054_PROFILE,verifyRestorePassRecord,type RestoreProfile} from '../production-restore-evidence';
+import {verifyRestorePassRecord} from '../production-restore-evidence';
 import {assertProductionHost,assertProductionHostFingerprint,assertProductionPort} from '../production-backup';
 
 const refuse=(suffix:string):never=>{throw new Error('PRODUCTION_INSTALL_'+suffix);};
@@ -29,8 +29,8 @@ export function assertNoTlsOverrides(env:NodeJS.ProcessEnv=process.env){
 /** The versioned restore PASS record is derived by `production-restore-evidence` from the Owner's restore result and the downloaded ciphertext; this gate re-verifies every binding
  * (drill result hash, object key, ciphertext, pre-0054 registry) and the freshness. A shape-only or edited file is refused. It is not a signature: see the evidence module header.
  * The refusal carries the evidence module's fixed reason code (never text from the evidence) so the operator can see why. */
-export async function requireRestorePass(root:string=process.cwd(),profile:RestoreProfile=PRE_0054_PROFILE){
- try{return await verifyRestorePassRecord(root,undefined,profile);}
+export async function requireRestorePass(root:string=process.cwd()){
+ try{return await verifyRestorePassRecord(root);}
  catch(e){const m=String((e as Error)?.message??'');throw Object.assign(new Error('PRODUCTION_INSTALL_RESTORE_PASS_REQUIRED'),{reason:/^RESTORE_EVIDENCE_[A-Z_]{1,40}$/.test(m)?m:null});}
 }
 

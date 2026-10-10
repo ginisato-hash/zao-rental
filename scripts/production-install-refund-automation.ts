@@ -5,9 +5,9 @@ import {existsSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
 import {neonCliPort} from './production-backup-credential';
-import {PRE_0056_PROFILE} from './production-restore-evidence';
+import {requirePre0056RestorePass} from './production-restore-evidence-pre0056';
 import {applyProductionRefundAutomationMigration,applyProductionRefundAutomationGrants} from './production-refund-automation';
-import {assertAcceptedMainRelease,assertNoTlsOverrides,openOwnerSession,requireRestorePass,type OwnerSession} from './lib/production-owner-session';
+import {assertAcceptedMainRelease,assertNoTlsOverrides,openOwnerSession,type OwnerSession} from './lib/production-owner-session';
 
 const COMMANDS=['migrate','grants'] as const;
 type Command=typeof COMMANDS[number];
@@ -25,7 +25,7 @@ export async function main(argv:string[],root:string=process.cwd(),seams:Install
  if(rest.length||!COMMANDS.includes(command as Command))throw new Error('PRODUCTION_INSTALL_ARGUMENTS_REJECTED');
  assertNoTlsOverrides();
  const head=seams.release();
- await requireRestorePass(root,PRE_0056_PROFILE);
+ await requirePre0056RestorePass(root);
  const session=await seams.openSession();
  try{
   const result=command==='migrate'?await applyProductionRefundAutomationMigration(session.client,'neondb','neondb_owner'):await applyProductionRefundAutomationGrants(session.client,'neondb','neondb_owner');

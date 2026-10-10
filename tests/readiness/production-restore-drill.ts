@@ -229,8 +229,8 @@ try {
   });
 
   await check('a pre-0054 Production backup restores against its own 53-entry registry; the default, a longer registry and an invalid count are refused', async () => {
-    // Emulates a dump taken before 0054/0055: registry holds the first 53 entries and the 0054 table does not exist.
-    const toPre0054 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055')"); await p.query('DROP TABLE provisional_capacity_receipts CASCADE'); };
+    // Emulates a dump taken before 0054–0056: registry holds the first 53 entries and the 0054/0056 tables do not exist.
+    const toPre0054 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056')"); await p.query('DROP TABLE provisional_capacity_receipts, staff_permission_override_removals, rental_internal.ops_refund_effects CASCADE'); };
     const target = await newTarget(); counters.fetch = counters.restore = 0;
     const result = await runRestoreDrill(adapters(toPre0054), input(target, {expectedMigrations: 53}), fingerprintHost('production.invalid'));
     assert.equal(result.verification.migrations, 53);
@@ -248,7 +248,7 @@ try {
     const drift = await newTarget();
     await rejects(() => runRestoreDrill(adapters(async p => { await toPre0054(p); await p.query("UPDATE foundation_migrations SET checksum='0'||substr(checksum,2) WHERE id='0053'"); }), input(drift, {expectedMigrations: 53}), fingerprintHost('production.invalid')), 'RESTORE_MIGRATION_REGISTRY_MISMATCH');
     counters.fetch = counters.restore = 0;
-    for (const bad of [0, 56, 1.5, -1]) {
+    for (const bad of [0, migrationPlan.length + 1, 1.5, -1]) {
       const badTarget = await newTarget();
       await rejects(() => runRestoreDrill(adapters(), input(badTarget, {expectedMigrations: bad}), fingerprintHost('production.invalid')), 'RESTORE_EXPECTED_MIGRATIONS_INVALID');
     }

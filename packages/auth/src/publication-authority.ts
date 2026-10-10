@@ -17,7 +17,7 @@ export function revokePublicationAuthority(authority:PublicationAuthority){issue
 export function publicationApproved(){return Boolean(root[key]&&issued.has(root[key]));}
 /** Pure URL policy. Does not issue or install authority. Queries are always private. */
 export function publicIndexablePath(path:string,query=''){
- return !query&&/^\/(ja|en)(?:\/?$|\/(?:rental(?:\/(?:ski|snowboard|wear|kids-family|premium(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)?))?|prices|stores\/(?:mountain-base|onsen-base)|pickup-return|faq)\/?$)/.test(path);
+ return !query&&/^\/(ja|en)(?:\/?$|\/(?:rental(?:\/(?:ski|snowboard|wear|kids-family|premium(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)?))?|prices|stores\/(?:mountain-base|onsen-base)|pickup-return|faq|legal\/(?:terms|privacy|commercial-disclosure|cancellation))\/?$)/.test(path);
 }
 /** Pure per-request robots decision used by proxy.ts: index only with installed authority, the
  * exact public origin and an allowlisted query-free public path; everything else is noindex. */

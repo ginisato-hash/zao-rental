@@ -6,6 +6,12 @@ import EmbeddedPostgres from 'embedded-postgres';
 import { Pool } from 'pg';
 import { trackPoolLifecycle } from './pool-lifecycle';
 import { assertPortFree, rejectAmbientDatabase, worktreeIdentity } from './worktree';
+// embedded-postgres registers async-exit-hook, whose beforeExit handler calls process.exit(0) and so discards a failing
+// process.exitCode set by a test. Keep the failure: capture it before that exit and restore it on 'exit'.
+let failingExitCode = 0;
+process.on('beforeExit', () => { if (process.exitCode) failingExitCode = Number(process.exitCode); });
+process.on('exit', () => { if (failingExitCode && !process.exitCode) process.exitCode = failingExitCode; });
+
 // Dedicated real PostgreSQL process and fresh data for each invocation. No host services are installed.
 export async function startIsolatedPostgres(options: { statementTimeoutMs?: number } = {}) {
   if (options.statementTimeoutMs !== undefined && (!Number.isSafeInteger(options.statementTimeoutMs) || options.statementTimeoutMs <= 0)) throw new Error('Statement timeout must be a positive integer');

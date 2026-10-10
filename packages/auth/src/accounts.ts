@@ -9,7 +9,9 @@ export type AccountSettings={displayName:string;active:boolean;role:StaffRole;sc
 export type AccountUpdate=AccountSettings&{expectedRevision:number};
 export type NewAccount=AccountSettings&{email:string;password:string};
 const ajv=new Ajv({strict:true});const createValidator=ajv.compile(schemas.create),updateValidator=ajv.compile(schemas.update);
-export function parseAccount(value:unknown,create:boolean){if(!(create?createValidator:updateValidator)(value))throw new LedgerError('INVALID_INPUT',422);const v=value as NewAccount&AccountUpdate;if(create){try{canonicalEmail(v.email);}catch{throw new LedgerError('INVALID_INPUT',422);}}if(v.scope==='ASSIGNED'&&!v.storeIds.length)throw new LedgerError('STORE_SCOPE_REQUIRED',422);if(v.permissions.STAFF_MANAGE&&v.role!=='ADMIN')throw new LedgerError('INVALID_INPUT',422);return v;}
+export function parseAccount(value:unknown,create:boolean){if(!(create?createValidator:updateValidator)(value))throw new LedgerError('INVALID_INPUT',422);const v=value as NewAccount&AccountUpdate;if(create){try{canonicalEmail(v.email);}catch{throw new LedgerError('INVALID_INPUT',422);}}if(v.scope==='ASSIGNED'&&!v.storeIds.length)throw new LedgerError('STORE_SCOPE_REQUIRED',422);if(v.permissions.STAFF_MANAGE&&v.role!=='ADMIN')throw new LedgerError('INVALID_INPUT',422);
+ // Owner decision 2026-10-09: every active STAFF/MANAGER/ADMIN can refund (role default, migration 0056); it is not revocable per person.
+ if(v.permissions.REFUND_OVERRIDE===false)throw new LedgerError('INVALID_INPUT',422);return v;}
 export async function insertAccount(client:PoolClient,input:NewAccount,actor:string|null):Promise<string>{
  const value=parseAccount(input,true);const email=canonicalEmail(value.email);const passwordHash=await hashStaffPassword(value.password);const id=randomUUID();
  await client.query("SELECT set_config('zao.staff_actor',$1,true)",[actor??'development-bootstrap']);

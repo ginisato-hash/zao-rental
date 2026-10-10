@@ -40,7 +40,9 @@ export const exceptionSignalCodes=['STORAGE_FAILED','NOTIFICATION_FAILED','BOOKI
 export type ExceptionSignalCode=typeof exceptionSignalCodes[number];
 /** Safe projection: identifiers, fixed enums and times only. No recipient, provider payload,
  * token, signed URL, stack or raw error text is representable here. */
-export type SafeException={id:string;eventType:ExceptionCode;correlationId:string;bookingId:string|null;assetId:string|null;store:string;severity:'INFO'|'WARN'|'ERROR';status:'UNACKNOWLEDGED'|'ACKNOWLEDGED';occurredAt:string;resolvedAt:string|null;resolutionActor:string|null;resolutionReason:typeof exceptionReasons[number]|null;sourceConditionActive:boolean|null};
+export type SafeException={id:string;eventType:ExceptionCode;correlationId:string;bookingId:string|null;assetId:string|null;store:string;severity:'INFO'|'WARN'|'ERROR';status:'UNACKNOWLEDGED'|'ACKNOWLEDGED';occurredAt:string;resolvedAt:string|null;resolutionActor:string|null;resolutionReason:typeof exceptionReasons[number]|null;sourceConditionActive:boolean|null;sourceType:string;refund:SafeRefundException|null};
+/** 0056: refund exception detail. providerIdPresent=false with dispatched=true is lost-response UNKNOWN: never re-POSTed, manual investigation only. */
+export type SafeRefundException={channel:'STORE'|'ONLINE';amountJpy:number;state:string;dispatched:boolean;providerIdPresent:boolean};
 export function operationalExceptionSignal(input:unknown){
  const v=exact(input,['eventType','correlationId','store']);
  if(!exceptionSignalCodes.includes(v.eventType as ExceptionSignalCode)||typeof v.correlationId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(v.correlationId)||!exceptionStores.includes(v.store as typeof exceptionStores[number]))throw new HoldError('OPERATIONAL_EVENT_REJECTED',422);

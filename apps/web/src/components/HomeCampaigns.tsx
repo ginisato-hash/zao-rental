@@ -18,7 +18,6 @@ export function HomeCampaigns({items,heading,ja}:{items:Campaign[];heading:strin
  const step=(d:number)=>setActive(a=>((a+d)%items.length+items.length)%items.length);
  return <section ref={root} className="pc-hero" aria-roledescription={ja?'カルーセル':'carousel'} aria-label={heading}
   onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)} onFocus={()=>setPaused(true)} onBlur={e=>{if(!root.current?.contains(e.relatedTarget as Node))setPaused(false);}}>
-  <h1><span className="pc-sr">{heading}</span></h1>
   <div className="pc-frame"><div className="pc-clip">
    {items.map((c,i)=><Link key={c.key} href={c.href} className={'pc-slide'+(i===active?' is-active':'')} aria-hidden={i!==active} tabIndex={-1}>
     <picture><source media="(min-width: 768px)" srcSet={c.desktop}/><img src={c.mobile} alt={i===active?c.alt:''} style={{['--pos-d' as string]:c.positionDesktop,['--pos-m' as string]:c.positionMobile}} loading={i===0?'eager':'lazy'} decoding="async"/></picture>

@@ -18,7 +18,7 @@ function nav(locale:Locale){const ja=locale==='ja',r='/'+locale;return {
 
 /** Palace-measured header: fixed, 20px from the top, centred black pill 60px high, fully rounded. Desktop shows the links; below 768px
  * the pill holds the logo and MENU, which opens a 10px-inset panel (rgba(0,0,0,.25), blur 50px, radius 30px). */
-export function PublicHeader({locale,alternate,campaigns=[]}:{locale:Locale;alternate:string;campaigns?:Campaign[]}){
+export function PublicHeader({locale,alternate,campaigns=[],homeHeading}:{locale:Locale;alternate:string;campaigns?:Campaign[];homeHeading?:string|undefined}){
  const ja=locale==='ja',n=nav(locale),[open,setOpen]=useState(false),toggle=useRef<HTMLButtonElement>(null),panel=useRef<HTMLDivElement>(null);
  useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow='hidden';panel.current?.querySelector<HTMLElement>('a,button')?.focus();
   const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){setOpen(false);toggle.current?.focus();}};document.addEventListener('keydown',key);
@@ -27,10 +27,13 @@ export function PublicHeader({locale,alternate,campaigns=[]}:{locale:Locale;alte
  return <>
   <header className="pc-header">
    <div className={"pc-pill"+(open?" is-open":"")}>
-    <Link className="pc-logo" href={'/'+locale} aria-label={BRAND_NAME+(ja?' ホーム':' home')} onClick={close}>
+    {homeHeading?<h1><Link className="pc-logo" href={'/'+locale} aria-label={BRAND_NAME+(ja?' ホーム':' home')} onClick={close}>
      <Image className="pc-logo-d" src={logos.horizontal} alt="" unoptimized priority/>
      <Image className="pc-logo-m" src={logos.wordmark} alt="" unoptimized priority/>
-    </Link>
+    </Link><span className="pc-sr">{homeHeading}</span></h1>:<Link className="pc-logo" href={'/'+locale} aria-label={BRAND_NAME+(ja?' ホーム':' home')} onClick={close}>
+     <Image className="pc-logo-d" src={logos.horizontal} alt="" unoptimized priority/>
+     <Image className="pc-logo-m" src={logos.wordmark} alt="" unoptimized priority/>
+    </Link>}
     <nav className="pc-links" aria-label={L(ja,'メインナビゲーション','Main navigation')}>{n.pill.map(l=><Link key={l.href} href={l.href}>{l.label}</Link>)}<Link href={n.book.href}>{n.book.label}</Link></nav>
     <button ref={toggle} type="button" className="pc-menu-btn" aria-expanded={open} aria-controls="pc-menu" aria-label={open?L(ja,'メニューを閉じる','Close menu'):L(ja,'メニューを開く','Open menu')} onClick={()=>setOpen(o=>!o)}>{open?'CLOSE':'MENU'}</button>
    </div>

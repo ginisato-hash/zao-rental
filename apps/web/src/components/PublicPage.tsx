@@ -10,15 +10,15 @@ import './public.css';
 export function legalLinks(locale:Locale){return approvedLegalDocs(locale).map(d=>({href:canonicalPath(locale,legalPath(d)),label:legalDocument(locale,d)!.title}));}
 
 /** Shared public frame: Palace-measured header pill, page body, white multi-column footer. */
-export function PublicFrame({locale,path,home=false,children}:{locale:Locale;path:string;home?:boolean;children:React.ReactNode}){
+export function PublicFrame({locale,path,home=false,homeHeading,children}:{locale:Locale;path:string;home?:boolean;homeHeading?:string;children:React.ReactNode}){
  const alternate=canonicalPath(locale==='ja'?'en':'ja',path);
- return <div className={'public-shell'+(home?' public-shell--home':'')} lang={locale}><PublicHeader locale={locale} alternate={alternate} campaigns={campaigns(locale)}/>{children}<PublicFooter locale={locale} alternate={alternate} legal={legalLinks(locale)}/></div>;
+ return <div className={'public-shell'+(home?' public-shell--home':'')} lang={locale}><PublicHeader locale={locale} alternate={alternate} campaigns={campaigns(locale)} homeHeading={homeHeading}/>{children}<PublicFooter locale={locale} alternate={alternate} legal={legalLinks(locale)}/></div>;
 }
 
 export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup:string;models?:{slug:string;name:string;season:string}[];page:typeof publicPages[number];locale:Locale;origin:string}){const ja=locale==='ja',path=page.path,isRentalHub=path==='rental';
  const preview=!publicationApproved()&&<p className="public-preview-note">{ja?'予約受付前の開発プレビューです。実決済・本番予約は行いません。':'Development preview before booking launch. No real payment or production booking.'}</p>;
  const schema=pageSchema(locale,path,origin).map((s,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(s)}}/>);
- if(path==='')return <PublicFrame locale={locale} path={path} home><main className="public-home"><HomeCampaigns items={campaigns(locale)} heading={page.heading} ja={ja}/>{preview}{schema}</main></PublicFrame>;
+ if(path==='')return <PublicFrame locale={locale} path={path} home homeHeading={page.heading}><main className="public-home"><HomeCampaigns items={campaigns(locale)} heading={page.heading} ja={ja}/>{preview}{schema}</main></PublicFrame>;
  // UX4R-01: on the /rental hub, Regular vs Premium must be the first substantive content.
  const compare=<section className="public-compare"><h2>{ja?'Regular と Premium':'Regular and Premium'}</h2><div className="public-compare-grid"><article><h3>Regular</h3><p>{ja?'サイズ・年齢区分・クラスから選びます。モデルの確約はありません。':'Choose by size, age category and class. No specific model is promised.'}</p></article><article><h3>Premium</h3><p>{ja?'モデル・シーズン・長さを選択条件として保存します。':'Your selected model, season and length become the promise.'}</p></article></div></section>;
  const cards=<ul className="public-card-grid">{publicPages.filter(p=>p.locale===locale&&['rental/ski','rental/snowboard','rental/wear','rental/premium'].includes(p.path)).map(p=><li key={p.path}><Link className="public-card" href={canonicalPath(locale,p.path)}><span>{p.path.split('/')[1]?.toUpperCase()}</span><b>{p.heading}</b><small>{p.summary}</small></Link></li>)}</ul>;

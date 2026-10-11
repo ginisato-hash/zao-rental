@@ -27,6 +27,10 @@ try{
  assert.equal((await app.db.pool.query('SELECT bool_and(expires_at<inventory_clock()) v FROM guest_contexts')).rows[0].v,true);
  const fresh=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});fresh.setDefaultTimeout(15000);let recovered=await fresh.newPage();
  stage='fresh browser exchange response loss';await recovered.goto('/ja/reservation');await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toHaveCount(0);
+ // The code input is a controlled React input that is already enabled in the server HTML: text filled before hydration is reset
+ // to the empty state (CI 38097026148: button disabled, input length 0). Fill only once React owns the node.
+ const hydrated=()=>expect.poll(()=>recovered.getByLabel('予約復旧コード',{exact:true}).evaluate(el=>Object.keys(el).some(k=>k.startsWith('__reactProps$'))),{timeout:15000}).toBe(true);
+ await hydrated();
  let observed!:()=>void;const lost=new Promise<void>(resolve=>observed=resolve);
  await recovered.route('**/api/booking-access/recovery/exchange',async route=>{const response=await route.fetch();assert.equal(response.status(),200);await route.abort('failed');observed();});
  await recovered.getByLabel('予約復旧コード',{exact:true}).fill(code);
@@ -35,7 +39,7 @@ try{
  try{await recovered.getByRole('button',{name:'復旧コードで予約を開く',exact:true}).click();}catch(e){console.error(JSON.stringify({code:'TEST_RECOVERY_CLICK_DIAGNOSTIC',playwright:String((e as Error).message).replace(/[A-Za-z0-9_-]{40,}/g,'<redacted>').slice(0,2000),disabled:await recovered.getByRole('button',{name:'復旧コードで予約を開く',exact:true}).isDisabled().catch(()=>null),inputLength:(await recovered.getByLabel('予約復旧コード',{exact:true}).inputValue().catch(()=>'')).length}));throw e;}
  await lost;
  await expect(recovered.getByRole('region',{name:'予約閲覧の復旧'}).getByRole('status')).toContainText('未確認');
- await recovered.unroute('**/api/booking-access/recovery/exchange');await fresh.clearCookies({name:'zao_booking_access'});await recovered.reload();await recovered.getByLabel('予約復旧コード',{exact:true}).fill(code);
+ await recovered.unroute('**/api/booking-access/recovery/exchange');await fresh.clearCookies({name:'zao_booking_access'});await recovered.reload();await hydrated();await recovered.getByLabel('予約復旧コード',{exact:true}).fill(code);
  await recovered.getByRole('button',{name:'復旧コードで予約を開く',exact:true}).click();await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();
  assert.equal((await app.db.pool.query('SELECT count(*)::int n FROM booking_access.capabilities')).rows[0].n,1);assert.equal((await app.db.pool.query('SELECT count(*)::int n FROM rental_bookings')).rows[0].n,1);
  const cookie=(await fresh.cookies()).find(c=>c.name==='zao_booking_access')!;assert.ok(cookie.httpOnly);assert.equal(cookie.sameSite,'Strict');assert.equal(recovered.url(),app.origin+'/ja/reservation');

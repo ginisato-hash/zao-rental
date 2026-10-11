@@ -15,6 +15,8 @@ import {
   type CustodyConfirmation, type DrillAdapters, type RestoreTarget,
 } from '../../scripts/production-restore-drill';
 import {expectedPre0054RegistrySha256, validateDrillResult} from '../../scripts/production-restore-evidence';
+import {RECEIPT_LEDGER, expectedPre0056RegistrySha256, validatePre0056DrillResult} from '../../scripts/production-restore-evidence-pre0056';
+import {criticalFingerprint} from '../../scripts/local-restore';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 
 // Synthetic fixtures only: random bytes stand in for a pg_dump archive, an embedded loopback cluster stands in for
@@ -255,6 +257,25 @@ try {
     assert.deepEqual(counters, {fetch: 0, restore: 0}, 'an invalid count stops before any download or restore');
     const probe = openTarget(await newTarget());
     try { await rejects(() => verifyRestoredDatabase(probe, 0), 'RESTORE_EXPECTED_MIGRATIONS_INVALID'); } finally { await probe.end(); }
+    // The pre-0056 verifier refuses this 53-entry result (it is not the database 0056 is installed on).
+    assert.throws(() => validatePre0056DrillResult({...result, dataClass: 'PRODUCTION'}, {key: KEY, ciphertextBytes: result.ciphertextBytes, ciphertextSha256: result.ciphertextSha256}), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/);
+  });
+
+  await check('a pre-0056 Production backup restores against its 55-entry registry and fingerprints the receipt ledger from the restored rows; the pre-0056 verifier accepts exactly that output', async () => {
+    // Emulates a dump taken after 0055 and before 0056: registry holds the first 55 entries and the 0056 tables do not exist.
+    const toPre0056 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id='0056'"); await p.query('DROP TABLE staff_permission_override_removals, rental_internal.ops_refund_effects CASCADE'); };
+    const target = await newTarget(); counters.fetch = counters.restore = 0;
+    const result = await runRestoreDrill(adapters(toPre0056), input(target, {expectedMigrations: 55}), fingerprintHost('production.invalid'));
+    assert.equal(result.verification.migrations, 55);
+    assert.equal(result.verification.registrySha256, expectedPre0056RegistrySha256());
+    const probe = openTarget(target);
+    try { assert.deepEqual(result.verification.critical[RECEIPT_LEDGER], (await criticalFingerprint(probe, [RECEIPT_LEDGER]))[RECEIPT_LEDGER], 'the receipt ledger entry is the restored table\'s own rows and digest'); } finally { await probe.end(); }
+    const expect = {key: KEY, ciphertextBytes: (await lstat(cipherPath)).size, ciphertextSha256: sha(await readFile(cipherPath))};
+    assert.equal(validatePre0056DrillResult({...result, dataClass: 'PRODUCTION'}, expect).plaintextSha256, sha(plain));
+    assert.throws(() => validatePre0056DrillResult(result, expect), /RESTORE_EVIDENCE_NOT_PRODUCTION_DRILL_PASS/);
+    assert.throws(() => validateDrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the frozen pre-0054 finalizer still refuses a 55-entry result');
+    assert.deepEqual(await readdir(work), []);
+    assert.deepEqual(counters, {fetch: 1, restore: 1});
   });
 
   await check('migration registry drift after restore is rejected and cleaned up', async () => {

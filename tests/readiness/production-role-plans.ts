@@ -123,7 +123,7 @@ try {
   const start=legacy.indexOf('CREATE FUNCTION provisional_capacity_effective_quantity('),end=legacy.indexOf('$$;',start)+3;
   await production.query(legacy.slice(start,end).replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION'));
   // 0056 (refund automation) is rewound the same way so the historical installers see their exact prefix.
-  await production.query('DROP FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb); DROP TABLE staff_permission_override_removals, rental_internal.ops_refund_effects');
+  await production.query('DROP FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb); DROP TABLE staff_permission_override_removals, public.ops_refund_effects');
   await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056')");
   await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
     const c=await production!.connect();try{

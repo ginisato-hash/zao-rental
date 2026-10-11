@@ -25,10 +25,10 @@ CREATE OR REPLACE FUNCTION ops_financial_guard() RETURNS trigger LANGUAGE plpgsq
  IF TG_OP='DELETE' THEN RAISE EXCEPTION 'Immutable financial history' USING ERRCODE='23514';END IF;
  SELECT * INTO STRICT b FROM rental_bookings WHERE id=NEW.booking_id;
  -- 0056: the trusted refund-worker functions below claim/observe a refund without a staff session. They first mark the exact row in
- -- rental_internal.ops_refund_effects for this transaction/backend; no application role can write that schema, so setting a session
+ -- public.ops_refund_effects for this transaction/backend; no application role can write that table, so setting a session
  -- variable or calling UPDATE directly still goes through the staff checks.
  IF TG_TABLE_NAME='ops_refund_requests' AND TG_OP='UPDATE'
-    AND EXISTS(SELECT 1 FROM rental_internal.ops_refund_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND refund_id=NEW.id) THEN NULL;
+    AND EXISTS(SELECT 1 FROM public.ops_refund_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND refund_id=NEW.id) THEN NULL;
  ELSIF TG_TABLE_NAME='ops_refund_requests' THEN
   PERFORM ops_assert_actor('BOOKING_VIEW',ARRAY[NEW.acting_store],current_setting('zao.actor',true));
   IF NEW.acting_store NOT IN (b.conditions->>'pickupStore',b.conditions->>'returnStore') AND NOT EXISTS(SELECT 1 FROM rental_receipts r JOIN rental_loan_items l ON l.id=r.loan_item_id WHERE l.booking_id=b.id AND r.received_store=NEW.acting_store) THEN RAISE EXCEPTION 'Refund booking scope denied' USING ERRCODE='42501';END IF;
@@ -52,8 +52,8 @@ CREATE OR REPLACE FUNCTION ops_financial_guard() RETURNS trigger LANGUAGE plpgsq
  RETURN NEW;
 END$$;
 
-CREATE TABLE rental_internal.ops_refund_effects(tx bigint NOT NULL,pid integer NOT NULL,refund_id uuid NOT NULL,PRIMARY KEY(tx,pid,refund_id));
-REVOKE ALL ON rental_internal.ops_refund_effects FROM PUBLIC;
+CREATE TABLE public.ops_refund_effects(tx bigint NOT NULL,pid integer NOT NULL,refund_id uuid NOT NULL,PRIMARY KEY(tx,pid,refund_id));
+REVOKE ALL ON public.ops_refund_effects FROM PUBLIC;
 CREATE FUNCTION ops_refund_row(p_id uuid) RETURNS jsonb
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$SELECT to_jsonb(r)||jsonb_build_object('mode',b.mode,'idempotency_key',r.id::text) FROM ops_refund_requests r JOIN rental_bookings b ON b.id=r.booking_id WHERE r.id=p_id$$;
 CREATE FUNCTION ops_refund_claim(p_id uuid) RETURNS jsonb
@@ -62,10 +62,10 @@ DECLARE claimed integer;
 BEGIN
  PERFORM pg_advisory_xact_lock(71820600);
  PERFORM set_config('zao.actor','system:refund-worker',true);
- INSERT INTO rental_internal.ops_refund_effects VALUES(txid_current(),pg_backend_pid(),p_id) ON CONFLICT DO NOTHING;
+ INSERT INTO public.ops_refund_effects VALUES(txid_current(),pg_backend_pid(),p_id) ON CONFLICT DO NOTHING;
  UPDATE ops_refund_requests SET state='UNKNOWN',dispatched_at=inventory_clock(),updated_at=inventory_clock() WHERE id=p_id AND state='PENDING' AND dispatched_at IS NULL;
  GET DIAGNOSTICS claimed=ROW_COUNT;
- DELETE FROM rental_internal.ops_refund_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND refund_id=p_id;
+ DELETE FROM public.ops_refund_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND refund_id=p_id;
  IF claimed<>1 THEN RETURN NULL;END IF;RETURN ops_refund_row(p_id);
 END $$;
 CREATE FUNCTION ops_refund_observe(p_id uuid,p_observation jsonb) RETURNS void
@@ -86,11 +86,11 @@ BEGIN
  END IF;
  IF action='NONE' THEN RETURN;END IF;
  PERFORM set_config('zao.actor','system:refund-worker',true);
- INSERT INTO rental_internal.ops_refund_effects VALUES(txid_current(),pg_backend_pid(),p_id) ON CONFLICT DO NOTHING;
+ INSERT INTO public.ops_refund_effects VALUES(txid_current(),pg_backend_pid(),p_id) ON CONFLICT DO NOTHING;
  IF action='REVIEW' THEN UPDATE ops_refund_requests SET state='REVIEW',updated_at=inventory_clock() WHERE id=r.id;
  ELSE UPDATE ops_refund_requests SET state=next_state,provider_id=o->>'id',provider_state=o->>'status',provider_updated_at=at,
   completed_at=CASE WHEN next_state='COMPLETED' THEN at ELSE NULL END,updated_at=inventory_clock() WHERE id=r.id;END IF;
- DELETE FROM rental_internal.ops_refund_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND refund_id=p_id;
+ DELETE FROM public.ops_refund_effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND refund_id=p_id;
 END $$;
 REVOKE ALL ON FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb) FROM PUBLIC;
 

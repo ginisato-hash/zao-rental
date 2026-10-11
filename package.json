@@ -80,7 +80,7 @@
     "production:worker-roles-contain": "node --import tsx scripts/production-worker-credential.ts contain",
     "setup:pg18-client": "sh scripts/build-pg18-client.sh",
     "monitor:worker-freshness": "node --import tsx scripts/production-worker-freshness.ts",
-    "test:production-role-plans": "node --import tsx tests/readiness/production-role-plans.ts",
+    "test:production-role-plans": "node --import tsx tests/readiness/production-role-plans.ts && node --import tsx tests/readiness/production-refund-owner.ts",
     "test:square-activation": "node scripts/square-activation.mjs",
     "test:staff-diagnostic": "node --import tsx tests/readiness/staff-diagnostic.ts",
     "test:activation-p4": "node --import tsx tests/readiness/booking-access.ts && node --import tsx tests/readiness/sandbox-booking.ts && node --import tsx tests/readiness/booking-access-ui.ts && node --import tsx tests/readiness/cancellation-ui.ts",

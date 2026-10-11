@@ -188,10 +188,10 @@ export async function refundAutomationAcceptance(x:X){
   const c=await operations.operationsPool.connect();try{
    await c.query('BEGIN');await c.query("SELECT set_config('zao.ops_refund_system','on',true),set_config('zao.actor','system:refund-worker',true)");
    await assert.rejects(c.query("UPDATE ops_refund_requests SET state='FAILED' WHERE id=$1",[second.id]),'a direct UPDATE without a staff session is refused');await c.query('ROLLBACK');
-   await c.query('BEGIN');await assert.rejects(c.query('INSERT INTO rental_internal.ops_refund_effects VALUES(txid_current(),pg_backend_pid(),$1)',[second.id]),{code:'42501'},'the marker cannot be forged');await c.query('ROLLBACK');
+   await c.query('BEGIN');await assert.rejects(c.query('INSERT INTO public.ops_refund_effects VALUES(txid_current(),pg_backend_pid(),$1)',[second.id]),{code:'42501'},'the marker cannot be forged');await c.query('ROLLBACK');
   }finally{c.release();}
   assert.deepEqual((await pool.query('SELECT state FROM ops_refund_requests WHERE id=$1',[second.id])).rows[0],{state:'UNKNOWN'});
-  assert.equal((await pool.query('SELECT count(*)::int n FROM rental_internal.ops_refund_effects')).rows[0].n,0,'no marker survives a transaction');
+  assert.equal((await pool.query('SELECT count(*)::int n FROM public.ops_refund_effects')).rows[0].n,0,'no marker survives a transaction');
   console.log('PASS refund automation: the worker bypass cannot be forged (session variable or marker insert), and no marker lingers');
  }finally{
   await operations.close();

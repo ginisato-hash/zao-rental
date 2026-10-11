@@ -33,7 +33,7 @@ export const NOT_RESTORED:Record<string,string>={
  'public.content_workspace':'CONTENT_PIPELINE_OUT_OF_SCOPE','public.content_revision_records':'CONTENT_PIPELINE_OUT_OF_SCOPE','public.content_audit_records':'CONTENT_PIPELINE_OUT_OF_SCOPE','public.content_media_objects':'RAW_OBJECT_STORE_OUT_OF_SCOPE','public.content_model_previews':'CONTENT_PIPELINE_OUT_OF_SCOPE','public.content_outbox':'CONTENT_PIPELINE_OUT_OF_SCOPE','public.content_public_policies':'CONTENT_PIPELINE_OUT_OF_SCOPE','public.content_staff_access':'CONTENT_PIPELINE_OUT_OF_SCOPE',
  'public.avatar_visuals':'MEDIA_DERIVATIVE_REBUILT','public.sandbox_activation_calls':'ACTIVATION_EVIDENCE_OUT_OF_SCOPE','public.sandbox_activation_runs':'ACTIVATION_EVIDENCE_OUT_OF_SCOPE',
  'public.foundation_metadata':'RECREATED_BY_MIGRATION','public.foundation_migrations':'RECREATED_BY_MIGRATION',
- 'rental_internal.effects':'IN_TRANSACTION_EFFECT_ONLY','rental_internal.ops_refund_effects':'IN_TRANSACTION_EFFECT_ONLY','rental_internal.amendment_effects':'IN_TRANSACTION_EFFECT_ONLY','rental_internal.stocktake_effects':'IN_TRANSACTION_EFFECT_ONLY',
+ 'rental_internal.effects':'IN_TRANSACTION_EFFECT_ONLY','public.ops_refund_effects':'IN_TRANSACTION_EFFECT_ONLY','rental_internal.amendment_effects':'IN_TRANSACTION_EFFECT_ONLY','rental_internal.stocktake_effects':'IN_TRANSACTION_EFFECT_ONLY',
  'payment_projection.events':'REDERIVED_FROM_RECONCILIATION','payment_projection.heads':'REDERIVED_FROM_RECONCILIATION','payment_projection.job_receipts':'REDERIVED_FROM_RECONCILIATION',
  'r15_activation.manifest':'ACTIVATION_EVIDENCE_OUT_OF_SCOPE','r15_activation.operations':'ACTIVATION_EVIDENCE_OUT_OF_SCOPE',
 };

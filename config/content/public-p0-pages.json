@@ -237,7 +237,8 @@
     "summary": "予約と用品の所在地を確認して受け渡します。店舗間の移動予定と実際の到着・受領は別に管理します。",
     "bullets": [
       "営業時間 08:30–17:00",
-      "正式住所・電話・アクセス詳細は公開前確認中"
+      "住所 山形市蔵王温泉935-25（ホテル喜らくとなり）",
+      "電話・アクセス詳細は公開前確認中"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -249,7 +250,8 @@
     "summary": "Handover requires the booking and equipment to match this store. Planned transfers are distinct from actual arrival and receipt.",
     "bullets": [
       "Opening hours 08:30–17:00",
-      "Official address, telephone and access details await verification"
+      "Address: 935-25 Zao Onsen, Yamagata City (next to Hotel Kiraku)",
+      "Telephone and access details await verification"
     ],
     "revision": "public-p0-draft-v1"
   },

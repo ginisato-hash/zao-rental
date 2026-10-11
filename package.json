@@ -71,6 +71,7 @@
     "backup:role-contain": "node --import tsx scripts/production-backup-credential.ts contain",
     "backup:object-get": "node --import tsx scripts/production-backup-object-get.ts",
     "production:restore-evidence-finalize": "node --import tsx scripts/production-restore-evidence.ts",
+    "production:restore-evidence-finalize-pre-0056": "node --import tsx scripts/production-restore-evidence-pre0056.ts",
     "production:install-normal-worker-migration": "node --import tsx scripts/production-install-normal-worker.ts migrate",
     "production:install-normal-worker-grants": "node --import tsx scripts/production-install-normal-worker.ts grants",
     "production:worker-bind-cron-secret": "node --import tsx scripts/production-worker-credential.ts bind-cron-secret",

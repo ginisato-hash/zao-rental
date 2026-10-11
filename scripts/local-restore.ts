@@ -154,7 +154,7 @@ export async function validateRestored(pool:Pool){
  return {foreignKeys:checked,sequences:advanced};
 }
 /** Contract-critical rows compared verbatim between source and restored database. */
-export const CRITICAL=['public.rental_bookings','public.price_quotes','public.rental_payment_attempts','public.inventory_holds','public.inventory_claims','public.rental_loan_items','public.rental_receipts','public.transfer_batches','public.transfer_pieces','public.ops_amendments','public.ops_refund_requests','public.ops_exceptions','public.field_acceptance_records','public.real_data_acceptance','public.booking_notification_outbox','public.rental_history','public.ops_history'] as const;
+export const CRITICAL=['public.rental_bookings','public.price_quotes','public.rental_payment_attempts','public.inventory_holds','public.inventory_claims','public.rental_loan_items','public.rental_receipts','public.transfer_batches','public.transfer_pieces','public.ops_amendments','public.ops_refund_requests','public.ops_exceptions','public.field_acceptance_records','public.real_data_acceptance','public.booking_notification_outbox','public.rental_history','public.ops_history','public.provisional_capacity_receipts'] as const;
 export async function criticalFingerprint(pool:Pool,tables:readonly string[]=CRITICAL){
  const out:Record<string,{rows:number;sha256:string}>={};
  for(const name of tables){

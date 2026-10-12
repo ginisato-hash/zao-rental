@@ -213,7 +213,9 @@
     "summary": "予約で選んだ受取店舗で用品を照合します。別店舗の返却が可能でも、受取店舗を自由に変えることはできません。",
     "bullets": [
       "営業時間 08:30–17:00",
-      "正式住所・電話・アクセス詳細は公開前確認中"
+      "所在地 JURIN（旧ホテル樹林）内",
+      "住所 〒990-2301 山形県山形市蔵王温泉上ノ台814",
+      "電話（レンタル共通窓口）070-4440-4813"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -225,7 +227,9 @@
     "summary": "Collect at the planned pickup store. Cross-store returns do not permit an unplanned change of pickup store.",
     "bullets": [
       "Opening hours 08:30–17:00",
-      "Official address, telephone and access details await verification"
+      "Location: inside JURIN",
+      "Address: 814 Uwanodai, Zao Onsen, Yamagata City, Yamagata 990-2301, Japan",
+      "Telephone (shared rental contact): +81 70-4440-4813"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -238,7 +242,7 @@
     "bullets": [
       "営業時間 08:30–17:00",
       "住所 山形市蔵王温泉935-25（ホテル喜らくとなり）",
-      "電話・アクセス詳細は公開前確認中"
+      "電話（レンタル共通窓口）070-4440-4813"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -251,7 +255,7 @@
     "bullets": [
       "Opening hours 08:30–17:00",
       "Address: 935-25 Zao Onsen, Yamagata City (next to Hotel Kiraku)",
-      "Telephone and access details await verification"
+      "Telephone (shared rental contact): +81 70-4440-4813"
     ],
     "revision": "public-p0-draft-v1"
   },

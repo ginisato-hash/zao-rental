@@ -12,7 +12,7 @@ import {productionConfiguration,productionServices,type ProductionConfiguration,
 import {productionConfigurationDigest,type ProductionRuntimeInput} from './production-runtime';
 import {productionGuestConfiguration,guestConfigurationHash} from '../../../contracts/src/production-guest';
 import {issueExactProductionIdentity,type ExactProductionIdentity} from '../../../auth/src/production-identity';
-import {PUBLICATION_ORIGIN,type PublicationApproval} from '../../../auth/src/publication-authority';
+import {PUBLICATION_ORIGIN,parsePublicationApproval,type PublicationApproval} from '../../../auth/src/publication-authority';
 import type {ProductionDatabaseCredential} from '../../../db/src/production-connection';
 import {FetchSquareProductionTransport,type ProductionSquareCredential,type SquareFetch} from '../payment/square-transport';
 import {RoutedSquareProductionGateway,RoutedSquareProductionRefundGateway,type ProductionStoreRoutes} from '../payment/square-production-routing';
@@ -63,16 +63,6 @@ export function parseProductionPublicOrigin(raw:string|undefined):string{
  let u:URL;try{u=new URL(raw);}catch{return fail('PRODUCTION_COMMERCIAL_ORIGIN_INVALID');}
  if(u.protocol!=='https:'||u.origin!==raw||u.port||u.username||u.password||!(raw===PUBLICATION_ORIGIN||/^https:\/\/[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vercel\.app$/.test(raw)))return fail('PRODUCTION_COMMERCIAL_ORIGIN_INVALID');
  return raw;
-}
-/** Per-release owner approval, only ever passed through to issuePublicationAuthority (which still
- * requires exact identity, origin === PUBLICATION_ORIGIN and releaseId === this release). */
-export function parsePublicationApproval(raw:string|undefined):PublicationApproval|undefined{
- if(raw===undefined)return undefined;
- let v:unknown;try{v=JSON.parse(raw);}catch{return fail('PRODUCTION_COMMERCIAL_PUBLICATION_APPROVAL_INVALID');}
- if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).sort().join()!=='approvedAt,approvedBy,origin,releaseId,state')return fail('PRODUCTION_COMMERCIAL_PUBLICATION_APPROVAL_INVALID');
- const a=v as Record<string,unknown>;
- if(a.state!=='PUBLICATION_APPROVED'||a.origin!==PUBLICATION_ORIGIN||typeof a.releaseId!=='string'||typeof a.approvedBy!=='string'||typeof a.approvedAt!=='string')return fail('PRODUCTION_COMMERCIAL_PUBLICATION_APPROVAL_INVALID');
- return Object.freeze({state:'PUBLICATION_APPROVED',origin:PUBLICATION_ORIGIN,releaseId:a.releaseId,approvedBy:a.approvedBy,approvedAt:a.approvedAt});
 }
 
 export type CommercialPlan=Readonly<{

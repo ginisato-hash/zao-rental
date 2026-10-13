@@ -4,8 +4,47 @@ import {NextRequest} from 'next/server';
 import nextConfig from '../../apps/web/next.config';
 import {proxy} from '../../apps/web/src/proxy';
 import robots from '../../apps/web/src/app/robots';
-import {indexablePage,publicationApproved,PUBLICATION_ORIGIN} from '../../packages/auth/src/publication-authority';
+import {indexablePage,parsePublicationApproval,publicationApproved,publicationDeploymentFactsApproved,publicationEnvironmentApproved,PUBLICATION_ORIGIN,type PublicationDeploymentFacts} from '../../packages/auth/src/publication-authority';
+import {EXPECTED_PRODUCTION_DATABASE_NAME,EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,EXPECTED_PRODUCTION_VERCEL_PROJECT_FINGERPRINT_SHA256,productionHostFingerprint,productionVercelProjectFingerprint} from '../../packages/auth/src/production-identity';
 import {indexingEnabled,robotsRules} from '../../packages/core/src/content/public-pages';
+
+const release='0123456789abcdef0123456789abcdef01234567',now=new Date('2035-01-01T00:00:00Z');
+const approval={state:'PUBLICATION_APPROVED',origin:PUBLICATION_ORIGIN,releaseId:release,approvedBy:'Synthetic Owner',approvedAt:'2034-12-31T23:59:59Z'};
+const facts:PublicationDeploymentFacts={environment:'production',vercelProjectFingerprintSha256:EXPECTED_PRODUCTION_VERCEL_PROJECT_FINGERPRINT_SHA256,hostFingerprintSha256:EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,databaseName:EXPECTED_PRODUCTION_DATABASE_NAME,releaseId:release,gitCommitSha:release,origin:PUBLICATION_ORIGIN,approval:JSON.stringify(approval)};
+test('Vercel routes/isolates cannot share global memory: pinned publication facts independently approve without an installed capability',()=>{
+ assert.equal(publicationApproved(),false);
+ for(const gitCommitSha of [undefined,'',release])assert.equal(publicationDeploymentFactsApproved({...facts,gitCommitSha},now),true);
+ assert.equal(publicationDeploymentFactsApproved({...facts,approval:JSON.stringify({...approval,approvedAt:now.toISOString(),approvedBy:'x'.repeat(120)})},now),true);
+ assert.equal(publicationApproved(),false,'facts validation never installs a runtime capability');
+});
+const rejectedFacts:[string,Partial<PublicationDeploymentFacts>][]=[
+ ['wrong Vercel project fingerprint',{vercelProjectFingerprintSha256:productionVercelProjectFingerprint('synthetic-project')}],
+ ['wrong Neon host fingerprint',{hostFingerprintSha256:productionHostFingerprint('ep-synthetic.neon.tech')}],
+ ['wrong database',{databaseName:'another_database'}],
+ ...[undefined,'','preview','development','Production'].map(environment=>['not Production',{environment}] as [string,Partial<PublicationDeploymentFacts>]),
+ ...[undefined,'','main',release.toUpperCase(),release.slice(1),release+'0',' '+release,release+'\n'].map(releaseId=>['missing/malformed release',{releaseId}] as [string,Partial<PublicationDeploymentFacts>]),
+ ...['f'.repeat(40),' ',release+' ',release.toUpperCase()].map(gitCommitSha=>['mismatched nonempty Git SHA',{gitCommitSha}] as [string,Partial<PublicationDeploymentFacts>]),
+ ['wrong origin',{origin:'https://staged.vercel.app'}],['missing approval',{approval:undefined}],['malformed approval',{approval:'{'}],
+ ...[null,true,[],{}, {...approval,extra:true},{...approval,state:'PENDING'},{...approval,releaseId:'f'.repeat(40)},{...approval,releaseId:1},{...approval,origin:'https://other.yuge-zao.com'},{...approval,approvedBy:''},{...approval,approvedBy:'  '},{...approval,approvedBy:'x'.repeat(121)},{...approval,approvedBy:1},{...approval,approvedAt:'2035-01-01T00:00:01Z'},{...approval,approvedAt:'not-a-time'},{...approval,approvedAt:1}].map(a=>['invalid approval '+JSON.stringify(a),{approval:JSON.stringify(a)}] as [string,Partial<PublicationDeploymentFacts>]),
+];
+for(const [name,patch] of rejectedFacts)test('deterministic publication fails closed: '+name,()=>assert.equal(publicationDeploymentFactsApproved({...facts,...patch},now),false));
+test('malformed release is rejected even with a matching approval and no platform Git SHA, including a trailing newline',()=>{
+ for(const releaseId of ['', 'main',release.toUpperCase(),release.slice(1),release+'0',' '+release,release+'\n'])assert.equal(publicationDeploymentFactsApproved({...facts,releaseId,gitCommitSha:'',approval:JSON.stringify({...approval,releaseId})},now),false);
+});
+test('an invalid verification clock cannot approve a deployment',()=>assert.equal(publicationDeploymentFactsApproved(facts,new Date('invalid')),false));
+test('shared strict approval parser preserves exact shape, immutable value and fixed value-free errors',()=>{
+ assert.equal(parsePublicationApproval(undefined),undefined);
+ const a=parsePublicationApproval(JSON.stringify(approval));assert.deepEqual(a,approval);assert.ok(Object.isFrozen(a));
+ for(const raw of ['','{','null','[]','true',JSON.stringify({...approval,extra:true}),JSON.stringify({...approval,state:'PENDING'}),JSON.stringify({...approval,origin:'https://staged.vercel.app'}),...['state','origin','releaseId','approvedBy','approvedAt'].map(k=>JSON.stringify(Object.fromEntries(Object.entries(approval).filter(([name])=>name!==k))))])assert.throws(()=>parsePublicationApproval(raw),{message:'PRODUCTION_COMMERCIAL_PUBLICATION_APPROVAL_INVALID'});
+ // Parsing retains the original contract: time/binding/blank checks belong to the verifier.
+ assert.equal(parsePublicationApproval(JSON.stringify({...approval,approvedBy:' ',approvedAt:'invalid'}))?.approvedBy,' ');
+});
+test('env adapter hashes real inputs; supplied fingerprints, request-shaped values and legacy flags cannot authorize publication',()=>{
+ const synthetic={VERCEL_ENV:'production',VERCEL_PROJECT_ID:'synthetic-project',PRODUCTION_DB_HOST:'ep-synthetic.neon.tech',PRODUCTION_DB_NAME:'neondb',PRODUCTION_RELEASE_ID:release,VERCEL_GIT_COMMIT_SHA:release,PRODUCTION_PUBLIC_ORIGIN:PUBLICATION_ORIGIN,PRODUCTION_PUBLICATION_APPROVAL:JSON.stringify(approval)};
+ assert.equal(publicationEnvironmentApproved(synthetic,now),false);
+ assert.equal(publicationEnvironmentApproved({...synthetic,VERCEL_PROJECT_ID:EXPECTED_PRODUCTION_VERCEL_PROJECT_FINGERPRINT_SHA256,PRODUCTION_DB_HOST:EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256},now),false,'digests cannot be substituted for raw identifiers');
+ for(const env of [{},{NODE_ENV:'production'},{PUBLIC:'true'},{PUBLIC_INDEXING:'true'},{ZAO_TEST_PUBLIC_INDEXING:'1'},{VERCEL_URL:'zao-rental.vercel.app'},{Host:'salomon-rental.yuge-zao.com',Forwarded:'host=salomon-rental.yuge-zao.com','X-Forwarded-Host':'salomon-rental.yuge-zao.com',cookie:'PUBLIC=true',query:'PUBLIC=true',body:JSON.stringify(approval)}])assert.equal(publicationEnvironmentApproved(env,now),false);
+});
 
 test('Production headers keep security headers but no static page-wide noindex; APIs stay statically noindex',async()=>{
  const old=process.env.NODE_ENV;(process.env as Record<string,string>).NODE_ENV='production';

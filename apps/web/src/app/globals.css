@@ -115,6 +115,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* staff toolbar (ledger) and account screens */
 .staff-toolbar{display:flex;gap:6px 20px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px var(--g);background:var(--ink);color:var(--snow)}
+.staff-toolbar nav{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px}
 .staff-toolbar a,.staff-toolbar button{color:var(--snow);font:700 15px/1.2 var(--d);text-decoration:none;min-height:44px;display:inline-flex;align-items:center;background:none;border:0;padding:0 2px;cursor:pointer}
 .staff-toolbar a:hover,.staff-toolbar button:hover{text-decoration:underline;text-underline-offset:5px}
 .staff-toolbar button{border:2px solid var(--snow);padding:0 14px}
@@ -137,3 +138,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 /* field labels stack the caption over a full-width control (checkbox/radio labels stay inline) */
 :where(body>main) :where(label:has(>input:not([type=checkbox]):not([type=radio]),>select,>textarea)){display:flex;flex-direction:column;gap:6px;align-items:stretch;max-width:36rem}
 :where(body>main) :where(label:has(>input[type=checkbox],>input[type=radio])){display:inline-flex;align-items:center;gap:8px;min-height:44px}
+/* Irreversible operations retain explicit labels and a distinct, high-contrast signal. */
+body button.st-danger{background:var(--signal);color:var(--snow);border-color:var(--signal)}
+body button.st-danger:hover:not(:disabled){background:#9d0c24;color:var(--snow);border-color:#9d0c24}

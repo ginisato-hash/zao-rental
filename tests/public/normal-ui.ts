@@ -54,18 +54,22 @@ try{
    for(const store of ['Mountain Station','Central Station'])await expect(desk.getByRole('link',{name:new RegExp('^'+store)})).toBeVisible();
    await expect(desk.getByRole('link',{name:/^Ski set · Regular · 1 day/})).toContainText('¥7,500');
    assert.equal(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal scroll');
-   // The mobile dock appears only once the in-page booking action has scrolled away.
-   assert.equal(await m.evaluate(()=>document.querySelector('.st-dock')!.classList.contains('on')),false,'dock hidden while the desk CTA is visible');
-   await m.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight/2));await expect.poll(()=>m.evaluate(()=>document.querySelector('.st-dock')!.classList.contains('on'))).toBe(true);
+   // The mobile dock carries BOOK RENTAL whenever the in-page booking action is out of view, and never covers it.
+   const docked=()=>m.evaluate(()=>document.querySelector('.st-dock')!.classList.contains('on'));
+   await desk.getByRole('link',{name:'BOOK RENTAL'}).scrollIntoViewIfNeeded();await expect.poll(docked).toBe(false);
+   await m.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight/2));await expect.poll(docked).toBe(true);
+   await expect(m.locator('.st-dock').getByRole('link',{name:'BOOK RENTAL'})).toHaveAttribute('href','/ja/book');
    await m.evaluate(()=>window.scrollTo(0,0));
    // Modal menu
    await m.getByRole('button',{name:'メニューを開く'}).click();const dialog=m.getByRole('dialog',{name:'メニュー'});await expect(dialog).toBeVisible();
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'hidden');
    // The menu is an opaque black field: white names keep >= 4.5:1 whatever sits behind it.
-   const panel=await m.evaluate(()=>{const p=document.querySelector('.st-mnu')!,bg=getComputedStyle(p).backgroundColor,a=Number(/rgba?\([^)]*,\s*([\d.]+)\)/.exec(bg)?.[1]??1),link=getComputedStyle(document.querySelector('.st-mnu-mi')!).color,small=getComputedStyle(document.querySelector('.st-mnu-small a')!).color;return {a,link,small};});
+   const panel=await m.evaluate(()=>{const p=document.querySelector('.st-mnu')!,bg=getComputedStyle(p).backgroundColor,a=bg.startsWith('rgba(')?Number(bg.slice(5,-1).split(',')[3]):1,link=getComputedStyle(document.querySelector('.st-mnu-mi')!).color,small=getComputedStyle(document.querySelector('.st-mnu-small a')!).color;return {a,link,small};});
    const lin=(v:number)=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;},worstBg=255*(1-panel.a),ratio=(1.05)/(lin(worstBg)+0.05);
    assert.equal(panel.link,'rgb(255, 255, 255)');assert.equal(panel.small,'rgb(255, 255, 255)');assert.ok(ratio>=4.5,'menu text contrast over white backdrop '+ratio.toFixed(2));
    const inside=()=>m.evaluate(()=>{const a=document.activeElement,d=document.querySelector('[role="dialog"][aria-modal="true"]');return !!a&&!!d&&d.contains(a);});
+   await dialog.getByRole('link',{name:'RENTAL',exact:true}).focus();
+   await expect(dialog.locator('.st-mnu-side')).toHaveCSS('opacity','1');
    assert.equal(await inside(),true,'focus starts inside the dialog');await expect(dialog.getByRole('button',{name:'メニューを閉じる'})).toBeVisible();
    for(let i=0;i<30;i++){await m.keyboard.press('Tab');assert.equal(await inside(),true,'Tab stays inside the dialog');}
    for(let i=0;i<30;i++){await m.keyboard.press('Shift+Tab');assert.equal(await inside(),true,'Shift+Tab stays inside the dialog');}
@@ -85,7 +89,25 @@ try{
   await expect(d.getByRole('heading',{level:1})).toHaveCount(1);
   const box=await d.getByRole('region',{name:'SALOMON STATION ZAO RENTAL'}).getByRole('link',{name:'BOOK RENTAL'}).boundingBox();assert.ok(box&&box.y+box.height<=900,'BOOK RENTAL is in the first viewport');
   await d.getByRole('button',{name:'Open menu'}).click();for(const name of ['SKI','SNOWBOARD','WEAR','PREMIUM','KIDS & FAMILY','RENTAL','PRICES','STORES','FAQ','MY BOOKING'])await expect(d.getByRole('dialog',{name:'Menu'}).getByRole('link',{name,exact:true})).toBeVisible();
+  await d.getByRole('dialog').getByRole('link',{name:'RENTAL',exact:true}).hover();
+  await expect(d.locator('.st-mnu-side')).toHaveCSS('opacity','1');
+  await d.getByRole('dialog').getByRole('link',{name:'MY BOOKING',exact:true}).focus();
+  await expect(d.locator('.st-mnu-side')).toHaveCSS('opacity','1');
+  await d.emulateMedia({reducedMotion:'reduce'});
+  await expect(d.locator('.st-mnu')).toHaveCSS('animation-name','none');
+  await expect(d.locator('.st-mnu-mi').first()).toHaveCSS('animation-name','none');
   await pc.close();
+ });
+ await check('long public headings remain fully readable on mobile and desktop',async()=>{
+  for(const width of [390,768,1440]){
+   await page.setViewportSize({width,height:width===390?844:900});
+   for(const path of ['rental/snowboard','stores/mountain-base']){
+    await page.goto('/ja/'+path);await page.evaluate(()=>document.fonts.ready);
+    const bounds=await page.locator('.st-ph h1').evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);const r=range.getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth};});
+    assert.ok(bounds.left>=0&&bounds.right<=bounds.width,'heading text fits: '+path+' '+width);
+   }
+  }
+  await page.setViewportSize({width:390,height:844});
  });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
   await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole); // option keys come from the server below if catalog prefix differs

@@ -98,9 +98,10 @@ export function StationReveal(){
  useEffect(()=>{const root=document.documentElement;if(!('IntersectionObserver' in window))return;
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{rootMargin:'0px 0px -8% 0px'});
   document.querySelectorAll('.st-rv:not(.in)').forEach(el=>{const r=el.getBoundingClientRect();if(r.top<innerHeight)el.classList.add('in');else io.observe(el);});
-  // Mobile dock: the primary CTA follows once the in-page one has scrolled away (never covers it).
+  // Mobile dock: the primary CTA is docked whenever the in-page one is out of view (above or below), never over it.
   const anchor=document.querySelector('.st-desk-acts'),dock=document.querySelector('.st-dock');
-  const dio=anchor&&dock?new IntersectionObserver(([e])=>dock.classList.toggle('on',!e!.isIntersecting&&e!.boundingClientRect.top<0)):null;if(anchor)dio?.observe(anchor);
-  root.classList.add('st-armed');return ()=>{io.disconnect();dio?.disconnect();root.classList.remove('st-armed');};},[]);
+  const place=()=>{if(!anchor||!dock)return;const r=anchor.getBoundingClientRect();dock.classList.toggle('on',r.bottom<0||r.top>innerHeight);};
+  place();addEventListener('scroll',place,{passive:true});addEventListener('resize',place);
+  root.classList.add('st-armed');return ()=>{io.disconnect();removeEventListener('scroll',place);removeEventListener('resize',place);root.classList.remove('st-armed');};},[]);
  return null;
 }

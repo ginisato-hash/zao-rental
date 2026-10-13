@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {INITIAL_TABLE,WEAR_TABLE} from '../../packages/contracts/src/pricing';
+import {INITIAL_TABLE,WEAR_TABLE,calculate,parseQuote} from '../../packages/contracts/src/pricing';
+import {skiSet,variants} from '../inventory/fixture';
 import {PRICE_ROWS,PRICE_DAY_INDEX,priceGrid,dayPrice} from '../../apps/web/src/components/price-rows';
 
 const TABLE={...INITIAL_TABLE,...WEAR_TABLE} as Record<string,Record<string,number>>;
@@ -21,4 +22,22 @@ test('premium rows exist only for adults and every row names a real product',()=
   for(const k of [r.adult,r.kids].filter(Boolean))assert.ok(TABLE[k!],k);
  }
  assert.equal(dayPrice('SKI_SET_ADULT_REGULAR'),TABLE.SKI_SET_ADULT_REGULAR!.DAY_1);
+});
+
+test('all 20 display products × 11 columns agree with independently constructed quote inputs',()=>{
+ const grid=priceGrid();let cells=0;
+ for(const key of Object.keys(TABLE))for(let column=0;column<11;column++){
+  const conditions=skiSet('2035-02-01'),member=conditions.members[0]!,sport=key.startsWith('SNOWBOARD')?'SNOWBOARD':'SKI';
+  member.age=key.includes('KIDS')?'KIDS':'ADULT';
+  member.tier=key.startsWith('WEAR')?'STANDARD':key.endsWith('PREMIUM')?'PREMIUM':'REGULAR';
+  member.product=key.startsWith('WEAR')?'WEAR_SET':key.includes('_SET_')?(sport==='SKI'?'SKI_SET':'SNOWBOARD_SET'):'SINGLE';
+  const families=member.product==='WEAR_SET'?['WEAR_JACKET','WEAR_PANTS']:member.product==='SKI_SET'?['SKI','SKI_BOOT','POLE']:member.product==='SNOWBOARD_SET'?['SNOWBOARD','SNOWBOARD_BOOT']:[key.includes('EQUIPMENT_ONLY')?sport:key.includes('BOOTS_ONLY')?sport+'_BOOT':'POLE'];
+  member.items=families.map(family=>({family:family as typeof member.items[number]['family'],variantIds:[variants.ski]}));
+  if(member.product==='WEAR_SET'){conditions.contractVersion='INTEGRATED_V1_2';member.wearSport='SKI';}
+  conditions.period={startDate:'2035-02-01',endDate:'2035-02-'+String(Math.max(1,column)).padStart(2,'0'),slot:column===0?'AM':column===1?'DAY':'MULTIDAY'};
+  const quote=calculate(INITIAL_TABLE,parseQuote({conditions,holdId:null,couponCode:null,wantAdvance:false}),new Date('2035-01-01T00:00:00Z'),null);
+  assert.equal(quote.items[0]!.productKey,key);
+  assert.equal(grid[key]![column],quote.totalJpy,key+' column '+column);cells++;
+ }
+ assert.equal(cells,220);
 });

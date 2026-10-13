@@ -162,7 +162,7 @@
     "bullets": [
       "大人・子供は利用開始日の年齢で区分",
       "一人ずつサイズを選択",
-      "全員分の用品が揃ったときに予約が成立"
+      "全員分の空きを確認してから予約手続きへ"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -175,7 +175,7 @@
     "bullets": [
       "Adult or child by age on the start date",
       "Choose sizes person by person",
-      "The booking is made only when everyone's equipment is available"
+      "Check availability for everyone before proceeding to book"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -188,7 +188,7 @@
     "bullets": [
       "表示料金はすべて税込",
       "前日15:00（日本時間）までの事前決済で5%OFF",
-      "お支払い金額は予約の最終確認で確定"
+      "最終金額と割引の適用条件は予約画面で確認"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -201,7 +201,7 @@
     "bullets": [
       "All prices include tax",
       "5% off when paid by 3:00 PM (JST) the day before",
-      "The amount you pay is fixed on the final review"
+      "Check the final amount and discount conditions in your booking"
     ],
     "revision": "public-p0-draft-v1"
   },

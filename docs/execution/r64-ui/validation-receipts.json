@@ -1,0 +1,370 @@
+[
+  {
+    "name": "lint",
+    "start": "2026-10-13T16:03:04.098Z",
+    "end": "2026-10-13T16:03:12.608Z",
+    "exitCode": 0,
+    "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+    "batch": "r64-2026-10-13T16-03-04.097Z"
+  },
+  {
+    "name": "typecheck",
+    "start": "2026-10-13T16:03:12.608Z",
+    "end": "2026-10-13T16:03:18.092Z",
+    "exitCode": 0,
+    "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+    "batch": "r64-2026-10-13T16-03-04.097Z"
+  },
+  {
+    "name": "build",
+    "start": "2026-10-13T16:03:18.093Z",
+    "end": "2026-10-13T16:03:29.937Z",
+    "exitCode": 0,
+    "logSha256": "99c2d4acaa3918d21a75d9dab96e4a0a458806f0b17ce7044b5381af25641fce",
+    "batch": "r64-2026-10-13T16-03-04.097Z"
+  },
+  {
+    "name": "check:secrets",
+    "start": "2026-10-13T16:03:29.937Z",
+    "end": "2026-10-13T16:03:31.470Z",
+    "exitCode": 0,
+    "logSha256": "4abe5aa34005b54f29f400a86daa858adb7fdfc040df57a20dcf345766c3b10d",
+    "batch": "r64-2026-10-13T16-03-04.097Z"
+  },
+  {
+    "name": "test:unit",
+    "start": "2026-10-13T16:03:31.470Z",
+    "end": "2026-10-13T16:05:17.502Z",
+    "exitCode": 0,
+    "logSha256": "4cdeb39de199d06c47dde5c9ec2cb4a1efdca8bcd5866cda56ffffacfd1e4197",
+    "batch": "r64-2026-10-13T16-03-04.097Z"
+  },
+  {
+    "name": "test:public-ui",
+    "start": "2026-10-13T16:06:07.178Z",
+    "end": "2026-10-13T16:07:33.498Z",
+    "exitCode": 0,
+    "logSha256": "38c37c50e29519ff9384f459db78de01bb6ec04e491710c0685d60ca2e895868",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:public-guest",
+    "start": "2026-10-13T16:07:33.498Z",
+    "end": "2026-10-13T16:07:41.935Z",
+    "exitCode": 0,
+    "logSha256": "5c383c7054bb7c18b32fab18c359cf8e30ca3701483265151ab7a336ceb063f3",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:readiness-ui",
+    "start": "2026-10-13T16:07:41.935Z",
+    "end": "2026-10-13T16:07:59.450Z",
+    "exitCode": 0,
+    "logSha256": "6ef1b6c27b715cb7408700c5f82ebb3f46166d505d8179414c93d2a30dbdd25c",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:activation-p4",
+    "start": "2026-10-13T16:07:59.451Z",
+    "end": "2026-10-13T16:08:42.277Z",
+    "exitCode": 0,
+    "logSha256": "45aa00a493cffab92fe33976153a24e90a5ca65f39819c97daa9643295309589",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:booking-recovery-ui",
+    "start": "2026-10-13T16:08:42.277Z",
+    "end": "2026-10-13T16:09:30.128Z",
+    "exitCode": 0,
+    "logSha256": "adbc06fe7b929cf82b9c782acc78c317b102ec6bf8b12a273846f3068752a07f",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:flow-ui",
+    "start": "2026-10-13T16:09:30.128Z",
+    "end": "2026-10-13T16:09:59.651Z",
+    "exitCode": 0,
+    "logSha256": "79d7cca99f7c08d6472a39800cb9e09cd539b63368dcce2d157191f3215e5745",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:recommendations-ui",
+    "start": "2026-10-13T16:09:59.651Z",
+    "end": "2026-10-13T16:10:07.160Z",
+    "exitCode": 0,
+    "logSha256": "f27608a39d5f45ed3d5de90f384da5196968aa2f85dd4f11b80b00018eef92b3",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:recommendation-audit",
+    "start": "2026-10-13T16:10:07.160Z",
+    "end": "2026-10-13T16:10:13.358Z",
+    "exitCode": 0,
+    "logSha256": "631f0cdbe9d0e4e579ea45897a35674c7f232f2a50a4b951dd36f1ab0684253e",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:recommendation-continuation",
+    "start": "2026-10-13T16:10:13.358Z",
+    "end": "2026-10-13T16:10:20.218Z",
+    "exitCode": 0,
+    "logSha256": "0ebc4b08bc043eeae9c2e311faf02ef53b2e77c8f47bf2ef404ebc4b25c38e65",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:auth",
+    "start": "2026-10-13T16:10:20.219Z",
+    "end": "2026-10-13T16:10:30.660Z",
+    "exitCode": 0,
+    "logSha256": "f1e0f49dca4fa9721ceb8cfd74de0c292adb9aa93cb56461441a5d2badbeb48d",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:staff-home-ui",
+    "start": "2026-10-13T16:10:30.660Z",
+    "end": "2026-10-13T16:10:38.509Z",
+    "exitCode": 0,
+    "logSha256": "e958fdcceab43e84578a68d0ebc648c042e0dc012944d19b46e6866c0e6dbcc0",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:custody-ui",
+    "start": "2026-10-13T16:10:38.510Z",
+    "end": "2026-10-13T16:11:07.716Z",
+    "exitCode": 0,
+    "logSha256": "8183d637b97599962cbf24c2c541a24977c7fe5eef02689bb5e36d0c627a17f6",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:wear-ui",
+    "start": "2026-10-13T16:11:07.717Z",
+    "end": "2026-10-13T16:11:42.755Z",
+    "exitCode": 0,
+    "logSha256": "102ab4f5e1204e497360b395a81cb0f218d226c42eb7a0f4080e8fab9884f650",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:transfers-ui",
+    "start": "2026-10-13T16:11:42.755Z",
+    "end": "2026-10-13T16:11:47.870Z",
+    "exitCode": 0,
+    "logSha256": "6da379b58546c18d6a91032e6c8076c1c6099c7dee95d8d0dd851b6a994b9483",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:holds-ui",
+    "start": "2026-10-13T16:11:47.871Z",
+    "end": "2026-10-13T16:11:53.720Z",
+    "exitCode": 0,
+    "logSha256": "c98db59f3e9c00c3071e71fbd37409700ffedb16bbd8a53dd823437d02e0f798",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:quotes-ui",
+    "start": "2026-10-13T16:11:53.720Z",
+    "end": "2026-10-13T16:11:59.217Z",
+    "exitCode": 0,
+    "logSha256": "f04042a28650471e5f38fb7f50e8176bf146c96ff01c3a1449fa487f44bd8136",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:operations-ui",
+    "start": "2026-10-13T16:11:59.218Z",
+    "end": "2026-10-13T16:12:04.880Z",
+    "exitCode": 0,
+    "logSha256": "1886579fa13b17e1fa9ce6f55bd0fbd7d3d6d7b25ffec7cf38fa8eb57e0cd625",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:operations-console-ui",
+    "start": "2026-10-13T16:12:04.881Z",
+    "end": "2026-10-13T16:12:09.047Z",
+    "exitCode": 0,
+    "logSha256": "ce0a701b81b192429307ce53422e1d238cddfdf86a2661707e43d83b6afe6c8c",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:m2a-launch-ui",
+    "start": "2026-10-13T16:12:09.048Z",
+    "end": "2026-10-13T16:12:57.940Z",
+    "exitCode": 0,
+    "logSha256": "982d4cbbf6bcdd03350b96ae9473458d560025b4bbd553a130d94d65f56f5ae8",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:notification-ui",
+    "start": "2026-10-13T16:12:57.941Z",
+    "end": "2026-10-13T16:13:01.907Z",
+    "exitCode": 0,
+    "logSha256": "ba6b4fa01a612e62ba219e3bb3e56c34f3649ce876eb7af09f94cbb963230b48",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:production-runtime-ui",
+    "start": "2026-10-13T16:13:01.908Z",
+    "end": "2026-10-13T16:13:06.639Z",
+    "exitCode": 0,
+    "logSha256": "84c005b8511c53fa4277429b1971b0cdaa819dc3bd1034bab590cd9e83286ad3",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "test:content-fixture",
+    "start": "2026-10-13T16:13:06.639Z",
+    "end": "2026-10-13T16:13:37.495Z",
+    "exitCode": 0,
+    "logSha256": "2434698e9641257a6d986ae419ef7f240a866ee54d42ac2cad6be0858f72fcd7",
+    "batch": "r64-2026-10-13T16-06-07.177Z"
+  },
+  {
+    "name": "check:reference",
+    "start": "2026-10-13T16:14:28.066Z",
+    "end": "2026-10-13T16:14:28.229Z",
+    "exitCode": 0,
+    "logSha256": "d5585857a54ece08cc81e7241049e8de7d0b31a14fef682edf095d4ad1621096",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "test:reference",
+    "start": "2026-10-13T16:14:28.229Z",
+    "end": "2026-10-13T16:14:28.377Z",
+    "exitCode": 0,
+    "logSha256": "58c16be89af231f8ca5158a01c120509f4bb7382e2672459fa3ad337c967e576",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "lint",
+    "start": "2026-10-13T16:14:28.377Z",
+    "end": "2026-10-13T16:14:36.734Z",
+    "exitCode": 0,
+    "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "typecheck",
+    "start": "2026-10-13T16:14:36.734Z",
+    "end": "2026-10-13T16:14:41.882Z",
+    "exitCode": 0,
+    "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "build",
+    "start": "2026-10-13T16:14:41.882Z",
+    "end": "2026-10-13T16:14:51.385Z",
+    "exitCode": 0,
+    "logSha256": "da46ead171ef5001d8b1257738287167f115b9ea91eac0b4ab1035c23c5d3905",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "check:secrets",
+    "start": "2026-10-13T16:14:51.385Z",
+    "end": "2026-10-13T16:14:52.911Z",
+    "exitCode": 0,
+    "logSha256": "eb91af93ad4fa15f9dfb75ac3d03a09cf95424a14dc4320b40c8835283b346f0",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "test:public-ui",
+    "start": "2026-10-13T16:14:52.911Z",
+    "end": "2026-10-13T16:16:20.718Z",
+    "exitCode": 0,
+    "logSha256": "38c37c50e29519ff9384f459db78de01bb6ec04e491710c0685d60ca2e895868",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "test:activation-p4",
+    "start": "2026-10-13T16:16:20.719Z",
+    "end": "2026-10-13T16:17:02.892Z",
+    "exitCode": 0,
+    "logSha256": "45aa00a493cffab92fe33976153a24e90a5ca65f39819c97daa9643295309589",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "test:booking-recovery-ui",
+    "start": "2026-10-13T16:17:02.893Z",
+    "end": "2026-10-13T16:17:46.308Z",
+    "exitCode": 0,
+    "logSha256": "adbc06fe7b929cf82b9c782acc78c317b102ec6bf8b12a273846f3068752a07f",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "test:transfers-ui",
+    "start": "2026-10-13T16:17:46.309Z",
+    "end": "2026-10-13T16:17:50.820Z",
+    "exitCode": 0,
+    "logSha256": "6da379b58546c18d6a91032e6c8076c1c6099c7dee95d8d0dd851b6a994b9483",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "test:operations-ui",
+    "start": "2026-10-13T16:17:50.820Z",
+    "end": "2026-10-13T16:17:56.090Z",
+    "exitCode": 0,
+    "logSha256": "1886579fa13b17e1fa9ce6f55bd0fbd7d3d6d7b25ffec7cf38fa8eb57e0cd625",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "test:production-runtime-ui",
+    "start": "2026-10-13T16:17:56.091Z",
+    "end": "2026-10-13T16:18:00.468Z",
+    "exitCode": 0,
+    "logSha256": "45b3afb3f2bfb4a7aa8e5f1fc5d5a3103b6609a7d4064593cc334a7976794800",
+    "batch": "r64-2026-10-13T16-14-28.065Z"
+  },
+  {
+    "name": "lint",
+    "start": "2026-10-13T16:23:47.747Z",
+    "end": "2026-10-13T16:23:56.325Z",
+    "exitCode": 0,
+    "logSha256": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+    "batch": "r64-2026-10-13T16-23-47.745Z"
+  },
+  {
+    "name": "typecheck",
+    "start": "2026-10-13T16:23:56.325Z",
+    "end": "2026-10-13T16:24:02.055Z",
+    "exitCode": 0,
+    "logSha256": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+    "batch": "r64-2026-10-13T16-23-47.745Z"
+  },
+  {
+    "name": "build",
+    "start": "2026-10-13T16:24:02.055Z",
+    "end": "2026-10-13T16:24:10.715Z",
+    "exitCode": 0,
+    "logSha256": "380fd6b456ab0fed770902c2d655d49b84b83bf0ab98d362ac471606936eb8e7",
+    "batch": "r64-2026-10-13T16-23-47.745Z"
+  },
+  {
+    "name": "check:secrets",
+    "start": "2026-10-13T16:24:10.715Z",
+    "end": "2026-10-13T16:24:12.250Z",
+    "exitCode": 0,
+    "logSha256": "eb91af93ad4fa15f9dfb75ac3d03a09cf95424a14dc4320b40c8835283b346f0",
+    "batch": "r64-2026-10-13T16-23-47.745Z"
+  },
+  {
+    "name": "test:public-ui",
+    "start": "2026-10-13T16:24:12.251Z",
+    "end": "2026-10-13T16:25:44.314Z",
+    "exitCode": 0,
+    "logSha256": "670626b5775848b2c01da9801e7fe5a3bc793bfb906112807d2c46dd00ba32b7",
+    "batch": "r64-2026-10-13T16-23-47.745Z"
+  },
+  {
+    "name": "test:flow-ui",
+    "start": "2026-10-13T16:25:44.315Z",
+    "end": "2026-10-13T16:26:10.474Z",
+    "exitCode": 0,
+    "logSha256": "79d7cca99f7c08d6472a39800cb9e09cd539b63368dcce2d157191f3215e5745",
+    "batch": "r64-2026-10-13T16-23-47.745Z"
+  },
+  {
+    "name": "test:staff-home-ui",
+    "start": "2026-10-13T16:26:10.475Z",
+    "end": "2026-10-13T16:26:18.405Z",
+    "exitCode": 0,
+    "logSha256": "e958fdcceab43e84578a68d0ebc648c042e0dc012944d19b46e6866c0e6dbcc0",
+    "batch": "r64-2026-10-13T16-23-47.745Z"
+  }
+]

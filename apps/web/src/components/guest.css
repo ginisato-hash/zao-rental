@@ -181,3 +181,5 @@ details.guest-secondary.guest-main{padding-top:0;padding-bottom:calc(48px + var(
 .st-res>section h2{font-size:clamp(22px,2.4vw,32px)}
 .st-res>section h3{margin-top:20px}
 @media (max-width:767px){.st-res-card{grid-template-columns:1fr}.guest-main .st-res-qr{grid-column:1;grid-row:auto;justify-self:start}}
+.guest-main button.st-danger,.guest-main .st-res-card button.st-danger{background:var(--signal);color:var(--snow);border-color:var(--signal)}
+.guest-main button.st-danger:hover:not(:disabled),.guest-main .st-res-card button.st-danger:hover:not(:disabled){background:#9d0c24;color:var(--snow);border-color:#9d0c24}

@@ -1,35 +1,64 @@
-.staff-home{max-width:1080px;margin:auto;padding:16px;overflow-wrap:anywhere}
-.staff-home h1{font-size:22px;margin:4px 0}
-.staff-home-header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
-.staff-home section{background:#edf4f1;padding:14px;border-radius:10px;margin:14px 0}
-.staff-home h2{font-size:16px;margin:0}
-.staff-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 8px}
-.staff-home input,.staff-home select{max-width:100%;min-width:0;padding:8px;font:inherit;min-height:44px;box-sizing:border-box}
-.staff-home label{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-weight:600}
-.staff-home button{min-height:44px;min-width:44px;padding:8px 14px;font:inherit}
+/* Staff Home (R64): a station desk for the shop floor. Order = store/business date → QR & booking search (the dominant
+   black block) → today's work → today's bookings → operations notes → other tools. Square cards, status as text tags,
+   one black primary per card, attention marked with the signal colour AND a word. */
+.staff-home{max-width:1280px;margin:auto;padding:0 var(--g) 56px;overflow-wrap:anywhere}
+.staff-home h1{font:700 clamp(36px,5vw,72px)/.9 var(--d);margin:6px 0 0}
+.staff-home-header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:0 calc(var(--g) * -1);padding:18px var(--g) 16px;border-bottom:2px solid var(--ink)}
+.staff-home-header nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:2px solid var(--ink);font:700 15px/1 var(--d);text-decoration:none}
+.staff-home-header nav a:hover{background:var(--ink);color:var(--snow)}
+.staff-home section{margin:20px 0;padding:16px 0 0;border-top:2px solid var(--ink);background:none;border-radius:0}
+.staff-home h2{font:700 clamp(22px,2.4vw,32px)/1 var(--d);margin:0}
+.staff-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 10px}
+.staff-home input,.staff-home select{max-width:100%;min-width:0;min-height:48px;box-sizing:border-box}
+.staff-home label{display:flex;flex-direction:column;gap:6px;margin:8px 0;font-weight:700}
+.staff-home button{min-height:48px;min-width:44px;padding:8px 16px}
 .staff-actions{display:flex;flex-wrap:wrap;gap:8px}
-/* 1. store / business date: the page's operating context, always first */
-.staff-home section.staff-context{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 24px;background:#e4efea;border:1px solid #c9dcd3}
-.staff-context label{margin:0;min-width:min(100%,240px)}
-.staff-context-date{margin:0;display:flex;flex-direction:column;gap:2px}.staff-context-date span{font-size:12px;color:#4a5c54;font-weight:600}.staff-context-date strong{font-size:18px}
-/* 3. Manifest states: loading / error / empty / ready are visually distinct */
-.staff-state{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}.staff-state [role=status]{margin:0}
-.staff-state--loading [role=status]{color:#35584a}
-.staff-state--error{background:#fff4ec;border:1px solid #e7b89a;border-left:4px solid #b54708;border-radius:6px;padding:8px 12px;margin:8px 0}.staff-state--error [role=status]{color:#8a2c0d}
-.staff-empty{background:white;border:1px dashed #b8cdc3;border-radius:8px;padding:14px;margin:8px 0;color:#35584a}
+
+/* 1. operating context: store + business date as an instrument line */
+.staff-home section.staff-context{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 28px;border-top:0;margin-top:0;padding:16px 0}
+.staff-context label{margin:0;min-width:min(100%,280px)}
+.staff-context-date{margin:0;display:flex;flex-direction:column;gap:4px}
+.staff-context-date span{font:700 12px/1 var(--d);color:var(--sub)}
+.staff-context-date strong{font:700 clamp(26px,3vw,40px)/1 var(--d);font-variant-numeric:tabular-nums}
+
+/* 2. QR & booking search: the first thing a hand reaches for */
+.staff-home section.staff-search{background:var(--ink);color:var(--snow);border:0;padding:clamp(16px,2.4vw,28px);margin:0 0 24px}
+.staff-search h2{font-size:clamp(28px,3.4vw,48px)}
+.staff-search p{color:var(--snow)}
+.staff-search video{display:block;margin:12px 0;border:2px solid var(--snow)}
+.staff-search .staff-actions button:first-child{background:var(--snow);color:var(--ink);border-color:var(--snow);min-height:56px;font-size:20px;padding:0 22px}
+.staff-search button{background:transparent;color:var(--snow);border-color:var(--snow)}
+.staff-search button:hover:not(:disabled){background:var(--snow);color:var(--ink)}
+.staff-search label{margin-top:16px;color:var(--snow)}
+.staff-search input{border-color:var(--snow);background:var(--ink);color:var(--snow);font:700 18px/1.2 var(--d)}
+.staff-search [role=status]{color:var(--snow)}
+
+/* 3. manifest states: loading / error / empty / ready are distinct in words and shape */
+.staff-state{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.staff-state [role=status]{margin:0}
+.staff-state--error{border-left:6px solid var(--signal);background:#fbeef0;padding:8px 12px;margin:8px 0}
+.staff-empty{border:2px dashed var(--ink);padding:16px;margin:8px 0;font-weight:700}
 .staff-more{margin-top:12px}
-.staff-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;margin:10px 0}
-.staff-card{background:white;border:1px solid #d4e0da;border-radius:8px;padding:12px;min-width:0;display:flex;flex-direction:column}
+.staff-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:2px;margin:12px 0}
+.staff-card{background:var(--snow);border:2px solid var(--ink);padding:14px;min-width:0;display:flex;flex-direction:column}
 .staff-card p{margin:4px 0}
-.staff-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
-.staff-chip{flex:0 0 auto;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:#e4efea;color:#23473a;border:1px solid #c9dcd3}.staff-chip--muted{background:#f3f6f5;color:#4a5c54}
-.staff-card .staff-card-action{display:flex;gap:8px;align-items:baseline;border-top:1px solid #e6eeea;padding-top:6px;margin-top:6px}.staff-card .staff-card-action span{font-size:12px;color:#4a5c54}
-.staff-card .staff-card-primary{margin-top:auto;align-self:stretch;background:#1f5f4a;color:white;border:1px solid #1f5f4a;border-radius:6px;font-weight:650}.staff-card .staff-card-primary:disabled{opacity:.6}
-.staff-card .staff-card-attention{color:#9a3412;font-weight:650}
-.staff-secondary{color:#4a5c54;font-size:13px}
-.staff-home details.staff-secondary-links{background:transparent;padding:0}
-.staff-home details.staff-secondary-links>summary{cursor:pointer;font-weight:650;padding:10px 0;min-height:44px;display:flex;align-items:center}
-.staff-home details.staff-secondary-links nav{display:flex;flex-wrap:wrap;gap:4px 12px}
-.staff-home details.staff-secondary-links nav a{min-height:44px;display:flex;align-items:center}
-.staff-home [role=status]{font-weight:600;min-height:1.5em}
-@media(max-width:500px){.staff-home{padding:10px}.staff-home section{padding:10px}.staff-context label{min-width:100%}}
+.staff-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.staff-card-head strong{font:700 20px/1.15 var(--d)}
+.staff-chip{flex:0 0 auto;font:700 12px/1 var(--d);padding:5px 8px;background:var(--ink);color:var(--snow);border:2px solid var(--ink)}
+.staff-chip--muted{background:var(--snow);color:var(--ink)}
+.staff-card .staff-card-action{display:flex;gap:8px;align-items:baseline;border-top:1px solid var(--ink);padding-top:8px;margin-top:8px}
+.staff-card .staff-card-action span{font:700 11px/1 var(--d);color:var(--sub)}
+.staff-card .staff-card-action strong{font:700 18px/1.2 var(--d)}
+.staff-card .staff-card-primary{margin-top:auto;align-self:stretch;min-height:52px;background:var(--ink);color:var(--snow);border:2px solid var(--ink);font:700 17px/1.2 var(--d)}
+.staff-card .staff-card-primary:hover:not(:disabled){background:#262626}
+.staff-card .staff-card-primary:disabled{opacity:.5}
+.staff-card .staff-card-attention{margin-top:8px;padding:4px 8px;border-left:6px solid var(--signal);font-weight:700}
+.staff-secondary{color:var(--sub);font-size:13px}
+.staff-home-header .staff-secondary{margin:0;font:700 13px/1 var(--d);color:var(--ink);letter-spacing:.02em}
+.staff-home details.staff-secondary-links{margin-top:28px;border-top:2px solid var(--ink)}
+.staff-home details.staff-secondary-links>summary{cursor:pointer;font:700 18px/1.2 var(--d);padding:10px 0;min-height:52px;display:flex;align-items:center}
+.staff-home details.staff-secondary-links nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:2px}
+.staff-home details.staff-secondary-links nav a{min-height:52px;display:flex;align-items:center;padding:0 14px;border:2px solid var(--ink);text-decoration:none;font:700 15px/1.2 var(--d)}
+.staff-home details.staff-secondary-links nav a:hover{background:var(--ink);color:var(--snow)}
+.staff-home [role=status]{font-weight:700;min-height:1.5em}
+@media(max-width:500px){.staff-context label{min-width:100%}.staff-context-date{text-align:left}}

@@ -56,9 +56,9 @@
     "heading": "スキーを、サイズから選ぶ。",
     "summary": "身長と足のサイズから候補を確認し、長さを明示的に選びます。最終的な適合はスタッフが用品と一緒に確認します。",
     "bullets": [
-      "板は左右1ペアで1個体",
-      "ブーツは左右1組、ポールはサイズ別ペア数量",
-      "身体情報だけでDINや安全適合を自動確定しません"
+      "スキーセット：板・ブーツ・ポール",
+      "身長と足のサイズから長さの候補を表示",
+      "最終的な適合・調整は受取時にスタッフが確認"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -69,9 +69,9 @@
     "heading": "Choose your ski setup.",
     "summary": "Review size suggestions from height and foot size, then explicitly choose a length. Final fit requires a staff check with the equipment.",
     "bullets": [
-      "One ski pair is one asset",
-      "Boots are a pair; poles are counted in pairs by size",
-      "Body measurements do not automatically certify DIN or safety"
+      "Ski set: skis, boots and poles",
+      "Length options from your height and foot size",
+      "Staff check the final fit and adjustment at pickup"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -82,9 +82,9 @@
     "heading": "ボードとブーツを、ひとつの選択へ。",
     "summary": "身長と足のサイズから候補を確認できます。スキー専用の体重・レベル入力は求めません。",
     "bullets": [
-      "スノーボードは1枚で1個体",
-      "ブーツは左右1組で1個体",
-      "RegularとPremiumの条件を区別して選択"
+      "スノーボードセット：ボード・ブーツ",
+      "身長と足のサイズから長さの候補を表示",
+      "RegularとPremiumから選択"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -95,9 +95,9 @@
     "heading": "Your board and boots, together.",
     "summary": "Explore candidates using height and foot size. Ski-specific weight and ability inputs are not required.",
     "bullets": [
-      "One board is one asset",
-      "One pair of boots is one asset",
-      "Choose between distinct Regular and Premium promises"
+      "Snowboard set: board and boots",
+      "Length options from your height and foot size",
+      "Choose Regular or Premium"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -109,8 +109,8 @@
     "summary": "Premiumでは当店で取扱確認されたモデル・シーズン・長さから選びます。メーカーの全ラインアップを当店在庫として表示しません。",
     "bullets": [
       "モデル・シーズン・長さを予約条件として保存",
-      "写真・取扱長さ・仕様の照合が必要",
-      "未照合・権利未確認のモデルは公開しません"
+      "当店で取扱を確認したモデルだけを掲載",
+      "大人（13歳以上）が対象"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -121,9 +121,9 @@
     "heading": "Know the model you choose.",
     "summary": "Premium selection is limited to verified shop models, seasons and lengths. A manufacturer catalogue is not our inventory.",
     "bullets": [
-      "Model, season and length are saved as selected conditions",
-      "Photos, shop lengths and specifications must be verified",
-      "Unverified models and media are not released"
+      "Your model, season and length are saved as the booking promise",
+      "Only models verified at our shop are listed",
+      "For adults (13+)"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -134,9 +134,9 @@
     "heading": "ウェアも、旅の前に。",
     "summary": "ジャケットとパンツのサイズを別々に選びます。道具と一緒でも、ウェアのみでも、グループの選択にまとめられます。",
     "bullets": [
-      "ウェアはサイズ別の数量在庫",
-      "上下セット、同じ利用者の道具セットとの調整は見積で確認",
-      "受領・洗浄・乾燥・再利用可能性を分離"
+      "ジャケットとパンツの上下セット",
+      "サイズは上下それぞれ選択",
+      "用品と一緒でも、ウェアのみでも予約可能"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -147,9 +147,9 @@
     "heading": "Plan your wear before the trip.",
     "summary": "Select jacket and pants sizes separately. Add wear to equipment or choose wear only within the same group.",
     "bullets": [
-      "Wear is quantity stock by size",
-      "Review the set price and same-person equipment adjustment in the estimate",
-      "Receipt, washing, drying and readiness are separate"
+      "Jacket and pants set",
+      "Choose the jacket and pants sizes separately",
+      "Book with equipment or wear only"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -160,9 +160,9 @@
     "heading": "家族みんなの選択を、一緒に。",
     "summary": "大人・子供それぞれの利用開始時の区分を選び、用品とウェアを利用者ごとに確認します。",
     "bullets": [
-      "大人・子供の在庫は無条件に代替しません",
-      "一人ずつサイズ候補を明示選択",
-      "全員分が成立する場合だけまとめてHOLD"
+      "大人・子供は利用開始日の年齢で区分",
+      "一人ずつサイズを選択",
+      "全員分の用品が揃ったときに予約が成立"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -173,9 +173,9 @@
     "heading": "One plan for the whole family.",
     "summary": "Choose each person’s age category at the start of the rental and review their equipment and wear separately.",
     "bullets": [
-      "No automatic substitutions across adult and child categories",
-      "Explicit size choices for each person",
-      "Group HOLD succeeds only when all requirements fit"
+      "Adult or child by age on the start date",
+      "Choose sizes person by person",
+      "The booking is made only when everyone's equipment is available"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -186,9 +186,9 @@
     "heading": "条件を選び、総額を確認。",
     "summary": "半日から10日まで、商品・人数・日数をもとに見積を確認します。表示料金はすべて税込です。",
     "bullets": [
-      "ブラウザの入力金額で料金を確定しません",
-      "事前決済5％調整の資格は前日15:00 JSTまでの決済完了で判定",
-      "見積を作るだけで決済完了や早割資格を確定しません"
+      "表示料金はすべて税込",
+      "前日15:00（日本時間）までの事前決済で5%OFF",
+      "お支払い金額は予約の最終確認で確定"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -199,9 +199,9 @@
     "heading": "Choose your options. Review the total.",
     "summary": "Review an estimate for half-day through ten-day rentals, using products, people and duration. All prices include Japanese consumption tax.",
     "bullets": [
-      "Amounts are evaluated on the server",
-      "Advance 5% eligibility requires payment completion by 15:00 JST the previous day",
-      "An estimate alone does not confirm payment or discount eligibility"
+      "All prices include tax",
+      "5% off when paid by 3:00 PM (JST) the day before",
+      "The amount you pay is fixed on the final review"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -292,9 +292,9 @@
     "heading": "出発前の、気になること。",
     "summary": "サイズ、グループ予約、ウェア、受取時刻について、予約の前に確認できます。",
     "bullets": [
-      "予約QRだけで用品の貸出や個人情報の閲覧を許可しません",
+      "予約QRは店頭での本人確認と合わせて使います",
       "ウェアのみの予約も選択できます",
-      "価格・期限は保存した見積と予約条件で確認します"
+      "料金と期限は予約の確認画面で確認できます"
     ],
     "revision": "public-p0-draft-v1"
   },
@@ -305,9 +305,9 @@
     "heading": "Before you set off.",
     "summary": "Find answers about sizes, group choices, wear and pickup timing before booking.",
     "bullets": [
-      "A booking QR alone does not authorize handover or disclosure",
-      "Wear-only selections are supported",
-      "Check the saved estimate and booking conditions for prices and deadlines"
+      "Your booking QR is used together with an in-store identity check",
+      "You can book wear only",
+      "Check prices and deadlines on your booking page"
     ],
     "revision": "public-p0-draft-v1"
   }

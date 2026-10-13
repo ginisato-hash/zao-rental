@@ -17,7 +17,7 @@ export function Photo({shot,locale,eager=false,sizes='100vw'}:{shot:{desktop:str
  return <picture><source media="(min-width: 768px)" srcSet={shot.desktop}/><img src={shot.mobile} alt={shot.alt[locale]} sizes={sizes} loading={eager?'eager':'lazy'} decoding="async"/></picture>;
 }
 function Product({shot,locale,eager=false,sizes}:{shot:Shot;locale:Locale;eager?:boolean;sizes:string}){
- return <img src={shot.src} srcSet={shot.srcSet} sizes={sizes} width={shot.width} height={shot.height} alt={shot.alt[locale]} loading={eager?'eager':'lazy'} decoding="async"/>;
+ return <picture><img src={shot.src} srcSet={shot.srcSet} sizes={sizes} width={shot.width} height={shot.height} alt={shot.alt[locale]} loading={eager?'eager':'lazy'} decoding="async"/></picture>;
 }
 
 /** Shared public frame (LP chrome): edge header + full-field menu, page, final BOOK band, one-line footer. */
@@ -99,8 +99,7 @@ export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup
    </article>;};
   body=<><section className="st-compare" aria-label={t('Regular と Premium','Regular and Premium')}>{plan('regular')}{plan('premium')}</section>
    <div className="st-wrap st-acts">{book()}<Link className="st-link" href={r+'/prices'}>{t('すべての料金','All prices')} →</Link></div>
-   <section className="st-wrap" aria-label={t('用品カテゴリ','Equipment')}><div className="st-sum">{publicPages.filter(p=>p.locale===locale&&['rental/ski','rental/snowboard','rental/wear','rental/premium','rental/kids-family'].includes(p.path)).map(p=><Link key={p.path} className="st-sumrow" href={canonicalPath(locale,p.path)}><span>{WORD[p.path]}<small>{p.heading}</small></span><span className="go" aria-hidden="true">→</span></Link>)}</div></section>
-   <section className="st-wrap" aria-label={page.title}>{facts}</section></>;
+   <section className="st-wrap" aria-label={t('用品カテゴリ','Equipment')}><div className="st-sum">{publicPages.filter(p=>p.locale===locale&&['rental/ski','rental/snowboard','rental/wear','rental/premium','rental/kids-family'].includes(p.path)).map(p=><Link key={p.path} className="st-sumrow" href={canonicalPath(locale,p.path)}><span>{WORD[p.path]}</span><span className="go" aria-hidden="true">→</span></Link>)}</div></section></>;
  }else if(path==='prices'){
   body=<><div className="st-wrap"><PriceExplorer locale={locale} grid={priceGrid()}/></div><section className="st-wrap" aria-label={page.title}>{facts}<div className="st-acts">{book()}</div></section></>;
  }else if(path==='stores/mountain-base'||path==='stores/onsen-base'){

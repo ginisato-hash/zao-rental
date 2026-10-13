@@ -44,48 +44,48 @@ try{
   assert.ok(!faq.includes('公開文言・利用規約は公開前確認中です'),'the under-review notice disappears once every document is approved');
   const legalHtml=await (await context.request.get('/ja/legal/terms')).text();assert.match(legalHtml,/<meta name="robots" content="noindex/,'not indexable without publication authority');
  });
- await check('P85 mobile home: deliberate horizontal swipe changes campaign (photo/title/VIEW agree), short or vertical touches do not; modal menu traps focus, Escape restores focus and scroll',async()=>{
+ await check('R64 home rental desk: one h1, the booking action and live facts from the system; modal menu traps focus, Escape restores focus and scroll',async()=>{
   for(const width of [390,375]){
    const touch=await browser.newContext({baseURL:app!.origin,viewport:{width,height:width===390?844:812},hasTouch:true,isMobile:true});touch.setDefaultTimeout(15000);const m=await touch.newPage();
-   await m.goto('/ja');const cdp=await touch.newCDPSession(m);
-   const state=async()=>m.evaluate(()=>({title:document.querySelector('.pc-title-m')?.textContent,view:document.querySelector('.pc-view')?.getAttribute('href'),slide:document.querySelector('.pc-slide.is-active')?.getAttribute('href')}));
-   const swipe=async(dx:number,dy:number,ms:number)=>{const x=width/2,y=420,steps=6;await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
-    for(let i=1;i<=steps;i++){await new Promise(r=>setTimeout(r,ms/steps));await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+dx*i/steps,y:y+dy*i/steps}]});}
-    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await new Promise(r=>setTimeout(r,150));};
-   await expect(m.locator('.pc-title-m')).toBeVisible();await m.locator('.pc-hero').dispatchEvent('mouseenter');
-   const a=await state();assert.equal(a.view,a.slide,'VIEW link and active photo belong to the same campaign');
-   await swipe(-20,0,150);assert.deepEqual(await state(),a,'a short touch never switches');
-   await swipe(-30,160,300);assert.deepEqual(await state(),a,'a vertical scroll gesture never switches');
-   await swipe(-140,8,250);const b=await state();assert.notEqual(b.title,a.title,'left swipe advances');assert.equal(b.view,b.slide);
-   await swipe(140,-6,250);assert.deepEqual(await state(),a,'right swipe goes back');
+   await m.goto('/ja');
+   await expect(m.getByRole('heading',{level:1})).toHaveCount(1);await expect(m.getByRole('heading',{level:1})).toBeVisible();
+   const desk=m.getByRole('region',{name:'SALOMON STATION ZAO RENTAL'});
+   await expect(desk.getByRole('link',{name:'BOOK RENTAL'})).toHaveAttribute('href','/ja/book');
+   for(const store of ['Mountain Station','Central Station'])await expect(desk.getByRole('link',{name:new RegExp('^'+store)})).toBeVisible();
+   await expect(desk.getByRole('link',{name:/^Ski set · Regular · 1 day/})).toContainText('¥7,500');
    assert.equal(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal scroll');
+   // The mobile dock appears only once the in-page booking action has scrolled away.
+   assert.equal(await m.evaluate(()=>document.querySelector('.st-dock')!.classList.contains('on')),false,'dock hidden while the desk CTA is visible');
+   await m.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight/2));await expect.poll(()=>m.evaluate(()=>document.querySelector('.st-dock')!.classList.contains('on'))).toBe(true);
+   await m.evaluate(()=>window.scrollTo(0,0));
    // Modal menu
    await m.getByRole('button',{name:'メニューを開く'}).click();const dialog=m.getByRole('dialog',{name:'メニュー'});await expect(dialog).toBeVisible();
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'hidden');
-   // VIS-01: white menu text stays >= 4.5:1 even if the blurred backdrop were pure white; the page CTA cannot show through.
-   const panel=await m.evaluate(()=>{const p=document.querySelector('.pc-menu')!,bg=getComputedStyle(p).backgroundColor,a=Number(/rgba?\([^)]*,\s*([\d.]+)\)/.exec(bg)?.[1]??1),link=getComputedStyle(document.querySelector('.pc-menu-cats a')!).color,small=getComputedStyle(document.querySelector('.pc-menu-small a')!).color;return {a,link,small,cta:getComputedStyle(document.querySelector('.pc-view')!).visibility};});
+   // The menu is an opaque black field: white names keep >= 4.5:1 whatever sits behind it.
+   const panel=await m.evaluate(()=>{const p=document.querySelector('.st-mnu')!,bg=getComputedStyle(p).backgroundColor,a=Number(/rgba?\([^)]*,\s*([\d.]+)\)/.exec(bg)?.[1]??1),link=getComputedStyle(document.querySelector('.st-mnu-mi')!).color,small=getComputedStyle(document.querySelector('.st-mnu-small a')!).color;return {a,link,small};});
    const lin=(v:number)=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;},worstBg=255*(1-panel.a),ratio=(1.05)/(lin(worstBg)+0.05);
-   assert.equal(panel.link,'rgb(255, 255, 255)');assert.equal(panel.small,'rgb(255, 255, 255)');assert.ok(ratio>=4.5,'menu text contrast over white backdrop '+ratio.toFixed(2));assert.equal(panel.cta,'hidden','campaign CTA hidden behind the dialog');
+   assert.equal(panel.link,'rgb(255, 255, 255)');assert.equal(panel.small,'rgb(255, 255, 255)');assert.ok(ratio>=4.5,'menu text contrast over white backdrop '+ratio.toFixed(2));
    const inside=()=>m.evaluate(()=>{const a=document.activeElement,d=document.querySelector('[role="dialog"][aria-modal="true"]');return !!a&&!!d&&d.contains(a);});
    assert.equal(await inside(),true,'focus starts inside the dialog');await expect(dialog.getByRole('button',{name:'メニューを閉じる'})).toBeVisible();
    for(let i=0;i<30;i++){await m.keyboard.press('Tab');assert.equal(await inside(),true,'Tab stays inside the dialog');}
    for(let i=0;i<30;i++){await m.keyboard.press('Shift+Tab');assert.equal(await inside(),true,'Shift+Tab stays inside the dialog');}
-   assert.equal(await m.evaluate(()=>{const f=document.querySelector<HTMLElement>('.pc-footer a');f?.focus();return document.activeElement===f;}),false,'background links are inert while open');
+   assert.equal(await m.evaluate(()=>{const f=document.querySelector<HTMLElement>('.st-ft a');if(!f)throw new Error('footer link missing');f.focus();return document.activeElement===f;}),false,'background links are inert while open');
    await m.keyboard.press('Escape');await expect(dialog).toHaveCount(0);
-   assert.equal(await m.evaluate(()=>getComputedStyle(document.querySelector('.pc-view')!).visibility),'visible','CTA back after closing');
    assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'メニューを開く','focus returns to the toggle');
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released');
-   assert.equal(await m.evaluate(()=>!!document.querySelector('.pc-footer a')&&!(document.querySelector('.pc-footer') as HTMLElement).inert),true,'background restored');
+   assert.equal(await m.evaluate(()=>!!document.querySelector('.st-ft a')&&!(document.querySelector('.st-ft') as HTMLElement).inert),true,'background restored');
    await m.getByRole('button',{name:'メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('button',{name:'メニューを閉じる'}).click();await expect(m.getByRole('dialog')).toHaveCount(0);
    assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'メニューを開く','CLOSE returns focus to MENU');assert.equal(await m.evaluate(()=>document.body.style.overflow),'');
    await m.getByRole('button',{name:'メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('link',{name:'SKI',exact:true}).click();
    await m.waitForURL(/\/ja\/rental\/ski$/);assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released after navigating from the menu');
    await touch.close();
   }
-  // VIS-02: with three campaigns the PC wheel draws each title once (active plus one either side).
-  const pc=await browser.newContext({baseURL:app!.origin,viewport:{width:1440,height:900}});const d=await pc.newPage();await d.goto('/ja');await expect(d.locator('.pc-wheel li[aria-hidden="false"] button')).toBeVisible();
-  const titles=await d.locator('.pc-wheel li button').allTextContents();assert.equal(titles.length,3);assert.equal(new Set(titles).size,3,'no repeated campaign title');
-  assert.equal(await d.locator('.pc-wheel li[aria-hidden="false"]').count(),1);await pc.close();
+  // Desktop: the board and the photograph share the first viewport; the menu offers every rental category.
+  const pc=await browser.newContext({baseURL:app!.origin,viewport:{width:1440,height:900}});const d=await pc.newPage();await d.goto('/en');
+  await expect(d.getByRole('heading',{level:1})).toHaveCount(1);
+  const box=await d.getByRole('region',{name:'SALOMON STATION ZAO RENTAL'}).getByRole('link',{name:'BOOK RENTAL'}).boundingBox();assert.ok(box&&box.y+box.height<=900,'BOOK RENTAL is in the first viewport');
+  await d.getByRole('button',{name:'Open menu'}).click();for(const name of ['SKI','SNOWBOARD','WEAR','PREMIUM','KIDS & FAMILY','RENTAL','PRICES','STORES','FAQ','MY BOOKING'])await expect(d.getByRole('dialog',{name:'Menu'}).getByRole('link',{name,exact:true})).toBeVisible();
+  await pc.close();
  });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
   await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByLabel('ポールのサイズ 1',{exact:true}).selectOption('pole-'+variants.pole); // option keys come from the server below if catalog prefix differs

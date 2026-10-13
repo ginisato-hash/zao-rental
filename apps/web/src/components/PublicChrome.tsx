@@ -64,7 +64,7 @@ export function PublicHeader({locale,page,homeHeading,guard}:{locale:Locale;page
      <ul className="st-mnu-small">{n.small.map(l=><li key={l.href}><Link href={l.href} onClick={go}>{l.label}</Link></li>)}</ul>
      <Link className="st-cta st-cta--w" href={n.book.href} onClick={go}>BOOK RENTAL<span className="ar" aria-hidden="true">↗</span></Link>
     </div>
-    <figure className={'st-mnu-img'+(img?' on':'')} aria-hidden="true">{Object.entries(menuImages).map(([k,src])=><img key={k} className={img===k?'on':undefined} src={src} alt="" loading="lazy" decoding="async"/>)}</figure>
+    <figure className={'st-mnu-img'+(img?' on':'')} aria-hidden="true">{Object.entries(menuImages).map(([k,src])=><picture key={k}><img className={img===k?'on':undefined} src={src} alt="" loading="lazy" decoding="async"/></picture>)}</figure>
    </div>
   </div>}
  </>;
@@ -87,7 +87,7 @@ export function PublicFooter({locale,page,legal}:{locale:Locale;page:string;lega
 }
 
 /** LP .fin: black band, giant two-line headline, white CTA, then a full-bleed official campaign photograph. */
-export function PublicFinal({locale,photo}:{locale:Locale;photo:React.ReactNode}){const ja=locale==='ja';
+export function PublicFinal({locale,photo}:{locale:Locale;photo:React.ReactNode}){
  return <section className="st-fin" aria-labelledby="st-fin-h"><h2 id="st-fin-h" className="st-rv">Book your<br/>Zao winter.</h2>
   <div className="st-fin-acts"><Link className="st-cta st-cta--w" href={'/'+locale+'/book'}>BOOK RENTAL<span className="ar" aria-hidden="true">↗</span></Link></div>
   <div className="st-fin-ph">{photo}</div></section>;

@@ -56,7 +56,7 @@ import {assertPortFree} from '../../scripts/worktree';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import type {DevelopmentRuntime} from '../../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
-export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean;avatarPhase5?:boolean;warmRoutes?:boolean}={}){
+export async function startFlowApp(options:{productionCopy?:boolean;paymentFault?:'SAVE_THEN_LOSE';contentFixture?:boolean;publicP0?:boolean;publicP1?:boolean;publicP4?:boolean;publicP5?:boolean;avatarPhase5?:boolean;warmRoutes?:boolean}={}){
  let avatar:Awaited<ReturnType<typeof provisionAvatarReadRole>>|undefined;
  let access:Awaited<ReturnType<typeof provisionBookingAccessRole>>|undefined;
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
@@ -83,9 +83,9 @@ export async function startFlowApp(options:{paymentFault?:'SAVE_THEN_LOSE';conte
      async lookup(messageId){return {messageId,state:captured.some(m=>m.messageId===messageId)?'DELIVERED':'UNKNOWN'};}
     });
     return service.prepare(await new GuestContexts(guest!.guestPool).resolve(guestToken),bookingId,requestId);
-   },code(){if(captured.length!==1)throw new Error('SYNTHETIC_MAIL_COUNT');return captured[0]!.code;}
+   },code(expectedMessages=1){if(captured.length!==expectedMessages)throw new Error('SYNTHETIC_MAIL_COUNT');return captured.at(-1)!.code;}
   }:undefined;
-  const env:NodeJS.ProcessEnv={...(avatar?{ZAO_AVATAR_READ_RUNTIME:JSON.stringify(avatar.avatarDb)}:{}),...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
+  const env:NodeJS.ProcessEnv={...(options.productionCopy?{ZAO_TEST_PRODUCTION_COPY:'1'}:{}),...(avatar?{ZAO_AVATAR_READ_RUNTIME:JSON.stringify(avatar.avatarDb)}:{}),...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
   const args=['node_modules/next/dist/bin/next','dev','tests/flow-app','--webpack','--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   function launch(){
    const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});

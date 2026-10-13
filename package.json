@@ -56,6 +56,7 @@
     "test:staff-home-ui": "node --import tsx tests/staff/home-ui.ts",
     "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts && node --experimental-test-module-mocks --import tsx tests/public/prepare-payment.ts",
     "test:public-content": "node --import tsx tests/public/content-postgres.ts",
+    "test:human-ui": "node --import tsx tests/public/human-ui.ts",
     "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",
     "demo:public": "node --import tsx tests/public/demo.ts",
     "test:readiness-guest": "node --import tsx tests/readiness/guest-security.ts",

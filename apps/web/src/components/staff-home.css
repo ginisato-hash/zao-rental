@@ -25,7 +25,7 @@
 .staff-home section.staff-search{background:var(--ink);color:var(--snow);border:0;padding:clamp(16px,2.4vw,28px);margin:0 0 24px}
 .staff-search h2{font-size:clamp(28px,3.4vw,48px)}
 .staff-search p{color:var(--snow)}
-.staff-search video{display:block;margin:12px 0;border:2px solid var(--snow)}
+.staff-search video:not([hidden]){display:block;margin:12px 0;border:2px solid var(--snow)}
 .staff-search .staff-actions button:first-child{background:var(--snow);color:var(--ink);border-color:var(--snow);min-height:56px;font-size:20px;padding:0 22px}
 .staff-search button{background:transparent;color:var(--snow);border-color:var(--snow)}
 .staff-search button:hover:not(:disabled){background:var(--snow);color:var(--ink)}

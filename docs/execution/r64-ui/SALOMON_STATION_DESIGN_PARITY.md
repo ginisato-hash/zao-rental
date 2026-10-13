@@ -2,7 +2,7 @@
 
 **Reference.** The LP at https://salomonstation-zao.com/lp. The measured stylesheet `lp.css` has sha256 86bff742… and is byte-identical to the Owner's LP source, so its values are exact rather than estimated. The full measurement record is `LP_FORENSIC_SPEC.md`, with recovered reference screenshots preserved in the recovery snapshot at 1440, 390 and 768.
 
-**Product screenshots.** See `VALIDATION.md` and `SCREENSHOTS.md` for final captures and receipts. The recovered captures in `.local/r64/shots/` are historical WIP, not final acceptance evidence. Several staff captures show permission errors or failed API composition. Final captures and their validation receipts are recorded separately.
+**Product screenshots.** See `HUMAN_UI_CLEANUP.md` for the current production-copy captures and receipts. `VALIDATION.md` and `SCREENSHOTS.md` retain the superseded first-candidate record. The recovered captures in `.local/r64/shots/` are historical WIP, not final acceptance evidence. Several staff captures show permission errors or failed API composition. Final captures and their validation receipts are recorded separately.
 
 ## System-level parity (all surfaces)
 
@@ -33,15 +33,15 @@
 | Category pages | One giant noun as the h1; no lead copy | The h1 is the noun (SKI, SNOWBOARD…). An official image beside the facts. Content bullets were rewritten in customer language, with jargon such as 1個体, DIN, HOLD and ブラウザ removed. | Facts stay visible: a booking site must state set contents, the fit check and so on. |
 | Prices | LP rates explorer | Same SPORT / AGE / PLAN / DAYS explorer, big answer and rows. Every cell comes from `INITIAL_TABLE`/`WEAR_TABLE`; unit tests compare all 20 products × 11 columns with both the authoritative tables and independently constructed quote inputs. | — |
 | Stores | Name as type and a fact list | MOUNTAIN / CENTRAL as nouns. Hours, location and address come from approved content, with Google and Apple Maps links to the building coordinates. | The LP terrain map is not ported. It is an LP asset with its own attribution, and the booking site needs only the facts and directions. |
-| Booking `/book` | Same type and plates; one main action | The h1 is BOOK. The stepper is four words on 4px rules (DATES / GEAR / SIZE / PAY). Fields have 2px borders at 52px with Barlow values. Size candidates are giant-number plates, black when selected. The review leads with the total. The result is a black confirmation plate that replaces the form; details are collapsed. | Native date inputs and selects are kept, because tests and accessibility rely on the native controls. |
-| Reservation and cancellation | Same plate language | The same black confirmation plate, with the QR on white beside it. The recovery tools are a ruled secondary section below. | — |
+| Booking `/book` | Same type and plates; one main action | The h1 is BOOK, reduced on transaction pages so the first controls and progress fit the first viewport. The stepper is four words on 4px rules (DATES / GEAR / SIZE / PAY). Fields have 2px borders at 52px with Barlow values. Size candidates are giant-number plates, black when selected. The review leads with the total. The result is a black confirmation plate that replaces the form; details are collapsed. | Native date inputs and selects are kept, because tests and accessibility rely on the native controls. |
+| Reservation and cancellation | Same plate language | The same black confirmation plate, with the QR on white beside it. The recovery tools appear only after opening “別の端末で予約を見る”. | — |
 | Legal | Facts in rules | Giant LEGAL, the document title, then ruled sections | — |
-| Staff and admin | The LP's DNA translated into an operations console | Same type and tokens, 2px rules, square controls of at least 44px. Staff Home order: context → the QR/search block (the dominant black block) → today's work cards → bookings → tools. Status uses text tags; attention uses a signal bar plus words. | No hero, no giant marketing type, no added navigation. `/admin/launch` must not gain buttons, and test locators depend on the existing structure. |
+| Staff and admin | The LP's DNA translated into an operations console | Same type and tokens, 2px rules, square controls of at least 44px. Staff Home order: context → the compact QR/search block (camera preview opens on request) → today's work cards → bookings → tools. Status uses text tags; attention uses a signal bar plus words. | No hero, no giant marketing type, no added navigation. `/admin/launch` must not gain buttons, and test locators depend on the existing structure. |
 
 ## Kept deliberately
 
 - Form labels and region names retain their behavioral identity; customer-facing copy changes preserve operation meaning. This includes 'プランを見る' on the booking header.
-- Raw enum values shown to staff (CONFIRMED_DEV, OUT …) are unchanged. They are asserted by suites, and staff need them.
+- Backend enum values and IDs are unchanged. Primary staff UI uses human labels and short references; exact technical values are in closed disclosures. Behavioral tests still verify the server values.
 
 ## Takeover corrections
 
@@ -50,7 +50,7 @@
 - Increase language, booking, menu utility and footer touch targets to 44px; mobile shows the alternate-language action in the compact header.
 - Remove hidden mobile-dock links from the focus order via visibility and reserve footer clearance.
 - Clarify public wording: availability enables proceeding; it does not by itself confirm a booking. Final amount and discount conditions are checked in the booking screen.
-- Development-only payment notices remain conditional and accurate; deleting them would misrepresent synthetic test bookings.
+- Normal synthetic behavior retains development notices. A separate test-only production-copy context renders customer wording with fake providers and identifies the fixture in its evidence manifest.
 
 - Cancellation confirmation, viewing/code revocation, transfer-plan cancellation and exceptional refund requests use the signal colour with their explicit action labels. No event handler or permission condition changed.
 - Customer English status copy uses “check” / “payment result” instead of internal “reconcile” terminology. A loading reservation no longer shows a synthetic-booking notice before its actual mode is known.

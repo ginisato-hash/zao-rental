@@ -1,5 +1,7 @@
 # R64 local validation
 
+> Historical first R64 candidate, superseded by the Human UI Cleanup. These counts and synthetic screenshots are not the current visual acceptance evidence. See `HUMAN_UI_CLEANUP.md`.
+
 Authority: Issue #47, comments [6148169405](https://github.com/ginisato-hash/zao-rental/issues/47#issuecomment-6148169405) and [6149495262](https://github.com/ginisato-hash/zao-rental/issues/47#issuecomment-6149495262).
 
 The interrupted WIP was recovered in place before edits. `TAKEOVER_RECONCILIATION.md` records the reconciliation and `SALOMON_STATION_DESIGN_PARITY.md` records the visual decisions. This is implementation evidence for independent TD review, not self-approval or publication authority.

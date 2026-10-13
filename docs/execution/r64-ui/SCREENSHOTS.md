@@ -1,5 +1,7 @@
 # R64 screenshot evidence
 
+> Historical first R64 candidate, superseded by the Human UI Cleanup. These counts and synthetic screenshots are not the current visual acceptance evidence. See `HUMAN_UI_CLEANUP.md`.
+
 190 PNGs across 48 route/state groups, each at 390x844 and 1440x900. Full-page images may exceed viewport height; paired viewport files retain the requested dimensions.
 
 The Owner handoff contains the local `r64-evidence/index.html` gallery, full PNGs and SHA-256 manifest. Large binary screenshots are retained outside product source. `screenshot-manifest.json` anchors each image for review. The Foundation CI artifact separately retains the regression suites' own screenshots.

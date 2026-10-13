@@ -90,7 +90,7 @@ try{
   await expect(dailyBusiness()).toBeVisible();
   await expect(page.getByRole('region',{name:'運用の注意事項'})).toBeVisible();
   await page.getByText('その他の管理機能').click();
-  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・HOLD','サイズ推薦','ウェアの数量貸出・返却'])await expect(page.getByRole('link',{name})).toBeVisible();
+  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・仮押さえ','サイズ推薦','ウェアの数量貸出・返却'])await expect(page.getByRole('link',{name})).toBeVisible();
   await narrowPage.goto('/staff');
   await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toBeVisible();
   // UX5R-01/UX-5D: a BOOKING_VIEW-only account cannot actually use pickup, so the search/QR
@@ -102,7 +102,7 @@ try{
   // UX5R-03: secondary links must match the destination route's own permission gate, not
   // "every authorized user".
   await narrowPage.getByText('その他の管理機能').click();
-  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・HOLD','サイズ推薦','ウェアの数量貸出・返却','スタッフ管理'])await expect(narrowPage.getByRole('link',{name})).toHaveCount(0);
+  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・仮押さえ','サイズ推薦','ウェアの数量貸出・返却','スタッフ管理'])await expect(narrowPage.getByRole('link',{name})).toHaveCount(0);
   for(const name of ['変更・返金依頼','パスワード変更'])await expect(narrowPage.getByRole('link',{name})).toBeVisible();
  });
 
@@ -146,7 +146,7 @@ try{
   await page.getByLabel('表示された個体と数量を照合した').check();
   await page.getByRole('button',{name:'照合した用品を準備固定'}).click();
   await page.getByRole('button',{name:'道具の貸出を記録'}).click();
-  await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('OUT');
+  await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('貸出中');
  });
 
  let assetId='';
@@ -204,7 +204,7 @@ try{
   await page.getByLabel('表示された個体と数量を照合した').check();
   await page.getByRole('button',{name:'照合した用品を準備固定'}).click();
   await page.getByRole('button',{name:'道具の貸出を記録'}).click();
-  await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('OUT');
+  await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('貸出中');
   const crossAssetId=(await db.pool.query('SELECT asset_id FROM rental_loan_items WHERE booking_id=$1',[crossStoreId])).rows[0].asset_id;
   // Received at ONSEN_BASE — a different store than either planned pickup or return store.
   const created=await page.request.post('/api/custody/batch',{headers:{origin},data:{requestKey:randomUUID(),input:{store:'ONSEN_BASE'}}});assert.equal(created.status(),200);

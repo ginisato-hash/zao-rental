@@ -3,7 +3,7 @@
    translated into a form: one main action per step, a strong selected state, the price never out of sight. */
 .guest-main{max-width:1180px;margin:0 auto;padding:calc(var(--top) + clamp(24px,6vh,72px)) var(--g) clamp(48px,8vh,96px);overflow-wrap:anywhere}
 .guest-main h1,.guest-main h2,.guest-main h3,.guest-main p,.guest-main dl,.guest-main dd,.guest-main ol,.guest-main ul{margin:0}
-.guest-main>h1{font:700 clamp(84px,15vw,220px)/.78 var(--d);text-transform:uppercase;margin:0 0 0 -.05em}
+.guest-main>h1{font:700 clamp(56px,6vw,88px)/.78 var(--d);text-transform:uppercase;margin:0 0 0 -.05em}
 .guest-main h2{font:700 clamp(28px,3vw,44px)/.95 var(--d);text-transform:uppercase}
 html[lang=ja] .guest-main h2{font-family:var(--d)}
 .guest-main h3{font:700 clamp(20px,2vw,28px)/1.15 var(--d);text-transform:uppercase}

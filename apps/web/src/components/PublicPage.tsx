@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {DevelopmentNotice} from './ProductionCopy';
 import {canonicalPath,publicPages,pageSchema,safeJsonLd,type Locale} from '../../../../packages/core/src/content/public-pages';
 import {publicationApproved} from '../../../../packages/auth/src/publication-authority';
 import {approvedLegalDocs,legalDocument,legalPath,legalPublicationComplete} from '../../../../packages/core/src/content/public-legal';
@@ -44,10 +45,10 @@ const STORE_GEO={MOUNTAIN_BASE:'38.169695,140.401042',ONSEN_BASE:'38.16334,140.3
 
 export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup:string;models?:{slug:string;name:string;season:string}[];page:typeof publicPages[number];locale:Locale;origin:string}){
  const ja=locale==='ja',path=page.path,t=(j:string,e:string)=>ja?j:e,r='/'+locale;
- const preview=!publicationApproved()&&<p className="st-preview">{t('予約受付前の開発プレビューです。実決済・本番予約は行いません。','Development preview before booking launch. No real payment or production booking.')}</p>;
+ const preview=!publicationApproved()&&<DevelopmentNotice><p className="st-preview">{t('予約受付前の開発プレビューです。実決済・本番予約は行いません。','Development preview before booking launch. No real payment or production booking.')}</p></DevelopmentNotice>;
  const schema=pageSchema(locale,path,origin).map((s,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(s)}}/>);
  const book=(label=t('日程から選ぶ','Start with dates'))=><Link className="st-cta" href={r+'/book'}>{label}<span className="ar" aria-hidden="true">↗</span></Link>;
- const facts=<ul className="st-facts">{page.bullets.map(b=><li key={b} className="st-rv">{b}</li>)}</ul>;
+ const facts=<ul className="st-facts">{page.bullets.map(b=><li key={b} className="st-rv">{['モデル・シーズン・長さを予約条件として保存','Your model, season and length are saved as the booking promise'].includes(b)?t('選んだモデル・シーズン・長さで予約できます','Book the model, season and length you choose'):['当店で取扱を確認したモデルだけを掲載','Only models verified at our shop are listed'].includes(b)?t('当店で取扱うPremiumモデルから選べます','Choose from our Premium range'):b}</li>)}</ul>;
  const stations=<div className="st-sum">{(['MOUNTAIN_BASE','ONSEN_BASE'] as const).map(s=><Link key={s} className="st-sumrow" href={canonicalPath(locale,STORE_PATH[s])}>{STORE_DISPLAY[s]}<span className="go" aria-hidden="true">→</span></Link>)}</div>;
 
 
@@ -93,7 +94,7 @@ export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup
    return <article className={'st-plan st-plan--'+k+(p?' st-rv':'')}><div className="st-plan-ph"><Product shot={shot} locale={locale} eager={!p} sizes="(max-width:767px) 100vw, 50vw"/></div>
     <h2>{p?'Premium':'Regular'}</h2>
     <p className="st-plan-promise"><span className={'st-tag'+(p?' st-tag--solid':'')}>{p?t('モデル指定','MODEL PROMISED'):t('モデル非指定','ANY MODEL')}</span></p>
-    <dl className="st-plan-dl"><div><dt>{t('選び方','How you choose')}</dt><dd>{p?t('当店で取扱確認済みのモデル・シーズン・長さから選び、その内容を予約条件として保存します。','Choose from shop-verified models, seasons and lengths; your choice becomes the booking promise.'):t('身長・足サイズ・年齢区分・クラスから選びます。特定モデルは確約しません。','Choose by height, foot size, age category and class. No specific model is promised.')}</dd></div>
+    <dl className="st-plan-dl"><div><dt>{t('選び方','How you choose')}</dt><dd>{p?t('当店で取扱うPremiumモデルから、モデル・シーズン・長さを選んで予約できます。','Choose and book a Premium model, season and length from our range.'):t('身長・足サイズ・年齢区分・クラスから選びます。特定モデルは確約しません。','Choose by height, foot size, age category and class. No specific model is promised.')}</dd></div>
      <div><dt>{t('対象','For')}</dt><dd>{p?t('大人（13歳以上）','Adults (13+)'):t('大人・子供','Adults and children')}</dd></div></dl>
     <p className="st-plan-price"><span className="st-lbl">{t('スキーセット 1日','Ski set · 1 day')}</span><b>{yen(dayPrice(p?'SKI_SET_ADULT_PREMIUM':'SKI_SET_ADULT_REGULAR'))}</b></p>
    </article>;};
@@ -114,8 +115,8 @@ export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup
   body=<>
    {path==='pickup-return'&&<section className="st-wrap" aria-label={t('店舗','Stores')}>{stations}</section>}
    <section className={'st-wrap st-split'+(shot?'':' st-split--solo')} aria-label={page.title}>{shot&&<div className={'st-split-ph'+(path==='rental/snowboard'||path==='rental/premium'?' st-split-ph--fog':'')}>{shot}</div>}<div>{facts}
-    {['pickup-return','faq'].includes(path)&&<aside className="st-aside st-rv"><h2>{t('複数日予約の後日受取','Late collection for multi-day bookings')}</h2><p>{latePickup}</p>{!legalPublicationComplete(locale)&&<small>{t('公開文言・利用規約は公開前確認中です。','Public wording and terms remain subject to review.')}</small>}</aside>}
-    {path==='rental/premium'&&<section className="st-models"><h2 className="st-lbl">{t('確認済みモデル','Verified models')}</h2>{models.length?<ul className="st-rows">{models.map(m=><li key={m.slug}><Link href={canonicalPath(locale,'rental/premium/'+m.slug)}><b>{m.name}</b></Link><span className="st-lbl">{m.season}</span></li>)}</ul>:<p>{t('資料・写真・当店取扱の確認が済んだモデルから掲載します。','Models appear after source, photo rights and shop inventory verification.')}</p>}</section>}
+    {['pickup-return','faq'].includes(path)&&<aside className="st-aside st-rv"><h2>{t('複数日予約の後日受取','Late collection for multi-day bookings')}</h2><p>{latePickup}</p>{!legalPublicationComplete(locale)&&<DevelopmentNotice><small>{t('公開文言・利用規約は公開前確認中です。','Public wording and terms remain subject to review.')}</small></DevelopmentNotice>}</aside>}
+    {path==='rental/premium'&&<section className="st-models"><h2 className="st-lbl">{t('Premiumモデル','Premium models')}</h2>{models.length?<ul className="st-rows">{models.map(m=><li key={m.slug}><Link href={canonicalPath(locale,'rental/premium/'+m.slug)}><b>{m.name}</b></Link><span className="st-lbl">{m.season}</span></li>)}</ul>:<p>{t('現在ご案内できるモデルはありません。日程と用品を選んでお確かめください。','No models are listed right now. Choose your dates and equipment to check available options.')}</p>}</section>}
     <div className="st-acts">{book()}</div></div></section></>;
  }
  return <PublicFrame locale={locale} path={path}><main id="main" className="st-page">

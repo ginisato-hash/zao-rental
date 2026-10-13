@@ -1,12 +1,75 @@
-:root { color-scheme: light; font-family: "Helvetica Neue", Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; color: #111; background: #fff; }
-* { box-sizing: border-box; } body { margin: 0; } main { max-width: 960px; margin: 0 auto; padding: 80px 28px 32px; }
-.eyebrow { font-size: 12px; letter-spacing: .18em; color: #557274; } h1 { font-size: clamp(32px, 5.5vw, 60px); line-height: 1.4; letter-spacing: -.035em; margin: 36px 0 20px; }
-.intro { max-width: 560px; line-height: 1.9; } section { border: 1px solid #d9d9d9; border-radius: 0; background: #fff; padding: 28px; margin: 36px 0; }
-.badge { display: inline-block; font-size: 12px; border-radius: 24px; padding: 6px 12px; background: #dfece3; } h2 { font-size: 20px; } p { line-height: 1.8; }
-nav { display: flex; gap: 12px; flex-wrap: wrap; } a { display: inline-block; color: inherit; padding: 12px 18px; border: 1px solid #000; border-radius: 0; text-decoration: none; } a:hover { background: #f2f2f2; } a:focus-visible { outline: 3px solid #af642c; outline-offset: 4px; } footer { margin-top: 72px; font-size: 12px; color: #607774; }
-@media (max-width: 480px) { main { padding-top: 40px; } section { padding: 20px; } }
+/* SALOMON STATION design system (R64). The single visual source is the SALOMON STATION ZAO LP
+   (salomonstation-zao.com/lp, stylesheet sha256 86bff742…): Barlow Semi Condensed 700 display, Helvetica body,
+   black/white tension, square geometry (no radius, no shadow), 2px structural rules, one easing.
+   Tokens live here so the public site, the booking flow and the staff/admin console share one DNA. */
+@font-face{font-family:'Barlow Semi Condensed';font-style:normal;font-weight:700;font-display:swap;src:url(../components/brand/barlow-semi-condensed-700.woff2) format('woff2')}
+:root{
+ color-scheme:light;
+ --ink:#000;--snow:#fff;--fog:#cdcccc;--paper:#f2f2f2;--sub:#555;--mute:#6b6b6b;--dim:#3b3b3b;
+ /* LP accent: marks "the one selected thing" only (selected store pin on the LP). */
+ --acc:#668499;
+ /* Operational signal (deliberate deviation, staff/transaction safety): errors and irreversible actions only, always with text. */
+ --signal:#c8102e;
+ --d:'Barlow Semi Condensed','Helvetica Neue',Helvetica,Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;
+ --b:'Helvetica Neue',Helvetica,Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;
+ --e:cubic-bezier(.4,0,.2,1);
+ --g:clamp(16px,2.4vw,32px);--top:72px;
+ --safe-b:env(safe-area-inset-bottom,0px);
+ font-family:var(--b);color:var(--ink);background:var(--snow);
+}
+@media (max-width:767px){:root{--top:60px}}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc(var(--top) + 8px)}
+body{margin:0;background:var(--snow);color:var(--ink);font:16px/1.6 var(--b);overflow-x:clip}
+html[lang=ja] body{line-height:1.7}
+img,svg,canvas,video{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+::selection{background:var(--ink);color:var(--snow)}
+.st-sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.st-skip{position:fixed;left:10px;top:-80px;z-index:400;background:var(--ink);color:var(--snow);padding:12px 16px;font:700 16px/16px var(--d);text-transform:uppercase;text-decoration:none}
+.st-skip:focus{top:10px}
 
-.staff-toolbar{display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:1rem 4vw;background:#000;color:white}.staff-toolbar button{padding:.6rem 1rem;border-radius:0;border:0;cursor:pointer}
-.staff-login,.staff-management-form{display:grid;gap:1rem;max-width:42rem;margin-block:1.5rem}.staff-login label,.staff-management-form label{display:grid;gap:.4rem}.staff-login input,.staff-management-form input,.staff-management-form select{max-width:100%;box-sizing:border-box;min-width:0;padding:.7rem;border:1px solid #999;border-radius:0;font:inherit}.staff-management-form fieldset{display:grid;gap:.7rem;min-width:0}.staff-management-form fieldset label{display:flex;flex-wrap:wrap;align-items:center}.staff-cards{padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:1rem}.staff-cards li{border:1px solid #d9d9d9;padding:1rem;border-radius:0;overflow-wrap:anywhere}.staff-toolbar a{color:inherit}.staff-page-head{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+/* ---------- shared primitives (public, booking and console) ---------- */
+/* CTA: LP .cta — square, 56px, Barlow 22 uppercase, label left + arrow right; hover #262626. */
+.st-cta{display:inline-flex;align-items:center;justify-content:space-between;gap:24px;min-height:56px;min-width:min(320px,100%);padding:15px 18px;background:var(--ink);color:var(--snow);border:0;border-radius:0;
+ font:700 22px/22px var(--d);text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background-color .15s var(--e),color .15s var(--e)}
+.st-cta:hover{background:#262626}
+.st-cta .ar{font-size:26px;line-height:22px}
+.st-cta--w{background:var(--snow);color:var(--ink)}.st-cta--w:hover{background:#e5e5e5}
+.st-cta--line{background:transparent;color:inherit;box-shadow:inset 0 0 0 2px currentColor}.st-cta--line:hover{background:transparent;color:inherit;box-shadow:inset 0 0 0 4px currentColor}
+.st-cta:disabled,.st-cta[aria-disabled=true]{background:#8a8a8a;color:#fff;cursor:not-allowed}
+/* Secondary action: LP segmented-button geometry (2px ink border, 48px). */
+.st-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 16px;background:var(--snow);color:var(--ink);border:2px solid var(--ink);border-radius:0;
+ font:700 16px/1.1 var(--d);text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background-color .15s var(--e),color .15s var(--e)}
+.st-btn:hover{background:var(--ink);color:var(--snow)}
+.st-btn:disabled{opacity:.4;cursor:not-allowed}.st-btn:disabled:hover{background:var(--snow);color:var(--ink)}
+.st-btn--danger{border-color:var(--signal);color:var(--signal)}.st-btn--danger:hover{background:var(--signal);color:var(--snow)}
+/* Link with an arrow: LP .tl / sumrow feel. */
+.st-link{font:700 16px/1.2 var(--d);text-transform:uppercase;color:inherit;text-decoration:none;border-bottom:2px solid currentColor;padding-bottom:2px}
+.st-link:hover{opacity:.7}
+/* Eyebrow / label: LP .lbl 13px Barlow uppercase. */
+.st-lbl{font:700 13px/16px var(--d);text-transform:uppercase;letter-spacing:.02em;margin:0}
+/* Giant word: LP page h1 scale. Decorative when paired with a semantic heading. */
+.st-word{font:700 clamp(84px,17vw,260px)/.78 var(--d);text-transform:uppercase;margin:0 0 0 -.05em;letter-spacing:-.005em;overflow-wrap:normal}
+/* Big number: LP .big .v */
+.st-num{font:700 clamp(64px,9.6vw,156px)/.82 var(--d);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.st-flip{animation:st-flip .25s var(--e)}
+@keyframes st-flip{0%{opacity:.2;transform:translateY(6px)}100%{opacity:1;transform:none}}
+/* Rule list rows: LP .rows */
+.st-rows{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink)}
+.st-rows>li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end;padding:16px 0 14px;border-bottom:1px solid var(--ink)}
+/* Status tag: square, text always present (never colour-only). */
+.st-tag{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:3px 8px;border:2px solid var(--ink);font:700 13px/1 var(--d);text-transform:uppercase;white-space:nowrap}
+.st-tag--solid{background:var(--ink);color:var(--snow)}
+.st-tag--signal{border-color:var(--signal);background:var(--signal);color:var(--snow)}
+.st-tag--acc{border-color:var(--acc);background:var(--acc);color:var(--ink)}
+/* Scroll reveal: LP .rv. Content is server-rendered visible; only after the client arms the observer
+   (html.st-armed) do below-the-fold blocks wait for .in — so no-JS and slow hydration never hide content. */
+.st-armed .st-rv{transition:opacity .5s var(--e),transform .5s var(--e)}
+.st-armed .st-rv:not(.in){opacity:0;transform:translateY(18px)}
 
-.staff-page-head{align-items:flex-start}.staff-management,.staff-account{padding-top:40px}.staff-management h1,.staff-account h1{font-size:clamp(28px,4vw,42px);margin:12px 0}.staff-management button,.staff-login button{background:#000;color:#fff;border:1px solid #000;border-radius:0;padding:10px 16px;font:inherit;width:fit-content;cursor:pointer}.staff-management button:disabled,.staff-login button:disabled{opacity:.55;cursor:default}.staff-management-form{padding:20px;border:1px solid #d9d9d9;border-radius:0;background:#fff}.staff-login form{display:grid;gap:1rem}
+@media (prefers-reduced-motion:reduce){
+ *,*::before,*::after{transition-duration:0s!important;animation:none!important;scroll-behavior:auto!important}
+ .st-armed .st-rv:not(.in){opacity:1;transform:none}
+}

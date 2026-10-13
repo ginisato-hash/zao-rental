@@ -62,3 +62,5 @@
 .staff-home details.staff-secondary-links nav a:hover{background:var(--ink);color:var(--snow)}
 .staff-home [role=status]{font-weight:700;min-height:1.5em}
 @media(max-width:500px){.staff-context label{min-width:100%}.staff-context-date{text-align:left}}
+
+.tomorrow-preparation button:hover:not(:disabled){background:var(--ink);color:var(--snow)}

@@ -1,3 +1,4 @@
+import {recordSyntheticBookingProfile} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {randomUUID,randomBytes} from 'node:crypto';
@@ -71,7 +72,7 @@ try{
  async function makeBooking(status:'COMPLETED'|'PENDING',variantId:string,displayName:string){
   const conditions=requestFor(businessDate,[variantId]),held=await holds.command('create',randomUUID(),conditions),q=(await quotes.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
   const booking=await bookings.create(randomUUID(),q.id,{displayName,email:'synthetic-ux5d-guest@example.invalid',termsAccepted:true});
-  fake.status=status;await bookings.startPayment(booking.id,randomUUID());return booking.id;
+  await recordSyntheticBookingProfile(db.pool,booking.id);fake.status=status;await bookings.startPayment(booking.id,randomUUID());return booking.id;
  }
  const confirmedId=await makeBooking('COMPLETED',variants.ski,'SYNTHETIC UX5D Confirmed');await makeBooking('PENDING',variants.skiAlt,'SYNTHETIC UX5D Pending');
  assert.equal((await db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[confirmedId])).rows[0].state,'CONFIRMED_DEV');
@@ -142,9 +143,9 @@ try{
   await page.getByRole('button',{name:'この予約を開く',exact:true}).click();
   await page.waitForURL(new RegExp('/staff/rentals\\?booking='+confirmedId));
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText(confirmedId);
-  await page.getByLabel('準備・最終適合の作業記録').fill('SYNTHETIC UX5D staff fit; no automatic DIN');
-  await page.getByLabel('表示された個体と数量を照合した').check();
-  await page.getByRole('button',{name:'照合した用品を準備固定'}).click();
+  await page.getByLabel('刻印・実測したソール長（mm）').fill('314');
+  for(const label of ['持込ブーツの現物とソール長を確認した','ブーツとビンディングの適合を確認した','ビンディング調整・現物検査済み','割当用品・サイズ・モデルを現物と照合した'])await page.getByLabel(label).check();
+  await page.getByRole('button',{name:'準備完了にする'}).click();
   await page.getByRole('button',{name:'道具の貸出を記録'}).click();
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('貸出中');
  });
@@ -196,13 +197,13 @@ try{
   const crossStoreConditions=requestFor(businessDate,[lengthVariants.ski135]);
   const held=await holds.command('create',randomUUID(),crossStoreConditions),q=(await quotes.create(randomUUID(),{conditions:crossStoreConditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
   const crossStoreId=(await bookings.create(randomUUID(),q.id,{displayName:'SYNTHETIC UX5D Cross Store Secret',email:'synthetic-ux5d-guest@example.invalid',termsAccepted:true})).id;
-  fake.status='COMPLETED';await bookings.startPayment(crossStoreId,randomUUID());
+  await recordSyntheticBookingProfile(db.pool,crossStoreId);fake.status='COMPLETED';await bookings.startPayment(crossStoreId,randomUUID());
   // Owner (ALL scope) runs the normal pickup workflow, planned entirely at MOUNTAIN_BASE.
   await page.goto('/staff/rentals?booking='+crossStoreId);
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText(crossStoreId);
-  await page.getByLabel('準備・最終適合の作業記録').fill('SYNTHETIC UX5D cross-store fit; no automatic DIN');
-  await page.getByLabel('表示された個体と数量を照合した').check();
-  await page.getByRole('button',{name:'照合した用品を準備固定'}).click();
+  await page.getByLabel('刻印・実測したソール長（mm）').fill('314');
+  for(const label of ['持込ブーツの現物とソール長を確認した','ブーツとビンディングの適合を確認した','ビンディング調整・現物検査済み','割当用品・サイズ・モデルを現物と照合した'])await page.getByLabel(label).check();
+  await page.getByRole('button',{name:'準備完了にする'}).click();
   await page.getByRole('button',{name:'道具の貸出を記録'}).click();
   await expect(page.getByRole('region',{name:'貸出用品'})).toContainText('貸出中');
   const crossAssetId=(await db.pool.query('SELECT asset_id FROM rental_loan_items WHERE booking_id=$1',[crossStoreId])).rows[0].asset_id;
@@ -224,7 +225,7 @@ try{
 
  await check('an unrecognized future nextAction enum value fails safe to 詳細確認 on the client, never inferred from other fields',async()=>{
   const fakeBookingId=randomUUID();
-  await page.route('**/api/operations/manifest*',async route=>{
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
    const url=new URL(route.request().url());
    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:url.searchParams.get('store'),date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+fakeBookingId,bookingId:fakeBookingId,displayName:'SYNTHETIC UX5D Unknown Action',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'FUTURE_ACTION_NOT_YET_INVENTED'}]})});
   });
@@ -238,7 +239,7 @@ try{
   let calls=0;
   const rowA={rowKind:'BOOKING_SCOPED',key:'B:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',bookingId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',displayName:'SYNTHETIC UX5D Page Row A',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'};
   const rowB={...rowA,key:'B:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',bookingId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',displayName:'SYNTHETIC UX5D Page Row B'};
-  await page.route('**/api/operations/manifest*',async route=>{
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
    const url=new URL(route.request().url()),cursor=url.searchParams.get('cursor');calls++;
    const body=cursor
     ?{store:url.searchParams.get('store'),date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:1,nextCursor:null,hasMore:false,rows:[rowA,rowB]}
@@ -260,7 +261,7 @@ try{
   let releaseA:(()=>void)|undefined;
   const gateA=new Promise<void>(resolve=>{releaseA=resolve;});
   let bRequested=false;
-  await page.route('**/api/operations/manifest*',async route=>{
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
    const url=new URL(route.request().url());
    if(url.searchParams.get('store')==='MOUNTAIN_BASE'){
     await gateA; // held until explicitly released below, simulating a slow/delayed response
@@ -287,7 +288,7 @@ try{
   let releaseMore:(()=>void)|undefined;
   const gateMore=new Promise<void>(resolve=>{releaseMore=resolve;});
   let onsenRequested=false;
-  await page.route('**/api/operations/manifest*',async route=>{
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
    const url=new URL(route.request().url()),store=url.searchParams.get('store'),cursor=url.searchParams.get('cursor');
    if(store==='MOUNTAIN_BASE'&&!cursor){
     await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:1,nextCursor:'ux5d-race-cursor',hasMore:true,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race Page1',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
@@ -318,7 +319,7 @@ try{
   const gateOld=new Promise<void>(resolve=>{releaseOld=resolve;});
   const staleDate='2035-01-01';
   let onsenRequested=false;
-  await page.route('**/api/operations/manifest*',async route=>{
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
    const url=new URL(route.request().url());
    if(url.searchParams.get('store')==='MOUNTAIN_BASE'){
     await gateOld; // held; carries a date that must never reach the screen
@@ -342,7 +343,7 @@ try{
  await check('UX5D-R03: the BOOKING_VIEW-only Today Refresh also restarts the authoritative Manifest date read, not only /api/bookings',async()=>{
   let calls=0;
   const laterDate='2035-07-01';
-  await narrowPage.route('**/api/operations/manifest*',async route=>{
+  await narrowPage.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
    calls++;
    const d=calls===1?businessDate:laterDate;
    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:d,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
@@ -358,7 +359,7 @@ try{
 
  await check('UX5E-01: a BOOKING_VIEW-only principal whose very first Manifest read fails (503) is never trapped on 業務日付を確認しています…; the visible Refresh recovers it without exposing 本日の業務',async()=>{
   let calls=0;
-  await narrowPage.route('**/api/operations/manifest*',async route=>{
+  await narrowPage.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
    calls++;
    if(calls===1){await route.fulfill({status:503,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'OPERATIONS_UNCONNECTED'})});return;}
    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
@@ -386,7 +387,7 @@ try{
   await page.goto('/staff');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible(); // the real, already-confirmed row from earlier in this suite
   for(const mode of ['409','503','network'] as const){
-   await page.route('**/api/operations/manifest*',async route=>{
+   await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
     if(mode==='network'){await route.abort('failed');return;}
     await route.fulfill({status:Number(mode),contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:mode==='409'?'SESSION_STALE':'OPERATIONS_UNCONNECTED'})});
    });
@@ -403,7 +404,7 @@ try{
  await check('UX5E-03: Manifest 401/403 ends the Staff Home session view the same as any other endpoint, rather than being swallowed as a generic Manifest error message',async()=>{
   await page.goto('/staff');
   await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
-  await page.route('**/api/operations/manifest*',async route=>{await route.fulfill({status:403,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'FORBIDDEN'})});});
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();await route.fulfill({status:403,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'FORBIDDEN'})});});
   await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
   await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();
   await page.unroute('**/api/operations/manifest*');
@@ -415,14 +416,14 @@ try{
   await mkdir('.local/screenshots',{recursive:true});await page.setViewportSize({width:390,height:900});await page.goto('/staff');
   await expect(dailyBusiness().locator('.staff-card').first()).toBeVisible();
   let release!:()=>void;const held=new Promise<void>(r=>{release=r;});
-  await page.route('**/api/operations/manifest*',async route=>{await held;await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});});
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();await held;await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});});
   await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
   await expect(dailyBusiness().getByRole('status')).toContainText('読み込んでいます');await expect(dailyBusiness()).not.toContainText('現在対応が必要な項目はありません');
   await dailyBusiness().screenshot({path:'.local/screenshots/staff-manifest-loading-390.png'});
   release();await expect(dailyBusiness()).toContainText('現在対応が必要な項目はありません');await expect(dailyBusiness().getByRole('status')).toHaveText('');
   await dailyBusiness().screenshot({path:'.local/screenshots/staff-manifest-empty-390.png'});
   await page.unroute('**/api/operations/manifest*');
-  await page.route('**/api/operations/manifest*',async route=>{await route.fulfill({status:503,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'OPERATIONS_UNCONNECTED'})});});
+  await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();await route.fulfill({status:503,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'OPERATIONS_UNCONNECTED'})});});
   await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
   await expect(dailyBusiness().getByRole('status')).toContainText('読み込めませんでした');await expect(dailyBusiness()).not.toContainText('OPERATIONS_UNCONNECTED');
   await expect(dailyBusiness().getByRole('button',{name:'もう一度読み込む',exact:true})).toBeVisible();await expect(dailyBusiness()).not.toContainText('現在対応が必要な項目はありません');

@@ -1,3 +1,4 @@
+import {syntheticPreparation} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {FakeGateway,flowFixture} from '../flow/fixture';
@@ -41,7 +42,7 @@ try{
  });
  await check('checkout consumes effective extended period; early return creates no automatic refund',async()=>{
   await x.clock('2035-02-05T10:00:00+09:00');const v=await custody.checkoutView(d.booking.id);assert.equal(v.conditions.period.endDate,'2035-02-07');
-  const prepared=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC fit'});
+  const prepared=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});
   const loan=await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:prepared.preparation.version});assert.ok(loan.loans.length);
   assert.equal(new Date(loan.loans[0].due_at).toISOString(),'2035-02-07T08:00:00.000Z');
   let batch=await custody.createBatch(randomUUID(),'MOUNTAIN_BASE');batch=await custody.scan(randomUUID(),{batchId:batch.id,expectedVersion:batch.version,assetId:loan.loans[0].asset_id,poleLoanId:null});await custody.confirm(randomUUID(),{batchId:batch.id,expectedVersion:batch.version});
@@ -51,7 +52,7 @@ try{
   const received=(await x.db.pool.query("SELECT id,version FROM rental_loan_items WHERE booking_id=$1 AND state<>'OUT'",[d.booking.id])).rows[0]!;await custody.inspection(randomUUID(),{loanItemId:received.id,expectedVersion:received.version,store:'MOUNTAIN_BASE',evidence:'SYNTHETIC inspection before next booking'});
   Object.assign(x.principal,(await loadStaff(x.db.pool,x.actor))!);
   const d2=await x.draft(undefined,requestFor('2035-02-12'),bufferOverride);await x.service.startPayment(d2.booking.id,randomUUID());
-  await x.clock('2035-02-12T10:00:00+09:00');const v=await custody.checkoutView(d2.booking.id),prepared=await custody.prepare(randomUUID(),{bookingId:d2.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC original fit'});
+  await x.clock('2035-02-12T10:00:00+09:00');const v=await custody.checkoutView(d2.booking.id),prepared=await custody.prepare(randomUUID(),{bookingId:d2.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});
   const checked=await custody.checkout(randomUUID(),{bookingId:d2.booking.id,expectedPreparationVersion:prepared.preparation.version}),current=await svc.view(d2.booking.id),conditions=structuredClone(current.conditions);conditions.members[0]!.items[0]!.variantIds=[variants.skiAlt];
   const q=await svc.quote(randomUUID(),{bookingId:d2.booking.id,expectedHoldVersion:current.holdVersion,conditions,reason:'SYNTHETIC length change'});
   await svc.accept(randomUUID(),{quoteId:q.id,fitEvidence:'SYNTHETIC replacement fit',reason:'SYNTHETIC length exchange'});

@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import {randomBytes,randomUUID} from 'node:crypto';
+import {chromium,expect} from '@playwright/test';
+import {startDevelopmentApp} from '../../scripts/development-app';
+import {provisionFlowRole} from '../../scripts/flow-roles';
+import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
+import {loadStaff,permissions} from '../../packages/auth/src/staff-auth';
+import {seedRecommendation} from '../recommendation/fixture';
+import {skiSet} from '../inventory/fixture';
+import {HoldService} from '../../packages/core/src/inventory/hold-service';
+import {QuoteService} from '../../packages/core/src/pricing/quote-service';
+import {BookingService} from '../../packages/core/src/payment/booking-service';
+import {FakeGateway,simulation} from '../flow/fixture';
+import {recordSyntheticBookingProfile} from '../custody/preparation-fixture';
+import {capture,saveManifest} from './visual';
+const app=await startDevelopmentApp({built:true,operations:true}),browser=await chromium.launch();let flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined,stage='setup';
+try{
+ await seedRecommendation(app.db.pool,true);const now=new Date('2035-02-01T09:00:00+09:00');
+ async function clock(value:string){now.setTime(Date.parse(value));await app.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${now.toISOString()}'::timestamptz$$`);}
+ await clock(now.toISOString());const password=randomBytes(24).toString('base64url'),email='r65-staff@example.invalid',subject=await bootstrapDevelopmentAdmin(app.db.pool,{email,password,displayName:'受付担当'});
+ for(const permission of permissions)await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true) ON CONFLICT DO NOTHING',[subject,permission]);
+ await app.db.pool.query("SELECT set_config('zao.actor',$1,false),set_config('zao.reason','SYNTHETIC R65 display fixture',false)",[subject]);
+ await app.db.pool.query("UPDATE ledger_models SET name=CASE family WHEN 'SKI' THEN 'Mountain Ski' WHEN 'SKI_BOOT' THEN 'Rental Ski Boots' WHEN 'SNOWBOARD' THEN 'Mountain Board' WHEN 'SNOWBOARD_BOOT' THEN 'Snowboard Boots' WHEN 'POLE' THEN 'Poles' ELSE name END");
+ const ctx=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
+ // Exact display-name alias at the read-only fixture boundary. Stored contacts stay synthetic.
+ await ctx.route('**/api/**',async route=>{if(route.request().method()!=='GET')return route.continue();const response=await route.fetch();if(!(response.headers()['content-type']??'').includes('application/json'))return route.fulfill({response});await route.fulfill({response,body:(await response.text()).replaceAll('SYNTHETIC R65 Guest','Aki Sato')});});
+ const p=await ctx.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL('**/staff/ledger');
+ const identity={subject,sessionId:(await app.db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1',[subject])).rows[0].id},principal=(await loadStaff(app.db.pool,subject))!;
+ const holds=new HoldService(app.roles.holdPool,principal,()=>now),quotes=new QuoteService(app.roles.pricingPool,principal,()=>now);await quotes.initializePrivate(randomUUID(),'2035-01-01','2035-12-31');flow=await provisionFlowRole(app.db.pool,app.db.identity);
+ const service=new BookingService(flow.flowPool,app.roles.authPool,identity,new FakeGateway(()=>now),simulation),conditions=skiSet('2035-02-02'),held=await holds.command('create',randomUUID(),conditions),quote=(await quotes.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
+ const booking=await service.create(randomUUID(),quote.id,{displayName:'SYNTHETIC R65 Guest',email:'synthetic-r65@example.invalid',termsAccepted:true});await service.startPayment(booking.id,randomUUID());await recordSyntheticBookingProfile(app.db.pool,booking.id);
+ stage='tomorrow queue';await p.goto('/staff');let tomorrow=p.getByRole('region',{name:'明日の準備',exact:true});await expect(tomorrow).toContainText('Aki Sato');await expect(tomorrow).toContainText('2035-02-02');await capture(p,'ja-tomorrow-unprepared',tomorrow);await tomorrow.getByRole('button',{name:'English',exact:true}).click();tomorrow=p.getByRole('region',{name:'Tomorrow’s preparation',exact:true});await capture(p,'en-tomorrow-unprepared',tomorrow);await tomorrow.getByRole('button',{name:'Prepare',exact:true}).click();
+ const work=()=>p.locator('.prep-workbench');await expect(work()).toBeVisible();await expect(work()).toContainText('170 cm');await expect(work()).toContainText('60 kg');await expect(work()).toContainText('25.5 cm');
+ async function bilingual(name:string){await capture(p,'ja-'+name,work());await work().getByRole('button',{name:'English',exact:true}).click();await capture(p,'en-'+name,work());await work().getByRole('button',{name:'日本語',exact:true}).click();}
+ stage='unverified boot fail-safe';await expect(work()).toContainText('BSL未確認');await expect(work().getByRole('button',{name:'準備完了にする'})).toBeDisabled();await bilingual('prep-missing-bsl');
+ const data=await (await ctx.request.get('/api/custody/booking/'+booking.id)).json(),boot=data.items.find((i:{family:string})=>i.family==='SKI_BOOT').asset_id;
+ stage='assigned boot actual BSL';await app.db.pool.query("UPDATE ledger_assets SET bsl_status='RECORDED',bsl_mm=304,bsl_evidence='SYNTHETIC individual physical marking',version=version+1 WHERE id=$1",[boot]);await p.reload();await expect(work()).toContainText('BSL 304 mm');await expect(work().locator('.prep-value').last()).toHaveText('4.5');await expect(work().getByLabel('刻印・実測したソール長（mm）')).toHaveCount(0);await bilingual('prep-actual-304-din');
+ async function markReady(){for(const label of ['ブーツとビンディングの適合を確認した','ビンディング調整・現物検査済み','割当用品・サイズ・モデルを現物と照合した'])await work().getByLabel(label).check();const response=p.waitForResponse(r=>r.url().endsWith('/api/custody/prepare')&&r.request().method()==='POST');await work().getByRole('button',{name:'準備完了にする'}).click();assert.equal((await response).status(),200);await expect(work()).toContainText('準備完了');await p.reload();await expect(work()).toContainText('Aki Sato');}
+ await markReady();await bilingual('prep-ready');
+ stage='changed actual BSL invalidates ready';await app.db.pool.query("UPDATE ledger_assets SET bsl_mm=314,bsl_evidence='SYNTHETIC corrected actual marking',version=version+1 WHERE id=$1",[boot]);await p.reload();await expect(work()).toContainText('BSL 314 mm');await expect(work().locator('.prep-value').last()).toHaveText('4');await expect(work()).toContainText('未準備');await expect(work().getByRole('button',{name:'準備完了にする'})).toBeDisabled();await bilingual('prep-changed-314-reconfirm');await markReady();
+ const evidence=(await app.db.pool.query('SELECT version,fit_evidence FROM rental_preparations WHERE id=$1',[booking.id])).rows[0];assert.equal(evidence.version,2);assert.equal(evidence.fit_evidence.members[0].bootAssetId,boot);assert.equal(evidence.fit_evidence.members[0].bslMm,314);assert.equal(evidence.fit_evidence.members[0].dinReferenceValue,4);assert.equal(evidence.fit_evidence.members[0].confirmedBy,subject);
+ stage='tomorrow ready';await p.goto('/staff');tomorrow=p.getByRole('region',{name:'明日の準備',exact:true});await expect(tomorrow).toContainText('準備完了');await capture(p,'ja-tomorrow-ready',tomorrow);await tomorrow.getByRole('button',{name:'English',exact:true}).click();await capture(p,'en-tomorrow-ready',p.getByRole('region',{name:'Tomorrow’s preparation',exact:true}));
+ stage='next day ready';await clock('2035-02-02T09:00:00+09:00');await p.reload();const today=p.getByRole('region',{name:'本日の業務',exact:true});await expect(today).toContainText('準備完了');await capture(p,'ja-day-of-ready',today);await p.goto('/staff/rentals?booking='+booking.id);await expect(work()).toContainText('準備完了');await bilingual('day-of-prepared-workbench');await expect(p.getByRole('button',{name:'道具の貸出を記録'})).toBeEnabled();
+ saveManifest('staff');console.log('PASS normal staff UI: server tomorrow, actual assigned BSL 304→314 / DIN 4.5→4, fail-safe, re-confirmation, next-day ready, physical audit');
+}catch(e){console.error('R65_STAFF_UI_FAILED '+stage);throw e;}finally{await browser.close();await flow?.close();await app.stop();}

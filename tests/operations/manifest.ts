@@ -1,3 +1,4 @@
+import {syntheticPreparation} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {flowFixture} from '../flow/fixture';
@@ -90,7 +91,7 @@ try{
   // still outside that window when actual checkout() runs below.
   await x.clock('2035-02-01T10:00:00+09:00');
   const view=await custody.checkoutView(pickup.booking.id);
-  await custody.prepare(randomUUID(),{bookingId:pickup.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC manifest fit note'});
+  await custody.prepare(randomUUID(),{bookingId:pickup.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view)});
   const row=(await full.manifest({store:'MOUNTAIN_BASE',date:'2035-02-01',section:null,cursor:null,pageSize:null})).rows.find(r=>(r as {bookingId?:string}).bookingId===pickup.booking.id) as {pickup:{equipmentPrepared:boolean;equipmentCheckedOut:boolean};nextAction:string};
   assert.equal(row.pickup.equipmentPrepared,true);assert.equal(row.pickup.equipmentCheckedOut,false);assert.equal(row.nextAction,'CHECKOUT');
   const key=randomUUID();await custody.checkout(key,{bookingId:pickup.booking.id,expectedPreparationVersion:1});
@@ -103,7 +104,7 @@ try{
   const conditions=requestFor('2035-02-05',[variants.skiAlt]);conditions.period={startDate:'2035-02-05',endDate:'2035-02-06',slot:'MULTIDAY'};
   const dueToday=await draft(undefined,conditions);await x.service.startPayment(dueToday.booking.id,randomUUID());
   await x.clock('2035-02-05T09:00:00+09:00');
-  const view=await custody.checkoutView(dueToday.booking.id);await custody.prepare(randomUUID(),{bookingId:dueToday.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC due-today fit'});
+  const view=await custody.checkoutView(dueToday.booking.id);await custody.prepare(randomUUID(),{bookingId:dueToday.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view)});
   await custody.checkout(randomUUID(),{bookingId:dueToday.booking.id,expectedPreparationVersion:1});
   const pickupDay=(await full.manifest({store:'MOUNTAIN_BASE',date:'2035-02-05',section:null,cursor:null,pageSize:null})).rows.find(r=>(r as {bookingId?:string}).bookingId===dueToday.booking.id) as {nextAction:string};
   assert.equal(pickupDay.nextAction,'OUT_WAIT_RETURN');
@@ -134,7 +135,7 @@ try{
   // A distinct SKI asset from the permanently-OUT pickup/dueToday bookings above.
   const sameDayConditions=skiSet('2035-02-15');sameDayConditions.members[0]!.items[0]!.variantIds=[lengthVariants.ski135];
   sameDay=await draft(undefined,sameDayConditions);await x.service.startPayment(sameDay.booking.id,randomUUID());
-  const view=await custody.checkoutView(sameDay.booking.id);await custody.prepare(randomUUID(),{bookingId:sameDay.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC same-day fit'});
+  const view=await custody.checkoutView(sameDay.booking.id);await custody.prepare(randomUUID(),{bookingId:sameDay.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view)});
   await x.clock('2035-02-15T09:00:00+09:00');await custody.checkout(randomUUID(),{bookingId:sameDay.booking.id,expectedPreparationVersion:1});
   await x.clock('2035-02-15T13:00:00+09:00');
   let batch=await custody.createBatch(randomUUID(),'MOUNTAIN_BASE');
@@ -156,7 +157,7 @@ try{
   // that OVERDUE_OUT uses for a never-returned OUT item.
   const carryOverConditions=requestFor('2035-02-20',[lengthVariants.ski165]);
   const d=await draft(undefined,carryOverConditions);await x.service.startPayment(d.booking.id,randomUUID());
-  const view=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC carry-over fit'});
+  const view=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view)});
   await x.clock('2035-02-20T09:00:00+09:00');await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:1});
   await x.clock('2035-02-20T13:00:00+09:00');
   let batch=await custody.createBatch(randomUUID(),'MOUNTAIN_BASE');
@@ -198,7 +199,7 @@ try{
   await x.service.startPayment(mixed.id,randomUUID());
   await x.clock('2035-02-26T09:00:00+09:00');
   const mixedView=await custody.checkoutView(mixed.id);
-  await custody.prepare(randomUUID(),{bookingId:mixed.id,expectedBookingVersion:mixedView.bookingVersion,expectedHoldVersion:mixedView.holdVersion,selections:mixedView.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC mixed fit'});
+  await custody.prepare(randomUUID(),{bookingId:mixed.id,expectedBookingVersion:mixedView.bookingVersion,expectedHoldVersion:mixedView.holdVersion,selections:mixedView.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(mixedView)});
   await custody.checkout(randomUUID(),{bookingId:mixed.id,expectedPreparationVersion:1});
   const mixedVersion=(await x.db.pool.query('SELECT version FROM rental_bookings WHERE id=$1',[mixed.id])).rows[0].version;
   await wear.checkout(randomUUID(),{bookingId:mixed.id,expectedBookingVersion:mixedVersion,store:'MOUNTAIN_BASE',reason:'SYNTHETIC mixed wear checkout'});
@@ -239,7 +240,7 @@ try{
   // A distinct SKI asset from the other checked-out-forever/carry-over bookings above.
   const crossStoreConditions=skiSet('2035-02-28');crossStoreConditions.members[0]!.items[0]!.variantIds=[lengthVariants.ski134];
   const d=await draft(undefined,crossStoreConditions);await x.service.startPayment(d.booking.id,randomUUID());
-  const view=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC cross-store fit'});
+  const view=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view)});
   await x.clock('2035-02-28T09:00:00+09:00');await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:1});
   await x.clock('2035-02-28T13:00:00+09:00');
   let batch=await custody.createBatch(randomUUID(),'ONSEN_BASE');

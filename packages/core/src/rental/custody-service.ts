@@ -1,3 +1,5 @@
+import {preparationMembers,recordPreparation,preparationStillValid,type PreparationItem} from '../../../contracts/src/preparation';
+import {centimetres,type Profile} from '../../../contracts/src/recommendation';
 import {bookingConfirmed} from '../../../contracts/src/booking-state';
 import {randomUUID} from 'node:crypto';
 import {pickupTiming} from '../../../contracts/src/pickup';
@@ -26,18 +28,23 @@ export class CustodyService extends BookingService{
   });
  }
  private async pickup(c:Conn,id:string){const b=await this.booking(c,id);await this.authorize('RENTAL_CHECKOUT',[b.conditions.pickupStore]);const h=(await c.query<{conditions:HoldConditions}>('SELECT conditions FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0]!;return {...b,conditions:h.conditions};}
- private async assignment(c:Conn,id:string){const b=await this.pickup(c,id);const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];
-  const items=(await c.query(`SELECT DISTINCT cl.requirement_key,cl.asset_id,cl.pole_id,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family,v.size,m.name,a.bsl_status,a.bsl_mm FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) JOIN ledger_models m ON m.id=v.model_id WHERE cl.hold_id=$1 AND cl.active ORDER BY cl.requirement_key`,[b.hold_id])).rows;
-  return {bookingId:b.id,bookingVersion:b.version,holdVersion:h.version,conditions:b.conditions,pickupTiming:pickupTiming(b.conditions.period,await this.time(c)),noPickup:(await c.query('SELECT outcome,completed_at FROM rental_no_pickup_events WHERE booking_id=$1',[b.id])).rows[0]??null,items,preparation:(await c.query('SELECT * FROM rental_preparations WHERE id=$1',[b.id])).rows[0]??null,loans:(await c.query('SELECT * FROM rental_loan_items WHERE booking_id=$1 ORDER BY requirement_key',[b.id])).rows};
+ private async assignment(c:Conn,id:string){const b=await this.pickup(c,id);await this.authorize('BOOKING_VIEW',[b.conditions.pickupStore]);const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];
+  const items=(await c.query<PreparationItem>(`SELECT DISTINCT cl.requirement_key,cl.asset_id,cl.pole_id,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family,v.size,m.name,m.catalog_season,a.bsl_status,a.bsl_mm FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) JOIN ledger_models m ON m.id=v.model_id WHERE cl.hold_id=$1 AND cl.active ORDER BY cl.requirement_key`,[b.hold_id])).rows;
+  const profiles=(await c.query<{input:{members:Profile[]}}>('SELECT p.input FROM recommendation_selections s JOIN recommendation_previews p ON p.id=s.preview_id WHERE s.quote_id=$1',[b.quote_id])).rows[0]?.input.members??[];
+  const wearIds=b.conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).flatMap(i=>i.variantIds));
+  const wearVariants=(await c.query<{id:string;family:string;size:string}>('SELECT id,family,size FROM ledger_variants WHERE id=ANY($1::uuid[])',[wearIds])).rows;
+  const poleSizes=(await c.query<{size:string}>("SELECT DISTINCT v.size FROM ledger_poles p JOIN ledger_variants v ON v.id=p.variant_id WHERE p.store_id=$1 AND p.status='AVAILABLE' AND p.quantity>0",[b.conditions.pickupStore])).rows.map(p=>centimetres(p.size)).filter((n):n is number=>n!==null);
+  const preparation=(await c.query('SELECT * FROM rental_preparations WHERE id=$1',[b.id])).rows[0]??null;
+  return {bookingId:b.id,bookingVersion:b.version,holdVersion:h.version,conditions:b.conditions,customerName:b.contact.displayName,preparationMembers:preparationMembers(b.conditions,profiles,items,wearVariants,poleSizes),preparationValid:!!preparation?.prepared_at&&['PREPARATION_FIXED','RENTAL_FIXED'].includes(h.allocation_stage)&&preparationStillValid(preparation.fit_evidence,items,b.conditions),pickupTiming:pickupTiming(b.conditions.period,await this.time(c)),noPickup:(await c.query('SELECT outcome,completed_at FROM rental_no_pickup_events WHERE booking_id=$1',[b.id])).rows[0]??null,items,preparation,loans:(await c.query('SELECT * FROM rental_loan_items WHERE booking_id=$1 ORDER BY requirement_key',[b.id])).rows};
  }
  async checkoutView(id:string){await this.authorize('RENTAL_CHECKOUT');return this.assignment(this.pool,id);}
- async prepare(key:string,value:unknown){const v=flowObject(value,['bookingId','expectedBookingVersion','expectedHoldVersion','selections','fitEvidence']);flowId(v.bookingId);flowVersion(v.expectedBookingVersion);flowVersion(v.expectedHoldVersion);const evidence=note(v.fitEvidence);
-  if(!Array.isArray(v.selections)||!v.selections.length||v.selections.length>60)throw new FlowError('INVALID_SELECTION',422);
+ async prepare(key:string,value:unknown){const v=flowObject(value,['bookingId','expectedBookingVersion','expectedHoldVersion','selections','fitEvidence']);flowId(v.bookingId);flowVersion(v.expectedBookingVersion);flowVersion(v.expectedHoldVersion);
+  if(!Array.isArray(v.selections)||v.selections.length>60)throw new FlowError('INVALID_SELECTION',422);
   const selections=v.selections.map(x=>{const p=flowObject(x,['requirementKey','assetId','poleId']);if(typeof p.requirementKey!=='string'||p.requirementKey.length>100)throw new FlowError('INVALID_SELECTION',422);if(p.assetId!==null)flowId(p.assetId);if(p.poleId!==null)flowId(p.poleId);if((p.assetId===null)===(p.poleId===null))throw new FlowError('INVALID_SELECTION',422);return p;});
   return this.tx('RENTAL_CHECKOUT',[],key,{operation:'prepare',v},async c=>{await this.pickup(c,v.bookingId as string);},async(c,now)=>{
    const b=await this.pickup(c,v.bookingId as string),h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];
    if(b.version!==v.expectedBookingVersion||h.version!==v.expectedHoldVersion)throw new FlowError('STALE_VERSION');
-   if(!bookingConfirmed(b.mode,b.state)||h.state!=='ACTIVE'||h.payment_state!=='SUCCESS'||!h.confirmed_at||h.transfer_attention||h.allocation_stage!=='PROVISIONAL')throw new FlowError('PREPARATION_NOT_ALLOWED');
+   if(!bookingConfirmed(b.mode,b.state)||h.state!=='ACTIVE'||h.payment_state!=='SUCCESS'||!h.confirmed_at||h.transfer_attention||!['PROVISIONAL','PREPARATION_FIXED'].includes(h.allocation_stage))throw new FlowError('PREPARATION_NOT_ALLOWED');
    await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);const a=await this.assignment(c,b.id);
    const expected=a.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})).sort((a,b)=>a.requirementKey.localeCompare(b.requirementKey));
    if(flowHash([...selections].sort((a,b)=>String(a.requirementKey).localeCompare(String(b.requirementKey))))!==flowHash(expected))throw new FlowError('EXACT_FULL_PERIOD_ASSIGNMENT_REQUIRED');
@@ -50,7 +57,9 @@ export class CustodyService extends BookingService{
    if(a.items.some((i:{requirement_key:string})=>!wantedByKey.has(i.requirement_key))||wanted.some(w=>!isPole(w.i.family)&&!a.items.some((i:{requirement_key:string})=>i.requirement_key===w.key)))throw new FlowError('INCOMPLETE_EQUIPMENT_GROUP');
    const variants=(await c.query<PromiseVariant>(`SELECT v.*,m.catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[a.items.map(i=>i.variant_id)])).rows;
    for(const i of a.items){const req=wanted.find(r=>r.key===i.requirement_key);if(!req||!variantMatches(req.m,req.i,variants.find(v=>v.id===i.variant_id)))throw new FlowError('PROMISE_MISMATCH');}
-   await c.query('INSERT INTO rental_preparations(id,store_id,checked_in_at,checked_in_by,prepared_at,prepared_by,fit_evidence) VALUES($1,$2,$3,$4,$3,$4,$5)',[b.id,b.conditions.pickupStore,now,this.identity.subject,JSON.stringify({selections:expected,evidence,meaning:'HUMAN_RECORDED_SYNTHETIC_CHECK_NOT_AUTOMATIC_DIN_OR_SAFETY_CERTIFICATION'})]);
+   const evidence=recordPreparation(v.fitEvidence,a.preparationMembers,this.identity.subject,now.toISOString(),expected,b.conditions);
+   if(!preparationStillValid(evidence,a.items,b.conditions))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');
+   await c.query('INSERT INTO rental_preparations(id,store_id,checked_in_at,checked_in_by,prepared_at,prepared_by,fit_evidence) VALUES($1,$2,$3,$4,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET prepared_at=EXCLUDED.prepared_at,prepared_by=EXCLUDED.prepared_by,fit_evidence=EXCLUDED.fit_evidence,version=rental_preparations.version+1',[b.id,b.conditions.pickupStore,now,this.identity.subject,JSON.stringify(evidence)]);
    await c.query("UPDATE inventory_holds SET allocation_stage='PREPARATION_FIXED',version=version+1 WHERE id=$1",[h.id]);return this.assignment(c,b.id);
   });
  }
@@ -61,6 +70,7 @@ export class CustodyService extends BookingService{
    if(!p||p.version!==v.expectedPreparationVersion||!p.prepared_at)throw new FlowError('STALE_PREPARATION');
    if((await c.query('SELECT 1 FROM rental_loan_items WHERE booking_id=$1',[b.id])).rowCount)throw new FlowError('ALREADY_CHECKED_OUT');
    const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);
+   if(p.fit_evidence?.version==='ZAO_PREP_V2'&&!((await this.assignment(c,b.id)).preparationValid))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');
    if(h.allocation_stage!=='PREPARATION_FIXED')throw new FlowError('PREPARATION_NOT_FIXED');
    const rows=(await c.query(`SELECT DISTINCT ON(requirement_key) cl.*,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) WHERE cl.hold_id=$1 AND cl.active ORDER BY requirement_key,day`,[b.hold_id])).rows;
    if(flowHash(rows.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})))!==flowHash(p.fit_evidence.selections)){const amendment=(await c.query("SELECT q.assignment FROM ops_amendments a JOIN ops_amendment_quotes q ON q.id=a.id WHERE a.booking_id=$1 AND q.expected_hold_version+1=$2 AND length(btrim(a.fit_evidence))>0",[b.id,h.version])).rows[0];if(!amendment||flowHash(rows.map(i=>({key:i.requirement_key,asset:i.asset_id,pole:i.pole_id})))!==flowHash(amendment.assignment.equipment.map((i:{key:string;asset:string|null;pole:string|null})=>({key:i.key,asset:i.asset,pole:i.pole}))))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');}

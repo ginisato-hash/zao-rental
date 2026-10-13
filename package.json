@@ -121,7 +121,9 @@
     "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts",
     "production:install-refund-automation": "node --import tsx scripts/production-install-refund-automation.ts",
     "production:complete-first-admin-commercial": "node --import tsx scripts/production-complete-first-admin-commercial.ts",
-    "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts"
+    "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts",
+    "test:preparation": "node --import tsx tests/preparation/real-postgres.ts",
+    "test:preparation-ui": "node --import tsx tests/preparation/customer-ui.ts && node --import tsx tests/preparation/staff-ui.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

@@ -1,3 +1,4 @@
+import {syntheticPreparation,recordSyntheticBookingProfile} from '../custody/preparation-fixture';
 // Real disposable PostgreSQL proof of the provisional booking-capacity mechanism (migration
 // 0041, packages/core/src/operations/provisional-capacity-source.ts,
 // packages/core/src/inventory/provisional-capacity.ts, packages/core/src/inventory/allocation.ts's
@@ -697,12 +698,13 @@ try {
     // have built is for the pre-reassign version and would fail QUOTE_HOLD_MISMATCH).
     const quote = (await x.quotes.create(randomUUID(), {conditions, holdId, couponCode: null, wantAdvance: false})).quote;
     const booking = await x.service.create(randomUUID(), quote.id, {displayName: 'SYNTHETIC Guest', email: 'synthetic-guest-p12@example.invalid', termsAccepted: true});
+    await recordSyntheticBookingProfile(x.db.pool,booking.id);
     const paid = await x.service.startPayment(booking.id, randomUUID());
     assert.equal(paid.state, 'CONFIRMED_DEV');
     const custody = new CustodyService(role!.operationsPool, x.roles.authPool, x.signed.identity);
     const view = await custody.checkoutView(booking.id);
     assert.deepEqual(view.items.map((i: {requirement_key: string; asset_id: string | null}) => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: null})), [{requirementKey: 'p:SKI', assetId, poleId: null}]);
-    const prepared = await custody.prepare(randomUUID(), {bookingId: booking.id, expectedBookingVersion: paid.version, expectedHoldVersion: view.holdVersion, selections: view.items.map((i: {requirement_key: string; asset_id: string | null}) => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: null})), fitEvidence: 'SYNTHETIC P12 fit note; no DIN certification'});
+    const prepared = await custody.prepare(randomUUID(), {bookingId: booking.id, expectedBookingVersion: paid.version, expectedHoldVersion: view.holdVersion, selections: view.items.map((i: {requirement_key: string; asset_id: string | null}) => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: null})), fitEvidence:syntheticPreparation(view)});
     assert.ok(prepared.preparation); // succeeded — no PROVISIONAL_PHYSICAL_ASSIGNMENT_REQUIRED, no other rejection
   });
 
@@ -757,7 +759,7 @@ try {
     const previousClock = x.now().toISOString();
     await x.clock('2035-06-17T10:00:00+09:00');
     const custody = new CustodyService(role!.operationsPool, x.roles.authPool, x.signed.identity), view = await custody.checkoutView(built.booking.id);
-    const prepared = await custody.prepare(randomUUID(), {bookingId: built.booking.id, expectedBookingVersion: view.bookingVersion, expectedHoldVersion: view.holdVersion, selections: view.items.map(i => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: i.pole_id})), fitEvidence: 'SYNTHETIC fit'});
+    const prepared = await custody.prepare(randomUUID(), {bookingId: built.booking.id, expectedBookingVersion: view.bookingVersion, expectedHoldVersion: view.holdVersion, selections: view.items.map(i => ({requirementKey: i.requirement_key, assetId: i.asset_id, poleId: i.pole_id})), fitEvidence:syntheticPreparation(view)});
     assert.equal((await custody.checkout(randomUUID(), {bookingId: built.booking.id, expectedPreparationVersion: prepared.preparation.version})).loans.length, 1);
     await x.clock(previousClock);
   });

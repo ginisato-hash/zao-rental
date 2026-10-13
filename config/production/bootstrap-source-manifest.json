@@ -1,6 +1,6 @@
 {
  "transformer": "production-bootstrap/3",
- "note": "Approved reviewed migration sources. Committed data: never regenerated automatically. Re-pinning is a visible change to reviewed source.",
+ "note": "Approved reviewed migration sources. Committed data: never regenerated automatically. Re-pinning is a visible change to reviewed source. 0057 is pinned only as an unapplied local/test review candidate; Production application remains prohibited pending TD review.",
  "migrations": [
   {
    "id": "0001",
@@ -444,6 +444,13 @@
    "id": "0056",
    "file": "0056_refund_automation.sql",
    "sha256": "1baf368ae0eec6707f00a3fbe7d7fa3bf08712d0dc7981732170613706ba5f0b",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0057",
+   "file": "0057_preparation_pole_v13.sql",
+   "sha256": "7651ab66134a35f03e480a37122651b5c2ffd4fda46090cf21e15c93f34b6896",
    "runtimeGuards": 0,
    "guard": null
   }

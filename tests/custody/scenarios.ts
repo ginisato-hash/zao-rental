@@ -1,3 +1,4 @@
+import {syntheticPreparation} from './preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import type {PoolClient} from 'pg';
@@ -17,7 +18,7 @@ try{
  // HOLD is incidental setup, not what's under test.
  const bufferOverride={reason:'SYNTHETIC custody scenarios mechanics test'};
  async function start(conditions:HoldConditions){const d=await x.draft(undefined,conditions,bufferOverride);await x.service.startPayment(d.booking.id,randomUUID());return d;}
- async function out(id:string,as=svc){const v=await as.checkoutView(id);await as.prepare(randomUUID(),{bookingId:id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC staff fit record'});return as.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:1});}
+ async function out(id:string,as=svc){const v=await as.checkoutView(id);await as.prepare(randomUUID(),{bookingId:id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});return as.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:1});}
  async function scanned(assetId:string|null,poleLoanId:string|null,store='ONSEN_BASE'){let b=await svc.createBatch(randomUUID(),store);b=await svc.scan(randomUUID(),{batchId:b.id,expectedVersion:b.version,assetId,poleLoanId});return b;}
  const group=skiSet('2035-02-01');group.members.push({...structuredClone(group.members[0]!),key:'person-b'});group.members[1]!.items[0]!.variantIds=[variants.skiAlt];
  const d=await start(group);const board=requestFor('2035-03-01');board.members[0]!.product='SNOWBOARD_SET';board.members[0]!.items=[{family:'SNOWBOARD',variantIds:[variants.board]},{family:'SNOWBOARD_BOOT',variantIds:[variants.boardBoot]}];const bd=await start(board);
@@ -51,7 +52,7 @@ try{
   const fresh=await scanned(again.asset_id,null);assert.equal(fresh.candidates[0].cycle_id,nd.booking.id);await svc.confirm(randomUUID(),{batchId:fresh.id,expectedVersion:fresh.version});assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_custody_events e JOIN rental_loan_items l ON l.id=e.loan_item_id WHERE l.asset_id=$1',[again.asset_id])).rows[0].n,2);
  });
  await check('MULTIDAY continuation is not permission for after-hours physical checkout',async()=>{
-  const c=requestFor('2035-03-05',[fid(7106)]);c.members[0]!.items[0]!.family='SNOWBOARD';c.period={startDate:'2035-03-05',endDate:'2035-03-06',slot:'MULTIDAY'};const day=await start(c),v=await svc.checkoutView(day.booking.id);await svc.prepare(randomUUID(),{bookingId:v.bookingId,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC preparation; not after-hours permission'});
+  const c=requestFor('2035-03-05',[fid(7106)]);c.members[0]!.items[0]!.family='SNOWBOARD';c.period={startDate:'2035-03-05',endDate:'2035-03-06',slot:'MULTIDAY'};const day=await start(c),v=await svc.checkoutView(day.booking.id);await svc.prepare(randomUUID(),{bookingId:v.bookingId,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});
   await x.clock('2035-03-05T17:01:00+09:00');await assert.rejects(svc.checkout(randomUUID(),{bookingId:v.bookingId,expectedPreparationVersion:1}),{code:'FLOW_CONFLICT'});assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_loan_items WHERE booking_id=$1',[v.bookingId])).rows[0].n,0);await x.clock('2035-03-02T10:00:00+09:00');
  });
  // Commit only a candidate/receipt, then call UUID function separately. This deliberately tests

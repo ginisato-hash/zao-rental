@@ -84,10 +84,10 @@ try{
  const aS1=await schemaFingerprint(a.neon),aX1=await securityFingerprint(a.neon),cS1=await schemaFingerprint(a.canonical);
  const foundationSecurityDelta=fingerprintDelta(aX0,aX1);
 
- await check('bootstrapProductionFoundation commits 53 migrations and the 17 operational roles under the manager',async()=>{
-  assert.equal(result.applied,56);assert.equal(result.guardsRewritten,12);assert.equal(result.planSha256,plan.bootstrap.planSha256);
+ await check('bootstrapProductionFoundation commits 57 migrations and the 17 operational roles under the manager',async()=>{
+  assert.equal(result.applied,57);assert.equal(result.guardsRewritten,12);assert.equal(result.planSha256,plan.bootstrap.planSha256);
   assert.equal(result.foundationPlanSha256,plan.foundationPlanSha256);assert.equal(result.roleProvisioning.planSha256,plan.roles.planSha256);
-  assert.deepEqual([result.roleProvisioning.operationalRoles,result.roleProvisioning.ownerGrantStatements,result.roleProvisioning.custodyExecutorGrantStatements],[17,150,1]);
+  assert.deepEqual([result.roleProvisioning.operationalRoles,result.roleProvisioning.ownerGrantStatements,result.roleProvisioning.custodyExecutorGrantStatements],[17,152,1]);
   const q=async(sql:string,params:unknown[]=[])=>scalar(a.neon,sql,params);
   const all=[plan.roles.managerRole,...plan.roles.operationalRoleNames];
   const facts={
@@ -105,7 +105,7 @@ try{
    executorDatabaseCreate:await q(`SELECT has_database_privilege('neondb_custody_executor','neondb','CREATE')`),
    executorPublicCreate:await q(`SELECT has_schema_privilege('neondb_custody_executor','public','CREATE')`),
   };
-  assert.deepEqual(facts,{migrations:56,manager:1,operational:17,loginRoles:0,ownerDirectOperational:0,managerOperationalAdmin:17,managerCustody:0,custodyRoles:2,ownerCustody:0,
+  assert.deepEqual(facts,{migrations:57,manager:1,operational:17,loginRoles:0,ownerDirectOperational:0,managerOperationalAdmin:17,managerCustody:0,custodyRoles:2,ownerCustody:0,
    operationsCustodyExecute:5,zaoBoot:0,executorDatabaseCreate:false,executorPublicCreate:false});
   const ownerManager=(await a.neon.query(`SELECT bool_or(admin_option) admin,bool_or(set_option) "set",bool_or(inherit_option) inherit FROM pg_auth_members WHERE member=$1::regrole AND roleid=$2::regrole`,[OWNER,plan.roles.managerRole])).rows[0];
   assert.deepEqual(ownerManager,{admin:true,set:true,inherit:false});
@@ -207,7 +207,7 @@ try{
   assert.equal(posts,1);const unknown=await state();assert.deepEqual([unknown.rolcanlogin,unknown.passwordIsNull,unknown.validUntil],[false,true,'infinity']);
   evidence.backupCredentialLifecycle={provisionPosts:1,leaseMinutesMax:90,finalized:true,contained:true,unknownOutcomeResent:false};
  });
- await check('normal worker grants: frozen 0055 installer refuses on the 0056 plan; the four approved grants stay role separated; 0056 grants are exactly three and replay is refused',async()=>{
+ await check('normal worker grants: frozen 0055 and 0056 installers refuse the 0057 registry; exact fixture grants stay role separated',async()=>{
   const targets=normalWorkerExecuteTargets(DB);
   const c=await a.neon.connect();
   try{
@@ -225,12 +225,15 @@ try{
    assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_dispatch',$1::regprocedure,'EXECUTE')`,[targets[1]!.fn]),false);
    assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_truth',$1::regprocedure,'EXECUTE')`,[targets[0]!.fn]),false);
    assert.equal(await scalar(a.neon,`SELECT has_function_privilege('neondb_pay_receipt',$1::regprocedure,'EXECUTE')`,[targets[2]!.fn]),false);
-   // 0056 grants (new explicit unit) on top: exactly three EXECUTE grants to neondb_operations; replay refused.
-   const refundGrants=await applyProductionRefundAutomationGrants(c,DB,OWNER);
-   assert.equal(refundGrants.status,'PRODUCTION_REFUND_AUTOMATION_GRANTS_INSTALLED');
-   for(const fn of ['ops_refund_row(uuid)','ops_refund_claim(uuid)','ops_refund_observe(uuid,jsonb)'])assert.deepEqual(await holders(fn),['neondb_operations']);
+   // The frozen 0056 installer also refuses a later registry. Reproduce its three
+   // already-reviewed grants only in this owned fixture; installer success is covered at 0056.
    await assert.rejects(applyProductionRefundAutomationGrants(c,DB,OWNER),/PRODUCTION_REFUND_AUTOMATION_GRANTS_REFUSED/);
-   evidence.normalWorkerGrants={frozenInstallerRefused:true,fixtureGrants:4,refundAutomationGrants:3,replayRefused:true};
+   for(const fn of ['ops_refund_row(uuid)','ops_refund_claim(uuid)','ops_refund_observe(uuid,jsonb)']){
+    await c.query(`GRANT EXECUTE ON FUNCTION ${fn} TO neondb_operations`);
+    assert.deepEqual(await holders(fn),['neondb_operations']);
+   }
+   await assert.rejects(applyProductionRefundAutomationGrants(c,DB,OWNER),/PRODUCTION_REFUND_AUTOMATION_GRANTS_REFUSED/);
+   evidence.normalWorkerGrants={frozenInstallerRefused:true,fixtureGrants:4,refundInstallerRefused:true,refundFixtureGrants:3,replayRefused:true};
   }finally{c.release();}
  });
  await check('worker role lifecycle (production-worker-credential) on the real foundation roles: three roles, direct-login probes against the approved EXECUTE grants, containment, unknown-reset path',async()=>{

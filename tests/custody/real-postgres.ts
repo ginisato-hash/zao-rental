@@ -1,3 +1,4 @@
+import {syntheticPreparation} from './preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {flowFixture} from '../flow/fixture';
@@ -30,7 +31,7 @@ try{
  let futureHold='';
  let prepared:Awaited<ReturnType<typeof svc.prepare>>;let loans:{id:string;asset_id:string|null;pole_id:string|null;family:string;version:number}[]=[];
  await check('normal library session confirmed synthetic booking -> exact preparation -> serialized pair/boot/pole checkout; replay once',async()=>{
-  const view=await svc.checkoutView(d.booking.id),input={bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC human fit note; no DIN certification'};
+  const view=await svc.checkoutView(d.booking.id),input={bookingId:d.booking.id,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view)};
   const wrong=structuredClone(input);wrong.selections.find(i=>i.assetId)!.assetId=randomUUID();await assert.rejects(svc.prepare(randomUUID(),wrong),{code:'EXACT_FULL_PERIOD_ASSIGNMENT_REQUIRED'});
   prepared=await svc.prepare(randomUUID(),input);assert.equal(prepared.preparation.version,1);
   const key=randomUUID(),value={bookingId:d.booking.id,expectedPreparationVersion:1};const out=await svc.checkout(key,value);assert.deepEqual(JSON.parse(JSON.stringify((await svc.checkout(key,value)).loans)),JSON.parse(JSON.stringify(out.loans)));loans=out.loans;assert.equal(loans.length,3);assert.ok(loans.every(l=>l.version===1));assert.equal((await x.db.pool.query('SELECT allocation_stage FROM inventory_holds WHERE id=$1',[d.holdId])).rows[0].allocation_stage,'RENTAL_FIXED');
@@ -42,7 +43,7 @@ try{
   b=await svc.scan(randomUUID(),{...value,batchId:b.id,expectedVersion:b.version});assert.equal(b.candidates.length,1);
  });
  await check('future promise is created before physical return',async()=>{const future=await x.draft(undefined,requestFor('2035-01-10'),bufferOverride);await x.service.startPayment(future.booking.id,randomUUID());futureHold=future.holdId;
- const v=await svc.checkoutView(future.booking.id);await svc.prepare(randomUUID(),{bookingId:v.bookingId,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC future prepared promise'});});
+ const v=await svc.checkoutView(future.booking.id);await svc.prepare(randomUUID(),{bookingId:v.bookingId,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});});
  let receiptId='';
  await check('two terminals confirm once; partial cross-store changes actual location, preserves other OUT items and original price/TTL',async()=>{
   const before=(await x.db.pool.query('SELECT price_sha256 FROM rental_bookings WHERE id=$1',[d.booking.id])).rows[0].price_sha256;

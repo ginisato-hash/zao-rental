@@ -124,7 +124,7 @@ try {
   await production.query(legacy.slice(start,end).replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION'));
   // 0056 (refund automation) is rewound the same way so the historical installers see their exact prefix.
   await production.query('DROP FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb); DROP TABLE staff_permission_override_removals, public.ops_refund_effects');
-  await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056')");
+  await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056','0057')");
   await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
     const c=await production!.connect();try{
       const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0050'")).rows[0].checksum;
@@ -349,6 +349,14 @@ try {
         assert.equal((await c.query("SELECT has_function_privilege($1,$2::regprocedure,'EXECUTE') ok",[appNames.operations,fn])).rows[0].ok,true);
       await assert.rejects(applyProductionRefundAutomationGrants(c,TARGET,db.identity.user),/GRANTS_REFUSED/);
     }finally{c.release();}
+  });
+  await check('restore the current 0057 fixture after exact historical installer proofs',async()=>{
+    const entry=(await bootstrapPlan(TARGET)).entries[56]!;assert.equal(entry.id,'0057');
+    const c=await production!.connect();try{
+      await c.query('BEGIN');await c.query(entry.sql);
+      await c.query('INSERT INTO foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);
+      await c.query('COMMIT');
+    }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
   });
   const auth = await loginRole(production, db.identity.dbPort, TARGET, appNames.auth); opened.push(auth);
   const ledger = await loginRole(production, db.identity.dbPort, TARGET, appNames.ledger); opened.push(ledger);

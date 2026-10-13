@@ -1,0 +1,45 @@
+{
+  "accessedAt": "2026-10-14T02:59:00+09:00",
+  "source": "Union Sport & Cycle, version 2022",
+  "page": "https://www.unionsportcycle.com/les-actualites/2022-12-14/tableau-de-reglage-des-fixations-de-ski-alpin-la-norme-iso-11088",
+  "pdfFilename": "usc2022-tableau-reglage-iso11088-a3_1857765791.pdf",
+  "sha256": "7e3c983c4189b85d9a294737c2208cf2dae4a3fcca208cdfcf6e6dc008567ac4",
+  "scope": "Staff initial DIN advisory only. Not final binding setting/certification. ISO13993:2019 applies to rental-shop process under15days; this ISO11088-based numerical reference does not implement the full rental inspection standard.",
+  "use": "Implement functional numeric facts and original lookup logic only; do not copy PDF, layout, prose or proprietary calculator code into distribution. PDF copyright notice prohibits reproduction; retain only source URL/version/hash in product/docs.",
+  "bslUpperBounds": [230,250,270,290,310,330,350,null],
+  "weightUpperBounds": [13,17,21,25,30,35,41,48,57,66,78,94,null],
+  "heightUpperBounds": [148,157,166,178,194,null],
+  "heightRowOffset": 7,
+  "rows": [
+    [0.75,0.75,0.75,null,null,null,null,null],
+    [1,0.75,0.75,0.75,null,null,null,null],
+    [1.5,1.25,1.25,1,null,null,null,null],
+    [2,1.75,1.5,1.5,1.25,null,null,null],
+    [2.5,2.25,2,1.75,1.5,1.5,null,null],
+    [3,2.75,2.5,2.25,2,1.75,1.75,null],
+    [null,3.5,3,2.75,2.5,2.25,2,null],
+    [null,null,3.5,3,3,2.75,2.5,null],
+    [null,null,4.5,4,3.5,3.5,3,null],
+    [null,null,5.5,5,4.5,4,3.5,3],
+    [null,null,6.5,6,5.5,5,4.5,4],
+    [null,null,7.5,7,6.5,6,5.5,5],
+    [null,null,null,8.5,8,7,6.5,6],
+    [null,null,null,10,9.5,8.5,8,7.5],
+    [null,null,null,11.5,11,10,9.5,9],
+    [null,null,null,null,null,12,11,10.5]
+  ],
+  "algorithm": "Use smaller row index of weight and height; add level offset0/1/2; subtract1 for age<=10 or>=50. No skier-demand15percent adjustment. If out of table or blank: do not extrapolate; show technician review required. USC has nearest-cell guidance for rare profiles but requires rechecking; deliberately fail closed instead.",
+  "independentCheck": {
+    "tool": "https://isoski.lumiplan.pro/",
+    "authorityLink": "https://www.salomon.com/en-gb/lp/g/ski-boot-and-binding-compatibility",
+    "method": "Manual public UI interaction with fictional category inputs; no runtime scrape or code extraction",
+    "cases": [
+      {"weightKg":60,"heightCm":170,"age":30,"level":"BEGINNER","bslMm":304,"observed":4.5},
+      {"weightKg":60,"heightCm":170,"age":30,"level":"BEGINNER","bslMm":314,"observed":4},
+      {"weightKg":60,"heightCm":170,"age":30,"level":"INTERMEDIATE","bslMm":314,"observed":5},
+      {"weightKg":60,"heightCm":170,"age":30,"level":"ADVANCED","bslMm":314,"observed":6},
+      {"weightKg":60,"heightCm":170,"age":50,"level":"ADVANCED","bslMm":314,"observed":5}
+    ]
+  },
+  "latestOwner": "Use actual planned/assigned customer boot asset bsl_mm; never global model default, never infer BSL from foot size. Recompute after assignment changes."
+}

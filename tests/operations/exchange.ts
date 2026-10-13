@@ -1,3 +1,4 @@
+import {syntheticPreparation} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
@@ -35,12 +36,12 @@ try{
  });
  await x.clock('2035-02-05T10:00:00+09:00');
  await check('prepared length replacement preserves confirmed booking and checks out amended allocation',async()=>{
-  const v=await custody.checkoutView(d.booking.id),p=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC fit'});
+  const v=await custody.checkoutView(d.booking.id),p=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});
   const current=await svc.view(d.booking.id),conditions=structuredClone(current.conditions);conditions.members[0]!.items[0]!.variantIds=[variants.skiAlt];
   const q=await svc.quote(randomUUID(),{bookingId:d.booking.id,expectedHoldVersion:current.holdVersion,conditions,reason:'SYNTHETIC prepared length'});
   await assert.rejects(svc.accept(randomUUID(),{quoteId:q.id,reason:'SYNTHETIC fit required',fitEvidence:''}),{code:'EXCHANGE_FIT_EVIDENCE_REQUIRED'});
   await svc.accept(randomUUID(),{quoteId:q.id,reason:'SYNTHETIC prepared length',fitEvidence:'SYNTHETIC refit'});
-  const out=await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:p.preparation.version});assert.equal(out.loans.find(l=>l.family==='SKI')!.asset_id,fid(1202));
+  await assert.rejects(custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:p.preparation.version}),{code:'PREPARED_ASSIGNMENT_CHANGED'});const changed=await custody.checkoutView(d.booking.id);assert.equal(changed.preparationValid,false);const renewed=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:changed.bookingVersion,expectedHoldVersion:changed.holdVersion,selections:changed.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(changed)});const out=await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:renewed.preparation.version});assert.equal(out.loans.find(l=>l.family==='SKI')!.asset_id,fid(1202));
  });
  await check('OUT boot size exchange records factual receipt and replacement with unknown BSL retained',async()=>{
   const source={notes:'SYNTHETIC boot',sourceKind:'SYNTHETIC',sourceDocument:'tests/operations/exchange.ts',sourceLocator:'replacement-boot'};

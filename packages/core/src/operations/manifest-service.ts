@@ -1,3 +1,5 @@
+import {preparationStillValid,type PreparationItem} from '../../../contracts/src/preparation';
+import type {Profile} from '../../../contracts/src/recommendation';
 import {bookingConfirmed,bookingStateValid} from '../../../contracts/src/booking-state';
 import type {Pool,PoolClient} from 'pg';
 import {loadStaff,type Permission,type StaffPrincipal} from '../../../auth/src/staff-auth';
@@ -5,7 +7,7 @@ import {FlowError,flowObject,flowStore} from '../../../contracts/src/rental-flow
 import {isWear,utcDate,type HoldConditions} from '../../../contracts/src/hold';
 import {pickupTiming} from '../../../contracts/src/pickup';
 type Identity={subject:string;sessionId:string};
-type Section='pickup'|'return'|'all';
+type Section='pickup'|'return'|'all'|'preparation';
 // Reuses the project's own round-trip calendar validator (regex shape + Date.parse +
 // re-serialize) rather than regex shape alone, so an impossible-but-well-shaped date like
 // 2035-02-31 or 2035-02-29 (non-leap) is rejected here as 422, never reaching `$2::date`
@@ -30,7 +32,7 @@ const severityRank={INFO:0,WARN:1,ERROR:2} as const;
 function equipmentRequirementKeys(conditions:HoldConditions){return new Set(conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).map(i=>m.key+':'+i.family)));}
 function bookingWearRequired(conditions:HoldConditions){return conditions.members.some(m=>m.items.some(i=>isWear(i.family)));}
 type BookingRow={id:string;conditions:HoldConditions;contact:{displayName:string};price_snapshot:{totalJpy?:number}|null;state:string;mode:string;version:number};
-type HoldRow={booking_id:string;pickup_store:string;due_at:Date;transfer_attention:string|null};
+type HoldRow={conditions:HoldConditions;allocation_stage:string;booking_id:string;pickup_store:string;due_at:Date;transfer_attention:string|null};
 type LoanItemRow={id:string;booking_id:string;requirement_key:string;family:string;state:'OUT'|'RECEIVED';due_at:Date};
 type CustodyRow={loan_item_id:string;receipt_id:string;source_store:string;actual_store:string;applied_at:Date;inspected:boolean;requirement_key:string;family:string;version:number;asset_id:string|null;pole_id:string|null;booking_id:string};
 type WearLoanRow={id:string;booking_id:string;requirement_key:string;quantity:number;returned:number;planned_return_store:string};
@@ -60,7 +62,7 @@ export class ManifestService{
   const v=flowObject(input,['store','date','section','cursor','pageSize']),store=flowStore(v.store);
   const principal=await this.principal(store);
   if(v.date!==null&&(typeof v.date!=='string'||!isCalendarDate(v.date)))throw new FlowError('MANIFEST_DATE_INVALID',422);
-  const section=(v.section??'all') as Section;if(!['pickup','return','all'].includes(section))throw new FlowError('MANIFEST_SECTION_INVALID',422);
+  const section=(v.section??'all') as Section;if(section==='preparation'&&!principal.permissions.includes('RENTAL_CHECKOUT'))throw new FlowError('FORBIDDEN',403);if(!['pickup','return','all','preparation'].includes(section))throw new FlowError('MANIFEST_SECTION_INVALID',422);
   const pageSize=(v.pageSize??100) as number;if(!Number.isInteger(pageSize)||pageSize<1||pageSize>300)throw new FlowError('MANIFEST_PAGE_SIZE_INVALID',422);
   if(v.cursor!==null&&typeof v.cursor!=='string')throw new FlowError('MANIFEST_CURSOR_INVALID',422);
   const cursorCtx=v.cursor!==null?decodeCursor(v.cursor as string):null;
@@ -79,7 +81,9 @@ export class ManifestService{
    // regardless of the function's own privileges) — see exceptionSnapshot() below.
    await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
    const now=(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;
-   const date=requestedDate??jstDate(now);
+   const tomorrow=jstDate(new Date(now.getTime()+86400000));
+   if(section==='preparation'&&requestedDate!==null&&requestedDate!==tomorrow)throw new FlowError('MANIFEST_DATE_INVALID',422);
+   const date=section==='preparation'?tomorrow:requestedDate??jstDate(now);
    if(cursorCtx&&(cursorCtx.store!==store||cursorCtx.date!==date||cursorCtx.section!==section))throw new FlowError('MANIFEST_CURSOR_CONTEXT_MISMATCH',422);
    const result=await this.read(c,principal,store,date,section,pageSize,cursorCtx,now);
    await c.query('COMMIT');return result;
@@ -102,15 +106,15 @@ export class ManifestService{
  // requires is absent — a BOOKING_VIEW-only caller must never learn candidacy exists.
  private async candidateKeys(c:PoolClient,principal:StaffPrincipal,store:string,date:string,section:Section,checkout:boolean,ret:boolean){
   const keys=new Map<string,KeyEntry>(),pickupToday=new Set<string>(),equipmentReturnDueToday=new Set<string>(),wearReturnDueToday=new Set<string>();
-  const wantPickup=section!=='return',wantReturn=section!=='pickup';
+  const wantPickup=section!=='return',wantReturn=section!=='pickup'&&section!=='preparation';
   const scoped=(pickupStore:string,returnStore:string)=>principal.storeIds.includes(pickupStore as never)||principal.storeIds.includes(returnStore as never);
   if(checkout&&wantPickup){
    // Excludes a booking that already has a no-pickup completion event: for a MULTIDAY
    // booking that event's date is occupancy_end's, not occupancy_start's (§3/Branch D),
    // so without this exclusion a completed booking would keep reappearing on its stale
    // start-date query forever instead of only on its one completion date below.
-   for(const r of (await c.query<{booking_id:string}>("SELECT b.id AS booking_id FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE h.pickup_store=$1 AND h.occupancy_start=$2::date AND NOT EXISTS(SELECT 1 FROM rental_no_pickup_events n WHERE n.booking_id=b.id)",[store,date])).rows){keys.set(bookingKey(r.booking_id),{kind:'B',bookingId:r.booking_id});pickupToday.add(r.booking_id);}
-   for(const r of (await c.query<{booking_id:string}>("SELECT n.booking_id FROM rental_no_pickup_events n JOIN rental_bookings b ON b.id=n.booking_id JOIN inventory_holds h ON h.id=b.hold_id WHERE h.pickup_store=$1 AND (n.completed_at AT TIME ZONE 'Asia/Tokyo')::date=$2::date",[store,date])).rows)keys.set(bookingKey(r.booking_id),{kind:'B',bookingId:r.booking_id});
+   for(const r of (await c.query<{booking_id:string}>(`SELECT b.id AS booking_id FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE h.pickup_store=$1 AND h.occupancy_start=$2::date AND NOT EXISTS(SELECT 1 FROM rental_no_pickup_events n WHERE n.booking_id=b.id) ${section==='preparation'?"AND ((b.mode='SQUARE_PRODUCTION' AND b.state='CONFIRMED') OR (b.mode IN ('SIMULATED_DEV','SQUARE_SANDBOX') AND b.state='CONFIRMED_DEV')) AND h.state='ACTIVE' AND h.payment_state='SUCCESS' AND h.confirmed_at IS NOT NULL AND h.transfer_attention IS NULL AND NOT EXISTS(SELECT 1 FROM rental_loan_items l WHERE l.booking_id=b.id)":""}`,[store,date])).rows){keys.set(bookingKey(r.booking_id),{kind:'B',bookingId:r.booking_id});pickupToday.add(r.booking_id);}
+   if(section!=='preparation')for(const r of (await c.query<{booking_id:string}>("SELECT n.booking_id FROM rental_no_pickup_events n JOIN rental_bookings b ON b.id=n.booking_id JOIN inventory_holds h ON h.id=b.hold_id WHERE h.pickup_store=$1 AND (n.completed_at AT TIME ZONE 'Asia/Tokyo')::date=$2::date",[store,date])).rows)keys.set(bookingKey(r.booking_id),{kind:'B',bookingId:r.booking_id});
   }
   if(ret&&wantReturn){
    for(const r of (await c.query<{booking_id:string}>("SELECT DISTINCT b.id AS booking_id FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id JOIN rental_loan_items l ON l.booking_id=b.id WHERE h.return_store=$1 AND l.state='OUT' AND (l.due_at AT TIME ZONE 'Asia/Tokyo')::date=$2::date",[store,date])).rows){keys.set(bookingKey(r.booking_id),{kind:'B',bookingId:r.booking_id});equipmentReturnDueToday.add(r.booking_id);}
@@ -136,8 +140,10 @@ export class ManifestService{
   const pageLoanItemIds=page.filter(k=>keys.get(k)!.kind==='E').map(k=>keys.get(k)!.loanItemId!);
   const pageWearReceiptIds=page.filter(k=>keys.get(k)!.kind==='W').map(k=>keys.get(k)!.wearReceiptId!);
   const bookingsById=new Map((pageBookingIds.length?(await c.query<BookingRow>('SELECT id,conditions,contact,price_snapshot,state,mode,version FROM rental_bookings WHERE id=ANY($1)',[pageBookingIds])).rows:[]).map(b=>[b.id,b]));
-  const holdsByBooking=new Map((pageBookingIds.length?(await c.query<HoldRow>('SELECT b.id AS booking_id,h.pickup_store,h.due_at,h.transfer_attention FROM inventory_holds h JOIN rental_bookings b ON b.hold_id=h.id WHERE b.id=ANY($1)',[pageBookingIds])).rows:[]).map(h=>[h.booking_id,h]));
-  const preparedByBooking=new Map((pageBookingIds.length?(await c.query<{id:string;prepared_at:Date|null}>('SELECT id,prepared_at FROM rental_preparations WHERE id=ANY($1)',[pageBookingIds])).rows:[]).map(r=>[r.id,r.prepared_at!==null]));
+  const holdsByBooking=new Map((pageBookingIds.length?(await c.query<HoldRow>('SELECT b.id AS booking_id,h.pickup_store,h.due_at,h.transfer_attention,h.allocation_stage,h.conditions FROM inventory_holds h JOIN rental_bookings b ON b.hold_id=h.id WHERE b.id=ANY($1)',[pageBookingIds])).rows:[]).map(h=>[h.booking_id,h]));
+  const assigned=pageBookingIds.length?(await c.query<PreparationItem&{booking_id:string}>(`SELECT DISTINCT b.id AS booking_id,cl.requirement_key,cl.asset_id,cl.pole_id,a.bsl_status,a.bsl_mm,v.size FROM rental_bookings b JOIN inventory_claims cl ON cl.hold_id=b.hold_id AND cl.active LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) WHERE b.id=ANY($1)`,[pageBookingIds])).rows:[];
+  const preparedByBooking=new Map((pageBookingIds.length?(await c.query<{id:string;prepared_at:Date|null;fit_evidence:unknown}>('SELECT id,prepared_at,fit_evidence FROM rental_preparations WHERE id=ANY($1)',[pageBookingIds])).rows:[]).map(r=>[r.id,r.prepared_at!==null&&['PREPARATION_FIXED','RENTAL_FIXED'].includes(holdsByBooking.get(r.id)?.allocation_stage??'')&&preparationStillValid(r.fit_evidence,assigned.filter(i=>i.booking_id===r.id),holdsByBooking.get(r.id)?.conditions)]));
+  const profilesByBooking=new Map((section==='preparation'&&pageBookingIds.length?(await c.query<{id:string;input:{members:Profile[]}}>('SELECT b.id,p.input FROM rental_bookings b JOIN recommendation_selections s ON s.quote_id=b.quote_id JOIN recommendation_previews p ON p.id=s.preview_id WHERE b.id=ANY($1)',[pageBookingIds])).rows:[]).map(r=>[r.id,r.input.members]));
   const loanItems=pageBookingIds.length?(await c.query<LoanItemRow>('SELECT id,booking_id,requirement_key,family,state,due_at FROM rental_loan_items WHERE booking_id=ANY($1)',[pageBookingIds])).rows:[];
   const loanItemsByBooking=new Map<string,LoanItemRow[]>();for(const l of loanItems){const arr=loanItemsByBooking.get(l.booking_id)??[];arr.push(l);loanItemsByBooking.set(l.booking_id,arr);}
   const custodyLoanItemIds=[...new Set([...loanItems.map(l=>l.id),...pageLoanItemIds])];
@@ -153,7 +159,7 @@ export class ManifestService{
   const wearReceiptsById=new Map(wearReceiptsRaw.map(r=>[r.id,r]));
   const rows=page.map(key=>{
    const entry=keys.get(key)!;
-   if(entry.kind==='B')return this.bookingRow(entry.bookingId!,{checkout,ret,store,date,now,bookingsById,holdsByBooking,preparedByBooking,loanItemsByBooking,custodyByLoanItem,custodyByBooking,noPickup,wearLoansByBooking,wearReceiptsByBooking,pickupToday,equipmentReturnDueToday,wearReturnDueToday});
+   if(entry.kind==='B'){const row=this.bookingRow(entry.bookingId!,{checkout,ret,store,date,now,bookingsById,holdsByBooking,preparedByBooking,loanItemsByBooking,custodyByLoanItem,custodyByBooking,noPickup,wearLoansByBooking,wearReceiptsByBooking,pickupToday,equipmentReturnDueToday,wearReturnDueToday});if(section==='preparation'){row.preparationMembers=holdsByBooking.get(entry.bookingId!)!.conditions.members.map(m=>({key:m.key,product:m.product,tier:m.tier,profile:profilesByBooking.get(entry.bookingId!)?.find(p=>p.key===m.key)??null}));row.nextAction=preparedByBooking.get(entry.bookingId!)?'CHECKOUT':'PREPARE_EQUIPMENT';}return row;}
    if(entry.kind==='E')return this.custodyOnlyEquipmentRow(entry.loanItemId!,custodyByLoanItem);
    return this.custodyOnlyWearRow(entry.wearReceiptId!,wearReceiptsById);
   });
@@ -240,7 +246,7 @@ export class ManifestService{
   if(bookingState==='PAYMENT_PENDING'||bookingState==='PAYMENT_REVIEW')return 'CHECK_PAYMENT_OR_EXCEPTION';
   if(checkout&&transferAttention)return 'CHECK_PAYMENT_OR_EXCEPTION';
   const timingOk=!!pickup&&(pickup.timing==='PICKUP_WINDOW'||pickup.timing==='LATE_PICKUP_ELIGIBLE');
-  if(checkout&&pickup&&bookingConfirmed(mode,bookingState)&&pickup.equipmentRequired&&!pickup.equipmentPrepared&&timingOk)return 'PREPARE_EQUIPMENT';
+  if(checkout&&pickup&&bookingConfirmed(mode,bookingState)&&pickup.equipmentRequired&&!equipmentEverCheckedOut&&!pickup.equipmentPrepared&&timingOk)return 'PREPARE_EQUIPMENT';
   if(checkout&&pickup&&bookingConfirmed(mode,bookingState)&&(!pickup.equipmentRequired||pickup.equipmentPrepared)&&((pickup.equipmentRequired&&!equipmentEverCheckedOut)||(pickup.wearRequired&&!pickup.wearCheckedOut))&&timingOk)return 'CHECKOUT';
   if(checkout&&ret&&pickup&&r){
    const eqWait=!r.equipmentReturnDueToday&&(pickup.equipmentCheckedOut||!pickup.equipmentRequired)&&r.outCount>0;

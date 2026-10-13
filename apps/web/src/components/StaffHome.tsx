@@ -1,4 +1,5 @@
 'use client';
+import {TomorrowPreparation} from './TomorrowPreparation';
 import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
@@ -119,6 +120,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
     <div className="staff-card-head"><strong>{row.displayName}</strong><span className="staff-chip">{stateLabel(row.bookingState)}</span></div>
     <p>{row.period.startDate} → {row.period.endDate} · {slotLabel(row.period.slot)}</p>
     <p>{storeName(row.pickupStore)} → {storeName(row.returnStore)}{row.totalJpy!==undefined?' · '+money(row.totalJpy):''}</p>
+    {row.pickup?.equipmentPrepared&&!row.pickup.equipmentCheckedOut&&<p className="staff-chip">準備完了</p>}
     <p className="staff-card-action"><span>次にすること</span><strong>{label}</strong></p>
     {row.exception?.attention&&<p className="staff-card-attention">要注意{row.exception.topSeverity?'（'+(SEVERITY_LABEL[row.exception.topSeverity]??'確認')+'）':''}</p>}
     {canOpen&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(row.bookingId)}>{label}へ進む</button>}
@@ -147,6 +149,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
   {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
   <Link href="/staff/rentals">貸出・返却の画面を開く</Link>
  </section>}
+ {effectivePickup&&<TomorrowPreparation stamp={stamp} store={activeStore} onOpen={openBooking}/>}
  {canBookingView&&<section aria-label="本日の予約"><div className="staff-section-head"><h2>本日の予約</h2>
   {/* UX-5E: the Refresh button and status line must never be gated behind manifestDate itself
       -- a BOOKING_VIEW-only principal has no "本日の業務" section and therefore no other retry

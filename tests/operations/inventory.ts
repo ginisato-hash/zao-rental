@@ -1,3 +1,4 @@
+import {syntheticPreparation} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {flowFixture} from '../flow/fixture';
@@ -41,7 +42,7 @@ try{
   const original=await ledger.get('poles',fid(1301));await ledger.update('poles',original.id,{version:original.version,reason:'SYNTHETIC stocktake fixture',quantity:10});
   const {CustodyService}=await import('../../packages/core/src/rental/custody-service');const custody=new CustodyService(role!.operationsPool,x.roles.authPool,x.signed.identity);
   const {loadStaff}=await import('../../packages/auth/src/staff-auth');Object.assign(x.principal,(await loadStaff(x.db.pool,x.actor))!);const d=await x.draft(undefined,skiSet('2035-02-05'),bufferOverride);await x.service.startPayment(d.booking.id,randomUUID());await x.clock('2035-02-05T10:00:00+09:00');
-  const v=await custody.checkoutView(d.booking.id),prepared=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC fit'});await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:prepared.preparation.version});
+  const v=await custody.checkoutView(d.booking.id),prepared=await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:prepared.preparation.version});
   const loans=(await x.db.pool.query("SELECT * FROM rental_loan_items WHERE pole_id=$1 AND state='OUT'",[fid(1301)])).rows;assert.equal(loans.length,1);
   await assert.rejects(role!.operationsPool.query('SELECT ops_reconcile_poles($1,$2,1)',[randomUUID(),fid(1301)]));
   const take=await svc.create(randomUUID(),'MOUNTAIN_BASE'),view=await svc.get(take.id),pole=view.baseline.quantities.find(q=>q.id===fid(1301))!;assert.equal(pole.physical,9);assert.equal(pole.protected_count,1);

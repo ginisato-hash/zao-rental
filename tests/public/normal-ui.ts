@@ -3,7 +3,7 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import {mkdir} from 'node:fs/promises';
 import {chromium,expect,request as apiRequest,type Page} from '@playwright/test';
 import {startFlowApp} from '../flow/launcher';
-import {seedRecommendation,variants} from '../recommendation/fixture';
+import {seedRecommendation} from '../recommendation/fixture';
 import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
@@ -110,7 +110,7 @@ try{
   await page.setViewportSize({width:390,height:844});
  });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
-  await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await page.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole); // option keys come from the server below if catalog prefix differs
+  await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click(); // option keys come from the server below if catalog prefix differs
   await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員の内容を確認しました').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('お支払い金額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // CL-02: no wear items and advance was never requested in this flow, so both adjustment
   // rows must stay hidden -- only the subtotal and group-total rows are present.
@@ -129,7 +129,7 @@ try{
   // 1 itself has been touched yet -- the warning must stay absent immediately on arrival here.
   await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('用品',{exact:true})).toBeVisible();
   await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
-  await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);
+  await p.getByLabel('身長（cm）',{exact:true}).fill('171');
   await expect(p.getByText('保存されていない変更があります')).toBeVisible();
   await ctx.close();
  });
@@ -151,7 +151,7 @@ try{
   await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('用品',{exact:true})).toBeVisible();
   // Editing step 1, then going back to step 0 (another touched-resetting transition), must not
   // drop protection either -- same guarantee one step earlier in the wizard.
-  await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);
+  await p.getByLabel('身長（cm）',{exact:true}).fill('171');
   await expect(p.getByText('保存されていない変更があります')).toBeVisible();
   await p.getByRole('button',{name:'日程に戻る',exact:true}).click();
   await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
@@ -167,12 +167,12 @@ try{
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-07');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-07');
   await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
-  await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);
+
   await p.getByLabel('利用人数',{exact:true}).fill('2');
-  await expect(p.getByRole('article',{name:'利用者 2',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true})).not.toBeVisible();
+  await expect(p.getByRole('article',{name:'利用者 2',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true})).not.toBeVisible();
   await p.getByText('利用者 2').first().click();
-  await expect(p.getByRole('article',{name:'利用者 2',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true})).toBeVisible();
-  await p.getByRole('article',{name:'利用者 2',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);
+  await expect(p.getByRole('article',{name:'利用者 2',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true})).toBeVisible();
+
   await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await expect(p.getByRole('radio',{name:/おすすめ/})).toHaveCount(2);
   await ctx.close();
@@ -223,7 +223,7 @@ try{
   await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-guest-draft-input')),null);
   // A real, server-saved draft (not the removed local cache) must still restore across reload.
-  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await p.reload();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await ctx.close();
  });
@@ -232,7 +232,7 @@ try{
   // must surface a nonzero "事前決済割引" row alongside the subtotal/total;
   // no wear items are selected here, so the wear-adjustment row must stay absent.
   const jaCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});jaCtx.setDefaultTimeout(15000);const ja=await jaCtx.newPage();last=ja;
-  await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await ja.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
+  await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
   await expect(ja.locator('dl.guest-price dt')).toHaveText(['小計','事前決済割引','お支払い金額']);
   await expect(ja.locator('dl.guest-price')).not.toContainText('ウェアセット割引');
   const advanceRowValue=await ja.locator('dl.guest-price dd').nth(1).innerText();assert.notEqual(advanceRowValue.trim(),'');assert.doesNotMatch(advanceRowValue,/¥0(?:[^0-9]|$)/);
@@ -241,7 +241,7 @@ try{
   // EN, same narrow viewport, default (zero-adjustment) flow: labels localize and no
   // adjustment rows leak in when nothing triggers them, mirroring the JA zero case above.
   const enCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});enCtx.setDefaultTimeout(15000);const en=await enCtx.newPage();last=en;
-  await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'Choose equipment',exact:true}).click();await en.getByRole('article',{name:'Person 1',exact:true,includeHidden:true}).getByLabel('Poles',{exact:true}).selectOption('pole-'+variants.pole);await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
+  await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'Choose equipment',exact:true}).click();await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   // Match the human-readable English recommendation label.
   await en.getByRole('radio',{name:/RECOMMENDED/i}).check();await en.getByLabel('I have checked everyone’s selections').check();await en.getByRole('button',{name:'Review the whole group',exact:true}).click();await expect(en.getByRole('region',{name:'Group review'})).toBeVisible();
   await expect(en.locator('dl.guest-price dt')).toHaveText(['Subtotal','Total to pay']);
@@ -280,7 +280,7 @@ try{
   await expect(p.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
   // Reach a real, server-saved final review for a SKI set (this exercises the normal,
   // fully-synced path end to end; nothing here is synthetic).
-  await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);
+
   await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await p.getByRole('radio',{name:/おすすめ/}).check();await p.getByLabel('全員の内容を確認しました').check();
   await p.getByRole('button',{name:'全員分の最終確認へ'}).click();
@@ -328,7 +328,7 @@ try{
   await p2.goto('/ja/book');await expect(p2.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p2.getByLabel('利用開始日',{exact:true}).fill('2035-02-03');await p2.getByLabel('利用終了日',{exact:true}).fill('2035-02-03');
   await p2.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
-  await p2.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);
+
   await p2.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await p2.getByRole('radio',{name:/おすすめ/}).check();await p2.getByLabel('全員の内容を確認しました').check();
   await p2.getByRole('button',{name:'全員分の最終確認へ'}).click();
@@ -364,7 +364,7 @@ try{
   await p.goto('/en/book');await expect(p.getByLabel('Start date',{exact:true})).toBeEnabled();
   await p.getByLabel('Start date',{exact:true}).fill('2035-02-02');await p.getByLabel('End date',{exact:true}).fill('2035-02-02');
   await p.getByRole('button',{name:'Choose equipment',exact:true}).click();
-  await p.getByRole('article',{name:'Person 1',exact:true,includeHidden:true}).getByLabel('Poles',{exact:true}).selectOption('pole-'+variants.pole);
+
   await p.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   await p.getByRole('radio',{name:/RECOMMENDED/i}).check();await p.getByLabel('I have checked everyone’s selections').check();
   await p.getByRole('button',{name:'Review the whole group',exact:true}).click();
@@ -389,7 +389,7 @@ try{
  async function toReview(p:Page,date:string,locale:'ja'|'en'='ja'){
   const ja=locale==='ja';await p.goto('/'+locale+'/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill(date);await p.getByLabel(ja?'利用終了日':'End date',{exact:true}).fill(date);
-  await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();await p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'ポール':'Poles',{exact:true}).selectOption('pole-'+variants.pole);
+  await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();
   await p.getByLabel(ja?'全員の内容を確認しました':'I have checked everyone’s selections').check();
   await p.getByRole('button',{name:ja?'全員分の最終確認へ':'Review the whole group',exact:true}).click();await expect(p.getByRole('region',{name:ja?'全員分の確認':'Group review'})).toBeVisible();
@@ -435,17 +435,17 @@ try{
     for(const value of validValues){await control.fill(value);await control.blur();await expect(control).not.toHaveAttribute('aria-invalid','true');}
    }
    await age.fill('12');await age.blur();await expect(p.locator('#guest-err-m0-age')).toContainText(ja?'13歳以上は大人':'Adult for 13 or older');
-   await p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'年齢区分':'Age category',{exact:true}).selectOption('KIDS');await age.fill('0');
+   await p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'年齢区分':'Age category',{exact:true}).selectOption('KIDS');await age.fill('0');await height.fill('49');
    await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
-   await expect(age).not.toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-age')).toHaveCount(0);await expect(p.locator('#guest-err-m0-pole')).toBeVisible();
-   assert.deepEqual(posts,[],'invalid input is blocked locally; missing child pole remains an independent error');await noRawCode(p);await ctx.close();
+   await expect(age).not.toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-age')).toHaveCount(0);await expect(p.locator('#guest-err-m0-height')).toBeVisible();await expect(p.locator('#guest-err-m0-pole')).toHaveCount(0);
+   assert.deepEqual(posts,[],'invalid height is blocked locally; no child pole input is required');await noRawCode(p);await ctx.close();
   }
  });
  await check('CH-04B: unsaved Input survives a hard reload for the same draft only; the restore sends nothing and checkout stays impossible until the ordinary server save',async()=>{
   const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   const before=await draftOf(p);
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-02');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-03');await p.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true}).fill('172');
+  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true}).fill('172');
   const envelope=JSON.parse((await p.evaluate(k=>sessionStorage.getItem(k),DRAFT_KEY+before.id))??'null');
   assert.deepEqual(Object.keys(envelope).sort(),['baseRevision','baseServerInputFingerprint','draftId','input','schemaVersion']);
   assert.deepEqual([envelope.schemaVersion,envelope.draftId,envelope.baseRevision,envelope.input.members[0].heightCm],[2,before.id,before.revision,172]);
@@ -454,7 +454,7 @@ try{
   const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
   await p.reload();
   await expect(p.getByRole('status').filter({hasText:'未保存の入力を復元しました'})).toBeVisible();
-  await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true})).toHaveValue('172');await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true})).toHaveValue('pole-'+variants.pole);
+  await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true})).toHaveValue('172');await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true})).toHaveCount(0);
   assert.deepEqual(posts.filter(x=>x!=='/api/guest/context'),[],'restoring sends no draft/preview/selection/checkout request');
   const server=await draftOf(p);assert.equal(server.revision,before.revision);assert.deepEqual(server.input,before.input);
   await expect(p.getByRole('region',{name:'全員分の確認'})).toHaveCount(0);await expect(p.getByRole('button',{name:/支払う/})).toHaveCount(0);
@@ -478,7 +478,7 @@ try{
  await check('CH-04B: a server revision change discards the stale cache instead of restoring it',async()=>{
   const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   const before=await draftOf(p);await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-06');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-06');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('ポール',{exact:true}).selectOption('pole-'+variants.pole);
+  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
   const cached=JSON.parse((await p.evaluate(k=>sessionStorage.getItem(k),DRAFT_KEY+before.id))!);
   const saved=await p.evaluate(body=>fetch('/api/guest/draft',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),{draftId:before.id,expectedRevision:before.revision,input:{...cached.input,period:{startDate:'2035-03-20',endDate:'2035-03-20',slot:'DAY'}}});
   assert.equal(saved.revision,before.revision+1);
@@ -557,10 +557,10 @@ try{
    await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill(date);await p.getByLabel(ja?'利用終了日':'End date',{exact:true}).fill(date);
    await expect(p.getByText(ja?'利用開始日を選択してください。':'Choose a start date.')).toHaveCount(0);await fits();await shot('dates');
    await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
-   for(const [label,mode] of [[ja?'身長（cm）':'Height (cm)','numeric'],[ja?'足のサイズ（cm）':'Foot size (cm)','decimal'],[ja?'体重（kg）':'Weight (kg)','numeric']] as const)await expect(p.getByLabel(label,{exact:true})).toHaveAttribute('inputmode',mode);
+   for(const [label,mode] of [[ja?'身長（cm）':'Height (cm)','numeric'],[ja?'足のサイズ（cm）':'Foot size (cm)','decimal'],[ja?'体重（kg）':'Weight (kg)','numeric']] as const)await expect(p.getByLabel(label,{exact:true})).toHaveAttribute('inputmode',mode);await p.getByLabel(ja?'身長（cm）':'Height (cm)',{exact:true}).fill('49');
    await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
-   await expect(p.getByText(ja?'ポールのサイズを選択してください。':'Choose a pole size.')).toBeVisible();await fits();await shot('equipment-invalid');
-   await p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'ポール':'Poles',{exact:true}).selectOption('pole-'+variants.pole);await expect(p.getByText(ja?'ポールのサイズを選択してください。':'Choose a pole size.')).toHaveCount(0);await shot('equipment');
+   await expect(p.locator('#guest-err-m0-height')).toBeVisible();await fits();await shot('equipment-invalid');
+   await p.getByLabel(ja?'身長（cm）':'Height (cm)',{exact:true}).fill('170');await expect(p.locator('#guest-err-m0-height')).toHaveCount(0);await shot('equipment');
    await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await expect(p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/})).toBeVisible();
    for(const raw of ['SHORTER','RECOMMENDED','LONGER'])await expect(p.getByRole('main')).not.toContainText(raw);
    await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(ja?'全員の内容を確認しました':'I have checked everyone’s selections').check();await fits();await shot('candidate');
@@ -592,7 +592,7 @@ try{
   for(const label of ['台帳の閲覧','予約の閲覧','受付・貸出'])await form.getByLabel(label,{exact:true}).selectOption('allow');
   const [created]=await Promise.all([adminPage.waitForResponse(r=>r.url()===app!.origin+'/api/staff-users'&&r.request().method()==='POST',{timeout:60000}),form.getByRole('button',{name:'スタッフ設定を保存'}).click()]);console.log('STAFF_CREATION '+JSON.stringify({status:created.status(),json:created.headers()['content-type']?.includes('application/json')===true}));assert.equal(created.status(),201);await expect(adminPage.getByRole('heading',{name:'SYNTHETIC Handoff',exact:true})).toBeVisible();await adminContext.close();
   const staff=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});staff.setDefaultTimeout(15000);const p=await staff.newPage();last=p;await staffLogin(p,'public-custody@example.invalid');
-  await app!.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-06T10:00:00+09:00'::timestamptz$$");await p.goto('/staff/rental');await expect.poll(()=>p.getByRole('button',{name:'予約と用品を確認'}).evaluate(b=>typeof (b as HTMLButtonElement).onclick)).toBe('function');await p.getByLabel('予約番号または予約QR').fill('zao-rental:reservation:'+booking.id);await p.evaluate(async()=>{window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:false}));await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));});await expect(p.getByLabel('予約番号または予約QR')).toHaveValue('zao-rental:reservation:'+booking.id);const assignmentResponse=p.waitForResponse(r=>r.url().includes('/api/custody/booking/')&&r.request().method()==='GET');await expect(p.getByLabel('予約番号または予約QR')).toHaveValue('zao-rental:reservation:'+booking.id);await p.getByRole('button',{name:'予約と用品を確認'}).click();const ar=await assignmentResponse;const av=await ar.json();console.log('HANDOFF_RESPONSE '+JSON.stringify({status:ar.status(),error:av.error,pickupTiming:av.pickupTiming}));await expect(p.getByRole('region',{name:'貸出用品'})).toContainText('LATE_PICKUP_ELIGIBLE');await p.getByLabel('準備・最終適合の作業記録').fill('SYNTHETIC staff handoff, no DIN inference');await p.getByLabel('表示された個体と数量を照合した').check();await p.getByRole('button',{name:'照合した用品を準備固定'}).click();await p.getByRole('button',{name:'道具の貸出を記録'}).click();await expect(p.getByRole('region',{name:'貸出用品'})).toContainText('貸出中');const after=(await app!.db.pool.query('SELECT * FROM rental_bookings WHERE id=$1',[booking.id])).rows[0];assert.deepEqual({conditions:after.conditions,price:after.price_snapshot,hash:after.price_sha256},before);const loans=(await app!.db.pool.query('SELECT checked_out_at,due_at FROM rental_loan_items WHERE booking_id=$1',[booking.id])).rows;assert.equal(loans.length,3);assert.ok(loans.every(l=>l.checked_out_at.toISOString()==='2035-01-06T01:00:00.000Z'&&l.due_at.toISOString()==='2035-01-06T08:00:00.000Z'));await p.screenshot({path:'.local/screenshots/late-pickup-staff-mobile.png',fullPage:true});await staff.close();
+  await app!.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-06T10:00:00+09:00'::timestamptz$$");await p.goto('/staff/rental');await expect.poll(()=>p.getByRole('button',{name:'予約と用品を確認'}).evaluate(b=>typeof (b as HTMLButtonElement).onclick)).toBe('function');await p.getByLabel('予約番号または予約QR').fill('zao-rental:reservation:'+booking.id);await p.evaluate(async()=>{window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:false}));await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));});await expect(p.getByLabel('予約番号または予約QR')).toHaveValue('zao-rental:reservation:'+booking.id);const assignmentResponse=p.waitForResponse(r=>r.url().includes('/api/custody/booking/')&&r.request().method()==='GET');await expect(p.getByLabel('予約番号または予約QR')).toHaveValue('zao-rental:reservation:'+booking.id);await p.getByRole('button',{name:'予約と用品を確認'}).click();const ar=await assignmentResponse;const av=await ar.json();console.log('HANDOFF_RESPONSE '+JSON.stringify({status:ar.status(),error:av.error,pickupTiming:av.pickupTiming}));await expect(p.getByRole('region',{name:'貸出用品'})).toContainText('詳細確認');await p.getByLabel('刻印・実測したソール長（mm）').fill('314');await p.getByLabel('ブーツとビンディングの適合を確認した').check();await p.getByLabel('ビンディング調整・現物検査済み').check();await p.getByLabel('割当用品・サイズ・モデルを現物と照合した').check();await p.getByRole('button',{name:'準備完了にする'}).click();await p.getByRole('button',{name:'道具の貸出を記録'}).click();await expect(p.getByRole('region',{name:'貸出用品'})).toContainText('貸出中');const after=(await app!.db.pool.query('SELECT * FROM rental_bookings WHERE id=$1',[booking.id])).rows[0];assert.deepEqual({conditions:after.conditions,price:after.price_snapshot,hash:after.price_sha256},before);const loans=(await app!.db.pool.query('SELECT checked_out_at,due_at FROM rental_loan_items WHERE booking_id=$1',[booking.id])).rows;assert.equal(loans.length,3);assert.ok(loans.every(l=>l.checked_out_at.toISOString()==='2035-01-06T01:00:00.000Z'&&l.due_at.toISOString()==='2035-01-06T08:00:00.000Z'));await p.screenshot({path:'.local/screenshots/late-pickup-staff-mobile.png',fullPage:true});await staff.close();
  });
  console.log(`Public/guest UI ${count} cases passed; synthetic adapter and mobile viewport, not real device/Square.`);
-}catch(e){failed=true;console.error('PUBLIC_UI_FAILED '+stage+' '+JSON.stringify({kind:e instanceof assert.AssertionError?'ASSERTION':e instanceof Error&&/ECONNRESET/.test(e.message)?'ECONNRESET':'BROWSER_TEST_FAILED'}));if(last){await mkdir('.local/screenshots',{recursive:true});await last.screenshot({path:'.local/screenshots/public-failure.png',fullPage:true});console.error('LAYOUT '+JSON.stringify(await last.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,wide:[...document.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).map(e=>({tag:e.tagName,cls:e.className,width:e.getBoundingClientRect().width})).slice(0,10)}))));}if(last)console.error('PAGE_ALERT '+(await last.locator('[role=alert],[role=status]').allTextContents()).join(' '));console.error((e as Error).stack?.split('\n').filter(s=>s.includes('/tests/public/')).join('\n'));}finally{await browser.close();await app?.stop();console.log('Owned Public browser/Web/PostgreSQL stopped.');}if(failed)process.exit(1);
+}catch(e){failed=true;console.error('PUBLIC_UI_FAILED '+stage+' '+JSON.stringify({kind:e instanceof assert.AssertionError?'ASSERTION':e instanceof Error&&/ECONNRESET/.test(e.message)?'ECONNRESET':'BROWSER_TEST_FAILED'}));if(last){await mkdir('.local/screenshots',{recursive:true});await last.screenshot({path:'.local/screenshots/public-failure.png',fullPage:true});console.error('LAYOUT '+JSON.stringify(await last.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,wide:[...document.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).map(e=>({tag:e.tagName,cls:e.className,width:e.getBoundingClientRect().width})).slice(0,10)}))));}if(last)console.error('PAGE_ALERT '+(await last.locator('[role=alert],[role=status]').allTextContents()).join(' '));console.error('BROWSER_ERROR '+String((e as Error).message).slice(0,1000));console.error((e as Error).stack?.split('\n').filter(s=>s.includes('/tests/public/')).join('\n'));}finally{await browser.close();await app?.stop();console.log('Owned Public browser/Web/PostgreSQL stopped.');}if(failed)process.exit(1);

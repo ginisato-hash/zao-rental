@@ -43,6 +43,9 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
    .filter(r=>!excludeKeys?.has(r.key));
   if(requirements.length>240)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const checkedRequirements=[...requirements,...conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(item=>({...item,member:m})))];
+  for(const r of checkedRequirements.filter(r=>isPole(r.family)&&!r.variantIds.length)){
+   if((await c.query("SELECT 1 FROM ledger_variants WHERE family='POLE' AND age=$1 AND tier=$2 AND btrim(size) ~* '^[0-9]{1,3}(\\.[0-9])?[[:space:]]*cm$' LIMIT 1",[r.member.age,r.member.tier])).rowCount)throw new HoldError('POLE_VARIANT_MISMATCH');
+  }
   const variantIds=[...new Set(checkedRequirements.flatMap(r=>r.variantIds))];
   const transfers=await transferProjection(c,variantIds);if(transfers.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const variants=(await c.query<import('../../../contracts/src/hold').PromiseVariant&{size:string}>(`SELECT v.id,v.family,v.age,v.tier,v.size,v.model_id,to_jsonb(v)->'compatible_sports' AS compatible_sports,to_jsonb(m)->>'catalog_season' AS catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[variantIds])).rows;

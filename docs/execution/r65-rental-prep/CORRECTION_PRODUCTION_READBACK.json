@@ -1,0 +1,35 @@
+{
+  "purpose": "Read-only historical decimal-weight audit; no Production mutation",
+  "project": "curly-union-23141081",
+  "branch": "br-long-king-azkou4fy",
+  "database": "neondb",
+  "query": "WITH sources AS (SELECT 'recommendation_previews' AS source, input AS value FROM recommendation_previews UNION ALL SELECT 'guest_drafts', input FROM guest_drafts), weights AS (SELECT source,sources.value->>'contractVersion' AS version, m->'ski'->'weightKg' AS weight FROM sources CROSS JOIN LATERAL jsonb_array_elements(coalesce(sources.value->'members','[]'::jsonb)) m), counts AS (SELECT source,count(*) AS profiles,count(*) FILTER (WHERE jsonb_typeof(weight)='number' AND (weight::text)::numeric<>trunc((weight::text)::numeric)) AS decimal_profiles FROM weights GROUP BY source) SELECT current_database() AS database,now() AS checked_at,(SELECT count(*) FROM rental_bookings) AS bookings,(SELECT count(*) FROM rental_preparations) AS preparations,(SELECT count(*) FROM recommendation_previews) AS previews,(SELECT count(*) FROM guest_drafts) AS drafts,coalesce((SELECT jsonb_agg(counts) FROM counts),'[]'::jsonb) AS profile_counts",
+  "result": [
+    {
+      "database": "neondb",
+      "checked_at": "2026-10-14T02:21:33.501Z",
+      "bookings": "3",
+      "preparations": "0",
+      "previews": "6",
+      "drafts": "9",
+      "profile_counts": [
+        {
+          "source": "guest_drafts",
+          "profiles": 5,
+          "decimal_profiles": 0
+        },
+        {
+          "source": "recommendation_previews",
+          "profiles": 6,
+          "decimal_profiles": 0
+        }
+      ]
+    }
+  ],
+  "productionMutation": 0,
+  "migrationReadback": {
+    "query": "SELECT count(*) AS migration_count, max(id) AS latest_migration FROM foundation_migrations",
+    "migration_count": 56,
+    "latest_migration": "0056"
+  }
+}

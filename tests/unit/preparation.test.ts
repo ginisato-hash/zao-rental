@@ -75,3 +75,11 @@ test('wear, product and period amendments invalidate the earlier preparation eve
  const changed=structuredClone(conditions);changed.members[0]!.wear=true;changed.members[0]!.items.push({family:'WEAR_JACKET',variantIds:['new-jacket']},{family:'WEAR_PANTS',variantIds:['new-pants']});
  assert.equal(preparationStillValid(saved,[item],changed),false);
 });
+
+test('ski boots only may be ready with unknown BSL, without DIN or ski body data',()=>{
+ const c=structuredClone(conditions);c.members[0]!.product='SINGLE';c.members[0]!.items=[{family:'SKI_BOOT',variantIds:['boot']}];
+ const boot={...item,bsl_status:'UNVERIFIED',bsl_mm:null},members=preparationMembers(c,[{...profile,itemFamily:'SKI_BOOT',heightCm:null,ski:null}],[boot],[],[]),v=input(null);
+ Object.assign(v.members[0]!,{bindingCompatibilityConfirmed:false,bindingSetupConfirmed:false,poleSelectedCm:null});
+ const saved=recordPreparation(v,members,'staff','time',[]);assert.equal(saved.members[0]!.bslMm,null);assert.equal(saved.members[0]!.bslSource,null);assert.equal(saved.members[0]!.dinReferenceValue,null);assert.equal(members[0]!.needsBinding,false);
+ v.members[0]!.equipmentConfirmed=false;assert.throws(()=>recordPreparation(v,members,'staff','time',[]),{code:'PHYSICAL_CONFIRMATION_REQUIRED'});
+});

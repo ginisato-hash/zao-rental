@@ -216,5 +216,46 @@
     "returnStore",
     "period",
     "members"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "contractVersion": {
+            "const": "INTEGRATED_V1_3"
+          }
+        },
+        "required": [
+          "contractVersion"
+        ]
+      },
+      "then": {
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ski": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "weightKg": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   ]
 }

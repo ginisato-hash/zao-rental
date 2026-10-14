@@ -11,7 +11,7 @@ BEGIN
  SELECT * INTO STRICT h FROM inventory_holds WHERE id=p_hold FOR UPDATE;
  UPDATE inventory_pole_exemptions SET active=false WHERE hold_id=p_hold AND active;
  IF h.state<>'ACTIVE' THEN RETURN;END IF;
- FOR m IN SELECT value FROM jsonb_array_elements(h.conditions->'members') LOOP
+ FOR m IN SELECT value FROM jsonb_array_elements(h.conditions->'members') WHERE value->>'product'='SKI_SET' LOOP
   FOR i IN SELECT value FROM jsonb_array_elements(m->'items') WHERE value->>'family'='POLE' LOOP
    SELECT coalesce(array_agg(value::uuid),'{}'::uuid[]) INTO variants FROM jsonb_array_elements_text(i->'variantIds');
    IF cardinality(variants)=0 AND (h.conditions->>'contractVersion' IS DISTINCT FROM 'INTEGRATED_V1_3' OR EXISTS(SELECT 1 FROM ledger_variants v WHERE v.family='POLE' AND v.age=m->>'age' AND v.tier=m->>'tier' AND btrim(v.size) ~* '^[0-9]{1,3}(\.[0-9])?[[:space:]]*cm$')) THEN
@@ -32,7 +32,7 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION inventory_sync_pole_exemptions(uuid) FROM PUBLIC;
 
--- An untracked V1.3 pole has a full-period absence witness and physical preparation
+-- An untracked V1.3 SKI_SET accessory pole has a full-period absence witness and physical preparation
 -- evidence, but no serialized loan row. Every other item still requires a loan.
 DO $$BEGIN EXECUTE format('GRANT SELECT ON inventory_pole_exemptions TO %I',current_database()||'_custody_executor');END$$;
 CREATE OR REPLACE FUNCTION rental_stage_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE b rental_bookings;BEGIN
@@ -41,6 +41,6 @@ CREATE OR REPLACE FUNCTION rental_stage_guard() RETURNS trigger LANGUAGE plpgsql
  SELECT * INTO b FROM rental_bookings WHERE hold_id=OLD.id;
  IF NOT FOUND OR NOT booking_is_confirmed(b.mode,b.state) OR OLD.payment_state<>'SUCCESS' OR OLD.transfer_attention IS NOT NULL THEN RAISE EXCEPTION 'CUSTODY_STAGE_INVALID' USING ERRCODE='23514';END IF;
  IF OLD.allocation_stage='PROVISIONAL' AND NEW.allocation_stage='PREPARATION_FIXED' AND EXISTS(SELECT 1 FROM rental_preparations WHERE id=b.id AND prepared_at IS NOT NULL) THEN RETURN NEW;END IF;
- IF OLD.allocation_stage='PREPARATION_FIXED' AND NEW.allocation_stage='RENTAL_FIXED' AND (SELECT count(*) FROM rental_loan_items WHERE booking_id=b.id AND state='OUT')=(SELECT count(*) FROM jsonb_array_elements(b.conditions->'members') m CROSS JOIN LATERAL jsonb_array_elements(m->'items') i WHERE i->>'family' NOT IN ('WEAR_JACKET','WEAR_PANTS') AND NOT (b.conditions->>'contractVersion' IS NOT DISTINCT FROM 'INTEGRATED_V1_3' AND i->>'family'='POLE' AND (SELECT count(*) FROM inventory_pole_exemptions e WHERE e.hold_id=OLD.id AND e.requirement_key=(m->>'key')||':POLE' AND e.active AND e.day BETWEEN OLD.occupancy_start AND OLD.occupancy_end)=OLD.occupancy_end-OLD.occupancy_start+1)) THEN RETURN NEW;END IF;
+ IF OLD.allocation_stage='PREPARATION_FIXED' AND NEW.allocation_stage='RENTAL_FIXED' AND (SELECT count(*) FROM rental_loan_items WHERE booking_id=b.id AND state='OUT')=(SELECT count(*) FROM jsonb_array_elements(b.conditions->'members') m CROSS JOIN LATERAL jsonb_array_elements(m->'items') i WHERE i->>'family' NOT IN ('WEAR_JACKET','WEAR_PANTS') AND NOT (b.conditions->>'contractVersion' IS NOT DISTINCT FROM 'INTEGRATED_V1_3' AND m->>'product'='SKI_SET' AND i->>'family'='POLE' AND (SELECT count(*) FROM inventory_pole_exemptions e WHERE e.hold_id=OLD.id AND e.requirement_key=(m->>'key')||':POLE' AND e.active AND e.store_id=OLD.pickup_store AND e.variant_ids=ARRAY(SELECT jsonb_array_elements_text(i->'variantIds')::uuid) AND e.day BETWEEN OLD.occupancy_start AND OLD.occupancy_end)=OLD.occupancy_end-OLD.occupancy_start+1)) THEN RETURN NEW;END IF;
  RAISE EXCEPTION 'CUSTODY_STAGE_INVALID' USING ERRCODE='23514';
 END$$;

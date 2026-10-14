@@ -546,14 +546,12 @@ try {
     const poleModel = await ledger.create('models', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'model-p6-pole', code: 'PBC-P6-POLE', name: 'PBC P6 pole', brand: 'SYNTHETIC', family: 'POLE', notes: '', catalogSeason: '2026/27'});
     const poleVariant = await ledger.create('variants', {sourceKind: 'SYNTHETIC', sourceDocument: 'provisional-capacity product-path fixture', sourceLocator: 'variant-p6-pole', modelId: poleModel.id, family: 'POLE', age: 'ADULT', tier: 'REGULAR', size: 'PBC-P6-POLE', notes: ''});
     const conditions: HoldConditions = {reservationId: randomUUID(), pickupStore: 'MOUNTAIN_BASE', returnStore: 'MOUNTAIN_BASE', period: {startDate: '2036-03-06', endDate: '2036-03-06', slot: 'DAY'}, members: [{key: 'p', product: 'SINGLE', age: 'ADULT', tier: 'REGULAR', items: [{family: 'POLE', variantIds: [poleVariant.id]}]}]};
-    // V4 (release-code-closure, Owner decision — see isPole()'s own comment): zero registered
-    // pole inventory of any kind for this variant is no longer INSUFFICIENT — it is exempt from
-    // the demand set entirely and the booking is CREATED, with no claim of any kind written for
-    // it (never inventory_claims, and structurally never provisional_capacity_claims either).
+    // Paid SINGLE poles require physical stock; only SKI_SET accessories may be exempt.
     const outcome = await x.holds.command('create', randomUUID(), conditions);
-    assert.equal(outcome.result, 'CREATED');
-    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active', [outcome.holdId])).rows[0].n, 0);
-    assert.equal((await x.db.pool.query("SELECT count(*)::int n FROM provisional_capacity_claims WHERE hold_id=$1 AND state='ACTIVE'", [outcome.holdId])).rows[0].n, 0);
+    assert.equal(outcome.result, 'INSUFFICIENT');
+    assert.equal(outcome.holdId, undefined);
+    assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_holds WHERE reservation_id=$1',[conditions.reservationId])).rows[0].n,0);
+
   });
 
   await check('P6b: POLE feasibility is conditional, not blanket — once a real pole unit is registered for the variant, it is claimed and conflict-checked exactly like any other family: a second same-day request for the same single unit is INSUFFICIENT', async () => {

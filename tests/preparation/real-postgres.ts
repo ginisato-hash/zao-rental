@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {flowFixture,simulation} from '../flow/fixture';
+import {seedInventory,fid,variants as fixtureVariants} from '../inventory/fixture';
 import {seedRecommendation} from '../recommendation/fixture';
 import {provisionGuestRole} from '../../scripts/guest-roles';
 import {provisionCustodyRole} from '../../scripts/custody-roles';
@@ -26,11 +27,11 @@ try{
  const catalog:GuestCatalog={revision:'r65-synthetic',models:[],sizes:[]};
  const custody=new CustodyService(custodyRole.custodyPool,x.roles.authPool,x.signed.identity),manifest=new ManifestService(ops.operationsPool,x.roles.authPool,x.signed.identity);
  const member={key:'person-1',itemFamily:null,sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null};
- async function reserve(date:string,patch:Record<string,unknown>={},pay=true,store='MOUNTAIN_BASE'){
+ async function reserve(date:string,patch:Record<string,unknown>={},pay=true,store='MOUNTAIN_BASE',unavailable=false){
   const actor=await contexts.resolve((await contexts.create()).token),h=new HoldService(x.roles.holdPool,actor),q=new QuoteService(x.roles.pricingPool,actor),r=new RecommendationService(x.roles.recommendationPool,actor,h,q,async v=>guestVariants(catalog,v)),b=new BookingService(x.flow.flowPool,guest!.guestPool,actor,x.fake,simulation),s=new GuestBookingService(contexts,actor,r,b,async()=>catalog);
   let d=await s.get();const input={contractVersion:'INTEGRATED_V1_3',pickupStore:store,returnStore:store,period:{startDate:date,endDate:date,slot:'DAY'},members:[{...member,...patch}]};
   await assert.rejects(s.save({draftId:d.id,expectedRevision:d.revision,input:{...input,members:[{...input.members[0],poleSize:'forged-authoritative-pole'}]}}),{code:'INVALID_POLE_INPUT'});
-  d=await s.save({draftId:d.id,expectedRevision:d.revision,input});d=await s.preview({draftId:d.id,expectedRevision:d.revision});assert.ok(d.preview?.members[0]?.candidates.RECOMMENDED);assert.equal(d.hold,null);
+  d=await s.save({draftId:d.id,expectedRevision:d.revision,input});d=await s.preview({draftId:d.id,expectedRevision:d.revision});if(unavailable){assert.equal(d.preview?.members[0]?.candidates.RECOMMENDED,null);assert.equal(d.preview?.members[0]?.price,null);await assert.rejects(s.choose({draftId:d.id,expectedRevision:d.revision,directions:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true}));await assert.rejects(s.checkout({draftId:d.id,expectedRevision:d.revision,reviewHash:null,contact:{displayName:'SYNTHETIC Rejected',email:'synthetic-rejected@example.invalid',termsAccepted:true}}));return {s,d};}assert.ok(d.preview?.members[0]?.candidates.RECOMMENDED);assert.equal(d.hold,null);
   d=await s.choose({draftId:d.id,expectedRevision:d.revision,directions:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});
   if(pay)d=await s.checkout({draftId:d.id,expectedRevision:d.revision,reviewHash:d.reviewHash,contact:{displayName:'SYNTHETIC R65 Guest',email:'synthetic-r65@example.invalid',termsAccepted:true}});
   else{const selected=await r.select((await contexts.read(actor)).preview_id!,randomUUID(),{directions:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});await b.create(randomUUID(),selected.quote!.id,{displayName:'SYNTHETIC R65 Unpaid',email:'synthetic-unpaid@example.invalid',termsAccepted:true});}
@@ -60,7 +61,29 @@ try{
  stage='day-of ready and checkout';await x.clock('2035-01-02T09:00:00+09:00');const today=await manifest.manifest({...query,date:null,section:'pickup'});assert.equal(((today.rows.find(r=>(r as Record<string,unknown>).bookingId===id) as Record<string,unknown>)?.pickup as {equipmentPrepared:boolean}).equipmentPrepared,true);
  const checked=await custody.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:2});assert.equal(checked.loans.length,2);assert.equal(checked.loans.find(l=>l.family==='SKI_BOOT').asset_id,boot.asset_id);
  console.log('PASS BSL 304→314 recalculates 4.5→4; invalidates old ready; renewed ready persists next day; exact assigned boot checkout');
- stage='individual products and snowboard';for(const itemFamily of ['SKI','SKI_BOOT','SNOWBOARD','SNOWBOARD_BOOT','POLE']){const snowboard=itemFamily.startsWith('SNOWBOARD'),r=await reserve('2035-02-05',{itemFamily,sport:snowboard?'SNOWBOARD':'SKI',ski:snowboard?null:member.ski});assert.ok(r.d.booking);}
+ stage='standalone pole without catalogue or pool';
+ const polePatch={itemFamily:'POLE',footCm:null,ski:null};
+ const counts=async()=>(await x.db.pool.query('SELECT (SELECT count(*) FROM price_quotes)::int quotes,(SELECT count(*) FROM rental_bookings)::int bookings,(SELECT count(*) FROM rental_payment_attempts)::int payments')).rows[0];
+ const before=await counts();await reserve('2035-02-05',polePatch,true,'MOUNTAIN_BASE',true);assert.deepEqual(await counts(),before);
+ // Even a catalogue-only pole cannot get an exemption or a paid booking.
+ await x.db.pool.query("INSERT INTO ledger_variants(id,model_id,family,age,tier,size,notes,source_kind,source_document,source_locator) VALUES($1,$2,'POLE','ADULT','REGULAR','110 cm','','SYNTHETIC','tests/preparation/real-postgres.ts','pole-variant')",[fixtureVariants.pole,fid(1003)]);
+ await reserve('2035-02-05',polePatch,true,'MOUNTAIN_BASE',true);assert.deepEqual(await counts(),before);
+ console.log('PASS standalone POLE rejects no catalogue and catalogue without pool; quote/booking/payment counts unchanged');
+ stage='tracked standalone pole complete custody';await seedInventory(x.db.pool,false,true);await x.db.pool.query('UPDATE ledger_poles SET quantity=20,version=version+1 WHERE id=$1',[fid(1301)]);
+ const poleBooking=(await reserve('2035-02-05',polePatch)).d.booking!;let pv=await custody.checkoutView(poleBooking.id);assert.equal(pv.items.length,1);assert.equal(pv.items[0]!.family,'POLE');assert.ok(pv.items[0]!.pole_id);
+ const ph=(await x.db.pool.query('SELECT hold_id FROM rental_bookings WHERE id=$1',[poleBooking.id])).rows[0].hold_id;assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_pole_exemptions WHERE hold_id=$1 AND active',[ph])).rows[0].n,0);assert.ok((await x.db.pool.query('SELECT 1 FROM inventory_claims WHERE hold_id=$1 AND pole_id IS NOT NULL AND active',[ph])).rowCount);
+ pv=await custody.prepare(randomUUID(),{bookingId:pv.bookingId,expectedBookingVersion:pv.bookingVersion,expectedHoldVersion:pv.holdVersion,selections:pv.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(pv)});
+ await assert.rejects(custody.checkout(randomUUID(),{bookingId:pv.bookingId,expectedPreparationVersion:pv.preparation.version}),{code:'FLOW_CONFLICT'});await x.clock('2035-02-05T09:00:00+09:00');
+ const pc=await custody.checkout(randomUUID(),{bookingId:pv.bookingId,expectedPreparationVersion:pv.preparation.version});assert.equal(pc.loans.length,1);const loan=pc.loans[0]!;assert.equal(loan.family,'POLE');assert.equal(loan.state,'OUT');
+ let batch=await custody.createBatch(randomUUID(),'MOUNTAIN_BASE');batch=await custody.scan(randomUUID(),{batchId:batch.id,expectedVersion:batch.version,assetId:null,poleLoanId:loan.id});assert.equal(batch.candidates.length,1);await custody.confirm(randomUUID(),{batchId:batch.id,expectedVersion:batch.version});
+ await custody.inspection(randomUUID(),{loanItemId:loan.id,expectedVersion:2,store:'MOUNTAIN_BASE',evidence:'SYNTHETIC standalone pole physical inspection'});
+ const terminal=(await x.db.pool.query('SELECT l.state,l.version,(SELECT count(*)::int FROM rental_custody_events WHERE loan_item_id=l.id) receipts,(SELECT count(*)::int FROM rental_inspection_events WHERE loan_item_id=l.id) inspections FROM rental_loan_items l WHERE id=$1',[loan.id])).rows[0];assert.equal(terminal.state,'RECEIVED');assert.equal(terminal.receipts,1);assert.equal(terminal.inspections,1);
+ console.log('PASS standalone POLE preview→quote→paid booking→claim→preparation→exactly 1 POLE loan→scan→receipt→inspection '+JSON.stringify(terminal));
+ stage='other individual products';for(const itemFamily of ['SKI','SKI_BOOT','SNOWBOARD','SNOWBOARD_BOOT']){const snowboard=itemFamily.startsWith('SNOWBOARD'),r=await reserve('2035-02-05',{itemFamily,sport:snowboard?'SNOWBOARD':'SKI',heightCm:itemFamily.endsWith('_BOOT')?null:170,footCm:itemFamily.endsWith('_BOOT')?25.5:null,ski:itemFamily==='SKI'?member.ski:null});assert.ok(r.d.booking);
+  if(itemFamily==='SKI_BOOT'){let bv=await custody.checkoutView(r.d.booking!.id);await x.db.pool.query("UPDATE ledger_assets SET bsl_status='UNVERIFIED',bsl_mm=NULL,bsl_evidence='',version=version+1 WHERE id=$1",[bv.items[0]!.asset_id]);bv=await custody.checkoutView(r.d.booking!.id);const fitEvidence=syntheticPreparation(bv);fitEvidence.members[0]!.bslMm=null;
+   const ready=await custody.prepare(randomUUID(),{bookingId:bv.bookingId,expectedBookingVersion:bv.bookingVersion,expectedHoldVersion:bv.holdVersion,selections:bv.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence});assert.equal(ready.preparationValid,true);assert.equal(ready.preparation.fit_evidence.members[0].bslMm,null);assert.equal(ready.preparation.fit_evidence.members[0].dinReferenceValue,null);
+  }
+ }
  const board=await reserve('2035-02-06',{sport:'SNOWBOARD',ski:null}),bv=await custody.checkoutView(board.d.booking!.id);assert.equal(bv.preparationMembers[0]?.din,null);const bp=await custody.prepare(randomUUID(),{bookingId:bv.bookingId,expectedBookingVersion:bv.bookingVersion,expectedHoldVersion:bv.holdVersion,selections:bv.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(bv)});assert.equal(bp.preparation.fit_evidence.members[0].dinReferenceValue,null);
- assert.ok(variants.length);console.log('PASS five individual products and snowboard preparation without BSL/DIN');
+ assert.ok(variants.length);console.log('PASS minimal individual profiles; boots-only ready with null BSL and no DIN; snowboard preparation');
 }catch(e){console.error('R65_PREPARATION_FAILED '+stage+' '+String((e as {code?:string}).code??(e as Error).message));throw e;}finally{await custodyRole?.close();await guest?.close();await ops?.close();await x.close();}

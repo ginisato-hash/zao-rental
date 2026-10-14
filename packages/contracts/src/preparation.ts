@@ -32,7 +32,7 @@ export function recordPreparation(value:unknown,members:PreparationMember[],acto
   if(!hasSkiBoot&&r.bslMm!==null)throw new FlowError('UNEXPECTED_BSL',422);
   if(m.bslMm!==null&&r.bslMm!==m.bslMm)throw new FlowError('ASSET_BSL_CHANGED');
   const bslMm=m.bslMm??r.bslMm;
-  if(hasSkiBoot&&(!Number.isInteger(bslMm)||Number(bslMm)<150||Number(bslMm)>450))throw new FlowError('ACTUAL_BSL_REQUIRED',422);
+  if((m.needsBinding||bslMm!==null)&&(!Number.isInteger(bslMm)||Number(bslMm)<150||Number(bslMm)>450))throw new FlowError('ACTUAL_BSL_REQUIRED',422);
   if(m.ownBoot&&r.ownBootConfirmed!==true)throw new FlowError('ACTUAL_BOOT_REQUIRED',422);
   const din=m.needsBinding?memberDin(m.profile,bslMm as number):null;
   if(m.needsBinding&&(r.bindingCompatibilityConfirmed!==true||r.bindingSetupConfirmed!==true))throw new FlowError('BINDING_CONFIRMATION_REQUIRED',422);
@@ -42,7 +42,7 @@ export function recordPreparation(value:unknown,members:PreparationMember[],acto
   if(assignedPole&&centimetres(assignedPole.size)!==r.poleSelectedCm)throw new FlowError('POLE_ASSIGNMENT_CHANGED',422);
   if(!m.needsPole&&r.poleSelectedCm!==null)throw new FlowError('UNEXPECTED_POLE_SELECTION',422);
   if(m.needsWear&&r.wearPrepared!==true)throw new FlowError('WEAR_PREPARATION_REQUIRED',422);
-  return {...r as PreparationInput['members'][number],bslMm:bslMm as number|null,bslSource:hasSkiBoot?(m.bslMm!==null?'ASSET':'PHYSICAL_OBSERVATION') as 'ASSET'|'PHYSICAL_OBSERVATION':null,confirmedBy:actor,confirmedAt:at,profile:m.profile,poleSuggestedCm:m.poleSuggestedCm,dinReferenceValue:din?.value??null,dinReferenceVersion:din?.version??null,dinReferenceSource:m.needsBinding?DIN_REFERENCE:null,bindingSetupConfirmedBy:m.needsBinding?actor:null,bindingSetupConfirmedAt:m.needsBinding?at:null};
+  return {...r as PreparationInput['members'][number],bslMm:bslMm as number|null,bslSource:hasSkiBoot&&bslMm!==null?(m.bslMm!==null?'ASSET':'PHYSICAL_OBSERVATION') as 'ASSET'|'PHYSICAL_OBSERVATION':null,confirmedBy:actor,confirmedAt:at,profile:m.profile,poleSuggestedCm:m.poleSuggestedCm,dinReferenceValue:din?.value??null,dinReferenceVersion:din?.version??null,dinReferenceSource:m.needsBinding?DIN_REFERENCE:null,bindingSetupConfirmedBy:m.needsBinding?actor:null,bindingSetupConfirmedAt:m.needsBinding?at:null};
  });
  return {version:'ZAO_PREP_V2',...(conditions?{conditions}:{}),selections,members:saved};
 }

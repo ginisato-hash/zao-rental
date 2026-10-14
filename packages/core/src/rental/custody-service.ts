@@ -6,7 +6,7 @@ import {pickupTiming} from '../../../contracts/src/pickup';
 import type {PoolClient} from 'pg';
 import {BookingService} from '../payment/booking-service';
 import {FlowError,flowHash,flowId,flowObject,flowStore,flowVersion} from '../../../contracts/src/rental-flow';
-import {isWear,isPole,normalizePeriod,variantMatches,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
+import {isWear,isAccessoryPole,normalizePeriod,variantMatches,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
 type Conn=Pick<PoolClient,'query'>;
 type Loan={id:string;cycle_id:string;booking_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;variant_id:string;family:string;state:string;version:number};
 type Candidate={id:string;batch_id:string;loan_item_id:string|null;cycle_id:string|null;asset_id:string|null;pole_id:string|null;loan_version:number|null;scanned_at:Date;state:string;outcome:string};
@@ -48,13 +48,10 @@ export class CustodyService extends BookingService{
    await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);const a=await this.assignment(c,b.id);
    const expected=a.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})).sort((a,b)=>a.requirementKey.localeCompare(b.requirementKey));
    if(flowHash([...selections].sort((a,b)=>String(a.requirementKey).localeCompare(String(b.requirementKey))))!==flowHash(expected))throw new FlowError('EXACT_FULL_PERIOD_ASSIGNMENT_REQUIRED');
-   // POLE is optional here (Owner decision, see isPole()'s own comment): a SKI_SET whose real
-   // pole inventory does not exist was never claimed for it (see planAllocation's own
-   // POLE-availability probe), so `a.items` legitimately omits it — every non-POLE requirement
-   // must still be present exactly once, and any item present must be a known requirement.
+   // Only untracked SKI_SET accessory poles may be absent; paid standalone poles need claims.
    const wanted=b.conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)).map(i=>({key:m.key+':'+i.family,m,i})));
    const wantedByKey=new Map(wanted.map(w=>[w.key,w]));
-   if(a.items.some((i:{requirement_key:string})=>!wantedByKey.has(i.requirement_key))||wanted.some(w=>!isPole(w.i.family)&&!a.items.some((i:{requirement_key:string})=>i.requirement_key===w.key)))throw new FlowError('INCOMPLETE_EQUIPMENT_GROUP');
+   if(a.items.some((i:{requirement_key:string})=>!wantedByKey.has(i.requirement_key))||wanted.some(w=>!isAccessoryPole(w.m,w.i.family)&&!a.items.some((i:{requirement_key:string})=>i.requirement_key===w.key)))throw new FlowError('INCOMPLETE_EQUIPMENT_GROUP');
    const variants=(await c.query<PromiseVariant>(`SELECT v.*,m.catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[a.items.map(i=>i.variant_id)])).rows;
    for(const i of a.items){const req=wanted.find(r=>r.key===i.requirement_key);if(!req||!variantMatches(req.m,req.i,variants.find(v=>v.id===i.variant_id)))throw new FlowError('PROMISE_MISMATCH');}
    const evidence=recordPreparation(v.fitEvidence,a.preparationMembers,this.identity.subject,now.toISOString(),expected,b.conditions);

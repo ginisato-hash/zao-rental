@@ -77,6 +77,9 @@ test('POLE needs exactly one physical claim or durable matching exemption',()=>{
  assert.equal(projectionClaims(s.booking.conditions,[...claims,exemption] as never).gear,true);
  assert.equal(projectionClaims(s.booking.conditions,[...physical,exemption] as never).gear,false);
  assert.equal(projectionClaims(s.booking.conditions,[...claims,{...exemption,store_id:'ONSEN_BASE'}] as never).gear,false);
+ m.product='SINGLE';delete m.wear;m.items=m.items.filter(i=>i.family==='POLE');
+ assert.equal(projectionClaims(s.booking.conditions,[exemption] as never).gear,false);
+ assert.equal(projectionClaims(s.booking.conditions,[pole] as never).gear,true);
 });
 
 for(const status of ['COMPLETED','FAILED','CANCELED','PENDING'] as const)test('cancelled booking records late '+status+' without inventory resurrection',()=>{const s=stateFixture();s.booking.state='CANCELLED';s.hold!.state='RELEASED';s.gearClaimsIntact=false;s.wearClaimsIntact=false;const plan=decide(s,observation(status),clock);assert.equal(plan.mutation,'CANCELLED_PAYMENT');assert.equal(s.booking.state,'CANCELLED');assert.equal(s.hold!.state,'RELEASED');});

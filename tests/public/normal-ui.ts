@@ -417,18 +417,18 @@ try{
    await noRawCode(p);await ctx.close();
   }
  });
- await check('UI-FINAL-R01: numeric controls mirror server bounds, tenths, and the SKI age category including zero',async()=>{
+ await check('UI-FINAL-R01: numeric controls mirror server bounds, foot tenths, whole kg and the SKI age category including zero',async()=>{
   for(const ja of [true,false]){
    const {ctx,p}=await newPage();await p.goto(ja?'/ja/book':'/en/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
    await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill('2035-07-01');await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
    const height=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'身長（cm）':'Height (cm)',{exact:true}),foot=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'足のサイズ（cm）':'Foot size (cm)',{exact:true}),weight=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'体重（kg）':'Weight (kg)',{exact:true}),age=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'年齢':'Age at start',{exact:true});
-   for(const [control,min,max,step] of [[height,'50','250','1'],[foot,'5','50','0.1'],[weight,'5','300','any'],[age,'0','120','1']] as const){await expect(control).toHaveAttribute('min',min);await expect(control).toHaveAttribute('max',max);await expect(control).toHaveAttribute('step',step);}
+   for(const [control,min,max,step] of [[height,'50','250','1'],[foot,'5','50','0.1'],[weight,'5','300','1'],[age,'0','120','1']] as const){await expect(control).toHaveAttribute('min',min);await expect(control).toHaveAttribute('max',max);await expect(control).toHaveAttribute('step',step);}
    await expect(height).toHaveAttribute('inputmode','numeric');await expect(foot).toHaveAttribute('inputmode','decimal');await expect(age).toHaveAttribute('inputmode','numeric');
    const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
    for(const [control,key,invalidValues,validValues] of [
     [height,'height',['49','251','170.5'],['50','250','170']],
     [foot,'foot',['4.9','50.1','25.15'],['5','50','25.1','25.3']],
-    [weight,'weight',['4.9','300.1'],['5','300','60.25']],
+    [weight,'weight',['4.9','300.1','60.5','60.25'],['5','300','60']],
     [age,'age',['-1','121','30.5'],['13','120','30']],
    ] as const){
     for(const value of invalidValues){await control.fill(value);await control.blur();await expect(control).toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-'+key)).toBeVisible();}

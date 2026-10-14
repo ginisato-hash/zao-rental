@@ -1,3 +1,4 @@
+import {recordSyntheticBookingProfile} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {migrate} from '../../packages/db/src/index';
@@ -23,9 +24,9 @@ export class FakeGateway implements PaymentGateway{
  async create(r:PaymentRequest){this.calls.push(r);const old=this.receipts.get(r.attemptId);if(old)return old;const o:PaymentObservation={providerId:'sim_'+r.attemptId,referenceId:r.bookingId,idempotencyKey:r.idempotencyKey,merchantId:r.merchantId,locationId:r.locationId,amountJpy:r.amountJpy,currency:r.currency,status:this.status,updatedAt:this.now().toISOString(),completedAt:this.status==='COMPLETED'?this.now().toISOString():null,...this.patch};this.receipts.set(r.attemptId,o);if(this.failAfterSave)throw new Error('SIMULATED_RESPONSE_LOST');return o;}
  async lookup(r:PaymentRequest){return this.receipts.get(r.attemptId)??null;}
 }
-export async function flowFixture(initialTime='2035-01-01T10:00:00+09:00'){
+export async function flowFixture(initialTime='2035-01-01T10:00:00+09:00',withPoles=true){
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined,flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
- try{await migrate(db.pool);await seedRecommendation(db.pool);roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);
+ try{await migrate(db.pool);await seedRecommendation(db.pool,false,withPoles);roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);
  const password=randomBytes(24).toString('base64url'),origin='http://127.0.0.1:34567';let now=new Date(initialTime);
  async function clock(t:string){now=new Date(t);await db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${now.toISOString()}'::timestamptz$$`);}
  await clock(now.toISOString());const root=await bootstrapDevelopmentAdmin(db.pool,{email:'flow-root@example.invalid',displayName:'SYNTHETIC Admin',password}),bp=(await loadStaff(db.pool,root))!;
@@ -44,7 +45,7 @@ export async function flowFixture(initialTime='2035-01-01T10:00:00+09:00'){
  // caller; a test proving lower-level exact-capacity/concurrency mechanics against a deliberately
  // scarce (sub-20-unit) synthetic pool opts in explicitly with {reason}, using this fixture's own
  // ADMIN principal (already granted INVENTORY_BUFFER_OVERRIDE above).
- async function draft(day?:string,supplied?:HoldConditions,bufferOverride?:{reason:string}){const conditions=supplied??skiSet(day??'2035-02-'+String(serial++).padStart(2,'0'));const h=await holds.command('create',randomUUID(),conditions,undefined,undefined,bufferOverride);assert.equal(h.result,'CREATED');const quote=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote,key=randomUUID();const contact={displayName:'SYNTHETIC Guest',email:'synthetic-guest@example.invalid',termsAccepted:true};const booking=await service.create(key,quote.id,contact);return {conditions,holdId:h.holdId!,quote,key,contact,booking};}
+ async function draft(day?:string,supplied?:HoldConditions,bufferOverride?:{reason:string}){const conditions=supplied??skiSet(day??'2035-02-'+String(serial++).padStart(2,'0'));const h=await holds.command('create',randomUUID(),conditions,undefined,undefined,bufferOverride);assert.equal(h.result,'CREATED');const quote=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote,key=randomUUID();const contact={displayName:'SYNTHETIC Guest',email:'synthetic-guest@example.invalid',termsAccepted:true};const booking=await service.create(key,quote.id,contact);await recordSyntheticBookingProfile(db.pool,booking.id);return {conditions,holdId:h.holdId!,quote,key,contact,booking};}
  return {db,roles,flow,actor,principal,bp,password,auth,handler,origin,login,signed,fake,service,holds,quotes,draft,clock,now:()=>now,async close(){await flow!.close();await roles!.close();await db.stop();}};
  }catch(e){await flow?.close();await roles?.close();await db.stop();throw e;}
 }

@@ -16,6 +16,8 @@ export async function provisionCustodyRole(owner:Pool,identity:{namespace:string
  for(const table of ['wear_pools','provisional_capacity_buckets','inventory_pole_exemptions']){
   if((await owner.query('SELECT to_regclass($1) IS NOT NULL AS present',['public.'+table])).rows[0].present)await owner.query(`GRANT SELECT ON ${table} TO ${user}`);
  }
+ await owner.query(`GRANT SELECT ON recommendation_previews,recommendation_selections TO ${user}`);
+ await owner.query(`GRANT UPDATE(prepared_at,prepared_by,fit_evidence,version) ON rental_preparations TO ${user}`);
  await owner.query(`GRANT SELECT,INSERT ON rental_preparations,rental_loan_items,rental_return_batches,rental_return_candidates,rental_receipts,rental_inspections,rental_requests TO ${user}`);
  await owner.query(`GRANT UPDATE(version) ON rental_return_batches TO ${user}`);
  await owner.query(`GRANT UPDATE(state,outcome) ON rental_return_candidates TO ${user}`);

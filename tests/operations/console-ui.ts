@@ -47,7 +47,7 @@ try{
 
  await check('normal console lists the pending payment exception without customer material',async()=>{
   await page.goto('/admin/ops');await page.getByRole('button',{name:'読み込む',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'PAYMENT_PENDING'}).first()).toBeVisible();
+  await expect(page.getByRole('heading',{name:'決済確認中'}).first()).toBeVisible();
   const body=await page.locator('section[aria-label="例外一覧"]').innerText();
   for(const secret of ['synthetic-m17-guest@example.invalid','SYNTHETIC Guest','sim_','SYNTHETIC-MERCHANT'])assert.ok(!body.includes(secret),secret);
   assert.ok(body.includes('現在も継続中'));
@@ -63,20 +63,20 @@ try{
    await page.goto('/admin/ops');await page.getByLabel('状態').selectOption('ALL');await page.getByRole('button',{name:'読み込む',exact:true}).click();
    const list=page.locator('section[aria-label="例外一覧"]');await expect(list.getByText('オンライン返金',{exact:false})).toBeVisible();
    const text=await list.innerText();
-   for(const want of ['オンライン返金 / 金額: ¥7,500 / 経過: 3時間 / 要手動調査：結果不明・Provider IDなし（自動再送しません）','店頭返金 / 金額: ¥300 / 経過: 3時間 / Provider IDあり：照合中（自動・再送なし）'])assert.ok(text.includes(want),want);
+   for(const want of ['オンライン返金 / 金額: ¥7,500 / 経過: 3時間 / 決済サービスの管理画面で返金結果を確認してください（自動再送なし）','店頭返金 / 金額: ¥300 / 経過: 3時間 / 返金結果を確認中'])assert.ok(text.includes(want),want);
    await expect(list.getByRole('button',{name:/再送|返金/})).toHaveCount(0);
    assert.deepEqual(posts,[],'listing sends no POST');
   }finally{
    // Restore the real list the later checks act on.
    page.off('request',onRequest);await page.unroute(/\/api\/operations\/exceptions\?/);
-   await page.goto('/admin/ops');await page.getByRole('button',{name:'読み込む',exact:true}).click();await expect(page.getByRole('heading',{name:'PAYMENT_PENDING'}).first()).toBeVisible();
+   await page.goto('/admin/ops');await page.getByRole('button',{name:'読み込む',exact:true}).click();await expect(page.getByRole('heading',{name:'決済確認中'}).first()).toBeVisible();
   }
  });
 
  await check('readiness reuses the existing safe component status only',async()=>{
   await page.getByRole('button',{name:'稼働状況',exact:true}).click();
   const health=page.locator('section[aria-label="稼働状況"]');await expect(health).toBeVisible();
-  const text=await health.innerText();for(const c of ['APP','DB','GUEST','PAYMENT_ADAPTER','MEDIA','NOTIFICATION'])assert.ok(text.includes(c),c);
+  const text=await health.innerText();for(const c of ['アプリ','データベース','お客様の予約','決済連携','写真・画像','予約通知'])assert.ok(text.includes(c),c);
   for(const leak of ['postgres','127.0.0.1','password','zr_','sk_','Error'])assert.ok(!text.includes(leak),leak);
  });
 

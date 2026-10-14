@@ -1,1 +1,15 @@
-.holds{max-width:1080px;margin:auto;padding:24px;overflow-wrap:anywhere}.holds fieldset{border:1px solid #b6c6c1;border-radius:10px;margin:16px 0;padding:16px;min-width:0}.hold-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:16px}.holds label{display:flex;flex-direction:column;gap:6px}.holds input,.holds select{max-width:100%;min-width:0;padding:10px;font:inherit}.holds select[multiple]{min-height:100px}.hold-actions{display:flex;gap:12px;flex-wrap:wrap}.holds button{max-width:100%;white-space:normal;margin:5px;padding:10px 14px}.holds section{background:#edf4f1;padding:16px;border-radius:10px;margin:16px 0}.holds [role=status]{font-weight:600;min-height:1.5em}@media(max-width:500px){.holds{padding:12px}.holds fieldset{padding:10px}}
+/* Console screens (R64): holds, quotes, transfers, rentals, wear, content, recommendations, amendments, admin tools.
+   Base element styling comes from the console layer in app/globals.css; this file keeps the screen grid rules. */
+.holds{max-width:1280px;margin:auto;padding:20px var(--g) 56px;overflow-wrap:anywhere}
+.holds fieldset{margin:18px 0;padding:14px 0 0;border:0;border-top:2px solid var(--ink);min-width:0}
+.hold-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px 18px}
+.holds label{display:flex;flex-direction:column;gap:6px}
+.holds input,.holds select{max-width:100%;min-width:0}
+.holds select[multiple]{min-height:120px;padding:4px}
+.hold-actions{display:flex;gap:8px;flex-wrap:wrap}
+.holds button{max-width:100%;white-space:normal;margin:4px 6px 4px 0}
+.holds section{margin:22px 0;padding:16px 0 0;border-top:2px solid var(--ink);background:none}
+.holds section section{border-top-width:1px}
+.holds [role=status]{font-weight:700;min-height:1.5em}
+.holds>h1:first-of-type,.holds>header h1{font:700 clamp(32px,4.4vw,60px)/1 var(--d)}
+@media(max-width:500px){.holds{padding:12px var(--g) 40px}}

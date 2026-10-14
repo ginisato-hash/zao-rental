@@ -1,3 +1,4 @@
+import {syntheticPreparation} from '../custody/preparation-fixture';
 import {provisionCustodyRole} from '../../scripts/custody-roles';
 import {CustodyService} from '../../packages/core/src/rental/custody-service';
 import assert from 'node:assert/strict';
@@ -73,7 +74,7 @@ try{
  await check('secured receipt schema retains chronology constraints; payment role still has no receipt rights',async()=>{
   const previous=x.now().toISOString(),d=await x.draft('2035-03-01',undefined,bufferOverride);await x.service.startPayment(d.booking.id,randomUUID());await x.clock('2035-03-01T10:00:00+09:00');
   const role=await provisionCustodyRole(x.db.pool,x.db.identity),custody=new CustodyService(role.custodyPool,x.roles.authPool,x.signed.identity);
-  const v=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC chronology fixture'});const out=await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:1});const ski=out.loans.find(l=>l.family==='SKI');
+  const v=await custody.checkoutView(d.booking.id);await custody.prepare(randomUUID(),{bookingId:d.booking.id,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});const out=await custody.checkout(randomUUID(),{bookingId:d.booking.id,expectedPreparationVersion:1});const ski=out.loans.find(l=>l.family==='SKI');
   const c=await x.db.pool.connect(),loan=ski.id,cycle=ski.cycle_id,batch=randomUUID(),candidate=randomUUID(),asset={id:ski.asset_id};
   // Receipt inserts below test only the unchanged chronology constraint and roll back.
   try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[x.actor]);

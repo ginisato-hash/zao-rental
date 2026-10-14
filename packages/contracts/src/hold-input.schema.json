@@ -99,7 +99,7 @@
                 },
                 "variantIds": {
                   "type": "array",
-                  "minItems": 1,
+                  "minItems": 0,
                   "maxItems": 6,
                   "uniqueItems": true,
                   "items": {
@@ -157,7 +157,10 @@
       }
     },
     "contractVersion": {
-      "const": "INTEGRATED_V1_2"
+      "enum": [
+        "INTEGRATED_V1_2",
+        "INTEGRATED_V1_3"
+      ]
     }
   },
   "required": [

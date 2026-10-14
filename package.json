@@ -56,6 +56,7 @@
     "test:staff-home-ui": "node --import tsx tests/staff/home-ui.ts",
     "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts && node --experimental-test-module-mocks --import tsx tests/public/prepare-payment.ts",
     "test:public-content": "node --import tsx tests/public/content-postgres.ts",
+    "test:human-ui": "node --import tsx tests/public/human-ui.ts",
     "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",
     "demo:public": "node --import tsx tests/public/demo.ts",
     "test:readiness-guest": "node --import tsx tests/readiness/guest-security.ts",
@@ -108,7 +109,7 @@
     "test:m2a-launch": "node --import tsx tests/operations/launch-gate.ts",
     "test:m2a-launch-ui": "node --import tsx tests/operations/launch-ui.ts",
     "test:m2b-security": "node --import tsx tests/operations/production-security.ts",
-    "test:m2b-bootstrap": "node --import tsx tests/operations/production-bootstrap.ts && node --import tsx tests/operations/production-bootstrap-delta.ts && node --import tsx tests/operations/production-bootstrap-owner-compat.ts && node --import tsx tests/operations/production-foundation.ts",
+    "test:m2b-bootstrap": "node --import tsx tests/operations/production-bootstrap.ts && node --import tsx tests/operations/production-bootstrap-delta.ts && node --import tsx tests/operations/production-bootstrap-owner-compat.ts && node --import tsx tests/operations/production-foundation.ts && node --import tsx tests/operations/production-0057-owner-apply.ts",
     "test:production-foundation": "node --import tsx tests/operations/production-foundation.ts",
     "test:production-runtime": "node --import tsx tests/readiness/normal-production.ts && node --import tsx tests/readiness/commercial-payment.ts",
     "test:production-runtime-ui": "node --import tsx tests/readiness/normal-production-ui.ts",
@@ -120,7 +121,9 @@
     "production:payment-acceptance": "node --import tsx scripts/production-payment-acceptance.ts",
     "production:install-refund-automation": "node --import tsx scripts/production-install-refund-automation.ts",
     "production:complete-first-admin-commercial": "node --import tsx scripts/production-complete-first-admin-commercial.ts",
-    "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts"
+    "production:bootstrap-first-admin": "node --import tsx scripts/production-bootstrap-first-admin.ts",
+    "test:preparation": "node --import tsx tests/preparation/real-postgres.ts",
+    "test:preparation-ui": "node --import tsx tests/preparation/customer-ui.ts && node --import tsx tests/preparation/staff-ui.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

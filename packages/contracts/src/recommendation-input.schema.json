@@ -117,12 +117,18 @@
                       "INTERMEDIATE",
                       "ADVANCED"
                     ]
+                  },
+                  "skierType": {
+                    "enum": [
+                      "TYPE_I",
+                      "TYPE_II",
+                      "TYPE_III"
+                    ]
                   }
                 },
                 "required": [
                   "weightKg",
-                  "ageAtStart",
-                  "level"
+                  "ageAtStart"
                 ]
               },
               {
@@ -182,6 +188,15 @@
                 "pattern": "^20[0-9]{2}/[0-9]{2}$"
               }
             }
+          },
+          "itemFamily": {
+            "enum": [
+              "SKI",
+              "SKI_BOOT",
+              "SNOWBOARD",
+              "SNOWBOARD_BOOT",
+              "POLE"
+            ]
           }
         },
         "required": [
@@ -191,13 +206,15 @@
           "footCm",
           "adultAtStart",
           "tier",
-          "ski",
-          "poleVariantId"
+          "ski"
         ]
       }
     },
     "contractVersion": {
-      "const": "INTEGRATED_V1_2"
+      "enum": [
+        "INTEGRATED_V1_2",
+        "INTEGRATED_V1_3"
+      ]
     }
   },
   "required": [
@@ -205,5 +222,46 @@
     "returnStore",
     "period",
     "members"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "contractVersion": {
+            "const": "INTEGRATED_V1_3"
+          }
+        },
+        "required": [
+          "contractVersion"
+        ]
+      },
+      "then": {
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ski": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "weightKg": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   ]
 }

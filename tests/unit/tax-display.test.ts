@@ -14,7 +14,7 @@ test('guest, saved-booking and public price pages state that prices include cons
   const guest = await read('apps/web/src/components/GuestBooking.tsx');
   assert.ok(guest.includes('表示料金はすべて税込です。') && guest.includes('All prices include Japanese consumption tax.'));
   const access = await read('apps/web/src/components/BookingAccess.tsx');
-  assert.ok(access.includes('予約金額（税込）') && access.includes('Booking total (tax included)'));
+  assert.ok(access.includes('お支払い金額（税込）') && access.includes('Booking total (tax included)'));
   const prices = publicPages.filter(p => p.path === 'prices');
   assert.deepEqual(prices.map(p => p.locale).sort(), ['en', 'ja']);
   assert.ok(prices.find(p => p.locale === 'ja')!.summary.includes('表示料金はすべて税込です。'));

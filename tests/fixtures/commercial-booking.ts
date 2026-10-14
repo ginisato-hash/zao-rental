@@ -1,3 +1,4 @@
+import {recordSyntheticBookingProfile} from '../custody/preparation-fixture';
 import {randomUUID} from 'node:crypto';
 import {flowHash,type PaymentObservation} from '../../packages/contracts/src/rental-flow';
 import {deriveApprovedCommercialPriceFacts,type CommercialPriceBook} from '../../packages/core/src/pricing/commercial-price-authority';
@@ -24,6 +25,7 @@ async function createBooking(x:CommercialFixture,day:string,supplied:HoldConditi
  await x.db.pool.query(`INSERT INTO rental_payment_attempts(id,booking_id,actor,idempotency_key,merchant_id,location_id,amount_jpy,currency,state,provider_id) VALUES($1,$2,$3,$4,$5,$6,$7,'JPY',$8,$9)`,[attemptId,bookingId,x.actor,key,merchantId,locationId,snapshot.totalJpy,lost?'UNKNOWN':'PENDING',lost?null:providerId]);
  await x.db.pool.query("UPDATE inventory_holds SET payment_state='PENDING',version=version+1 WHERE id=$1",[hold.holdId]);
  const observation:PaymentObservation={providerId,referenceId:bookingId,idempotencyKey:key,merchantId,locationId,amountJpy:Number(snapshot.totalJpy),currency:'JPY',status:'COMPLETED',updatedAt:x.now().toISOString(),completedAt:x.now().toISOString()};
+ await recordSyntheticBookingProfile(x.db.pool,bookingId);
  return {conditions,holdId:hold.holdId!,quoteId,bookingId,attemptId,key,merchantId,locationId,snapshot,observation};
 }
 /** Direct local schema fixture, not an identity/permit issuer or a Production service accept proof. */

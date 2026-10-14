@@ -32,7 +32,8 @@ try{
 
  await check('a ski label prints two copies of one immutable identifier and no customer data',async()=>{
   const detail=await openAsset(page,'SKI');
-  const id=(await detail.locator('.ledger-id').first().innerText()).trim();
+  await detail.getByText('技術情報',{exact:true}).first().click();
+  const id=(await detail.locator('details').first().getByText(/^用品ID /).innerText()).replace('用品ID ','').trim();
   assert.ok(/^[0-9a-f-]{36}$/.test(id),id);
   const labels=detail.locator('.asset-label');
   await expect(labels).toHaveCount(2);
@@ -71,7 +72,7 @@ try{
   assert.equal((await plain.request.get('/api/admin/launch')).status(),403);
   assert.equal((await anonymous.request.get('/api/admin/launch')).status(),401);
   await page.goto('/admin/launch');await page.getByRole('button',{name:'読み込む',exact:true}).click();
-  await expect(page.getByRole('row',{name:/DBスキーマ/})).toBeVisible();
+  await expect(page.getByRole('row',{name:/データベース/})).toBeVisible();
   await expect(page.getByRole('row',{name:/実在庫データ/})).toContainText('未実施');
   // Nothing on this page can deploy, activate Production, take a payment or accept a secret.
   assert.equal(await page.locator('input[type="password"]').count(),0);
@@ -85,7 +86,7 @@ try{
    await page.setViewportSize({width,height:900});await page.goto('/admin/launch');
    await page.getByRole('button',{name:'読み込む',exact:true}).click();
    await expect(page.getByRole('heading',{name:'公開準備状況'})).toBeVisible();
-   await expect(page.getByRole('row',{name:/DBスキーマ/})).toBeVisible();
+   await expect(page.getByRole('row',{name:/データベース/})).toBeVisible();
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'width '+width);
   }
   assert.equal(external,0);

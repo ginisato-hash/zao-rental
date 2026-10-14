@@ -176,6 +176,8 @@ export function productionAppRoleGrantPlan(databaseName:string):{authority:Produ
   `GRANT SELECT,INSERT ON rental_provider_events,rental_notifications TO ${n.operations}`,
   `GRANT UPDATE(payment_state,confirmed_at,version) ON inventory_holds TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid) TO ${n.operations}`,
+  `GRANT SELECT ON recommendation_previews,recommendation_selections TO ${n.operations}`,
+  `GRANT UPDATE(prepared_at,prepared_by,fit_evidence,version) ON rental_preparations TO ${n.operations}`,
   `GRANT SELECT,INSERT ON ops_financial_alerts,ops_amendment_quotes,ops_amendments,ops_import_stages,ops_import_sources,ops_import_commits,ops_stocktake_reconciliations,ops_requests,rental_preparations,rental_loan_items,rental_return_batches,rental_return_candidates,rental_receipts,rental_inspections,rental_requests TO ${n.operations}`,
   `GRANT SELECT,INSERT,UPDATE ON ops_charge_requests,ops_refund_requests,ops_stocktakes TO ${n.operations}`,
   `GRANT UPDATE(conditions,starts_at,due_at,occupancy_start,occupancy_end,allocation_stage,version,buffer_override) ON inventory_holds TO ${n.operations}`,

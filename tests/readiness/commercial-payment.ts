@@ -1,3 +1,4 @@
+import {syntheticPreparation} from '../custody/preparation-fixture';
 import {randomUUID} from 'node:crypto';
 import {provisionOperationsRole} from '../../scripts/operations-roles';
 import {CustodyService} from '../../packages/core/src/rental/custody-service';
@@ -39,7 +40,7 @@ try{
  const custody=new CustodyService(operations.operationsPool,x.roles.authPool,x.signed.identity),manifest=new ManifestService(operations.operationsPool,x.roles.authPool,x.signed.identity);
  await x.clock('2035-02-10T10:00:00+09:00');
  const before=await manifest.manifest({store:'MOUNTAIN_BASE',date:'2035-02-10',section:'pickup',cursor:null,pageSize:100});assert.equal((before.rows as Record<string,unknown>[]).find(r=>r.bookingId===f.bookingId)?.nextAction,'PREPARE_EQUIPMENT');
- const view=await custody.checkoutView(f.bookingId),prepared=await custody.prepare(randomUUID(),{bookingId:f.bookingId,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC commercial operational proof'});
+ const view=await custody.checkoutView(f.bookingId),prepared=await custody.prepare(randomUUID(),{bookingId:f.bookingId,expectedBookingVersion:view.bookingVersion,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view)});
  const after=await manifest.manifest({store:'MOUNTAIN_BASE',date:'2035-02-10',section:'pickup',cursor:null,pageSize:100});assert.equal((after.rows as Record<string,unknown>[]).find(r=>r.bookingId===f.bookingId)?.nextAction,'CHECKOUT');
  const checked=await custody.checkout(randomUUID(),{bookingId:f.bookingId,expectedPreparationVersion:prepared.preparation.version});assert.equal(checked.loans.length,3);assert.ok(checked.loans.every(l=>l.state==='OUT'));
  await x.clock('2035-02-12T17:01:00+09:00');await custody.completeNoPickup(randomUUID(),{bookingId:noPickup.bookingId});assert.equal((await x.db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[noPickup.bookingId])).rows[0].state,'COMPLETED');

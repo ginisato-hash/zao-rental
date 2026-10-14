@@ -8,15 +8,12 @@ export type EquipmentFamily='SKI'|'SNOWBOARD'|'SKI_BOOT'|'SNOWBOARD_BOOT'|'POLE'
 export type ModelPromise={modelId:string;season:string;variantId:string};
 export type HoldItem={family:EquipmentFamily;variantIds:string[];modelPromise?:ModelPromise};
 export type HoldMember={key:string;product:'SKI_SET'|'SNOWBOARD_SET'|'SINGLE'|'WEAR_SET';age:'ADULT'|'KIDS';tier:'REGULAR'|'PREMIUM'|'STANDARD';wear?:boolean;wearSport?:'SKI'|'SNOWBOARD';items:HoldItem[]};
-export type HoldConditions={contractVersion?:'INTEGRATED_V1_2';reservationId:string;pickupStore:StoreId;returnStore:StoreId;period:Period;members:HoldMember[]};
+export type HoldConditions={contractVersion?:'INTEGRATED_V1_2'|'INTEGRATED_V1_3';reservationId:string;pickupStore:StoreId;returnStore:StoreId;period:Period;members:HoldMember[]};
 export function isWear(family:string){return family==='WEAR_JACKET'||family==='WEAR_PANTS';}
-// Owner decision (release-code-closure, Phase 1): POLE is removed from public feasibility
-// blocking — no physical or provisional inventory has ever been registered for it (see
-// RESULT.md §10), so it must never make an otherwise-satisfiable SKI_SET unbookable. POLE
-// remains a required structural member of SKI_SET (see families check below) and is still
-// shown to staff on the daily manifest; it is simply never inventory-claim-tracked, exactly
-// like an item the store hands out ad hoc without per-unit accounting.
+// Only SKI_SET accessory poles may use an absence witness when no tracked pool exists.
+// Paid standalone poles always require normal inventory claims and custody.
 export function isPole(family:string){return family==='POLE';}
+export function isAccessoryPole(member:Pick<HoldMember,'product'>,family:string){return member.product==='SKI_SET'&&isPole(family);}
 export function memberSport(m:HoldMember){return m.product==='WEAR_SET'?m.wearSport!:m.product==='SNOWBOARD_SET'||m.items.some(i=>i.family==='SNOWBOARD'||i.family==='SNOWBOARD_BOOT')?'SNOWBOARD':'SKI';}
 export function itemTier(m:HoldMember,item:HoldItem){return isWear(item.family)?'STANDARD':m.tier;}
 export type PromiseVariant={id:string;family:string;age:string;tier:string;model_id?:string;catalog_season?:string|null;compatible_sports?:string[]|null};
@@ -30,14 +27,14 @@ export function parseConditions(value:unknown):HoldConditions {
  const c=value as HoldConditions;normalizePeriod(c.period);
  if(new Set(c.members.map(m=>m.key)).size!==c.members.length)throw new HoldError('DUPLICATE_MEMBER');
  for(const m of c.members){
-  const integrated=c.contractVersion==='INTEGRATED_V1_2',wearItems=m.items.filter(i=>isWear(i.family)),gear=m.items.filter(i=>!isWear(i.family)),families=gear.map(i=>i.family).sort().join(',');
+  const integrated=c.contractVersion==='INTEGRATED_V1_2'||c.contractVersion==='INTEGRATED_V1_3',wearItems=m.items.filter(i=>isWear(i.family)),gear=m.items.filter(i=>!isWear(i.family)),families=gear.map(i=>i.family).sort().join(',');
   if(!integrated&&(m.product==='WEAR_SET'||m.wear!==undefined||m.wearSport!==undefined||wearItems.length||m.tier==='STANDARD'||m.items.some(i=>i.modelPromise)))throw new HoldError('CONTRACT_VERSION_REQUIRED');
   if(new Set(m.items.map(i=>i.family)).size!==m.items.length)throw new HoldError('INCOMPLETE_SET');
   if((m.product==='SKI_SET'&&families!=='POLE,SKI,SKI_BOOT')||(m.product==='SNOWBOARD_SET'&&families!=='SNOWBOARD,SNOWBOARD_BOOT')||(m.product==='SINGLE'&&gear.length!==1)||(m.product==='WEAR_SET'&&gear.length))throw new HoldError('INCOMPLETE_SET');
   const needsWear=m.product==='WEAR_SET'||m.wear===true;
   if(needsWear?wearItems.map(i=>i.family).sort().join(',')!=='WEAR_JACKET,WEAR_PANTS':wearItems.length!==0)throw new HoldError('INCOMPLETE_WEAR_SET');
   if(m.product==='WEAR_SET'?(m.tier!=='STANDARD'||!m.wearSport||m.wear!==undefined):(m.tier==='STANDARD'||m.wearSport!==undefined))throw new HoldError('INVALID_PRODUCT_CLASS');
-  for(const item of m.items){if(isWear(item.family)&&item.variantIds.length!==1)throw new HoldError('WEAR_EXPLICIT_SIZE_REQUIRED');const board=item.family==='SKI'||item.family==='SNOWBOARD';if(integrated&&m.tier==='PREMIUM'&&board&&!item.modelPromise)throw new HoldError('MODEL_PROMISE_REQUIRED');if(item.modelPromise&&(!board||m.tier!=='PREMIUM'||item.variantIds.length!==1||item.variantIds[0]!==item.modelPromise.variantId))throw new HoldError('MODEL_PROMISE_MISMATCH');}
+  for(const item of m.items){if(!item.variantIds.length&&!(c.contractVersion==='INTEGRATED_V1_3'&&isAccessoryPole(m,item.family)))throw new HoldError('INVALID_CONDITIONS');if(isWear(item.family)&&item.variantIds.length!==1)throw new HoldError('WEAR_EXPLICIT_SIZE_REQUIRED');const board=item.family==='SKI'||item.family==='SNOWBOARD';if(integrated&&m.tier==='PREMIUM'&&board&&!item.modelPromise)throw new HoldError('MODEL_PROMISE_REQUIRED');if(item.modelPromise&&(!board||m.tier!=='PREMIUM'||item.variantIds.length!==1||item.variantIds[0]!==item.modelPromise.variantId))throw new HoldError('MODEL_PROMISE_MISMATCH');}
  }
 
  return c;

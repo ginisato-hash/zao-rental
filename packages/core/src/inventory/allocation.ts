@@ -1,6 +1,6 @@
 import {wearCapacity,wearCapacityDetailed} from './wear-capacity';
 import type {PoolClient} from 'pg';
-import {HoldError,normalizePeriod,variantMatches,isWear,isPole,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
+import {HoldError,normalizePeriod,variantMatches,isWear,isPole,isAccessoryPole,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {transferProjection,destinationFeasible,sourceReservations} from '../transfer/projection';
 import {dependencyScope,type ScopeNode} from './dependency-scope';
 import {matchPeriods,type Demand,type Placement} from './period-matching';
@@ -43,6 +43,10 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
    .filter(r=>!excludeKeys?.has(r.key));
   if(requirements.length>240)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const checkedRequirements=[...requirements,...conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(item=>({...item,member:m})))];
+  for(const r of checkedRequirements.filter(r=>isPole(r.family)&&!r.variantIds.length)){
+   if(!isAccessoryPole(r.member,r.family))throw new HoldError('INVALID_CONDITIONS');
+   if((await c.query("SELECT 1 FROM ledger_variants WHERE family='POLE' AND age=$1 AND tier=$2 AND btrim(size) ~* '^[0-9]{1,3}(\\.[0-9])?[[:space:]]*cm$' LIMIT 1",[r.member.age,r.member.tier])).rowCount)throw new HoldError('POLE_VARIANT_MISMATCH');
+  }
   const variantIds=[...new Set(checkedRequirements.flatMap(r=>r.variantIds))];
   const transfers=await transferProjection(c,variantIds);if(transfers.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const variants=(await c.query<import('../../../contracts/src/hold').PromiseVariant&{size:string}>(`SELECT v.id,v.family,v.age,v.tier,v.size,v.model_id,to_jsonb(v)->'compatible_sports' AS compatible_sports,to_jsonb(m)->>'catalog_season' AS catalog_season FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[])`,[variantIds])).rows;
@@ -63,7 +67,7 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   for(const u of [...units])if(u.family==='POLE'){u.quantity-=transfers.filter(p=>p.destination_pole_id===u.id&&p.state==='READY').length;for(const p of transfers.filter(p=>p.destination_pole_id===u.id&&!['CANCELLED','CLOSED'].includes(p.state)))units.push({...u,id:p.id,quantity:1,transfer_piece_id:p.id,physical_pole_id:u.id});}
   if(units.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
   // Only absent relevant stock permits a durable exemption; unavailable stock remains tracked.
-  const poleExempt=new Set(requirements.filter(r=>isPole(r.family)&&!units.some(u=>u.family==='POLE'&&r.variantIds.includes(u.variant_id)&&(u.store_id===r.job.c.pickupStore||transfers.some(p=>p.source_pole_id===u.id&&p.destination_store===r.job.c.pickupStore&&!['CANCELLED','CLOSED'].includes(p.state))))).map(r=>r.key));
+  const poleExempt=new Set(requirements.filter(r=>isAccessoryPole(r.member,r.family)&&!units.some(u=>u.family==='POLE'&&r.variantIds.includes(u.variant_id)&&(u.store_id===r.job.c.pickupStore||transfers.some(p=>p.source_pole_id===u.id&&p.destination_store===r.job.c.pickupStore&&!['CANCELLED','CLOSED'].includes(p.state))))).map(r=>r.key));
   const fixedClaims=(await c.query<Claim>(`SELECT c.transfer_piece_id,c.hold_id,c.requirement_key,c.asset_id,c.pole_id,c.pole_slot,c.day::text,h.occupancy_start::text AS start,h.occupancy_end::text AS end,h.pickup_store,h.return_store,h.buffer_override FROM inventory_claims c JOIN inventory_holds h ON h.id=c.hold_id WHERE c.active AND h.id=ANY($1::uuid[]) AND (c.asset_id=ANY($2::uuid[]) OR c.pole_id=ANY($2::uuid[]) OR c.transfer_piece_id=ANY($2::uuid[])) LIMIT 100001`,[fixedIds,units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   const constraints=(await c.query<{asset_id:string|null;pole_id:string|null;kind:string;start:string;end:string}>(`SELECT asset_id,pole_id,kind,starts_on::text AS start,ends_on::text AS end FROM inventory_constraints x WHERE x.asset_id=ANY($1::uuid[]) OR x.pole_id=ANY($1::uuid[]) LIMIT 10001`,[units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;
   const custody=(await c.query<{id:string;asset_id:string|null;pole_id:string|null;start:string;end:string;hold_id:string;requirement_key:string}>(`SELECT x.id,x.asset_id,x.pole_id,x.starts_on::text AS start,x.ends_on::text AS end,b.hold_id,l.requirement_key FROM rental_inventory_blocks x JOIN rental_loan_items l ON l.id=x.id JOIN rental_bookings b ON b.id=l.booking_id WHERE x.asset_id=ANY($1::uuid[]) OR x.pole_id=ANY($1::uuid[]) LIMIT 10001`,[units.flatMap(u=>[u.id,...(u.physical_pole_id?[u.physical_pole_id]:[])])])).rows;

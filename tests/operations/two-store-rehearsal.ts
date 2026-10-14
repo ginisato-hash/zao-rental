@@ -1,3 +1,4 @@
+import {syntheticPreparation} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomUUID,randomBytes} from 'node:crypto';
 import {flowFixture} from '../flow/fixture';
@@ -57,7 +58,7 @@ try{
   // Custody checkout is only valid inside the booked pickup day and opening hours.
   await x.clock('2035-02-01T10:00:00+09:00');
   const v=await svc.checkoutView(bookingId);
-  await svc.prepare(randomUUID(),{bookingId,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:'SYNTHETIC staff fit record'});
+  await svc.prepare(randomUUID(),{bookingId,expectedBookingVersion:v.bookingVersion,expectedHoldVersion:v.holdVersion,selections:v.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(v)});
   const out=await svc.checkout(randomUUID(),{bookingId,expectedPreparationVersion:1});
   loans=out.loans as typeof loans;
   assert.ok(loans.length>=2);

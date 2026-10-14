@@ -1,4 +1,5 @@
 'use client';
+import {TomorrowPreparation} from './TomorrowPreparation';
 import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
@@ -119,6 +120,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
     <div className="staff-card-head"><strong>{row.displayName}</strong><span className="staff-chip">{stateLabel(row.bookingState)}</span></div>
     <p>{row.period.startDate} → {row.period.endDate} · {slotLabel(row.period.slot)}</p>
     <p>{storeName(row.pickupStore)} → {storeName(row.returnStore)}{row.totalJpy!==undefined?' · '+money(row.totalJpy):''}</p>
+    {row.pickup?.equipmentPrepared&&!row.pickup.equipmentCheckedOut&&<p className="staff-chip">準備完了</p>}
     <p className="staff-card-action"><span>次にすること</span><strong>{label}</strong></p>
     {row.exception?.attention&&<p className="staff-card-attention">要注意{row.exception.topSeverity?'（'+(SEVERITY_LABEL[row.exception.topSeverity]??'確認')+'）':''}</p>}
     {canOpen&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(row.bookingId)}>{label}へ進む</button>}
@@ -134,7 +136,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  const manifestError=manifestMessage?loadErrorText('本日の業務',manifestMessage):'';
  const manifestKind=manifestError?'error':manifestRows===null||manifestBusy?'loading':manifestRows.length?'ready':'empty';
  const manifestStatus=manifestError||(manifestRows===null?'本日の業務を読み込んでいます…':manifestBusy?'最新の状態を読み込んでいます…':'');
- return <main className="holds staff-home"><header className="staff-home-header"><div><p className="staff-secondary">ZAO Rental · スタッフ業務</p><h1>スタッフホーム</h1></div><nav><a href="/staff/logout">ログアウト</a></nav></header>
+ return <main className="holds staff-home"><header className="staff-home-header"><div><p className="staff-secondary">SALOMON STATION ZAO · STAFF</p><h1>スタッフホーム</h1></div><nav><a href="/staff/logout">ログアウト</a></nav></header>
  {canBookingView&&<section aria-label="店舗・営業日" className="staff-context">
   {showManifest&&<label>対象店舗<select aria-label="対象店舗" value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{storeName(s)}</option>)}</select></label>}
   <p className="staff-context-date"><span>営業日</span><strong>{manifestDate?manifestDate+'（JST）':'確認しています…'}</strong></p>
@@ -147,6 +149,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
   {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
   <Link href="/staff/rentals">貸出・返却の画面を開く</Link>
  </section>}
+ {effectivePickup&&<TomorrowPreparation stamp={stamp} store={activeStore} onOpen={openBooking}/>}
  {canBookingView&&<section aria-label="本日の予約"><div className="staff-section-head"><h2>本日の予約</h2>
   {/* UX-5E: the Refresh button and status line must never be gated behind manifestDate itself
       -- a BOOKING_VIEW-only principal has no "本日の業務" section and therefore no other retry
@@ -160,6 +163,6 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
   </>}
  </section>}
  {canOperationsView&&<section aria-label="運用の注意事項"><h2>運用の注意事項</h2><p>本日の業務カードの「要注意」表示、または以下から詳細を確認してください。</p><Link href="/admin/ops">運用例外の画面を開く</Link></section>}
- <details className="staff-secondary-links"><summary>その他の管理機能</summary><nav>{canInventoryView&&<a href="/staff/ledger">道具の台帳</a>}{canInventoryView&&<a href="/admin/inventory">棚卸・CSV投入</a>}{canBookingView&&<a href="/staff/amendments">変更・返金依頼</a>}{canTransferView&&<a href="/staff/transfers">店舗間移動</a>}{canQuoteView&&<a href="/staff/quotes">見積</a>}{canHoldView&&<a href="/staff/holds">期間在庫・HOLD</a>}{canHoldView&&canQuoteView&&<a href="/staff/recommendations">サイズ推薦</a>}{canInventoryView&&<a href="/staff/wear">ウェアの数量貸出・返却</a>}<a href="/staff/password">パスワード変更</a>{canManageStaff&&<a href="/staff/users">スタッフ管理</a>}</nav></details>
+ <details className="staff-secondary-links"><summary>その他の管理機能</summary><nav>{canInventoryView&&<a href="/staff/ledger">道具の台帳</a>}{canInventoryView&&<a href="/admin/inventory">棚卸・CSV投入</a>}{canBookingView&&<a href="/staff/amendments">変更・返金依頼</a>}{canTransferView&&<a href="/staff/transfers">店舗間移動</a>}{canQuoteView&&<a href="/staff/quotes">見積</a>}{canHoldView&&<a href="/staff/holds">期間在庫・仮押さえ</a>}{canHoldView&&canQuoteView&&<a href="/staff/recommendations">サイズ推薦</a>}{canInventoryView&&<a href="/staff/wear">ウェアの数量貸出・返却</a>}<a href="/staff/password">パスワード変更</a>{canManageStaff&&<a href="/staff/users">スタッフ管理</a>}</nav></details>
  </main>;
 }

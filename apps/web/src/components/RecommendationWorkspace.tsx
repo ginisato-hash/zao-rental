@@ -9,7 +9,7 @@ import {staffLabel,shortRef,TechnicalDetails} from './staff-labels';
 import './recommendation.css';
 import {storeDisplayName} from '../../../../packages/contracts/src/store-display';
 type View=Awaited<ReturnType<RecommendationService['get']>>;
-type Member=Omit<Profile,'adultAtStart'|'ski'>&{adultAtStart:boolean|null;ski:{weightKg:number;ageAtStart:number;level:string}|null};
+type Member=Omit<Profile,'adultAtStart'|'ski'>&{adultAtStart:boolean|null;ski:{weightKg:number;ageAtStart:number;level?:string}|null};
 type Draft=Omit<RecommendationInput,'members'>&{members:Member[]};
 type Pending={path:string;body:unknown};
 const pendingKey='zao-rental-recommendation-pending-v1';

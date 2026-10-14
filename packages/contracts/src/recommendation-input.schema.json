@@ -117,12 +117,18 @@
                       "INTERMEDIATE",
                       "ADVANCED"
                     ]
+                  },
+                  "skierType": {
+                    "enum": [
+                      "TYPE_I",
+                      "TYPE_II",
+                      "TYPE_III"
+                    ]
                   }
                 },
                 "required": [
                   "weightKg",
-                  "ageAtStart",
-                  "level"
+                  "ageAtStart"
                 ]
               },
               {

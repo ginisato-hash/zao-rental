@@ -5,11 +5,12 @@ import Ajv from 'ajv';
 import schema from './recommendation-input.schema.json';
 import {HoldError,normalizePeriod,variantMatches,type HoldConditions,type Period,type Feasibility} from './hold';
 import type {StoreId} from './ledger';
+import {SKIER_TYPES,type SkierType} from './din';
 export const RECOMMENDATION_RULE='HEIGHT_MINUS_20_WINDOW_15_BOOT_PLUS_1_V1' as const;
 export const MODEL_POLICY='EXPLICIT_SIZE_CLASS_NO_MODEL_PROMISE_V1' as const;
 export const DIRECTIONS=['RECOMMENDED','SHORTER','LONGER'] as const;
 export type Direction=typeof DIRECTIONS[number];
-export type Profile={key:string;sport:'SKI'|'SNOWBOARD'|'WEAR';heightCm:number|null;footCm:number|null;wearSelection?:{jacketVariantId:string;pantsVariantId:string};wearSport?:'SKI'|'SNOWBOARD';modelSelection?:{modelId:string;season:string};adultAtStart:boolean;tier:'REGULAR'|'PREMIUM'|'STANDARD';ski:{weightKg:number;ageAtStart:number;level:'BEGINNER'|'INTERMEDIATE'|'ADVANCED'}|null;poleVariantId?:string|null;itemFamily?:'SKI'|'SKI_BOOT'|'SNOWBOARD'|'SNOWBOARD_BOOT'|'POLE'};
+export type Profile={key:string;sport:'SKI'|'SNOWBOARD'|'WEAR';heightCm:number|null;footCm:number|null;wearSelection?:{jacketVariantId:string;pantsVariantId:string};wearSport?:'SKI'|'SNOWBOARD';modelSelection?:{modelId:string;season:string};adultAtStart:boolean;tier:'REGULAR'|'PREMIUM'|'STANDARD';ski:{weightKg:number;ageAtStart:number;level?:'BEGINNER'|'INTERMEDIATE'|'ADVANCED';skierType?:SkierType}|null;poleVariantId?:string|null;itemFamily?:'SKI'|'SKI_BOOT'|'SNOWBOARD'|'SNOWBOARD_BOOT'|'POLE'};
 export type RecommendationInput={contractVersion?:'INTEGRATED_V1_2'|'INTEGRATED_V1_3';pickupStore:StoreId;returnStore:StoreId;period:Period;members:Profile[]};
 export type Variant={id:string;family:string;age:string;tier:string;size:string;model_id?:string;catalog_season?:string|null;compatible_sports?:string[]|null;model_name?:string;poleStores?:string[]};
 export type Candidate={lengthCm:number;member:HoldConditions['members'][number]};
@@ -29,7 +30,9 @@ export function parseRecommendation(value:unknown):RecommendationInput{
   if((fields.height?m.heightCm===null:m.heightCm!==null)||(fields.foot?m.footCm===null:m.footCm!==null)||m.tier==='STANDARD'||m.wearSport)throw new RecommendationError('INVALID_EQUIPMENT_PROFILE');
   if(m.tier==='PREMIUM'&&!m.adultAtStart)throw new RecommendationError('PRODUCT_NOT_OFFERED');
   if(integrated&&m.tier==='PREMIUM'&&!m.modelSelection||m.tier!=='PREMIUM'&&m.modelSelection)throw new RecommendationError('MODEL_PROMISE_REQUIRED');
-  if(fields.ski){if(!m.ski||(!current&&!m.poleVariantId)||m.adultAtStart!==(m.ski.ageAtStart>=13))throw new RecommendationError('SKI_PROFILE_OR_AGE_MISMATCH');if(current&&!Number.isInteger(m.ski.weightKg))throw new RecommendationError('INVALID_RECOMMENDATION_INPUT');}else if(m.ski!==null||m.poleVariantId!=null)throw new RecommendationError(m.sport==='SNOWBOARD'?'UNNECESSARY_SNOWBOARD_INPUT':'INVALID_EQUIPMENT_PROFILE');
+  if(fields.ski){if(!m.ski||(!current&&!m.poleVariantId)||m.adultAtStart!==(m.ski.ageAtStart>=13))throw new RecommendationError('SKI_PROFILE_OR_AGE_MISMATCH');if(current&&!Number.isInteger(m.ski.weightKg))throw new RecommendationError('INVALID_RECOMMENDATION_INPUT');
+   // V1.3 takes only the explicit DIN skier type; V1.2 keeps its generic level, which is never a DIN type.
+   if(current?m.ski.level!==undefined||!SKIER_TYPES.includes(m.ski.skierType!):m.ski.skierType!==undefined||m.ski.level===undefined)throw new RecommendationError('SKIER_TYPE_REQUIRED');}else if(m.ski!==null||m.poleVariantId!=null)throw new RecommendationError(m.sport==='SNOWBOARD'?'UNNECESSARY_SNOWBOARD_INPUT':'INVALID_EQUIPMENT_PROFILE');
  }
  return x;
 }

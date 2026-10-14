@@ -21,31 +21,21 @@ const values:(number|null)[][]=[
  [null,null,null,11.5,11,10,9.5,9],
  [null,null,null,null,null,12,11,10.5]
 ];
-export type DinInput={heightCm:number;weightKg:number;ageAtStart:number;level:'BEGINNER'|'INTERMEDIATE'|'ADVANCED';bslMm:number};
-// Owner-provided 2026-10-14 range chart, retained as a separate broad reference.
-// These ranges omit height, age and actual BSL; never use them to choose a binding setting.
-const ownerRanges=[
- [[.75,.75],[.75,1],[1,1.5]],[[.75,1],[1,1.5],[1.25,1.75]],[[1,1.5],[1.25,1.75],[1.5,2.25]],
- [[1.25,1.75],[1.5,2.25],[1.75,2.75]],[[1.5,2.25],[1.75,2.75],[2,3.5]],[[1.75,2.75],[2,3.5],[2.5,3.5]],
- [[2,3.5],[2.5,3.5],[3,4.5]],[[2.5,3.5],[3,4.5],[3.5,5.5]],[[3,4.5],[3.5,5.5],[4.5,6.5]],
- [[3.5,5.5],[4.5,6.5],[5.5,7.5]],[[4.5,6.5],[5.5,7.5],[6.5,8.5]],[[5.5,7.5],[6.5,8.5],[8,10]],[[6.5,8.5],[8,10],[9.5,11.5]]
-];
-export function weightLevelRange(weightKg:number,level:DinInput['level']){
- const row=weightUpper.findIndex(v=>weightKg<=v),column=['BEGINNER','INTERMEDIATE','ADVANCED'].indexOf(level);
- if(!Number.isFinite(weightKg)||weightKg<10||row<0||column<0||row>0&&weightKg<weightUpper[row-1]!+1)return null;
- return ownerRanges[row]?.[column]??null;
-}
+/** ISO 11088 skier type, declared explicitly by the customer. Never derived from a generic ski level. */
+export const SKIER_TYPES=['TYPE_I','TYPE_II','TYPE_III'] as const;
+export type SkierType=typeof SKIER_TYPES[number];
+export type DinInput={heightCm:number;weightKg:number;ageAtStart:number;skierType:SkierType;bslMm:number};
 export type DinAdvisory={value:number|null;version:typeof DIN_REFERENCE.version;row:string|null;column:number|null;reason:'INPUT_REQUIRED'|'OUTSIDE_TABLE'|'TECHNICIAN_CHECK_REQUIRED'};
 /** Initial staff reference. Never a release test or final binding setting. No foot-size input. */
 export function dinAdvisory(input:DinInput|null):DinAdvisory{
  const empty={value:null,version:DIN_REFERENCE.version,row:null,column:null};
  if(!input||Object.values(input).some(v=>v===null||v===undefined))return {...empty,reason:'INPUT_REQUIRED'};
- const {heightCm,weightKg,ageAtStart,level,bslMm}=input;
+ const {heightCm,weightKg,ageAtStart,skierType,bslMm}=input;
  // The published bands use whole kg/cm/mm. Fractional kg in gaps are not rounded to a
  // higher release value: a technician must resolve that boundary. No extrapolation.
- if(!Number.isInteger(heightCm)||heightCm<50||heightCm>250||!Number.isFinite(weightKg)||weightKg<10||weightKg>300||!Number.isInteger(ageAtStart)||ageAtStart<0||ageAtStart>120||!Number.isInteger(bslMm)||bslMm<150||bslMm>450||!['BEGINNER','INTERMEDIATE','ADVANCED'].includes(level))return {...empty,reason:'OUTSIDE_TABLE'};
+ if(!Number.isInteger(heightCm)||heightCm<50||heightCm>250||!Number.isFinite(weightKg)||weightKg<10||weightKg>300||!Number.isInteger(ageAtStart)||ageAtStart<0||ageAtStart>120||!Number.isInteger(bslMm)||bslMm<150||bslMm>450||!SKIER_TYPES.includes(skierType))return {...empty,reason:'OUTSIDE_TABLE'};
  const w=weightUpper.findIndex(v=>weightKg<=v);
  if(w>0&&weightKg<weightUpper[w-1]!+1)return {...empty,reason:'OUTSIDE_TABLE'};
- const row=Math.min(w,7+heightUpper.findIndex(v=>heightCm<=v))+['BEGINNER','INTERMEDIATE','ADVANCED'].indexOf(level)-(ageAtStart<=10||ageAtStart>=50?1:0),column=bslUpper.findIndex(v=>bslMm<=v),value=values[row]?.[column]??null;
+ const row=Math.min(w,7+heightUpper.findIndex(v=>heightCm<=v))+SKIER_TYPES.indexOf(skierType)-(ageAtStart<=10||ageAtStart>=50?1:0),column=bslUpper.findIndex(v=>bslMm<=v),value=values[row]?.[column]??null;
  return {value,version:DIN_REFERENCE.version,row:row>=0&&row<values.length?String.fromCharCode(65+row):null,column,reason:value===null?'OUTSIDE_TABLE':'TECHNICIAN_CHECK_REQUIRED'};
 }

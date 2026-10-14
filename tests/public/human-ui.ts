@@ -1,5 +1,6 @@
 /** R64 production-copy visual proof. Local fixture app, unchanged real API/PG, fake payment only. */
 import assert from 'node:assert/strict';
+import {fillGuestProfile} from './guest-profile';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {chromium,expect,type Page} from '@playwright/test';
@@ -43,11 +44,11 @@ try{
   if(ja)for(const path of ['','rental','rental/ski','rental/snowboard','rental/wear','rental/premium','rental/kids-family','prices','pickup-return','stores/mountain-base','stores/onsen-base','faq']){await p.goto('/ja'+(path?'/'+path:''));await capture(p,'public-'+(path.replaceAll('/','-')||'home'));}
   await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();await capture(p,locale+'-book-dates',!ja);
   await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill(ja?'2035-02-05':'2035-02-06');await p.getByRole('button',{name:t('用品を選ぶ','Choose equipment'),exact:true}).click();
-  const person=p.getByRole('article',{name:t('利用者 1','Person 1'),exact:true}),warning=p.getByText(t('保存されていない変更があります。移動すると失われます。','You have unsaved changes. Leaving now will lose them.'),{exact:true});
+  const person=p.getByRole('article',{name:t('利用者 1','Person 1'),exact:true}),warning=p.getByText(t('入力内容は「候補と参考料金を確認」で保存されます。','Your entries are saved when you select “Review sizes and estimates”.'),{exact:true});
   await expect(warning).toHaveCount(0);await capture(p,locale+'-book-equipment-entry',!ja);
-  await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');await expect(warning).toBeVisible();await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('170');await expect(warning).toHaveCount(0);
+  await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');await expect(warning).toBeVisible();await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('');await expect(warning).toHaveCount(0);
   await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');await expect(warning).toBeVisible();
-  await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(t('全員の内容を確認しました','I have checked everyone’s selections')).check();await p.getByLabel(t('事前に支払って5%OFFを利用する','Use the 5% advance payment discount')).check();await capture(p,locale+'-book-candidate',!ja);
+  await fillGuestProfile(p,locale);await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(t('全員の内容を確認しました','I have checked everyone’s selections')).check();await p.getByLabel(t('事前に支払って5%OFFを利用する','Use the 5% advance payment discount')).check();await capture(p,locale+'-book-candidate',!ja);
   await p.getByRole('button',{name:t('全員分の最終確認へ','Review the whole group'),exact:true}).click();await expect(p.getByRole('region',{name:t('全員分の確認','Group review')})).toBeVisible();
   await p.getByLabel(t('お名前','Name'),{exact:true}).fill('Aki Sato');await p.getByLabel(t('メール','Email'),{exact:true}).fill('aki@example.invalid');await p.getByRole('checkbox',{name:ja?/利用開始48時間前/:/I accept the cancellation policy/}).check();await capture(p,locale+'-book-review-payment',!ja);
   await p.getByRole('button',{name:t('支払いへ進む','Continue to payment'),exact:true}).click();await expect(p.getByRole('heading',{name:t('予約が確認されました','Booking confirmed'),exact:true})).toBeVisible();await capture(p,locale+'-book-success',!ja);

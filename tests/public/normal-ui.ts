@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {fillGuestProfile} from './guest-profile';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {mkdir} from 'node:fs/promises';
 import {chromium,expect,request as apiRequest,type Page} from '@playwright/test';
@@ -111,7 +112,7 @@ try{
  });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
   await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click(); // option keys come from the server below if catalog prefix differs
-  await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員の内容を確認しました').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('お支払い金額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await fillGuestProfile(page,'ja');await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員の内容を確認しました').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('お支払い金額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // CL-02: no wear items and advance was never requested in this flow, so both adjustment
   // rows must stay hidden -- only the subtotal and group-total rows are present.
   await expect(page.locator('dl.guest-price dt')).toHaveText(['小計','お支払い金額']);
@@ -122,15 +123,15 @@ try{
  await check('UX-3A regression: the unsaved-changes banner does not appear on first arrival at a step, only after an actual edit on it',async()=>{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
-  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-01');
   await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
   // Filling step 0 and advancing to step 1 is real, unsubmitted progress, but nothing on step
   // 1 itself has been touched yet -- the warning must stay absent immediately on arrival here.
   await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('用品',{exact:true})).toBeVisible();
-  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   await p.getByLabel('身長（cm）',{exact:true}).fill('171');
-  await expect(p.getByText('保存されていない変更があります')).toBeVisible();
+  await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toBeVisible();
   await ctx.close();
  });
  await check('UX3R-01 regression: hiding the unsaved-changes banner on step arrival must never disable the actual guardNav/beforeunload protection',async()=>{
@@ -141,7 +142,7 @@ try{
   // Fresh arrival at step 1: the visible banner is hidden (UX-3A), but the entered dates are
   // still real, unsaved input -- a guarded nav must still prompt, and cancelling it must keep
   // the user on the same page with that input intact.
-  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   let dialogSeen=false;
   p.once('dialog',async d=>{dialogSeen=true;assert.match(d.message(),/保存されていない入力/);await d.dismiss();});
   await p.getByRole('link',{name:'プランを見る',exact:true}).click();
@@ -152,9 +153,9 @@ try{
   // Editing step 1, then going back to step 0 (another touched-resetting transition), must not
   // drop protection either -- same guarantee one step earlier in the wizard.
   await p.getByLabel('身長（cm）',{exact:true}).fill('171');
-  await expect(p.getByText('保存されていない変更があります')).toBeVisible();
+  await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toBeVisible();
   await p.getByRole('button',{name:'日程に戻る',exact:true}).click();
-  await expect(p.getByText('保存されていない変更があります')).toHaveCount(0);
+  await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   let secondDialogSeen=false;
   p.once('dialog',async d=>{secondDialogSeen=true;await d.accept();});
   await p.getByRole('link',{name:'プランを見る',exact:true}).click();
@@ -173,7 +174,7 @@ try{
   await p.getByText('利用者 2').first().click();
   await expect(p.getByRole('article',{name:'利用者 2',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true})).toBeVisible();
 
-  await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
+  await fillGuestProfile(p,'ja');await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await expect(p.getByRole('radio',{name:/おすすめ/})).toHaveCount(2);
   await ctx.close();
  });
@@ -223,7 +224,7 @@ try{
   await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-guest-draft-input')),null);
   // A real, server-saved draft (not the removed local cache) must still restore across reload.
-  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await fillGuestProfile(p,'ja');await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await p.reload();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await ctx.close();
  });
@@ -232,7 +233,7 @@ try{
   // must surface a nonzero "事前決済割引" row alongside the subtotal/total;
   // no wear items are selected here, so the wear-adjustment row must stay absent.
   const jaCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});jaCtx.setDefaultTimeout(15000);const ja=await jaCtx.newPage();last=ja;
-  await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
+  await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await fillGuestProfile(ja,'ja');await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
   await expect(ja.locator('dl.guest-price dt')).toHaveText(['小計','事前決済割引','お支払い金額']);
   await expect(ja.locator('dl.guest-price')).not.toContainText('ウェアセット割引');
   const advanceRowValue=await ja.locator('dl.guest-price dd').nth(1).innerText();assert.notEqual(advanceRowValue.trim(),'');assert.doesNotMatch(advanceRowValue,/¥0(?:[^0-9]|$)/);
@@ -241,7 +242,7 @@ try{
   // EN, same narrow viewport, default (zero-adjustment) flow: labels localize and no
   // adjustment rows leak in when nothing triggers them, mirroring the JA zero case above.
   const enCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});enCtx.setDefaultTimeout(15000);const en=await enCtx.newPage();last=en;
-  await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'Choose equipment',exact:true}).click();await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
+  await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'Choose equipment',exact:true}).click();await fillGuestProfile(en,'en');await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   // Match the human-readable English recommendation label.
   await en.getByRole('radio',{name:/RECOMMENDED/i}).check();await en.getByLabel('I have checked everyone’s selections').check();await en.getByRole('button',{name:'Review the whole group',exact:true}).click();await expect(en.getByRole('region',{name:'Group review'})).toBeVisible();
   await expect(en.locator('dl.guest-price dt')).toHaveText(['Subtotal','Total to pay']);
@@ -281,7 +282,7 @@ try{
   // Reach a real, server-saved final review for a SKI set (this exercises the normal,
   // fully-synced path end to end; nothing here is synthetic).
 
-  await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
+  await fillGuestProfile(p,'ja');await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await p.getByRole('radio',{name:/おすすめ/}).check();await p.getByLabel('全員の内容を確認しました').check();
   await p.getByRole('button',{name:'全員分の最終確認へ'}).click();
   await expect(p.getByRole('region',{name:'全員分の確認'})).toContainText('スキーセット');
@@ -300,7 +301,7 @@ try{
   // eligibility for a changed condition -- switching to SNOWBOARD and resubmitting reaches a
   // fresh, fully-synced review for it.
   await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('用品',{exact:true}).selectOption('SNOWBOARD');
-  await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
+  await fillGuestProfile(p,'ja');await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await p.getByRole('radio',{name:/おすすめ/}).check();await p.getByLabel('全員の内容を確認しました').check();
   await p.getByRole('button',{name:'全員分の最終確認へ'}).click();
   await expect(p.getByRole('region',{name:'全員分の確認'})).toContainText('スノーボードセット');
@@ -329,14 +330,14 @@ try{
   await p2.getByLabel('利用開始日',{exact:true}).fill('2035-02-03');await p2.getByLabel('利用終了日',{exact:true}).fill('2035-02-03');
   await p2.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
 
-  await p2.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
+  await fillGuestProfile(p2,'ja');await p2.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await p2.getByRole('radio',{name:/おすすめ/}).check();await p2.getByLabel('全員の内容を確認しました').check();
   await p2.getByRole('button',{name:'全員分の最終確認へ'}).click();
   await expect(p2.getByRole('region',{name:'全員分の確認'})).toContainText('スキーセット');
   await p2.getByRole('button',{name:'内容を変更'}).click();
   await expect(p2.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
   await p2.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('用品',{exact:true}).selectOption('SNOWBOARD');
-  await expect(p2.getByRole('status').filter({hasText:'保存されていない変更があります'})).toBeVisible();
+  await expect(p2.getByRole('status').filter({hasText:'入力内容は「候補と参考料金を確認」で保存されます'})).toBeVisible();
   await p2.evaluate(()=>window.dispatchEvent(new PopStateEvent('popstate',{state:{...(history.state as object),step:3}})));await p2.waitForLoadState('networkidle');
   // Since CH-04B that full reload restores this same draft's unsaved SNOWBOARD edit instead of
   // discarding it -- and because it no longer matches the server's saved Ski review, neither the
@@ -365,14 +366,14 @@ try{
   await p.getByLabel('Start date',{exact:true}).fill('2035-02-02');await p.getByLabel('End date',{exact:true}).fill('2035-02-02');
   await p.getByRole('button',{name:'Choose equipment',exact:true}).click();
 
-  await p.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
+  await fillGuestProfile(p,'en');await p.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   await p.getByRole('radio',{name:/RECOMMENDED/i}).check();await p.getByLabel('I have checked everyone’s selections').check();
   await p.getByRole('button',{name:'Review the whole group',exact:true}).click();
   await expect(p.getByRole('region',{name:'Group review'})).toContainText('Ski set');
   await p.getByRole('button',{name:'Change details'}).click();
   await expect(p.getByRole('button',{name:'Review sizes and estimates',exact:true})).toBeVisible();
   await p.getByRole('article',{name:'Person 1',exact:true,includeHidden:true}).getByLabel('Equipment',{exact:true}).selectOption('SNOWBOARD');
-  await expect(p.getByRole('status').filter({hasText:'unsaved changes'})).toBeVisible();
+  await expect(p.getByRole('status').filter({hasText:'Your entries are saved when you select'})).toBeVisible();
   await p.evaluate(()=>window.dispatchEvent(new PopStateEvent('popstate',{state:{...(history.state as object),step:3}})));await p.waitForLoadState('networkidle');
   // As in the JA test above, this popstate turns into a full reload, which since CH-04B restores
   // the unsaved Snowboard edit for this draft; it no longer matches the saved Ski review, so no
@@ -390,7 +391,7 @@ try{
   const ja=locale==='ja';await p.goto('/'+locale+'/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill(date);await p.getByLabel(ja?'利用終了日':'End date',{exact:true}).fill(date);
   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
-  await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();
+  await fillGuestProfile(p,(ja?'ja':'en'));await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();
   await p.getByLabel(ja?'全員の内容を確認しました':'I have checked everyone’s selections').check();
   await p.getByRole('button',{name:ja?'全員分の最終確認へ':'Review the whole group',exact:true}).click();await expect(p.getByRole('region',{name:ja?'全員分の確認':'Group review'})).toBeVisible();
  }
@@ -436,7 +437,7 @@ try{
    }
    await age.fill('12');await age.blur();await expect(p.locator('#guest-err-m0-age')).toContainText(ja?'13歳以上は大人':'Adult for 13 or older');
    await p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'年齢区分':'Age category',{exact:true}).selectOption('KIDS');await age.fill('0');await height.fill('49');
-   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
+   await fillGuestProfile(p,(ja?'ja':'en'));await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
    await expect(age).not.toHaveAttribute('aria-invalid','true');await expect(p.locator('#guest-err-m0-age')).toHaveCount(0);await expect(p.locator('#guest-err-m0-height')).toBeVisible();await expect(p.locator('#guest-err-m0-pole')).toHaveCount(0);
    assert.deepEqual(posts,[],'invalid height is blocked locally; no child pole input is required');await noRawCode(p);await ctx.close();
   }
@@ -460,7 +461,7 @@ try{
   await expect(p.getByRole('region',{name:'全員分の確認'})).toHaveCount(0);await expect(p.getByRole('button',{name:/支払う/})).toHaveCount(0);
   await mkdir('.local/screenshots',{recursive:true});await p.screenshot({path:'.local/screenshots/guest-restored-ja-390.png',fullPage:true});
   // The ordinary save path is the only way forward, and it clears the cache.
-  await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
+  await fillGuestProfile(p,'ja');await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   assert.deepEqual(await cacheKeys(p),[]);assert.equal(((await draftOf(p)).input as {members:{heightCm:number}[]}).members[0]!.heightCm,172);
   await ctx.close();
  });
@@ -480,7 +481,7 @@ try{
   const before=await draftOf(p);await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-06');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-06');
   await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
   const cached=JSON.parse((await p.evaluate(k=>sessionStorage.getItem(k),DRAFT_KEY+before.id))!);
-  const saved=await p.evaluate(body=>fetch('/api/guest/draft',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),{draftId:before.id,expectedRevision:before.revision,input:{...cached.input,period:{startDate:'2035-03-20',endDate:'2035-03-20',slot:'DAY'}}});
+  const saved=await p.evaluate(body=>fetch('/api/guest/draft',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),{draftId:before.id,expectedRevision:before.revision,input:{...cached.input,period:{startDate:'2035-03-20',endDate:'2035-03-20',slot:'DAY'},members:cached.input.members.map((m:object)=>({...m,heightCm:170,footCm:25.5,ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I'}}))}});
   assert.equal(saved.revision,before.revision+1);
   await p.reload();await expect(p.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
   await expect(p.getByText('未保存の入力を復元しました')).toHaveCount(0);await expect.poll(()=>cacheKeys(p)).toEqual([]);
@@ -558,10 +559,10 @@ try{
    await expect(p.getByText(ja?'利用開始日を選択してください。':'Choose a start date.')).toHaveCount(0);await fits();await shot('dates');
    await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
    for(const [label,mode] of [[ja?'身長（cm）':'Height (cm)','numeric'],[ja?'足のサイズ（cm）':'Foot size (cm)','decimal'],[ja?'体重（kg）':'Weight (kg)','numeric']] as const)await expect(p.getByLabel(label,{exact:true})).toHaveAttribute('inputmode',mode);await p.getByLabel(ja?'身長（cm）':'Height (cm)',{exact:true}).fill('49');
-   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
+   await fillGuestProfile(p,(ja?'ja':'en'));await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
    await expect(p.locator('#guest-err-m0-height')).toBeVisible();await fits();await shot('equipment-invalid');
    await p.getByLabel(ja?'身長（cm）':'Height (cm)',{exact:true}).fill('170');await expect(p.locator('#guest-err-m0-height')).toHaveCount(0);await shot('equipment');
-   await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await expect(p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/})).toBeVisible();
+   await fillGuestProfile(p,(ja?'ja':'en'));await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await expect(p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/})).toBeVisible();
    for(const raw of ['SHORTER','RECOMMENDED','LONGER'])await expect(p.getByRole('main')).not.toContainText(raw);
    await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(ja?'全員の内容を確認しました':'I have checked everyone’s selections').check();await fits();await shot('candidate');
    await p.getByRole('button',{name:ja?'全員分の最終確認へ':'Review the whole group',exact:true}).click();

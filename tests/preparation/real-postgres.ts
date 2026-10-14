@@ -26,17 +26,31 @@ try{
  const contexts=new GuestContexts(guest.guestPool),variants=await x.holds.recommendationCatalog();
  const catalog:GuestCatalog={revision:'r65-synthetic',models:[],sizes:[]};
  const custody=new CustodyService(custodyRole.custodyPool,x.roles.authPool,x.signed.identity),manifest=new ManifestService(ops.operationsPool,x.roles.authPool,x.signed.identity);
- const member={key:'person-1',itemFamily:null,sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null};
+ const member={key:'person-1',itemFamily:null,sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null};
  async function reserve(date:string,patch:Record<string,unknown>={},pay=true,store='MOUNTAIN_BASE',unavailable=false){
   const actor=await contexts.resolve((await contexts.create()).token),h=new HoldService(x.roles.holdPool,actor),q=new QuoteService(x.roles.pricingPool,actor),r=new RecommendationService(x.roles.recommendationPool,actor,h,q,async v=>guestVariants(catalog,v)),b=new BookingService(x.flow.flowPool,guest!.guestPool,actor,x.fake,simulation),s=new GuestBookingService(contexts,actor,r,b,async()=>catalog);
   let d=await s.get();const input={contractVersion:'INTEGRATED_V1_3',pickupStore:store,returnStore:store,period:{startDate:date,endDate:date,slot:'DAY'},members:[{...member,...patch}]};
   await assert.rejects(s.save({draftId:d.id,expectedRevision:d.revision,input:{...input,members:[{...input.members[0],poleSize:'forged-authoritative-pole'}]}}),{code:'INVALID_POLE_INPUT'});
   d=await s.save({draftId:d.id,expectedRevision:d.revision,input});d=await s.preview({draftId:d.id,expectedRevision:d.revision});if(unavailable){assert.equal(d.preview?.members[0]?.candidates.RECOMMENDED,null);assert.equal(d.preview?.members[0]?.price,null);await assert.rejects(s.choose({draftId:d.id,expectedRevision:d.revision,directions:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true}));await assert.rejects(s.checkout({draftId:d.id,expectedRevision:d.revision,reviewHash:null,contact:{displayName:'SYNTHETIC Rejected',email:'synthetic-rejected@example.invalid',termsAccepted:true}}));return {s,d};}assert.ok(d.preview?.members[0]?.candidates.RECOMMENDED);assert.equal(d.hold,null);
-  d=await s.choose({draftId:d.id,expectedRevision:d.revision,directions:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});
+  // A standalone pole sends no length choice: the server derives its single candidate and refuses any other.
+  const pole=patch.itemFamily==='POLE';if(pole)for(const forged of ['LONGER','SHORTER'])await assert.rejects(s.choose({draftId:d.id,expectedRevision:d.revision,directions:{'person-1':forged},wantAdvance:false,couponCode:null,acceptedModelPolicy:true}),{code:'SELECTION_INVALID'});
+  d=await s.choose({draftId:d.id,expectedRevision:d.revision,directions:pole?{}:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});if(pole)assert.deepEqual(d.selection?.directions,{'person-1':'RECOMMENDED'});
   if(pay)d=await s.checkout({draftId:d.id,expectedRevision:d.revision,reviewHash:d.reviewHash,contact:{displayName:'SYNTHETIC R65 Guest',email:'synthetic-r65@example.invalid',termsAccepted:true}});
   else{const selected=await r.select((await contexts.read(actor)).preview_id!,randomUUID(),{directions:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true});await b.create(randomUUID(),selected.quote!.id,{displayName:'SYNTHETIC R65 Unpaid',email:'synthetic-unpaid@example.invalid',termsAccepted:true});}
   return {s,d};
  }
+ stage='untouched or generic-level V1.3 input rejected by the server';{
+  const actor=await contexts.resolve((await contexts.create()).token),h=new HoldService(x.roles.holdPool,actor),q=new QuoteService(x.roles.pricingPool,actor),r=new RecommendationService(x.roles.recommendationPool,actor,h,q,async v=>guestVariants(catalog,v)),s=new GuestBookingService(contexts,actor,r,null,async()=>catalog);
+  const d=await s.get(),save=(patch:Record<string,unknown>)=>s.save({draftId:d.id,expectedRevision:d.revision,input:{contractVersion:'INTEGRATED_V1_3',pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-01-02',endDate:'2035-01-02',slot:'DAY'},members:[{...member,...patch}]}});
+  // The guest form's untouched state: nothing entered, so nothing authoritative to save.
+  await assert.rejects(save({heightCm:null,footCm:null,ski:{weightKg:null,ageAtStart:null,skierType:null}}));
+  for(const ski of [{weightKg:60,ageAtStart:30,skierType:null},{weightKg:null,ageAtStart:30,skierType:'TYPE_I'},{weightKg:60,ageAtStart:null,skierType:'TYPE_I'}])await assert.rejects(save({ski}),JSON.stringify(ski));
+  await assert.rejects(save({heightCm:null}));await assert.rejects(save({footCm:null}));
+  // The retired synthetic default (generic BEGINNER level, no declared skier type) is refused.
+  await assert.rejects(save({ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'}}),{code:'SKIER_TYPE_REQUIRED'});
+  assert.equal((await s.get()).input,null);
+ }
+ console.log('PASS server refuses untouched null body/safety input and generic-level V1.3 ski profiles; nothing saved');
  stage='V1.3 no-pole-inventory booking';const booked=await reserve('2035-01-02'),id=booked.d.booking!.id;assert.equal(booked.d.booking!.state,'CONFIRMED_DEV');assert.equal(booked.d.booking!.priceSnapshot.totalJpy,7500);
  const row=(await x.db.pool.query('SELECT conditions,hold_id FROM rental_bookings WHERE id=$1',[id])).rows[0];assert.equal(row.conditions.contractVersion,'INTEGRATED_V1_3');assert.deepEqual(row.conditions.members[0].items.find((i:{family:string})=>i.family==='POLE').variantIds,[]);
  assert.equal((await x.db.pool.query('SELECT cardinality(variant_ids) n FROM inventory_pole_exemptions WHERE hold_id=$1 AND active',[row.hold_id])).rows[0].n,0);
@@ -86,4 +100,22 @@ try{
  }
  const board=await reserve('2035-02-06',{sport:'SNOWBOARD',ski:null}),bv=await custody.checkoutView(board.d.booking!.id);assert.equal(bv.preparationMembers[0]?.din,null);const bp=await custody.prepare(randomUUID(),{bookingId:bv.bookingId,expectedBookingVersion:bv.bookingVersion,expectedHoldVersion:bv.holdVersion,selections:bv.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(bv)});assert.equal(bp.preparation.fit_evidence.members[0].dinReferenceValue,null);
  assert.ok(variants.length);console.log('PASS minimal individual profiles; boots-only ready with null BSL and no DIN; snowboard preparation');
+ stage='legacy preparation is history only; V2 re-preparation restores checkout';{
+  const legacyBooking=(await reserve('2035-02-05')).d.booking!.id;let lv=await custody.checkoutView(legacyBooking);
+  const selections=lv.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})).sort((a,b)=>a.requirementKey.localeCompare(b.requirementKey));
+  const legacyEvidence={selections,note:'SYNTHETIC legacy free-form fit record'};
+  const c=await x.db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC legacy preparation fixture',true)",[x.actor]);
+   await c.query('INSERT INTO rental_preparations(id,store_id,checked_in_at,checked_in_by,prepared_at,prepared_by,fit_evidence) VALUES($1,$2,$3,$4,$3,$4,$5)',[legacyBooking,'MOUNTAIN_BASE',x.now(),x.actor,JSON.stringify(legacyEvidence)]);
+   await c.query("UPDATE inventory_holds SET allocation_stage='PREPARATION_FIXED',version=version+1 WHERE id=(SELECT hold_id FROM rental_bookings WHERE id=$1)",[legacyBooking]);await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  lv=await custody.checkoutView(legacyBooking);assert.ok(lv.preparation?.prepared_at);assert.deepEqual(lv.preparation.fit_evidence,legacyEvidence);assert.equal(lv.preparationValid,false);
+  const legacyRows=await manifest.manifest({...query,date:'2035-02-05',section:'pickup'});assert.equal(((legacyRows.rows.find(r=>(r as Record<string,unknown>).bookingId===legacyBooking) as Record<string,unknown>)?.pickup as {equipmentPrepared:boolean}).equipmentPrepared,false);
+  await assert.rejects(custody.checkout(randomUUID(),{bookingId:legacyBooking,expectedPreparationVersion:lv.preparation.version}),{code:'REPREPARATION_REQUIRED'});
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_loan_items WHERE booking_id=$1',[legacyBooking])).rows[0].n,0);
+  const again=await custody.prepare(randomUUID(),{bookingId:lv.bookingId,expectedBookingVersion:lv.bookingVersion,expectedHoldVersion:lv.holdVersion,selections:lv.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(lv)});
+  assert.equal(again.preparationValid,true);assert.equal(again.preparation.fit_evidence.version,'ZAO_PREP_V2');
+  const out=await custody.checkout(randomUUID(),{bookingId:legacyBooking,expectedPreparationVersion:again.preparation.version});assert.ok(out.loans.length);
+  // The retired record is not erased: the append-only rental history keeps it as the prior state.
+  const history=(await x.db.pool.query("SELECT before_data->'fit_evidence' AS evidence FROM rental_history WHERE entity_id=$1 AND event='rental_preparations_UPDATE' ORDER BY id",[legacyBooking])).rows;assert.deepEqual(history[0]?.evidence,legacyEvidence);
+ }
+ console.log('PASS legacy evidence + matching assignment: not ready, manifest not prepared, checkout REPREPARATION_REQUIRED, V2 re-prepare then checkout, legacy kept in history');
 }catch(e){console.error('R65_PREPARATION_FAILED '+stage+' '+String((e as {code?:string}).code??(e as Error).message));throw e;}finally{await custodyRole?.close();await guest?.close();await ops?.close();await x.close();}

@@ -5,10 +5,10 @@ import {suggestPole} from '../../packages/contracts/src/pole';
 import {preparationMembers,recordPreparation,preparationStillValid,type PreparationItem,type PreparationInput} from '../../packages/contracts/src/preparation';
 import type {Profile} from '../../packages/contracts/src/recommendation';
 import type {HoldConditions} from '../../packages/contracts/src/hold';
-const base:DinInput={heightCm:170,weightKg:60,ageAtStart:30,level:'BEGINNER',bslMm:304};
+const base:DinInput={heightCm:170,weightKg:60,ageAtStart:30,skierType:'TYPE_I',bslMm:304};
 test('published version provenance and independent Salomon-linked ISOSKI observations',()=>{
  assert.equal(DIN_REFERENCE.version,'USC_2022_INITIAL_V1');assert.match(DIN_REFERENCE.sha256,/^[0-9a-f]{64}$/);
- for(const [patch,value] of [[{},4.5],[{bslMm:314},4],[{bslMm:314,level:'INTERMEDIATE'},5],[{bslMm:314,level:'ADVANCED'},6],[{bslMm:314,level:'ADVANCED',ageAtStart:50},5]] as const)assert.equal(dinAdvisory({...base,...patch}).value,value);
+ for(const [patch,value] of [[{},4.5],[{bslMm:314},4],[{bslMm:314,skierType:'TYPE_II'},5],[{bslMm:314,skierType:'TYPE_III'},6],[{bslMm:314,skierType:'TYPE_III',ageAtStart:50},5]] as const)assert.equal(dinAdvisory({...base,...patch}).value,value);
 });
 test('each actual BSL column boundary, no interpolation across cells',()=>{
  const expected=[[230,null],[231,null],[250,null],[251,5.5],[270,5.5],[271,5],[290,5],[291,4.5],[310,4.5],[311,4],[330,4],[331,3.5],[350,3.5],[351,3],[450,3]];
@@ -29,7 +29,7 @@ test('missing, nonfinite, blank and out-of-table inputs fail closed',()=>{
 test('pole advisory uses real size nearest to height x 0.7, shorter tie and no-inventory 5cm rounding',()=>{
  assert.equal(suggestPole(170),120);assert.equal(suggestPole(170,[110,125]),125);assert.equal(suggestPole(150,[110,100]),100);assert.equal(suggestPole(150,[100,110,100]),100);assert.equal(suggestPole(NaN),null);
 });
-const profile:Profile={key:'a',sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'},poleVariantId:null};
+const profile:Profile={key:'a',sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I'},poleVariantId:null};
 const conditions:HoldConditions={contractVersion:'INTEGRATED_V1_3',reservationId:'booking',pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-01-01',endDate:'2035-01-01',slot:'DAY'},members:[{key:'a',product:'SKI_SET',age:'ADULT',tier:'REGULAR',items:[{family:'SKI',variantIds:['ski']},{family:'SKI_BOOT',variantIds:['boot']},{family:'POLE',variantIds:[]}]}]};
 const item:PreparationItem={requirement_key:'a:SKI_BOOT',asset_id:'actual-boot-A',pole_id:null,variant_id:'boot',family:'SKI_BOOT',size:'26.5 cm',name:'actual boot',catalog_season:null,bsl_status:'RECORDED',bsl_mm:304};
 const plan=(items=[item],p=profile)=>preparationMembers(conditions,[p],items,[],[]);
@@ -82,4 +82,21 @@ test('ski boots only may be ready with unknown BSL, without DIN or ski body data
  Object.assign(v.members[0]!,{bindingCompatibilityConfirmed:false,bindingSetupConfirmed:false,poleSelectedCm:null});
  const saved=recordPreparation(v,members,'staff','time',[]);assert.equal(saved.members[0]!.bslMm,null);assert.equal(saved.members[0]!.bslSource,null);assert.equal(saved.members[0]!.dinReferenceValue,null);assert.equal(members[0]!.needsBinding,false);
  v.members[0]!.equipmentConfirmed=false;assert.throws(()=>recordPreparation(v,members,'staff','time',[]),{code:'PHYSICAL_CONFIRMATION_REQUIRED'});
+});
+
+test('each explicit skier type enters the DIN path; a generic level alone never does',()=>{
+ for(const [skierType,value] of [['TYPE_I',4.5],['TYPE_II',5.5],['TYPE_III',6.5]] as const)assert.equal(plan([item],{...profile,ski:{weightKg:60,ageAtStart:30,skierType}})[0]!.din?.value,value,skierType);
+ // Changing only a generic level never changes the declared DIN type or its value.
+ for(const level of ['BEGINNER','INTERMEDIATE','ADVANCED'] as const)assert.equal(plan([item],{...profile,ski:{...profile.ski!,level}})[0]!.din?.value,4.5,level);
+});
+test('historical V1.2 generic level stays readable but must be re-confirmed: no DIN, cannot be marked ready',()=>{
+ for(const level of ['BEGINNER','INTERMEDIATE','ADVANCED'] as const){const members=plan([item],{...profile,ski:{weightKg:60,ageAtStart:30,level}});
+  assert.equal(members[0]!.profile?.ski?.level,level);assert.equal(members[0]!.din?.value,null);assert.equal(members[0]!.din?.reason,'INPUT_REQUIRED');
+  assert.throws(()=>recordPreparation(input(),members,'staff','time',[]),{code:'SKIER_TYPE_DECLARATION_REQUIRED'});
+ }
+});
+test('legacy non-V2 evidence with the same assignment is history only and never valid for checkout',()=>{
+ const selections=[{requirementKey:item.requirement_key,assetId:item.asset_id,poleId:null}];
+ for(const legacy of [{selections},{version:'ZAO_PREP_V1',selections},{version:'LEGACY',selections,members:[]}])assert.equal(preparationStillValid(legacy,[item],conditions),false,JSON.stringify(legacy));
+ assert.equal(preparationStillValid(recordPreparation(input(),plan(),'staff','time',selections,conditions),[item],conditions),true);
 });

@@ -193,7 +193,7 @@ try{
   // holds 1 of registerWear's 2 jacket/pants units, so a SKI_SET-bundled wear item here
   // would need a second concurrent unit that isn't available until wear-only is returned
   // later in this same check. wear-mixed alone still makes this booking mixed equipment+wear.
-  const mixedInput={pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-02-26',endDate:'2035-02-26',slot:'DAY' as const},contractVersion:'INTEGRATED_V1_2' as const,members:[{key:'ski-mixed',sport:'SKI' as const,heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR' as const,ski:{weightKg:60,ageAtStart:30,level:'BEGINNER' as const},poleVariantId:variants.pole},wearMember('wear-mixed')]};
+  const mixedInput={pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-02-26',endDate:'2035-02-26',slot:'DAY' as const},contractVersion:'INTEGRATED_V1_3' as const,members:[{key:'ski-mixed',sport:'SKI' as const,heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR' as const,ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I' as const},poleVariantId:null},wearMember('wear-mixed')]};
   const mp=await recs.preview(randomUUID(),mixedInput,null,true),ms=await recs.select(mp.preview.id,randomUUID(),{directions:{'ski-mixed':'RECOMMENDED','wear-mixed':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true},{reason:'SYNTHETIC mixed manifest mechanics'});
   const mixed=await x.service.create(randomUUID(),ms.quote!.id,{displayName:'SYNTHETIC Mixed',email:'synthetic-mixed@example.invalid',termsAccepted:true});
   await x.service.startPayment(mixed.id,randomUUID());

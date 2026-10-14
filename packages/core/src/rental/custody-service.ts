@@ -67,7 +67,9 @@ export class CustodyService extends BookingService{
    if(!p||p.version!==v.expectedPreparationVersion||!p.prepared_at)throw new FlowError('STALE_PREPARATION');
    if((await c.query('SELECT 1 FROM rental_loan_items WHERE booking_id=$1',[b.id])).rowCount)throw new FlowError('ALREADY_CHECKED_OUT');
    const h=(await c.query('SELECT * FROM inventory_holds WHERE id=$1',[b.hold_id])).rows[0];await this.verifyClaims(c,h,now);await this.verifyPhysicalHandoff(c,h.id);
-   if(p.fit_evidence?.version==='ZAO_PREP_V2'&&!((await this.assignment(c,b.id)).preparationValid))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');
+   // Legacy evidence stays as history only: current checkout needs a valid ZAO_PREP_V2 preparation.
+   if(p.fit_evidence?.version!=='ZAO_PREP_V2')throw new FlowError('REPREPARATION_REQUIRED');
+   if(!((await this.assignment(c,b.id)).preparationValid))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');
    if(h.allocation_stage!=='PREPARATION_FIXED')throw new FlowError('PREPARATION_NOT_FIXED');
    const rows=(await c.query(`SELECT DISTINCT ON(requirement_key) cl.*,coalesce(a.variant_id,p.variant_id) AS variant_id,v.family FROM inventory_claims cl LEFT JOIN ledger_assets a ON a.id=cl.asset_id LEFT JOIN ledger_poles p ON p.id=cl.pole_id JOIN ledger_variants v ON v.id=coalesce(a.variant_id,p.variant_id) WHERE cl.hold_id=$1 AND cl.active ORDER BY requirement_key,day`,[b.hold_id])).rows;
    if(flowHash(rows.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})))!==flowHash(p.fit_evidence.selections)){const amendment=(await c.query("SELECT q.assignment FROM ops_amendments a JOIN ops_amendment_quotes q ON q.id=a.id WHERE a.booking_id=$1 AND q.expected_hold_version+1=$2 AND length(btrim(a.fit_evidence))>0",[b.id,h.version])).rows[0];if(!amendment||flowHash(rows.map(i=>({key:i.requirement_key,asset:i.asset_id,pole:i.pole_id})))!==flowHash(amendment.assignment.equipment.map((i:{key:string;asset:string|null;pole:string|null})=>({key:i.key,asset:i.asset,pole:i.pole}))))throw new FlowError('PREPARED_ASSIGNMENT_CHANGED');}

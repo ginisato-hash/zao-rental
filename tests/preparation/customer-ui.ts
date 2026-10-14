@@ -13,6 +13,7 @@ import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {registerWear} from '../wear/fixture';
 import {seedPublicContent} from '../public/content-seed';
 import {capture,saveManifest} from './visual';
+import {fillGuestProfile,skierTypeName} from '../public/guest-profile';
 const app=await startFlowApp({publicP0:true,productionCopy:true,warmRoutes:true}),browser=await chromium.launch();let stage='setup';
 try{
  await seedRecommendation(app.db.pool,true,false);await app.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T10:00:00+09:00'::timestamptz$$");
@@ -42,18 +43,47 @@ try{
  await sp.goto('/staff/content');await sp.getByRole('button',{name:'下書き全体の掲載版を確認'}).click();await sp.getByRole('button',{name:/^非公開の掲載版へ反映/}).click();await expect(sp.getByRole('status',{name:'説明処理状態'})).toContainText('保存済み');
  let serial=5;
  for(const locale of ['ja','en'] as const){const t=(j:string,e:string)=>locale==='ja'?j:e;
-  for(const scenario of ['ski','board','premium','individual','wear']){stage=locale+' '+scenario;
+  for(const scenario of ['ski','board','premium','individual','wear','pole','mixed']){stage=locale+' '+scenario;
    const ctx=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
    await ctx.route('**/api/guest/checkout',async route=>{const body=route.request().postDataJSON();assert.equal(body.contact.displayName,'Aki Sato');assert.equal(body.contact.email,'aki@example.invalid');await route.continue({postData:JSON.stringify({...body,contact:{...body.contact,displayName:'SYNTHETIC Aki Sato',email:'synthetic-aki@example.invalid'}})});});
    const p=await ctx.newPage();await p.goto('/'+locale+'/book');await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill('2035-02-'+String(serial++).padStart(2,'0'));await p.getByRole('button',{name:t('用品を選ぶ','Choose equipment'),exact:true}).click();
    const equipment=p.getByLabel(t('用品','Equipment'),{exact:true});assert.deepEqual(await equipment.locator('option').allTextContents(),locale==='ja'?['スキーセット','スノーボードセット','単品','ウェア']:['Ski Set','Snowboard Set','Individual Items','Wear']);
-   assert.equal(await p.locator('select[aria-label*="ポール"],select[aria-label*="pole" i]').count(),0);assert.doesNotMatch(await p.locator('body').innerText(),/DIN|BSL/);
-   if(scenario==='ski'){const weight=p.getByLabel(t('体重（kg）','Weight (kg)'));await expect(weight).toHaveAttribute('step','1');await weight.fill('60.5');await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await expect(p.getByRole('heading',{name:t('利用者','Person')+' 1',exact:true})).toBeVisible();await expect(p.locator('body')).toContainText(t('体重は5〜300kgの整数で入力してください。','Enter a whole-number weight from 5 to 300 kg.'));await capture(p,locale+'-weight-decimal-rejected');await weight.fill('60');await capture(p,locale+'-four-categories-ski');}
-   if(scenario==='board'||scenario==='premium'){await equipment.selectOption('SNOWBOARD');await expect(p.getByLabel(t('プラン','Plan'),{exact:true})).toContainText('Premium');if(scenario==='premium'){await expect(p.getByLabel(t('プラン','Plan'),{exact:true}).locator('option[value="PREMIUM"]')).toHaveJSProperty('disabled',false);await p.getByLabel(t('プラン','Plan'),{exact:true}).selectOption('PREMIUM');await p.getByLabel(t('モデルとシーズン','Model and season'),{exact:true}).selectOption('synthetic-ski');}await capture(p,locale+'-snowboard-'+scenario);}
+   assert.equal(await p.locator('select[aria-label*="ポール"],select[aria-label*="pole" i]').count(),0);assert.doesNotMatch(await p.locator('body').innerText(),/\bDIN\b|\bBSL\b/);
+   if(scenario==='ski'){
+    // A new Ski Set holds no authoritative body or safety value until the guest types one.
+    const fields=[t('身長（cm）','Height (cm)'),t('足のサイズ（cm）','Foot size (cm)'),t('体重（kg）','Weight (kg)'),t('年齢','Age at start')];
+    const empty=async()=>{for(const label of fields){const field=p.getByLabel(label,{exact:true});if(await field.count())await expect(field).toHaveValue('');}for(const type of ['TYPE_I','TYPE_II','TYPE_III'] as const)await expect(p.getByRole('radio',{name:skierTypeName(locale,type)})).not.toBeChecked();};
+    await empty();assert.equal(await p.getByLabel(t('レベル','Ski level'),{exact:true}).count(),0);await capture(p,locale+'-ski-untouched');
+    let saves=0;p.on('request',r=>{if(r.method()==='POST'&&r.url().endsWith('/api/guest/draft'))saves++;});
+    await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();
+    for(const message of [t('身長は50〜250cmの整数で入力してください。','Enter a whole-number height from 50 to 250 cm.'),t('体重は5〜300kgの整数で入力してください。','Enter a whole-number weight from 5 to 300 kg.'),t('開始日の年齢は0〜120歳の整数で入力してください。','Enter a whole-number age from 0 to 120 at the start date.'),t('ビンディング設定のため、滑り方を1つ選んでください。','Choose how you ski so the binding can be set.')])await expect(p.locator('body')).toContainText(message);
+    assert.equal(saves,0);await capture(p,locale+'-ski-untouched-rejected');
+    const age=p.getByLabel(t('年齢区分','Age category'),{exact:true});await age.selectOption('KIDS');await empty();await age.selectOption('ADULT');await empty();
+    await fillGuestProfile(p,locale,{heightCm:182,footCm:28,weightKg:80,ageAtStart:40,skierType:'TYPE_III'});await equipment.selectOption('SNOWBOARD');await equipment.selectOption('SKI');await empty();
+    await equipment.selectOption('INDIVIDUAL');await p.getByLabel(t('単品の種類','Individual item'),{exact:true}).selectOption('SKI');await empty();await equipment.selectOption('SKI');
+    await fillGuestProfile(p,locale);await capture(p,locale+'-ski-skier-type-entered');
+    const weight=p.getByLabel(t('体重（kg）','Weight (kg)'));await expect(weight).toHaveAttribute('step','1');await weight.fill('60.5');await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await expect(p.getByRole('heading',{name:t('利用者','Person')+' 1',exact:true})).toBeVisible();await expect(p.locator('body')).toContainText(t('体重は5〜300kgの整数で入力してください。','Enter a whole-number weight from 5 to 300 kg.'));await capture(p,locale+'-weight-decimal-rejected');await weight.fill('60');await capture(p,locale+'-four-categories-ski');}
+   if(scenario==='board'||scenario==='premium'){await equipment.selectOption('SNOWBOARD');await fillGuestProfile(p,locale);await expect(p.getByLabel(t('プラン','Plan'),{exact:true})).toContainText('Premium');if(scenario==='premium'){await expect(p.getByLabel(t('プラン','Plan'),{exact:true}).locator('option[value="PREMIUM"]')).toHaveJSProperty('disabled',false);await p.getByLabel(t('プラン','Plan'),{exact:true}).selectOption('PREMIUM');await p.getByLabel(t('モデルとシーズン','Model and season'),{exact:true}).selectOption('synthetic-ski');}await capture(p,locale+'-snowboard-'+scenario);}
    if(scenario==='individual'){await equipment.selectOption('INDIVIDUAL');for(const item of ['SKI','SKI_BOOT','SNOWBOARD','SNOWBOARD_BOOT','POLE']){await p.getByLabel(t('単品の種類','Individual item'),{exact:true}).selectOption(item);await expect(p.getByLabel(t('プラン','Plan'),{exact:true})).toHaveCount(['SKI','SNOWBOARD'].includes(item)?1:0);
-    for(const [label,visible] of [[t('身長（cm）','Height (cm)'),!item.endsWith('_BOOT')],[t('足のサイズ（cm）','Foot size (cm)'),item.endsWith('_BOOT')],[t('体重（kg）','Weight (kg)'),item==='SKI'],[t('年齢','Age at start'),item==='SKI'],[t('レベル','Ski level'),item==='SKI']] as const){const field=p.getByLabel(label,{exact:true});await expect(field).toHaveCount(visible?1:0);if(visible){await expect(field).toBeVisible();if(label!==t('レベル','Ski level'))await expect(field).toHaveAttribute('aria-required','true');}}
+    for(const [label,visible] of [[t('身長（cm）','Height (cm)'),!item.endsWith('_BOOT')],[t('足のサイズ（cm）','Foot size (cm)'),item.endsWith('_BOOT')],[t('体重（kg）','Weight (kg)'),item==='SKI'],[t('年齢','Age at start'),item==='SKI']] as const){const field=p.getByLabel(label,{exact:true});await expect(field).toHaveCount(visible?1:0);if(visible){await expect(field).toBeVisible();await expect(field).toHaveAttribute('aria-required','true');await expect(field).toHaveValue('');}}
+    await expect(p.getByRole('radio',{name:skierTypeName(locale,'TYPE_I')})).toHaveCount(item==='SKI'?1:0);assert.equal(await p.getByLabel(t('レベル','Ski level'),{exact:true}).count(),0);
     await capture(p,locale+'-individual-'+item.toLowerCase());
    }await ctx.close();continue;}
+   if(scenario==='pole'||scenario==='mixed'){
+    if(scenario==='mixed'){await p.getByLabel(t('利用人数','Group size'),{exact:true}).fill('2');const first=p.getByRole('article',{name:t('利用者','Person')+' 1',exact:true});await fillGuestProfile(first,locale);await p.locator('summary',{hasText:t('利用者','Person')+' 2'}).click();}
+    const person=p.getByRole('article',{name:t('利用者','Person')+' '+(scenario==='mixed'?2:1),exact:true});await person.getByLabel(t('用品','Equipment'),{exact:true}).selectOption('INDIVIDUAL');await person.getByLabel(t('単品の種類','Individual item'),{exact:true}).selectOption('POLE');await fillGuestProfile(person,locale,{heightCm:165});
+    assert.equal(await p.locator('input[aria-label*="ポール"],input[aria-label*="pole" i]').count(),0);
+    await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();
+    const size=p.getByRole('article',{name:t('利用者','Person')+' '+(scenario==='mixed'?2:1),exact:true});await expect(size).toContainText(t('身長に合わせてご用意します','Prepared to suit your height'));await expect(size).toContainText(t('参考料金','Estimate'));
+    assert.equal(await size.getByRole('radio').count(),0);assert.equal(await size.locator('input').count(),0);assert.equal(await p.locator('input[aria-label*="ポール"],input[aria-label*="pole" i]').count(),0);
+    if(scenario==='mixed'){assert.ok(await p.getByRole('article',{name:t('利用者','Person')+' 1',exact:true}).getByRole('radio').count()>0);await p.getByRole('article',{name:t('利用者','Person')+' 1',exact:true}).getByRole('radio',{name:locale==='ja'?/おすすめ/:/Recommended/}).check();}
+    else assert.equal(await p.getByRole('radio').count(),0);
+    await capture(p,locale+'-'+scenario+'-pole-size');
+    await p.getByLabel(t('全員の内容を確認しました','I have checked everyone’s selections')).check();await p.getByRole('button',{name:t('全員分の最終確認へ','Review the whole group'),exact:true}).click();
+    const review=p.getByRole('region',{name:t('全員分の確認','Group review')});await expect(review).toBeVisible();await expect(review).toContainText(t('身長に合わせてご用意します','Prepared to suit your height'));assert.equal(await review.getByRole('radio').count(),0);
+    const draft=await (await ctx.request.get('/api/guest/draft')).json(),key=draft.input.members[scenario==='mixed'?1:0].key;assert.equal(draft.input.members[scenario==='mixed'?1:0].itemFamily,'POLE');assert.equal(draft.selection.directions[key],'RECOMMENDED');
+    await capture(p,locale+'-'+scenario+'-pole-review');console.log('PASS '+stage+' Gear → standalone Pole → Size (0 pole radios, 0 length inputs) → Final review');await ctx.close();continue;
+   }
    if(scenario==='wear'){await equipment.selectOption('WEAR');await p.getByLabel(t('ジャケット','Jacket'),{exact:true}).selectOption('wear_jacket-'+wear.selection.jacketVariantId);await p.getByLabel(t('パンツ','Pants'),{exact:true}).selectOption('wear_pants-'+wear.selection.pantsVariantId);await capture(p,locale+'-wear');}
    await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await p.getByRole('radio',{name:locale==='ja'?/おすすめ/:/Recommended/}).check();await p.getByLabel(t('全員の内容を確認しました','I have checked everyone’s selections')).check();await p.getByRole('button',{name:t('全員分の最終確認へ','Review the whole group'),exact:true}).click();await expect(p.getByRole('region',{name:t('全員分の確認','Group review')})).toBeVisible();
    const draft=await (await ctx.request.get('/api/guest/draft')).json();assert.equal(draft.input.contractVersion,'INTEGRATED_V1_3');assert.equal(draft.input.members[0].poleSize,null);

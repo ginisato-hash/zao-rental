@@ -17,7 +17,8 @@ export function preparationMembers(conditions:HoldConditions,profiles:Profile[],
   return {memberKey:m.key,product:m.product,age:m.age,tier:m.tier,profile,items:assigned,wear:m.items.filter(i=>isWear(i.family)).map(i=>({family:i.family,size:wearVariants.find(v=>v.id===i.variantIds[0])?.size??''})),needsBinding,needsPole,needsWear,ownBoot:needsBinding&&!m.items.some(i=>i.family==='SKI_BOOT'),bootAssetId:boot?.asset_id??null,bslMm,poleSuggestedCm:needsPole&&profile?.heightCm?suggestPole(profile.heightCm,poleSizes):null,din:needsBinding?memberDin(profile,bslMm):null};
  });
 }
-export function memberDin(profile:Profile|null,bslMm:number|null){return dinAdvisory(profile?.ski&&profile.heightCm&&bslMm?{...profile.ski,heightCm:profile.heightCm,bslMm}:null);}
+/** Only an explicit V1.3 skier type is DIN input; a historical generic level leaves the reference unavailable. */
+export function memberDin(profile:Profile|null,bslMm:number|null){const ski=profile?.ski;return dinAdvisory(ski?.skierType&&profile!.heightCm&&bslMm?{heightCm:profile!.heightCm,weightKg:ski.weightKg,ageAtStart:ski.ageAtStart,skierType:ski.skierType,bslMm}:null);}
 export function recordPreparation(value:unknown,members:PreparationMember[],actor:string,at:string,selections:PreparationEvidence['selections'],conditions?:HoldConditions):PreparationEvidence{
  const input=flowObject(value,['version','members']);
  if(input.version!=='ZAO_PREP_V2'||!Array.isArray(input.members)||input.members.length!==members.length)throw new FlowError('STRUCTURED_PREPARATION_REQUIRED',422);
@@ -36,6 +37,7 @@ export function recordPreparation(value:unknown,members:PreparationMember[],acto
   if(m.ownBoot&&r.ownBootConfirmed!==true)throw new FlowError('ACTUAL_BOOT_REQUIRED',422);
   const din=m.needsBinding?memberDin(m.profile,bslMm as number):null;
   if(m.needsBinding&&(r.bindingCompatibilityConfirmed!==true||r.bindingSetupConfirmed!==true))throw new FlowError('BINDING_CONFIRMATION_REQUIRED',422);
+  if(m.needsBinding&&!m.profile?.ski?.skierType)throw new FlowError('SKIER_TYPE_DECLARATION_REQUIRED',422);
   if(m.needsBinding&&din?.value==null)throw new FlowError('DIN_REFERENCE_UNAVAILABLE',422);
   if(m.needsPole&&(m.poleSuggestedCm===null||!Number.isFinite(r.poleSelectedCm)||Number(r.poleSelectedCm)<30||Number(r.poleSelectedCm)>200))throw new FlowError('POLE_PHYSICAL_SELECTION_REQUIRED',422);
   const assignedPole=m.items.find(i=>i.family==='POLE');
@@ -50,10 +52,11 @@ export function recordPreparation(value:unknown,members:PreparationMember[],acto
 export function preparationStillValid(evidence:unknown,items:PreparationItem[],conditions?:HoldConditions){
  if(!evidence||typeof evidence!=='object')return false;
  const e=evidence as PreparationEvidence;
+ // Historical non-V2 records stay readable for audit only; they never authorize a current checkout.
+ if(e.version!=='ZAO_PREP_V2')return false;
  if(!Array.isArray(e.selections))return false;
  const current=items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})).sort((a,b)=>a.requirementKey.localeCompare(b.requirementKey));
  if(canonical(current)!==canonical([...e.selections].sort((a,b)=>a.requirementKey.localeCompare(b.requirementKey))))return false;
- if(e.version!=='ZAO_PREP_V2')return true; // Historical records remain readable under their original contract.
  if(conditions&&canonical(e.conditions??null)!==canonical(conditions))return false;
  return Array.isArray(e.members)&&e.members.every(m=>{
   const boot=items.find(i=>i.requirement_key===m.memberKey+':SKI_BOOT');

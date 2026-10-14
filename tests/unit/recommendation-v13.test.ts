@@ -4,13 +4,15 @@ import {buildMembers,parseRecommendation,type Profile,type Variant} from '../../
 import {parseConditions,type HoldConditions} from '../../packages/contracts/src/hold';
 import {productKey} from '../../packages/contracts/src/pricing';
 const id=(n:number)=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
-const p:Profile={key:'person-1',sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'}};
+const p:Profile={key:'person-1',sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I'}};
+// Historical V1.2 profiles keep a generic ski level and never a DIN skier type.
+const legacy:Profile={...p,ski:{weightKg:60,ageAtStart:30,level:'BEGINNER'}};
 const variants:Variant[]=[{id:id(1),family:'SKI',age:'ADULT',tier:'REGULAR',size:'150 cm'},{id:id(2),family:'SKI_BOOT',age:'ADULT',tier:'REGULAR',size:'26.5 cm'},{id:id(3),family:'SNOWBOARD',age:'ADULT',tier:'REGULAR',size:'150 cm'},{id:id(4),family:'SNOWBOARD_BOOT',age:'ADULT',tier:'REGULAR',size:'26.5 cm'}];
 const envelope={pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-02-01',endDate:'2035-02-01',slot:'DAY'}};
 test('V1.3 needs no customer pole variant; old V1.2 still needs its saved explicit pole',()=>{
  assert.equal(parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_3',members:[p]}).members[0]?.poleVariantId,undefined);
- assert.throws(()=>parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_2',members:[p]}));
- assert.equal(parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_2',members:[{...p,poleVariantId:id(5)}]}).members[0]?.poleVariantId,id(5));
+ assert.throws(()=>parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_2',members:[legacy]}));
+ assert.equal(parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_2',members:[{...legacy,poleVariantId:id(5)}]}).members[0]?.poleVariantId,id(5));
  for(const extra of [{poleVariantId:id(5)},{poleSelectedCm:120},{din:4.5},{bslMm:304}])assert.throws(()=>parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_3',members:[{...p,...extra}]}));
 });
 test('no pole catalogue preserves structural ski set; non-pole and legacy empty variants reject',()=>{
@@ -52,7 +54,7 @@ test('V1.3 individual field matrix: only the inputs the item needs; unused field
  }
 });
 test('whole kg V1.3 policy accepts 60, rejects 60.5, preserves historical V1.2 decimals',()=>{
- const parse=(version:string,weightKg:number)=>parseRecommendation({...envelope,contractVersion:version,members:[{...p,ski:{...p.ski!,weightKg},poleVariantId:version==='INTEGRATED_V1_2'?id(5):null}]});
+ const parse=(version:string,weightKg:number)=>parseRecommendation({...envelope,contractVersion:version,members:[{...(version==='INTEGRATED_V1_2'?legacy:p),ski:{...(version==='INTEGRATED_V1_2'?legacy:p).ski!,weightKg},poleVariantId:version==='INTEGRATED_V1_2'?id(5):null}]});
  assert.equal(parse('INTEGRATED_V1_3',60).members[0]?.ski?.weightKg,60);
  assert.throws(()=>parse('INTEGRATED_V1_3',60.5),{code:'INVALID_RECOMMENDATION_INPUT'});
  assert.equal(parse('INTEGRATED_V1_2',60.5).members[0]?.ski?.weightKg,60.5);
@@ -62,4 +64,22 @@ test('standalone pole cannot use an empty variant or a nonexistent catalogue can
  assert.equal(buildMembers(member,variants,'INTEGRATED_V1_3').candidates.length,0);
  const single={key:'person-1',product:'SINGLE',age:'ADULT',tier:'REGULAR',items:[{family:'POLE',variantIds:[]}]};
  for(const contractVersion of ['INTEGRATED_V1_2','INTEGRATED_V1_3'])assert.throws(()=>parseConditions({...envelope,reservationId:id(99),contractVersion,members:[single]}),{code:'INVALID_CONDITIONS'});
+});
+
+test('V1.3 requires an explicit DIN skier type; generic level is neither accepted nor reinterpreted',()=>{
+ const parse=(version:string,ski:unknown,extra={})=>parseRecommendation({...envelope,contractVersion:version,members:[{...p,ski,...extra}]});
+ for(const skierType of ['TYPE_I','TYPE_II','TYPE_III'] as const)assert.equal(parse('INTEGRATED_V1_3',{weightKg:60,ageAtStart:30,skierType}).members[0]?.ski?.skierType,skierType);
+ for(const ski of [{weightKg:60,ageAtStart:30},{weightKg:60,ageAtStart:30,level:'BEGINNER'},{weightKg:60,ageAtStart:30,level:'ADVANCED',skierType:'TYPE_III'},{weightKg:60,ageAtStart:30,skierType:'TYPE_IV'},{weightKg:60,ageAtStart:30,skierType:null}])assert.throws(()=>parse('INTEGRATED_V1_3',ski),JSON.stringify(ski));
+ // A historical V1.2 profile stays readable with its level, and cannot carry a DIN type.
+ const old=parse('INTEGRATED_V1_2',legacy.ski,{poleVariantId:id(5)}).members[0]!;assert.equal(old.ski?.level,'BEGINNER');assert.equal(old.ski?.skierType,undefined);
+ assert.throws(()=>parse('INTEGRATED_V1_2',{weightKg:60,ageAtStart:30,level:'BEGINNER',skierType:'TYPE_I'},{poleVariantId:id(5)}),{code:'SKIER_TYPE_REQUIRED'});
+});
+test('untouched new profiles carry no authoritative body or safety value and are rejected for every product',()=>{
+ // The exact shape the guest form now starts with: every body/safety value unset.
+ const untouched={heightCm:null,footCm:null,ski:{weightKg:null,ageAtStart:null,skierType:null}};
+ for(const itemFamily of [undefined,'SKI','SKI_BOOT','POLE','SNOWBOARD','SNOWBOARD_BOOT'] as const){const fields={sport:itemFamily?.startsWith('SNOWBOARD')?'SNOWBOARD':'SKI',...(itemFamily?{itemFamily}:{})};
+  for(const ski of [untouched.ski,null])assert.throws(()=>parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_3',members:[{...p,...fields,heightCm:null,footCm:null,ski}]}),String(itemFamily));
+ }
+ // The retired synthetic default (170 / 25.5 / 60 / 30 / BEGINNER) is not an acceptable V1.3 ski profile.
+ assert.throws(()=>parseRecommendation({...envelope,contractVersion:'INTEGRATED_V1_3',members:[legacy]}),{code:'SKIER_TYPE_REQUIRED'});
 });

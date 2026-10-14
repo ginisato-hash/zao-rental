@@ -85,3 +85,22 @@ Claude took over as sole implementer in the same worktree, branch and Draft PR #
 **Validation.** All 77 local `verify` steps have a final PASS, including 1126 unit tests, real PostgreSQL and JA/EN browser suites. `final-validation-receipts.json` keeps every attempt. In the first full batch, `test:controller:macos` lacked the `codex` binary on PATH (the test only hashes it), and `test:custody-ui` failed by design (see below). Both passed on rerun. The customer and staff captures at 390/1440 were regenerated and inspected visually: untouched/rejected Ski, skier-type entry, standalone and mixed Pole Size/review, DIN card, legacy re-preparation, boots-only.
 
 **Residual for TD.** The staff recommendation preview tool (`/staff/recommendations`, `RecommendationWorkspace`) still creates V1.2 profiles with a generic level. Ski bookings made there now correctly fail closed at preparation (“申告なし”). Adding a skier-type declaration to that tool is outside the four authorized items and is left for a TD decision. `tests/custody/normal-ui.ts` asserts the fail-closed state, then records an explicit declaration on its synthetic preview at the test boundary before continuing custody.
+
+## 0057 owner-compatibility correction (parent 83a7e99)
+
+The local operator check found a source defect that blocked Production (Issue #47 `R65_0057_OWNER_PATH_BLOCKER`, TD comment 6165244902). Candidate 0057 replaced `rental_stage_guard()`, but on the reviewed Production topology that function is owned by `<db>_custody_executor` (0015/0049). Neither `neondb_owner` nor the role admin can act as that role. Applied as the owner, 0057 therefore failed with `42501 must be owner of function rental_stage_guard` and rolled back.
+
+The correction removes the guard replacement from 0057, together with its only dependent change, the custody-executor `SELECT` on `inventory_pole_exemptions`. No other executor-owned function references that table. 0057 keeps:
+- the empty-witness `inventory_pole_exemptions_variant_ids_check`;
+- the V1.3 + SKI_SET scoped `inventory_sync_pole_exemptions(uuid)`;
+- the PUBLIC EXECUTE revoke.
+
+Canonical SHA-256 is now `8d43db5f8b1da4ca2e3259d9afafecbb2fd3576364e7f0501958acfe503bbe25`. The pre-Production draft `1232501d…ce6d6` is historical only. No 0058 is introduced, because Production is still at 0056.
+
+The custody API runs as the operations role in Production (`/api/custody` → `getRuntime().operationsPool` → `CustodyService`). The unchanged guard returns immediately for any session other than `<db>_custody`, so the V1.3 accessory-pole checkout relies on the service checks: V2 preparation, assignment validity, claims, physical handoff and the full-period absence witness. On the local `<db>_custody` session, which is a local security boundary and not the Production identity, the unchanged guard still requires a serialized loan for every item, so that V1.3 accessory-pole checkout fails closed there.
+
+Proof:
+- `tests/operations/production-0057-owner-apply.ts` (in `test:m2b-bootstrap`) builds a Neon-shaped `neondb` at canonical 0001–0056, with the guard owned by the executor and custody membership 0 for the owner and role admin. It applies canonical 0057 as `neondb_owner` in one transaction: registry 56→57, 57 canonical checksums. The guard definition, owner, SECURITY DEFINER, search_path and ACL are unchanged; roles, memberships, LOGIN/password and object owners are unchanged. Hold/transfer/operations EXECUTE and the operations checkout privileges are present, and executor privileges are unchanged.
+- `test:preparation` shows the local custody session refusing the V1.3 accessory-pole checkout (no loan written). The operations role then prepares and checks it out with ski + boot loans, pole loan 0, `RENTAL_FIXED` and an exact full-period empty witness. Standalone Pole tracked custody (one Pole loan → return → inspection) and the no-stock refusal are unchanged.
+
+No customer- or staff-visible source changed: no `apps/` or `packages/` runtime file outside the migration is touched.

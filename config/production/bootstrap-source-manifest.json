@@ -450,7 +450,7 @@
   {
    "id": "0057",
    "file": "0057_preparation_pole_v13.sql",
-   "sha256": "1232501dcb926551d32e317c23b0c88ad28863f44bbf2ef2db7cc82ba30ce6d6",
+   "sha256": "8d43db5f8b1da4ca2e3259d9afafecbb2fd3576364e7f0501958acfe503bbe25",
    "runtimeGuards": 0,
    "guard": null
   }

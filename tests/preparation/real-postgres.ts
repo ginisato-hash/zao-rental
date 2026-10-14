@@ -25,7 +25,9 @@ try{
  await x.db.pool.query("UPDATE ledger_assets SET bsl_status='RECORDED',bsl_mm=304,bsl_evidence='SYNTHETIC individually observed marking',version=version+1 WHERE family='SKI_BOOT'");
  const contexts=new GuestContexts(guest.guestPool),variants=await x.holds.recommendationCatalog();
  const catalog:GuestCatalog={revision:'r65-synthetic',models:[],sizes:[]};
- const custody=new CustodyService(custodyRole.custodyPool,x.roles.authPool,x.signed.identity),manifest=new ManifestService(ops.operationsPool,x.roles.authPool,x.signed.identity);
+ // Production runs CustodyService on the operations role (getRuntime().operationsPool); the local <db>_custody session is a
+ // local security boundary only, where the unchanged 0015/0049 rental_stage_guard() still requires every serialized loan.
+ const custody=new CustodyService(custodyRole.custodyPool,x.roles.authPool,x.signed.identity),productionCustody=new CustodyService(ops.operationsPool,x.roles.authPool,x.signed.identity),manifest=new ManifestService(ops.operationsPool,x.roles.authPool,x.signed.identity);
  const member={key:'person-1',itemFamily:null,sport:'SKI',heightCm:170,footCm:25.5,adultAtStart:true,tier:'REGULAR',ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I'},poleSize:null,premiumModel:null,jacketSize:null,pantsSize:null,wearSport:null};
  async function reserve(date:string,patch:Record<string,unknown>={},pay=true,store='MOUNTAIN_BASE',unavailable=false){
   const actor=await contexts.resolve((await contexts.create()).token),h=new HoldService(x.roles.holdPool,actor),q=new QuoteService(x.roles.pricingPool,actor),r=new RecommendationService(x.roles.recommendationPool,actor,h,q,async v=>guestVariants(catalog,v)),b=new BookingService(x.flow.flowPool,guest!.guestPool,actor,x.fake,simulation),s=new GuestBookingService(contexts,actor,r,b,async()=>catalog);
@@ -73,8 +75,16 @@ try{
  view=await custody.checkoutView(id);assert.equal(view.preparationValid,false);assert.equal(view.preparationMembers[0]?.din?.value,4);await assert.rejects(custody.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:1}),{code:'PREPARED_ASSIGNMENT_CHANGED'});
  const renewed=await custody.prepare(randomUUID(),body());assert.equal(renewed.preparation.version,2);assert.equal(renewed.preparation.fit_evidence.members[0].bslMm,314);
  stage='day-of ready and checkout';await x.clock('2035-01-02T09:00:00+09:00');const today=await manifest.manifest({...query,date:null,section:'pickup'});assert.equal(((today.rows.find(r=>(r as Record<string,unknown>).bookingId===id) as Record<string,unknown>)?.pickup as {equipmentPrepared:boolean}).equipmentPrepared,true);
- const checked=await custody.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:2});assert.equal(checked.loans.length,2);assert.equal(checked.loans.find(l=>l.family==='SKI_BOOT').asset_id,boot.asset_id);
- console.log('PASS BSL 304→314 recalculates 4.5→4; invalidates old ready; renewed ready persists next day; exact assigned boot checkout');
+ // Local custody session: the unchanged guard keeps demanding a serialized loan for every item, so this V1.3 accessory-pole booking fails closed there.
+ await assert.rejects(custody.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:2}),{code:'FLOW_CONFLICT'});assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_loan_items WHERE booking_id=$1',[id])).rows[0].n,0);
+ // Production path (operations role): prepare/checkout succeed with ski + boot loans and no serialized pole loan, backed by the full-period absence witness.
+ const ready=await productionCustody.checkoutView(id);assert.equal(ready.preparationValid,true);
+ const checked=await productionCustody.checkout(randomUUID(),{bookingId:id,expectedPreparationVersion:2});assert.equal(checked.loans.length,2);assert.equal(checked.loans.find(l=>l.family==='SKI_BOOT').asset_id,boot.asset_id);
+ assert.deepEqual(checked.loans.map(l=>l.family).sort(),['SKI','SKI_BOOT']);
+ const held=(await x.db.pool.query('SELECT allocation_stage,occupancy_start,occupancy_end FROM inventory_holds WHERE id=$1',[row.hold_id])).rows[0];assert.equal(held.allocation_stage,'RENTAL_FIXED');
+ const witness=(await x.db.pool.query("SELECT count(*)::int n,count(DISTINCT day)::int days,bool_and(cardinality(variant_ids)=0) empty FROM inventory_pole_exemptions WHERE hold_id=$1 AND active AND requirement_key='person-1:POLE'",[row.hold_id])).rows[0];
+ const span=(await x.db.pool.query('SELECT ($2::date-$1::date+1)::int n',[held.occupancy_start,held.occupancy_end])).rows[0].n;assert.equal(witness.n,span);assert.equal(witness.days,span);assert.equal(witness.empty,true);
+ console.log('PASS BSL 304→314 recalculates 4.5→4; invalidates old ready; renewed ready persists next day; local custody session fails closed; Production operations path checks out ski+boot, pole loan 0, RENTAL_FIXED, full-period witness '+span+'d');
  stage='standalone pole without catalogue or pool';
  const polePatch={itemFamily:'POLE',footCm:null,ski:null};
  const counts=async()=>(await x.db.pool.query('SELECT (SELECT count(*) FROM price_quotes)::int quotes,(SELECT count(*) FROM rental_bookings)::int bookings,(SELECT count(*) FROM rental_payment_attempts)::int payments')).rows[0];

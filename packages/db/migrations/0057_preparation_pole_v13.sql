@@ -1,4 +1,5 @@
--- Local/test R65 migration. No production apply authorized.
+-- R65 V1.3 pole witness. Owner-applicable on the reviewed Production topology: it touches only owner-owned objects and
+-- leaves the custody-executor-owned rental_stage_guard() (0015/0049) and every custody privilege unchanged.
 -- V1.3 needs a durable absence witness even when no POLE catalogue variant exists.
 -- Historical conditions/claims are not rewritten. Existing nonempty witnesses are unchanged.
 ALTER TABLE inventory_pole_exemptions DROP CONSTRAINT inventory_pole_exemptions_variant_ids_check;
@@ -31,16 +32,3 @@ BEGIN
  END LOOP;
 END $$;
 REVOKE ALL ON FUNCTION inventory_sync_pole_exemptions(uuid) FROM PUBLIC;
-
--- An untracked V1.3 SKI_SET accessory pole has a full-period absence witness and physical preparation
--- evidence, but no serialized loan row. Every other item still requires a loan.
-DO $$BEGIN EXECUTE format('GRANT SELECT ON inventory_pole_exemptions TO %I',current_database()||'_custody_executor');END$$;
-CREATE OR REPLACE FUNCTION rental_stage_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE b rental_bookings;BEGIN
- IF session_user<>current_database()||'_custody' OR NEW.allocation_stage=OLD.allocation_stage THEN RETURN NEW;END IF;
- PERFORM rental_internal.assert_actor('RENTAL_CHECKOUT',OLD.pickup_store,current_setting('zao.actor',true));
- SELECT * INTO b FROM rental_bookings WHERE hold_id=OLD.id;
- IF NOT FOUND OR NOT booking_is_confirmed(b.mode,b.state) OR OLD.payment_state<>'SUCCESS' OR OLD.transfer_attention IS NOT NULL THEN RAISE EXCEPTION 'CUSTODY_STAGE_INVALID' USING ERRCODE='23514';END IF;
- IF OLD.allocation_stage='PROVISIONAL' AND NEW.allocation_stage='PREPARATION_FIXED' AND EXISTS(SELECT 1 FROM rental_preparations WHERE id=b.id AND prepared_at IS NOT NULL) THEN RETURN NEW;END IF;
- IF OLD.allocation_stage='PREPARATION_FIXED' AND NEW.allocation_stage='RENTAL_FIXED' AND (SELECT count(*) FROM rental_loan_items WHERE booking_id=b.id AND state='OUT')=(SELECT count(*) FROM jsonb_array_elements(b.conditions->'members') m CROSS JOIN LATERAL jsonb_array_elements(m->'items') i WHERE i->>'family' NOT IN ('WEAR_JACKET','WEAR_PANTS') AND NOT (b.conditions->>'contractVersion' IS NOT DISTINCT FROM 'INTEGRATED_V1_3' AND m->>'product'='SKI_SET' AND i->>'family'='POLE' AND (SELECT count(*) FROM inventory_pole_exemptions e WHERE e.hold_id=OLD.id AND e.requirement_key=(m->>'key')||':POLE' AND e.active AND e.store_id=OLD.pickup_store AND e.variant_ids=ARRAY(SELECT jsonb_array_elements_text(i->'variantIds')::uuid) AND e.day BETWEEN OLD.occupancy_start AND OLD.occupancy_end)=OLD.occupancy_end-OLD.occupancy_start+1)) THEN RETURN NEW;END IF;
- RAISE EXCEPTION 'CUSTODY_STAGE_INVALID' USING ERRCODE='23514';
-END$$;

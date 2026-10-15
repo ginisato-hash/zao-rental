@@ -51,4 +51,6 @@ implementation session on 2026-10-15 (listed below; they supersede the plan wher
 
 - Real PostgreSQL R67 matrix `tests/readiness/r67-bookable.ts` (`npm run test:r67-bookable`, added to verify/CI): 20/20.
 - Period/pricing + size units `tests/unit/r67-period-size.test.ts`; unit suite 1135/1135.
-- Visual self-check `tests/r67/shoot.ts` / `tests/r67/flow-shots.ts` against the local preview (`tests/r67/preview.ts`): logo image, no FAMILY, no radius/shadow, no overflow, BOOK + index in the first viewport (home/rental) at 390/1440.
+- Full local regression (every `npm run verify` command, 77/77 PASS) on the candidate before the last UI-only commit; after it lint/typecheck/build, public-ui, readiness-ui and preparation-ui PASS (public-ui's pre-existing person-card toggle timing flaked once, PASS on rerun).
+- Visual self-check `tests/r67/shoot.ts` / `tests/r67/flow-shots.ts` against the local preview (`tests/r67/preview.ts`): 16/16 page×width views — logo image, no FAMILY, no radius/shadow, no horizontal overflow, in-page BOOK in the first viewport at 390/1440. Evidence set: `screenshots/` (synthetic input only).
+- Premium is not selectable anywhere (O1): the Premium page offers `BOOK REGULAR`, model `TO BE ANNOUNCED`, `COMING SOON`; the booking plan option reads `Premium（準備中）` / `Premium — coming soon` (asserted in `tests/preparation/customer-ui.ts`).

@@ -42,7 +42,7 @@ try{
   });
   const p=await ctx.newPage();
   if(ja)for(const path of ['','rental','rental/ski','rental/snowboard','rental/wear','rental/premium','rental/kids-family','prices','pickup-return','stores/mountain-base','stores/onsen-base','faq']){await p.goto('/ja'+(path?'/'+path:''));await capture(p,'public-'+(path.replaceAll('/','-')||'home'));}
-  await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();await capture(p,locale+'-book-dates',!ja);
+  await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();await expect(p.getByRole('heading',{level:1,name:t('レンタル予約','Book rental')})).toBeVisible();if(ja){await expect(p.locator('.guest-steps')).toContainText('1日程・店舗2用品・利用者情報3サイズ選択4確認・支払い');await expect(p.locator('.guest-steps')).not.toContainText(/[A-Za-z]/);}await capture(p,locale+'-book-dates');
   await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill(ja?'2035-02-05':'2035-02-06');await p.getByRole('button',{name:t('用品を選ぶ','Choose equipment'),exact:true}).click();
   const person=p.getByRole('article',{name:t('利用者 1','Person 1'),exact:true}),warning=p.getByText(t('入力内容は「候補と参考料金を確認」で保存されます。','Your entries are saved when you select “Review sizes and estimates”.'),{exact:true});
   await expect(warning).toHaveCount(0);await capture(p,locale+'-book-equipment-entry',!ja);
@@ -50,8 +50,19 @@ try{
   await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');await expect(warning).toBeVisible();
   await fillGuestProfile(p,locale);await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(t('全員の内容を確認しました','I have checked everyone’s selections')).check();await p.getByLabel(t('事前に支払って5%OFFを利用する','Use the 5% advance payment discount')).check();await capture(p,locale+'-book-candidate',!ja);
   await p.getByRole('button',{name:t('全員分の最終確認へ','Review the whole group'),exact:true}).click();await expect(p.getByRole('region',{name:t('全員分の確認','Group review')})).toBeVisible();
-  await p.getByLabel(t('お名前','Name'),{exact:true}).fill('Aki Sato');await p.getByLabel(t('メール','Email'),{exact:true}).fill('aki@example.invalid');await p.getByRole('checkbox',{name:ja?/利用開始48時間前/:/I accept the cancellation policy/}).check();await capture(p,locale+'-book-review-payment',!ja);
-  await p.getByRole('button',{name:t('支払いへ進む','Continue to payment'),exact:true}).click();await expect(p.getByRole('heading',{name:t('予約が確認されました','Booking confirmed'),exact:true})).toBeVisible();await capture(p,locale+'-book-success',!ja);
+  await p.getByLabel(t('お名前','Name'),{exact:true}).fill('Aki Sato');await p.getByLabel(t('メール','Email'),{exact:true}).fill('aki@example.invalid');await p.getByRole('checkbox',{name:ja?/利用開始48時間前/:/I accept the cancellation policy/}).check();
+  // R66: a mistyped confirmation copy blocks checkout client-side (no request); a trimmed/case-different copy matches;
+  // the confirmation value never enters the checkout payload (contact shape unchanged).
+  const checkouts:Record<string,unknown>[]=[];p.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/guest/checkout')checkouts.push(r.postDataJSON());});
+  const confirmEmail=p.getByLabel(t('メール（確認用）','Confirm email'),{exact:true});await confirmEmail.fill('aki@example.invali');
+  await p.getByRole('button',{name:t('支払いへ進む','Continue to payment'),exact:true}).click();await expect(p.getByText(t('メールアドレスが一致しません。もう一度ご確認ください。','The email addresses do not match. Please check them again.'),{exact:true})).toBeVisible();assert.equal(checkouts.length,0,'mismatch never reaches the server');
+  await confirmEmail.fill(' AKI@example.invalid ');await expect(p.getByText(t('メールアドレスが一致しません。もう一度ご確認ください。','The email addresses do not match. Please check them again.'),{exact:true})).toHaveCount(0);
+  const summary=p.getByRole('region',{name:t('お支払い前の確認','Before you pay')});for(const text of [ja?'2035-02-05':'2035-02-06','Mountain Station',t('利用者','Person')+' 1',t('お支払い合計（税込）','Total (tax included)')])await expect(summary).toContainText(text);
+  await capture(p,locale+'-book-review-payment');
+  await p.getByRole('button',{name:t('支払いへ進む','Continue to payment'),exact:true}).click();await expect(p.getByRole('heading',{name:t('予約が確定しました','Booking confirmed'),exact:true})).toBeVisible();
+  assert.equal(checkouts.length,1);assert.deepEqual(Object.keys(checkouts[0]!.contact as object).sort(),['displayName','email','termsAccepted']);assert.equal((checkouts[0]!.contact as {email:string}).email,'aki@example.invalid');assert.ok(!JSON.stringify(checkouts[0]).includes('AKI@'),'confirmation copy is never sent');
+  const result=p.locator('.guest-result');for(const text of [t('予約番号','Booking reference'),t('受取','Pickup'),t('返却','Return'),'Mountain Station',t('登録メールアドレスへ予約確認メールを送信します。数分かかる場合があります。','We will send a booking confirmation email to your registered address. It may take a few minutes.')])await expect(result).toContainText(text);
+  await expect(result).not.toContainText(ja?'送信しました':'has been sent');await capture(p,locale+'-book-success');
   const draft=await (await ctx.request.get('/api/guest/draft')).json();assert.equal(draft.booking.state,'CONFIRMED_DEV');assert.equal(draft.booking.payments[0].state,'COMPLETED');
   await p.getByRole('button',{name:t('この端末に予約を保存','Save booking on this device')}).click();await p.getByRole('link',{name:t('保存した予約とQRを開く','Open the saved booking and QR')}).click();await expect(p.getByRole('img',{name:t('保存済み予約QR','Saved booking QR')})).toBeVisible();await expect(p.getByLabel(t('確認コード','Verification code'),{exact:true})).not.toBeVisible();await capture(p,locale+'-reservation',!ja);
   const guest=(await ctx.cookies()).find(c=>c.name==='zao_guest')!;await app.recoveryFixture!.enroll(guest.value,draft.booking.id,randomUUID());

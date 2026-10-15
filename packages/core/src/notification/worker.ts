@@ -22,7 +22,7 @@ export class BookingNotificationWorker{
   const m=(await this.pool.query('SELECT notification_material($1,$2) v',[id,claim.claimId])).rows[0].v as Material|null;
   if(!m)return settle({state:'SUPPRESSED',code:'RECOVERY_EXPIRED_OR_REVOKED'});
   if(typeof m.recipient!=='string'||m.recipient.length>254||!/^[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+$/.test(m.recipient))return settle({state:'SUPPRESSED',code:'RECIPIENT_UNAVAILABLE'});
-  let body:{subject:string;text:string};try{
+  let body:{subject:string;text:string;html?:string};try{
    if(flowHash(m.priceSnapshot)!==m.priceSha256)throw Error();
    const proof=m.recovery?this.recovery.notificationProof(m.bookingId,m.recovery):undefined;
    body=renderBookingNotification(m.eventType,m.locale,{bookingId:m.bookingId,pickupStore:m.conditions.pickupStore,returnStore:m.conditions.returnStore,...m.conditions.period,totalJpy:m.priceSnapshot.totalJpy,paymentStatus:m.paymentStatus,...(m.cancellation?{cancellation:m.cancellation}:{})},this.origin,proof);

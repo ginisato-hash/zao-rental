@@ -69,8 +69,8 @@ try{
  await quotes.initializePrivate(randomUUID(),(year-3)+'-01-01',(year+3)+'-12-31');
  flow=await provisionFlowRole(db.pool,db.identity);
  const fake=new FakeGateway(()=>now),bookings=new BookingService(flow.flowPool,roles.authPool,{subject:full,sessionId},fake,simulation);
- async function makeBooking(status:'COMPLETED'|'PENDING',variantId:string,displayName:string){
-  const conditions=requestFor(businessDate,[variantId]),held=await holds.command('create',randomUUID(),conditions),q=(await quotes.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
+ async function makeBooking(status:'COMPLETED'|'PENDING',variantId:string,displayName:string,date=businessDate){
+  const conditions=requestFor(date,[variantId]),held=await holds.command('create',randomUUID(),conditions),q=(await quotes.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
   const booking=await bookings.create(randomUUID(),q.id,{displayName,email:'synthetic-ux5d-guest@example.invalid',termsAccepted:true});
   await recordSyntheticBookingProfile(db.pool,booking.id);fake.status=status;await bookings.startPayment(booking.id,randomUUID());return booking.id;
  }
@@ -105,6 +105,25 @@ try{
   await narrowPage.getByText('その他の管理機能').click();
   for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・仮押さえ','サイズ推薦','ウェアの数量貸出・返却','スタッフ管理'])await expect(narrowPage.getByRole('link',{name})).toHaveCount(0);
   for(const name of ['変更・返金依頼','パスワード変更'])await expect(narrowPage.getByRole('link',{name})).toBeVisible();
+ });
+
+ await check('R66 新着予約: a future confirmed booking (not today\'s rental) appears newest-first with ref/name/state/dates/stores/total/received time, a link to notification status and no customer email; payment-pending reads as attention',async()=>{
+  const futureDate='2035-12-20',futureId=await makeBooking('COMPLETED',variants.ski,'SYNTHETIC R66 Future',futureDate);
+  assert.equal((await db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[futureId])).rows[0].state,'CONFIRMED_DEV');
+  for(const p of [page,narrowPage]){
+   await p.goto('/staff');const recent=p.getByRole('region',{name:'新着予約'});await expect(recent).toBeVisible();
+   const first=recent.locator('.staff-card').first();await expect(first).toContainText('SYNTHETIC R66 Future');
+   for(const text of ['#'+futureId.slice(0,8).toUpperCase(),'確定済み',futureDate,'Mountain Station','受付','確定 '])await expect(first).toContainText(text);
+   await expect(p.getByRole('region',{name:'本日の予約'}).locator('.staff-card',{hasText:'SYNTHETIC R66 Future'})).toHaveCount(0);
+   const pending=recent.locator('.staff-card',{hasText:'SYNTHETIC UX5D Pending'});await expect(pending).toContainText('決済照合待ち');await expect(pending).toContainText('要対応');
+   await expect(recent.getByRole('link',{name:'予約確認メールの送信状況を見る'})).toHaveAttribute('href','/admin/notifications');
+   await expect(recent).not.toContainText('@');
+  }
+  // BOOKING_VIEW-only: still no pickup action from 新着予約.
+  await expect(narrowPage.getByRole('region',{name:'新着予約'}).getByRole('button',{name:'予約の状態を確認'})).toHaveCount(0);
+  await mkdir('.local/screenshots',{recursive:true});
+  for(const width of [390,1440]){await page.setViewportSize({width,height:1000});await page.goto('/staff');await page.getByRole('region',{name:'新着予約'}).screenshot({path:`.local/screenshots/r66-staff-recent-${width}.png`});}
+  await page.setViewportSize({width:390,height:844});
  });
 
  await check('UX5R-04: RENTAL_CHECKOUT/RENTAL_RETURN without BOOKING_VIEW must not surface pickup/return/search surfaces the destination route would deny',async()=>{

@@ -1,6 +1,6 @@
 import {wearCapacity,wearCapacityDetailed} from './wear-capacity';
 import type {PoolClient} from 'pg';
-import {HoldError,normalizePeriod,variantMatches,isWear,isPole,isAccessoryPole,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
+import {HoldError,normalizePeriod,variantMatches,isWear,isPole,isAccessoryPole,isFitAccessory,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {transferProjection,destinationFeasible,sourceReservations} from '../transfer/projection';
 import {dependencyScope,type ScopeNode} from './dependency-scope';
 import {matchPeriods,type Demand,type Placement} from './period-matching';
@@ -45,7 +45,10 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
   const checkedRequirements=[...requirements,...conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(item=>({...item,member:m})))];
   for(const r of checkedRequirements.filter(r=>isPole(r.family)&&!r.variantIds.length)){
    if(!isAccessoryPole(r.member,r.family))throw new HoldError('INVALID_CONDITIONS');
-   if((await c.query("SELECT 1 FROM ledger_variants WHERE family='POLE' AND age=$1 AND tier=$2 AND btrim(size) ~* '^[0-9]{1,3}(\\.[0-9])?[[:space:]]*cm$' LIMIT 1",[r.member.age,r.member.tier])).rowCount)throw new HoldError('POLE_VARIANT_MISMATCH');
+   // R67: existing promises keep their accepted V1.3 empty accessory pole; only the new candidate
+   // must name a pole once a pole catalog (Regular fit pool, also for Premium) exists.
+   if('job' in r&&(r.job as {id:string}).id!=='candidate')continue;
+   if((await c.query("SELECT 1 FROM ledger_variants WHERE family='POLE' AND age=$1 AND tier IN ($2,'REGULAR') AND btrim(size) ~* '^[0-9]{1,3}(\\.[0-9])?[[:space:]]*cm$' LIMIT 1",[r.member.age,r.member.tier])).rowCount)throw new HoldError('POLE_VARIANT_MISMATCH');
   }
   const variantIds=[...new Set(checkedRequirements.flatMap(r=>r.variantIds))];
   const transfers=await transferProjection(c,variantIds);if(transfers.length>3000)return {result:'INDETERMINATE',witness:[],replanned:[]};
@@ -150,7 +153,7 @@ export async function writeAllocationClaims(c:Conn,holdId:string,conditions:Hold
   await c.query('SELECT inventory_sync_pole_exemptions($1)',[holdId]);
  }
 
-const PROVISIONAL_FAMILIES:readonly ProvisionalFamily[]=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'];
+const PROVISIONAL_FAMILIES:readonly ProvisionalFamily[]=['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','POLE','WEAR_JACKET','WEAR_PANTS'];
 type MixedResult={result:Feasibility;witness:Witness[];replanned:string[];provisional:ProvisionalRequirement[];wearExcludeKeys:ReadonlySet<string>};
 const NONE:MixedResult['provisional']=[],NO_KEYS:ReadonlySet<string>=new Set();
 
@@ -176,7 +179,10 @@ export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:D
  const wear=await wearCapacityDetailed(c,conditions,now,ignore,undefined,bufferOverride);
  const primary=await planAllocation(c,conditions,now,ignore,pin,undefined,wear.feasible?undefined:false,bufferOverride);
  if(primary.result!=='INSUFFICIENT')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
- const eligiblePhysical=conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)&&m.tier!=='PREMIUM'&&!i.modelPromise&&PROVISIONAL_FAMILIES.includes(i.family as ProvisionalFamily)&&i.variantIds.length===1).map(i=>({memberKey:m.key+':'+i.family,age:m.age,family:i.family as ProvisionalFamily,variantId:i.variantIds[0]!})));
+ // R67: a Premium model promise is eligible only through its explicit model binding
+ // (promiseVariantId); its boots/poles use the common Regular fit pool. SKI_SET accessory poles keep
+ // the V1.3 accessory behaviour and never take provisional pole capacity.
+ const eligiblePhysical=conditions.members.flatMap(m=>m.items.filter(i=>!isWear(i.family)&&!isAccessoryPole(m,i.family)&&(m.tier!=='PREMIUM'||!!i.modelPromise||isFitAccessory(i.family))&&PROVISIONAL_FAMILIES.includes(i.family as ProvisionalFamily)&&i.variantIds.length===1).map(i=>({memberKey:m.key+':'+i.family,age:m.age,family:i.family as ProvisionalFamily,variantId:i.variantIds[0]!,...(i.modelPromise?{promiseVariantId:i.modelPromise.variantId}:{})})));
  const eligibleWear=wear.infeasible.filter(w=>!conditions.members.some(m=>m.tier==='PREMIUM'&&m.items.some(i=>m.key+':'+i.family===w.key))).map(w=>({memberKey:w.key,age:w.age,family:w.family as ProvisionalFamily,variantId:w.variant}));
  const eligible=[...eligiblePhysical,...eligibleWear];
  if(!eligible.length)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
@@ -195,7 +201,7 @@ export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:D
   if(attempt.result==='FEASIBLE'){excludeKeys.delete('candidate/'+e.memberKey);retry=attempt;}
  }
  const stillProvisionalPhysical=eligiblePhysical.filter(e=>excludeKeys.has('candidate/'+e.memberKey));
- const requirements:ProvisionalRequirement[]=[...stillProvisionalPhysical,...eligibleWear].map(e=>({key:e.memberKey,family:e.family,age:e.age,bookingSize:withSize.find(w=>w.memberKey===e.memberKey)!.bookingSize}));
+ const requirements:ProvisionalRequirement[]=[...stillProvisionalPhysical,...eligibleWear].map(e=>({key:e.memberKey,family:e.family,age:e.age,bookingSize:withSize.find(w=>w.memberKey===e.memberKey)!.bookingSize,...('promiseVariantId' in e&&typeof e.promiseVariantId==='string'?{promiseVariantId:e.promiseVariantId}:{})}));
  const days=normalizePeriod(conditions.period).dates;
  const plan=await provisionalCapacity(c,requirements,days,now,ignore,bufferOverride);
  if(!plan.feasible)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};

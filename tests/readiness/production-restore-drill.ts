@@ -232,7 +232,7 @@ try {
 
   await check('a pre-0054 Production backup restores against its own 53-entry registry; the default, a longer registry and an invalid count are refused', async () => {
     // Emulates a dump taken before 0054–0056: registry holds the first 53 entries and the 0054/0056 tables do not exist.
-    const toPre0054 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056','0057')"); await p.query('DROP TABLE provisional_capacity_receipts, staff_permission_override_removals, public.ops_refund_effects CASCADE'); };
+    const toPre0054 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056','0057','0058')"); await p.query('DROP TABLE provisional_capacity_receipts, staff_permission_override_removals, public.ops_refund_effects CASCADE'); };
     const target = await newTarget(); counters.fetch = counters.restore = 0;
     const result = await runRestoreDrill(adapters(toPre0054), input(target, {expectedMigrations: 53}), fingerprintHost('production.invalid'));
     assert.equal(result.verification.migrations, 53);
@@ -263,7 +263,7 @@ try {
 
   await check('a pre-0056 Production backup restores against its 55-entry registry and fingerprints the receipt ledger from the restored rows; the pre-0056 verifier accepts exactly that output', async () => {
     // Emulates a dump taken after 0055 and before 0056: registry holds the first 55 entries and the 0056 tables do not exist.
-    const toPre0056 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id IN ('0056','0057')"); await p.query('DROP TABLE staff_permission_override_removals, public.ops_refund_effects CASCADE'); };
+    const toPre0056 = async (p: Pool) => { await p.query("DELETE FROM foundation_migrations WHERE id IN ('0056','0057','0058')"); await p.query('DROP TABLE staff_permission_override_removals, public.ops_refund_effects CASCADE'); };
     const target = await newTarget(); counters.fetch = counters.restore = 0;
     const result = await runRestoreDrill(adapters(toPre0056), input(target, {expectedMigrations: 55}), fingerprintHost('production.invalid'));
     assert.equal(result.verification.migrations, 55);

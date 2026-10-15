@@ -51,7 +51,7 @@ try{
  });
  await check('invalid payloads are rejected before any registration',async()=>{
   const before=await sources();
-  for(const input of [{...payload(),sourceSha256:'nothex'},{...payload(),buckets:[]},{...payload(),buckets:[{...payload().buckets[0],family:'POLE'}]},{...payload(),buckets:[{...payload().buckets[0],quantity:0}]}])
+  for(const input of [{...payload(),sourceSha256:'nothex'},{...payload(),buckets:[]},{...payload(),buckets:[{...payload().buckets[0],family:'HELMET'}]},{...payload(),buckets:[{...payload().buckets[0],quantity:0}]}])
    assert.equal((await post(editor.cookie,{requestKey:randomUUID(),input})).status,422);
   assert.equal(await sources(),before);
  });

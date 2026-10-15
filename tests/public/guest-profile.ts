@@ -21,3 +21,12 @@ async function fillOne(scope:Page|Locator,locale:'ja'|'en',values:GuestProfile){
  const group=scope.getByRole('radiogroup',{name:locale==='ja'?'滑り方（ビンディング設定用）':'How you ski (for binding settings)'});
  for(const one of await group.all())if(await one.isVisible()&&!await one.getByRole('radio',{checked:true}).count())await one.getByRole('radio',{name:skierTypeName(locale,v.skierType)}).check();
 }
+/** R67 V1.4: choose one person's individual items (rectangular checkboxes; sport chosen first). */
+export async function chooseIndividual(scope:Page|Locator,locale:'ja'|'en',items:string[]){
+ const t=(j:string,e:string)=>locale==='ja'?j:e,sport=items.some(f=>f.startsWith('SNOWBOARD'))?'SNOWBOARD':'SKI',board=sport;
+ await scope.getByLabel(t('用品','Equipment'),{exact:true}).selectOption('INDIVIDUAL');
+ await scope.getByLabel(t('スポーツ','Sport'),{exact:true}).selectOption(sport);
+ const word:Record<string,string>={SKI:'SKIS',SKI_BOOT:'BOOTS',POLE:'POLES',SNOWBOARD:'BOARD',SNOWBOARD_BOOT:'BOOTS'};
+ for(const f of items)if(f!==board)await scope.getByRole('checkbox',{name:new RegExp('^'+word[f])}).check();
+ if(!items.includes(board))await scope.getByRole('checkbox',{name:new RegExp('^'+word[board])}).uncheck();
+}

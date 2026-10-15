@@ -2,7 +2,8 @@ import {bookingStateValid,bookingConfirmed,bookingCompleted} from '../../../cont
 import {r15ProjectionTarget,type R15ProjectionPermit} from './r15-projection-authority';
 import {productionProjectionTarget,type ProductionProjectionPermit} from './production-projection-authority';
 import {flowHash,flowId,matchPayment,type PaymentObservation,type PaymentRequest} from '../../../contracts/src/rental-flow';
-import {parseConditions,normalizePeriod,variantMatches,isWear,isPole,isAccessoryPole,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
+import {parseConditions,normalizePeriod,variantMatches,isWear,isAccessoryPole,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
+import {canonicalSize} from '../../../contracts/src/size';
 import {advanceQualification,timestamp} from '../../../contracts/src/pricing';
 import {cleanObservation} from './payment-truth';
 
@@ -171,7 +172,7 @@ export class TransactionalPaymentProjection implements PaymentProjectionPort{
 
 export type ProjectionClaim=
  |(PromiseVariant&{requirement_key:string;day:string;kind:'GEAR'|'WEAR';quantity:number})
- |{requirement_key:string;day:string;kind:'PROVISIONAL';quantity:number;family:string;age:'ADULT'|'KIDS';booking_size:string;requestedVariant:(PromiseVariant&{size:string})|null}
+ |{requirement_key:string;day:string;kind:'PROVISIONAL';quantity:number;family:string;age:'ADULT'|'KIDS';booking_size:string;promise_variant_id?:string|null;requestedVariant:(PromiseVariant&{size:string})|null}
  |{requirement_key:string;day:string;kind:'POLE_EXEMPT';quantity:number;store_id:string;variant_ids:string[]};
 export function projectionClaims(conditions:HoldConditions,claims:ProjectionClaim[]){
  try{
@@ -183,7 +184,7 @@ export function projectionClaims(conditions:HoldConditions,claims:ProjectionClai
    if(!e)return {gear:false,wear:false};
    let ok=!seen.has(key)&&c.quantity===1;seen.add(key);
    if(c.kind==='POLE_EXEMPT')ok=ok&&isAccessoryPole(e.member,e.item.family)&&c.store_id===conditions.pickupStore&&flowHash([...c.variant_ids].sort())===flowHash([...e.item.variantIds].sort());
-   else if(c.kind==='PROVISIONAL')ok=ok&&!isPole(e.item.family)&&e.member.tier!=='PREMIUM'&&!e.item.modelPromise&&e.item.variantIds.length===1&&e.item.family===c.family&&e.member.age===c.age&&!!c.requestedVariant&&e.item.variantIds[0]===c.requestedVariant.id&&c.requestedVariant.size===c.booking_size&&variantMatches(e.member,e.item,c.requestedVariant);
+   else if(c.kind==='PROVISIONAL')ok=ok&&!isAccessoryPole(e.member,e.item.family)&&(e.item.modelPromise?c.promise_variant_id===e.item.modelPromise.variantId:!c.promise_variant_id)&&e.item.variantIds.length===1&&e.item.family===c.family&&e.member.age===c.age&&!!c.requestedVariant&&e.item.variantIds[0]===c.requestedVariant.id&&canonicalSize(c.family,c.requestedVariant.size)===canonicalSize(c.family,c.booking_size)&&variantMatches(e.member,e.item,c.requestedVariant);
    else ok=ok&&(c.kind==='WEAR')===isWear(e.item.family)&&e.item.variantIds.includes(c.id)&&variantMatches(e.member,e.item,c);
    if(!ok){if(isWear(e.item.family))wear=false;else gear=false;}
   }

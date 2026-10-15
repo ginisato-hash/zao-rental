@@ -15,6 +15,16 @@ export async function releasedModels(pool:Pool):Promise<PublishedModel[]>{const 
   out.push({slug:p.slug,name:p.name,modelId:p.model_id,season:p.season,sport:p.family,lengths:variants.map(v=>v.size),variantIds:variants.map(v=>v.id),content:p.content,media:p.media});
  }return out;
 }
-export async function guestCatalog(pool:Pool,variants:Variant[]):Promise<GuestCatalog>{const models=await releasedModels(pool);return {revision:'public-p0-preview-v1',models:models.map(m=>({key:m.slug,name:m.name,modelId:m.modelId,season:m.season,sport:m.sport,lengths:m.lengths,variantIds:m.variantIds})),sizes:variants.filter(v=>['POLE','WEAR_JACKET','WEAR_PANTS'].includes(v.family)).map(v=>({key:v.family.toLowerCase()+'-'+v.id,label:v.size,variant:v}))};}
+/** R67: Premium models bookable against an accepted, model-bound provisional source (no photo or
+ * physical asset required). Only variants with an active, mapped binding are offered. */
+export type ProvisionalPremiumModel={slug:string;name:string;modelId:string;season:string;sport:'SKI'|'SNOWBOARD';lengths:string[];variantIds:string[]};
+export async function provisionalPremiumModels(pool:Pick<Pool,'query'>):Promise<ProvisionalPremiumModel[]>{
+ const rows=(await pool.query<{model_id:string;code:string;name:string;family:'SKI'|'SNOWBOARD';season:string;variant_id:string;size:string}>('SELECT model_id,code,name,family,season,variant_id,size FROM provisional_premium_catalog()')).rows;
+ const out=new Map<string,ProvisionalPremiumModel>();
+ for(const r of rows){const m=out.get(r.model_id)??{slug:r.code.toLowerCase(),name:r.name,modelId:r.model_id,season:r.season,sport:r.family,lengths:[],variantIds:[]};m.lengths.push(r.size);m.variantIds.push(r.variant_id);out.set(r.model_id,m);}
+ for(const m of out.values()){const order=m.lengths.map((l,i)=>({l,i,n:Number.parseInt(l,10)})).sort((a,b)=>a.n-b.n);m.lengths=order.map(o=>o.l);m.variantIds=order.map(o=>m.variantIds[o.i]!);}
+ return [...out.values()];
+}
+export async function guestCatalog(pool:Pool,variants:Variant[]):Promise<GuestCatalog>{const released=await releasedModels(pool),provisional=(await provisionalPremiumModels(pool)).filter(p=>!released.some(r=>r.modelId===p.modelId));const models=[...released,...provisional];return {revision:'public-p0-preview-v1',models:models.map(m=>({key:m.slug,name:m.name,modelId:m.modelId,season:m.season,sport:m.sport,lengths:m.lengths,variantIds:m.variantIds})),sizes:variants.filter(v=>['POLE','WEAR_JACKET','WEAR_PANTS'].includes(v.family)).map(v=>({key:v.family.toLowerCase()+'-'+v.id,label:v.size,variant:v}))};}
 
 export async function guestVariants(catalog:GuestCatalog,variants:Variant[]){const allowed=new Set(catalog.models.flatMap(m=>m.variantIds));return variants.filter(v=>!(['SKI','SNOWBOARD'].includes(v.family)&&v.tier==='PREMIUM')||allowed.has(v.id));}

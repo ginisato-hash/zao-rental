@@ -1,10 +1,15 @@
 import type {PoolClient} from 'pg';
 import {HoldError} from '../../../contracts/src/hold';
 import type {ProvisionalFamily} from '../operations/provisional-capacity-source';
+import {canonicalSize} from '../../../contracts/src/size';
 type Conn = Pick<PoolClient, 'query'>;
 
-export type ProvisionalRequirement = {key: string; family: ProvisionalFamily; age: 'ADULT'|'KIDS'; bookingSize: string};
-export type ProvisionalPlan = {feasible: true; rows: {key: string; bucket: string; day: string}[]} | {feasible: false; rows: []};
+// R67: `promiseVariantId` marks a Premium model promise. It may use only buckets bound to that
+// variant (provisional_model_bindings) and never more than the binding quantity per day; Regular
+// requirements match any compatible bucket by canonical size. Both count against the same bucket.
+export type ProvisionalRequirement = {key: string; family: ProvisionalFamily; age: 'ADULT'|'KIDS'; bookingSize: string; promiseVariantId?: string};
+type PlanRow = {key: string; bucket: string; day: string; promise: string|null};
+export type ProvisionalPlan = {feasible: true; rows: PlanRow[]} | {feasible: false; rows: []};
 
 // F8-style deliberate scope boundary: this module is a complete, independently real-PG-tested
 // quantity-pool mechanism (mirrors packages/core/src/inventory/wear-capacity.ts's pattern, not
@@ -39,10 +44,22 @@ export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequ
      GROUP BY c.bucket_id,c.day`,
     [buckets.map((b) => b.id), days, ignore, now],
   )).rows : [];
+  const promised = [...new Set(requirements.flatMap((r) => r.promiseVariantId ? [r.promiseVariantId] : []))];
+  const bindings = promised.length ? (await c.query<{variant_id: string; bucket_id: string; quantity: number}>(
+    'SELECT variant_id,bucket_id,quantity FROM provisional_model_bindings WHERE variant_id=ANY($1::uuid[])', [promised])).rows : [];
+  const promiseClaims = promised.length && buckets.length ? (await c.query<{bucket_id: string; variant_id: string; day: string; quantity: number}>(
+    `SELECT c.bucket_id,c.promise_variant_id AS variant_id,c.day::text,sum(c.quantity)::int AS quantity FROM provisional_capacity_claims c JOIN inventory_holds h ON h.id=c.hold_id
+     WHERE c.state='ACTIVE' AND c.promise_variant_id=ANY($1::uuid[]) AND c.day=ANY($2::date[]) AND ($3::uuid IS NULL OR h.id<>$3) AND h.state='ACTIVE'
+       AND (h.expires_at>$4 OR h.payment_state IN ('PENDING','UNKNOWN','SUCCESS') OR h.allocation_stage<>'PROVISIONAL')
+     GROUP BY c.bucket_id,c.promise_variant_id,c.day`,
+    [promised, days, ignore, now],
+  )).rows : [];
   const ownUsage = new Map<string, number>();
-  const rows: {key: string; bucket: string; day: string}[] = [];
+  const rows: PlanRow[] = [];
   for (const r of requirements) {
-    const candidates = buckets.filter((b) => b.family === r.family && b.age === r.age && b.booking_size === r.bookingSize);
+    const want = canonicalSize(r.family, r.bookingSize);
+    const bound = r.promiseVariantId ? bindings.filter((x) => x.variant_id === r.promiseVariantId) : null;
+    const candidates = buckets.filter((b) => b.family === r.family && b.age === r.age && canonicalSize(b.family, b.booking_size) === want && (!bound || bound.some((x) => x.bucket_id === b.id)));
     if (!candidates.length) return {feasible: false, rows: []};
     for (const day of days) {
       let placed = false;
@@ -57,9 +74,13 @@ export async function provisionalCapacity(c: Conn, requirements: ProvisionalRequ
         const publicCap = Math.floor(candidates.reduce((n,x)=>n+x.quantity,0) * 0.95);
         const withinHardCeiling = usedByOthersAll + usedByThisPlan + 1 <= b.quantity;
         const withinPublicCeiling = bufferOverride || usedByOthersPublic + plannedPublic + 1 <= publicCap;
-        if (withinHardCeiling && withinPublicCeiling) {
+        const binding = bound?.find((x) => x.bucket_id === b.id);
+        const promiseKey = binding ? 'promise/' + r.promiseVariantId + '/' + b.id + '/' + day : '';
+        const withinBinding = !binding || (promiseClaims.find((x) => x.bucket_id === b.id && x.variant_id === r.promiseVariantId && x.day === day)?.quantity ?? 0) + (ownUsage.get(promiseKey) ?? 0) + 1 <= binding.quantity;
+        if (withinHardCeiling && withinPublicCeiling && withinBinding) {
           ownUsage.set(slotKey, usedByThisPlan + 1);
-          rows.push({key: r.key, bucket: b.id, day});
+          if (binding) ownUsage.set(promiseKey, (ownUsage.get(promiseKey) ?? 0) + 1);
+          rows.push({key: r.key, bucket: b.id, day, promise: r.promiseVariantId ?? null});
           placed = true;
           break;
         }
@@ -79,7 +100,7 @@ export async function writeProvisionalClaims(c: Conn, holdId: string, requiremen
   await c.query(`UPDATE provisional_capacity_claims SET state='RELEASED',released_at=clock_timestamp() WHERE hold_id=$1 AND state='ACTIVE'`, [holdId]);
   if (plan.rows.length) {
     await c.query(
-      `INSERT INTO provisional_capacity_claims(hold_id,requirement_key,bucket_id,day,quantity) SELECT $1,x.key,x.bucket::uuid,x.day::date,1 FROM jsonb_to_recordset($2::jsonb) AS x(key text,bucket uuid,day date)`,
+      `INSERT INTO provisional_capacity_claims(hold_id,requirement_key,bucket_id,day,quantity,promise_variant_id) SELECT $1,x.key,x.bucket::uuid,x.day::date,1,x.promise FROM jsonb_to_recordset($2::jsonb) AS x(key text,bucket uuid,day date,promise uuid)`,
       [holdId, JSON.stringify(plan.rows)],
     );
   }

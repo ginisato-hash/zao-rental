@@ -1,4 +1,4 @@
-import {canonical,HOLD_TTL_SECONDS,HoldError,newIntakeWindow,normalizePeriod,type HoldConditions,type PaymentBoundary} from './hold';
+import {canonical,HOLD_TTL_SECONDS,HoldError,newIntakeWindow,normalizePeriod,type HoldConditions,type PaymentBoundary,intakeClose} from './hold';
 
 // Size choices are omitted only from this comparison, never from the saved promise,
 // feasibility solver, final quote equality or immutable request fingerprint.
@@ -40,6 +40,6 @@ export function intakeWindow(c:HoldConditions,now:Date,h:IntakeHold|null=null,co
   // Never use the already-past product start/intake close as a new quote deadline.
   const due=normalizePeriod(h.conditions.period).dueAt;
   if(Date.parse(due)!==h.due_at.getTime())throw new HoldError('HOLD_PERIOD_MISMATCH',409);
-  return {mode:'HOLD_CONTINUATION' as const,intakeClosesAt:new Date(c.period.startDate+(c.period.slot==='AM'?'T12:00:00+09:00':'T17:00:00+09:00')).toISOString(),quoteBoundaryAt:new Date(Math.min(h.expires_at.getTime(),h.due_at.getTime())).toISOString()};
+  return {mode:'HOLD_CONTINUATION' as const,intakeClosesAt:intakeClose(c.period),quoteBoundaryAt:new Date(Math.min(h.expires_at.getTime(),h.due_at.getTime())).toISOString()};
  }
 }

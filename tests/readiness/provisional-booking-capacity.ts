@@ -107,12 +107,14 @@ try {
   });
 
   // ---- C: no excluded inventory ----
-  await check('C: no excluded inventory — POLE/HELMET/SNOWBOARD_BINDING cannot enter booking capacity, structurally (DB CHECK, not caller discipline)', async () => {
-    await assert.rejects(src.register(randomUUID(), {
-      sourceSha256: 'a'.repeat(64),
+  // R67 (TD 6193538884 §3): POLE is now a bookable provisional family; HELMET/SNOWBOARD_BINDING stay excluded structurally.
+  await check('C: no excluded inventory — HELMET/SNOWBOARD_BINDING cannot enter booking capacity, structurally (DB CHECK, not caller discipline); POLE is accepted (R67)', async () => {
+    for (const family of ['HELMET', 'SNOWBOARD_BINDING']) await assert.rejects(src.register(randomUUID(), {
+      sourceSha256: (family === 'HELMET' ? 'a' : 'c').repeat(64),
       originalFilename: 'excluded-probe.xlsx',
-      buckets: [{family: 'POLE' as never, age: 'ADULT', sourceSize: '115 cm', bookingSize: '115 cm', quantity: 74, provenance: 'excluded probe'}],
+      buckets: [{family: family as never, age: 'ADULT', sourceSize: 'M', bookingSize: 'M', quantity: 74, provenance: 'excluded probe'}],
     }));
+    await assert.rejects(x.db.pool.query("INSERT INTO provisional_capacity_buckets(source_id,family,age,source_size,booking_size,size_mapping_status,quantity,provenance) SELECT id,'HELMET','ADULT','M','M','MAPPED',1,'x' FROM provisional_capacity_sources LIMIT 1"), /check/i);
   });
 
   // ---- D: no double store count ----

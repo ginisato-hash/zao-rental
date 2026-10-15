@@ -113,6 +113,8 @@ html[lang=ja] .st-ft-grid a{font-family:var(--d)}
 /* R67: content (booking form fields, photographs) scrolls under the fixed header, so it is an opaque
    paper bar with a hairline instead of the LP difference blend that garbled the logo over text. */
 .st-hd{color:var(--ink);mix-blend-mode:normal;background:var(--snow);border-bottom:1px solid var(--ink)}
+/* Focused/scrolled-to content must never sit behind the opaque bar (WCAG 2.4.11). */
+html:has(.st-hd){scroll-padding-top:calc(var(--top) + 12px)}
 .st-mnu-top .st-hd-home img{filter:invert(1)}
 .st-hd-ctx{font:700 12px/1 var(--d);letter-spacing:.14em;text-transform:uppercase;padding-left:clamp(10px,1.2vw,16px);border-left:1px solid currentColor;align-self:center;line-height:22px}
 .st-hd-r .st-hd-lang a[aria-current]{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:7px}
@@ -278,7 +280,7 @@ html[lang=ja] .st-model-p{font-family:var(--b)}
  .st-index--stack a{font-size:20px;padding:11px 0}
  .st-fv-ph{height:62svh;margin-top:24px}
  .st-ph{padding-top:calc(var(--top) + 20px);gap:14px}
- .st-ph h1{font-size:clamp(56px,19vw,96px)}
+ .st-ph h1{font-size:min(clamp(56px,19vw,96px),calc((100vw - 2 * var(--g)) / (var(--n,6) * .62)))}
  .st-ph-acts .st-cta{width:100%}
  .st-grid,.st-grid--pair{grid-template-columns:1fr;gap:36px}
  .st-grid .st-tile,.st-grid--pair .st-tile:first-child,.st-grid--pair .st-tile:last-child{grid-column:auto}

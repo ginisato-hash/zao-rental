@@ -36,7 +36,9 @@ export function PublicFrame({locale,path,final=true,children}:{locale:Locale;pat
 
 /** Page title (Palace grammar): one giant word, optional grey second word; the h1. */
 export function PageHead({word,tone,children}:{word:string;tone?:string|undefined;children?:React.ReactNode}){
- return <header className="st-ph"><h1>{word}{tone&&<span className="st-tone"> {tone}</span>}</h1>{children}</header>;
+ // The longest unbreakable token caps the type size so it never overflows a narrow viewport whatever the font metrics.
+ const longest=Math.max(...(word+' '+(tone??'')).split(/\s+/).map(w=>w.length));
+ return <header className="st-ph" style={{'--n':longest} as React.CSSProperties}><h1>{word}{tone&&<span className="st-tone"> {tone}</span>}</h1>{children}</header>;
 }
 const yen=(n:number)=>'¥'+n.toLocaleString('en-US');
 const STORE_PATH={MOUNTAIN_BASE:'stores/mountain-base',ONSEN_BASE:'stores/onsen-base'} as const;

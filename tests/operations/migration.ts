@@ -10,8 +10,7 @@ import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {seedRecommendation} from '../recommendation/fixture';
 import {requestFor} from '../inventory/fixture';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
-import {BookingService} from '../../packages/core/src/payment/booking-service';
-import {FakeGateway,simulation} from '../flow/fixture';
+import {flowHash,syntheticContact} from '../../packages/contracts/src/rental-flow';
 import {normalizePeriod,type HoldConditions} from '../../packages/contracts/src/hold';
 // Always exercises the newest migration in the plan, whichever one this branch adds.
 const NEW=migrationPlan.at(-1)!.file,PRIOR=migrationPlan.length-1;
@@ -21,6 +20,26 @@ const NEW=migrationPlan.at(-1)!.file,PRIOR=migrationPlan.length-1;
 // unconditionally references. Mirrors legacyHold() in tests/fixtures/legacy-prefix.ts exactly
 // (same direct inventory_reservations/inventory_holds/inventory_claims inserts), scoped locally
 // since what the newest migration adds — and thus needs omitting — varies migration to migration.
+// Current BookingService.create()/startPayment() verify claims through code that reads the newest migration's
+// columns (0058 adds provisional_capacity_claims.promise_variant_id), so create and confirm the PRIOR-schema booking
+// directly. Mirror legacyBooking()/legacyConfirmBooking() in tests/fixtures/legacy-prefix.ts without their older-prefix assertions.
+async function bookBeforeNewMigration(pool:import('pg').Pool,actor:string,quoteId:string,contact:unknown){
+ const c=await pool.connect(),normalized=syntheticContact(contact);
+ try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','Synthetic pre-upgrade fixture',true)",[actor]);
+ const q=(await c.query('SELECT id,hold_id,conditions,snapshot,snapshot_sha256 FROM price_quotes WHERE id=$1',[quoteId])).rows[0];assert.ok(q);const id=q.conditions.reservationId as string;
+ await c.query("INSERT INTO rental_bookings(id,owner_id,request_key,fingerprint,hold_id,quote_id,conditions,price_snapshot,price_sha256,contact,mode,state,notification_locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'SIMULATED_DEV','DRAFT','ja')",[id,actor,randomUUID(),flowHash({quoteId,contact:normalized}),q.hold_id,q.id,q.conditions,q.snapshot,q.snapshot_sha256,normalized]);
+ await c.query('COMMIT');return {id};
+ }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+}
+async function confirmBeforeNewMigration(pool:import('pg').Pool,actor:string,bookingId:string,now:Date){
+ const c=await pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','Synthetic pre-upgrade fixture',true)",[actor]);
+ const b=(await c.query('SELECT * FROM rental_bookings WHERE id=$1 FOR UPDATE',[bookingId])).rows[0];assert.equal(b.state,'DRAFT');const id=randomUUID();
+ await c.query("INSERT INTO rental_payment_attempts(id,booking_id,actor,idempotency_key,merchant_id,location_id,amount_jpy,currency,state,provider_id,provider_state,provider_updated_at,completed_at) VALUES($1,$2,$3,$4,'SYNTHETIC-MERCHANT','SYNTHETIC-MOUNTAIN',$5,'JPY','COMPLETED',$6,'COMPLETED',$7,$7)",[id,bookingId,actor,randomUUID(),b.price_snapshot.totalJpy,'sim_'+id,now]);
+ await c.query("UPDATE rental_bookings SET state='CONFIRMED_DEV',confirmed_at=$2,version=version+1 WHERE id=$1",[bookingId,now]);
+ await c.query("UPDATE inventory_holds SET payment_state='SUCCESS',confirmed_at=$2,version=version+1 WHERE id=$1",[b.hold_id,now]);
+ await c.query("INSERT INTO rental_notifications(id,booking_id,destination,state) VALUES($1,$2,$3,'CAPTURED_TEST_ONLY')",[randomUUID(),bookingId,b.contact.email]);
+ await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+}
 async function legacyHoldBeforeNewMigration(pool:import('pg').Pool,actor:string,conditions:HoldConditions,now:Date){
  const c=await pool.connect(),id=randomUUID(),p=normalizePeriod(conditions.period),expiry=new Date(now.getTime()+600000).toISOString();
  try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','Synthetic pre-upgrade fixture',true)",[actor]);await c.query('INSERT INTO inventory_reservations VALUES($1,$2)',[conditions.reservationId,actor]);
@@ -47,8 +66,7 @@ try{
  await quotes.initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  const conditions=requestFor('2035-02-05'),h=await legacyHoldBeforeNewMigration(db.pool,actor,conditions,now);
  const q=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote;
- const bookings=new BookingService(flow.flowPool,roles.authPool,{subject:actor,sessionId},new FakeGateway(()=>now),simulation);
- const b=await bookings.create(randomUUID(),q.id,{displayName:'SYNTHETIC Migration',email:'synthetic-m17@example.invalid',termsAccepted:true});await bookings.startPayment(b.id,randomUUID());
+ const b=await bookBeforeNewMigration(db.pool,actor,q.id,{displayName:'SYNTHETIC Migration',email:'synthetic-m17@example.invalid',termsAccepted:true});await confirmBeforeNewMigration(db.pool,actor,b.id,now);
  assert.deepEqual((await db.pool.query("SELECT b.state,a.state pay FROM rental_bookings b JOIN rental_payment_attempts a ON a.booking_id=b.id")).rows,[{state:'CONFIRMED_DEV',pay:'COMPLETED'}]);
  // Columns the newest migration adds to an already-fingerprinted table are absent before the
  // upgrade, so compare without them (matching tests/operations/upgrade.ts's own established

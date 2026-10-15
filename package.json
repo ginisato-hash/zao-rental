@@ -26,6 +26,7 @@
     "controller:export": "node --import tsx scripts/export-controller.ts",
     "test:auth": "node --import tsx tests/auth/first-admin-bootstrap.ts && node --import tsx tests/auth/staff-flow.ts && node --import tsx tests/auth/first-admin-commercial.ts",
     "test:inventory": "node --import tsx tests/inventory/real-postgres.ts",
+    "test:r67-bookable": "node --import tsx tests/readiness/r67-bookable.ts",
     "test:provisional-booking-capacity": "node --import tsx tests/readiness/provisional-booking-capacity.ts && node --import tsx tests/readiness/inventory-truth.ts && node --import tsx tests/readiness/capacity-policy.ts && node --import tsx tests/operations/provisional-source-http.ts",
     "test:holds-ui": "node --import tsx tests/inventory/normal-ui.ts",
     "test:transfer": "node --import tsx tests/transfer/real-postgres.ts",

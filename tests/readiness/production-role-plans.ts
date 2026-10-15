@@ -118,7 +118,7 @@ try {
   // 0050→0053 installer proofs. Live installers still require their exact historical database prefix.
   await production.query('DROP FUNCTION payment_reconciliation.dispatch_normal(text,integer,timestamptz),payment_reconciliation.claim_normal(text,integer,text,timestamptz),payment_projection.normal_candidates(text,timestamptz,integer),notification_due_normal(timestamptz,integer)');
   // 0058 (R67 catalog bridge) is rewound first so the historical prefix is exact.
-  await production.query("DROP TRIGGER provisional_model_claim_guard ON provisional_capacity_claims; DROP FUNCTION provisional_model_claim_guard(); DROP TABLE provisional_model_bindings; DROP FUNCTION provisional_model_binding_guard(); ALTER TABLE provisional_capacity_claims DROP COLUMN promise_variant_id; ALTER TABLE ledger_models DROP COLUMN catalog_role; ALTER TABLE provisional_capacity_buckets DROP CONSTRAINT provisional_capacity_buckets_family_check; ALTER TABLE provisional_capacity_buckets ADD CONSTRAINT provisional_capacity_buckets_family_check CHECK(family IN ('SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS')); DROP FUNCTION provisional_size_key(text,text)");
+  await production.query("DROP FUNCTION provisional_premium_catalog(); DROP TRIGGER provisional_model_claim_guard ON provisional_capacity_claims; DROP FUNCTION provisional_model_claim_guard(); DROP TABLE provisional_model_bindings; DROP FUNCTION provisional_model_binding_guard(); ALTER TABLE provisional_capacity_claims DROP COLUMN promise_variant_id; ALTER TABLE ledger_models DROP COLUMN catalog_role; ALTER TABLE provisional_capacity_buckets DROP CONSTRAINT provisional_capacity_buckets_family_check; ALTER TABLE provisional_capacity_buckets ADD CONSTRAINT provisional_capacity_buckets_family_check CHECK(family IN ('SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS')); DROP FUNCTION provisional_size_key(text,text)");
   await production.query('DROP TRIGGER provisional_capacity_receive_import ON ops_import_commits; DROP FUNCTION provisional_capacity_receive_import(); DROP TABLE provisional_capacity_receipts');
   await production.query('DROP TRIGGER provisional_receipt_physical_guard ON inventory_claims; DROP TRIGGER provisional_receipt_wear_guard ON wear_claims; DROP TRIGGER provisional_receipt_provisional_guard ON provisional_capacity_claims; DROP FUNCTION provisional_receipt_claim_guard()');
   const legacy=readFileSync('packages/db/migrations/0041_provisional_booking_capacity.sql','utf8');
@@ -352,11 +352,11 @@ try {
       await assert.rejects(applyProductionRefundAutomationGrants(c,TARGET,db.identity.user),/GRANTS_REFUSED/);
     }finally{c.release();}
   });
-  await check('restore the current 0057 fixture after exact historical installer proofs',async()=>{
-    const entry=(await bootstrapPlan(TARGET)).entries[56]!;assert.equal(entry.id,'0057');
+  await check('restore the current 0057+0058 fixture after exact historical installer proofs',async()=>{
+    const entries=(await bootstrapPlan(TARGET)).entries.slice(56,58);assert.deepEqual(entries.map(e=>e.id),['0057','0058']);
     const c=await production!.connect();try{
-      await c.query('BEGIN');await c.query(entry.sql);
-      await c.query('INSERT INTO foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);
+      await c.query('BEGIN');for(const entry of entries){await c.query(entry.sql);
+      await c.query('INSERT INTO foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);}
       await c.query('COMMIT');
     }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
   });

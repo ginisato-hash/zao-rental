@@ -41,9 +41,9 @@ try{
    }await route.continue();
   });
   const p=await ctx.newPage();
-  if(ja)for(const path of ['','rental','rental/ski','rental/snowboard','rental/wear','rental/premium','rental/kids-family','prices','pickup-return','stores/mountain-base','stores/onsen-base','faq']){await p.goto('/ja'+(path?'/'+path:''));await capture(p,'public-'+(path.replaceAll('/','-')||'home'));}
-  await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();await expect(p.getByRole('heading',{level:1,name:t('レンタル予約','Book rental')})).toBeVisible();if(ja){await expect(p.locator('.guest-steps')).toContainText('1日程・店舗2用品・利用者情報3サイズ選択4確認・支払い');await expect(p.locator('.guest-steps')).not.toContainText(/[A-Za-z]/);}await capture(p,locale+'-book-dates');
-  await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill(ja?'2035-02-05':'2035-02-06');await p.getByRole('button',{name:t('用品を選ぶ','Choose equipment'),exact:true}).click();
+  if(ja)for(const path of ['','rental','rental/ski','rental/snowboard','rental/wear','rental/premium','prices','pickup-return','stores/mountain-base','stores/onsen-base','faq']){await p.goto('/ja'+(path?'/'+path:''));await capture(p,'public-'+(path.replaceAll('/','-')||'home'));}
+  await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();await expect(p.getByRole('heading',{level:1,name:t('レンタル予約','Book rental')})).toBeVisible();await expect(p.locator('.guest-steps')).toContainText(ja?'01DATES日程・店舗02GEAR用品・利用者情報03SIZEサイズ選択04REVIEW確認・支払い':'01DATESDates & stores02GEAREquipment & people03SIZEChoose sizes04REVIEWReview & pay');await capture(p,locale+'-book-dates');
+  await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill(ja?'2035-02-05':'2035-02-06');await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   const person=p.getByRole('article',{name:t('利用者 1','Person 1'),exact:true}),warning=p.getByText(t('入力内容は「候補と参考料金を確認」で保存されます。','Your entries are saved when you select “Review sizes and estimates”.'),{exact:true});
   await expect(warning).toHaveCount(0);await capture(p,locale+'-book-equipment-entry',!ja);
   await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');await expect(warning).toBeVisible();await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('');await expect(warning).toHaveCount(0);

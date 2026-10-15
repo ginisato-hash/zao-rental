@@ -68,8 +68,8 @@ export function buildMembers(profile:Profile,variants:Variant[],version?:Recomme
  if(profile.sport==='WEAR')return {reason:null,candidates:[{lengthCm:0,member:wearMember}]};
  const sport=profile.sport,s=sizing(profile),selected=memberItems(profile);
  const catalog=variants.filter(v=>v.age===age&&v.tier===profile.tier);
- // Premium's promise is the ski/board model; boots/poles come from the common Regular fit pool.
- const fitPool=variants.filter(v=>v.age===age&&(v.tier===profile.tier||profile.tier==='PREMIUM'&&v.tier==='REGULAR'));
+ // Premium's promise is the ski/board model; a boot/pole family with no Premium variant comes from the common Regular fit pool.
+ const fitPool=variants.filter(v=>v.age===age&&(v.tier===profile.tier||profile.tier==='PREMIUM'&&v.tier==='REGULAR'&&!catalog.some(x=>x.family===v.family)));
  const bootFamily:'SKI_BOOT'|'SNOWBOARD_BOOT'=sport==='SKI'?'SKI_BOOT':'SNOWBOARD_BOOT';
  const wantBoard=!selected||selected.includes(sport),wantBoot=!selected||selected.includes(bootFamily),wantPole=sport==='SKI'&&(!selected||selected.includes('POLE'));
  const options=wantBoot?bootOptions(fitPool,bootFamily,s.bootCm):[];
@@ -77,7 +77,7 @@ export function buildMembers(profile:Profile,variants:Variant[],version?:Recomme
  const boot=options[Math.min(bootChoice,options.length-1)];
  const poles=fitPool.filter(v=>v.family==='POLE'&&lengthCm(v.size)!==null);
  const suggested=profile.heightCm===null?null:suggestPole(profile.heightCm,poles.map(v=>lengthCm(v.size)!));
- const pole=wantPole?(atLeastV13(version)?poles.filter(v=>lengthCm(v.size)===suggested).sort((a,b)=>a.id.localeCompare(b.id))[0]:catalog.find(v=>v.family==='POLE'&&v.id===profile.poleVariantId)):null;
+ const pole=wantPole?(atLeastV13(version)?poles.filter(v=>lengthCm(v.size)===suggested).sort((a,b)=>a.id.localeCompare(b.id))[0]:fitPool.find(v=>v.family==='POLE'&&v.id===profile.poleVariantId)):null;
  if(sport==='SKI'&&!selected&&!atLeastV13(version)&&!pole)throw new RecommendationError('POLE_VARIANT_MISMATCH');
  // A set's pole is a V1.3 accessory (may be empty); an individual pole must name real capacity.
  if(selected&&wantPole&&!pole)return {reason:'INSUFFICIENT',candidates:[]};

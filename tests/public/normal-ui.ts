@@ -29,10 +29,11 @@ try{
  assert.equal((await context.request.get('/api/auth/sign-in/email')).status(),405);
  for(const path of ['/api/session','/api/staff-users','/api/ledger/assets'])assert.equal((await context.request.get(path)).status(),401);
  await check('JA/EN primary content, unique metadata, canonical/hreflang/JSON-LD are in initial HTML; private/query URLs noindex',async()=>{
-  const titles=new Set();for(const locale of ['ja','en'])for(const path of ['','rental','rental/ski','rental/snowboard','rental/premium','rental/wear','rental/kids-family','prices','stores/mountain-base','stores/onsen-base','pickup-return','faq']){const response=await context.request.get('/'+locale+(path?'/'+path:''));assert.equal(response.status(),200);const html=await response.text();assert.match(html,/<h1>/);assert.match(html,/rel="canonical"/);assert.match(html,/hrefLang="x-default"/i);assert.match(html,/application\/ld\+json/);assert.match(html,/BreadcrumbList/);const title=/<title>(.*?)<\/title>/.exec(html)?.[1];assert.ok(title&&!titles.has(title));titles.add(title);assert.match(response.headers()['x-robots-tag']??'',/noindex/);}
+  const titles=new Set();for(const locale of ['ja','en'])for(const path of ['','rental','rental/ski','rental/snowboard','rental/premium','rental/wear','prices','stores/mountain-base','stores/onsen-base','pickup-return','faq']){const response=await context.request.get('/'+locale+(path?'/'+path:''));assert.equal(response.status(),200);const html=await response.text();assert.match(html,/<h1[\s>]/);assert.match(html,/rel="canonical"/);assert.match(html,/hrefLang="x-default"/i);assert.match(html,/application\/ld\+json/);assert.match(html,/BreadcrumbList/);const title=/<title>(.*?)<\/title>/.exec(html)?.[1];assert.ok(title&&!titles.has(title));titles.add(title);assert.match(response.headers()['x-robots-tag']??'',/noindex/);}
   assert.doesNotMatch(await (await context.request.get('/sitemap.xml')).text(),/<loc>/);assert.doesNotMatch(await (await context.request.get('/sitemap.xml')).text(),/<loc>[^<]*(?:\/book|\/staff|\?)/);assert.match(await (await context.request.get('/robots.txt')).text(),/Disallow: \//);
   for(const path of ['/ja/book','/api/guest/draft','/staff/login','/ja/rental?date=2035-01-05&people=20'])assert.match((await context.request.get(path)).headers()['x-robots-tag']??'',/noindex/);
   assert.equal((await context.request.get('/en/not-a-page')).status(),404);
+  for(const locale of ['ja','en']){const r=await context.request.get('/'+locale+'/rental/kids-family',{maxRedirects:0});assert.ok([307,308].includes(r.status()));assert.match(r.headers().location??'',new RegExp('/'+locale+'/rental$'));}
   await page.goto('/ja/rental');await expect(page.getByRole('heading',{level:1})).toBeVisible();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await mkdir('.local/screenshots',{recursive:true});await page.screenshot({path:'.local/screenshots/public-ja-mobile.png',fullPage:true});
  });
  await check('Owner-approved legal pages render JA/EN with the confirmed seller facts, are linked from the footer, and the under-review notices are gone',async()=>{
@@ -50,16 +51,16 @@ try{
    const touch=await browser.newContext({baseURL:app!.origin,viewport:{width,height:width===390?844:812},hasTouch:true,isMobile:true});touch.setDefaultTimeout(15000);const m=await touch.newPage();
    await m.goto('/ja');
    await expect(m.getByRole('heading',{level:1})).toHaveCount(1);await expect(m.getByRole('heading',{level:1})).toBeVisible();
-   const desk=m.getByRole('region',{name:'SALOMON STATION ZAO RENTAL'});
-   await expect(desk.getByRole('link',{name:'BOOK RENTAL'})).toHaveAttribute('href','/ja/book');
-   for(const store of ['Mountain Station','Central Station'])await expect(desk.getByRole('link',{name:new RegExp('^'+store)})).toBeVisible();
-   await expect(desk.getByRole('link',{name:/^Ski set · Regular · 1 day/})).toContainText('¥7,500');
+   // R67 first view: RENTAL + BOOK RENTAL above the fold; prices/stores facts come from the system.
+   const desk=m.getByRole('region',{name:'RENTAL',exact:true});
+   await expect(desk.getByRole('link',{name:'BOOK RENTAL'})).toHaveAttribute('href','/ja/book');await expect(desk.getByRole('link',{name:'BOOK RENTAL'})).toBeInViewport();
+   const facts=m.getByRole('region',{name:'料金と店舗'});
+   for(const store of ['Mountain Station','Central Station'])await expect(facts.getByRole('link',{name:/^STORES/})).toContainText(store);
+   await expect(facts.getByRole('link',{name:/^PRICES/})).toContainText('¥7,500');
    assert.equal(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal scroll');
-   // The mobile dock carries BOOK RENTAL whenever the in-page booking action is out of view, and never covers it.
-   const docked=()=>m.evaluate(()=>document.querySelector('.st-dock')!.classList.contains('on'));
-   await desk.getByRole('link',{name:'BOOK RENTAL'}).scrollIntoViewIfNeeded();await expect.poll(docked).toBe(false);
-   await m.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight/2));await expect.poll(docked).toBe(true);
-   await expect(m.locator('.st-dock').getByRole('link',{name:'BOOK RENTAL'})).toHaveAttribute('href','/ja/book');
+   // The fixed header carries BOOK on every scroll position (the old mobile dock is gone).
+   await m.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight/2));
+   await expect(m.locator('header').getByRole('link',{name:'BOOK',exact:true})).toHaveAttribute('href','/ja/book');await expect(m.locator('header').getByRole('link',{name:'BOOK',exact:true})).toBeInViewport();
    await m.evaluate(()=>window.scrollTo(0,0));
    // Modal menu
    await m.getByRole('button',{name:'メニューを開く'}).click();const dialog=m.getByRole('dialog',{name:'メニュー'});await expect(dialog).toBeVisible();
@@ -88,8 +89,8 @@ try{
   // Desktop: the board and the photograph share the first viewport; the menu offers every rental category.
   const pc=await browser.newContext({baseURL:app!.origin,viewport:{width:1440,height:900}});const d=await pc.newPage();await d.goto('/en');
   await expect(d.getByRole('heading',{level:1})).toHaveCount(1);
-  const box=await d.getByRole('region',{name:'SALOMON STATION ZAO RENTAL'}).getByRole('link',{name:'BOOK RENTAL'}).boundingBox();assert.ok(box&&box.y+box.height<=900,'BOOK RENTAL is in the first viewport');
-  await d.getByRole('button',{name:'Open menu'}).click();for(const name of ['SKI','SNOWBOARD','WEAR','PREMIUM','KIDS & FAMILY','RENTAL','PRICES','STORES','FAQ','MY BOOKING'])await expect(d.getByRole('dialog',{name:'Menu'}).getByRole('link',{name,exact:true})).toBeVisible();
+  const box=await d.getByRole('region',{name:'RENTAL',exact:true}).getByRole('link',{name:'BOOK RENTAL'}).boundingBox();assert.ok(box&&box.y+box.height<=900,'BOOK RENTAL is in the first viewport');
+  await d.getByRole('button',{name:'Open menu'}).click();for(const name of ['SKI','SNOWBOARD','WEAR','PREMIUM','RENTAL','PRICES','STORES','FAQ','MY BOOKING'])await expect(d.getByRole('dialog',{name:'Menu'}).getByRole('link',{name,exact:true})).toBeVisible();await expect(d.getByRole('dialog',{name:'Menu'})).not.toContainText('FAMILY');
   await d.getByRole('dialog').getByRole('link',{name:'RENTAL',exact:true}).hover();
   await expect(d.locator('.st-mnu-side')).toHaveCSS('opacity','1');
   await d.getByRole('dialog').getByRole('link',{name:'MY BOOKING',exact:true}).focus();
@@ -111,7 +112,7 @@ try{
   await page.setViewportSize({width:390,height:844});
  });
  await check('guest ordinary mobile UI -> explicit size -> server group total, without early HOLD',async()=>{
-  await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');await page.getByRole('button',{name:'用品を選ぶ',exact:true}).click(); // option keys come from the server below if catalog prefix differs
+  await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-06');await page.getByRole('button',{name:'CONTINUE',exact:true}).click(); // option keys come from the server below if catalog prefix differs
   await fillGuestProfile(page,'ja');await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員の内容を確認しました').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('お支払い金額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // CL-02: no wear items and advance was never requested in this flow, so both adjustment
   // rows must stay hidden -- only the subtotal and group-total rows are present.
@@ -125,7 +126,7 @@ try{
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-01');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   // Filling step 0 and advancing to step 1 is real, unsubmitted progress, but nothing on step
   // 1 itself has been touched yet -- the warning must stay absent immediately on arrival here.
   await expect(p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('用品',{exact:true})).toBeVisible();
@@ -138,14 +139,14 @@ try{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-04-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-04-01');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   // Fresh arrival at step 1: the visible banner is hidden (UX-3A), but the entered dates are
   // still real, unsaved input -- a guarded nav must still prompt, and cancelling it must keep
   // the user on the same page with that input intact.
   await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   let dialogSeen=false;
   p.once('dialog',async d=>{dialogSeen=true;assert.match(d.message(),/保存されていない入力/);await d.dismiss();});
-  await p.getByRole('link',{name:'プランを見る',exact:true}).click();
+  await p.locator('header').getByRole('link',{name:'EN',exact:true}).click();
   await p.waitForTimeout(300);
   assert.ok(dialogSeen,'guardNav must still fire even though the visible banner is hidden right after a step transition');
   await expect(p).toHaveURL(/\/ja\/book$/);
@@ -158,8 +159,8 @@ try{
   await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   let secondDialogSeen=false;
   p.once('dialog',async d=>{secondDialogSeen=true;await d.accept();});
-  await p.getByRole('link',{name:'プランを見る',exact:true}).click();
-  await p.waitForURL(/\/ja\/rental$/);
+  await p.locator('header').getByRole('link',{name:'EN',exact:true}).click();
+  await p.waitForURL(/\/en\/book$/);
   assert.ok(secondDialogSeen,'guardNav must still fire after backToStep(0) even though the banner is hidden there too');
   await ctx.close();
  });
@@ -167,7 +168,7 @@ try{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-07');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-07');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
 
   await p.getByLabel('利用人数',{exact:true}).fill('2');
   await expect(p.getByRole('article',{name:'利用者 2',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true})).not.toBeVisible();
@@ -224,7 +225,7 @@ try{
   await p.reload();await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   assert.equal(await p.evaluate(()=>sessionStorage.getItem('zao-guest-draft-input')),null);
   // A real, server-saved draft (not the removed local cache) must still restore across reload.
-  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await fillGuestProfile(p,'ja');await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');await p.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(p,'ja');await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await p.reload();await expect(p.getByRole('radio',{name:/おすすめ/})).toBeVisible();
   await ctx.close();
  });
@@ -233,7 +234,7 @@ try{
   // must surface a nonzero "事前決済割引" row alongside the subtotal/total;
   // no wear items are selected here, so the wear-adjustment row must stay absent.
   const jaCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});jaCtx.setDefaultTimeout(15000);const ja=await jaCtx.newPage();last=ja;
-  await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await fillGuestProfile(ja,'ja');await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
+  await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(ja,'ja');await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
   await expect(ja.locator('dl.guest-price dt')).toHaveText(['小計','事前決済割引','お支払い金額']);
   await expect(ja.locator('dl.guest-price')).not.toContainText('ウェアセット割引');
   const advanceRowValue=await ja.locator('dl.guest-price dd').nth(1).innerText();assert.notEqual(advanceRowValue.trim(),'');assert.doesNotMatch(advanceRowValue,/¥0(?:[^0-9]|$)/);
@@ -242,7 +243,7 @@ try{
   // EN, same narrow viewport, default (zero-adjustment) flow: labels localize and no
   // adjustment rows leak in when nothing triggers them, mirroring the JA zero case above.
   const enCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});enCtx.setDefaultTimeout(15000);const en=await enCtx.newPage();last=en;
-  await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'Choose equipment',exact:true}).click();await fillGuestProfile(en,'en');await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
+  await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(en,'en');await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   // Match the human-readable English recommendation label.
   await en.getByRole('radio',{name:/RECOMMENDED/i}).check();await en.getByLabel('I have checked everyone’s selections').check();await en.getByRole('button',{name:'Review the whole group',exact:true}).click();await expect(en.getByRole('region',{name:'Group review'})).toBeVisible();
   await expect(en.locator('dl.guest-price dt')).toHaveText(['Subtotal','Total to pay']);
@@ -261,7 +262,7 @@ try{
   // matters: we land back on step 1, on the same page, never on an unrelated prior page).
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-02-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-02-01');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   await expect(p.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
   await p.goBack();await expect(p).toHaveURL(/\/ja\/book$/);
   // A real Back here was observed, live, to sometimes fall back to a full document reload. Since
@@ -276,7 +277,7 @@ try{
   await expect(p.getByLabel('利用開始日',{exact:true}).or(p.getByRole('button',{name:'候補と参考料金を確認',exact:true}))).toBeVisible();
   if(await p.getByLabel('利用開始日',{exact:true}).isVisible()){
    await p.getByLabel('利用開始日',{exact:true}).fill('2035-02-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-02-01');
-   await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   }
   await expect(p.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
   // Reach a real, server-saved final review for a SKI set (this exercises the normal,
@@ -328,7 +329,7 @@ try{
   const ctx2=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx2.setDefaultTimeout(15000);const p2=await ctx2.newPage();last=p2;
   await p2.goto('/ja/book');await expect(p2.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p2.getByLabel('利用開始日',{exact:true}).fill('2035-02-03');await p2.getByLabel('利用終了日',{exact:true}).fill('2035-02-03');
-  await p2.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  await p2.getByRole('button',{name:'CONTINUE',exact:true}).click();
 
   await fillGuestProfile(p2,'ja');await p2.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();
   await p2.getByRole('radio',{name:/おすすめ/}).check();await p2.getByLabel('全員の内容を確認しました').check();
@@ -364,7 +365,7 @@ try{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/en/book');await expect(p.getByLabel('Start date',{exact:true})).toBeEnabled();
   await p.getByLabel('Start date',{exact:true}).fill('2035-02-02');await p.getByLabel('End date',{exact:true}).fill('2035-02-02');
-  await p.getByRole('button',{name:'Choose equipment',exact:true}).click();
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
 
   await fillGuestProfile(p,'en');await p.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   await p.getByRole('radio',{name:/RECOMMENDED/i}).check();await p.getByLabel('I have checked everyone’s selections').check();
@@ -390,7 +391,7 @@ try{
  async function toReview(p:Page,date:string,locale:'ja'|'en'='ja'){
   const ja=locale==='ja';await p.goto('/'+locale+'/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill(date);await p.getByLabel(ja?'利用終了日':'End date',{exact:true}).fill(date);
-  await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   await fillGuestProfile(p,(ja?'ja':'en'));await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();
   await p.getByLabel(ja?'全員の内容を確認しました':'I have checked everyone’s selections').check();
   await p.getByRole('button',{name:ja?'全員分の最終確認へ':'Review the whole group',exact:true}).click();await expect(p.getByRole('region',{name:ja?'全員分の確認':'Group review'})).toBeVisible();
@@ -401,27 +402,28 @@ try{
  await check('UI-FINAL-R01: static date and slot constraints stop invalid periods inline before any save',async()=>{
   for(const ja of [true,false]){
    const {ctx,p}=await newPage();await p.goto(ja?'/ja/book':'/en/book');
-   const start=p.getByLabel(ja?'利用開始日':'Start date',{exact:true}),end=p.getByLabel(ja?'利用終了日':'End date',{exact:true}),slot=p.getByLabel(ja?'利用枠':'Rental slot',{exact:true});
+   const start=p.getByLabel(ja?'利用開始日':'Start date',{exact:true}),end=p.getByLabel(ja?'利用終了日':'End date',{exact:true});
+   // R67 V1.4: the slot is derived from the start/return boundaries; only an afternoon start returned by noon on the same day is invalid.
+   const at=(v:RegExp)=>p.getByRole('radio',{name:v});const pm=at(ja?/午後から/:/From afternoon/),am=at(ja?/朝から/:/From morning/),noon=at(ja?/昼まで/:/By noon/),five=at(ja?/17:00まで/:/By 5:00 PM/);
    await expect(start).toBeEnabled();const posts:string[]=[];p.on('request',r=>{if(r.method()==='POST')posts.push(new URL(r.url()).pathname);});
    await start.fill('2035-06-02');
-   for(const [endDate,rentalSlot,key,copy] of [
-    ['2035-06-01','DAY','endDate',ja?'開始日以降':'on or after'],
-    ['2035-06-12','MULTIDAY','endDate',ja?'最大10日':'no more than 10 days'],
-    ['2035-06-03','DAY','slot',ja?'複数日':'Multiple days'],
-    ['2035-06-02','MULTIDAY','slot',ja?'午前・午後・1日':'Morning, Afternoon or Full day'],
-   ]){
-    await end.fill(endDate!);await slot.selectOption(rentalSlot!);await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
-    await expect(p.locator('#guest-err-'+key)).toContainText(copy!);await expect(key==='slot'?slot:end).toHaveAttribute('aria-invalid','true');await expect(start).toBeVisible();
+   for(const [endDate,from,until,key,copy] of [
+    ['2035-06-01',am,five,'endDate',ja?'開始日以降':'on or after'],
+    ['2035-06-12',am,five,'endDate',ja?'最大10日':'no more than 10 days'],
+    ['2035-06-02',pm,noon,'returnBy',ja?'17:00までの返却':'returned by 5:00 PM'],
+   ] as const){
+    await end.fill(endDate);await from.check();await until.check();await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
+    await expect(p.locator('#guest-err-'+key)).toContainText(copy);await expect(key==='returnBy'?noon:end).toHaveAttribute('aria-invalid','true');await expect(start).toBeVisible();
    }
-   assert.deepEqual(posts,[]);await end.fill('2035-06-11');await slot.selectOption('MULTIDAY');
-   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();await expect(p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'用品':'Equipment',{exact:true})).toBeVisible();
+   assert.deepEqual(posts,[]);await end.fill('2035-06-11');await pm.check();await noon.check();
+   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();await expect(p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'用品':'Equipment',{exact:true})).toBeVisible();
    await noRawCode(p);await ctx.close();
   }
  });
  await check('UI-FINAL-R01: numeric controls mirror server bounds, foot tenths, whole kg and the SKI age category including zero',async()=>{
   for(const ja of [true,false]){
    const {ctx,p}=await newPage();await p.goto(ja?'/ja/book':'/en/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
-   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill('2035-07-01');await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+   await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill('2035-07-01');await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
    const height=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'身長（cm）':'Height (cm)',{exact:true}),foot=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'足のサイズ（cm）':'Foot size (cm)',{exact:true}),weight=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'体重（kg）':'Weight (kg)',{exact:true}),age=p.getByRole('article',{name:ja?'利用者 1':'Person 1',exact:true}).getByLabel(ja?'年齢':'Age at start',{exact:true});
    for(const [control,min,max,step] of [[height,'50','250','1'],[foot,'5','50','0.1'],[weight,'5','300','1'],[age,'0','120','1']] as const){await expect(control).toHaveAttribute('min',min);await expect(control).toHaveAttribute('max',max);await expect(control).toHaveAttribute('step',step);}
    await expect(height).toHaveAttribute('inputmode','numeric');await expect(foot).toHaveAttribute('inputmode','decimal');await expect(age).toHaveAttribute('inputmode','numeric');
@@ -445,8 +447,8 @@ try{
  await check('CH-04B: unsaved Input survives a hard reload for the same draft only; the restore sends nothing and checkout stays impossible until the ordinary server save',async()=>{
   const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   const before=await draftOf(p);
-  await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-02');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-03');await p.getByLabel('利用枠',{exact:true}).selectOption('MULTIDAY');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true}).fill('172');
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-02');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-03');
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();await p.getByRole('article',{name:'利用者 1',exact:true,includeHidden:true}).getByLabel('身長（cm）',{exact:true}).fill('172');
   const envelope=JSON.parse((await p.evaluate(k=>sessionStorage.getItem(k),DRAFT_KEY+before.id))??'null');
   assert.deepEqual(Object.keys(envelope).sort(),['baseRevision','baseServerInputFingerprint','draftId','input','schemaVersion']);
   assert.deepEqual([envelope.schemaVersion,envelope.draftId,envelope.baseRevision,envelope.input.members[0].heightCm],[2,before.id,before.revision,172]);
@@ -479,9 +481,9 @@ try{
  await check('CH-04B: a server revision change discards the stale cache instead of restoring it',async()=>{
   const {ctx,p}=await newPage();await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   const before=await draftOf(p);await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-06');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-06');
-  await p.getByRole('button',{name:'用品を選ぶ',exact:true}).click();
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   const cached=JSON.parse((await p.evaluate(k=>sessionStorage.getItem(k),DRAFT_KEY+before.id))!);
-  const saved=await p.evaluate(body=>fetch('/api/guest/draft',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),{draftId:before.id,expectedRevision:before.revision,input:{...cached.input,period:{startDate:'2035-03-20',endDate:'2035-03-20',slot:'DAY'},members:cached.input.members.map((m:object)=>({...m,heightCm:170,footCm:25.5,ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I'}}))}});
+  const saved=await p.evaluate(body=>fetch('/api/guest/draft',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),{draftId:before.id,expectedRevision:before.revision,input:{...cached.input,period:{startDate:'2035-03-20',endDate:'2035-03-20',startAt:'08:30',returnBy:'17:00'},members:cached.input.members.map((m:object)=>({...m,heightCm:170,footCm:25.5,ski:{weightKg:60,ageAtStart:30,skierType:'TYPE_I'}}))}});
   assert.equal(saved.revision,before.revision+1);
   await p.reload();await expect(p.getByRole('button',{name:'候補と参考料金を確認',exact:true})).toBeVisible();
   await expect(p.getByText('未保存の入力を復元しました')).toHaveCount(0);await expect.poll(()=>cacheKeys(p)).toEqual([]);
@@ -552,12 +554,12 @@ try{
    const ja=locale==='ja',{ctx,p}=await newPage(width,width===390?844:900),shot=(n:string)=>p.screenshot({path:`.local/screenshots/guest-${n}-${locale}-${width}.png`,fullPage:true}),fits=async()=>assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    await p.goto('/'+locale+'/book');await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toBeEnabled();
    // Forward attempt with nothing entered: messages appear beside the fields, not while typing.
-   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
    await expect(p.getByText(ja?'利用開始日を選択してください。':'Choose a start date.')).toBeVisible();await expect(p.getByLabel(ja?'利用開始日':'Start date',{exact:true})).toHaveAttribute('aria-invalid','true');
    await shot('dates-invalid');const date='2035-03-'+String(day++);
    await p.getByLabel(ja?'利用開始日':'Start date',{exact:true}).fill(date);await p.getByLabel(ja?'利用終了日':'End date',{exact:true}).fill(date);
    await expect(p.getByText(ja?'利用開始日を選択してください。':'Choose a start date.')).toHaveCount(0);await fits();await shot('dates');
-   await p.getByRole('button',{name:ja?'用品を選ぶ':'Choose equipment',exact:true}).click();
+   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
    for(const [label,mode] of [[ja?'身長（cm）':'Height (cm)','numeric'],[ja?'足のサイズ（cm）':'Foot size (cm)','decimal'],[ja?'体重（kg）':'Weight (kg)','numeric']] as const)await expect(p.getByLabel(label,{exact:true})).toHaveAttribute('inputmode',mode);await p.getByLabel(ja?'身長（cm）':'Height (cm)',{exact:true}).fill('49');
    await fillGuestProfile(p,(ja?'ja':'en'));await p.getByRole('button',{name:ja?'候補と参考料金を確認':'Review sizes and estimates',exact:true}).click();
    await expect(p.locator('#guest-err-m0-height')).toBeVisible();await fits();await shot('equipment-invalid');

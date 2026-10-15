@@ -131,13 +131,15 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
   head=<PageHead word="WEAR" tone="JACKET + PANTS"><p className="st-ph-l">{t('上下セット · 1日','Set · 1 day')} {yen(dayPrice('WEAR_SET_ADULT'))} · {t('セット用品と同時で20%OFF','20% off with an equipment set')}</p><div className="st-ph-acts">{book('BOOK WEAR')}</div></PageHead>;
   body=<section className="st-sec st-sec--tight" aria-label="WEAR"><Lineup locale={locale} only={['wear']}/></section>;
  }else if(path==='rental/premium'){
-  head=<PageHead word="PREMIUM"><p className="st-ph-l">CHOOSE MODEL / SEASON / LENGTH</p><div className="st-ph-acts"><a className="st-cta" href="#ski">VIEW SKI MODELS<span className="ar" aria-hidden="true">↓</span></a><a className="st-cta st-cta--line" href="#snowboard">VIEW SNOWBOARD MODELS<span className="ar" aria-hidden="true">↓</span></a></div></PageHead>;
+  // R67 (Owner): Premium models are not announced yet, so until a model is bound the page offers Regular booking instead.
+  const open=premiumOpen('SKI')||premiumOpen('SNOWBOARD');
+  head=<PageHead word="PREMIUM"><p className="st-ph-l">{open?'CHOOSE MODEL / SEASON / LENGTH':'COMING SOON · 2026/27'}</p><div className="st-ph-acts">{open?<a className="st-cta" href="#ski">VIEW SKI MODELS<span className="ar" aria-hidden="true">↓</span></a>:book('BOOK REGULAR')}<a className="st-cta st-cta--line" href={open?'#snowboard':'#ski'}>{open?'VIEW SNOWBOARD MODELS':'VIEW PREMIUM'}<span className="ar" aria-hidden="true">↓</span></a></div></PageHead>;
   // R67 (Owner): no model names in the public Premium display; the model/season/length is chosen in the booking flow.
   const group=(family:'SKI'|'SNOWBOARD',shot:Shot)=><section id={family==='SKI'?'ski':'snowboard'} className="st-sec st-pm" aria-labelledby={'pm-'+family}>
    <div className="st-pm-ph"><Product shot={shot} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/></div>
    <div className="st-pm-list"><h2 id={'pm-'+family} className="st-sec-h">{family}<span className="st-tone"> PREMIUM</span></h2>
     <dl className="st-spec">
-     <div><dt>{t('予約で選ぶ','CHOSEN IN BOOKING')}</dt><dd>MODEL / SEASON / LENGTH</dd></div>
+     {premiumOpen(family)?<div><dt>{t('予約で選ぶ','CHOSEN IN BOOKING')}</dt><dd>MODEL / SEASON / LENGTH</dd></div>:<div><dt>{t('モデル','MODEL')}</dt><dd>{t('発表準備中','TO BE ANNOUNCED')}</dd></div>}
      <div><dt>{t('セット 1日','SET · 1 DAY')}</dt><dd>{yen(dayPrice(family==='SKI'?'SKI_SET_ADULT_PREMIUM':'SNOWBOARD_SET_ADULT_PREMIUM'))}</dd></div>
      <div><dt>{t('対象','FOR')}</dt><dd>{t('大人','ADULTS')}</dd></div></dl>
     <div className="st-ph-acts st-pm-acts">{premiumOpen(family)?book('BOOK '+family+' PREMIUM'):<p className="st-soon st-soon--lg">COMING SOON</p>}</div></div>

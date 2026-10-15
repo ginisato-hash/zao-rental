@@ -106,10 +106,13 @@ html[lang=ja] .st-ft-grid a{font-family:var(--d)}
    Hard rectangles, two-tone condensed titles, image first, one line of copy, action above the fold. No radius, no shadow.
    ===================================================================================================================== */
 .public-shell *{border-radius:0}
-/* header: official logo raster (inverted under the difference blend, like the LP) + plain context word */
+/* header: official logo raster + plain context word */
 .st-hd-left{display:flex;align-items:center;gap:clamp(10px,1.2vw,16px);pointer-events:auto}
 .st-hd .st-hd-home,.st-mnu-top .st-hd-home{display:block;padding:10px 0!important;line-height:0}
-.st-hd-home img{display:block;width:clamp(112px,11vw,160px);height:auto;filter:invert(1)}
+.st-hd-home img{display:block;width:clamp(112px,11vw,160px);height:auto}
+/* R67: content (booking form fields, photographs) scrolls under the fixed header, so it is an opaque
+   paper bar with a hairline instead of the LP difference blend that garbled the logo over text. */
+.st-hd{color:var(--ink);mix-blend-mode:normal;background:var(--snow);border-bottom:1px solid var(--ink)}
 .st-mnu-top .st-hd-home img{filter:invert(1)}
 .st-hd-ctx{font:700 12px/1 var(--d);letter-spacing:.14em;text-transform:uppercase;padding-left:clamp(10px,1.2vw,16px);border-left:1px solid currentColor;align-self:center;line-height:22px}
 .st-hd-r .st-hd-lang a[aria-current]{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:7px}

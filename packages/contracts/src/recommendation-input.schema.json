@@ -33,6 +33,18 @@
             "DAY",
             "MULTIDAY"
           ]
+        },
+        "startAt": {
+          "enum": [
+            "08:30",
+            "13:00"
+          ]
+        },
+        "returnBy": {
+          "enum": [
+            "12:00",
+            "17:00"
+          ]
         }
       },
       "required": [
@@ -197,6 +209,21 @@
               "SNOWBOARD_BOOT",
               "POLE"
             ]
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "SKI",
+                "SKI_BOOT",
+                "SNOWBOARD",
+                "SNOWBOARD_BOOT",
+                "POLE"
+              ]
+            }
           }
         },
         "required": [
@@ -213,7 +240,8 @@
     "contractVersion": {
       "enum": [
         "INTEGRATED_V1_2",
-        "INTEGRATED_V1_3"
+        "INTEGRATED_V1_3",
+        "INTEGRATED_V1_4"
       ]
     }
   },
@@ -228,7 +256,10 @@
       "if": {
         "properties": {
           "contractVersion": {
-            "const": "INTEGRATED_V1_3"
+            "enum": [
+              "INTEGRATED_V1_3",
+              "INTEGRATED_V1_4"
+            ]
           }
         },
         "required": [

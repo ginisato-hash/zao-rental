@@ -1,8 +1,8 @@
 import {FlowError,flowId} from '../../../contracts/src/rental-flow';
 import {OperationsContext} from './context';
 
-export type ProvisionalFamily = 'SKI'|'SNOWBOARD'|'SKI_BOOT'|'SNOWBOARD_BOOT'|'WEAR_JACKET'|'WEAR_PANTS';
-const FAMILIES: readonly ProvisionalFamily[] = ['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','WEAR_JACKET','WEAR_PANTS'];
+export type ProvisionalFamily = 'SKI'|'SNOWBOARD'|'SKI_BOOT'|'SNOWBOARD_BOOT'|'POLE'|'WEAR_JACKET'|'WEAR_PANTS';
+const FAMILIES: readonly ProvisionalFamily[] = ['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','POLE','WEAR_JACKET','WEAR_PANTS'];
 
 export type ProvisionalCapacityBucketInput = {
   family: ProvisionalFamily;

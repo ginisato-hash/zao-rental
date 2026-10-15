@@ -21,7 +21,7 @@ import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {RecommendationService} from '../../packages/core/src/recommendation/recommendation-service';
 import {CustodyService} from '../../packages/core/src/rental/custody-service';
 import {provisionalCapacity} from '../../packages/core/src/inventory/provisional-capacity';
-import {activateProvisionalCatalog,PREMIUM_MODELS} from '../../packages/core/src/operations/provisional-catalog-bridge';
+import {activateProvisionalCatalog,PREMIUM_MODELS,type PremiumModelSpec} from '../../packages/core/src/operations/provisional-catalog-bridge';
 import {provisionalPremiumModels} from '../../packages/core/src/content/public-catalog';
 import {boundarySlot,type HoldConditions} from '../../packages/contracts/src/hold';
 import {FakeGateway,simulation} from '../flow/fixture';
@@ -50,7 +50,7 @@ try{
  // Production-shaped WEAR catalog (the only variants Production has today).
  const wear=await asOwner('SYNTHETIC R67 wear catalog',async c=>{const out:Record<string,string>={};for(const family of ['WEAR_JACKET','WEAR_PANTS']){const m=(await c.query("INSERT INTO ledger_models(code,name,brand,family,notes,source_kind,source_document,source_locator,catalog_season) VALUES($1,$1,'SYNTHETIC',$2,'','SYNTHETIC','tests/readiness/r67-bookable.ts',$1,'2026/27') RETURNING id",['R67-'+family.replace('_','-'),family])).rows[0].id;out[family]=(await c.query("INSERT INTO ledger_variants(model_id,family,age,tier,size,compatible_sports,notes,source_kind,source_document,source_locator) VALUES($1,$2,'ADULT','STANDARD','M',ARRAY['SKI','SNOWBOARD'],'','SYNTHETIC','tests/readiness/r67-bookable.ts',$3) RETURNING id",[m,family,'v-'+family])).rows[0].id;}return out;});
  const payload=(name:string)=>JSON.parse(readFileSync('docs/execution/provisional-booking-capacity/ACTIVATION_PAYLOAD_SOURCE_'+name+'.json','utf8')) as {sourceSha256:string;originalFilename:string;buckets:{family:string;age:string;sourceSize:string;bookingSize:string|null;quantity:number;provenance:string}[]};
- const counts=async()=>(await db.pool.query(`SELECT (SELECT count(*) FROM ledger_assets)::int assets,(SELECT count(*) FROM ledger_poles)::int poles,(SELECT count(*) FROM ledger_variants WHERE family LIKE 'WEAR%')::int wear,(SELECT coalesce(sum(provisional_capacity_effective_quantity(b.id)),0)::int FROM provisional_capacity_buckets b JOIN provisional_capacity_sources s ON s.id=b.source_id WHERE s.source_sha256<>$1) ab`,['9d219847237ee1414de4f2be161d7c735ba3fbbbf908a9e51cdb13248c55f603'])).rows[0];
+ const counts=async()=>(await db.pool.query(`SELECT (SELECT count(*) FROM ledger_assets)::int assets,(SELECT count(*) FROM ledger_poles)::int poles,(SELECT count(*) FROM ledger_variants WHERE family LIKE 'WEAR%')::int wear,(SELECT coalesce(sum(provisional_capacity_effective_quantity(b.id)),0)::int FROM provisional_capacity_buckets b JOIN provisional_capacity_sources s ON s.id=b.source_id WHERE s.source_sha256=ANY($1::text[])) ab`,[['5ff5ce67c8ec1afbfab6bc5beeab0a2a725b73db0e1958a02860a0db39fbe1f4','c85997f464e59c616c6afb18ce03a34f6a73371d1aebeba2a6b8229bfd9c2257']])).rows[0];
  let before:Record<string,number>={};
  await check('A0 accepted Source A/B registered exactly as committed; 0058 canonical key',async()=>{
   await asOwner('SYNTHETIC R67 source registration',async c=>{for(const n of ['A','B']){const p=payload(n);await c.query('SELECT provisional_capacity_register_source($1,$2,$3::jsonb)',[p.sourceSha256,p.originalFilename,JSON.stringify(p.buckets.map(b=>({family:b.family,age:b.age,source_size:b.sourceSize,booking_size:b.bookingSize,size_mapping_status:b.bookingSize===null?'UNRESOLVED':'MAPPED',quantity:b.quantity,provenance:b.provenance})))]);}});
@@ -58,19 +58,33 @@ try{
   for(const [f,s,k] of [['SNOWBOARD','145','145 cm'],['SNOWBOARD','145 cm','145 cm'],['SKI_BOOT','25/25.5','25/25.5 cm'],['SKI_BOOT','25.5','25.5 cm'],['SNOWBOARD_BOOT','26.5 cm','26.5 cm'],['SKI_BOOT','22X','22X'],['WEAR_JACKET','M','M']])assert.equal((await db.pool.query('SELECT provisional_size_key($1,$2) k',[f,s])).rows[0].k,k);
  });
  let report:Awaited<ReturnType<typeof activateProvisionalCatalog>>;
- await check('A1 deterministic catalog/pole/premium activation: variants exist, fake physical assets 0, WEAR unchanged, Source A/B effective quantities unchanged, idempotent',async()=>{
+ // Owner (2026-10-15): Salomon has not confirmed the Premium models; every Source A row is Regular stock.
+ // The Production activation binds no Premium model. The model-bound mechanism is proven below against a
+ // separate test-only synthetic Premium source (never Source A/B).
+ const TEST_PREMIUM_SHA='7e57'+'0'.repeat(60);
+ const TEST_PREMIUM:PremiumModelSpec[]=[
+  {code:'TEST-PREM-SB-ALPHA',name:'TEST ALPHA',family:'SNOWBOARD',itemCode:'SYNTHETIC',sourceSha256:TEST_PREMIUM_SHA,rows:[[1,150,4],[2,155,4]]},
+  {code:'TEST-PREM-SB-BETA',name:'TEST BETA',family:'SNOWBOARD',itemCode:'SYNTHETIC',sourceSha256:TEST_PREMIUM_SHA,rows:[[3,140,2]]},
+  {code:'TEST-PREM-SKI-GAMMA',name:'TEST GAMMA',family:'SKI',itemCode:'SYNTHETIC',sourceSha256:TEST_PREMIUM_SHA,rows:[[4,153,3],[5,160,3]]}];
+ await check('A1 Production activation: Regular catalog for SKI/SNOWBOARD/boots + adult POLE, NO Premium binding (Owner), fake physical assets 0, WEAR unchanged, Source A/B quantities unchanged, idempotent',async()=>{
   report=await asOwner('R67 provisional catalog bridge',c=>activateProvisionalCatalog(c));
   assert.equal(report.poleSourceRegistered,true);assert.ok(report.regularVariants.SKI&&report.regularVariants.SNOWBOARD&&report.regularVariants.SKI_BOOT&&report.regularVariants.SNOWBOARD_BOOT&&report.regularVariants.POLE===5);
-  assert.deepEqual(report.premiumVariants,{'PREM-SB-WILD-CARD-2627':5,'PREM-SB-LIBERTY-2627':2,'PREM-SKI-SMAX4-2627':6});assert.equal(report.bindingsCreated,13);
+  assert.deepEqual(report.premiumVariants,{});assert.equal(report.bindingsCreated,0);assert.equal(PREMIUM_MODELS.length,0);
+  assert.deepEqual(await provisionalPremiumModels(db.pool),[],'no Premium model is offered before Salomon confirms it');
   const after=await counts();assert.deepEqual(after,before,'no fake assets/poles; WEAR and Source A/B quantities unchanged');
   // canonical lexical duplicates collapse to one Regular variant (Source A "145" + Source B "145 cm")
   assert.equal((await db.pool.query("SELECT count(*)::int n FROM ledger_variants WHERE family='SNOWBOARD' AND age='ADULT' AND tier='REGULAR' AND size='145 cm'")).rows[0].n,1);
-  assert.equal((await db.pool.query("SELECT count(*)::int n FROM ledger_models WHERE catalog_role='PROVISIONAL_BOOKING_SELECTOR'")).rows[0].n,8);
+  assert.equal((await db.pool.query("SELECT count(*)::int n FROM ledger_models WHERE catalog_role='PROVISIONAL_BOOKING_SELECTOR'")).rows[0].n,5);
   const again=await asOwner('R67 provisional catalog bridge rerun',c=>activateProvisionalCatalog(c));assert.deepEqual([again.poleSourceRegistered,again.modelsCreated,again.variantsCreated,again.bindingsCreated],[false,0,0,0]);
-  // Premium bindings point only to the intended Source A bucket of the same model length.
-  const bad=(await db.pool.query(`SELECT count(*)::int n FROM provisional_model_bindings x JOIN provisional_capacity_buckets b ON b.id=x.bucket_id JOIN provisional_capacity_sources s ON s.id=b.source_id JOIN ledger_variants v ON v.id=x.variant_id WHERE s.source_sha256<>$1 OR provisional_size_key(b.family,b.booking_size)<>v.size OR x.quantity<>b.quantity`,['5ff5ce67c8ec1afbfab6bc5beeab0a2a725b73db0e1958a02860a0db39fbe1f4'])).rows[0].n;assert.equal(bad,0);
   await assert.rejects(asOwner('bad binding',async c=>{const v=(await c.query("SELECT id FROM ledger_variants WHERE tier='REGULAR' AND family='SNOWBOARD' LIMIT 1")).rows[0].id,b=(await c.query("SELECT id FROM provisional_capacity_buckets WHERE family='SNOWBOARD' LIMIT 1")).rows[0].id;await c.query('INSERT INTO provisional_model_bindings(variant_id,bucket_id,quantity,provenance,actor) VALUES($1,$2,1,$3,$4)',[v,b,'bad',actor]);}),/PROVISIONAL_MODEL_BINDING_INVALID/);
-  const models=await provisionalPremiumModels(db.pool);assert.deepEqual(models.map(m=>[m.name,m.sport,m.lengths.join('/')]).sort(),[['LIBERTY','SNOWBOARD','135 cm/140 cm'],['S/MAX 4 + M10 GW L80','SKI','139 cm/146 cm/153 cm/160 cm/167 cm/174 cm'],['WILD CARD','SNOWBOARD','145 cm/150 cm/155 cm/160 cm/165 cm']]);
+ });
+ await check('A1b mechanism: a separate synthetic Premium source binds each model length only to its own bucket; idempotent',async()=>{
+  await asOwner('SYNTHETIC R67 premium test source',async c=>{await c.query('SELECT provisional_capacity_register_source($1,$2,$3::jsonb)',[TEST_PREMIUM_SHA,'SYNTHETIC R67 premium test source',JSON.stringify(TEST_PREMIUM.flatMap(m=>m.rows.map(([,l,q])=>({family:m.family,age:'ADULT',source_size:String(l),booking_size:l+' cm',size_mapping_status:'MAPPED',quantity:q,provenance:'SYNTHETIC '+m.code}))))]);});
+  const r=await asOwner('R67 bridge with synthetic premium',c=>activateProvisionalCatalog(c,TEST_PREMIUM));
+  assert.deepEqual(r.premiumVariants,{'TEST-PREM-SB-ALPHA':2,'TEST-PREM-SB-BETA':1,'TEST-PREM-SKI-GAMMA':2});assert.equal(r.bindingsCreated,5);
+  const bad=(await db.pool.query(`SELECT count(*)::int n FROM provisional_model_bindings x JOIN provisional_capacity_buckets b ON b.id=x.bucket_id JOIN provisional_capacity_sources s ON s.id=b.source_id JOIN ledger_variants v ON v.id=x.variant_id WHERE s.source_sha256<>$1 OR provisional_size_key(b.family,b.booking_size)<>v.size OR x.quantity<>b.quantity`,[TEST_PREMIUM_SHA])).rows[0].n;assert.equal(bad,0);
+  const models=await provisionalPremiumModels(db.pool);assert.deepEqual(models.map(m=>[m.name,m.sport,m.lengths.join('/')]).sort(),[['TEST ALPHA','SNOWBOARD','150 cm/155 cm'],['TEST BETA','SNOWBOARD','140 cm'],['TEST GAMMA','SKI','153 cm/160 cm']]);
+  const again=await asOwner('rerun',c=>activateProvisionalCatalog(c,TEST_PREMIUM));assert.equal(again.bindingsCreated,0);
  });
  const period=(startDate:string,endDate=startDate,startAt:'08:30'|'13:00'='08:30',returnBy:'12:00'|'17:00'='17:00')=>({startDate,endDate,slot:boundarySlot(startDate,endDate,startAt,returnBy),startAt,returnBy});
  const adultSki={weightKg:65,ageAtStart:30,skierType:'TYPE_II'},kidSki={weightKg:25,ageAtStart:8,skierType:'TYPE_I'};
@@ -98,28 +112,28 @@ try{
  await check('B9 one person: individual snowboard + boots',async()=>{const r=await book(member({sport:'SNOWBOARD',footCm:26,items:['SNOWBOARD','SNOWBOARD_BOOT']}));assert.equal(families(r),'SNOWBOARD+SNOWBOARD_BOOT');assert.deepEqual((r.quote.snapshot.items as {productKey:string}[]).map(i=>i.productKey).sort(),['SNOWBOARD_BOOTS_ONLY_ADULT_STANDARD','SNOWBOARD_EQUIPMENT_ONLY_ADULT_REGULAR']);});
  await check('B10 wear only',async()=>{const r=await book({key:'p',sport:'WEAR',heightCm:null,footCm:null,adultAtStart:true,tier:'STANDARD',ski:null,poleVariantId:null,wearSport:'SKI',wearSelection:{jacketVariantId:wear.WEAR_JACKET,pantsVariantId:wear.WEAR_PANTS}});assert.equal(r.candidate.member.product,'WEAR_SET');});
  const premium=async(code:string)=>{const m=(await provisionalPremiumModels(db.pool)).find(x=>x.slug===code.toLowerCase())!;return {modelId:m.modelId,season:m.season};};
- await check('B11 Premium Ski S/MAX 4 model/length promise -> model-bound claim',async()=>{const r=await book(member({footCm:26,ski:adultSki,tier:'PREMIUM',modelSelection:await premium('PREM-SKI-SMAX4-2627')}));const ski=r.candidate.member.items.find(i=>i.family==='SKI')!;assert.ok(ski.modelPromise);assert.equal(r.claims.find(c=>c.requirement_key==='p:SKI')!.promise_variant_id,ski.modelPromise!.variantId);assert.equal(r.claims.find(c=>c.requirement_key==='p:SKI_BOOT')!.promise_variant_id,null,'boots come from the common pool, no model promise');});
- await check('B12 Premium Snowboard WILD CARD',async()=>{const r=await book(member({sport:'SNOWBOARD',heightCm:170,footCm:26,tier:'PREMIUM',modelSelection:await premium('PREM-SB-WILD-CARD-2627')}));const b=r.candidate.member.items.find(i=>i.family==='SNOWBOARD')!;assert.equal(r.candidate.lengthCm,150);assert.equal(r.claims.find(c=>c.requirement_key==='p:SNOWBOARD')!.promise_variant_id,b.modelPromise!.variantId);});
- await check('B13 Premium Snowboard LIBERTY',async()=>{const r=await book(member({sport:'SNOWBOARD',heightCm:158,footCm:24,tier:'PREMIUM',modelSelection:await premium('PREM-SB-LIBERTY-2627')}));assert.equal(r.candidate.lengthCm,140);assert.ok(r.claims.find(c=>c.requirement_key==='p:SNOWBOARD')!.promise_variant_id);});
+ await check('B11 Premium Ski model/length promise -> model-bound claim (synthetic Premium source)',async()=>{const r=await book(member({heightCm:178,footCm:26,ski:adultSki,tier:'PREMIUM',modelSelection:await premium('TEST-PREM-SKI-GAMMA')}));const ski=r.candidate.member.items.find(i=>i.family==='SKI')!;assert.ok(ski.modelPromise);assert.equal(r.claims.find(c=>c.requirement_key==='p:SKI')!.promise_variant_id,ski.modelPromise!.variantId);assert.equal(r.claims.find(c=>c.requirement_key==='p:SKI_BOOT')!.promise_variant_id,null,'boots come from the common pool, no model promise');});
+ await check('B12 Premium Snowboard model A (synthetic Premium source)',async()=>{const r=await book(member({sport:'SNOWBOARD',heightCm:170,footCm:26,tier:'PREMIUM',modelSelection:await premium('TEST-PREM-SB-ALPHA')}));const b=r.candidate.member.items.find(i=>i.family==='SNOWBOARD')!;assert.equal(r.candidate.lengthCm,150);assert.equal(r.claims.find(c=>c.requirement_key==='p:SNOWBOARD')!.promise_variant_id,b.modelPromise!.variantId);});
+ await check('B13 Premium Snowboard model B (synthetic Premium source)',async()=>{const r=await book(member({sport:'SNOWBOARD',heightCm:158,footCm:24,tier:'PREMIUM',modelSelection:await premium('TEST-PREM-SB-BETA')}));assert.equal(r.candidate.lengthCm,140);assert.ok(r.claims.find(c=>c.requirement_key==='p:SNOWBOARD')!.promise_variant_id);});
  // Direct planner proofs on a fixed day: fill exact buckets with synthetic live claims.
  const fillDay='2035-03-20';
  async function fill(bucketId:string,n:number){await asOwner('SYNTHETIC R67 capacity fill',async c=>{for(let i=0;i<n;i++){const res=randomUUID(),hold=randomUUID();await c.query('INSERT INTO inventory_reservations(id,owner_id) VALUES($1,$2)',[res,actor]);await c.query(`INSERT INTO inventory_holds(id,reservation_id,owner_id,pickup_store,return_store,conditions,starts_at,due_at,occupancy_start,occupancy_end,expires_at,state,payment_state) VALUES($1,$2,$3,'MOUNTAIN_BASE','MOUNTAIN_BASE','{}'::jsonb,$4,$5,$6,$6,$5,'ACTIVE','SUCCESS')`,[hold,res,actor,fillDay+'T08:30:00+09:00',fillDay+'T17:00:00+09:00',fillDay]);await c.query('INSERT INTO provisional_capacity_claims(hold_id,requirement_key,bucket_id,day,quantity) VALUES($1,$2,$3,$4,1)',[hold,'fill:'+i,bucketId,fillDay]);}});}
  const bucket=async(sha:string,family:string,size:string)=>(await db.pool.query('SELECT b.id FROM provisional_capacity_buckets b JOIN provisional_capacity_sources s ON s.id=b.source_id WHERE s.source_sha256=$1 AND b.family=$2 AND provisional_size_key(b.family,b.booking_size)=$3',[sha,family,size])).rows[0].id as string;
  const variant=async(code:string,size:string)=>(await db.pool.query('SELECT v.id FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE m.code=$1 AND v.size=$2',[code,size])).rows[0].id as string;
- await check('B14 a Premium promise cannot consume another model or the generic Source B bucket: LIBERTY 140 exhausted -> Premium LIBERTY 140 infeasible while Regular 140 still feasible from Source B',async()=>{
-  const lib140=await bucket('5ff5ce67c8ec1afbfab6bc5beeab0a2a725b73db0e1958a02860a0db39fbe1f4','SNOWBOARD','140 cm');await fill(lib140,10);
+ await check('B14 a Premium promise cannot consume another model or the generic Regular buckets: model B 140 exhausted -> Premium B 140 infeasible while Regular 140 still feasible from Source A/B',async()=>{
+  const lib140=await bucket(TEST_PREMIUM_SHA,'SNOWBOARD','140 cm');await fill(lib140,1);
   const c=await db.pool.connect();try{
-   const prem=await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'140 cm',promiseVariantId:await variant('PREM-SB-LIBERTY-2627','140 cm')}],[fillDay],now,null);assert.equal(prem.feasible,false);
+   const prem=await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'140 cm',promiseVariantId:await variant('TEST-PREM-SB-BETA','140 cm')}],[fillDay],now,null);assert.equal(prem.feasible,false);
    const reg=await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'140'}],[fillDay],now,null);assert.equal(reg.feasible,true);assert.notEqual(reg.rows[0]!.bucket,lib140);
-   const wc=await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'140 cm',promiseVariantId:await variant('PREM-SB-WILD-CARD-2627','145 cm')}],[fillDay],now,null);assert.equal(wc.feasible,false,'WILD CARD 145 binding never matches a 140 bucket');
+   const wc=await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'140 cm',promiseVariantId:await variant('TEST-PREM-SB-ALPHA','150 cm')}],[fillDay],now,null);assert.equal(wc.feasible,false,'model A 150 binding never matches a 140 bucket');
   }finally{c.release();}
  });
- await check('B15 Regular and Premium share one ceiling: Regular claims on the WILD CARD 165 bucket leave no Premium WILD CARD 165 capacity; a direct over-claim is rejected by the DB guard',async()=>{
-  const wc165=await bucket('5ff5ce67c8ec1afbfab6bc5beeab0a2a725b73db0e1958a02860a0db39fbe1f4','SNOWBOARD','165 cm'),v=await variant('PREM-SB-WILD-CARD-2627','165 cm');
+ await check('B15 Regular and Premium share one ceiling: Regular claims on the model A 155 bucket leave no Premium model A 155 capacity; a direct over-claim is rejected by the DB guard',async()=>{
+  const wc165=await bucket(TEST_PREMIUM_SHA,'SNOWBOARD','155 cm'),v=await variant('TEST-PREM-SB-ALPHA','155 cm');
   const c=await db.pool.connect();try{
-   assert.equal((await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'165 cm',promiseVariantId:v}],[fillDay],now,null,true)).feasible,true);
-   await fill(wc165,10);
-   assert.equal((await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'165 cm',promiseVariantId:v}],[fillDay],now,null,true)).feasible,false);
+   assert.equal((await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'155 cm',promiseVariantId:v}],[fillDay],now,null,true)).feasible,true);
+   await fill(wc165,4);
+   assert.equal((await provisionalCapacity(c,[{key:'x',family:'SNOWBOARD',age:'ADULT',bookingSize:'155 cm',promiseVariantId:v}],[fillDay],now,null,true)).feasible,false);
   }finally{c.release();}
   await assert.rejects(fill(wc165,1),/PROVISIONAL_CAPACITY_EXCEEDED/);
  });
@@ -133,7 +147,6 @@ try{
  await check('A2 after the matrix: fake assets 0, pole stock untouched, Source A/B quantities unchanged, every Premium claim is bound',async()=>{
   assert.deepEqual(await counts(),before);
   assert.equal((await db.pool.query('SELECT count(*)::int n FROM provisional_capacity_claims c WHERE c.promise_variant_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM provisional_model_bindings x WHERE x.variant_id=c.promise_variant_id AND x.bucket_id=c.bucket_id)')).rows[0].n,0);
-  assert.ok(PREMIUM_MODELS.length===3);
  });
  console.log(`R67 bookable real PostgreSQL: ${count} passed, no skipped. Synthetic people only.`);
 }catch(e){failed=true;console.error('R67_BOOKABLE_FAILED '+stage+' '+((e as Error).stack??String(e)).slice(0,1500));}finally{await ops?.close();await flow?.close();await roles?.close();await db.stop();}

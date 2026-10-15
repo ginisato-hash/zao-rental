@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {useEffect,useRef,useState} from 'react';
 import {STORE_DISPLAY} from './brand';
-import {menuImages} from './brand/media';
+import {menuImages,logo} from './brand/media';
 
 type Locale='ja'|'en';
 type LinkItem={href:string;label:string};
@@ -16,15 +16,20 @@ function nav(locale:Locale){const ja=locale==='ja',r='/'+locale;return {
  /** The four giant menu words (LP: one word per destination). */
  main:[{href:r+'/rental',label:'RENTAL',img:'rental'},{href:r+'/prices',label:'PRICES',img:'prices'},{href:r+'/pickup-return',label:'STORES',img:'stores'},{href:r+'/faq',label:'FAQ',img:'faq'}] as (LinkItem&{img:string})[],
  book:{href:r+'/book',label:'BOOK'} as LinkItem,
- categories:[{href:r+'/rental/ski',label:'SKI'},{href:r+'/rental/snowboard',label:'SNOWBOARD'},{href:r+'/rental/wear',label:'WEAR'},{href:r+'/rental/premium',label:'PREMIUM'},{href:r+'/rental/kids-family',label:L(ja,'キッズ・ファミリー','KIDS & FAMILY')}] as LinkItem[],
- small:[{href:r+'/reservation',label:L(ja,'予約の確認','MY BOOKING')},{href:r+'/stores/mountain-base',label:STORE_DISPLAY.MOUNTAIN_BASE},{href:r+'/stores/onsen-base',label:STORE_DISPLAY.ONSEN_BASE},{href:r+'/pickup-return',label:L(ja,'受取・返却','PICKUP & RETURN')}] as LinkItem[],
+ /** Secondary row (R67): categories + MY BOOKING. Children are an age category of each person, never a FAMILY product. */
+ categories:[{href:r+'/rental/ski',label:'SKI'},{href:r+'/rental/snowboard',label:'SNOWBOARD'},{href:r+'/rental/premium',label:'PREMIUM'},{href:r+'/rental/wear',label:'WEAR'},{href:r+'/reservation',label:'MY BOOKING'}] as LinkItem[],
+ small:[{href:r+'/stores/mountain-base',label:STORE_DISPLAY.MOUNTAIN_BASE},{href:r+'/stores/onsen-base',label:STORE_DISPLAY.ONSEN_BASE},{href:r+'/pickup-return',label:L(ja,'受取・返却','PICKUP & RETURN')}] as LinkItem[],
 };}
 
 /** LP chrome: quiet edge type with difference blending (legible on white, black and photos), no pill, no logo plate.
  * Left: the site name home link. Right: JP/EN, BOOK, MENU. The menu is a modal full black field (LP .mnu) with the
  * accessibility contract kept from the previous header: focus starts inside, Tab/Shift+Tab cycle inside, the rest of
  * the page is inert, Escape/CLOSE close and return focus to MENU, the scroll lock is always restored. */
-export function PublicHeader({locale,page,homeHeading,guard}:{locale:Locale;page:string;homeHeading?:string|undefined;guard?:Guard|undefined}){
+/** The official logo is always the LP raster asset (never type); `context` is the plain-text page marker. */
+function Brand({locale,context,onClick}:{locale:Locale;context:'RENTAL'|'BOOKING';onClick:Guard}){
+ return <span className="st-hd-left"><Link className="st-hd-home" href={'/'+locale} aria-label={SITE_NAME+(locale==='ja'?' ホーム':' home')} onClick={onClick}><img src={logo.src} width={logo.width} height={logo.height} alt={SITE_NAME}/></Link><span className="st-hd-ctx" aria-label={context==='BOOKING'?L(locale==='ja','予約','Booking'):L(locale==='ja','レンタル','Rental')}>{context}</span></span>;
+}
+export function PublicHeader({locale,page,homeHeading,guard,context='RENTAL'}:{locale:Locale;page:string;homeHeading?:string|undefined;guard?:Guard|undefined;context?:'RENTAL'|'BOOKING'}){
  const ja=locale==='ja',n=nav(locale),[open,setOpen]=useState(false),[img,setImg]=useState(''),toggle=useRef<HTMLButtonElement>(null),panel=useRef<HTMLDivElement>(null);
  const returnFocus=useRef(false);
  useEffect(()=>{if(!open){if(returnFocus.current){returnFocus.current=false;toggle.current?.focus();}return;}
@@ -40,11 +45,11 @@ export function PublicHeader({locale,page,homeHeading,guard}:{locale:Locale;page
   return ()=>{document.body.style.overflow=prev;document.removeEventListener('keydown',key);inerted.forEach(el=>{el.inert=false;});};},[open]);
  const go=(e:React.MouseEvent)=>{guard?.(e);if(!e.defaultPrevented)setOpen(false);};
  const here=path(locale,page),lang=(l:Locale)=><Link href={path(l,page)} hrefLang={l} lang={l} aria-current={l===locale?'true':undefined} onClick={go}>{l==='ja'?'JP':'EN'}</Link>;
- const home=<Link className="st-hd-home" href={'/'+locale} aria-label={SITE_NAME+(ja?' ホーム':' home')} onClick={go}>{SITE_NAME}</Link>;
+ const home=<Brand locale={locale} context={context} onClick={go}/>;
  return <>
   <a className="st-skip" href="#main">{L(ja,'本文へ','Skip to content')}</a>
-  <header className={'st-hd'+(homeHeading?' st-hd--home':'')}>
-   {homeHeading?<span className="st-hd-left">{home}</span>:home}
+  <header className="st-hd">
+   {home}
    <div className="st-hd-r">
     <span className="st-hd-lang">{lang('ja')}{lang('en')}</span>
     <Link className="st-hd-book" href={n.book.href} aria-current={here===n.book.href?'page':undefined} onClick={go}>{n.book.label}</Link>
@@ -53,7 +58,7 @@ export function PublicHeader({locale,page,homeHeading,guard}:{locale:Locale;page
   </header>
   {open&&<div id="st-menu" ref={panel} className="st-mnu" role="dialog" aria-modal="true" aria-label={L(ja,'メニュー','Menu')}>
    <div className="st-mnu-top">
-    <Link className="st-hd-home" href={'/'+locale} onClick={go}>{SITE_NAME}</Link>
+    <Brand locale={locale} context={context} onClick={go}/>
     <div className="st-hd-r"><span className="st-hd-lang">{lang('ja')}{lang('en')}</span>
      <button type="button" className="st-hd-menu" aria-label={L(ja,'メニューを閉じる','Close menu')} onClick={()=>{returnFocus.current=true;setOpen(false);}}>CLOSE</button></div>
    </div>

@@ -22,7 +22,7 @@ try{
  await db.pool.query(`CREATE DATABASE ${DB} OWNER ${OWNER}`);
  const owner=connect(OWNER,ownerPassword),observer=connect(db.identity.user,superPassword);
  const full=await productionFoundationPlan(DB),entries=full.bootstrap.entries;
- assert.equal(entries.length,57);assert.equal(entries[56]!.id,'0057');assert.equal(entries[56]!.provenance.transformation,'NONE');
+ assert.equal(entries.length,58);assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
  stage='registry56 production topology';
  await runFoundationPlan(owner,{...full,bootstrap:{...full.bootstrap,entries:entries.slice(0,56)}});
  const q=async(sql:string,params:unknown[]=[])=>(await observer.query(sql,params)).rows;
@@ -52,7 +52,7 @@ try{
   await c.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[56]!.id,entries[56]!.checksum]);
   await c.query('COMMIT');
  }catch(e){await c.query('ROLLBACK').catch(()=>{});throw e;}finally{c.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,57).map(e=>({id:e.id,checksum:e.checksum})));
  console.log('PASS canonical 0057 applies as neondb_owner in one transaction: registry 56 → 57, latest 0057, 57 canonical checksums');
 
  stage='no role or guard mutation';
@@ -73,4 +73,27 @@ try{
  assert.deepEqual({e:by.neondb_operations.exemptions,l:by.neondb_operations.loans,s:by.neondb_operations.stage},{e:true,l:true,s:true});
  assert.equal(by[EXECUTOR].exemptions,false,'0057 adds no custody-executor privilege');
  console.log('PASS 0057 constraint, V1.3 SKI_SET sync function (owner, SECURITY DEFINER, pinned path, no PUBLIC EXECUTE); hold/transfer/operations EXECUTE and operations checkout privileges present; executor privileges unchanged');
+ stage='R67 0058 applied as neondb_owner';
+ // R67: 0058 is additive and owner-applicable on the same topology: one transaction, no role/membership/
+ // ownership/LOGIN change, rental_stage_guard() unchanged, runtime readers of buckets also read bindings.
+ const before58=await guard(),roles58=await roles();
+ const c2=await owner.connect();
+ try{
+  await c2.query('BEGIN');
+  await c2.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='15000ms';SET LOCAL search_path=public,pg_catalog");
+  await c2.query('SELECT pg_advisory_xact_lock(71820401),pg_advisory_xact_lock(71820600)');
+  await c2.query('LOCK TABLE public.foundation_migrations IN EXCLUSIVE MODE');
+  await c2.query(entries[57]!.sql);
+  await c2.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[57]!.id,entries[57]!.checksum]);
+  await c2.query('COMMIT');
+ }catch(e){await c2.query('ROLLBACK').catch(()=>{});throw e;}finally{c2.release();}
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await guard(),before58);
+ const roles58After=await roles();assert.deepEqual({roles:roles58After.roles,members:roles58After.members},{roles:roles58.roles,members:roles58.members});
+ const owners58=roles58After.owners.filter((o:{k:string})=>!roles58.owners.some((p:{k:string})=>p.k===o.k));
+ assert.ok(owners58.length>0&&owners58.every((o:{o:string})=>o.o===OWNER),'every new 0058 object is owner-owned');
+ const readers=await q(`SELECT r.rolname FROM pg_roles r WHERE has_table_privilege(r.oid,'public.provisional_capacity_buckets'::regclass,'SELECT') AND NOT r.rolsuper AND r.rolname<>$1 ORDER BY 1`,[OWNER]);
+ for(const r of readers)assert.equal((await q(`SELECT has_table_privilege($1,'public.provisional_model_bindings'::regclass,'SELECT') ok`,[r.rolname]))[0].ok,true,r.rolname);
+ assert.equal((await q("SELECT provisional_size_key('SNOWBOARD','145') k"))[0].k,'145 cm');
+ console.log('PASS canonical 0058 applies as neondb_owner after 0057: registry 57 -> 58, guard/roles/memberships unchanged, new objects owner-owned, bucket readers can read bindings');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

@@ -4,7 +4,6 @@ import {canonicalPath,publicPages,pageSchema,safeJsonLd,type Locale} from '../..
 import {publicationApproved} from '../../../../packages/auth/src/publication-authority';
 import {approvedLegalDocs,legalDocument,legalPath,legalPublicationComplete} from '../../../../packages/core/src/content/public-legal';
 import {PublicHeader,PublicFooter,PublicFinal,StationReveal} from './PublicChrome';
-import {S_PATH,S_VIEWBOX} from './brand/salomon-s-path';
 import {PriceExplorer} from './PriceExplorer';
 import {priceGrid,dayPrice} from './price-rows';
 import {products,photos,type Shot} from './brand/media';
@@ -21,10 +20,10 @@ function Product({shot,locale,eager=false,sizes}:{shot:Shot;locale:Locale;eager?
  return <picture><img src={shot.src} srcSet={shot.srcSet} sizes={sizes} width={shot.width} height={shot.height} alt={shot.alt[locale]} loading={eager?'eager':'lazy'} decoding="async"/></picture>;
 }
 
-/** Shared public frame (LP chrome): edge header + full-field menu, page, final BOOK band, one-line footer. */
-export function PublicFrame({locale,path,home=false,homeHeading,final=true,children}:{locale:Locale;path:string;home?:boolean;homeHeading?:string;final?:boolean;children:React.ReactNode}){
- return <div className={'public-shell'+(home?' public-shell--home':'')} lang={locale}>
-  <PublicHeader locale={locale} page={path} homeHeading={home?homeHeading:undefined}/>
+/** Shared public frame (LP chrome): edge header + full-field menu, page, final BOOK band, footer. */
+export function PublicFrame({locale,path,final=true,children}:{locale:Locale;path:string;home?:boolean;homeHeading?:string;final?:boolean;children:React.ReactNode}){
+ return <div className="public-shell" lang={locale}>
+  <PublicHeader locale={locale} page={path}/>
   {children}
   {final&&<PublicFinal locale={locale} photo={<Photo shot={photos.winter} locale={locale}/>}/>}
   <PublicFooter locale={locale} page={path} legal={legalLinks(locale)}/>
@@ -32,94 +31,140 @@ export function PublicFrame({locale,path,home=false,homeHeading,final=true,child
  </div>;
 }
 
-/** One display word per page (LP: a page is one giant noun). Decorative: the semantic h1 carries the page heading. */
-const WORD:Record<string,string>={rental:'Rental','rental/ski':'Ski','rental/snowboard':'Snowboard','rental/premium':'Premium','rental/wear':'Wear','rental/kids-family':'Family',prices:'Prices','stores/mountain-base':'Mountain','stores/onsen-base':'Central','pickup-return':'Stores',faq:'FAQ'};
-/** LP page head: the page is one giant noun, and that noun is the h1 (no sentence headline, no lead copy). */
-export function PageHead({word,children}:{word:string;children?:React.ReactNode}){
- return <header className="st-ph"><h1>{word}</h1>{children}</header>;
+/** Page title (Palace grammar): one giant word, optional grey second word; the h1. */
+export function PageHead({word,tone,children}:{word:string;tone?:string|undefined;children?:React.ReactNode}){
+ return <header className="st-ph"><h1>{word}{tone&&<span className="st-tone"> {tone}</span>}</h1>{children}</header>;
 }
 const yen=(n:number)=>'¥'+n.toLocaleString('en-US');
 const STORE_PATH={MOUNTAIN_BASE:'stores/mountain-base',ONSEN_BASE:'stores/onsen-base'} as const;
 /** Coordinates of each station's building (OSM, same points as the LP map) for directions links only. */
 const STORE_GEO={MOUNTAIN_BASE:'38.169695,140.401042',ONSEN_BASE:'38.16334,140.395437'} as const;
+const maps=(geo:string)=>[['GOOGLE MAPS','https://www.google.com/maps/dir/?api=1&destination='+geo],['APPLE MAPS','https://maps.apple.com/?daddr='+geo]] as const;
 
-export function PublicPage({page,locale,origin,latePickup,models=[]}:{latePickup:string;models?:{slug:string;name:string;season:string}[];page:typeof publicPages[number];locale:Locale;origin:string}){
+type Tile={key:string;name:string;tone:string;fact:string;view:string;image:React.ReactNode;kind:'product'|'photo'};
+function lineup(locale:Locale):Tile[]{
+ const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e,r='/'+locale,day=t('1日','1 day');
+ const promise=t('モデル指定','Model promised');
+ return [
+  {key:'ski-regular',name:'SKI',tone:'REGULAR',fact:t('モデル非指定 · セット','Any model · set')+' '+day+' '+yen(dayPrice('SKI_SET_ADULT_REGULAR')),view:r+'/rental/ski',kind:'product',image:<Product shot={products.regular} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/>},
+  {key:'ski-premium',name:'SKI',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SKI_SET_ADULT_PREMIUM')),view:r+'/rental/premium#ski',kind:'photo',image:<Product shot={products.premium} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
+  {key:'snowboard-regular',name:'SNOWBOARD',tone:'REGULAR',fact:t('モデル非指定 · セット','Any model · set')+' '+day+' '+yen(dayPrice('SNOWBOARD_SET_ADULT_REGULAR')),view:r+'/rental/snowboard',kind:'product',image:<Product shot={products.snowboard} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
+  {key:'snowboard-premium',name:'SNOWBOARD',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SNOWBOARD_SET_ADULT_PREMIUM')),view:r+'/rental/premium#snowboard',kind:'photo',image:<Product shot={products.snowboardRide} locale={locale} sizes="(max-width:767px) 100vw, 58vw"/>},
+  {key:'wear',name:'WEAR',tone:'JACKET + PANTS',fact:t('上下セット','Jacket + pants')+' · '+day+' '+yen(dayPrice('WEAR_SET_ADULT')),view:r+'/rental/wear',kind:'photo',image:<Photo shot={photos.wear} locale={locale} sizes="100vw"/>},
+ ];
+}
+/** Palace range grid: IMAGE · NAME (two-tone) · 1 FACT · ACTION. Equal-rank, asymmetric. */
+function Lineup({locale,only}:{locale:Locale;only?:string[]}){
+ const r='/'+locale,tiles=lineup(locale).filter(x=>!only||only.includes(x.key));
+ return <div className={'st-grid'+(only?' st-grid--pair':'')}>{tiles.map(x=><article key={x.key} id={x.key} className={'st-tile st-tile--'+x.key+' st-tile--'+x.kind}>
+  <Link className="st-tile-ph" href={x.view} tabIndex={-1} aria-hidden="true">{x.image}</Link>
+  <div className="st-tile-cap">
+   <h2 className="st-tile-n"><Link href={x.view}>{x.name}<span className="st-tone"> {x.tone}</span></Link></h2>
+   <p className="st-tile-f">{x.fact}</p>
+   <p className="st-tile-a"><Link href={x.view}>VIEW</Link><Link href={r+'/book'}>BOOK →</Link></p>
+  </div>
+ </article>)}</div>;
+}
+const CATS=(locale:Locale)=>{const r='/'+locale;return [['SKI',r+'/rental/ski'],['SNOWBOARD',r+'/rental/snowboard'],['PREMIUM',r+'/rental/premium'],['WEAR',r+'/rental/wear'],['PRICES',r+'/prices'],['STORES',r+'/pickup-return']] as const;};
+function CategoryIndex({locale,stacked=false}:{locale:Locale;stacked?:boolean}){
+ return <nav className={'st-index'+(stacked?' st-index--stack':'')} aria-label={locale==='ja'?'カテゴリー':'Categories'}><ul>{CATS(locale).map(([l,h])=><li key={l}><Link href={h}>{l}</Link></li>)}</ul></nav>;
+}
+
+/** FAQ: every answer restates an implemented rule or approved copy; nothing new is promised here. */
+function faq(locale:Locale,latePickup:string):[string,React.ReactNode][]{
+ const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e,r='/'+locale;
+ return [
+  [t('セットには何が含まれますか？','What does a set include?'),t('スキーセットはスキー・ブーツ・ポール、スノーボードセットはボード（ビンディング付き）とブーツです。ウェアは追加できます。','A ski set is skis, boots and poles; a snowboard set is a board (bindings mounted) and boots. Wear can be added.')],
+  [t('Premiumとは何ですか？','What is Premium?'),t('モデル・シーズン・長さを指定して予約できるプランです（大人のみ）。ブーツ・ポールは通常の在庫からご用意します。','Book a specific model, season and length (adults only). Boots and poles come from our regular range.')],
+  [t('ブーツのサイズはどう選びますか？','How is my boot size chosen?'),<>{t('SALOMON STATION ZAOでは、レンタルブーツは入力いただいた足のサイズ＋1.0cmを目安にご用意します。','SALOMON STATION ZAO prepares rental boots at about 1.0 cm above the foot length you enter.')}<br/>{t('在庫状況により、現地で別サイズへ交換できない場合があります。','Depending on stock, we may not be able to change to another size at the store.')}</>],
+  [t('一人で複数の単品を借りられますか？','Can one person rent several individual items?'),t('はい。スキー・ブーツ・ポール、またはボード・ブーツから必要なものを選べます。料金は単品ごとです。','Yes. Choose any of skis, boots and poles — or board and boots. Each item is priced on its own.')],
+  [t('半日と複数日は組み合わせられますか？','Can I combine half days with several days?'),t('初日を午後から（13:00）、最終日を昼まで（12:00）にできます。料金は半日と日数の料金表を組み合わせて計算します。','Start the first day at 1:00 PM and/or return at noon on the last day. The price combines the half-day and day prices from the price table.')],
+  [t('ウェアだけ借りられますか？','Can I rent wear only?'),t('はい。ジャケットとパンツの上下セットでご用意します。','Yes, as a jacket and pants set.')],
+  [t('受取・返却の時間は？','What are the pickup and return times?'),t('営業時間は8:30〜17:00です。開始は朝から（8:30）または午後から（13:00）、返却は昼まで（12:00）または17:00までです。','Open 8:30 AM–5:00 PM. Start from 8:30 AM or 1:00 PM; return by noon or by 5:00 PM.')],
+  [t('複数日予約で、開始日より後に受け取れますか？','Can I collect a multi-day booking after the start date?'),latePickup],
+  [t('予約QR・別の端末での確認は？','Where is my booking QR? Another device?'),<>{t('予約確認ページでQRを表示できます。別の端末では予約番号と登録メールアドレスで確認コードを受け取り、開き直せます。','Your booking page shows the QR. On another device, enter your booking reference and email to receive a code.')} <Link href={r+'/reservation'}>{t('予約確認','My booking')} →</Link></>],
+  [t('キャンセル・返金は？','Cancellation and refunds?'),<>{t('利用開始の48時間前までは全額返金。それ以降の自動返金はありません。','Full refund until 48 hours before the rental starts; no automatic refund after that.')} <Link href={canonicalPath(locale,'legal/cancellation')}>{t('キャンセル・返金規定','Cancellation policy')} →</Link></>],
+ ];
+}
+
+export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;models?:{slug:string;name:string;season:string}[];page:typeof publicPages[number];locale:Locale;origin:string}){
  const ja=locale==='ja',path=page.path,t=(j:string,e:string)=>ja?j:e,r='/'+locale;
  const preview=!publicationApproved()&&<DevelopmentNotice><p className="st-preview">{t('予約受付前の開発プレビューです。実決済・本番予約は行いません。','Development preview before booking launch. No real payment or production booking.')}</p></DevelopmentNotice>;
  const schema=pageSchema(locale,path,origin).map((s,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(s)}}/>);
- const book=(label=t('日程から選ぶ','Start with dates'))=><Link className="st-cta" href={r+'/book'}>{label}<span className="ar" aria-hidden="true">↗</span></Link>;
- const facts=<ul className="st-facts">{page.bullets.map(b=><li key={b} className="st-rv">{['モデル・シーズン・長さを予約条件として保存','Your model, season and length are saved as the booking promise'].includes(b)?t('選んだモデル・シーズン・長さで予約できます','Book the model, season and length you choose'):['当店で取扱を確認したモデルだけを掲載','Only models verified at our shop are listed'].includes(b)?t('当店で取扱うPremiumモデルから選べます','Choose from our Premium range'):b}</li>)}</ul>;
- const stations=<div className="st-sum">{(['MOUNTAIN_BASE','ONSEN_BASE'] as const).map(s=><Link key={s} className="st-sumrow" href={canonicalPath(locale,STORE_PATH[s])}>{STORE_DISPLAY[s]}<span className="go" aria-hidden="true">→</span></Link>)}</div>;
-
+ const book=(label='BOOK RENTAL',href=r+'/book')=><Link className="st-cta" href={href}>{label}<span className="ar" aria-hidden="true">↗</span></Link>;
 
  if(path===''){
-  const hours=(p:string)=>{const b=publicPages.find(x=>x.locale===locale&&x.path===p)?.bullets.map(v=>/^(?:営業時間|Opening hours)\s+(.+)$/.exec(v)?.[1]).find(Boolean);return b??'—';};
-  const board:[string,string,string][]=[
-   [STORE_DISPLAY.MOUNTAIN_BASE,hours('stores/mountain-base'),r+'/stores/mountain-base'],
-   [STORE_DISPLAY.ONSEN_BASE,hours('stores/onsen-base'),r+'/stores/onsen-base'],
-   ['Ski set · Regular · 1 day',yen(dayPrice('SKI_SET_ADULT_REGULAR')),r+'/prices'],
-   ['Ski set · Premium · 1 day',yen(dayPrice('SKI_SET_ADULT_PREMIUM')),r+'/rental/premium'],
-   ['Snowboard set · 1 day',yen(dayPrice('SNOWBOARD_SET_ADULT_REGULAR')),r+'/rental/snowboard'],
-   ['Wear · jacket + pants · 1 day',yen(dayPrice('WEAR_SET_ADULT')),r+'/rental/wear'],
-  ];
-  return <PublicFrame locale={locale} path={path} home homeHeading={page.heading}><main id="main" className="st-home">
-  <section className="st-desk" aria-label="SALOMON STATION ZAO RENTAL">
-   <div className="st-desk-ph"><Photo shot={photos.winter} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/>
-    <h1><span>Rental</span><small>SALOMON STATION ZAO</small></h1></div>
-   <div className="st-desk-board">
-    <p className="st-desk-top"><svg viewBox={'0 0 '+S_VIEWBOX[0]+' '+S_VIEWBOX[1]} aria-hidden="true" focusable="false"><path d={S_PATH} fillRule="evenodd"/></svg><span>Rental desk</span><span>Winter 26/27</span></p>
-    <ul className="st-desk-rows">{board.map(([k,v,h])=><li key={k}><Link href={h}><span>{k}</span><b>{v}</b></Link></li>)}</ul>
-    <p className="st-desk-tax">{t('税込 · 前日15:00までの事前決済で5%OFF','Tax included · 5% off when paid by 3:00 PM (JST) the day before')}</p>
-    <ol className="st-desk-flow" aria-label={t('予約の流れ','How booking works')}>{['Dates','Gear','Size','Pay'].map(x=><li key={x}>{x}</li>)}</ol>
-    <div className="st-desk-acts">{book('BOOK RENTAL')}<Link className="st-link" href={r+'/reservation'}>{t('予約の確認','My booking')} →</Link></div>
-   </div>
-  </section>
-  {preview}
-  <section className="st-sec" aria-labelledby="home-rental"><h2 id="home-rental" className="st-word st-rv">Lineup</h2>
-   <div className="st-lineup">
-    <Link className="st-lu" href={r+'/rental'}><span className="st-lu-ph"><Product shot={products.regular} locale={locale} sizes="(max-width:767px) 100vw, 58vw"/></span><span className="st-lu-n">Regular</span><span className="st-lu-s">{t('モデル非指定','Any model')}</span></Link>
-    <Link className="st-lu st-rv" href={r+'/rental/premium'}><span className="st-lu-ph"><Product shot={products.premium} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/></span><span className="st-lu-n">Premium</span><span className="st-lu-s">{t('モデル指定','Model promised')}</span></Link>
-    <Link className="st-lu st-rv" href={r+'/rental/snowboard'}><span className="st-lu-ph"><Product shot={products.snowboard} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/></span><span className="st-lu-n">Snowboard</span></Link>
-    <Link className="st-lu st-rv" href={r+'/rental/wear'}><span className="st-lu-ph"><Photo shot={photos.wear} locale={locale} sizes="(max-width:767px) 100vw, 58vw"/></span><span className="st-lu-n">Wear</span></Link>
-   </div>
-   <p className="st-note">{t('同等ランクのアイテムをご用意します。画像のアイテムをご用意できるとは限りません。','We provide items of an equivalent grade. The items shown may not always be available.')}</p>
-   <p className="st-chips">{[['rental/ski','SKI'],['rental/kids-family',t('キッズ・ファミリー','KIDS & FAMILY')],['prices',t('料金','PRICES')],['pickup-return',t('受取・返却','PICKUP & RETURN')]].map(([p,l])=><Link key={p} className="st-link" href={r+'/'+p}>{l} →</Link>)}</p>
-  </section>
-  <div className="st-dock"><Link className="st-cta" href={r+'/book'}>BOOK RENTAL<span className="ar" aria-hidden="true">↗</span></Link></div>
-  {schema}</main></PublicFrame>;}
- const word=WORD[path]??'Rental';
- let body:React.ReactNode;
- if(path==='rental'){
-  const plan=(k:'regular'|'premium')=>{const p=k==='premium',shot=p?products.premium:products.regular;
-   return <article className={'st-plan st-plan--'+k+(p?' st-rv':'')}><div className="st-plan-ph"><Product shot={shot} locale={locale} eager={!p} sizes="(max-width:767px) 100vw, 50vw"/></div>
-    <h2>{p?'Premium':'Regular'}</h2>
-    <p className="st-plan-promise"><span className={'st-tag'+(p?' st-tag--solid':'')}>{p?t('モデル指定','MODEL PROMISED'):t('モデル非指定','ANY MODEL')}</span></p>
-    <dl className="st-plan-dl"><div><dt>{t('選び方','How you choose')}</dt><dd>{p?t('当店で取扱うPremiumモデルから、モデル・シーズン・長さを選んで予約できます。','Choose and book a Premium model, season and length from our range.'):t('身長・足サイズ・年齢区分・クラスから選びます。特定モデルは確約しません。','Choose by height, foot size, age category and class. No specific model is promised.')}</dd></div>
-     <div><dt>{t('対象','For')}</dt><dd>{p?t('大人（13歳以上）','Adults (13+)'):t('大人・子供','Adults and children')}</dd></div></dl>
-    <p className="st-plan-price"><span className="st-lbl">{t('スキーセット 1日','Ski set · 1 day')}</span><b>{yen(dayPrice(p?'SKI_SET_ADULT_PREMIUM':'SKI_SET_ADULT_REGULAR'))}</b></p>
-   </article>;};
-  body=<><section className="st-compare" aria-label={t('Regular と Premium','Regular and Premium')}>{plan('regular')}{plan('premium')}</section>
-   <div className="st-wrap st-acts">{book()}<Link className="st-link" href={r+'/prices'}>{t('すべての料金','All prices')} →</Link></div>
-   <section className="st-wrap" aria-label={t('用品カテゴリ','Equipment')}><div className="st-sum">{publicPages.filter(p=>p.locale===locale&&['rental/ski','rental/snowboard','rental/wear','rental/premium','rental/kids-family'].includes(p.path)).map(p=><Link key={p.path} className="st-sumrow" href={canonicalPath(locale,p.path)}><span>{WORD[p.path]}</span><span className="go" aria-hidden="true">→</span></Link>)}</div></section></>;
- }else if(path==='prices'){
-  body=<><div className="st-wrap"><PriceExplorer locale={locale} grid={priceGrid()}/></div><section className="st-wrap" aria-label={page.title}>{facts}<div className="st-acts">{book()}</div></section></>;
- }else if(path==='stores/mountain-base'||path==='stores/onsen-base'){
-  const s=path==='stores/mountain-base'?'MOUNTAIN_BASE':'ONSEN_BASE',geo=STORE_GEO[s];
-  body=<section className="st-wrap st-store" aria-label={page.title}>
-   <p className="st-store-name">{STORE_DISPLAY[s].replace(' ','\n')}</p>
-   <dl className="st-store-dl">{page.bullets.map(b=>{const m=/^(\S+)\s+(.+)$/.exec(b);return m?<div key={b} className="st-rv"><dt>{m[1]}</dt><dd>{m[2]}</dd></div>:<div key={b}><dd>{b}</dd></div>;})}</dl>
-   <p className="st-maps"><a className="st-link" href={'https://www.google.com/maps/dir/?api=1&destination='+geo} rel="noopener" target="_blank">Google Maps ↗</a><a className="st-link" href={'https://maps.apple.com/?daddr='+geo} rel="noopener" target="_blank">Apple Maps ↗</a></p>
-   <div className="st-acts">{book()}<Link className="st-link" href={r+'/pickup-return'}>{t('受取・返却の流れ','Pickup & return')} →</Link></div></section>;
- }else{
-  const shot=path==='rental/ski'?<Photo shot={photos.ski} locale={locale} eager/>:path==='rental/wear'?<Photo shot={photos.wear} locale={locale} eager/>:path==='rental/snowboard'?<Product shot={products.snowboard} locale={locale} eager sizes="(max-width:767px) 100vw, 50vw"/>:path==='rental/premium'?<Product shot={products.premium} locale={locale} eager sizes="(max-width:767px) 100vw, 50vw"/>:null;
-  body=<>
-   {path==='pickup-return'&&<section className="st-wrap" aria-label={t('店舗','Stores')}>{stations}</section>}
-   <section className={'st-wrap st-split'+(shot?'':' st-split--solo')} aria-label={page.title}>{shot&&<div className={'st-split-ph'+(path==='rental/snowboard'||path==='rental/premium'?' st-split-ph--fog':'')}>{shot}</div>}<div>{facts}
-    {['pickup-return','faq'].includes(path)&&<aside className="st-aside st-rv"><h2>{t('複数日予約の後日受取','Late collection for multi-day bookings')}</h2><p>{latePickup}</p>{!legalPublicationComplete(locale)&&<DevelopmentNotice><small>{t('公開文言・利用規約は公開前確認中です。','Public wording and terms remain subject to review.')}</small></DevelopmentNotice>}</aside>}
-    {path==='rental/premium'&&<section className="st-models"><h2 className="st-lbl">{t('Premiumモデル','Premium models')}</h2>{models.length?<ul className="st-rows">{models.map(m=><li key={m.slug}><Link href={canonicalPath(locale,'rental/premium/'+m.slug)}><b>{m.name}</b></Link><span className="st-lbl">{m.season}</span></li>)}</ul>:<p>{t('現在ご案内できるモデルはありません。日程と用品を選んでお確かめください。','No models are listed right now. Choose your dates and equipment to check available options.')}</p>}</section>}
-    <div className="st-acts">{book()}</div></div></section></>;
+  return <PublicFrame locale={locale} path={path}><main id="main" className="st-home">
+   <section className="st-fv" aria-labelledby="fv-h">
+    <div className="st-fv-txt">
+     <h1 id="fv-h" className="st-fv-h">RENTAL</h1>
+     <p className="st-fv-l">SKI / SNOWBOARD / WEAR · ZAO ONSEN</p>
+     <div className="st-fv-acts">{book()}<Link className="st-link" href={r+'/rental'}>VIEW LINEUP →</Link></div>
+     <CategoryIndex locale={locale} stacked/>
+    </div>
+    <div className="st-fv-ph"><Photo shot={photos.winter} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/></div>
+   </section>
+   {preview}
+   <section className="st-sec" aria-labelledby="home-lineup"><h2 id="home-lineup" className="st-sec-h">LINEUP<span className="st-tone"> 26/27</span></h2><Lineup locale={locale}/></section>
+   <section className="st-sec st-duo" aria-label={t('料金と店舗','Prices and stores')}>
+    <Link className="st-duo-i" href={r+'/prices'}><span className="st-duo-n">PRICES</span><span className="st-duo-f">{t('セット 1日','Set · 1 day')} {yen(dayPrice('SKI_SET_ADULT_REGULAR'))}〜 · {t('税込','tax incl.')}</span><span className="st-duo-a" aria-hidden="true">→</span></Link>
+    <Link className="st-duo-i" href={r+'/pickup-return'}><span className="st-duo-n">STORES</span><span className="st-duo-f">{STORE_DISPLAY.MOUNTAIN_BASE} · {STORE_DISPLAY.ONSEN_BASE}</span><span className="st-duo-a" aria-hidden="true">→</span></Link>
+   </section>
+   {schema}</main></PublicFrame>;
  }
- return <PublicFrame locale={locale} path={path}><main id="main" className="st-page">
-  <PageHead word={word}/>
-  {preview}{body}{schema}</main></PublicFrame>;
+
+ let head:React.ReactNode,body:React.ReactNode=null;
+ if(path==='rental'){
+  head=<PageHead word="RENTAL" tone="LINEUP"><p className="st-ph-l">SKI / SNOWBOARD / WEAR · ZAO ONSEN</p><div className="st-ph-acts">{book()}</div><CategoryIndex locale={locale}/></PageHead>;
+  body=<section className="st-sec st-sec--tight" aria-label="LINEUP"><Lineup locale={locale}/></section>;
+ }else if(path==='rental/ski'||path==='rental/snowboard'){
+  const ski=path==='rental/ski',word=ski?'SKI':'SNOWBOARD';
+  const [reg,prem]=ski?['ski-regular','ski-premium']:['snowboard-regular','snowboard-premium'];
+  head=<PageHead word={word}><p className="st-ph-l"><a href={'#'+reg}>REGULAR</a> / <a href={'#'+prem}>PREMIUM</a></p><div className="st-ph-acts">{book('BOOK '+word)}</div></PageHead>;
+  const rows=(keys:string[])=>keys.map(k=>[k,yen(dayPrice(k))] as const);
+  body=<><section className="st-sec st-sec--tight" aria-label={word}><Lineup locale={locale} only={[reg!,prem!]}/></section>
+   <section className="st-sec" aria-label={t('1日料金','1-day prices')}><dl className="st-spec">{rows(ski?['SKI_SET_ADULT_REGULAR','SKI_SET_ADULT_PREMIUM','SKI_SET_KIDS_REGULAR']:['SNOWBOARD_SET_ADULT_REGULAR','SNOWBOARD_SET_ADULT_PREMIUM','SNOWBOARD_SET_KIDS_REGULAR']).map(([k,v])=><div key={k}><dt>{(k.includes('KIDS')?t('子供','KIDS'):t('大人','ADULT'))+' · '+(k.endsWith('PREMIUM')?'PREMIUM':'REGULAR')+' · '+t('セット 1日','SET · 1 DAY')}</dt><dd>{v}</dd></div>)}</dl>
+    <p className="st-more"><Link className="st-link" href={r+'/prices'}>{t('すべての料金','ALL PRICES')} →</Link></p></section></>;
+ }else if(path==='rental/wear'){
+  head=<PageHead word="WEAR" tone="JACKET + PANTS"><p className="st-ph-l">{t('上下セット · 1日','Set · 1 day')} {yen(dayPrice('WEAR_SET_ADULT'))} · {t('セット用品と同時で20%OFF','20% off with an equipment set')}</p><div className="st-ph-acts">{book('BOOK WEAR')}</div></PageHead>;
+  body=<section className="st-sec st-sec--tight" aria-label="WEAR"><Lineup locale={locale} only={['wear']}/></section>;
+ }else if(path==='rental/premium'){
+  head=<PageHead word="PREMIUM"><p className="st-ph-l">CHOOSE MODEL / SEASON / LENGTH</p><div className="st-ph-acts"><a className="st-cta" href="#ski">VIEW SKI MODELS<span className="ar" aria-hidden="true">↓</span></a><a className="st-cta st-cta--line" href="#snowboard">VIEW SNOWBOARD MODELS<span className="ar" aria-hidden="true">↓</span></a></div></PageHead>;
+  // R67 (Owner): no model names in the public Premium display; the model/season/length is chosen in the booking flow.
+  const group=(family:'SKI'|'SNOWBOARD',shot:Shot)=><section id={family==='SKI'?'ski':'snowboard'} className="st-sec st-pm" aria-labelledby={'pm-'+family}>
+   <div className="st-pm-ph"><Product shot={shot} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/></div>
+   <div className="st-pm-list"><h2 id={'pm-'+family} className="st-sec-h">{family}<span className="st-tone"> PREMIUM</span></h2>
+    <dl className="st-spec">
+     <div><dt>{t('予約で選ぶ','CHOSEN IN BOOKING')}</dt><dd>MODEL / SEASON / LENGTH</dd></div>
+     <div><dt>{t('セット 1日','SET · 1 DAY')}</dt><dd>{yen(dayPrice(family==='SKI'?'SKI_SET_ADULT_PREMIUM':'SNOWBOARD_SET_ADULT_PREMIUM'))}</dd></div>
+     <div><dt>{t('対象','FOR')}</dt><dd>{t('大人','ADULTS')}</dd></div></dl>
+    <div className="st-ph-acts st-pm-acts">{book('BOOK '+family+' PREMIUM')}</div></div>
+  </section>;
+  body=<>{group('SKI',products.premium)}{group('SNOWBOARD',products.snowboardRide)}</>;
+ }else if(path==='prices'){
+  head=<PageHead word="PRICES"><p className="st-ph-tax">{t('税込','TAX INCLUDED')}<br/>{t('前日15:00までの事前決済で5%OFF','5% OFF WHEN PAID BY 3:00 PM (JST) THE DAY BEFORE')}</p><div className="st-ph-acts">{book()}</div></PageHead>;
+  body=<section className="st-sec st-sec--tight" aria-label={page.title}><PriceExplorer locale={locale} grid={priceGrid()}/><p className="st-one">{t('予約内容に応じた合計は予約画面で確認できます。','Your booking total is shown in the booking flow.')}</p></section>;
+ }else if(path==='pickup-return'){
+  head=<PageHead word="PICKUP" tone="/ RETURN"><div className="st-ph-acts">{book()}</div></PageHead>;
+  const steps:[string,string,string][]=[['01','BOOKING / QR',t('予約確認ページのQRを用意','Have your booking QR ready')],['02','FIT CHECK',t('スタッフとサイズ・用品を確認','Check size and gear with staff')],['03','PICKUP',t('受取店舗で受け取り','Collect at your pickup station')],['04','RETURN',t('返却店舗へ返却','Return at your return station')]];
+  body=<>
+   <section className="st-sec st-sec--tight st-stores" aria-label={t('店舗','Stores')}>{(['MOUNTAIN_BASE','ONSEN_BASE'] as const).map(s=><div key={s} className="st-store-row"><Link className="st-store-n" href={canonicalPath(locale,STORE_PATH[s])}>{STORE_DISPLAY[s]}</Link><p className="st-store-m">{maps(STORE_GEO[s]).map(([l,h])=><a key={l} className="st-link" href={h} rel="noopener" target="_blank">{l} ↗</a>)}</p></div>)}</section>
+   <section className="st-sec" aria-label={t('受取から返却まで','From pickup to return')}><ol className="st-flow">{steps.map(([n,h,d])=><li key={n}><span className="st-flow-n">{n}</span><span className="st-flow-h">{h}</span><span className="st-flow-d">{d}</span></li>)}</ol></section>
+   <section className="st-sec" aria-label={t('時間','Times')}><dl className="st-spec">
+    <div><dt>{t('営業時間','OPEN')}</dt><dd>8:30–17:00</dd></div>
+    <div><dt>{t('開始','START')}</dt><dd>8:30 / 13:00</dd></div>
+    <div><dt>{t('返却','RETURN BY')}</dt><dd>12:00 / 17:00</dd></div></dl>
+    <p className="st-one">{latePickup}</p>{!legalPublicationComplete(locale)&&<DevelopmentNotice><small>{t('公開文言・利用規約は公開前確認中です。','Public wording and terms remain subject to review.')}</small></DevelopmentNotice>}</section></>;
+ }else if(path==='faq'){
+  head=<PageHead word="FAQ"><div className="st-ph-acts">{book()}</div></PageHead>;
+  body=<section className="st-sec st-sec--tight" aria-label="FAQ"><div className="st-faq">{faq(locale,latePickup).map(([q,a],i)=><details key={i} className="st-faq-i"><summary><span>{q}</span><span className="st-faq-x" aria-hidden="true"/></summary><div className="st-faq-a">{a}</div></details>)}</div></section>;
+ }else if(path==='stores/mountain-base'||path==='stores/onsen-base'){
+  const s=path==='stores/mountain-base'?'MOUNTAIN_BASE':'ONSEN_BASE',[a,b]=STORE_DISPLAY[s].split(' ');
+  head=<PageHead word={a!.toUpperCase()} tone={b?.toUpperCase()}><p className="st-store-m">{maps(STORE_GEO[s]).map(([l,h])=><a key={l} className="st-link" href={h} rel="noopener" target="_blank">{l} ↗</a>)}</p><div className="st-ph-acts">{book()}</div></PageHead>;
+  body=<section className="st-sec st-sec--tight" aria-label={page.title}><dl className="st-spec">{page.bullets.map(x=>{const m=/^(\S+)\s+(.+)$/.exec(x);return m?<div key={x}><dt>{m[1]}</dt><dd>{m[2]}</dd></div>:<div key={x}><dd>{x}</dd></div>;})}</dl>
+   <p className="st-more"><Link className="st-link" href={r+'/pickup-return'}>PICKUP / RETURN →</Link></p></section>;
+ }else{
+  head=<PageHead word={page.heading}><div className="st-ph-acts">{book()}</div></PageHead>;
+ }
+ return <PublicFrame locale={locale} path={path}><main id="main" className="st-page">{head}{preview}{body}{schema}</main></PublicFrame>;
 }

@@ -84,8 +84,8 @@ try{
  const aS1=await schemaFingerprint(a.neon),aX1=await securityFingerprint(a.neon),cS1=await schemaFingerprint(a.canonical);
  const foundationSecurityDelta=fingerprintDelta(aX0,aX1);
 
- await check('bootstrapProductionFoundation commits 57 migrations and the 17 operational roles under the manager',async()=>{
-  assert.equal(result.applied,57);assert.equal(result.guardsRewritten,12);assert.equal(result.planSha256,plan.bootstrap.planSha256);
+ await check('bootstrapProductionFoundation commits 58 migrations and the 17 operational roles under the manager',async()=>{
+  assert.equal(result.applied,58);assert.equal(result.guardsRewritten,12);assert.equal(result.planSha256,plan.bootstrap.planSha256);
   assert.equal(result.foundationPlanSha256,plan.foundationPlanSha256);assert.equal(result.roleProvisioning.planSha256,plan.roles.planSha256);
   assert.deepEqual([result.roleProvisioning.operationalRoles,result.roleProvisioning.ownerGrantStatements,result.roleProvisioning.custodyExecutorGrantStatements],[17,152,1]);
   const q=async(sql:string,params:unknown[]=[])=>scalar(a.neon,sql,params);
@@ -105,7 +105,7 @@ try{
    executorDatabaseCreate:await q(`SELECT has_database_privilege('neondb_custody_executor','neondb','CREATE')`),
    executorPublicCreate:await q(`SELECT has_schema_privilege('neondb_custody_executor','public','CREATE')`),
   };
-  assert.deepEqual(facts,{migrations:57,manager:1,operational:17,loginRoles:0,ownerDirectOperational:0,managerOperationalAdmin:17,managerCustody:0,custodyRoles:2,ownerCustody:0,
+  assert.deepEqual(facts,{migrations:58,manager:1,operational:17,loginRoles:0,ownerDirectOperational:0,managerOperationalAdmin:17,managerCustody:0,custodyRoles:2,ownerCustody:0,
    operationsCustodyExecute:5,zaoBoot:0,executorDatabaseCreate:false,executorPublicCreate:false});
   const ownerManager=(await a.neon.query(`SELECT bool_or(admin_option) admin,bool_or(set_option) "set",bool_or(inherit_option) inherit FROM pg_auth_members WHERE member=$1::regrole AND roleid=$2::regrole`,[OWNER,plan.roles.managerRole])).rows[0];
   assert.deepEqual(ownerManager,{admin:true,set:true,inherit:false});

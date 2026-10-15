@@ -15,13 +15,12 @@ export const SOURCE_B_SHA256='c85997f464e59c616c6afb18ce03a34f6a73371d1aebeba2a6
 export const POLE_SOURCE={sha256:'9d219847237ee1414de4f2be161d7c735ba3fbbbf908a9e51cdb13248c55f603',filename:'R67 PROVISIONAL_SOURCE_A_POLE_CAPACITY.csv',
  buckets:[110,115,120,125,130].map((n,i)=>({family:'POLE',age:'ADULT',source_size:String(n),booking_size:n+' cm',size_mapping_status:'MAPPED',quantity:[30,30,30,20,10][i]!,provenance:`PROVISIONAL_CATALOG_MAPPING.csv rows ${40+i} (L39135100 POLES RENTAL ANODIZED ADULT ALU)`}))};
 const GENERIC=[{family:'SKI',name:'Regular ski'},{family:'SNOWBOARD',name:'Regular snowboard'},{family:'SKI_BOOT',name:'Regular ski boots'},{family:'SNOWBOARD_BOOT',name:'Regular snowboard boots'},{family:'POLE',name:'Ski poles'}] as const;
-/** Exact Source A model rows (PROVISIONAL_CATALOG_MAPPING.csv). Each length binds only to the Source A
- * bucket of that family/age/length, which in Source A holds exactly this model. */
-export const PREMIUM_MODELS=[
- {code:'PREM-SB-WILD-CARD-2627',name:'WILD CARD',family:'SNOWBOARD',itemCode:'L47663400',rows:[[53,145,20],[54,150,30],[55,155,30],[56,160,20],[57,165,10]]},
- {code:'PREM-SB-LIBERTY-2627',name:'LIBERTY',family:'SNOWBOARD',itemCode:'L47663700',rows:[[58,135,10],[59,140,10]]},
- {code:'PREM-SKI-SMAX4-2627',name:'S/MAX 4 + M10 GW L80',family:'SKI',itemCode:'L479235001xx',rows:[[3,139,10],[4,146,20],[5,153,30],[6,160,30],[7,167,20],[8,174,10]]},
-] as const;
+/** Premium model promises bound to exact provisional buckets. Owner (2026-10-15): Salomon has not yet
+ * confirmed which Premium models arrive; every Source A row (incl. S/MAX 4, WILD CARD, LIBERTY) is Regular
+ * stock per the inventory sheet. Production therefore binds NO Premium model. When the Premium models are
+ * confirmed, register their source and add exact rows here (or pass `premium` explicitly). */
+export type PremiumModelSpec={code:string;name:string;family:'SKI'|'SNOWBOARD';itemCode:string;sourceSha256:string;rows:readonly (readonly [row:number,length:number,quantity:number])[]};
+export const PREMIUM_MODELS:readonly PremiumModelSpec[]=[];
 const NOTE='Provisional booking selector over accepted provisional capacity. Not received physical stock; handoff requires materialization.';
 
 export type BridgeReport={poleSourceRegistered:boolean;modelsCreated:number;variantsCreated:number;bindingsCreated:number;regularVariants:Record<string,number>;premiumVariants:Record<string,number>;bindings:{model:string;size:string;bucket:string;quantity:number}[]};
@@ -39,7 +38,7 @@ async function ensureVariant(c:Conn,model:string,v:{family:string;age:string;tie
  return {id,created:true};
 }
 
-export async function activateProvisionalCatalog(c:Conn):Promise<BridgeReport>{
+export async function activateProvisionalCatalog(c:Conn,premium:readonly PremiumModelSpec[]=PREMIUM_MODELS):Promise<BridgeReport>{
  const actor=(await c.query<{a:string|null}>("SELECT current_setting('zao.actor',true) AS a")).rows[0]!.a;
  if(!actor)throw new Error('BRIDGE_ACTOR_REQUIRED');
  const sourceA=await source(c,SOURCE_A_SHA256);if(!sourceA)throw new Error('BRIDGE_SOURCE_A_NOT_ACTIVE');
@@ -64,15 +63,16 @@ export async function activateProvisionalCatalog(c:Conn):Promise<BridgeReport>{
    regularVariants[g.family]=(regularVariants[g.family]??0)+1;
   }
  }
- for(const p of PREMIUM_MODELS){
+ for(const p of premium){
+  const premiumSource=await source(c,p.sourceSha256);if(!premiumSource)throw new Error('BRIDGE_PREMIUM_SOURCE_NOT_ACTIVE '+p.code);
   const model=await ensureModel(c,'model:PREMIUM:'+p.code,{code:p.code,name:p.name,family:p.family,season:'2026/27'});if(model.created)modelsCreated++;
   for(const [row,length,quantity] of p.rows){
-   const size=length+' cm',bucket=buckets.filter(b=>b.source_id===sourceA&&b.family===p.family&&b.age==='ADULT'&&canonicalSize(b.family,b.booking_size)===size);
+   const size=length+' cm',bucket=buckets.filter(b=>b.source_id===premiumSource&&b.family===p.family&&b.age==='ADULT'&&canonicalSize(b.family,b.booking_size)===size);
    if(bucket.length!==1||bucket[0]!.quantity<quantity)throw new Error(`BRIDGE_PREMIUM_BUCKET_MISMATCH ${p.code} ${size}`);
    const v=await ensureVariant(c,model.id,{family:p.family,age:'ADULT',tier:'PREMIUM',size});if(v.created)variantsCreated++;
    premiumVariants[p.code]=(premiumVariants[p.code]??0)+1;
    if(!(await c.query('SELECT 1 FROM provisional_model_bindings WHERE variant_id=$1 AND bucket_id=$2',[v.id,bucket[0]!.id])).rowCount){
-    await c.query('INSERT INTO provisional_model_bindings(variant_id,bucket_id,quantity,provenance,actor) VALUES($1,$2,$3,$4,$5)',[v.id,bucket[0]!.id,quantity,`PROVISIONAL_CATALOG_MAPPING.csv row ${row} (${p.itemCode} ${p.name} ${length})`,actor]);bindingsCreated++;
+    await c.query('INSERT INTO provisional_model_bindings(variant_id,bucket_id,quantity,provenance,actor) VALUES($1,$2,$3,$4,$5)',[v.id,bucket[0]!.id,quantity,`source row ${row} (${p.itemCode} ${p.name} ${length})`,actor]);bindingsCreated++;
    }
    bindings.push({model:p.code,size,bucket:bucket[0]!.id,quantity});
   }

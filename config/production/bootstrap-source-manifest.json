@@ -453,6 +453,13 @@
    "sha256": "8d43db5f8b1da4ca2e3259d9afafecbb2fd3576364e7f0501958acfe503bbe25",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0058",
+   "file": "0058_provisional_catalog_bridge.sql",
+   "sha256": "16d09a438d459aae76dbedcbb1d4f7d1b18b9d4c4d01c0b62f603a6eba859ad3",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

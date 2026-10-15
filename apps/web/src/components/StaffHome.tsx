@@ -8,9 +8,10 @@ import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
 import {BookingSearchInput} from './BookingSearchInput';
 import {useOperationsRequest} from './useOperationsRequest';
 import {STORE_LABEL} from './guest-format';
+import {shortRef} from './staff-labels';
 import './holds.css';
 import './staff-home.css';
-type BookingRow={id:string;state:string;version:number;period:{startDate:string;endDate:string;slot:string}|null;pickup_store:string|null;return_store:string|null;display_name:string|null;total_jpy:string|null;mode:string};
+type BookingRow={id:string;state:string;version:number;period:{startDate:string;endDate:string;slot:string}|null;pickup_store:string|null;return_store:string|null;display_name:string|null;total_jpy:string|null;mode:string;created_at:string|null;confirmed_at:string|null};
 type ManifestPickup={isPickupToday:boolean;equipmentRequired:boolean;equipmentPrepared:boolean;equipmentCheckedOut:boolean;noPickup:boolean;timing:string;wearRequired:boolean;wearCheckedOut:boolean};
 type ManifestReturn={equipmentReturnDueToday:boolean;outCount:number;receivedHereCount:number;inspectionPendingHereCount:number;wearReturnDueToday:boolean;wearOutstandingQuantity:number;wearReturnedPendingQuantity:number;wearCleaningQuantity:number;wearTodayBlockedQuantity:number;wearUnavailableQuantity:number;wearReadyQuantity:number};
 type ManifestException={attention:boolean;count:number;topSeverity:'INFO'|'WARN'|'ERROR'|null};
@@ -42,6 +43,10 @@ const storeName=(s:string|null)=>s?STORE_LABEL[s]??'店舗':'—';
 const loadErrorText=(what:string,raw:string)=>/^[A-Z][A-Z0-9_]*$/.test(raw)||/fetch|network|load failed/i.test(raw)?what+'を読み込めませんでした。通信状況を確認し、もう一度読み込んでください。':raw;
 function actionLabel(action:string){return ACTION_LABEL[action]??'詳細確認';}
 function taskActionLabel(action:string){return TASK_ACTION_LABEL[action]??'詳細確認';}
+// 新着予約: payment-side states a person must look at; CONFIRMED is the normal, settled case.
+const ATTENTION_STATES=new Set(['PAYMENT_PENDING','PAYMENT_REVIEW']);
+const RECENT_LIMIT=20;
+const jstTime=(iso:string|null)=>{const d=iso?new Date(iso):null;return d&&Number.isFinite(d.getTime())?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(d):'—';};
 function money(raw:string|number|null){const n=Number(raw);return Number.isFinite(n)?new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n):'—';}
 type Props={stamp:string;stores:StoreId[];canBookingView:boolean;canCheckout:boolean;canReturn:boolean;canOperationsView:boolean;canInventoryView:boolean;canTransferView:boolean;canQuoteView:boolean;canHoldView:boolean;canManageStaff:boolean};
 export function StaffHome(p:Props){return <StaffSessionBoundary stamp={p.stamp}><Home {...p}/></StaffSessionBoundary>;}
@@ -112,6 +117,8 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  useEffect(()=>{if(canBookingView)loadManifest(activeStore,null,false);
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[canBookingView,activeStore]);
+ // Server order is created_at DESC (newest first); DRAFT rows are unpaid carts, not received reservations.
+ const recent=(bookings??[]).filter(b=>b.state!=='DRAFT').slice(0,RECENT_LIMIT);
  const todays=manifestDate?(bookings??[]).filter(b=>b.period&&b.period.startDate<=manifestDate&&manifestDate<=b.period.endDate):[];
  function manifestCard(row:ManifestRow){
   if(row.rowKind==='BOOKING_SCOPED'){
@@ -148,6 +155,21 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
   {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:!manifestError&&!manifestBusy&&<p className="staff-empty">現在対応が必要な項目はありません。</p>)}
   {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
   <Link href="/staff/rentals">貸出・返却の画面を開く</Link>
+ </section>}
+ {canBookingView&&<section aria-label="新着予約" className="staff-recent"><div className="staff-section-head"><h2>新着予約</h2><button aria-label="新着予約を更新" disabled={bookingsReq.busy} onClick={()=>void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings)}>更新</button></div>
+  <p className="staff-secondary">受け付けた予約の新しい順（最大{RECENT_LIMIT}件、利用日に関係なく表示）。決済前の下書きは含みません。自動更新はしないため、「更新」で最新にしてください。</p>
+  <p role="status">{bookingsReq.message?loadErrorText('新着予約',bookingsReq.message):bookings===null?'新着予約を読み込んでいます…':''}</p>
+  {bookings&&(recent.length?<div className="staff-card-grid">{recent.map(b=>{const attention=ATTENTION_STATES.has(b.state);return <article className={'staff-card'+(attention?' staff-card--attention':'')} key={b.id}>
+   <div className="staff-card-head"><strong>{b.display_name??'（氏名未取得）'}</strong><span className={'staff-chip'+(b.state==='CANCELLED'?' staff-chip--muted':'')}>{stateLabel(b.state)}</span></div>
+   <p className="staff-recent-ref">予約番号 {shortRef(b.id)}</p>
+   <p>{b.period?b.period.startDate+' → '+b.period.endDate+' · '+slotLabel(b.period.slot):'利用日 —'}</p>
+   <p>{storeName(b.pickup_store)} → {storeName(b.return_store)} · {money(b.total_jpy)}</p>
+   <p className="staff-secondary">受付 {jstTime(b.created_at)}{b.confirmed_at?' · 確定 '+jstTime(b.confirmed_at):''}</p>
+   {attention&&<p className="staff-card-attention">要対応：決済の確認が必要です{canOperationsView?'（運用例外の画面で確認）':''}</p>}
+   {attention&&canOperationsView&&<Link href="/admin/ops">運用例外の画面を開く</Link>}
+   {effectivePickup&&<button className={attention?'':'staff-card-primary'} disabled={opening} onClick={()=>openBooking(b.id)}>予約の状態を確認</button>}
+  </article>;})}</div>:<p className="staff-empty">新しい予約はまだありません。</p>)}
+  <Link href="/admin/notifications">予約確認メールの送信状況を見る</Link>
  </section>}
  {effectivePickup&&<TomorrowPreparation stamp={stamp} store={activeStore} onOpen={openBooking}/>}
  {canBookingView&&<section aria-label="本日の予約"><div className="staff-section-head"><h2>本日の予約</h2>

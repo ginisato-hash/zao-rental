@@ -64,3 +64,9 @@
 @media(max-width:500px){.staff-context label{min-width:100%}.staff-context-date{text-align:left}}
 
 .tomorrow-preparation button:hover:not(:disabled){background:var(--ink);color:var(--snow)}
+
+/* 新着予約: settled bookings read as plain cards; payment attention gets the signal edge AND a word. */
+.staff-card--attention{border-left:8px solid var(--signal)}
+.staff-recent-ref{font:700 15px/1.2 var(--d);font-variant-numeric:tabular-nums}
+.staff-recent .staff-card > a{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.staff-recent > a{display:inline-flex;align-items:center;min-height:44px;font-weight:700}

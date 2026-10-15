@@ -192,7 +192,7 @@ try{
     await expect(page.getByRole('status').filter({hasText:'処理中です'})).toBeVisible();
     cm06Checked=true;
     assert.equal(new URL(route.request().url()).origin,app!.origin);const response=await forward.fetch(route.request(),{maxRetries:0,maxRedirects:0});assert.equal(response.status(),200);await route.abort('failed');done();}catch(e){fail(e);}finally{await forward.dispose();}
-  });await page.getByRole('button',{name:'この内容で支払う（開発用決済）'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'最新の内容を確認'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'最新の内容を確認'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
+  });await page.getByRole('button',{name:'この内容で支払う（開発用決済）'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'最新の内容を確認'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確定しました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'最新の内容を確認'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
  });
  await check('UIR-01/UIR-02 regression: no cross-context input leak, malformed cache does not crash, server-saved input still restores',async()=>{
   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
@@ -524,7 +524,7 @@ try{
   await expect(p.locator('dl.guest-price dd').last()).toContainText('7,600');
   assert.equal(await countOf('rental_payment_attempts'),attempts,'accepting the new price does not pay by itself (no blind retry)');
   await p.getByRole('button',{name:'この内容でもう一度支払う（開発用決済）',exact:true}).click();
-  await expect(p.getByRole('heading',{name:'予約が確認されました',exact:true})).toBeVisible();
+  await expect(p.getByRole('heading',{name:'予約が確定しました',exact:true})).toBeVisible();
   assert.equal(await countOf('rental_payment_attempts'),attempts+1);
   assert.equal((await app!.db.pool.query("SELECT (price_snapshot->>'totalJpy')::int t FROM rental_bookings ORDER BY created_at DESC LIMIT 1")).rows[0].t,7600);
   await ctx.close();
@@ -573,7 +573,7 @@ try{
    await expect(p.getByText(ja?'内容に同意したらチェックを入れてください。':'Tick this box to accept.')).toBeVisible();
    await p.getByLabel(ja?'合成データによる開発確認であることを確認':'I understand this is a synthetic development preview').check();await expect(p.getByText(ja?'内容に同意したらチェックを入れてください。':'Tick this box to accept.')).toHaveCount(0);
    await p.getByRole('button',{name:ja?'この内容で支払う（開発用決済）':'Pay with these details (test payment)',exact:true}).click();
-   await expect(p.getByRole('heading',{name:ja?'予約が確認されました':'Booking confirmed',exact:true})).toBeVisible();
+   await expect(p.getByRole('heading',{name:ja?'予約が確定しました':'Booking confirmed',exact:true})).toBeVisible();
    assert.deepEqual(await cacheKeys(p),[],'a confirmed booking keeps no draft-input cache');await noRawCode(p);await fits();await shot('confirmed');
    await ctx.close();
   }

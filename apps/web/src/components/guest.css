@@ -8,6 +8,7 @@
 html[lang=ja] .guest-main h2{font-family:var(--d)}
 .guest-main h3{font:700 clamp(20px,2vw,28px)/1.15 var(--d);text-transform:uppercase}
 .guest-main p{line-height:1.7}
+.guest-intro{max-width:46em;margin-top:18px!important;font:700 15px/1.7 var(--b)}
 .guest-preview-note{margin-top:20px;padding:10px 0;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);font:700 13px/1.5 var(--d)}
 
 /* stepper: four words on 4px rules (same device as the home rental desk) */
@@ -128,11 +129,26 @@ html[lang=ja] .guest-candidate-label{font:700 14px/1.2 var(--b)}
 .guest-contact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;margin:20px 0 12px;padding-top:16px;border-top:2px solid var(--ink)}
 .guest-contact>.guest-choice,.guest-contact>.guest-hint,.guest-contact>.guest-field-error{grid-column:1/-1}
 .guest-main button.guest-cta-sticky{width:100%;margin-top:12px}
+/* R66: one block right above contact/payment that repeats what is being paid for */
+.guest-pay-summary{margin:20px 0 0;padding:16px;border:2px solid var(--ink)}
+.guest-pay-summary dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 24px;margin-top:10px}
+.guest-pay-summary dl div{padding:10px 0;border-top:1px solid var(--ink)}
+.guest-pay-summary dt{font:700 12px/1.4 var(--b);color:var(--sub)}
+.guest-pay-summary dd{margin-top:4px;font:700 17px/1.4 var(--b)}
+.guest-pay-summary ul{margin:0;padding:0;list-style:none}
+.guest-main .guest-pay-summary-total{grid-column:1/-1;border-top-width:2px}
+.guest-main .guest-pay-summary-total dd{font:700 clamp(36px,5vw,64px)/1 var(--d);font-variant-numeric:tabular-nums}
 
 /* result: the confirmation replaces the form as the protagonist */
 .guest-result{margin:0 0 24px;padding:clamp(20px,3vw,36px);background:var(--ink);color:var(--snow)}
 .guest-result h3{font:700 clamp(34px,5vw,80px)/1 var(--d)}
 .guest-result-total{margin-top:14px!important;font:700 clamp(40px,5vw,72px)/.9 var(--d);font-variant-numeric:tabular-nums}
+.guest-result-ref{margin-top:12px!important;font:700 18px/1.4 var(--b)}
+.guest-result-ref strong{font:700 clamp(24px,3vw,36px)/1 var(--d);letter-spacing:.04em}
+.guest-main .guest-result-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+.guest-result-facts div{border-top-color:var(--snow)}
+.guest-result-facts dt{color:var(--snow);opacity:.8}
+.guest-result-mail{margin-top:12px!important;padding:10px 12px;border:2px solid var(--snow);font:700 15px/1.6 var(--b)}
 .guest-result picture{display:inline-block;margin-top:18px;padding:12px;background:var(--snow)}
 .guest-result img{display:block;width:200px;height:200px}
 .guest-result button,.guest-result a{color:var(--snow)}
@@ -165,6 +181,7 @@ details.guest-secondary.guest-main{padding-top:0;padding-bottom:calc(48px + var(
  .guest-main .guest-candidates label.guest-candidate{min-height:120px;padding:10px}
  .guest-facts{grid-template-columns:1fr 1fr}
  .guest-facts--compact{grid-template-columns:1fr}
+ .guest-pay-summary dl,.guest-main .guest-result-facts{grid-template-columns:1fr}
  .guest-actions{flex-direction:column-reverse;align-items:stretch}
  .guest-actions .guest-primary{margin-left:0;width:100%}
  .guest-main button.guest-cta-sticky{position:sticky;bottom:calc(10px + var(--safe-b));z-index:20}

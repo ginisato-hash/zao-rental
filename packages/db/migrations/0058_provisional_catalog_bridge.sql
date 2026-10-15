@@ -209,3 +209,15 @@ BEGIN
   END LOOP;
  END LOOP;
 END $$;
+
+-- Guest/public catalog read: Premium models bookable through an active, mapped model binding. Catalog
+-- identity only (no quantities, no claims), so every runtime role may call it without table grants.
+CREATE FUNCTION provisional_premium_catalog() RETURNS TABLE(model_id uuid,code text,name text,family text,season text,variant_id uuid,size text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+ SELECT m.id,m.code,m.name,m.family,m.catalog_season,v.id,v.size FROM ledger_models m JOIN ledger_variants v ON v.model_id=m.id
+ WHERE m.catalog_role='PROVISIONAL_BOOKING_SELECTOR' AND m.family IN ('SKI','SNOWBOARD') AND m.catalog_season IS NOT NULL AND v.tier='PREMIUM'
+  AND EXISTS(SELECT 1 FROM provisional_model_bindings x JOIN provisional_capacity_buckets b ON b.id=x.bucket_id JOIN provisional_capacity_sources s ON s.id=b.source_id
+   WHERE x.variant_id=v.id AND b.active AND b.size_mapping_status='MAPPED' AND s.status='ACTIVE')
+ ORDER BY m.family DESC,m.name,v.size
+$$;
+GRANT EXECUTE ON FUNCTION provisional_premium_catalog() TO PUBLIC;

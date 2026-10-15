@@ -6,7 +6,7 @@ import {publicMetadata} from '../../../../lib/public-seo';
 import {PublicFrame,PageHead} from '../../../../components/PublicPage';
 type Props={params:Promise<{locale:string;doc:string}>};
 const resolve=async(p:Props)=>{const {locale,doc}=await p.params;return locale==='ja'||locale==='en'?legalDocument(locale as Locale,doc):null;};
-export async function generateMetadata(p:Props){const d=await resolve(p);if(!d)return {title:'Not found',robots:{index:false,follow:false}};return publicMetadata(d.locale,legalPath(d.doc),d.title+' | ZAO Rental',d.title);}
+export async function generateMetadata(p:Props){const d=await resolve(p);if(!d)return {title:'Not found',robots:{index:false,follow:false}};return publicMetadata(d.locale,legalPath(d.doc),d.title,d.title);}
 /** Owner-approved legal/policy text only; an unapproved document does not exist publicly. */
 export default async function Page(p:Props){const d=await resolve(p);if(!d)notFound();const ja=d.locale==='ja';
  return <PublicFrame locale={d.locale} path={legalPath(d.doc)}>

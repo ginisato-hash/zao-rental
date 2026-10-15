@@ -8,6 +8,9 @@ import {PriceExplorer} from './PriceExplorer';
 import {priceGrid,dayPrice} from './price-rows';
 import {products,photos,type Shot} from './brand/media';
 import {STORE_DISPLAY} from './brand';
+import {PREMIUM_MODELS} from '../../../../packages/core/src/operations/provisional-catalog-bridge';
+/** Owner (2026-10-15): Premium models are not yet confirmed by Salomon; Premium is shown but not bookable until a model is bound. */
+const premiumOpen=(family:'SKI'|'SNOWBOARD')=>PREMIUM_MODELS.some(m=>m.family===family);
 import './public.css';
 
 export function legalLinks(locale:Locale){return approvedLegalDocs(locale).map(d=>({href:canonicalPath(locale,legalPath(d)),label:legalDocument(locale,d)!.title}));}
@@ -41,15 +44,15 @@ const STORE_PATH={MOUNTAIN_BASE:'stores/mountain-base',ONSEN_BASE:'stores/onsen-
 const STORE_GEO={MOUNTAIN_BASE:'38.169695,140.401042',ONSEN_BASE:'38.16334,140.395437'} as const;
 const maps=(geo:string)=>[['GOOGLE MAPS','https://www.google.com/maps/dir/?api=1&destination='+geo],['APPLE MAPS','https://maps.apple.com/?daddr='+geo]] as const;
 
-type Tile={key:string;name:string;tone:string;fact:string;view:string;image:React.ReactNode;kind:'product'|'photo'};
+type Tile={key:string;name:string;tone:string;fact:string;view:string;image:React.ReactNode;kind:'product'|'photo';soon?:boolean};
 function lineup(locale:Locale):Tile[]{
  const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e,r='/'+locale,day=t('1日','1 day');
  const promise=t('モデル指定','Model promised');
  return [
   {key:'ski-regular',name:'SKI',tone:'REGULAR',fact:t('モデル非指定 · セット','Any model · set')+' '+day+' '+yen(dayPrice('SKI_SET_ADULT_REGULAR')),view:r+'/rental/ski',kind:'product',image:<Product shot={products.regular} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/>},
-  {key:'ski-premium',name:'SKI',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SKI_SET_ADULT_PREMIUM')),view:r+'/rental/premium#ski',kind:'photo',image:<Product shot={products.premium} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
+  {key:'ski-premium',name:'SKI',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SKI_SET_ADULT_PREMIUM')),view:r+'/rental/premium#ski',kind:'photo',soon:!premiumOpen('SKI'),image:<Product shot={products.premium} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
   {key:'snowboard-regular',name:'SNOWBOARD',tone:'REGULAR',fact:t('モデル非指定 · セット','Any model · set')+' '+day+' '+yen(dayPrice('SNOWBOARD_SET_ADULT_REGULAR')),view:r+'/rental/snowboard',kind:'product',image:<Product shot={products.snowboard} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
-  {key:'snowboard-premium',name:'SNOWBOARD',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SNOWBOARD_SET_ADULT_PREMIUM')),view:r+'/rental/premium#snowboard',kind:'photo',image:<Product shot={products.snowboardRide} locale={locale} sizes="(max-width:767px) 100vw, 58vw"/>},
+  {key:'snowboard-premium',name:'SNOWBOARD',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SNOWBOARD_SET_ADULT_PREMIUM')),view:r+'/rental/premium#snowboard',kind:'photo',soon:!premiumOpen('SNOWBOARD'),image:<Product shot={products.snowboardRide} locale={locale} sizes="(max-width:767px) 100vw, 58vw"/>},
   {key:'wear',name:'WEAR',tone:'JACKET + PANTS',fact:t('上下セット','Jacket + pants')+' · '+day+' '+yen(dayPrice('WEAR_SET_ADULT')),view:r+'/rental/wear',kind:'photo',image:<Photo shot={photos.wear} locale={locale} sizes="100vw"/>},
  ];
 }
@@ -61,7 +64,7 @@ function Lineup({locale,only}:{locale:Locale;only?:string[]}){
   <div className="st-tile-cap">
    <h2 className="st-tile-n"><Link href={x.view}>{x.name}<span className="st-tone"> {x.tone}</span></Link></h2>
    <p className="st-tile-f">{x.fact}</p>
-   <p className="st-tile-a"><Link href={x.view}>VIEW</Link><Link href={r+'/book'}>BOOK →</Link></p>
+   <p className="st-tile-a"><Link href={x.view}>VIEW</Link>{x.soon?<span className="st-soon">COMING SOON</span>:<Link href={r+'/book'}>BOOK →</Link>}</p>
   </div>
  </article>)}</div>;
 }
@@ -98,7 +101,6 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
    <section className="st-fv" aria-labelledby="fv-h">
     <div className="st-fv-txt">
      <h1 id="fv-h" className="st-fv-h">RENTAL</h1>
-     <p className="st-fv-l">SKI / SNOWBOARD / WEAR · ZAO ONSEN</p>
      <div className="st-fv-acts">{book()}<Link className="st-link" href={r+'/rental'}>VIEW LINEUP →</Link></div>
      <CategoryIndex locale={locale} stacked/>
     </div>
@@ -115,7 +117,7 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
 
  let head:React.ReactNode,body:React.ReactNode=null;
  if(path==='rental'){
-  head=<PageHead word="RENTAL" tone="LINEUP"><p className="st-ph-l">SKI / SNOWBOARD / WEAR · ZAO ONSEN</p><div className="st-ph-acts">{book()}</div><CategoryIndex locale={locale}/></PageHead>;
+  head=<PageHead word="RENTAL" tone="LINEUP"><div className="st-ph-acts">{book()}</div><CategoryIndex locale={locale}/></PageHead>;
   body=<section className="st-sec st-sec--tight" aria-label="LINEUP"><Lineup locale={locale}/></section>;
  }else if(path==='rental/ski'||path==='rental/snowboard'){
   const ski=path==='rental/ski',word=ski?'SKI':'SNOWBOARD';
@@ -138,7 +140,7 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
      <div><dt>{t('予約で選ぶ','CHOSEN IN BOOKING')}</dt><dd>MODEL / SEASON / LENGTH</dd></div>
      <div><dt>{t('セット 1日','SET · 1 DAY')}</dt><dd>{yen(dayPrice(family==='SKI'?'SKI_SET_ADULT_PREMIUM':'SNOWBOARD_SET_ADULT_PREMIUM'))}</dd></div>
      <div><dt>{t('対象','FOR')}</dt><dd>{t('大人','ADULTS')}</dd></div></dl>
-    <div className="st-ph-acts st-pm-acts">{book('BOOK '+family+' PREMIUM')}</div></div>
+    <div className="st-ph-acts st-pm-acts">{premiumOpen(family)?book('BOOK '+family+' PREMIUM'):<p className="st-soon st-soon--lg">COMING SOON</p>}</div></div>
   </section>;
   body=<>{group('SKI',products.premium)}{group('SNOWBOARD',products.snowboardRide)}</>;
  }else if(path==='prices'){

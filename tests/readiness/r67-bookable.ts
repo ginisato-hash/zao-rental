@@ -34,7 +34,7 @@ let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined,flow:A
 try{
  await migrate(db.pool);
  roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);ops=await provisionOperationsRole(db.pool,db.identity);
- let now=new Date('2035-01-10T10:00:00+09:00');
+ const now=new Date('2035-01-10T10:00:00+09:00');
  await db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${now.toISOString()}'::timestamptz$$`);
  const password=randomBytes(24).toString('base64url'),origin='http://127.0.0.1:34567';
  const root=await bootstrapDevelopmentAdmin(db.pool,{email:'r67-root@example.invalid',displayName:'SYNTHETIC Admin',password}),bp=(await loadStaff(db.pool,root))!;

@@ -27,9 +27,11 @@ function nav(locale:Locale){const ja=locale==='ja',r='/'+locale;return {
  * the page is inert, Escape/CLOSE close and return focus to MENU, the scroll lock is always restored. */
 /** The official logo is always the LP raster asset (never type); `context` is the plain-text page marker. */
 function Brand({locale,context,onClick}:{locale:Locale;context:'RENTAL'|'BOOKING';onClick:Guard}){
+ // eslint-disable-next-line @next/next/no-img-element -- fixed-size official logo raster; next/image adds nothing here
  return <span className="st-hd-left"><Link className="st-hd-home" href={'/'+locale} aria-label={SITE_NAME+(locale==='ja'?' ホーム':' home')} onClick={onClick}><img src={logo.src} width={logo.width} height={logo.height} alt={SITE_NAME}/></Link><span className="st-hd-ctx" aria-label={context==='BOOKING'?L(locale==='ja','予約','Booking'):L(locale==='ja','レンタル','Rental')}>{context}</span></span>;
 }
-export function PublicHeader({locale,page,homeHeading,guard,context='RENTAL'}:{locale:Locale;page:string;homeHeading?:string|undefined;guard?:Guard|undefined;context?:'RENTAL'|'BOOKING'}){
+// Owner (2026-10-15): the context marker reads BOOKING on every page of this booking site (the LP is the brand site).
+export function PublicHeader({locale,page,guard,context='BOOKING'}:{locale:Locale;page:string;homeHeading?:string|undefined;guard?:Guard|undefined;context?:'RENTAL'|'BOOKING'}){
  const ja=locale==='ja',n=nav(locale),[open,setOpen]=useState(false),[img,setImg]=useState(''),toggle=useRef<HTMLButtonElement>(null),panel=useRef<HTMLDivElement>(null);
  const returnFocus=useRef(false);
  useEffect(()=>{if(!open){if(returnFocus.current){returnFocus.current=false;toggle.current?.focus();}return;}
@@ -79,7 +81,7 @@ export function PublicHeader({locale,page,homeHeading,guard,context='RENTAL'}:{l
 export function PublicFooter({locale,page,legal}:{locale:Locale;page:string;legal:LegalLink[]}){
  const ja=locale==='ja',r='/'+locale,n=nav(locale),other:Locale=ja?'en':'ja';
  const cols:[string,LinkItem[]][]=[
-  [L(ja,'レンタル','RENTAL'),[{href:r+'/rental',label:L(ja,'プラン比較','COMPARE PLANS')},...n.categories,{href:r+'/prices',label:L(ja,'料金','PRICES')}]],
+  [L(ja,'レンタル','RENTAL'),[{href:r+'/rental',label:L(ja,'ラインナップ','LINEUP')},...n.categories,{href:r+'/prices',label:L(ja,'料金','PRICES')}]],
   [L(ja,'店舗','STORES'),[{href:r+'/stores/mountain-base',label:STORE_DISPLAY.MOUNTAIN_BASE},{href:r+'/stores/onsen-base',label:STORE_DISPLAY.ONSEN_BASE},{href:r+'/pickup-return',label:L(ja,'受取・返却','PICKUP & RETURN')}]],
   [L(ja,'ご予約','BOOKING'),[n.book,{href:r+'/reservation',label:L(ja,'予約の確認','MY BOOKING')},{href:r+'/faq',label:L(ja,'よくある質問','FAQ')}]],
   [L(ja,'規約・表記','LEGAL'),legal],

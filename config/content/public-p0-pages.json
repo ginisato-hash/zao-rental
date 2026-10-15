@@ -154,32 +154,6 @@
     "revision": "public-p0-draft-v1"
   },
   {
-    "path": "rental/kids-family",
-    "locale": "ja",
-    "title": "蔵王の子供・ファミリーレンタル",
-    "heading": "家族みんなの選択を、一緒に。",
-    "summary": "大人・子供それぞれの利用開始時の区分を選び、用品とウェアを利用者ごとに確認します。",
-    "bullets": [
-      "大人・子供は利用開始日の年齢で区分",
-      "一人ずつサイズを選択",
-      "全員分の空きを確認してから予約手続きへ"
-    ],
-    "revision": "public-p0-draft-v1"
-  },
-  {
-    "path": "rental/kids-family",
-    "locale": "en",
-    "title": "Zao kids & family rental",
-    "heading": "One plan for the whole family.",
-    "summary": "Choose each person’s age category at the start of the rental and review their equipment and wear separately.",
-    "bullets": [
-      "Adult or child by age on the start date",
-      "Choose sizes person by person",
-      "Check availability for everyone before proceeding to book"
-    ],
-    "revision": "public-p0-draft-v1"
-  },
-  {
     "path": "prices",
     "locale": "ja",
     "title": "レンタル料金と見積の見方",

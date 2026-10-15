@@ -19,10 +19,7 @@ export async function releasedModels(pool:Pool):Promise<PublishedModel[]>{const 
  * physical asset required). Only variants with an active, mapped binding are offered. */
 export type ProvisionalPremiumModel={slug:string;name:string;modelId:string;season:string;sport:'SKI'|'SNOWBOARD';lengths:string[];variantIds:string[]};
 export async function provisionalPremiumModels(pool:Pick<Pool,'query'>):Promise<ProvisionalPremiumModel[]>{
- const rows=(await pool.query<{model_id:string;code:string;name:string;family:'SKI'|'SNOWBOARD';season:string;variant_id:string;size:string}>(`SELECT m.id AS model_id,m.code,m.name,m.family,m.catalog_season AS season,v.id AS variant_id,v.size FROM ledger_models m JOIN ledger_variants v ON v.model_id=m.id
-  WHERE m.catalog_role='PROVISIONAL_BOOKING_SELECTOR' AND m.family IN ('SKI','SNOWBOARD') AND m.catalog_season IS NOT NULL AND v.tier='PREMIUM'
-   AND EXISTS(SELECT 1 FROM provisional_model_bindings x JOIN provisional_capacity_buckets b ON b.id=x.bucket_id JOIN provisional_capacity_sources s ON s.id=b.source_id WHERE x.variant_id=v.id AND b.active AND b.size_mapping_status='MAPPED' AND s.status='ACTIVE')
-  ORDER BY m.family DESC,m.name,v.size`)).rows;
+ const rows=(await pool.query<{model_id:string;code:string;name:string;family:'SKI'|'SNOWBOARD';season:string;variant_id:string;size:string}>('SELECT model_id,code,name,family,season,variant_id,size FROM provisional_premium_catalog()')).rows;
  const out=new Map<string,ProvisionalPremiumModel>();
  for(const r of rows){const m=out.get(r.model_id)??{slug:r.code.toLowerCase(),name:r.name,modelId:r.model_id,season:r.season,sport:r.family,lengths:[],variantIds:[]};m.lengths.push(r.size);m.variantIds.push(r.variant_id);out.set(r.model_id,m);}
  for(const m of out.values()){const order=m.lengths.map((l,i)=>({l,i,n:Number.parseInt(l,10)})).sort((a,b)=>a.n-b.n);m.lengths=order.map(o=>o.l);m.variantIds=order.map(o=>m.variantIds[o.i]!);}

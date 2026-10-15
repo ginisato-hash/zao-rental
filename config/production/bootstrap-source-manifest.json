@@ -457,7 +457,7 @@
   {
    "id": "0058",
    "file": "0058_provisional_catalog_bridge.sql",
-   "sha256": "16d09a438d459aae76dbedcbb1d4f7d1b18b9d4c4d01c0b62f603a6eba859ad3",
+   "sha256": "fbd3a655c25e13fd21dc3e222946065b9622deb007a5075824639779d6e3acea",
    "runtimeGuards": 0,
    "guard": null
   }

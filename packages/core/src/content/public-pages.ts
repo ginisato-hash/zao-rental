@@ -15,4 +15,13 @@ export function languages(origin:string,path:string){return {ja:origin+canonical
 export function safeJsonLd(value:unknown){return JSON.stringify(value).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');}
 export type LocationContent={store:'MOUNTAIN_BASE'|'ONSEN_BASE';name:string;address:string|null;telephone:string|null;verified:boolean;openingHours:string};
 export function locationSchema(value:LocationContent,url:string){return value.verified&&value.address&&value.telephone?{'@type':'LocalBusiness',name:value.name,address:value.address,telephone:value.telephone,openingHours:value.openingHours,url}:null;}
-export function pageSchema(locale:Locale,path:string,origin:string){const p=publicPage(locale,path);if(!p)return [];const base=origin+canonicalPath(locale,'');return [{'@context':'https://schema.org','@type':'Organization',name:'SALOMON STATION ZAO',url:base},{'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'SALOMON STATION ZAO',item:base},...(path?[{'@type':'ListItem',position:2,name:p.title,item:origin+canonicalPath(locale,path)}]:[])]}];}
+export function pageSchema(locale:Locale,path:string,origin:string,content=publicPage(locale,path)){
+ if(!content)return [];
+ const name='SALOMON RENTAL STATION ZAO',base=origin+canonicalPath(locale,''),url=origin+canonicalPath(locale,path),organization=origin+'/#organization',website=origin+'/#website';
+ return [
+  {'@context':'https://schema.org','@type':'Organization','@id':organization,name,url:origin},
+  {'@context':'https://schema.org','@type':'WebSite','@id':website,name,url:origin,inLanguage:['ja','en'],publisher:{'@id':organization}},
+  {'@context':'https://schema.org','@type':'WebPage','@id':url+'#webpage',url,name:content.title,description:content.summary,inLanguage:locale,isPartOf:{'@id':website},about:{'@id':organization}},
+  {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name,item:base},...(path?[{'@type':'ListItem',position:2,name:content.title,item:url}]:[])]},
+ ];
+}

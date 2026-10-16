@@ -95,6 +95,8 @@ html[lang=ja] .guest-main button{font-family:var(--d)}
 
 /* size candidates: three big plates, the length as a giant number, selected = black */
 .guest-candidates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;margin:14px 0 4px}
+.guest-candidates:has(>.guest-candidate:only-child){grid-template-columns:minmax(0,1fr)}
+.guest-main .guest-candidates label.guest-candidate:only-child{flex-direction:row;align-items:center;min-height:76px}
 .guest-candidates[aria-invalid=true]{outline:2px solid var(--signal);outline-offset:4px}
 .guest-main .guest-candidates label.guest-candidate{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:18px;min-height:150px;margin:0;padding:14px;border:2px solid var(--ink);cursor:pointer;transition:background-color .15s var(--e),color .15s var(--e)}
 .guest-main .guest-candidates label.guest-candidate input{position:absolute;inset:0;z-index:1;opacity:0;width:100%;height:100%;min-height:0;margin:0;cursor:pointer}
@@ -104,7 +106,7 @@ html[lang=ja] .guest-main button{font-family:var(--d)}
 .guest-candidate-label{font:700 15px/1 var(--d);text-transform:uppercase}
 html[lang=ja] .guest-candidate-label{font:700 14px/1.2 var(--b)}
 .guest-main .guest-candidates label.guest-candidate--primary .guest-candidate-label::after{content:' ★' / ''}
-.guest-candidate-value{font:700 clamp(40px,4.6vw,72px)/.85 var(--d);font-variant-numeric:tabular-nums}
+.guest-candidate-value{font:700 clamp(32px,4.6vw,64px)/1 var(--d);font-variant-numeric:tabular-nums}
 /* Wear has no length: its textual candidate uses body-size type, never the numeric length scale. */
 .guest-candidate-text{font:700 18px/1.35 var(--b);overflow-wrap:anywhere}
 .guest-main .guest-candidates label.guest-candidate:has(.guest-candidate-text){grid-column:1 / -1;min-height:0}
@@ -182,7 +184,7 @@ details.guest-secondary.guest-main{padding-top:0;padding-bottom:calc(48px + var(
  .guest-grid,.guest-contact,.guest-compare{grid-template-columns:1fr}
  .guest-steps li{font-size:11px}
  .guest-candidates{grid-template-columns:repeat(3,minmax(0,1fr))}
- .guest-main .guest-candidates label.guest-candidate{min-height:120px;padding:10px}
+ .guest-main .guest-candidates label.guest-candidate{min-height:96px;padding:10px}
  .guest-facts{grid-template-columns:1fr 1fr}
  .guest-facts--compact{grid-template-columns:1fr}
  .guest-pay-summary dl,.guest-main .guest-result-facts{grid-template-columns:1fr}
@@ -259,3 +261,5 @@ html[lang=ja] .guest-seg-o b{font:700 15px/1.1 var(--b)}
  .guest-steps{grid-template-columns:repeat(4,minmax(0,1fr))}
  .guest-step-j{display:none}
 }
+
+.guest-grid>.guest-wear-colour{grid-column:1 / -1}

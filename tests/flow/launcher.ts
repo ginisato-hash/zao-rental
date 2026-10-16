@@ -52,7 +52,7 @@ import {spawn} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
 import {migrate,seed} from '../../packages/db/src/index';
 import {startIsolatedPostgres} from '../../scripts/postgres';
-import {assertPortFree} from '../../scripts/worktree';
+import {waitForPortFree} from '../../scripts/worktree';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import type {DevelopmentRuntime} from '../../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
@@ -64,7 +64,7 @@ export async function startFlowApp(options:{productionCopy?:boolean;paymentFault
  let custody:Awaited<ReturnType<typeof provisionCustodyRole>>|undefined;
  let startupPhase='MIGRATE';
  try{
-  await migrate(db.pool);startupPhase='SEED';await seed(db.pool,db.identity.namespace);startupPhase='PORT';await assertPortFree(db.identity.webPort);
+  await migrate(db.pool);startupPhase='SEED';await seed(db.pool,db.identity.namespace);startupPhase='PORT';await waitForPortFree(db.identity.webPort);
   startupPhase='ROLES';
   roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);custody=await provisionCustodyRole(db.pool,db.identity);
   if(options.publicP0){guest=await provisionGuestRole(db.pool,db.identity);content=await provisionContentRole(db.pool,db.identity);}
@@ -111,7 +111,7 @@ export async function startFlowApp(options:{productionCopy?:boolean;paymentFault
   }
   return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(readyPaths:string[]=[]){
    if(stopping||restarting)throw new Error('TEST_RESTART_NOT_ALLOWED');restarting=true;
-   try{const old=current.pid;await current.stop();await assertPortFree(db.identity.webPort);current=launch();
+   try{const old=current.pid;await current.stop();await waitForPortFree(db.identity.webPort);current=launch();
     // Readiness is proved here rather than left to whoever navigates next.
     await waitForRoute(origin,'/api/health');
     for(const path of readyPaths)await waitForRoute(origin,path);

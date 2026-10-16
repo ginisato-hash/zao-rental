@@ -33,7 +33,7 @@ export function LedgerWorkspace({client=httpLedgerClient,canEdit=false,canEditGl
    const [m,v]=await Promise.all([references(client,'models'),references(client,'variants')]);if(token===selection.current){setModels(m);setVariants(v);}
  }
  return <main className="ledger-shell">
-  <header className="ledger-header"><div><p className="ledger-kicker">ZAO RENTAL / INVENTORY REGISTER</p><h1>道具の台帳</h1><p className="ledger-lead">商品と、ひとつずつの道具を記録する。</p></div><span className="ledger-pill">台帳 · 予約可否は未判定</span></header>
+  <header className="ledger-header"><div><p className="ledger-kicker">SALOMON RENTAL STATION ZAO / INVENTORY REGISTER</p><h1>道具の台帳</h1><p className="ledger-lead">商品と、ひとつずつの道具を記録する。</p></div><span className="ledger-pill">台帳 · 予約可否は未判定</span></header>
   <div className="ledger-notice">{testNotice?'合成サンプルを使った画面テストです。実スタッフのログイン・実在庫ではありません。':'台帳数量は予約可能数ではありません。期間・店舗を通した空き状況は、まだ判定しません。'}</div>
   <nav className="ledger-tabs" aria-label="台帳の種類">{(Object.keys(tabs) as Resource[]).map(key=><button key={key} aria-current={resource===key?'page':undefined} onClick={()=>changeTab(key)}>{tabs[key]}</button>)}</nav>
   <div className="ledger-workspace">

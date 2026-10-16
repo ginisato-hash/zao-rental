@@ -17,12 +17,12 @@ export function PriceExplorer({locale,grid}:{locale:'ja'|'en';grid:PriceGrid}){
   {opts.map(([v,t,s])=><button key={v} type="button" aria-pressed={(k==='plan'?plan:st[k])===v} disabled={k==='plan'&&v==='premium'&&!premiumAllowed()} onClick={()=>set({[k]:v} as Partial<typeof st>)}>{t}{s&&<small>{s}</small>}</button>)}</div></div>;
  return <section className="st-rx" aria-label={ja?'料金':'Prices'}>
   <div className="st-rx-ctl">
+   <div className="st-rx-big" aria-live="polite"><p ref={num} className="st-num">{yen(grid[hero[st.age]!]![st.di]!)}</p>
+    <p className="st-rx-w">{[PRICE_ROWS[st.sport].en,ja?hero.ja:hero.en,plan.toUpperCase(),st.age.toUpperCase()].join(' · ')} — {dur(st.di)}</p></div>
    {seg('sport','Sport',[['ski','SKI'],['snowboard','SNOWBOARD'],['wear','WEAR']],3)}
    {seg('age','Age',[['adult','ADULT','13+'],['kids','KIDS','≤12']],2)}
    {seg('plan','Plan',[['regular','REGULAR'],['premium','PREMIUM']],2)}
    <div><p className="st-lbl">Days</p><div className="st-days" role="group" aria-label={ja?'日数':'Days'}>{PRICE_DAY_INDEX.map((_,i)=><button key={i} type="button" aria-pressed={st.di===i} aria-label={dur(i)} onClick={()=>set({di:i})}>{i||(ja?'半日':'HALF')}</button>)}</div></div>
-   <div className="st-rx-big" aria-live="polite"><p ref={num} className="st-num">{yen(grid[hero[st.age]!]![st.di]!)}</p>
-    <p className="st-rx-w">{[PRICE_ROWS[st.sport].en,ja?hero.ja:hero.en,plan.toUpperCase(),st.age.toUpperCase()].join(' · ')} — {dur(st.di)}</p></div>
    <p className="st-lbl st-rx-tax">{ja?'税込':'TAX INCLUDED'}<br/>{ja?'前日15:00までの事前決済でさらに5%OFF':'EXTRA 5% OFF WHEN PAID BY 3:00 PM (JST) THE DAY BEFORE'}</p>
   </div>
   <ul className="st-rows st-rx-rows">{rows.map(r=><li key={r[st.age]}><div><b>{ja?r.ja:r.en}</b><small>{ja?r.dja:r.den}</small></div><span className="st-rx-p">{yen(grid[r[st.age]!]![st.di]!)}</span></li>)}</ul>

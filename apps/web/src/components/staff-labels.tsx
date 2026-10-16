@@ -1,6 +1,7 @@
 import type {ReactNode} from 'react';
 // Display labels only. Requests, IDs, statuses and authorization remain server-owned.
 const labels:Record<string,string>={
+ CONFIGURED_COMMERCIAL:'本番設定済み',
  ADMIN:'管理者',MANAGER:'責任者',STAFF:'受付担当',VIEWER:'閲覧担当',SENT:'送信済み',PERMANENT_FAILURE:'送信失敗',RETRY_PENDING:'再送待ち',BOOKING_CONFIRMED:'予約確定のお知らせ',BOOKING_CANCELLED:'キャンセルのお知らせ',REFUND_COMPLETED:'返金完了のお知らせ',BOOKING_RECOVERY:'予約の確認コード',
  SKI:'スキー',SNOWBOARD:'スノーボード',SKI_BOOT:'スキーブーツ',SNOWBOARD_BOOT:'スノーボードブーツ',POLE:'ポール',WEAR:'ウェア',WEAR_JACKET:'ジャケット',WEAR_PANTS:'パンツ',SKI_SET:'スキーセット',SNOWBOARD_SET:'スノーボードセット',WEAR_SET:'ウェア上下',SINGLE:'単品',SET:'セット',EQUIPMENT_ONLY:'板のみ',BOOTS_ONLY:'ブーツのみ',POLES_ONLY:'ポールのみ',ADULT:'大人',KIDS:'子供',REGULAR:'Regular',PREMIUM:'Premium',STANDARD:'共通',DAY:'1日',AM:'午前',PM:'午後',MULTIDAY:'複数日',
  PLANNED:'計画済み',DEPARTED:'発送済み',IN_TRANSIT:'運搬中',CLOSED:'準備完了',RETURNED_PENDING:'洗浄待ち',CLEANING:'洗浄中',TODAY_BLOCKED:'翌日から利用可',PARTIAL:'一部完了',HALF_DAY_AM:'午前半日',HALF_DAY_PM:'午後半日',DAY_1:'1日',DAY_2:'2日',DAY_3:'3日',DAY_4:'4日',DAY_5:'5日',DAY_6:'6日',DAY_7:'7日',DAY_8:'8日',DAY_9:'9日',DAY_10:'10日',

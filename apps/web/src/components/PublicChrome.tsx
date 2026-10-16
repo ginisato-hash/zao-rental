@@ -9,7 +9,7 @@ type LinkItem={href:string;label:string};
 export type LegalLink=LinkItem;
 type Guard=(e:React.MouseEvent)=>void;
 const L=(ja:boolean,j:string,e:string)=>ja?j:e;
-export const SITE_NAME='SALOMON STATION ZAO';
+export const SITE_NAME='SALOMON RENTAL STATION ZAO';
 const path=(locale:Locale,p:string)=>'/'+locale+(p?'/'+p:'');
 
 function nav(locale:Locale){const ja=locale==='ja',r='/'+locale;return {
@@ -55,14 +55,14 @@ export function PublicHeader({locale,page,guard,context='BOOKING'}:{locale:Local
    <div className="st-hd-r">
     <span className="st-hd-lang">{lang('ja')}{lang('en')}</span>
     <Link className="st-hd-book" href={n.book.href} aria-current={here===n.book.href?'page':undefined} onClick={go}>{n.book.label}</Link>
-    <button ref={toggle} type="button" className="st-hd-menu" aria-expanded={open} aria-controls="st-menu" aria-label={L(ja,'メニューを開く','Open menu')} onClick={()=>setOpen(true)}>MENU</button>
+    <button ref={toggle} type="button" className="st-hd-menu" aria-expanded={open} aria-controls="st-menu" aria-label={L(ja,'MENU · メニューを開く','Open menu')} onClick={()=>setOpen(true)}>MENU</button>
    </div>
   </header>
   {open&&<div id="st-menu" ref={panel} className="st-mnu" role="dialog" aria-modal="true" aria-label={L(ja,'メニュー','Menu')}>
    <div className="st-mnu-top">
     <Brand locale={locale} context={context} onClick={go}/>
     <div className="st-hd-r"><span className="st-hd-lang">{lang('ja')}{lang('en')}</span>
-     <button type="button" className="st-hd-menu" aria-label={L(ja,'メニューを閉じる','Close menu')} onClick={()=>{returnFocus.current=true;setOpen(false);}}>CLOSE</button></div>
+     <button type="button" className="st-hd-menu" aria-label={L(ja,'CLOSE · メニューを閉じる','Close menu')} onClick={()=>{returnFocus.current=true;setOpen(false);}}>CLOSE</button></div>
    </div>
    <div className="st-mnu-body">
     <ul className="st-mnu-main" onPointerLeave={()=>setImg('')}>{n.main.map(l=><li key={l.href}><Link className="st-mnu-mi" href={l.href} aria-current={here===l.href?'page':undefined} onClick={go} onPointerEnter={()=>setImg(l.img)} onFocus={()=>setImg(l.img)}>{l.label}</Link></li>)}</ul>

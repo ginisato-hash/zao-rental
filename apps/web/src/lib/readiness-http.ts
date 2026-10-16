@@ -12,7 +12,7 @@ export function readinessDetails(state:RuntimeReadiness,staff:StaffState,compone
  if(!canManage(staff.principal)&&!staff.principal.permissions.includes('OPERATIONS_VIEW'))return Response.json({error:'FORBIDDEN'},{status:403,headers});
  // Copy only the fixed safe enums, even if a future adapter adds diagnostic fields.
  const input=components&&typeof components==='object'?components as Record<string,unknown>:{};
- const allowed=['READY','UNAVAILABLE','OFF','CONFIGURED','CONFIGURED_ACTIVATION_PENDING','UNCONNECTED'];
+ const allowed=['READY','UNAVAILABLE','OFF','CONFIGURED','CONFIGURED_COMMERCIAL','CONFIGURED_ACTIVATION_PENDING','UNCONNECTED'];
  const safe=Object.fromEntries(['APP','DB','GUEST','PAYMENT_ADAPTER','WEBHOOK','MEDIA','NOTIFICATION'].map(k=>[k,typeof input[k]==='string'&&allowed.includes(input[k] as string)?input[k]:'UNAVAILABLE']));
  return Response.json({status:state.ready?'READY':'UNAVAILABLE',stage:state.stage,components:safe},{headers});
 }

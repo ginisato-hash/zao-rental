@@ -1,5 +1,5 @@
 import type {BookingNotificationDelivery,DeliveryResult,NotificationMessage} from './contracts';
-export const RESEND_SENDER='SALOMON STATION ZAO <rentalstation@yuge-zao.com>';
+export const RESEND_SENDER='SALOMON RENTAL STATION ZAO <rentalstation@yuge-zao.com>';
 /** Unconnected transport adapter. Resend has no lookup by idempotency key; deliberately no
  * lookup method. Only explicit NOT_ACCEPTED may be retried by the durable outbox worker. */
 export class ResendDelivery implements BookingNotificationDelivery{

@@ -7,7 +7,7 @@ import {InventoryOperations} from './inventory-service';
 /** Read-only launch gate. It reports what is already true and offers no action: nothing
  * here can activate Production, deploy, take a payment or accept a secret. Because it
  * aggregates both stores it requires explicit ALL scope. */
-const COMPONENT:Record<string,LaunchGateState>={READY:'READY',CONFIGURED:'PENDING',CONFIGURED_ACTIVATION_PENDING:'PENDING',OFF:'NOT_RUN',UNCONNECTED:'NOT_RUN',UNAVAILABLE:'BLOCKED'};
+const COMPONENT:Record<string,LaunchGateState>={READY:'READY',CONFIGURED:'PENDING',CONFIGURED_COMMERCIAL:'PENDING',CONFIGURED_ACTIVATION_PENDING:'PENDING',OFF:'NOT_RUN',UNCONNECTED:'NOT_RUN',UNAVAILABLE:'BLOCKED'};
 const map=(value:unknown):LaunchGateState=>typeof value==='string'&&COMPONENT[value]?COMPONENT[value]!:'BLOCKED';
 export class LaunchGate{
  constructor(private ctx:OperationsContext){}

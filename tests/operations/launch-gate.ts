@@ -100,6 +100,15 @@ try{
   assert.equal(by.FIELD_DEVICE,'BLOCKED');assert.equal(by.STAFF_REHEARSAL,'NOT_RUN');
  });
 
+ await check('commercial payment configuration remains pending acceptance and cannot activate production',async()=>{
+  for(const [state,expected] of [['CONFIGURED_COMMERCIAL','PENDING'],['UNKNOWN_CONFIGURATION','BLOCKED']] as const){
+   const result=await gate.status({runId:run,components:{...COMPONENTS,PAYMENT_ADAPTER:state},backup:null});
+   assert.equal(result.rows.find(r=>r.row==='PAYMENT')!.state,expected);
+   assert.equal(result.rows.find(r=>r.row==='WEBHOOK')!.state,'NOT_RUN');
+   assert.equal(result.readOnly,true);assert.equal(result.canActivateProduction,false);
+  }
+ });
+
  await check('real inventory readiness needs an acceptance receipt, never a file name',async()=>{
   const before=await gate.status({runId:run,components:COMPONENTS,backup:null});
   assert.equal(before.rows.find(r=>r.row==='REAL_DATA')!.state,'NOT_RUN');

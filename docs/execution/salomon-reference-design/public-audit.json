@@ -1,0 +1,482 @@
+[
+  {
+    "locale": "ja",
+    "path": "",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/ski",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/ski",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/snowboard",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/snowboard",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/wear",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/wear",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/premium",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "rental/premium",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "prices",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "prices",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "pickup-return",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "pickup-return",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "stores/mountain-base",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "stores/mountain-base",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "stores/onsen-base",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "stores/onsen-base",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "faq",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "faq",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "reservation",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "ja",
+    "path": "reservation",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/ski",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/ski",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/snowboard",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/snowboard",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/wear",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/wear",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/premium",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "rental/premium",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "prices",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "prices",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "pickup-return",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "pickup-return",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "stores/mountain-base",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "stores/mountain-base",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "stores/onsen-base",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "stores/onsen-base",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "faq",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "faq",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "reservation",
+    "width": 390,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  },
+  {
+    "locale": "en",
+    "path": "reservation",
+    "width": 1440,
+    "status": 200,
+    "overflow": 0,
+    "brokenImages": 0,
+    "h1": 1,
+    "violations": []
+  }
+]

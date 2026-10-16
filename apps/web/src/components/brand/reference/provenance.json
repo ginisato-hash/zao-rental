@@ -1,0 +1,57 @@
+{
+  "kind": "ORIGINAL_GENERIC_REFERENCE",
+  "created": "2026-10-16",
+  "method": "Built-in image_gen: original image generation and colour-appearance edit. Cropped transparent margins and resized to 1080px height; alpha WebP.",
+  "scope": "Public bundled generic illustrations. No actual product/model/fit promise. Independent of private R2 ContentRelease grants.",
+  "files": [
+    {
+      "file": "person-graphite.webp",
+      "source": "exec-4368d754-427c-49e7-a8a0-878879f751bf.png",
+      "crop": {
+        "left": 242,
+        "top": 14,
+        "width": 540,
+        "height": 1500
+      },
+      "sha256": "c6fb8d3191f5bbd17efd359d2b917bdfedc8007e716d6a4b5ef4f4996017143e",
+      "designBriefSummary": "Original gender-neutral front orthographic winter-wear mannequin. Graphite jacket, pants, gloves, boots and beanie. Transparent background. No logos or labels. Generic illustration, not an actual rental product."
+    },
+    {
+      "file": "person-chalk.webp",
+      "source": "exec-d0e1a6a0-f221-4004-b226-406ff0b738c6.png",
+      "crop": {
+        "left": 242,
+        "top": 14,
+        "width": 540,
+        "height": 1500
+      },
+      "sha256": "1409ed3f77a8188cbc87578284f86efd6f77943585c2b6ce042151d25b5cc72f",
+      "designBriefSummary": "Colour variation of the graphite figure. Preserve the pose and geometry; change jacket and beanie to chalk/off-white. Transparent background; no logos."
+    },
+    {
+      "file": "snowboard.webp",
+      "source": "exec-a5c7665a-9352-428a-a37c-25036d9fc530.png",
+      "crop": {
+        "left": 375,
+        "top": 29,
+        "width": 275,
+        "height": 1482
+      },
+      "sha256": "636a76d927f1a6ced16100e03c2c33e46e11e5ee93a9ff7b2e289f8a7247281e",
+      "designBriefSummary": "Original generic graphite snowboard, front orthographic view, blue accent panel and two angled bindings. Approximate width/length ratio 0.18. Transparent background. No logos or text."
+    },
+    {
+      "file": "ski.webp",
+      "source": "exec-19eefffb-7e80-475a-8c8f-c8b5a2ca8f08.png",
+      "crop": {
+        "left": 454,
+        "top": 16,
+        "width": 116,
+        "height": 1505
+      },
+      "sha256": "598e157dbbae5193ebf26f4af9284024a44dbe7cd5711a57e6dec14d91cea4a8",
+      "designBriefSummary": "Original generic ski, front orthographic view, black/white/blue and bindings. Approximate width/length ratio 0.065. Transparent background. No logos or text."
+    }
+  ],
+  "briefNote": "Design brief summaries, not verbatim tool prompts. Generated originals remain retained locally."
+}

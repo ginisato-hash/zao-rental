@@ -2,7 +2,7 @@ import {spawn} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
 import {migrate,seed} from '@rental/db';
 import {startIsolatedPostgres} from './postgres';
-import {assertPortFree} from './worktree';
+import {waitForPortFree} from './worktree';
 import {provisionOperationsRole} from './operations-roles';
 import {provisionApplicationRoles} from './application-roles';
 import type {DevelopmentRuntime} from '../packages/auth/src/config';
@@ -10,7 +10,7 @@ import type {DevelopmentRuntime} from '../packages/auth/src/config';
 export async function startDevelopmentApp(options:{built?:boolean;operations?:boolean}={}){
  const db=await startIsolatedPostgres();let operations:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let startupPhase='MIGRATE';
  try{
-  await migrate(db.pool);startupPhase='SEED';await seed(db.pool,db.identity.namespace);startupPhase='WEB_PORT';await assertPortFree(db.identity.webPort);
+  await migrate(db.pool);startupPhase='SEED';await seed(db.pool,db.identity.namespace);startupPhase='WEB_PORT';await waitForPortFree(db.identity.webPort);
   startupPhase='APPLICATION_ROLES';roles=await provisionApplicationRoles(db.pool,db.identity);
   startupPhase='OPERATIONS_ROLE';if(options.operations)operations=await provisionOperationsRole(db.pool,db.identity);
   startupPhase='SPAWN';

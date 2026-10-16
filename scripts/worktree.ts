@@ -15,6 +15,14 @@ export async function assertPortFree(port: number): Promise<void> {
     server.listen(port, '127.0.0.1', () => server.close((error) => error ? reject(error) : resolve()));
   });
 }
+/** A stopped `next` parent can exit before the child process that owns its listener; wait (bounded) for release. */
+export async function waitForPortFree(port: number, timeoutMs = 10000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try { await assertPortFree(port); return; } catch (error) { if (Date.now() >= deadline) throw error; }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
 export function rejectAmbientDatabase(): void {
   if (process.env.DATABASE_URL || process.env.PGHOST || process.env.PGDATABASE || process.env.PGUSER || process.env.PGPASSWORD || process.env.PGPORT || process.env.PGSERVICE || process.env.PGSERVICEFILE) {
     throw new Error('Ambient database configuration detected; unset it before running isolated ZAO Rental setup');

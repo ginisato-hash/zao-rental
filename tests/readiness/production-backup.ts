@@ -475,6 +475,30 @@ async function main(): Promise<void> {
     } finally { await rm(shims, {recursive: true, force: true}); }
   });
 
+  await check('S5. worker freshness reads only Production runtime logs with one secret and goes red on ALERT, unreadable logs or a missing token', async () => {
+    const yaml = readWorkflow('production-worker-freshness.yml');
+    assert.match(yaml, /\npermissions:\n  contents: read\n/);
+    assert.deepEqual([...new Set([...yaml.matchAll(/secrets\.(\w+)/g)].map(m => m[1]))], ['VERCEL_MONITOR_TOKEN']);
+    assert.ok(!/environment:/.test(yaml) && !/\n(\s*)(push|pull_request|pull_request_target):/.test(yaml));
+    assert.ok(/\n  schedule:\n    - cron: /.test(yaml));
+    assert.ok([...yaml.matchAll(/uses: (\S+)/g)].every(m => /@[0-9a-f]{40}$/.test(m[1]!)), 'actions pinned by SHA');
+    const script = stepScript(yaml, 'Check Production worker freshness');
+    const dir = await mkdtemp(join(tmpdir(), 'wk-fresh-'));
+    try {
+      await writeFile(join(dir, 'npx'), '#!/bin/sh\n[ -n "$FAKE_NPX_FAIL" ] && exit 1\nprintf \'%s\\n\' "$FAKE_LOGS"\n', {mode: 0o755});
+      const line = (ageSeconds: number, state = 'COMPLETED') => JSON.stringify({timestamp: Date.now() - ageSeconds * 1000, message: JSON.stringify({event: 'normal_worker_tick', state, pendingPayments: 0, oldestPendingAgeSeconds: 0})});
+      const run = (env: Record<string, string>) => spawnSync('bash', ['-c', script], {env: {PATH: `${dir}:${process.env.PATH ?? ''}`, ...env} as unknown as NodeJS.ProcessEnv, encoding: 'utf8'}).status;
+      const fresh = [line(180), line(120), line(60)].join('\n'), stale = [line(900), line(840)].join('\n');
+      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: fresh}), 0, 'fresh COMPLETED ticks => green');
+      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: stale}), 1, 'no success within 300 s => red');
+      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: [line(120, 'FAILED'), line(60, 'FAILED'), line(1, 'FAILED')].join('\n')}), 1, 'three non-success ticks => red');
+      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: ''}), 1, 'no tick lines => red');
+      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: fresh, FAKE_NPX_FAIL: '1'}), 1, 'unreadable logs => red');
+      assert.equal(run({VERCEL_TOKEN: '', MONITOR_MODE: '', FAKE_LOGS: fresh}), 1, 'missing token => red');
+      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: 'INTENTIONAL_STOP', FAKE_LOGS: stale}), 0, 'planned stop reports without alerting');
+    } finally { await rm(dir, {recursive: true, force: true}); }
+  });
+
   await check('19. Worker dispatch target/ref/workflow are fixed constants, never request-controlled', async () => {
     assert.equal(TARGET_REPO, 'ginisato-hash/zao-rental');
     assert.equal(TARGET_WORKFLOW, 'production-backup.yml');

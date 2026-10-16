@@ -1,0 +1,41 @@
+name: Production Worker Freshness
+# Independent outside check of the Production worker (Vercel cron /api/internal/worker-tick, every minute). Reads the
+# last 15 minutes of Production runtime logs for the tick lines and judges them with scripts/production-worker-freshness.ts
+# (no COMPLETED tick within 300 s, dormant while expected active, 3 consecutive non-success ticks, oldest pending
+# payment older than 900 s). It goes RED (GitHub's failed-workflow e-mail) on ALERT and also when the logs cannot be
+# read, so a broken monitor is never silent.
+# Reads only: the single secret VERCEL_MONITOR_TOKEN is used for `vercel logs`; no deploy, env, DB, R2 or provider call.
+# vars.PRODUCTION_WORKER_MONITOR_MODE=INTENTIONAL_STOP reports without alerting during a planned worker stop.
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  freshness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, verified upstream
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4, verified upstream
+        with:
+          node-version: '24.15.0'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check Production worker freshness
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_MONITOR_TOKEN }}
+          MONITOR_MODE: ${{ vars.PRODUCTION_WORKER_MONITOR_MODE }}
+        run: |
+          set -euo pipefail
+          if [ -z "$VERCEL_TOKEN" ]; then echo "::error::VERCEL_MONITOR_TOKEN is not set; the worker is NOT monitored."; exit 1; fi
+          mode=--expected-active
+          [ "$MONITOR_MODE" = "INTENTIONAL_STOP" ] && mode=--intentional-stop
+          npx --yes vercel@60.1.3 logs --project prj_ehUMOzM77em9DVnHJBJffncD5hg7 --scope zao-food-map \
+            --environment production --since 15m --json --limit 100 --query normal_worker_tick > ticks.jsonl \
+            || { echo "::error::Production runtime logs could not be read; the worker is NOT monitored."; exit 1; }
+          node --import tsx scripts/production-worker-freshness.ts "$mode" < ticks.jsonl | tee result.json \
+            || { echo "::error::Production worker freshness ALERT (see result above)."; exit 1; }

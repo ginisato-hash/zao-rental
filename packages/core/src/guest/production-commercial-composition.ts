@@ -19,9 +19,10 @@ import {RoutedSquareProductionGateway,RoutedSquareProductionRefundGateway,type P
 import {vercelProductionPeer} from './vercel-production-peer';
 import approvedGuestPolicy from '../../../../config/production/guest.p4-approved-policy.json';
 import type {HostingCompositionResult} from './production-hosting-composition';
+import type {R2Credential} from '../content/r2-media';
 
 export const COMMERCIAL_ACTIVATION_TOKEN='R5_COMMERCIAL_PRODUCTION_COMPOSITION';
-/** Explicit reviewed flag choice. Media/Avatar stay off: no Production R2 binding is part of this profile. */
+/** Default profile. Avatar is enabled only by its separate, complete Production binding below. */
 export const COMMERCIAL_FLAGS=Object.freeze({booking:true,guestRecovery:true,payment:true,media:false,avatar:false,staffOperations:true});
 /** Exactly the services composeProductionRuntime opens for COMMERCIAL_FLAGS; no other password is read. */
 export const COMMERCIAL_DB_SERVICES=Object.freeze(['auth','ledger','hold','transfer','pricing','recommendation','operations','guest','content_read','booking_access'] as const satisfies readonly ProductionService[]);
@@ -31,7 +32,7 @@ const STORES=['MOUNTAIN_BASE','ONSEN_BASE'] as const;
 const roleKey=(s:ProductionService)=>`PRODUCTION_DB_ROLE_${s.toUpperCase()}`;
 const passwordKey=(s:ProductionService)=>`PRODUCTION_DB_PASSWORD_${s.toUpperCase()}`;
 const locationKey=(s:typeof STORES[number])=>`PRODUCTION_SQUARE_LOCATION_${s}`;
-/** The complete, fixed set of environment names this module ever reads (never an env scan). */
+/** Fixed base-profile environment names (never an env scan). Optional avatar names are separate below. */
 export const COMMERCIAL_ALLOWLISTED_KEYS=Object.freeze([
  'ZAO_PRODUCTION_HOSTING_ACTIVATION','VERCEL_ENV','VERCEL_PROJECT_ID','VERCEL_GIT_COMMIT_SHA',
  'PRODUCTION_RELEASE_ID','PRODUCTION_PUBLIC_ORIGIN','PRODUCTION_DB_HOST','PRODUCTION_DB_NAME','PRODUCTION_GUEST_POLICY_SHA256',
@@ -42,6 +43,9 @@ export const COMMERCIAL_ALLOWLISTED_KEYS=Object.freeze([
 ]);
 /** Names whose values are secret. Used by the operator plan to list names only, never values. */
 export const COMMERCIAL_SECRET_KEYS=Object.freeze(['PRODUCTION_GUEST_KEY','PRODUCTION_STAFF_KEY','PRODUCTION_ACCESS_KEY','PRODUCTION_RECOVERY_KEY',...COMMERCIAL_DB_SERVICES.map(passwordKey),'PRODUCTION_SQUARE_ACCESS_TOKEN','PRODUCTION_RESEND_API_KEY']);
+export const COMMERCIAL_AVATAR_ACTIVATION_TOKEN='R67_PRIVATE_AVATAR_V1';
+/** Read only after opt-in; removing the activation leaves the existing booking profile intact. */
+export const COMMERCIAL_AVATAR_KEYS=Object.freeze(['PRODUCTION_DB_PASSWORD_AVATAR_READ','PRODUCTION_AVATAR_R2_ACCOUNT_ID','PRODUCTION_AVATAR_R2_BUCKET','PRODUCTION_AVATAR_R2_ACCESS_KEY_ID','PRODUCTION_AVATAR_R2_SECRET_ACCESS_KEY','PRODUCTION_AVATAR_R2_EXPIRES_AT'] as const);
 
 type Env=Readonly<Record<string,string|undefined>>;
 function read(env:Env){const out:Record<string,string>={};for(const k of COMMERCIAL_ALLOWLISTED_KEYS)if(typeof env[k]==='string')out[k]=env[k]!;return out;}
@@ -71,6 +75,7 @@ export type CommercialPlan=Readonly<{
  square:Readonly<{applicationId:string;merchantId:string;locations:Readonly<Record<typeof STORES[number],string>>;accessToken:string;expiresAt:Date|null}>;
  resendApiKey:string;
  publication:PublicationApproval|undefined;
+ avatarMedia:R2Credential|null;
 }>;
 
 /** Pure: validates the allowlisted environment and derives the reviewed configuration. No I/O,
@@ -111,13 +116,25 @@ export function commercialProductionPlan(env:Env,now=new Date()):CommercialPlan|
  const database:Partial<Record<ProductionService,ProductionDatabaseCredential>>={};
  for(const s of COMMERCIAL_DB_SERVICES){const password=e[passwordKey(s)];if(!password||password.length<16)fail('PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING');database[s]={provider:'NEON',environment:'PRODUCTION',host:e.PRODUCTION_DB_HOST!,port:5432,database:e.PRODUCTION_DB_NAME!,user:roles[s],password:password!,revoked:false};}
 
+ const avatarActivation=env.ZAO_PRODUCTION_AVATAR_ACTIVATION;
+ let avatarMedia:R2Credential|null=null;
+ if(avatarActivation!==undefined&&avatarActivation!==''){
+  if(avatarActivation!==COMMERCIAL_AVATAR_ACTIVATION_TOKEN)fail('PRODUCTION_COMMERCIAL_AVATAR_ACTIVATION_INVALID');
+  const a:Record<string,string>={};for(const k of COMMERCIAL_AVATAR_KEYS){const v=env[k];if(typeof v!=='string'||!v||v.length>4096)fail('PRODUCTION_COMMERCIAL_AVATAR_BINDING_MISSING');a[k]=v!;}
+  const expiresAt=new Date(a.PRODUCTION_AVATAR_R2_EXPIRES_AT!);
+  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(a.PRODUCTION_AVATAR_R2_EXPIRES_AT!)||!Number.isFinite(expiresAt.getTime())||expiresAt<=now)fail('PRODUCTION_COMMERCIAL_AVATAR_CREDENTIAL_EXPIRED');
+  for(const k of ['PRODUCTION_DB_PASSWORD_AVATAR_READ','PRODUCTION_AVATAR_R2_ACCESS_KEY_ID','PRODUCTION_AVATAR_R2_SECRET_ACCESS_KEY'])if(a[k]!.length<16)fail('PRODUCTION_COMMERCIAL_AVATAR_CREDENTIAL_INVALID');
+  avatarMedia={accountId:a.PRODUCTION_AVATAR_R2_ACCOUNT_ID!,bucket:a.PRODUCTION_AVATAR_R2_BUCKET!,accessKeyId:a.PRODUCTION_AVATAR_R2_ACCESS_KEY_ID!,secretAccessKey:a.PRODUCTION_AVATAR_R2_SECRET_ACCESS_KEY!,expiresAt,revoked:false};
+  database.avatar_read={provider:'NEON',environment:'PRODUCTION',host:e.PRODUCTION_DB_HOST!,port:5432,database:e.PRODUCTION_DB_NAME!,user:roles.avatar_read,password:a.PRODUCTION_DB_PASSWORD_AVATAR_READ!,revoked:false};
+ }
+
  const configuration=productionConfiguration({
   schemaVersion:1,capability:'ZAO_PRODUCTION_RUNTIME_V1',
   deployment:{provider:'VERCEL',environment:'production',projectId:e.VERCEL_PROJECT_ID,releaseId,origin},
   database:{provider:'NEON',environment:'production',host:e.PRODUCTION_DB_HOST,name:e.PRODUCTION_DB_NAME,roles},
-  flags:{...COMMERCIAL_FLAGS},guest,approvedGuestSha256:guestConfigurationHash(guest),
+  flags:{...COMMERCIAL_FLAGS,...(avatarMedia?{media:true,avatar:true}:{})},guest,approvedGuestSha256:guestConfigurationHash(guest),
   payment:{provider:'SQUARE',environment:'PRODUCTION',merchantId,locations,webhookNotificationUrl:e.PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL??null},
-  media:null,
+  media:avatarMedia?{provider:'CLOUDFLARE_R2',environment:'PRODUCTION',accountId:avatarMedia.accountId,bucket:avatarMedia.bucket,visibility:'PRIVATE',r2DevEnabled:false,publicDomains:[],credentialExpiresAt:avatarMedia.expiresAt.toISOString()}:null,
  },now);
  return Object.freeze({
   configuration,
@@ -125,6 +142,7 @@ export function commercialProductionPlan(env:Env,now=new Date()):CommercialPlan|
   square:Object.freeze({applicationId:applicationId!,merchantId:merchantId!,locations:Object.freeze(locations),accessToken:accessToken!,expiresAt}),
   resendApiKey:resendApiKey!,
   publication:parsePublicationApproval(e.PRODUCTION_PUBLICATION_APPROVAL),
+  avatarMedia,
  });
 }
 
@@ -144,6 +162,7 @@ export function commercialRuntimeInput(plan:CommercialPlan,identity:ExactProduct
   payment:{provider:'SQUARE',environment:'PRODUCTION',merchantId:plan.square.merchantId,applicationId:plan.square.applicationId,credentials:async()=>({environment:'PRODUCTION',merchantId:plan.square.merchantId,token:plan.square.accessToken,revoked:false}),gateway:new RoutedSquareProductionGateway(plan.square.merchantId,routes)},
   refunds:new RoutedSquareProductionRefundGateway(plan.square.merchantId,routes),
   notification:{environment:'PRODUCTION',providerId:'RESEND',credentials:async()=>({secret:plan.resendApiKey,revoked:false}),fetch},
+  ...(plan.avatarMedia?{media:{environment:'PRODUCTION' as const,permission:'OBJECT_READ' as const,credentials:async()=>({...plan.avatarMedia!})}}:{}),
   ...(plan.publication?{publication:plan.publication}:{}),
   audit:async()=>{},
  };

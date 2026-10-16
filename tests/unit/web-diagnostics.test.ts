@@ -96,3 +96,14 @@ test('F2: known built-in error prototypes retain their finite types',()=>{
  const cases:[Error,string][]=[[new Error(),'Error'],[new TypeError(),'TypeError'],[new ReferenceError(),'ReferenceError'],[new SyntaxError(),'SyntaxError'],[new RangeError(),'RangeError'],[new AggregateError([]),'AggregateError']];
  for(const [error,errorType] of cases)assert.equal(requestErrorRecord(error,{path:'/api/staff-users',method:'POST'},{routeType:'route'})!.errorType,errorType);
 });
+test('avatar fixture markers and route errors retain only fixed stages and enums',async()=>{
+ for(const stage of ['MODULE_READY','GET_ENTER','RETURN_200','RETURN_404','RETURN_OTHER'])assert.equal(safeWebDiagnostic('TEST_AVATAR_ROUTE '+stage),'TEST_AVATAR_ROUTE '+stage);
+ for(const suffix of ['RETURN_500 SYNTHETIC_PRIVATE','GET_ENTER cookie=private','RETURN_200\tprivate'])assert.equal(safeWebDiagnostic('TEST_AVATAR_ROUTE '+suffix),null);
+ const path='/avatar-media/'+randomUUID()+'/'+'a'.repeat(64),ctx={routeType:'route'};
+ const record=requestErrorRecord(Object.assign(new Error('Cannot find module SYNTHETIC_PRIVATE'),{code:'MODULE_NOT_FOUND'}),{method:'GET',path},ctx)!;
+ assert.deepEqual(record,{code:'TEST_REQUEST_ERROR',scope:'AVATAR_STAFF_MEDIA',routeType:'route',errorType:'Error',reason:'MODULE_NOT_FOUND',sqlState:null});
+ assert.equal(safeWebDiagnostic(JSON.stringify(record)),JSON.stringify(record));
+ for(const request of [{method:'POST',path},{method:'GET',path:path+'?private=value'},{method:'GET',path:'/guest-avatar-media/'+path}])assert.equal(requestErrorRecord(new Error(),request,ctx),null);
+ const response=await safeHttpResponseDiagnostic('AVATAR_STAFF_MEDIA',{status:()=>500,headers:()=>({'content-type':'text/html'}),text:async()=>'<p>Internal Server Error</p>SYNTHETIC_PRIVATE'});
+ assert.equal(response.framework,'FRAMEWORK_RUNTIME_ERROR');assert.ok(!JSON.stringify(response).includes('SYNTHETIC_PRIVATE'));
+});

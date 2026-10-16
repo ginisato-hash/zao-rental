@@ -6,6 +6,7 @@ export function safeWebDiagnostic(raw:string):string|null{
  // Colour/style escapes (Next dev colours its `⨯` prefix) are normalised away before any pattern is applied.
  const line=raw.replace(ANSI,'');
  if(/^AUTH_PIPELINE_CODE [A-Z0-9_]{1,80}$/.test(line))return line;
+ if(['TEST_AVATAR_ROUTE MODULE_READY','TEST_AVATAR_ROUTE GET_ENTER','TEST_AVATAR_ROUTE RETURN_200','TEST_AVATAR_ROUTE RETURN_404','TEST_AVATAR_ROUTE RETURN_OTHER'].includes(line))return line;
  const request=safeRequestErrorLine(line);if(request)return request;
  // Next dev server failures (compile / module / unhandled) as a fixed category only: the line text is never forwarded.
  const next=nextDevErrorCategory(line);if(next)return 'NEXT_DEV_ERROR '+next;
@@ -39,9 +40,9 @@ export function safeTestTransportFailure(error:unknown){
 /** The finite set of machine codes the staff-account route and its readers can return; anything else is UNLISTED. */
 export const STAFF_RESPONSE_CODES=new Set(['AUTHENTICATION_REQUIRED','BODY_TOO_LARGE','DUPLICATE_ACCOUNT','FORBIDDEN','INVALID_FILTER','INVALID_INPUT','INVALID_JSON','JSON_REQUIRED',
  'LEDGER_OPERATION_FAILED','METHOD_NOT_ALLOWED','NOT_FOUND','ORIGIN_REJECTED','SELF_ACCESS_CHANGE_FORBIDDEN','SESSION_CHANGED','STAFF_OPERATION_FAILED','STALE_STAFF_REVISION','STORE_SCOPE_REQUIRED']);
-export type ResponseDiagnosticStage='STAFF_CREATE';
+export type ResponseDiagnosticStage='STAFF_CREATE'|'AVATAR_STAFF_MEDIA';
 export async function safeHttpResponseDiagnostic(stage:ResponseDiagnosticStage,response:{status():number;headers():Record<string,string>;text():Promise<string>}){
- if(stage!=='STAFF_CREATE')throw new Error('DIAGNOSTIC_STAGE_REJECTED');
+ if(stage!=='STAFF_CREATE'&&stage!=='AVATAR_STAFF_MEDIA')throw new Error('DIAGNOSTIC_STAGE_REJECTED');
  const type=response.headers()['content-type']??'',kind=/application\/json/.test(type)?'JSON':/text\/html/.test(type)?'HTML':type?'OTHER':'NONE';let body='',unreadable=false;try{body=await response.text();}catch{unreadable=true;}
  let errorCode:string|null=unreadable?'UNREADABLE':null;if(kind==='JSON'&&!unreadable){try{const v=JSON.parse(body) as {error?:unknown};errorCode=typeof v?.error==='string'&&STAFF_RESPONSE_CODES.has(v.error)?v.error:v&&typeof v==='object'&&'error' in v?'UNLISTED':'NO_ERROR_FIELD';}catch{errorCode='UNPARSEABLE_JSON';}}
  const framework=kind!=='HTML'||unreadable?null:/Failed to compile|Module not found|Module build failed/.test(body)?'FRAMEWORK_COMPILE_ERROR':/__next_error__|Internal Server Error|Unhandled Runtime Error/.test(body)?'FRAMEWORK_RUNTIME_ERROR':'HTML_OTHER';
@@ -51,13 +52,14 @@ export async function safeHttpResponseDiagnostic(stage:ResponseDiagnosticStage,r
 /** Fixture-only classification of errors Next captures and passes to `onRequestError`. The probe verifies a
  * synthetic route throw, not coverage of all compile/module/startup failures. Type uses known prototypes;
  * message/code use own data properties. Emitted enums (including RUNTIME above) are observations, not root causes. */
-const REQUEST_SCOPES=new Set(['STAFF_CREATE','FIXTURE_PROBE']),ROUTE_TYPES=new Set(['render','route','action','proxy']);
+const REQUEST_SCOPES=new Set(['STAFF_CREATE','FIXTURE_PROBE','AVATAR_STAFF_MEDIA']),ROUTE_TYPES=new Set(['render','route','action','proxy']);
 const ERROR_TYPES=new Set(['Error','TypeError','ReferenceError','SyntaxError','RangeError','AggregateError','ChunkLoadError']);
 const ERROR_PROTOTYPES=new Map<object,string>([[Error.prototype,'Error'],[TypeError.prototype,'TypeError'],[ReferenceError.prototype,'ReferenceError'],[SyntaxError.prototype,'SyntaxError'],[RangeError.prototype,'RangeError'],[AggregateError.prototype,'AggregateError']]);
 const REASONS=new Set(['MODULE_NOT_FOUND','CHUNK_LOAD','FS_ENOENT','FS_EMFILE','NET_REFUSED','NET_RESET','TIMEOUT','SQLSTATE','OTHER']);
 export function requestErrorScope(method:string,path:string){
  if(method==='POST'&&/^\/api\/staff-users\/?(\?|$)/.test(path))return 'STAFF_CREATE';
  if(/^\/api\/test-diagnostic-probe\/?(\?|$)/.test(path))return 'FIXTURE_PROBE';
+ if(method==='GET'&&/^\/avatar-media\/[a-f0-9-]{36}\/[a-f0-9]{64}$/.test(path))return 'AVATAR_STAFF_MEDIA';
  return null;
 }
 export function requestErrorRecord(error:unknown,request:{path:string;method:string},context:{routeType:string}){

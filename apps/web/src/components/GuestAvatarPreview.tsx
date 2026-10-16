@@ -35,7 +35,7 @@ export function GuestAvatarPreview({profile,offer,direction,locale}:{profile:Ref
    <div className="fit-study-info">
 
     <fieldset className="fit-appearance"><legend>{ja?'表示カラー（参考）':'Illustration colour'}</legend><div>{[graphite,chalk].map((_,i)=><button type="button" key={i} aria-pressed={appearance===i} aria-label={(ja?'見た目 ':'Appearance ')+(i+1)+' · '+(i===0?'GRAPHITE':'CHALK')} onClick={()=>setAppearance(i)}><span className={'fit-swatch fit-swatch--'+i} aria-hidden="true"/><span>{i===0?'GRAPHITE':'CHALK'}</span><span aria-hidden="true">{appearance===i?'●':'○'}</span></button>)}</div></fieldset>
-    <p className="fit-study-note">{ja?(wear?'色と形の参考です。実際のウェアや着用時のフィットを示すものではありません。':'身長と板の長さを同じ縮尺で表示。体型・板の幅・実際の商品やフィットを示すものではありません。'):(wear?'A reference for colour and shape, not the actual garments or their fit.':'Your height and '+(study.sport==='SKI'?'ski':'snowboard')+' length use the same scale. Body shape, equipment width, actual products and fit are not represented.')}</p>
+    <p className="fit-study-note">{ja?(wear?'見た目の参考イラストです。実際のウェアの色・形・フィットを示すものではありません。':'身長と板の長さを同じ縮尺で表示。体型・板の幅・実際の商品やフィットを示すものではありません。'):(wear?'Illustration only. It does not show the actual garment colour, shape or fit.':'Your height and '+(study.sport==='SKI'?'ski':'snowboard')+' length use the same scale. Body shape, equipment width, actual products and fit are not represented.')}</p>
     <p className="fit-study-footnote">{wear?WEAR_COLOR_NOTICE[locale]:(ja?'表示のみの切替です。サイズ・料金は変わりません。':'Illustration only. Sizing and pricing stay the same.')}</p>
    </div>
   </div>

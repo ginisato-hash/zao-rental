@@ -65,7 +65,7 @@ try{
       proof.push({locale,width,sport,direction:key,lengthCm:direction.lengthCm,expectedRatio:direction.lengthCm/height,...m,stageHeight});
      }
     }
-    else{await expect(panel.locator('.fit-study-footnote')).toHaveText(WEAR_COLOR_NOTICE[locale]);await expect(panel.locator('.fit-study-measures')).toHaveCount(0);}
+    else{await expect(panel.locator('.fit-study-footnote')).toHaveText(WEAR_COLOR_NOTICE[locale]);await expect(panel.locator('.fit-study-note')).toHaveText(t('見た目の参考イラストです。実際のウェアの色・形・フィットを示すものではありません。','Illustration only. It does not show the actual garment colour, shape or fit.'));await expect(panel.locator('.fit-study-measures')).toHaveCount(0);}
    }
    assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await p.locator('.fit-study').nth(1).screenshot({path:evidence+'/'+locale+'-snowboard-'+width+'.png'});proof.push({locale,width,mixedMembers:3,ratioAndFloor:true,overflow:false});
   }

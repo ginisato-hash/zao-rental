@@ -69,3 +69,26 @@ test('fixture onRequestError record: STAFF_CREATE/probe scope only, finite enums
  const base={code:'TEST_REQUEST_ERROR',scope:'STAFF_CREATE',routeType:'route',errorType:'Error',reason:'OTHER',sqlState:null};
  for(const bad of [{...base,message:'SYNTHETIC_PRIVATE'},{...base,scope:'SYNTHETIC_PRIVATE'},{...base,reason:'SYNTHETIC_PRIVATE'},{...base,errorType:'SyntheticPrivate'},{...base,sqlState:'SYNTHETIC_PRIVATE'},{...base,sqlState:'OTHER'}])assert.equal(safeWebDiagnostic(JSON.stringify(bad)),null);
 });
+test('F1: request-error forwarding rejects a duplicate code with an unknown parsed value',()=>{
+ const line=JSON.stringify({code:'TEST_REQUEST_ERROR',scope:'STAFF_CREATE',routeType:'route',errorType:'Error',reason:'OTHER',sqlState:null});
+ assert.equal(safeWebDiagnostic(line),line);
+ assert.equal(safeWebDiagnostic(line.slice(0,-1)+',"code":"SYNTHETIC_PRIVATE"}'),null);
+});
+test('F2: request-error type classification never invokes constructor getters',()=>{
+ for(const error of [new Error('SYNTHETIC_PRIVATE'),new (class extends Error{})('SYNTHETIC_PRIVATE')]){
+  let calls=0;Object.defineProperty(error,'constructor',{get(){calls++;return Error;}});
+  const rec=requestErrorRecord(error,{path:'/api/staff-users',method:'POST'},{routeType:'route'})!;
+  assert.equal(calls,0);assert.equal(rec.errorType,Object.getPrototypeOf(error)===Error.prototype?'Error':'OTHER');assert.ok(!JSON.stringify(rec).includes('PRIVATE'));
+ }
+});
+test('F2: request-error classification never invokes name, message or code getters',()=>{
+ let calls=0;const error=new Error(),constructor={get name(){calls++;return 'Error';}};
+ Object.defineProperty(error,'constructor',{value:constructor});
+ for(const key of ['name','message','code'])Object.defineProperty(error,key,{get(){calls++;throw new Error('SYNTHETIC_PRIVATE');}});
+ assert.deepEqual(requestErrorRecord(error,{path:'/api/staff-users',method:'POST'},{routeType:'route'}),{code:'TEST_REQUEST_ERROR',scope:'STAFF_CREATE',routeType:'route',errorType:'Error',reason:'OTHER',sqlState:null});
+ assert.equal(calls,0);
+});
+test('F2: known built-in error prototypes retain their finite types',()=>{
+ const cases:[Error,string][]=[[new Error(),'Error'],[new TypeError(),'TypeError'],[new ReferenceError(),'ReferenceError'],[new SyntaxError(),'SyntaxError'],[new RangeError(),'RangeError'],[new AggregateError([]),'AggregateError']];
+ for(const [error,errorType] of cases)assert.equal(requestErrorRecord(error,{path:'/api/staff-users',method:'POST'},{routeType:'route'})!.errorType,errorType);
+});

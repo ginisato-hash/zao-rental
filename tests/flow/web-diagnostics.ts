@@ -48,12 +48,12 @@ export async function safeHttpResponseDiagnostic(stage:ResponseDiagnosticStage,r
  return {code:'TEST_HTTP_RESPONSE_DIAGNOSTIC',stage,status:response.status(),contentKind:kind,errorCode,framework};
 }
 
-/** Fixture-only `onRequestError` classification. Next calls it only for errors that escape a route handler (module
- * evaluation, compilation, uncaught throws); the staff route itself catches everything it can. Inputs are inspected
- * through own data properties only; the emitted record holds nothing but these finite enums. Pattern names are
- * observations, not root causes. */
+/** Fixture-only classification of errors Next captures and passes to `onRequestError`. The probe verifies a
+ * synthetic route throw, not coverage of all compile/module/startup failures. Type uses known prototypes;
+ * message/code use own data properties. Emitted enums (including RUNTIME above) are observations, not root causes. */
 const REQUEST_SCOPES=new Set(['STAFF_CREATE','FIXTURE_PROBE']),ROUTE_TYPES=new Set(['render','route','action','proxy']);
 const ERROR_TYPES=new Set(['Error','TypeError','ReferenceError','SyntaxError','RangeError','AggregateError','ChunkLoadError']);
+const ERROR_PROTOTYPES=new Map<object,string>([[Error.prototype,'Error'],[TypeError.prototype,'TypeError'],[ReferenceError.prototype,'ReferenceError'],[SyntaxError.prototype,'SyntaxError'],[RangeError.prototype,'RangeError'],[AggregateError.prototype,'AggregateError']]);
 const REASONS=new Set(['MODULE_NOT_FOUND','CHUNK_LOAD','FS_ENOENT','FS_EMFILE','NET_REFUSED','NET_RESET','TIMEOUT','SQLSTATE','OTHER']);
 export function requestErrorScope(method:string,path:string){
  if(method==='POST'&&/^\/api\/staff-users\/?(\?|$)/.test(path))return 'STAFF_CREATE';
@@ -63,7 +63,7 @@ export function requestErrorScope(method:string,path:string){
 export function requestErrorRecord(error:unknown,request:{path:string;method:string},context:{routeType:string}){
  const scope=requestErrorScope(request.method,request.path);if(!scope)return null;
  const own=(k:string)=>{try{const d=error&&typeof error==='object'?Object.getOwnPropertyDescriptor(error,k):undefined;return d&&'value' in d?d.value:undefined;}catch{return undefined;}};
- let name='OTHER';try{const n=error instanceof Error?error.constructor?.name:undefined;if(typeof n==='string'&&ERROR_TYPES.has(n))name=n;}catch{/* hostile */}
+ let name='OTHER';try{if(error&&typeof error==='object')name=ERROR_PROTOTYPES.get(Object.getPrototypeOf(error))??'OTHER';}catch{/* hostile */}
  const code=own('code'),message=own('message'),text=typeof message==='string'?message:'';
  const sqlState=typeof code==='string'&&categories.has(code)&&code!=='OTHER'?code:null;
  const reason=sqlState?'SQLSTATE':code==='MODULE_NOT_FOUND'||/Cannot find module|Module not found/.test(text)?'MODULE_NOT_FOUND':name==='ChunkLoadError'||/Loading chunk .* failed/.test(text)?'CHUNK_LOAD'
@@ -72,7 +72,7 @@ export function requestErrorRecord(error:unknown,request:{path:string;method:str
 }
 function safeRequestErrorLine(line:string){
  if(!line.startsWith('{"code":"TEST_REQUEST_ERROR"'))return null;
- try{const v=JSON.parse(line);if(!v||typeof v!=='object'||Object.keys(v).sort().join()!=='code,errorType,reason,routeType,scope,sqlState')return null;
+ try{const v=JSON.parse(line);if(!v||typeof v!=='object'||v.code!=='TEST_REQUEST_ERROR'||Object.keys(v).sort().join()!=='code,errorType,reason,routeType,scope,sqlState')return null;
   if(!REQUEST_SCOPES.has(v.scope)||!(ROUTE_TYPES.has(v.routeType)||v.routeType==='OTHER')||!(ERROR_TYPES.has(v.errorType)||v.errorType==='OTHER')||!REASONS.has(v.reason)||!(v.sqlState===null||(categories.has(v.sqlState)&&v.sqlState!=='OTHER')))return null;
-  return JSON.stringify({code:v.code,scope:v.scope,routeType:v.routeType,errorType:v.errorType,reason:v.reason,sqlState:v.sqlState});}catch{return null;}
+  return JSON.stringify({code:'TEST_REQUEST_ERROR',scope:v.scope,routeType:v.routeType,errorType:v.errorType,reason:v.reason,sqlState:v.sqlState});}catch{return null;}
 }

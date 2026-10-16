@@ -55,7 +55,7 @@
     "test:custody-ui": "node --import tsx tests/custody/normal-ui.ts",
     "test:late-pickup": "node --import tsx tests/custody/late-pickup.ts",
     "test:staff-home-ui": "node --import tsx tests/staff/home-ui.ts",
-    "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-integrated.ts && node --experimental-test-module-mocks --import tsx tests/public/prepare-payment.ts",
+    "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-malformed.ts && node --import tsx tests/public/guest-integrated.ts && node --experimental-test-module-mocks --import tsx tests/public/prepare-payment.ts",
     "test:public-content": "node --import tsx tests/public/content-postgres.ts",
     "test:human-ui": "node --import tsx tests/public/human-ui.ts",
     "test:public-ui": "node --import tsx tests/public/normal-ui.ts && node --import tsx tests/public/content-ui.ts",

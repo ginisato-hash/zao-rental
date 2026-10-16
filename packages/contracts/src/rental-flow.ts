@@ -1,7 +1,8 @@
 import {createHash} from 'node:crypto';
 import {canonical,normalizePeriod,type HoldConditions} from './hold';
 import type {StoreId} from './ledger';
-export class FlowError extends Error{constructor(public code:string,public status=409){super(code);}}
+import {brandContractError} from './contract-error';
+export class FlowError extends Error{constructor(public code:string,public status=409){super(code);brandContractError(this);}}
 export const flowPermissions=['BOOKING_VIEW','BOOKING_CREATE','RENTAL_CHECKOUT','RENTAL_RETURN'] as const;
 export type FlowPermission=typeof flowPermissions[number];
 export const flowHash=(value:unknown)=>createHash('sha256').update(canonical(value)).digest('hex');

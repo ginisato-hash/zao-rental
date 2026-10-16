@@ -1,6 +1,7 @@
 import Ajv from 'ajv';
 import schema from './hold-input.schema.json';
 import type {StoreId} from './ledger';
+import {brandContractError} from './contract-error';
 export const HOLD_TTL_SECONDS=600; // Owner-approved development default; no production activation.
 export const OCCUPANCY_POLICY='WHOLE_TOKYO_DATE_V1' as const;
 export type Period={startDate:string;endDate:string;slot:'AM'|'PM'|'DAY'|'MULTIDAY';startAt?:'08:30'|'13:00';returnBy?:'12:00'|'17:00'};
@@ -35,7 +36,7 @@ export type PromiseVariant={id:string;family:string;age:string;tier:string;model
 // One decision shared by advisory pricing and the real all-period allocator.
 export function variantMatches(m:HoldMember,item:HoldItem,v:PromiseVariant|undefined){return !!v&&v.family===item.family&&v.age===m.age&&tierMatches(m,item,v.tier)&&(!isWear(item.family)||!!v.compatible_sports?.includes(memberSport(m)))&&(!item.modelPromise||(v.id===item.modelPromise.variantId&&v.model_id===item.modelPromise.modelId&&v.catalog_season===item.modelPromise.season));}
 
-export class HoldError extends Error{constructor(public code:string,public status=422){super(code);}}
+export class HoldError extends Error{constructor(public code:string,public status=422){super(code);brandContractError(this);}}
 const validate=new Ajv({allErrors:false}).compile(schema);
 export function parseConditions(value:unknown):HoldConditions {
  if(!validate(value))throw new HoldError('INVALID_CONDITIONS');

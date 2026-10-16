@@ -38,3 +38,34 @@ Preserved local log SHA-256:
 Exact new-head independent review and a new natural CI run are required before
 merge. Historical staff-creation HTTP 500 remains root-cause-unproven; this
 separate fixture correction does not resolve or explain it.
+
+## Commercial configuration status display
+
+During the protected Production operations review on the accepted `1891fbec`
+release, the authenticated readiness panel displayed the payment adapter as
+unavailable. `ProductionRuntime.safeStatus()` already emits
+`CONFIGURED_COMMERCIAL`; the readiness response allowlist and staff label omitted
+that safe enum. The read-only launch gate also treated it as an unknown, blocked
+state. This observation is not evidence of a provider or payment failure.
+
+The response now preserves that enum, the staff label reads `本番設定済み`, and
+the launch gate maps it to `PENDING`, just as it maps `CONFIGURED`. Configuration
+alone must not claim provider acceptance or activate Production. Public readiness,
+authorization, unknown-value filtering and payment execution remain unchanged.
+
+Both failures were reproduced before their respective corrections. The readiness
+target suite passes 19 tests; the launch-gate fixture passes 11 checks, including
+commercial configuration, unknown state, independent webhook and no activation.
+The existing production-runtime fixture also passes with zero actual provider
+calls. Targeted ESLint, secret-pattern scan, typecheck and build pass.
+
+Preserved local log SHA-256:
+
+- Readiness RED: `d24ca324ed10a3cac201047d4f246d34d7c774541d8d1cf14db494493ee497fa`
+- Readiness GREEN: `1ecda1b485e01b3726dc6f00fc2910bf8d23e774ed525c51f4d259c21e94962e`
+- Launch gate RED: `5f3dc47f290daf9f2fb497de014414c1d56f58ce143fe584ea9defadf013ea61`
+- Launch gate GREEN: `a6d0fd97dae12561e776f5893bd00207e562a0d2ccc119450f647ec6aec265dd`
+
+This meaningful correction requires review and a new natural CI for the new
+tree. It does not reuse a previous head's CI result or alter the historical
+staff-creation HTTP 500 assessment.

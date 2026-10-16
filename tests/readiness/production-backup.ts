@@ -58,7 +58,7 @@ case "$1" in
       */actions/runs/*) printf '%s\\n' "$FAKE_CREATED" ;;
       *) exit 99 ;;
     esac ;;
-  run) printf '%s\\n' "$FAKE_RUNS" ;;
+  run) if [ -n "$FAKE_RUN_EVENT" ]; then case " $* " in *" --event $FAKE_RUN_EVENT "*) ;; *) exit 98 ;; esac; fi; printf '%s\\n' "$FAKE_RUNS" ;;
   *) exit 99 ;;
 esac
 `, {mode: 0o755});
@@ -441,7 +441,7 @@ async function main(): Promise<void> {
     assert.match(yaml, /environment: production-backup/);
   });
 
-  await check('S4. freshness counts only runs whose backup STEP succeeded (skipped-gate runs are not backups) and goes red on missing/stale/disabled', async () => {
+  await check('S4. freshness counts only runs whose backup STEP succeeded (skipped-gate runs are not backups) and goes red on missing/stale/disabled, for either selected source', async () => {
     const yaml = readWorkflow('production-backup-freshness.yml');
     assert.match(yaml, /permissions:\n  actions: read\n/);
     assert.ok(!/secrets\./.test(yaml) && !/environment:/.test(yaml), 'no secret, no environment');
@@ -450,12 +450,16 @@ async function main(): Promise<void> {
     try {
       const script = stepScript(yaml, 'Check scheduled backup freshness');
       const NOW = '2026-09-21T11:47:00.000Z';
-      const run = (source: string, state: string, runs: Array<[number, string]>, okIds: number[]) =>
-        runShell(script, {FRESH_SOURCE: source, GH_TOKEN: 'x', REPO: 'o/r', FAKE_NOW_EPOCH: epoch(NOW), FAKE_STATE: state,
+      const run = (source: string, state: string, runs: Array<[number, string]>, okIds: number[], event = source === 'CLOUDFLARE_DISPATCH' ? 'workflow_dispatch' : 'schedule') =>
+        runShell(script, {FRESH_SOURCE: source, GH_TOKEN: 'x', REPO: 'o/r', FAKE_NOW_EPOCH: epoch(NOW), FAKE_STATE: state, FAKE_RUN_EVENT: event,
           FAKE_RUNS: runs.map(([id, t]) => `${id} ${t}`).join('\n'), FAKE_OK_IDS: okIds.join(' ')}, shims);
       const runs: Array<[number, string]> = [[4, '2026-09-21T11:24:00Z'], [3, '2026-09-21T10:23:00Z'], [2, '2026-09-21T09:25:00Z'], [1, '2026-09-21T08:22:00Z']];
-      assert.equal(run('', 'active', [], []).code, 0, 'inert when GitHub is not the source');
-      assert.equal(run('CLOUDFLARE_DISPATCH', 'disabled_inactivity', [], []).code, 0, 'inert for the Cloudflare source');
+      assert.equal(run('', 'active', [], []).code, 0, 'inert when no scheduler source is selected');
+      assert.equal(run('CLOUDFLARE_DISPATCH', 'active', runs, [1, 2, 3, 4]).code, 0, 'Cloudflare source: fresh dispatched backups + daily slot => green');
+      assert.equal(run('CLOUDFLARE_DISPATCH', 'active', [], []).code, 1, 'Cloudflare source: no dispatched backup => red');
+      assert.equal(run('CLOUDFLARE_DISPATCH', 'active', [[2, '2026-09-21T09:25:00Z'], [1, '2026-09-21T08:22:00Z']], [1, 2]).code, 1, 'Cloudflare source: newest dispatched backup older than 100 minutes => red');
+      assert.equal(run('CLOUDFLARE_DISPATCH', 'active', runs, [1, 2, 3, 4], 'schedule').code, 98, 'Cloudflare source reads workflow_dispatch runs, never schedule runs');
+      assert.equal(run('GITHUB_SCHEDULE', 'active', runs, [1, 2, 3, 4], 'workflow_dispatch').code, 98, 'GitHub source reads schedule runs, never workflow_dispatch runs');
       assert.equal(run('GITHUB_SCHEDULE', 'active', runs, [1, 2, 3, 4]).code, 0, 'fresh + daily slot present, all steps succeeded => green');
       assert.equal(run('GITHUB_SCHEDULE', 'disabled_inactivity', runs, [1, 2, 3, 4]).code, 1, 'auto-disabled workflow => red');
       assert.equal(run('GITHUB_SCHEDULE', 'active', [], []).code, 1, 'no run at all => red');

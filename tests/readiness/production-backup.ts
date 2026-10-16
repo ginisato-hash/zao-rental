@@ -458,6 +458,8 @@ async function main(): Promise<void> {
       assert.equal(run('CLOUDFLARE_DISPATCH', 'active', runs, [1, 2, 3, 4]).code, 0, 'Cloudflare source: fresh dispatched backups + daily slot => green');
       assert.equal(run('CLOUDFLARE_DISPATCH', 'active', [], []).code, 1, 'Cloudflare source: no dispatched backup => red');
       assert.equal(run('CLOUDFLARE_DISPATCH', 'active', [[2, '2026-09-21T09:25:00Z'], [1, '2026-09-21T08:22:00Z']], [1, 2]).code, 1, 'Cloudflare source: newest dispatched backup older than 100 minutes => red');
+      assert.equal(run('CLOUDFLARE_DISPATCH', 'disabled_inactivity', runs, [1, 2, 3, 4]).code, 1, 'Cloudflare source: disabled backup workflow => red');
+      assert.equal(run('CLOUDFLARE_DISPATCH', 'active', runs, [3, 4]).code, 1, 'Cloudflare source: UTC-hour-09 dispatched run made no backup => red');
       assert.equal(run('CLOUDFLARE_DISPATCH', 'active', runs, [1, 2, 3, 4], 'schedule').code, 98, 'Cloudflare source reads workflow_dispatch runs, never schedule runs');
       assert.equal(run('GITHUB_SCHEDULE', 'active', runs, [1, 2, 3, 4], 'workflow_dispatch').code, 98, 'GitHub source reads schedule runs, never workflow_dispatch runs');
       assert.equal(run('GITHUB_SCHEDULE', 'active', runs, [1, 2, 3, 4]).code, 0, 'fresh + daily slot present, all steps succeeded => green');
@@ -478,24 +480,36 @@ async function main(): Promise<void> {
   await check('S5. worker freshness reads only Production runtime logs with one secret and goes red on ALERT, unreadable logs or a missing token', async () => {
     const yaml = readWorkflow('production-worker-freshness.yml');
     assert.match(yaml, /\npermissions:\n  contents: read\n/);
-    assert.deepEqual([...new Set([...yaml.matchAll(/secrets\.(\w+)/g)].map(m => m[1]))], ['VERCEL_MONITOR_TOKEN']);
-    assert.ok(!/environment:/.test(yaml) && !/\n(\s*)(push|pull_request|pull_request_target):/.test(yaml));
+    assert.match(yaml, /\n    environment: production-monitor\n/);
+    assert.deepEqual([...yaml.matchAll(/secrets\.(\w+)/g)].map(m => m[1]), ['VERCEL_MONITOR_TOKEN'], 'one secret, referenced once');
+    assert.ok(!/\bnpx\b/.test(yaml), 'no unlocked npx resolution');
+    assert.ok(!/\n(\s*)(push|pull_request|pull_request_target):/.test(yaml));
     assert.ok(/\n  schedule:\n    - cron: /.test(yaml));
     assert.ok([...yaml.matchAll(/uses: (\S+)/g)].every(m => /@[0-9a-f]{40}$/.test(m[1]!)), 'actions pinned by SHA');
+    const install = stepScript(yaml, 'Install (no token present)');
+    assert.ok(install.split('\n').filter(Boolean).every(l => l.includes('--ignore-scripts')));
+    assert.ok(!/MONITOR_TOKEN|VERCEL_TOKEN/.test(yaml.slice(yaml.indexOf('- name: Install'), yaml.indexOf('- name: Check Production worker freshness'))), 'install step has no token');
+    const lock = JSON.parse(readFileSync('tools/vercel-cli/package-lock.json', 'utf8')) as {packages: Record<string, {version?: string; integrity?: string}>};
+    assert.equal(lock.packages['node_modules/vercel']?.version, '60.1.3');
+    assert.ok(Object.entries(lock.packages).filter(([k]) => k).every(([, v]) => v.integrity), 'every locked package has integrity');
     const script = stepScript(yaml, 'Check Production worker freshness');
     const dir = await mkdtemp(join(tmpdir(), 'wk-fresh-'));
     try {
-      await writeFile(join(dir, 'npx'), '#!/bin/sh\n[ -n "$FAKE_NPX_FAIL" ] && exit 1\nprintf \'%s\\n\' "$FAKE_LOGS"\n', {mode: 0o755});
+      const expected = 'logs --project prj_ehUMOzM77em9DVnHJBJffncD5hg7 --scope zao-food-map --environment production --since 15m --json --limit 100 --query normal_worker_tick';
+      await writeFile(join(dir, 'vercel'), `#!/bin/sh\n[ "$*" = "${expected}" ] || exit 97\n[ "$VERCEL_TOKEN" = synthetic ] || exit 96\n[ -n "$FAKE_FAIL" ] && exit 1\nprintf '%s\\n' "$FAKE_LOGS"\n`, {mode: 0o755});
       const line = (ageSeconds: number, state = 'COMPLETED') => JSON.stringify({timestamp: Date.now() - ageSeconds * 1000, message: JSON.stringify({event: 'normal_worker_tick', state, pendingPayments: 0, oldestPendingAgeSeconds: 0})});
-      const run = (env: Record<string, string>) => spawnSync('bash', ['-c', script], {env: {PATH: `${dir}:${process.env.PATH ?? ''}`, ...env} as unknown as NodeJS.ProcessEnv, encoding: 'utf8'}).status;
+      const run = (env: Record<string, string>) => spawnSync('bash', ['-c', script], {env: {PATH: process.env.PATH ?? '', VERCEL_BIN: join(dir, 'vercel'), MONITOR_MODE: '', MONITOR_TOKEN: 'synthetic', ...env} as unknown as NodeJS.ProcessEnv, encoding: 'utf8'});
       const fresh = [line(180), line(120), line(60)].join('\n'), stale = [line(900), line(840)].join('\n');
-      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: fresh}), 0, 'fresh COMPLETED ticks => green');
-      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: stale}), 1, 'no success within 300 s => red');
-      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: [line(120, 'FAILED'), line(60, 'FAILED'), line(1, 'FAILED')].join('\n')}), 1, 'three non-success ticks => red');
-      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: ''}), 1, 'no tick lines => red');
-      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: '', FAKE_LOGS: fresh, FAKE_NPX_FAIL: '1'}), 1, 'unreadable logs => red');
-      assert.equal(run({VERCEL_TOKEN: '', MONITOR_MODE: '', FAKE_LOGS: fresh}), 1, 'missing token => red');
-      assert.equal(run({VERCEL_TOKEN: 'synthetic', MONITOR_MODE: 'INTENTIONAL_STOP', FAKE_LOGS: stale}), 0, 'planned stop reports without alerting');
+      assert.equal(run({FAKE_LOGS: fresh}).status, 0, 'fresh COMPLETED ticks => green');
+      assert.equal(run({FAKE_LOGS: stale}).status, 1, 'no success within 300 s => red');
+      assert.equal(run({FAKE_LOGS: [line(120, 'FAILED'), line(60, 'FAILED'), line(1, 'FAILED')].join('\n')}).status, 1, 'three non-success ticks => red');
+      assert.equal(run({FAKE_LOGS: ''}).status, 1, 'no tick lines => red');
+      assert.equal(run({FAKE_LOGS: fresh, FAKE_FAIL: '1'}).status, 1, 'unreadable logs => red');
+      assert.equal(run({FAKE_LOGS: fresh, MONITOR_TOKEN: ''}).status, 1, 'missing token => red');
+      assert.equal(run({FAKE_LOGS: fresh, MONITOR_TOKEN: 'other'}).status, 1, 'the CLI receives exactly the monitor token');
+      const stop = run({FAKE_LOGS: stale, MONITOR_MODE: 'INTENTIONAL_STOP'});
+      assert.equal(stop.status, 0, 'planned stop reports without alerting');
+      assert.match(stop.stdout, /::warning::PRODUCTION_WORKER_MONITOR_MODE=INTENTIONAL_STOP/);
     } finally { await rm(dir, {recursive: true, force: true}); }
   });
 

@@ -1,0 +1,8 @@
+{
+  "name": "zao-rental-monitor-vercel-cli",
+  "private": true,
+  "description": "Lockfile-pinned Vercel CLI for the read-only Production worker freshness monitor.",
+  "dependencies": {
+    "vercel": "60.1.3"
+  }
+}

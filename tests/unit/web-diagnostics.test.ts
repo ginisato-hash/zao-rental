@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {staffOperationDiagnostic} from '../../apps/web/src/lib/staff-operation-diagnostic';
 import {safeWebDiagnostic,webDiagnosticForwarder,safeTestTransportFailure,safeHttpResponseDiagnostic,requestErrorRecord} from '../flow/web-diagnostics';
+import {GET as probeGet,HEAD as probeHead} from '../flow-app/src/app/api/test-diagnostic-probe/route';
+test('fixture probe HEAD is harmless while the explicit GET still throws',async()=>{
+ const response=probeHead();assert.equal(response.status,204);assert.equal(await response.text(),'');assert.throws(probeGet,TypeError);
+});
 test('CI diagnostic forwarding preserves only the exact emitted safe schema and historical auth code',()=>{
  const value=staffOperationDiagnostic({code:'23514'},'WRITE'),line=JSON.stringify(value);assert.equal(safeWebDiagnostic(line),line);assert.equal(safeWebDiagnostic('AUTH_PIPELINE_CODE LOGIN_REJECTED'),'AUTH_PIPELINE_CODE LOGIN_REJECTED');
  for(const bad of [{...value,email:'synthetic@example.invalid'},{...value,phase:'SYNTHETIC_PRIVATE'},{...value,category:'SYNTHETIC_PRIVATE'},{...value,correlationId:'client-selected'},{...value,code:'OTHER'},{...value,stack:'SYNTHETIC_PRIVATE'},null,[]])assert.equal(safeWebDiagnostic(JSON.stringify(bad)),null);

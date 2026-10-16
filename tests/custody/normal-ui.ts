@@ -13,6 +13,7 @@ import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority'
 import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconcile-protection';
 import {WearService} from '../../packages/core/src/wear/service';
 import {registerWear} from '../wear/fixture';
+import {safeHttpResponseDiagnostic} from '../flow/web-diagnostics';
 let stage='startup',count=0,failed=false;const browser=await chromium.launch(),password=randomBytes(24).toString('base64url');let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,page:Page|undefined;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 /** The reconcile click sends one POST /api/bookings/<uuid>/payment. Wait for that exact response first (same app origin, POST, UUID path; up to 60 s), check HTTP 200 and a
@@ -32,10 +33,18 @@ try{
  app=await startFlowApp();await seedRecommendation(app.db.pool);await bootstrapDevelopmentAdmin(app.db.pool,{email:'custody-ui-root@example.invalid',displayName:'SYNTHETIC Root',password});const {origin}=app;
  async function clock(time:string){await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${time}'::timestamptz$$`);}await clock('2035-01-01T01:00:00Z');
  for(let n=0;n<100;n++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(n===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
+ // Diagnostic path proof (fixture only): an uncaught synthetic error reaches the test log solely as the fixed-enum
+ // TEST_REQUEST_ERROR record via onRequestError -> child stderr -> launcher allowlist; its private text never does.
+ {const seen:string[]=[],original=console.error;console.error=(...args:unknown[])=>{seen.push(args.map(String).join(' '));original(...args);};
+  try{const probe=await fetch(origin+'/api/test-diagnostic-probe');assert.equal(probe.status,500);await probe.arrayBuffer();
+   const want=JSON.stringify({code:'TEST_REQUEST_ERROR',scope:'FIXTURE_PROBE',routeType:'route',errorType:'TypeError',reason:'OTHER',sqlState:null});
+   for(let n=0;n<50&&!seen.includes(want);n++)await new Promise(r=>setTimeout(r,100));
+   assert.ok(seen.includes(want),'request-error record reached the test log');assert.ok(!seen.join('\n').includes('SYNTHETIC_PRIVATE'),'no private probe text forwarded');}
+  finally{console.error=original;}}
  const context=await browser.newContext({baseURL:origin,viewport:{width:1280,height:960}});context.setDefaultTimeout(15000);await context.addInitScript('window.__name = (fn) => fn');page=await context.newPage();const p=page;
  async function login(email:string){await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(origin+'/staff/ledger');}
  await login('custody-ui-root@example.invalid');const perms={BOOKING_VIEW:true,BOOKING_CREATE:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,INVENTORY_VIEW:true,INVENTORY_EDIT:true,HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true,TRANSFER_VIEW:true,TRANSFER_PLAN:true,TRANSFER_DISPATCH:true,TRANSFER_RECEIVE:true};
- const created=await context.request.post('/api/staff-users',{headers:{origin},data:{email:'custody-ui-actor@example.invalid',password,displayName:'SYNTHETIC Custody Staff',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:perms}});assert.equal(created.status(),201);
+ const created=await context.request.post('/api/staff-users',{headers:{origin},data:{email:'custody-ui-actor@example.invalid',password,displayName:'SYNTHETIC Custody Staff',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:perms}});if(created.status()!==201)console.error(JSON.stringify(await safeHttpResponseDiagnostic('STAFF_CREATE',created)));assert.equal(created.status(),201);
  const root=await browser.newContext({baseURL:origin});const rootLogin=await root.request.post('/api/auth/sign-in/email',{headers:{origin},data:{email:'custody-ui-root@example.invalid',password}});assert.equal(rootLogin.status(),200);
  await p.goto('/staff/logout');await p.getByRole('button',{name:'ログアウトする',exact:true}).click();await p.waitForURL(origin+'/staff/login');await login('custody-ui-actor@example.invalid');
  const subject=(await app.db.pool.query("SELECT id FROM staff_users WHERE email='custody-ui-actor@example.invalid'")).rows[0].id,sessionId=(await app.db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[subject])).rows[0].id,identity={subject,sessionId},principal=(await loadStaff(app.db.pool,subject))!;

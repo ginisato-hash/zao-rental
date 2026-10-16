@@ -1,0 +1,90 @@
+{
+  "status": "LOCAL_DESIGN_ACCEPTANCE_PASS",
+  "base": "1891fbecb80ad5b7bb3a21f4350519a57c9fb80d",
+  "referenceMeasurements": 48,
+  "publicPageConditions": 48,
+  "publicAxeViolations": 0,
+  "publicOverflow": 0,
+  "unitInitial": {
+    "total": 1155,
+    "passed": 1139,
+    "failed": 16,
+    "causes": "15 sandbox permission failures; one tax-copy regression."
+  },
+  "unitCorrections": {
+    "files": 4,
+    "passed": 41,
+    "failed": 0,
+    "reason": "Restored required tax wording; reran affected files with loopback/process permissions."
+  },
+  "lint": "PASS",
+  "typecheck": "PASS",
+  "build": "PASS",
+  "secretPatternScan": "PASS",
+  "privateArtworkRegression": "PASS",
+  "performance": [
+    {
+      "name": "home-mobile",
+      "fetchTime": "2026-10-16T11:53:52.721Z",
+      "lighthouseVersion": "12.8.2",
+      "score": {
+        "performance": 94,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 69
+      },
+      "lcpMs": 3148.2124999999996,
+      "tbtMs": 36.5,
+      "cls": 0.0003580667216589916,
+      "environment": "Local compiled production build; local publication authority intentionally absent; simulated lab metrics, not field Core Web Vitals."
+    },
+    {
+      "name": "prices-mobile",
+      "fetchTime": "2026-10-16T11:51:00.357Z",
+      "lighthouseVersion": "12.8.2",
+      "score": {
+        "performance": 97,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 69
+      },
+      "lcpMs": 2522.0753,
+      "tbtMs": 33.5,
+      "cls": 0.001074200164976975,
+      "environment": "Local compiled production build; local publication authority intentionally absent; simulated lab metrics, not field Core Web Vitals."
+    },
+    {
+      "name": "home-desktop",
+      "fetchTime": "2026-10-16T11:54:18.084Z",
+      "lighthouseVersion": "12.8.2",
+      "score": {
+        "performance": 98,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 69
+      },
+      "lcpMs": 1046.8839,
+      "tbtMs": 0,
+      "cls": 0.00007622555672299565,
+      "environment": "Local compiled production build; local publication authority intentionally absent; simulated lab metrics, not field Core Web Vitals."
+    }
+  ],
+  "evidenceSha256": {
+    ".local/design-all-unit.log": "5cdaf917547be9780d76553c8ef7cc3cd059e8ed486670eb984bd3c4c98cf09c",
+    ".local/design-unit-corrections.log": "1bf52ab9bb79ff175300d406bcc91324f1b42802d56a211fa068b1440177cff6",
+    ".local/design-release-lint.log": "ac812fea2229548cf112890207a7bbc0c78e504f800a5998797ce79bde49233e",
+    ".local/design-release-typecheck.log": "00a3a9a61a51a07fbbb60b4a1497613b78e0daa3fa14ece0c0fdc9763d60269e",
+    ".local/design-build-preload.log": "978e5d97e089c3eeb5c1c25f4aa3c53a8ec965c2a59d059547ea756f9f047356",
+    ".local/design-release-secrets.log": "9c7d47381c444467ad22736afb44b0bd473d08efc9f9464c2d302eb03d72dadc",
+    ".local/design-phase5/local-e2e.json": "14a35050f9208809cc1b4e3e02e349713e146bf100525f07e495627e9dc19441",
+    ".local/design-artwork/local-e2e.json": "0c7f8075acaafdf7cbdce49162e9e90b09b04db7b6043454bfdf7b798904628c",
+    ".local/design-reference-three-directions/report.json": "7ea941e69b292f03d69df8e61b0fe8997ecefb0f8a98b05c40f337e905e62858"
+  },
+  "notClaimed": [
+    "Natural CI for this source",
+    "Exact-commit independent final review",
+    "Deployment or public acceptance of this source",
+    "Award certification",
+    "Field Core Web Vitals"
+  ]
+}

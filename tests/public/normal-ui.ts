@@ -63,7 +63,7 @@ try{
    await expect(m.locator('header').getByRole('link',{name:'BOOK',exact:true})).toHaveAttribute('href','/ja/book');await expect(m.locator('header').getByRole('link',{name:'BOOK',exact:true})).toBeInViewport();
    await m.evaluate(()=>window.scrollTo(0,0));
    // Modal menu
-   await m.getByRole('button',{name:'メニューを開く'}).click();const dialog=m.getByRole('dialog',{name:'メニュー'});await expect(dialog).toBeVisible();
+   await m.getByRole('button',{name:'MENU · メニューを開く'}).click();const dialog=m.getByRole('dialog',{name:'メニュー'});await expect(dialog).toBeVisible();
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'hidden');
    // The menu is an opaque black field: white names keep >= 4.5:1 whatever sits behind it.
    const panel=await m.evaluate(()=>{const p=document.querySelector('.st-mnu')!,bg=getComputedStyle(p).backgroundColor,a=bg.startsWith('rgba(')?Number(bg.slice(5,-1).split(',')[3]):1,link=getComputedStyle(document.querySelector('.st-mnu-mi')!).color,small=getComputedStyle(document.querySelector('.st-mnu-small a')!).color;return {a,link,small};});
@@ -72,17 +72,17 @@ try{
    const inside=()=>m.evaluate(()=>{const a=document.activeElement,d=document.querySelector('[role="dialog"][aria-modal="true"]');return !!a&&!!d&&d.contains(a);});
    await dialog.getByRole('link',{name:'RENTAL',exact:true}).focus();
    await expect(dialog.locator('.st-mnu-side')).toHaveCSS('opacity','1');
-   assert.equal(await inside(),true,'focus starts inside the dialog');await expect(dialog.getByRole('button',{name:'メニューを閉じる'})).toBeVisible();
+   assert.equal(await inside(),true,'focus starts inside the dialog');await expect(dialog.getByRole('button',{name:'CLOSE · メニューを閉じる'})).toBeVisible();
    for(let i=0;i<30;i++){await m.keyboard.press('Tab');assert.equal(await inside(),true,'Tab stays inside the dialog');}
    for(let i=0;i<30;i++){await m.keyboard.press('Shift+Tab');assert.equal(await inside(),true,'Shift+Tab stays inside the dialog');}
    assert.equal(await m.evaluate(()=>{const f=document.querySelector<HTMLElement>('.st-ft a');if(!f)throw new Error('footer link missing');f.focus();return document.activeElement===f;}),false,'background links are inert while open');
    await m.keyboard.press('Escape');await expect(dialog).toHaveCount(0);
-   assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'メニューを開く','focus returns to the toggle');
+   assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'MENU · メニューを開く','focus returns to the toggle');
    assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released');
    assert.equal(await m.evaluate(()=>!!document.querySelector('.st-ft a')&&!(document.querySelector('.st-ft') as HTMLElement).inert),true,'background restored');
-   await m.getByRole('button',{name:'メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('button',{name:'メニューを閉じる'}).click();await expect(m.getByRole('dialog')).toHaveCount(0);
-   assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'メニューを開く','CLOSE returns focus to MENU');assert.equal(await m.evaluate(()=>document.body.style.overflow),'');
-   await m.getByRole('button',{name:'メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('link',{name:'SKI',exact:true}).click();
+   await m.getByRole('button',{name:'MENU · メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('button',{name:'CLOSE · メニューを閉じる'}).click();await expect(m.getByRole('dialog')).toHaveCount(0);
+   assert.equal(await m.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'MENU · メニューを開く','CLOSE returns focus to MENU');assert.equal(await m.evaluate(()=>document.body.style.overflow),'');
+   await m.getByRole('button',{name:'MENU · メニューを開く'}).click();await m.getByRole('dialog',{name:'メニュー'}).getByRole('link',{name:'SKI',exact:true}).click();
    await m.waitForURL(/\/ja\/rental\/ski$/);assert.equal(await m.evaluate(()=>document.body.style.overflow),'','scroll lock released after navigating from the menu');
    await touch.close();
   }
@@ -201,7 +201,7 @@ try{
  await check('R67 smoke fix: Premium metadata says coming soon in JA/EN and never claims model selection',async()=>{
   for(const [locale,want] of [['ja','準備中'],['en','coming soon']] as const){const html=await (await context.request.get('/'+locale+'/rental/premium')).text();
    const title=/<title>(.*?)<\/title>/.exec(html)?.[1]??'',description=/<meta name="description" content="([^"]*)"/.exec(html)?.[1]??'';
-   assert.ok(title.includes(want)&&title.includes('SALOMON STATION ZAO'),locale+' title '+title);
+   assert.ok(title.includes(want)&&title.includes('SALOMON RENTAL STATION ZAO'),locale+' title '+title);
    for(const text of [title,description])assert.doesNotMatch(text,/model selection|モデル指定|choose (a|the) model|Know the model/i,locale);}
  });
  await check('final test payment response loss and reload restore the same booking/QR from real DB without duplicate hold or payment',async()=>{

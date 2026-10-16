@@ -7,7 +7,7 @@ import {loadAvatarPreview} from '../../../../../../packages/core/src/avatar/prev
 import {avatarUuid} from '../../../../../../packages/core/src/avatar/media';
 import {HoldError} from '../../../../../../packages/contracts/src/hold';
 export const dynamic='force-dynamic';
-export const metadata={title:'ZAO Rental | Avatar staff preview',robots:{index:false,follow:false}};
+export const metadata={title:'SALOMON RENTAL STATION ZAO | Avatar staff preview',robots:{index:false,follow:false}};
 export default async function Page({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){
  const h=new Headers(await headers()),s=await staffState(h);
  if(s.status!=='authorized'||!['BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'].every(p=>s.principal.permissions.includes(p as never)))return <main className="avatar-private"><h1>Staff preview · 非公開プレビュー</h1><p>スタッフのログインと閲覧権限が必要です。Staff sign-in and read permissions are required.</p><a href="/staff/login">スタッフログイン / Staff sign in</a></main>;

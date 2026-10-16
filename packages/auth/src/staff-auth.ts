@@ -10,7 +10,7 @@ export type StaffPrincipal={subject:string;role:StaffRole;storeIds:StoreId[];sco
 export type ResetDelivery=(payload:{token:string;email:string})=>Promise<void>;
 export function createStaffAuth(pool:Pool,settings:{origin:string;secret:string;resetDelivery?:ResetDelivery}) {
  return betterAuth({
-  appName:'ZAO Rental',baseURL:settings.origin,secret:settings.secret,database:pool,
+  appName:'SALOMON RENTAL STATION ZAO',baseURL:settings.origin,secret:settings.secret,database:pool,
   trustedOrigins:[settings.origin],logger:{disabled:true},
   emailAndPassword:{enabled:true,disableSignUp:true,autoSignIn:false,minPasswordLength:passwordPolicy.min,maxPasswordLength:passwordPolicy.max,password:{hash:hashStaffPassword,verify:verifyStaffPassword},revokeSessionsOnPasswordReset:true,resetPasswordTokenExpiresIn:900,...(settings.resetDelivery?{sendResetPassword:async({user,token})=>settings.resetDelivery!({email:user.email,token})}:{})},
   user:{modelName:'auth_user'},

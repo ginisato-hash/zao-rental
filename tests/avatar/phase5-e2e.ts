@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {fillGuestProfile} from '../public/guest-profile';
+import {decodeReference} from './reference-browser';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
@@ -11,7 +12,7 @@ import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {seedAvatarPhase4} from './phase4-fixture';
 import {id} from './fixture';
 import type {ContentWorkflowState} from '../../packages/core/src/content/workflow';
-const evidence='docs/execution/avatar-phase5',results:{kind:string;name:string;status:'PASS'}[]=[],measurements:unknown[]=[],screenshots:unknown[]=[];
+const evidence=process.env.ZAO_AVATAR_EVIDENCE_DIR??'docs/execution/avatar-phase5',results:{kind:string;name:string;status:'PASS'}[]=[],measurements:unknown[]=[],screenshots:unknown[]=[];
 let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,browser:Awaited<ReturnType<typeof chromium.launch>>|undefined,stage='setup',failed=false,externalAttempts=0,visualPosts=0,measuringVisuals=false;
 const check=async(kind:string,name:string,fn:()=>Promise<void>)=>{stage=name;await fn();results.push({kind,name,status:'PASS'});console.log('PASS '+kind+' '+name);};
 try{
@@ -27,20 +28,20 @@ try{
  await check('PG','fresh canonical0001–0032 with dedicated Avatar role',async()=>{assert.equal((await db.pool.query("SELECT count(*)::int n FROM foundation_migrations WHERE id<='0032'")).rows[0].n,32);assert.ok(app!.avatar);});
  browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}}),anon=await browser.newContext({baseURL:origin}),other=await browser.newContext({baseURL:origin}),staff=await browser.newContext({baseURL:origin});
  let failArtwork=false;
- // Keep interception ownership stable while injecting the optional metadata failure.
+ // Keep interception ownership stable while injecting the bundled reference-image failure.
  // Adding/removing a page route can race the context route for requests in flight.
  for(const context of [c,anon,other,staff]){context.setDefaultTimeout(20000);await context.route('**/*',async route=>{
   const request=route.request(),url=new URL(request.url());
   if(url.origin!==origin){externalAttempts++;await route.abort();return;}
   if(measuringVisuals&&request.method()==='POST'&&url.pathname!=='/api/guest/context')visualPosts++;
-  if(context===c&&failArtwork&&request.method()==='GET'&&url.pathname.startsWith('/api/guest/avatar/')){await route.fulfill({status:503,body:''});return;}
+  if(context===c&&failArtwork&&request.method()==='GET'&&url.pathname.startsWith('/_next/static/media/person-')){await route.fulfill({status:503,body:''});return;}
   await route.continue();
  });}
  // Warm ordinary routes before interaction so Next dev compilation does not reload a submitted form.
  for(const path of ['/ja','/en/book','/staff/login','/staff/ledger','/api/auth/get-session'])await anon.request.get(path);
  const page=await c.newPage(),fatals:string[]=[];page.on('pageerror',()=>fatals.push('PAGE_ERROR'));page.on('console',m=>{if(m.type()==='error'&&/hydration|uncaught|maximum update/i.test(m.text()))fatals.push('CONSOLE_FATAL');});
- await check('BROWSER','ordinary GuestBooking without approved artwork still previews candidates',async()=>{
-  await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-05');await page.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(page,'ja');await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(page.getByRole('radio',{name:/おすすめ/})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(0);
+ await check('BROWSER','ordinary GuestBooking has generic reference without private artwork activation',async()=>{
+  await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-05');await page.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(page,'ja');await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await expect(page.getByRole('radio',{name:/おすすめ/})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(1);
  });
  const draft=await (await c.request.get('/api/guest/draft')).json(),scope=draft.id+'/'+draft.revision+'/person-1',metadataPath='/api/guest/avatar/'+scope;
  await check('PG','zero-art metadata is null and normal business candidate lengths remain present',async()=>{const r=await c.request.get(metadataPath);assert.equal(r.status(),200);assert.deepEqual(await r.json(),{APPEARANCE_1:null,APPEARANCE_2:null});assert.ok(draft.preview.members[0].candidates.RECOMMENDED.lengthCm>0);assert.equal(draft.hold,null);});
@@ -69,22 +70,22 @@ try{
  await mkdir(evidence+'/screenshots',{recursive:true});
  const shot=async(name:string)=>{const file=evidence+'/screenshots/'+name+'.png';await page.screenshot({path:file,fullPage:true});screenshots.push({file,sha256:createHash('sha256').update(await readFile(file)).digest('hex'),syntheticOnly:true});};
  const metadataRequests:string[]=[];page.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/api/guest/avatar/'))metadataRequests.push(r.url());});
- await page.reload();await expect(page.locator('[data-avatar-stage]')).toHaveCount(1);await page.waitForFunction(()=>Array.from(document.querySelectorAll<HTMLImageElement>('[data-avatar-stage] img')).every(i=>i.complete&&i.naturalHeight>0));
+ await page.reload();await expect(page.locator('[data-avatar-stage]')).toHaveCount(1);await decodeReference(page);
  const requestsBefore=metadataRequests.length;
  for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:width<768?844:1000});for(const [direction,label] of [['SHORTER','短め'],['RECOMMENDED','おすすめ'],['LONGER','長め']] as const)await check('BROWSER',width+'px '+direction+' actual guest DOM ratio and common floor',async()=>{
   const offered=draft.preview.members[0].candidates[direction];assert.ok(offered);await page.getByRole('radio',{name:new RegExp(label)}).check();
-  await page.waitForFunction(()=>Array.from(document.querySelectorAll<HTMLImageElement>('[data-avatar-stage] img')).every(i=>i.complete&&i.naturalHeight>0));
+  await decodeReference(page);
   const m=await page.evaluate(()=>{const b=document.querySelector('[data-layer="AVATAR"]')!.getBoundingClientRect(),s=document.querySelector('[data-layer="SKI"]')!.getBoundingClientRect();return {bodyHeight:b.height,skiHeight:s.height,bodyBottom:b.bottom,skiBottom:s.bottom,overflow:document.documentElement.scrollWidth>innerWidth};});
   assert.equal(m.overflow,false);assert.ok(Math.abs(m.skiHeight-m.bodyHeight*offered.lengthCm/170)<=1);assert.ok(Math.abs(m.skiBottom-m.bodyBottom)<=1);measurements.push({width,direction,lengthCm:offered.lengthCm,expectedRatio:offered.lengthCm/170,...m});if(width===390||width===1440)await shot(width+'-'+direction);
  });}
- await check('BROWSER','appearance switch is local, updates body and causes no metadata reload or POST',async()=>{const old=await page.locator('[data-layer="AVATAR"] img').getAttribute('src');await page.getByRole('button',{name:'見た目 2',exact:true}).click();await expect(page.locator('[data-layer="AVATAR"] img')).not.toHaveAttribute('src',old!);await page.waitForFunction(()=>document.querySelector<HTMLImageElement>('[data-layer="AVATAR"] img')?.naturalHeight===1000);assert.equal(metadataRequests.length,requestsBefore);assert.equal(visualPosts,0);assert.equal(await page.locator('img[src*="_next/image"]').count(),0);await shot('desktop-appearance2');});
- await check('BROWSER','English candidate page keeps full disclaimer and appearance labels',async()=>{await page.goto('/en/book');await expect(page.getByRole('button',{name:'Appearance 1',exact:true})).toBeVisible();await expect(page.locator('.avatar-disclaimer')).toContainText('completed payment');});
- await check('BROWSER','revoked rights refresh omits renderer and keeps business candidates usable',async()=>{const state=structuredClone(base);for(const m of state.catalog.media)m.rightsConfirmed=false;await save(state);assert.equal((await c.request.get(imagePath)).status(),404);await page.reload();await expect(page.getByRole('radio',{name:/RECOMMENDED/i})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(0);await save(base);});
- await check('BROWSER','optional artwork HTTP failure does not fail candidate step or invent art',async()=>{
+ await check('BROWSER','appearance switch is local, updates body and causes no metadata reload or POST',async()=>{const old=await page.locator('image[data-layer="AVATAR"]').getAttribute('href');await page.getByRole('button',{name:'見た目 2 · CHALK',exact:true}).click();await expect(page.locator('image[data-layer="AVATAR"]')).not.toHaveAttribute('href',old!);await decodeReference(page);assert.equal(metadataRequests.length,requestsBefore);assert.equal(visualPosts,0);assert.equal(await page.locator('img[src*="_next/image"]').count(),0);await shot('desktop-appearance2');});
+ await check('BROWSER','English candidate page identifies a generic illustration and names both colours',async()=>{await page.goto('/en/book');await expect(page.getByRole('button',{name:'Appearance 1 · GRAPHITE',exact:true})).toBeVisible();await expect(page.locator('.fit-study-note')).toContainText('actual products and fit are not represented');});
+ await check('BROWSER','revoked private rights deny old bytes while independent generic reference remains',async()=>{const state=structuredClone(base);for(const m of state.catalog.media)m.rightsConfirmed=false;await save(state);assert.equal((await c.request.get(imagePath)).status(),404);await page.reload();await expect(page.getByRole('radio',{name:/RECOMMENDED/i})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(1);await save(base);});
+ await check('BROWSER','reference image HTTP failure preserves candidates and exposes unavailable state',async()=>{
   failArtwork=true;
   try{
-   const unavailable=page.waitForResponse(r=>new URL(r.url()).pathname.startsWith('/api/guest/avatar/')&&r.status()===503);
-   await page.reload();assert.equal((await unavailable).status(),503);
+   const unavailable=page.waitForResponse(r=>new URL(r.url()).pathname.startsWith('/_next/static/media/person-')&&r.status()===503);
+   await page.reload();assert.equal((await unavailable).status(),503);await expect(page.getByRole('status').filter({hasText:'reference image is unavailable'})).toBeVisible();
    await expect(page.getByRole('radio',{name:/RECOMMENDED/i})).toBeVisible();await expect(page.locator('[data-avatar-stage]')).toHaveCount(0);
   }finally{failArtwork=false;}
  });

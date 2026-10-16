@@ -17,7 +17,7 @@ export function legalLinks(locale:Locale){return approvedLegalDocs(locale).map(d
 
 /** Official Salomon photograph, cropped by CSS (object-fit), never captioned as Zao or as stock. */
 export function Photo({shot,locale,eager=false,sizes='100vw'}:{shot:{desktop:string;mobile:string;alt:{ja:string;en:string}};locale:Locale;eager?:boolean;sizes?:string}){
- return <picture><source media="(min-width: 768px)" srcSet={shot.desktop}/><img src={shot.mobile} alt={shot.alt[locale]} sizes={sizes} loading={eager?'eager':'lazy'} decoding="async"/></picture>;
+ return <>{eager&&<><link rel="preload" as="image" href={shot.mobile} media="(width < 768px)" fetchPriority="high"/><link rel="preload" as="image" href={shot.desktop} media="(min-width: 768px)" fetchPriority="high"/></>}<picture><source media="(min-width: 768px)" srcSet={shot.desktop}/><img src={shot.mobile} alt={shot.alt[locale]} sizes={sizes} loading={eager?'eager':'lazy'} fetchPriority={eager?'high':undefined} decoding="async"/></picture></>;
 }
 function Product({shot,locale,eager=false,sizes}:{shot:Shot;locale:Locale;eager?:boolean;sizes:string}){
  return <picture><img src={shot.src} srcSet={shot.srcSet} sizes={sizes} width={shot.width} height={shot.height} alt={shot.alt[locale]} loading={eager?'eager':'lazy'} decoding="async"/></picture>;
@@ -81,7 +81,7 @@ function faq(locale:Locale,latePickup:string):[string,React.ReactNode][]{
  return [
   [t('セットには何が含まれますか？','What does a set include?'),t('スキーセットはスキー・ブーツ・ポール、スノーボードセットはボード（ビンディング付き）とブーツです。ウェアは追加できます。','A ski set is skis, boots and poles; a snowboard set is a board (bindings mounted) and boots. Wear can be added.')],
   [t('Premiumとは何ですか？','What is Premium?'),t('モデル・シーズン・長さを指定して予約できるプランです（大人のみ）。ブーツ・ポールは通常の在庫からご用意します。','Book a specific model, season and length (adults only). Boots and poles come from our regular range.')],
-  [t('ブーツのサイズはどう選びますか？','How is my boot size chosen?'),<>{t('SALOMON STATION ZAOでは、レンタルブーツは入力いただいた足のサイズ＋1.0cmを目安にご用意します。','SALOMON STATION ZAO prepares rental boots at about 1.0 cm above the foot length you enter.')}<br/>{t('在庫状況により、現地で別サイズへ交換できない場合があります。','Depending on stock, we may not be able to change to another size at the store.')}</>],
+  [t('ブーツのサイズはどう選びますか？','How is my boot size chosen?'),<>{t('SALOMON RENTAL STATION ZAOでは、レンタルブーツは入力いただいた足のサイズ＋1.0cmを目安にご用意します。','SALOMON RENTAL STATION ZAO prepares rental boots at about 1.0 cm above the foot length you enter.')}<br/>{t('在庫状況により、現地で別サイズへ交換できない場合があります。','Depending on stock, we may not be able to change to another size at the store.')}</>],
   [t('一人で複数の単品を借りられますか？','Can one person rent several individual items?'),t('はい。スキー・ブーツ・ポール、またはボード・ブーツから必要なものを選べます。料金は単品ごとです。','Yes. Choose any of skis, boots and poles — or board and boots. Each item is priced on its own.')],
   [t('半日と複数日は組み合わせられますか？','Can I combine half days with several days?'),t('初日を午後から（13:00）、最終日を昼まで（12:00）にできます。料金は半日と日数の料金表を組み合わせて計算します。','Start the first day at 1:00 PM and/or return at noon on the last day. The price combines the half-day and day prices from the price table.')],
   [t('ウェアだけ借りられますか？','Can I rent wear only?'),t('はい。ジャケットとパンツの上下セットでご用意します。','Yes, as a jacket and pants set.')],
@@ -95,7 +95,7 @@ function faq(locale:Locale,latePickup:string):[string,React.ReactNode][]{
 export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;models?:{slug:string;name:string;season:string}[];page:typeof publicPages[number];locale:Locale;origin:string}){
  const ja=locale==='ja',path=page.path,t=(j:string,e:string)=>ja?j:e,r='/'+locale;
  const preview=!publicationApproved()&&<DevelopmentNotice><p className="st-preview">{t('予約受付前の開発プレビューです。実決済・本番予約は行いません。','Development preview before booking launch. No real payment or production booking.')}</p></DevelopmentNotice>;
- const schema=pageSchema(locale,path,origin).map((s,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(s)}}/>);
+ const schema=pageSchema(locale,path,origin,page).map((s,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(s)}}/>);
  const book=(label='BOOK RENTAL',href=r+'/book')=><Link className="st-cta" href={href}>{label}<span className="ar" aria-hidden="true">↗</span></Link>;
 
  if(path===''){
@@ -104,11 +104,12 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
     <div className="st-fv-txt">
      <h1 id="fv-h" className="st-fv-h">RENTAL</h1>
      <div className="st-fv-acts">{book()}<Link className="st-link" href={r+'/rental'}>VIEW LINEUP →</Link></div>
-     <CategoryIndex locale={locale} stacked/>
     </div>
-    <div className="st-fv-ph"><Photo shot={photos.winter} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/></div>
+    <div className="st-fv-ph"><Photo shot={photos.ski} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/></div>
+    <CategoryIndex locale={locale} stacked/>
    </section>
    {preview}
+   <p className="st-intro">{page.summary}</p>
    <section className="st-sec" aria-labelledby="home-lineup"><h2 id="home-lineup" className="st-sec-h">LINEUP<span className="st-tone"> 26/27</span></h2><Lineup locale={locale}/></section>
    <section className="st-sec st-duo" aria-label={t('料金と店舗','Prices and stores')}>
     <Link className="st-duo-i" href={r+'/prices'}><span className="st-duo-n">PRICES</span><span className="st-duo-f">{t('セット 1日','Set · 1 day')} {yen(dayPrice('SKI_SET_ADULT_REGULAR'))}〜 · {t('税込','tax incl.')}</span><span className="st-duo-a" aria-hidden="true">→</span></Link>
@@ -148,7 +149,7 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
   </section>;
   body=<>{group('SKI',products.premium)}{group('SNOWBOARD',products.snowboardRide)}</>;
  }else if(path==='prices'){
-  head=<PageHead word="PRICES"><p className="st-ph-tax">{t('税込','TAX INCLUDED')}<br/>{t('前日15:00までの事前決済で5%OFF','5% OFF WHEN PAID BY 3:00 PM (JST) THE DAY BEFORE')}</p><div className="st-ph-acts">{book()}</div></PageHead>;
+  head=<PageHead word="PRICES"><p className="st-ph-l">{t('用品・日数を選んで、料金を確認。','Choose your gear and days. See your price.')}</p></PageHead>;
   body=<section className="st-sec st-sec--tight" aria-label={page.title}><PriceExplorer locale={locale} grid={priceGrid()}/><p className="st-one">{t('予約内容に応じた合計は予約画面で確認できます。','Your booking total is shown in the booking flow.')}</p></section>;
  }else if(path==='pickup-return'){
   head=<PageHead word="PICKUP" tone="/ RETURN"><div className="st-ph-acts">{book()}</div></PageHead>;
@@ -172,5 +173,5 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
  }else{
   head=<PageHead word={page.heading}><div className="st-ph-acts">{book()}</div></PageHead>;
  }
- return <PublicFrame locale={locale} path={path}><main id="main" className="st-page">{head}{preview}{body}{schema}</main></PublicFrame>;
+ return <PublicFrame locale={locale} path={path}><main id="main" className="st-page">{head}{preview}<p className="st-intro">{page.summary}</p>{body}{schema}</main></PublicFrame>;
 }

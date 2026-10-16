@@ -179,6 +179,31 @@ try{
   await expect(p.getByRole('radio',{name:/おすすめ/})).toHaveCount(2);
   await ctx.close();
  });
+ await check('R67 smoke fix: opening another person card brings its summary below the opaque header without stealing focus; keyboard toggle too',async()=>{
+  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
+  await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');
+  await p.getByRole('button',{name:'CONTINUE',exact:true}).click();await p.getByLabel('利用人数',{exact:true}).fill('2');
+  const cards=p.locator('details.guest-person-toggle'),placement=(n:number)=>p.evaluate(i=>{const h=document.querySelector('.st-hd')!.getBoundingClientRect().bottom,s=document.querySelectorAll('details.guest-person-toggle')[i]!.querySelector('summary')!.getBoundingClientRect();
+   return {header:h,top:s.top,visible:s.top>=h&&s.bottom<=innerHeight,active:document.activeElement?.tagName??null,margin:getComputedStyle(document.querySelectorAll('details.guest-person-toggle')[i]!.querySelector('summary')!).scrollMarginTop};},n);
+  // Person 1 is open: read to the bottom of its long form, then open person 2 with an ordinary click.
+  await expect(cards.nth(0)).toHaveJSProperty('open',true);await p.getByRole('button',{name:'候補と参考料金を確認',exact:true}).scrollIntoViewIfNeeded();
+  await cards.nth(1).locator('summary').click();await expect(cards.nth(1)).toHaveJSProperty('open',true);await expect(cards.nth(0)).toHaveJSProperty('open',false);
+  await expect.poll(async()=>(await placement(1)).visible).toBe(true);const after=await placement(1);
+  assert.ok(parseFloat(after.margin)>=after.header,'summary scroll-margin-top covers the fixed header '+JSON.stringify(after));
+  assert.ok(!['INPUT','SELECT','TEXTAREA'].includes(after.active??''),'pointer open does not move focus into a field '+after.active);
+  await p.screenshot({path:'.local/screenshots/r67-two-person-open-390.png'});
+  // Keyboard: Enter on person 1's summary opens it and brings it below the header as well; focus stays on the summary.
+  await cards.nth(0).locator('summary').focus();await p.keyboard.press('Enter');await expect(cards.nth(0)).toHaveJSProperty('open',true);
+  await expect.poll(async()=>(await placement(0)).visible).toBe(true);assert.equal((await placement(0)).active,'SUMMARY');
+  await ctx.close();
+ });
+ await check('R67 smoke fix: Premium metadata says coming soon in JA/EN and never claims model selection',async()=>{
+  for(const [locale,want] of [['ja','準備中'],['en','coming soon']] as const){const html=await (await context.request.get('/'+locale+'/rental/premium')).text();
+   const title=/<title>(.*?)<\/title>/.exec(html)?.[1]??'',description=/<meta name="description" content="([^"]*)"/.exec(html)?.[1]??'';
+   assert.ok(title.includes(want)&&title.includes('SALOMON STATION ZAO'),locale+' title '+title);
+   for(const text of [title,description])assert.doesNotMatch(text,/model selection|モデル指定|choose (a|the) model|Know the model/i,locale);}
+ });
  await check('final test payment response loss and reload restore the same booking/QR from real DB without duplicate hold or payment',async()=>{
   await page.getByLabel('合成データによる開発確認であることを確認').check();let done!:()=>void,fail!:(e:unknown)=>void;const lost=new Promise<void>((r,j)=>{done=r;fail=j;});let cm06Checked=false;await page.route('**/api/guest/checkout',async route=>{
    // One fresh local transport avoids reusing the context's idle HTTP connection.

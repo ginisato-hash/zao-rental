@@ -109,3 +109,30 @@ test('publication stays a separate explicit approval and is impossible for a non
  assert.equal(parseProductionPublicOrigin(PUBLICATION_ORIGIN),PUBLICATION_ORIGIN);
  assert.equal(commercialProductionPlan(env({PRODUCTION_PUBLIC_ORIGIN:PUBLICATION_ORIGIN}))!.configuration.deployment.origin,PUBLICATION_ORIGIN);
 });
+
+const avatarEnv={ZAO_PRODUCTION_AVATAR_ACTIVATION:'R67_PRIVATE_AVATAR_V1',PRODUCTION_DB_PASSWORD_AVATAR_READ:pw('avatar_read'),
+ PRODUCTION_AVATAR_R2_ACCOUNT_ID:'e'.repeat(32),PRODUCTION_AVATAR_R2_BUCKET:'synthetic-production-avatar',
+ PRODUCTION_AVATAR_R2_ACCESS_KEY_ID:'synthetic-avatar-read-key',PRODUCTION_AVATAR_R2_SECRET_ACCESS_KEY:'synthetic-avatar-read-secret',PRODUCTION_AVATAR_R2_EXPIRES_AT:'2099-01-01T00:00:00Z'};
+test('commercial avatar activation binds private Production media and its separate read-only role',async()=>{
+ const p=commercialProductionPlan(env(avatarEnv))!,input=commercialRuntimeInput(p,undefined,async()=>{throw Error('NO_PROVIDER_CALL');});
+ assert.deepEqual(p.configuration.flags,{...COMMERCIAL_FLAGS,media:true,avatar:true});
+ assert.deepEqual(p.configuration.media,{provider:'CLOUDFLARE_R2',environment:'PRODUCTION',accountId:'e'.repeat(32),bucket:'synthetic-production-avatar',visibility:'PRIVATE',r2DevEnabled:false,publicDomains:[],credentialExpiresAt:'2099-01-01T00:00:00.000Z'});
+ assert.deepEqual(Object.keys(p.secrets.database).sort(),[...COMMERCIAL_DB_SERVICES,'avatar_read'].sort());
+ assert.equal(p.secrets.database.avatar_read!.user,'neondb_avatar_read');assert.equal(input.media!.permission,'OBJECT_READ');
+ assert.deepEqual(await input.media!.credentials(),{accountId:'e'.repeat(32),bucket:'synthetic-production-avatar',accessKeyId:avatarEnv.PRODUCTION_AVATAR_R2_ACCESS_KEY_ID,secretAccessKey:avatarEnv.PRODUCTION_AVATAR_R2_SECRET_ACCESS_KEY,expiresAt:new Date('2099-01-01T00:00:00Z'),revoked:false});
+ assert.equal(input.payment!.gateway.kind,'SQUARE_PRODUCTION');assert.equal(input.notification!.providerId,'RESEND');
+});
+test('removing avatar activation leaves booking unchanged and does not read any media credential',()=>{
+ const e=env();let reads=0;
+ for(const key of Object.keys(avatarEnv).filter(k=>k!=='ZAO_PRODUCTION_AVATAR_ACTIVATION'))Object.defineProperty(e,key,{get(){reads++;throw Error('DISABLED_SECRET_READ');}});
+ const p=commercialProductionPlan(e)!;assert.equal(reads,0);assert.deepEqual(p.configuration.flags,COMMERCIAL_FLAGS);
+ assert.equal(p.configuration.media,null);assert.equal(p.secrets.database.avatar_read,undefined);assert.equal(commercialRuntimeInput(p,undefined,async()=>{throw Error();}).media,undefined);
+});
+test('avatar activation rejects missing, expired or malformed bindings without leaking values',()=>{
+ const cases:Record<string,string|undefined>[]=[...Object.keys(avatarEnv).filter(k=>k!=='ZAO_PRODUCTION_AVATAR_ACTIVATION').map(k=>({[k]:undefined})),
+  {ZAO_PRODUCTION_AVATAR_ACTIVATION:'PREVIEW'},{PRODUCTION_AVATAR_R2_ACCOUNT_ID:'https://private.invalid'},{PRODUCTION_AVATAR_R2_BUCKET:'../private'},
+  {PRODUCTION_AVATAR_R2_EXPIRES_AT:'2020-01-01T00:00:00Z'},{PRODUCTION_AVATAR_R2_EXPIRES_AT:'invalid-private-value'},
+  {PRODUCTION_DB_ROLE_AVATAR_READ:'neondb_owner'},{PRODUCTION_AVATAR_R2_ACCESS_KEY_ID:'x'},{PRODUCTION_AVATAR_R2_SECRET_ACCESS_KEY:'x'}];
+ for(const patch of cases){let error:unknown;try{commercialProductionPlan(env({...avatarEnv,...patch}));}catch(e){error=e;}
+  assert.ok(error instanceof Error);assert.match(error.message,/^[A-Z_]+$/);assert.ok(!error.message.includes('private-value')&&!error.message.includes('synthetic-avatar-read'));}
+});

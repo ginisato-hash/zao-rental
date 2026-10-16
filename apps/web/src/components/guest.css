@@ -86,6 +86,7 @@ html[lang=ja] .guest-main button{font-family:var(--d)}
 .guest-person{padding:18px 0 8px;border-top:2px solid var(--ink);margin-top:20px}
 .guest-person>h2{font-size:clamp(26px,2.8vw,40px);margin-bottom:6px}
 .guest-person-toggle{margin-top:12px;border-top:2px solid var(--ink)}
+.guest-person-toggle,.guest-person-toggle>summary{scroll-margin-top:calc(var(--top) + 12px)}
 .guest-person-toggle>summary{display:flex;align-items:center;gap:10px;min-height:56px;padding:12px 0;cursor:pointer;list-style:none;font:700 clamp(20px,2vw,28px)/1.1 var(--d);text-transform:uppercase}
 .guest-person-toggle>summary::-webkit-details-marker{display:none}
 .guest-person-toggle>summary::after{content:'+' / '';margin-left:auto;font-size:1.2em}
@@ -104,6 +105,9 @@ html[lang=ja] .guest-main button{font-family:var(--d)}
 html[lang=ja] .guest-candidate-label{font:700 14px/1.2 var(--b)}
 .guest-main .guest-candidates label.guest-candidate--primary .guest-candidate-label::after{content:' ★' / ''}
 .guest-candidate-value{font:700 clamp(40px,4.6vw,72px)/.85 var(--d);font-variant-numeric:tabular-nums}
+/* Wear has no length: its textual candidate uses body-size type, never the numeric length scale. */
+.guest-candidate-text{font:700 18px/1.35 var(--b);overflow-wrap:anywhere}
+.guest-main .guest-candidates label.guest-candidate:has(.guest-candidate-text){grid-column:1 / -1;min-height:0}
 
 /* review: the decision screen — total first, then facts */
 .guest-main .guest-review{margin-top:8px;padding-top:20px;border-top:2px solid var(--ink)}

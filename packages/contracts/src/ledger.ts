@@ -1,5 +1,6 @@
 import Ajv from 'ajv';
 import schemas from './ledger-input.schema.json';
+import {brandContractError} from './contract-error';
 export const stores = ['MOUNTAIN_BASE', 'ONSEN_BASE'] as const;
 export type StoreId = typeof stores[number];
 export const resources = ['models', 'variants', 'assets', 'poles', 'bundles'] as const;
@@ -22,7 +23,7 @@ export type LedgerRecord = {
 export type LedgerDetail = LedgerRecord & {history:{action:string; actor:string; reason:string; occurredAt:string; before:unknown; after:unknown}[]; locations:{storeId:string; event:string; occurredAt:string}[]};
 export type LedgerFilters = {storeId?:string; sport?:string; age?:string; tier?:string; size?:string; status?:string; q?:string; offset?:number};
 export class LedgerError extends Error {
-  constructor(public readonly code:string, public readonly status:number) {super(code);}
+  constructor(public readonly code:string, public readonly status:number) {super(code); brandContractError(this);}
 }
 const ajv = new Ajv({allErrors:false, strict:true});
 const validators = Object.fromEntries(resources.flatMap(resource => ['create','update'].map(operation => {

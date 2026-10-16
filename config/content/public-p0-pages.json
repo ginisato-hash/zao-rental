@@ -104,12 +104,12 @@
   {
     "path": "rental/premium",
     "locale": "ja",
-    "title": "蔵王 Premiumレンタル・モデル指定",
-    "heading": "乗りたいモデルを、確かめて選ぶ。",
-    "summary": "Premiumでは当店で取扱確認されたモデル・シーズン・長さから選びます。メーカーの全ラインアップを当店在庫として表示しません。",
+    "title": "蔵王 Premiumレンタル（準備中）",
+    "heading": "Premiumは準備中です。",
+    "summary": "Premiumの取扱モデルは発表準備中です。現在はRegularのスキー・スノーボードをご予約いただけます。",
     "bullets": [
-      "モデル・シーズン・長さを予約条件として保存",
-      "当店で取扱を確認したモデルだけを掲載",
+      "取扱モデルは発表準備中",
+      "現在はRegularを予約できます",
       "大人（13歳以上）が対象"
     ],
     "revision": "public-p0-draft-v1"
@@ -117,12 +117,12 @@
   {
     "path": "rental/premium",
     "locale": "en",
-    "title": "Zao Premium rental & model selection",
-    "heading": "Know the model you choose.",
-    "summary": "Premium selection is limited to verified shop models, seasons and lengths. A manufacturer catalogue is not our inventory.",
+    "title": "Zao Premium rental — coming soon",
+    "heading": "Premium is coming soon.",
+    "summary": "Premium models are to be announced. Regular ski and snowboard rental is available to book now.",
     "bullets": [
-      "Your model, season and length are saved as the booking promise",
-      "Only models verified at our shop are listed",
+      "Premium models to be announced",
+      "Regular rental is available to book now",
       "For adults (13+)"
     ],
     "revision": "public-p0-draft-v1"

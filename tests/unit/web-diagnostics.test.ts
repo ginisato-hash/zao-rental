@@ -25,7 +25,7 @@ test('transport failure classification never exports messages, URLs, cookies or 
 });
 
 test('Next dev server failure lines forward only a fixed category, never their text',()=>{
- for(const [line,category] of [[' ⨯ ./src/x.ts Module not found: SYNTHETIC_PRIVATE','MODULE_NOT_FOUND'],['Failed to compile SYNTHETIC_PRIVATE','COMPILE'],[' ⨯ unhandledRejection: SYNTHETIC_PRIVATE','UNHANDLED'],[' ⨯ Error: SYNTHETIC_PRIVATE postgres://u:p@h/db','RUNTIME'],['Module build failed: SYNTHETIC_PRIVATE','COMPILE']] as const){
+ for(const [line,category] of [[' ⨯ ./src/x.ts Module not found: SYNTHETIC_PRIVATE','MODULE_NOT_FOUND'],['Failed to compile SYNTHETIC_PRIVATE','COMPILE'],[' ⨯ unhandledRejection: SYNTHETIC_PRIVATE','UNHANDLED'],[' ⨯ Error: SYNTHETIC_PRIVATE connection-detail','RUNTIME'],['Module build failed: SYNTHETIC_PRIVATE','COMPILE']] as const){
   const out=safeWebDiagnostic(line);assert.equal(out,'NEXT_DEV_ERROR '+category);assert.ok(!out!.includes('PRIVATE'));}
  assert.equal(safeWebDiagnostic(' ✓ Compiled /api/staff-users in 812ms'),null);assert.equal(safeWebDiagnostic('Error: SYNTHETIC_PRIVATE'),null);
 });

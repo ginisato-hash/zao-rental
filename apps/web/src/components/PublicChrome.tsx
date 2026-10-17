@@ -77,7 +77,7 @@ export function PublicHeader({locale,page,guard,context='BOOKING'}:{locale:Local
  </>;
 }
 
-/** LP footer: one quiet line, preceded by the minimum link index a transactional site needs (legal, booking, stores, staff). */
+/** LP footer: one quiet line, preceded by the minimum link index a transactional site needs (legal, booking, stores). */
 export function PublicFooter({locale,page,legal}:{locale:Locale;page:string;legal:LegalLink[]}){
  const ja=locale==='ja',r='/'+locale,n=nav(locale),other:Locale=ja?'en':'ja';
  const cols:[string,LinkItem[]][]=[
@@ -88,7 +88,7 @@ export function PublicFooter({locale,page,legal}:{locale:Locale;page:string;lega
  ];
  return <footer className="st-ft">
   <nav className="st-ft-grid" aria-label={L(ja,'フッター','Footer')}>{cols.filter(([,l])=>l.length>0).map(([h,l])=><div key={h}><p className="st-lbl">{h}</p><ul>{l.map(x=><li key={x.href+x.label}><Link href={x.href}>{x.label}</Link></li>)}</ul></div>)}
-   <div><p className="st-lbl">{L(ja,'言語','LANGUAGE')}</p><ul><li><Link href={path(other,page)} hrefLang={other}>{ja?'ENGLISH':'日本語'}</Link></li><li><Link href="/staff/login">{L(ja,'スタッフ入口','STAFF')}</Link></li></ul></div></nav>
+   <div><p className="st-lbl">{L(ja,'言語','LANGUAGE')}</p><ul><li><Link href={path(other,page)} hrefLang={other}>{ja?'ENGLISH':'日本語'}</Link></li></ul></div></nav>
   <p className="st-ft-line" lang="en">An official ski &amp; snowboard rental shop in collaboration between Amer Sports Japan, Inc. and Yuge Inc. · © Yuge Inc. {new Date().getFullYear()} · Photography includes imagery provided by Salomon.</p>
  </footer>;
 }

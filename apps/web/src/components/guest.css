@@ -117,6 +117,8 @@ html[lang=ja] .guest-candidate-label{font:700 14px/1.2 var(--b)}
 .guest-price{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:8px 16px;margin:6px 0 18px;padding:16px 0;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
 .guest-price dt{font:700 14px/1.4 var(--b)}
 .guest-price dd{font:700 20px/1.2 var(--d);font-variant-numeric:tabular-nums;text-align:right}
+/* Discount amounts only: a quiet red reduction; the total and its typography are unchanged. */
+.guest-price dd.guest-price-discount{color:#B85863}
 .guest-price dt:last-of-type{align-self:end;font:700 15px/1.4 var(--b)}
 .guest-price dd:last-of-type{font-size:clamp(56px,7vw,112px);line-height:.85}
 .guest-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;margin:14px 0}
@@ -263,3 +265,5 @@ html[lang=ja] .guest-seg-o b{font:700 15px/1.1 var(--b)}
 }
 
 .guest-grid>.guest-wear-colour{grid-column:1 / -1}
+.guest-map-link{grid-column:1/-1;margin:0}
+.guest-map-link a{font:700 14px/1.4 var(--d);letter-spacing:.04em;color:var(--ink);text-underline-offset:3px}

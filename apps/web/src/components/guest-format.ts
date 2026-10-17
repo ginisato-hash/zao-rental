@@ -6,4 +6,6 @@ import {STORE_DISPLAY_NAMES} from '../../../../packages/contracts/src/store-disp
 export const STORE_LABEL:Record<string,string>={...STORE_DISPLAY_NAMES};
 export const storeName=(ja:boolean,v:string)=>STORE_LABEL[v]??(ja?'店舗':'Store');
 export const yen=(ja:boolean,n:unknown)=>{const v=typeof n==='string'&&n.trim()!==''?Number(n):n;return typeof v==='number'&&Number.isFinite(v)?new Intl.NumberFormat(ja?'ja-JP':'en-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(v):'—';};
+/** Display only: a discount amount always reads as a reduction (−¥1,200), whatever sign the estimate carries; 0 stays ¥0. */
+export const discountYen=(ja:boolean,n:unknown)=>{const v=typeof n==='string'&&n.trim()!==''?Number(n):n;if(typeof v!=='number'||!Number.isFinite(v))return yen(ja,v);return v===0?yen(ja,0):'−'+yen(ja,Math.abs(v));};
 export const jstDateTime=(ja:boolean,iso:string)=>{const d=new Date(iso);if(Number.isNaN(d.getTime()))return '—';return new Intl.DateTimeFormat(ja?'ja-JP':'en-JP',{timeZone:'Asia/Tokyo',dateStyle:'medium',timeStyle:'short'}).format(d)+' JST';};

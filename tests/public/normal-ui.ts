@@ -100,6 +100,29 @@ try{
   await expect(d.locator('.st-mnu-mi').first()).toHaveCSS('animation-name','none');
   await pc.close();
  });
+ await check('R69: public footer has no staff entry (JA/EN) while /staff/login still serves; the LP station map works on pickup-return, store pages and from /book',async()=>{
+  const ctx=await browser.newContext({baseURL:app!.origin});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  for(const locale of ['ja','en'] as const){await p.goto('/'+locale);await expect(p.locator('footer.st-ft')).toBeVisible();
+   assert.equal(await p.locator('footer a[href^="/staff"],footer a[href^="/admin"],header a[href^="/staff"],header a[href^="/admin"]').count(),0);
+   await expect(p.locator('footer')).not.toContainText(locale==='ja'?'スタッフ入口':'STAFF');}
+  assert.equal((await p.goto('/staff/login'))!.status(),200,'staff login route kept');
+  for(const [width,height] of [[390,844],[1440,900]] as const)for(const locale of ['ja','en'] as const){await p.setViewportSize({width,height});
+   for(const [path,initial] of [['/pickup-return','all'],['/stores/mountain-base','mountain'],['/stores/onsen-base','central']] as const){
+    await p.goto('/'+locale+path);const map=p.locator('section.stmap#map');await expect(map).toBeVisible();await expect(map.locator('.pins .pin')).toHaveCount(8);await expect(map.locator('.pins .stp')).toHaveCount(2);
+    await expect(map.locator('.cv img')).toHaveJSProperty('complete',true);assert.ok(await map.locator('.cv img').evaluate(i=>(i as HTMLImageElement).naturalWidth>0));
+    await expect(map.locator(`.tabs button[data-v="${initial}"]`)).toHaveAttribute('aria-pressed','true');await expect(map.locator(`.panel .card[data-v="${initial}"]`)).toBeVisible();
+    assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow '+path+' '+width);}
+   const map=p.locator('section.stmap');
+   await map.locator('.tabs button[data-v="mountain"]').click();await expect(map.locator('.panel .card[data-v="mountain"]')).toBeVisible();await expect(map.locator('.pins .stp.on')).toHaveAttribute('aria-label','Mountain Station');
+   assert.equal(new URL(p.url()).hash,'#mountain');
+   await expect(map.locator('.panel .card[data-v="mountain"] a').first()).toHaveAttribute('href','https://www.google.com/maps/dir/?api=1&destination=38.169695,140.401042');
+   await map.locator('.pins .stp[aria-label="Central Station"]').click();await expect(map.locator('.panel .card[data-v="central"]')).toBeVisible();
+   await expect(map.locator('.panel .card[data-v="central"] a').nth(1)).toHaveAttribute('href','https://maps.apple.com/?daddr=38.16334,140.395437');
+   await expect(map.locator('.panel .card[data-v="central"] .ad')).toHaveText(locale==='ja'?'山形市蔵王温泉935-25（KIRAKU ONSEN LIVINGとなり）':'935-25 Zao Onsen, Yamagata City (next to KIRAKU ONSEN LIVING)');
+   await p.screenshot({path:`.local/screenshots/r69-map-${locale}-${width}.png`});}
+  await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();await expect(p.locator('.guest-map-link a')).toHaveAttribute('href','/ja/pickup-return#map');await expect(p.locator('.guest-map-link a')).toHaveAttribute('target','_blank');
+  await ctx.close();
+ });
  await check('long public headings remain fully readable on mobile and desktop',async()=>{
   for(const width of [390,768,1440]){
    await page.setViewportSize({width,height:width===390?844:900});
@@ -264,6 +287,14 @@ try{
   await expect(ja.locator('dl.guest-price')).not.toContainText('ウェアセット割引');
   const advanceRowValue=await ja.locator('dl.guest-price dd').nth(1).innerText();assert.notEqual(advanceRowValue.trim(),'');assert.doesNotMatch(advanceRowValue,/¥0(?:[^0-9]|$)/);
   assert.ok(await ja.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  // R69-D: only the discount amount reads as a reduction in quiet red; subtotal − discount = total is unchanged.
+  for(const width of [390,1440]){await ja.setViewportSize({width,height:900});
+   const v=await ja.evaluate(()=>{const dd=[...document.querySelectorAll('dl.guest-price dd')] as HTMLElement[],nums=dd.map(e=>Number(e.innerText.replace(/[^0-9]/g,'')));return {texts:dd.map(e=>e.innerText.trim()),discountColor:getComputedStyle(dd[1]!).color,totalColor:getComputedStyle(dd[2]!).color,subtotalColor:getComputedStyle(dd[0]!).color,sub:nums[0]!,disc:nums[1]!,total:nums[2]!,cls:dd.map(e=>e.className)};});
+   assert.ok(v.texts[1]!.startsWith('−')&&!v.texts[1]!.startsWith('−−')&&!v.texts[1]!.includes('-'),'one U+2212 sign: '+v.texts[1]);
+   assert.equal(v.discountColor,'rgb(184, 88, 99)');assert.notEqual(v.totalColor,v.discountColor);assert.notEqual(v.subtotalColor,v.discountColor);
+   assert.deepEqual(v.cls,['','guest-price-discount','']);assert.ok(!v.texts[0]!.startsWith('−')&&!v.texts[2]!.startsWith('−'));
+   assert.equal(v.sub-v.disc,v.total,'display only: subtotal − discount = total');
+   await ja.locator('dl.guest-price').screenshot({path:'.local/screenshots/r69-discount-ja-'+width+'.png'});}
   await jaCtx.close();
   // EN, same narrow viewport, default (zero-adjustment) flow: labels localize and no
   // adjustment rows leak in when nothing triggers them, mirroring the JA zero case above.

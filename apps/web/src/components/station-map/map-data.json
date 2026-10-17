@@ -1,0 +1,128 @@
+{
+ "source": {
+  "lp": "https://salomonstation-zao.com/lp/stores",
+  "lpDeployment": "dpl_BwPw4xneKmqq3BW19ncHYAHgvTJc",
+  "mapdataSha256": "804d87b65ad40d33ebb51adfe9b12d06d09728cc4ee9a5f7caab4b01b5a8237c",
+  "terrainSvgSha256": "5fe5c9d042963e2597604c73f5c14171053e8c80e0510f976a71d0c995b5a26e",
+  "credit": {
+   "ja": "地形：国土地理院 標高タイル（DEM10B）を加工 · 道路・索道・コース・河川：© OpenStreetMap contributors（ODbL）",
+   "en": "Terrain: processed GSI DEM10B tiles · Roads, lifts, runs, rivers: © OpenStreetMap contributors (ODbL)"
+  }
+ },
+ "map": {
+  "points": [
+   {
+    "id": "mountain",
+    "x": 1448,
+    "y": 700,
+    "ja": "Mountain Station",
+    "en": "Mountain Station",
+    "n": "01"
+   },
+   {
+    "id": "central",
+    "x": 957,
+    "y": 1405,
+    "ja": "Central Station",
+    "en": "Central Station",
+    "n": "02"
+   },
+   {
+    "id": "bus",
+    "x": 805,
+    "y": 951,
+    "ja": "蔵王温泉バスターミナル",
+    "en": "Zao Onsen Bus Terminal"
+   },
+   {
+    "id": "sanroku",
+    "x": 934,
+    "y": 1590,
+    "ja": "蔵王ロープウェイ 山麓駅",
+    "en": "Zao Ropeway Sanroku Sta."
+   },
+   {
+    "id": "onsen-sta",
+    "x": 977,
+    "y": 1234,
+    "ja": "蔵王中央ロープウェイ 温泉駅",
+    "en": "Zao Chuo Ropeway Onsen Sta."
+   },
+   {
+    "id": "uenodai",
+    "x": 1187,
+    "y": 570,
+    "ja": "上の台駅",
+    "en": "Uenodai Lift"
+   },
+   {
+    "id": "daiyotenburo",
+    "x": 1521,
+    "y": 1100,
+    "ja": "蔵王温泉大露天風呂",
+    "en": "Dai-Rotenburo Open-air Bath"
+   },
+   {
+    "id": "sukawa",
+    "x": 1251,
+    "y": 726,
+    "ja": "酢川温泉神社",
+    "en": "Sukawa Onsen Shrine"
+   }
+  ],
+  "views": {
+   "all": {
+    "box": [
+     560,
+     330,
+     1880,
+     1800
+    ],
+    "show": [
+     "bus",
+     "sanroku",
+     "uenodai"
+    ]
+   },
+   "mountain": {
+    "show": [
+     "uenodai",
+     "sukawa",
+     "daiyotenburo"
+    ],
+    "flip": [
+     "sukawa"
+    ]
+   },
+   "central": {
+    "show": [
+     "onsen-sta",
+     "sanroku",
+     "bus"
+    ]
+   }
+  }
+ },
+ "stations": {
+  "mountain": {
+   "store": "MOUNTAIN_BASE",
+   "name": "Mountain Station",
+   "tag": "Hotel JURIN",
+   "hours": "08:30–17:00",
+   "ja": "〒990-2301 山形県山形市蔵王温泉上ノ台814 ホテルJURIN内",
+   "en": "Hotel JURIN, 814 Uwanodai, Zao Onsen, Yamagata City, Yamagata 990-2301",
+   "lat": 38.169695,
+   "lon": 140.401042
+  },
+  "central": {
+   "store": "ONSEN_BASE",
+   "name": "Central Station",
+   "tag": "Next to KIRAKU ONSEN LIVING",
+   "hours": "08:30–17:00",
+   "ja": "山形市蔵王温泉935-25（KIRAKU ONSEN LIVINGとなり）",
+   "en": "935-25 Zao Onsen, Yamagata City (next to KIRAKU ONSEN LIVING)",
+   "lat": 38.16334,
+   "lon": 140.395437
+  }
+ }
+}

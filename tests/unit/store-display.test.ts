@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import {join} from 'node:path';
 import {STORE_DISPLAY_NAMES,storeDisplayName} from '../../packages/contracts/src/store-display';
-import {STORE_LABEL,storeName} from '../../apps/web/src/components/guest-format';
+import {STORE_LABEL,storeName,yen,discountYen} from '../../apps/web/src/components/guest-format';
 
 test('store display dictionary: Owner names, internal IDs unchanged, non-store scope passes through',()=>{
  assert.deepEqual({...STORE_DISPLAY_NAMES},{MOUNTAIN_BASE:'Mountain Station',ONSEN_BASE:'Central Station'});
@@ -18,4 +18,12 @@ test('UI sources render store fields only through the display dictionary',()=>{
  for(const d of dirs)for(const f of readdirSync(d).filter(n=>n.endsWith('.tsx'))){const src=readFileSync(join(d,f),'utf8');
   for(const r of raw){const m=src.match(r);if(m&&!/storeDisplayName|storeName/.test(m[0]))bad.push(f+': '+m[0]);}}
  assert.deepEqual(bad.filter(b=>!/PriceAdminWorkspace|StaffManagement.tsx: \{r\}/.test(b)),[]);
+});
+
+test('discount amounts read as one reduction sign without changing the amount',()=>{
+ for(const ja of [true,false]){
+  assert.equal(discountYen(ja,1200),'−'+yen(ja,1200));assert.equal(discountYen(ja,-1200),'−'+yen(ja,1200),'no double minus for a negative input');
+  assert.equal(discountYen(ja,'1200'),'−'+yen(ja,1200));assert.equal(discountYen(ja,0),yen(ja,0));assert.equal(discountYen(ja,null),yen(ja,null));
+  assert.ok(!discountYen(ja,-1200).includes('-'),'only U+2212, never a doubled ASCII hyphen');
+ }
 });

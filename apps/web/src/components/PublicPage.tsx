@@ -5,6 +5,7 @@ import {publicationApproved} from '../../../../packages/auth/src/publication-aut
 import {approvedLegalDocs,legalDocument,legalPath,legalPublicationComplete} from '../../../../packages/core/src/content/public-legal';
 import {PublicHeader,PublicFooter,PublicFinal,StationReveal} from './PublicChrome';
 import {PriceExplorer} from './PriceExplorer';
+import {StationMap} from './station-map/StationMap';
 import {priceGrid,dayPrice} from './price-rows';
 import {products,photos,type Shot} from './brand/media';
 import {STORE_DISPLAY} from './brand';
@@ -156,6 +157,7 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
   const steps:[string,string,string][]=[['01','BOOKING / QR',t('予約確認ページのQRを用意','Have your booking QR ready')],['02','FIT CHECK',t('スタッフとサイズ・用品を確認','Check size and gear with staff')],['03','PICKUP',t('受取店舗で受け取り','Collect at your pickup station')],['04','RETURN',t('返却店舗へ返却','Return at your return station')]];
   body=<>
    <section className="st-sec st-sec--tight st-stores" aria-label={t('店舗','Stores')}>{(['MOUNTAIN_BASE','ONSEN_BASE'] as const).map(s=><div key={s} className="st-store-row"><Link className="st-store-n" href={canonicalPath(locale,STORE_PATH[s])}>{STORE_DISPLAY[s]}</Link><p className="st-store-m">{maps(STORE_GEO[s]).map(([l,h])=><a key={l} className="st-link" href={h} rel="noopener" target="_blank">{l} ↗</a>)}</p></div>)}</section>
+   <StationMap locale={locale}/>
    <section className="st-sec" aria-label={t('受取から返却まで','From pickup to return')}><ol className="st-flow">{steps.map(([n,h,d])=><li key={n}><span className="st-flow-n">{n}</span><span className="st-flow-h">{h}</span><span className="st-flow-d">{d}</span></li>)}</ol></section>
    <section className="st-sec" aria-label={t('時間','Times')}><dl className="st-spec">
     <div><dt>{t('営業時間','OPEN')}</dt><dd>8:30–17:00</dd></div>
@@ -168,8 +170,8 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
  }else if(path==='stores/mountain-base'||path==='stores/onsen-base'){
   const s=path==='stores/mountain-base'?'MOUNTAIN_BASE':'ONSEN_BASE',[a,b]=STORE_DISPLAY[s].split(' ');
   head=<PageHead word={a!.toUpperCase()} tone={b?.toUpperCase()}><p className="st-store-m">{maps(STORE_GEO[s]).map(([l,h])=><a key={l} className="st-link" href={h} rel="noopener" target="_blank">{l} ↗</a>)}</p><div className="st-ph-acts">{book()}</div></PageHead>;
-  body=<section className="st-sec st-sec--tight" aria-label={page.title}><dl className="st-spec">{page.bullets.map(x=>{const m=/^(\S+)\s+(.+)$/.exec(x);return m?<div key={x}><dt>{m[1]}</dt><dd>{m[2]}</dd></div>:<div key={x}><dd>{x}</dd></div>;})}</dl>
-   <p className="st-more"><Link className="st-link" href={r+'/pickup-return'}>PICKUP / RETURN →</Link></p></section>;
+  body=<><section className="st-sec st-sec--tight" aria-label={page.title}><dl className="st-spec">{page.bullets.map(x=>{const m=/^(\S+)\s+(.+)$/.exec(x);return m?<div key={x}><dt>{m[1]}</dt><dd>{m[2]}</dd></div>:<div key={x}><dd>{x}</dd></div>;})}</dl>
+   <p className="st-more"><Link className="st-link" href={r+'/pickup-return'}>PICKUP / RETURN →</Link></p></section><StationMap locale={locale} initial={s==='MOUNTAIN_BASE'?'mountain':'central'}/></>;
  }else{
   head=<PageHead word={page.heading}><div className="st-ph-acts">{book()}</div></PageHead>;
  }

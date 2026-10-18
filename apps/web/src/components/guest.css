@@ -265,5 +265,8 @@ html[lang=ja] .guest-seg-o b{font:700 15px/1.1 var(--b)}
 }
 
 .guest-grid>.guest-wear-colour{grid-column:1 / -1}
+/* Jacket + pants: one full-width block after the ski type and pole hint (dense back-fill cannot split it). */
+.guest-grid>.guest-wear-pair{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
+@media (max-width:767px){.guest-grid>.guest-wear-pair{grid-template-columns:1fr}}
 .guest-map-link{grid-column:1/-1;margin:0}
 .guest-map-link a{font:700 14px/1.4 var(--d);letter-spacing:.04em;color:var(--ink);text-underline-offset:3px}

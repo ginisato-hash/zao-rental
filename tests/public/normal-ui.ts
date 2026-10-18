@@ -123,6 +123,29 @@ try{
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();await expect(p.locator('.guest-map-link a')).toHaveAttribute('href','/ja/pickup-return#map');await expect(p.locator('.guest-map-link a')).toHaveAttribute('target','_blank');
   await ctx.close();
  });
+ await check('R70: Jacket/Pants sit together after the ski type and pole hint (side by side 1440, stacked 390) and wear sizes are ordered XS→2XL, selections kept',async()=>{
+  // Production adult labels arrive unordered (S, XS, M, 2XL, XL, L); only the options response is extended, nothing is saved.
+  const shuffled=[['WEAR_JACKET',['S','XS','M','2XL','XL','L']],['WEAR_PANTS',['XS','XL','S','M','L','2XL']]] as const;
+  for(const [width,height] of [[390,844],[1440,900]] as const)for(const locale of ['ja','en'] as const){const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
+   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width,height}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+   await p.route('**/api/guest/options',async route=>{const r=await route.fetch(),body=await r.json() as {sizes:{key:string;label:string;family:string;age:string;tier:string}[]};
+    body.sizes=[...body.sizes.filter(v=>!v.family.startsWith('WEAR_')),...shuffled.flatMap(([family,labels])=>labels.map(label=>({key:'r70-'+family+'-'+label,label,family,age:'ADULT',tier:'STANDARD'})))];await route.fulfill({response:r,json:body});});
+   await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();
+   await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill('2035-01-09');await p.getByLabel(t('利用終了日','End date'),{exact:true}).fill('2035-01-09');await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
+   const card=p.getByRole('article',{name:t('利用者 ','Person ')+'1',exact:true}),jacket=card.getByLabel(t('ジャケット','Jacket'),{exact:true}),pants=card.getByLabel(t('パンツ','Pants'),{exact:true});
+   for(const s of [jacket,pants])assert.deepEqual((await s.locator('option').allTextContents()).slice(1),['XS','S','M','L','XL','2XL']);
+   const box=async(l:import('@playwright/test').Locator)=>(await l.boundingBox())!;
+   const type=await box(card.getByRole('radiogroup',{name:t('滑り方（ビンディング設定用）','How you ski (for binding settings)')})),pole=await box(card.locator('p.guest-hint').filter({hasText:t('ポールは','We’ll prepare the most suitable pole')})),jb=await box(jacket),pb=await box(pants);
+   assert.ok(jb.y>=type.y+type.height&&jb.y>=pole.y+pole.height,'jacket below ski type and pole hint');
+   if(width===1440){assert.equal(Math.round(jb.y),Math.round(pb.y),'side by side');assert.ok(pb.x>jb.x);}else assert.ok(pb.y>=jb.y+jb.height,'stacked on mobile');
+   await jacket.selectOption({label:'XL'});await pants.selectOption({label:'S'});await card.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');
+   assert.equal(await jacket.inputValue(),'r70-WEAR_JACKET-XL');assert.equal(await pants.inputValue(),'r70-WEAR_PANTS-S');
+   await card.screenshot({path:`.local/screenshots/r70-ski-${locale}-${width}.png`});
+   await card.getByLabel(t('用品','Equipment'),{exact:true}).selectOption('WEAR');
+   for(const s of [jacket,pants])assert.deepEqual((await s.locator('option').allTextContents()).slice(1),['XS','S','M','L','XL','2XL']);
+   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   await card.screenshot({path:`.local/screenshots/r70-wear-${locale}-${width}.png`});await ctx.close();}
+ });
  await check('long public headings remain fully readable on mobile and desktop',async()=>{
   for(const width of [390,768,1440]){
    await page.setViewportSize({width,height:width===390?844:900});

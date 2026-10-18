@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import {join} from 'node:path';
 import {STORE_DISPLAY_NAMES,storeDisplayName} from '../../packages/contracts/src/store-display';
-import {STORE_LABEL,storeName,yen,discountYen} from '../../apps/web/src/components/guest-format';
+import {STORE_LABEL,storeName,yen,discountYen,byWearSize} from '../../apps/web/src/components/guest-format';
 
 test('store display dictionary: Owner names, internal IDs unchanged, non-store scope passes through',()=>{
  assert.deepEqual({...STORE_DISPLAY_NAMES},{MOUNTAIN_BASE:'Mountain Station',ONSEN_BASE:'Central Station'});
@@ -26,4 +26,13 @@ test('discount amounts read as one reduction sign without changing the amount',(
   assert.equal(discountYen(ja,'1200'),'−'+yen(ja,1200));assert.equal(discountYen(ja,0),yen(ja,0));assert.equal(discountYen(ja,null),yen(ja,null));
   assert.ok(!discountYen(ja,-1200).includes('-'),'only U+2212, never a doubled ASCII hyphen');
  }
+});
+
+test('wear sizes display XS→2XL, numeric ascending, unknown labels kept last in order, keys untouched',()=>{
+ const l=(...xs:string[])=>xs.map((label,i)=>({key:'k'+i,label}));
+ assert.deepEqual(byWearSize(l('S','XS','M','2XL','XL','L')).map(v=>v.label),['XS','S','M','L','XL','2XL']);
+ assert.deepEqual(byWearSize(l('L','S','M','XS')).map(v=>v.label),['XS','S','M','L']);
+ assert.deepEqual(byWearSize(l('3XL','XXL','xxs','xl')).map(v=>v.label),['xxs','xl','XXL','3XL']);
+ assert.deepEqual(byWearSize(l('150','FREE','130 cm','ONE','140')).map(v=>v.label),['130 cm','140','150','FREE','ONE']);
+ const input=l('M','S');assert.deepEqual(byWearSize(input).map(v=>v.key),['k1','k0']);assert.deepEqual(input.map(v=>v.label),['M','S'],'input not mutated');
 });

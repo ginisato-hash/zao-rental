@@ -88,12 +88,14 @@ export async function startFlowApp(options:{productionCopy?:boolean;paymentFault
   const env:NodeJS.ProcessEnv={...(options.productionCopy?{ZAO_TEST_PRODUCTION_COPY:'1'}:{}),...(avatar?{ZAO_AVATAR_READ_RUNTIME:JSON.stringify(avatar.avatarDb)}:{}),...(access?{ZAO_BOOKING_ACCESS_RUNTIME:JSON.stringify(access.accessDb)}:{}),...(guest&&content?{ZAO_GUEST_RUNTIME:JSON.stringify(guest.guestDb),ZAO_CONTENT_READ_RUNTIME:JSON.stringify(content.contentReadDb),ZAO_CONTENT_RUNTIME:JSON.stringify(content.contentDb),ZAO_PUBLIC_ORIGIN:origin}:{}),...(options.publicP1?{ZAO_TEST_PUBLIC_P1:'1'}:{}),NODE_ENV:'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config),ZAO_TEST_FLOW_RUNTIME:JSON.stringify(flow.flowDb),ZAO_TEST_CUSTODY_RUNTIME:JSON.stringify(custody.custodyDb),...(options.contentFixture?{ZAO_TEST_CONTENT_FIXTURE_ROOT:resolve('.local/content-fixtures')}:{ }),...(options.paymentFault?{ZAO_TEST_FLOW_FAULT:options.paymentFault}:{})};
   const args=['node_modules/next/dist/bin/next','dev','tests/flow-app','--webpack','--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   function launch(){
-   const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});
+   // Own process group: `next dev` serves from a child process, so stop() must signal the whole group, not only the parent.
+   const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe'],detached:true});
+   const signal=(s:NodeJS.Signals)=>{try{process.kill(-web.pid!,s);}catch{web.kill(s);}};
    // Never persist raw auth/callback/cookie diagnostics.
    const diagnostics=webDiagnosticForwarder(line=>console.error(line));web.stdout.resume();web.stderr.on('data',chunk=>diagnostics.push(chunk));web.stderr.on('end',()=>diagnostics.end());
    let exited=false,stopRequested=false;const exit=new Promise<number>(resolve=>{web.once('error',()=>{exited=true;resolve(1);});web.once('exit',(code,signal)=>{exited=true;if(!stopRequested)console.error(JSON.stringify({code:'TEST_WEB_UNEXPECTED_EXIT',exitCode:Number.isInteger(code)?code:null,signal:signal==='SIGKILL'||signal==='SIGTERM'||signal==='SIGABRT'?signal:'OTHER'}));resolve(code??1);});});
    let closing:Promise<void>|undefined;
-   return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){stopRequested=true;web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
+   return {pid:web.pid,exit,stop:()=>closing??=(async()=>{if(!exited){stopRequested=true;signal('SIGTERM');const timer=setTimeout(()=>signal('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}})()};
   }
   let current=launch(),stopping:Promise<void>|undefined,restarting=false;
   const stop=()=>stopping??=(async()=>{try{await current.stop();}finally{try{await avatar?.close();await access?.close();await guest?.close();await content?.close();await custody!.close();await flow!.close();await roles!.close();}finally{await db.stop();}}})();

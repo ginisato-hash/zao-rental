@@ -13,7 +13,7 @@ export function guestHandler(contexts:GuestContexts,service:(a:GuestActor)=>Gues
  const url=new URL(req.url),path=url.pathname.slice('/api/guest'.length);if(url.search)throw new HoldError('INVALID_QUERY',422);
  if(!['GET','POST'].includes(req.method))throw new HoldError('METHOD_NOT_ALLOWED',405);
  if(req.method==='POST'&&(req.headers.get('origin')!==origin||req.headers.get('sec-fetch-site')==='cross-site'))throw new HoldError('ORIGIN_REJECTED',403);
- if(security)await security.service.guard(security.peer(req));
+ if(security)await security.service.guard(security.peer(req),{entry:req.method==='POST'&&(path==='/context'||path==='/recover')});
  if(!recoveryEnabled&&['/recover','/recovery-code'].includes(path))throw new HoldError('RECOVERY_UNCONNECTED',503);
  if(req.method==='POST'&&path==='/recover'){if(!security)throw new HoldError('RECOVERY_UNCONNECTED',503);const v=exact(await readJson(req),['code','requestId']);const c=await security.service.recover(v.code,v.requestId);return Response.json({recovered:true,replayed:c.replayed},{headers:{...privateHeaders,'Set-Cookie':guestCookie(c.token,origin.startsWith('https:'),false,c.maxAgeSeconds)}});}
  if(req.method==='POST'&&path==='/context'){const body=await readJson(req);if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).length)throw new HoldError('INVALID_INPUT');

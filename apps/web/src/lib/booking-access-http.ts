@@ -7,14 +7,15 @@ import {HoldError} from '../../../../packages/contracts/src/hold';
 import {exact} from '../../../../packages/contracts/src/pricing';
 import {readJson} from './ledger-http';
 const headers={'Cache-Control':'private, no-store','Vary':'Cookie','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'};
-export function bookingAccessHandler(access:BookingAccess,contexts:GuestContexts,origin:string,guard?:(r:Request)=>Promise<void>,recovery?:BookingRecovery){return async(req:Request)=>{
+export function bookingAccessHandler(access:BookingAccess,contexts:GuestContexts,origin:string,guard?:(r:Request,options?:{entry?:boolean})=>Promise<void>,recovery?:BookingRecovery){return async(req:Request)=>{
  try{
   if(process.env.NODE_ENV==='production'&&(!guard||!origin.startsWith('https:')))throw new FlowError('BOOKING_ACCESS_UNCONFIGURED',503);
   const url=new URL(req.url),path=url.pathname.slice('/api/booking-access'.length);
   if(url.search)throw new FlowError('INVALID_QUERY',422);
   if(!['GET','POST'].includes(req.method))throw new FlowError('METHOD_NOT_ALLOWED',405);
   if(req.method==='POST'&&(req.headers.get('origin')!==origin||req.headers.get('sec-fetch-site')==='cross-site'))throw new FlowError('ORIGIN_REJECTED',403);
-  await guard?.(req);
+  // Anonymous recovery is entry; /recovery/prepare runs for a resolved guest context.
+  await guard?.(req,{entry:req.method==='POST'&&['/recovery/request','/recovery/exchange','/recovery/revoke'].includes(path)});
   if(req.method==='GET'&&path===''){
    const booking=await access.read(bookingAccessToken(req.headers),bookingAccessToken(req.headers,BOOKING_CANCEL_COOKIE));
    return Response.json({...booking,qrImage:booking.qr?await QRCode.toDataURL(booking.qr,{width:240,margin:2}):null},{headers});

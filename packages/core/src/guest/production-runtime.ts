@@ -92,7 +92,8 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   const readDerivative=async(digest:string)=>{if(!r2||! /^[a-f0-9]{64}$/.test(digest))return null;return r2.readPrivate('private/derivative/sha256/'+digest);};
   stage='MEDIA';let avatar=null;
   if(guest&&c.flags.avatar){const visuals=new PostgresAvatarVisuals(required('avatar_read')),rate=avatarGuestSecurity(required('guest'),guest.contexts,secrets.guestKey);await rate.transaction(async()=>{});
-   avatar={guard:(request:Request)=>rate.guard(guest.security.peer(request)),load:(headers:Headers,scope:Parameters<typeof loadGuestAvatar>[4])=>loadGuestAvatar(guest.contexts,required('recommendation'),visuals,headers,scope),reader:()=>({findForDelivery:(id:string,hash:string,now:Date)=>visuals.findForDelivery(id,hash,now),readBytes:async(hash:string)=>{const bytes=await readDerivative(hash);return bytes?Buffer.from(bytes):null;}})};
+   // Avatar media keeps its own global byte-delivery cost budget (separate policy version), unchanged by S07.
+   avatar={guard:(request:Request)=>rate.guard(guest.security.peer(request),{entry:true}),load:(headers:Headers,scope:Parameters<typeof loadGuestAvatar>[4])=>loadGuestAvatar(guest.contexts,required('recommendation'),visuals,headers,scope),reader:()=>({findForDelivery:(id:string,hash:string,now:Date)=>visuals.findForDelivery(id,hash,now),readBytes:async(hash:string)=>{const bytes=await readDerivative(hash);return bytes?Buffer.from(bytes):null;}})};
   }
   stage='READY';await input.audit(stage);if(input.publication){if(!input.identity)throw Error();publication=issuePublicationAuthority(input.identity,input.publication);installPublicationAuthority(publication);}let closed=false;
   return Object.freeze({configuration:c,staff,guest,service,access,recovery,avatar,refundWorker,notifications,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,

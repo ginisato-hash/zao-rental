@@ -15,12 +15,12 @@ try{
  await db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:00Z'::timestamptz$$");
  const key=randomBytes(32).toString('hex'),contexts=new GuestContexts(role.guestPool),peer=guestPeerKey('192.0.2.10',key);
  const a=avatarGuestSecurity(role.guestPool,contexts,key),b=avatarGuestSecurity(replica,new GuestContexts(replica),key);
- const results=await Promise.all(Array.from({length:avatarGuestPolicy.peerRequests+2},(_,i)=>(i%2?a:b).guard(peer).then(()=>true,e=>{assert.equal(e.code,'GUEST_RATE_LIMITED');return false;})));
+ const results=await Promise.all(Array.from({length:avatarGuestPolicy.peerRequests+2},(_,i)=>(i%2?a:b).guard(peer,{entry:true}).then(()=>true,e=>{assert.equal(e.code,'GUEST_RATE_LIMITED');return false;})));
  assert.equal(results.filter(Boolean).length,avatarGuestPolicy.peerRequests);
  const counts=(await db.pool.query('SELECT count FROM guest_rate_buckets ORDER BY bucket')).rows.map(r=>r.count);
  assert.deepEqual(counts,[avatarGuestPolicy.peerRequests,avatarGuestPolicy.peerRequests]);
  let loads=0,reads=0;
- const boundary:GuestAvatarBoundary={guard:()=>b.guard(peer),load:async()=>{loads++;return {payloads:{APPEARANCE_1:null,APPEARANCE_2:null},previewId:'20000000-0000-4000-8000-000000000003'};},reader:()=>({findForDelivery:async()=>{reads++;return null;},readBytes:async()=>{reads++;return null;}})};
+ const boundary:GuestAvatarBoundary={guard:()=>b.guard(peer,{entry:true}),load:async()=>{loads++;return {payloads:{APPEARANCE_1:null,APPEARANCE_2:null},previewId:'20000000-0000-4000-8000-000000000003'};},reader:()=>({findForDelivery:async()=>{reads++;return null;},readBytes:async()=>{reads++;return null;}})};
  const scope='20000000-0000-4000-8000-000000000001/1/person-1',metadata='/api/guest/avatar/'+scope;
  for(const media of [false,true]){
   const path=media?'/guest-avatar-media/'+scope+'/20000000-0000-4000-8000-000000000002/'+'a'.repeat(64):metadata;

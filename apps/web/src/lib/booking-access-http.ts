@@ -14,7 +14,8 @@ export function bookingAccessHandler(access:BookingAccess,contexts:GuestContexts
   if(url.search)throw new FlowError('INVALID_QUERY',422);
   if(!['GET','POST'].includes(req.method))throw new FlowError('METHOD_NOT_ALLOWED',405);
   if(req.method==='POST'&&(req.headers.get('origin')!==origin||req.headers.get('sec-fetch-site')==='cross-site'))throw new FlowError('ORIGIN_REJECTED',403);
-  await guard?.(req,{entry:req.method==='POST'&&path.startsWith('/recovery/')});
+  // Anonymous recovery is entry; /recovery/prepare runs for a resolved guest context.
+  await guard?.(req,{entry:req.method==='POST'&&['/recovery/request','/recovery/exchange','/recovery/revoke'].includes(path)});
   if(req.method==='GET'&&path===''){
    const booking=await access.read(bookingAccessToken(req.headers),bookingAccessToken(req.headers,BOOKING_CANCEL_COOKIE));
    return Response.json({...booking,qrImage:booking.qr?await QRCode.toDataURL(booking.qr,{width:240,margin:2}):null},{headers});

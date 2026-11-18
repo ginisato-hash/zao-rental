@@ -41,7 +41,9 @@ export function PageHead({word,tone,children}:{word:string;tone?:string|undefine
  const longest=Math.max(...(word+' '+(tone??'')).split(/\s+/).map(w=>w.length));
  return <header className="st-ph" style={{'--n':longest} as React.CSSProperties}><h1>{word}{tone&&<span className="st-tone"> {tone}</span>}</h1>{children}</header>;
 }
-const yen=(n:number)=>'¥'+n.toLocaleString('en-US');
+const yen=(n:number)=>'¥'+n.toLocaleString('en-US')
+/** Every public price reads with its tax status right after it (Owner 2026-11-19). Display only. */
+const yenTax=(ja:boolean,n:number)=>yen(n)+(ja?'（税込）':' (tax included)');
 const STORE_PATH={MOUNTAIN_BASE:'stores/mountain-base',ONSEN_BASE:'stores/onsen-base'} as const;
 /** Coordinates of each station's building (OSM, same points as the LP map) for directions links only. */
 const STORE_GEO={MOUNTAIN_BASE:'38.169695,140.401042',ONSEN_BASE:'38.16334,140.395437'} as const;
@@ -49,14 +51,14 @@ const maps=(geo:string)=>[['GOOGLE MAPS','https://www.google.com/maps/dir/?api=1
 
 type Tile={key:string;name:string;tone:string;fact:string;view:string;image:React.ReactNode;kind:'product'|'photo';soon?:boolean};
 function lineup(locale:Locale):Tile[]{
- const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e,r='/'+locale,day=t('1日','1 day');
+ const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e,r='/'+locale,day=t('1日','1 day'),yt=(n:number)=>yenTax(ja,n);
  const promise=t('モデル指定','Model promised');
  return [
-  {key:'ski-regular',name:'SKI',tone:'REGULAR',fact:t('モデル非指定 · セット','Any model · set')+' '+day+' '+yen(dayPrice('SKI_SET_ADULT_REGULAR')),view:r+'/rental/ski',kind:'product',image:<Product shot={products.regular} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/>},
-  {key:'ski-premium',name:'SKI',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SKI_SET_ADULT_PREMIUM')),view:r+'/rental/premium#ski',kind:'photo',soon:!premiumOpen('SKI'),image:<Product shot={products.premium} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
-  {key:'snowboard-regular',name:'SNOWBOARD',tone:'REGULAR',fact:t('モデル非指定 · セット','Any model · set')+' '+day+' '+yen(dayPrice('SNOWBOARD_SET_ADULT_REGULAR')),view:r+'/rental/snowboard',kind:'product',image:<Product shot={products.snowboard} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
-  {key:'snowboard-premium',name:'SNOWBOARD',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yen(dayPrice('SNOWBOARD_SET_ADULT_PREMIUM')),view:r+'/rental/premium#snowboard',kind:'photo',soon:!premiumOpen('SNOWBOARD'),image:<Product shot={products.snowboardRide} locale={locale} sizes="(max-width:767px) 100vw, 58vw"/>},
-  {key:'wear',name:'WEAR',tone:'JACKET + PANTS',fact:t('上下セット','Jacket + pants')+' · '+day+' '+yen(dayPrice('WEAR_SET_ADULT')),view:r+'/rental/wear',kind:'photo',image:<Photo shot={photos.wear} locale={locale} sizes="100vw"/>},
+  {key:'ski-regular',name:'SKI',tone:'REGULAR',fact:t('モデル指定なし · セット','No specific model · set')+' '+day+' '+yt(dayPrice('SKI_SET_ADULT_REGULAR')),view:r+'/rental/ski',kind:'product',image:<Product shot={products.regular} locale={locale} eager sizes="(max-width:767px) 100vw, 58vw"/>},
+  {key:'ski-premium',name:'SKI',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yt(dayPrice('SKI_SET_ADULT_PREMIUM')),view:r+'/rental/premium#ski',kind:'photo',soon:!premiumOpen('SKI'),image:<Product shot={products.premium} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
+  {key:'snowboard-regular',name:'SNOWBOARD',tone:'REGULAR',fact:t('モデル指定なし · セット','No specific model · set')+' '+day+' '+yt(dayPrice('SNOWBOARD_SET_ADULT_REGULAR')),view:r+'/rental/snowboard',kind:'product',image:<Product shot={products.snowboard} locale={locale} sizes="(max-width:767px) 100vw, 42vw"/>},
+  {key:'snowboard-premium',name:'SNOWBOARD',tone:'PREMIUM',fact:promise+' · '+t('セット','set')+' '+day+' '+yt(dayPrice('SNOWBOARD_SET_ADULT_PREMIUM')),view:r+'/rental/premium#snowboard',kind:'photo',soon:!premiumOpen('SNOWBOARD'),image:<Product shot={products.snowboardRide} locale={locale} sizes="(max-width:767px) 100vw, 58vw"/>},
+  {key:'wear',name:'WEAR',tone:'JACKET + PANTS',fact:t('上下セット','Jacket + pants')+' · '+day+' '+yt(dayPrice('WEAR_SET_ADULT')),view:r+'/rental/wear',kind:'photo',image:<Photo shot={photos.wear} locale={locale} sizes="100vw"/>},
  ];
 }
 /** Palace range grid: IMAGE · NAME (two-tone) · 1 FACT · ACTION. Equal-rank, asymmetric. */
@@ -94,7 +96,7 @@ function faq(locale:Locale,latePickup:string):[string,React.ReactNode][]{
 }
 
 export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;models?:{slug:string;name:string;season:string}[];page:typeof publicPages[number];locale:Locale;origin:string}){
- const ja=locale==='ja',path=page.path,t=(j:string,e:string)=>ja?j:e,r='/'+locale;
+ const ja=locale==='ja',path=page.path,t=(j:string,e:string)=>ja?j:e,r='/'+locale,yt=(n:number)=>yenTax(ja,n);
  const preview=!publicationApproved()&&<DevelopmentNotice><p className="st-preview">{t('予約受付前の開発プレビューです。実決済・本番予約は行いません。','Development preview before booking launch. No real payment or production booking.')}</p></DevelopmentNotice>;
  const schema=pageSchema(locale,path,origin,page).map((s,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(s)}}/>);
  const book=(label='BOOK RENTAL',href=r+'/book')=><Link className="st-cta" href={href}>{label}<span className="ar" aria-hidden="true">↗</span></Link>;
@@ -113,7 +115,7 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
    <p className="st-intro">{page.summary}</p>
    <section className="st-sec" aria-labelledby="home-lineup"><h2 id="home-lineup" className="st-sec-h">LINEUP<span className="st-tone"> 26/27</span></h2><Lineup locale={locale}/></section>
    <section className="st-sec st-duo" aria-label={t('料金と店舗','Prices and stores')}>
-    <Link className="st-duo-i" href={r+'/prices'}><span className="st-duo-n">PRICES</span><span className="st-duo-f">{t('セット 1日','Set · 1 day')} {yen(dayPrice('SKI_SET_ADULT_REGULAR'))}〜 · {t('税込','tax incl.')}</span><span className="st-duo-a" aria-hidden="true">→</span></Link>
+    <Link className="st-duo-i" href={r+'/prices'}><span className="st-duo-n">PRICES</span><span className="st-duo-f">{t('セット 1日','Set · 1 day')} {yt(dayPrice('SKI_SET_ADULT_REGULAR'))}〜</span><span className="st-duo-a" aria-hidden="true">→</span></Link>
     <Link className="st-duo-i" href={r+'/pickup-return'}><span className="st-duo-n">STORES</span><span className="st-duo-f">{STORE_DISPLAY.MOUNTAIN_BASE} · {STORE_DISPLAY.ONSEN_BASE}</span><span className="st-duo-a" aria-hidden="true">→</span></Link>
    </section>
    {schema}</main></PublicFrame>;
@@ -132,7 +134,7 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
    <section className="st-sec" aria-label={t('1日料金','1-day prices')}><dl className="st-spec">{rows(ski?['SKI_SET_ADULT_REGULAR','SKI_SET_ADULT_PREMIUM','SKI_SET_KIDS_REGULAR']:['SNOWBOARD_SET_ADULT_REGULAR','SNOWBOARD_SET_ADULT_PREMIUM','SNOWBOARD_SET_KIDS_REGULAR']).map(([k,v])=><div key={k}><dt>{(k.includes('KIDS')?t('子供','KIDS'):t('大人','ADULT'))+' · '+(k.endsWith('PREMIUM')?'PREMIUM':'REGULAR')+' · '+t('セット 1日','SET · 1 DAY')}</dt><dd>{v}</dd></div>)}</dl>
     <p className="st-more"><Link className="st-link" href={r+'/prices'}>{t('すべての料金','ALL PRICES')} →</Link></p></section></>;
  }else if(path==='rental/wear'){
-  head=<PageHead word="WEAR" tone="JACKET + PANTS"><p className="st-ph-l">{t('上下セット · 1日','Set · 1 day')} {yen(dayPrice('WEAR_SET_ADULT'))} · {t('セット用品と同時で20%OFF','20% off with an equipment set')}</p><div className="st-ph-acts">{book('BOOK WEAR')}</div></PageHead>;
+  head=<PageHead word="WEAR" tone="JACKET + PANTS"><p className="st-ph-l">{t('上下セット · 1日','Set · 1 day')} {yt(dayPrice('WEAR_SET_ADULT'))} · {t('セット用品と同時で20%OFF','20% off with an equipment set')}</p><div className="st-ph-acts">{book('BOOK WEAR')}</div></PageHead>;
   body=<section className="st-sec st-sec--tight" aria-label="WEAR"><Lineup locale={locale} only={['wear']}/></section>;
  }else if(path==='rental/premium'){
   // R67 (Owner): Premium models are not announced yet, so until a model is bound the page offers Regular booking instead.

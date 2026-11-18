@@ -1,4 +1,5 @@
 import {syntheticLegalReady} from '../fixtures/approved-legal';
+import {currentRentalTerms} from '../../packages/core/src/content/rental-terms';
 import assert from 'node:assert/strict';
 import {mock} from 'node:test';
 import type {ProductionConfiguration} from '../../packages/auth/src/production-config';
@@ -49,7 +50,7 @@ try{
   const post=(path:string,body:unknown)=>api(new Request(origin+'/api/guest'+path,{method:'POST',headers:{origin,cookie,'content-type':'application/json'},body:JSON.stringify(body)}));
   const day='2035-02-'+String(serial++).padStart(2,'0'),input={pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:day,endDate:day,slot:'DAY'},members:[{key:'person-1',sport:'WEAR',heightCm:null,footCm:null,adultAtStart:true,tier:'STANDARD',ski:null,poleSize:null,premiumModel:null,jacketSize:stock.selection.jacketVariantId,pantsSize:stock.selection.pantsVariantId,wearSport:'SKI'}]};
   for(const [path,body] of [['/draft',{draftId:d.id,expectedRevision:d.revision,input}],['/preview',null],['/selection',null]] as const){const response=await post(path,body??{draftId:d.id,expectedRevision:d.revision,...(path==='/selection'?{directions:{'person-1':'RECOMMENDED'},wantAdvance:false,couponCode:null,acceptedModelPolicy:true}:{})});assert.equal(response.status,200,JSON.stringify(await response.clone().json()));d=await response.json() as Draft;}
-  const body={draftId:d.id,expectedRevision:d.revision,reviewHash:d.reviewHash,locale:'en',contact:{displayName:'SYNTHETIC Prepare',email:'synthetic-prepare@example.invalid',termsAccepted:true}};
+  const body={draftId:d.id,expectedRevision:d.revision,reviewHash:d.reviewHash,locale:'en',contact:{displayName:'SYNTHETIC Prepare',email:'synthetic-prepare@example.invalid',termsAccepted:true,terms:{...currentRentalTerms(),locale:'en'}}};
   const counts=async()=>(await x.db.pool.query(`SELECT (SELECT count(*)::int FROM inventory_holds WHERE owner_id=g.actor_id) holds,(SELECT count(*)::int FROM price_quotes WHERE actor=g.actor_id) quotes,(SELECT count(*)::int FROM rental_bookings WHERE owner_id=g.actor_id) bookings,(SELECT count(*)::int FROM rental_payment_attempts WHERE actor=g.actor_id) attempts FROM guest_drafts d JOIN guest_contexts g ON g.id=d.context_id WHERE d.id=$1`,[d.id])).rows[0];
   const rows=async()=>(await x.db.pool.query(`SELECT b.id,b.hold_id,b.quote_id,b.state,b.mode,q.expires_at quote_expires,h.expires_at hold_expires,q.snapshot,q.snapshot_sha256 FROM guest_drafts d JOIN rental_bookings b ON b.id=d.booking_id JOIN price_quotes q ON q.id=b.quote_id JOIN inventory_holds h ON h.id=b.hold_id WHERE d.id=$1`,[d.id])).rows[0];
   return {post,body,counts,rows};
@@ -64,6 +65,16 @@ try{
   const r=await f.post('/prepare-payment',f.body);assert.equal(r.status,200,JSON.stringify(await r.clone().json()));const d=await r.json() as Draft;
   assert.equal(d.booking!.state,'DRAFT');assert.equal(d.booking!.mode,'SQUARE_PRODUCTION');assert.equal(d.hold!.state,'ACTIVE');assert.equal(d.quote!.chargeReady,true);assert.equal(d.quote!.snapshot.currency,'JPY');assert.equal((d.quote!.snapshot.commercialApproval as {revision:number}).revision,2);
   assert.deepEqual(await f.counts(),{holds:1,quotes:1,bookings:1,attempts:0});assert.equal(calls.length,0);
+  // Terms acceptance is recorded in the booking-creation transaction with the server's time, the exact bundle and locale.
+  const t=(await x.db.pool.query(`SELECT a.version,a.sha256,a.locale,abs(extract(epoch FROM a.accepted_at-b.created_at))<5 same_tx,p.policy_version FROM rental_terms_acceptances a JOIN rental_bookings b ON b.id=a.booking_id JOIN booking_cancellation_policies p ON p.booking_id=b.id WHERE b.id=$1`,[d.booking!.id])).rows;
+  assert.deepEqual(t,[{version:currentRentalTerms().version,sha256:currentRentalTerms().sha256,locale:'en',same_tx:true,policy_version:'ZAO_CANCELLATION_V1'}]);
+  await assert.rejects(x.db.pool.query('UPDATE rental_terms_acceptances SET locale=$1',['ja']));
+ });
+ await check('missing or outdated terms bundle is refused before any HOLD/booking/attempt',async()=>{
+  const g=await fixture();
+  for(const [terms,code] of [[undefined,'INVALID_INPUT'],[{...currentRentalTerms(),version:'ZAO_RENTAL_TERMS_V1',locale:'en'},'TERMS_VERSION_MISMATCH'],[{...currentRentalTerms(),sha256:'0'.repeat(64),locale:'en'},'TERMS_VERSION_MISMATCH']] as const){
+   const {terms:_,...rest}=g.body.contact;void _;const r=await g.post('/prepare-payment',{...g.body,contact:terms?{...rest,terms}:rest});assert.notEqual(r.status,200);assert.equal((await r.json()).error,code);}
+  assert.deepEqual(await g.counts(),{holds:0,quotes:0,bookings:0,attempts:0});assert.equal(calls.length,0);
  });
  await check('identical concurrent prepare reuses IDs and TTL; changed contact/locale refuse',async()=>{
   const before=await f.rows();for(const r of await Promise.all([f.post('/prepare-payment',f.body),f.post('/prepare-payment',f.body)]))assert.equal(r.status,200);

@@ -10,11 +10,17 @@ export function flowId(value:unknown):asserts value is string{if(typeof value!==
 export function flowObject(value:unknown,keys:readonly string[]){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join()!==[...keys].sort().join())throw new FlowError('INVALID_INPUT',422);return value as Record<string,unknown>;}
 export function flowStore(value:unknown):StoreId{if(value!=='MOUNTAIN_BASE'&&value!=='ONSEN_BASE')throw new FlowError('INVALID_STORE',422);return value;}
 export function flowVersion(value:unknown):number{if(!Number.isSafeInteger(value)||Number(value)<1)throw new FlowError('INVALID_VERSION',422);return Number(value);}
-export function syntheticContact(value:unknown){const v=flowObject(value,['displayName','email','termsAccepted']);if(typeof v.displayName!=='string'||!/^SYNTHETIC [A-Za-z0-9 -]{1,60}$/.test(v.displayName)||typeof v.email!=='string'||!/^synthetic-[a-z0-9-]{1,64}@example\.invalid$/.test(v.email)||v.termsAccepted!==true)throw new FlowError('SYNTHETIC_PREVIEW_ONLY',422);return {displayName:v.displayName,email:v.email,termsAccepted:true,termsVersion:'DEVELOPMENT_PREVIEW_NOT_COMMERCIAL_TERMS_V1'};}
-/** Commercial contact records acceptance of the approved cancellation policy only. */
-export function commercialContact(value:unknown){const v=flowObject(value,['displayName','email','termsAccepted']);
+export function syntheticContact(value:unknown){const v=flowObject(value&&typeof value==='object'&&!Array.isArray(value)&&'terms' in value?Object.fromEntries(Object.entries(value).filter(([k])=>k!=='terms')):value,['displayName','email','termsAccepted']);if(typeof v.displayName!=='string'||!/^SYNTHETIC [A-Za-z0-9 -]{1,60}$/.test(v.displayName)||typeof v.email!=='string'||!/^synthetic-[a-z0-9-]{1,64}@example\.invalid$/.test(v.email)||v.termsAccepted!==true)throw new FlowError('SYNTHETIC_PREVIEW_ONLY',422);return {displayName:v.displayName,email:v.email,termsAccepted:true,termsVersion:'DEVELOPMENT_PREVIEW_NOT_COMMERCIAL_TERMS_V1'};}
+/** Commercial contact: the customer accepted the current rental terms bundle (version + SHA-256 of the exact JA/EN text,
+ * shown in the locale named here). A missing, older or altered bundle is refused before any booking or payment work.
+ * termsVersion stays the refund-arithmetic policy (ZAO_CANCELLATION_V1); rentalTerms is the accepted text bundle. */
+export type RentalTermsAcceptance={version:string;sha256:string;locale:'ja'|'en'};
+export function commercialContact(value:unknown,expected?:{version:string;sha256:string}){const v=flowObject(value,['displayName','email','termsAccepted','terms']);
  if(typeof v.displayName!=='string'||!v.displayName.trim()||v.displayName.length>120||/[\x00-\x1f\x7f]/.test(v.displayName)||typeof v.email!=='string'||v.email.length>254||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)||v.termsAccepted!==true)throw new FlowError('INVALID_BOOKING_CONTACT',422);
- return {displayName:v.displayName.trim(),email:v.email.trim(),termsAccepted:true,termsVersion:'ZAO_CANCELLATION_V1'};
+ const terms=v.terms as Record<string,unknown>|null;if(!terms||typeof terms!=='object'||Array.isArray(terms)||Object.keys(terms).sort().join()!=='locale,sha256,version'||typeof terms.version!=='string'||typeof terms.sha256!=='string'||!/^[0-9a-f]{64}$/.test(terms.sha256)||(terms.locale!=='ja'&&terms.locale!=='en'))throw new FlowError('TERMS_ACCEPTANCE_REQUIRED',422);
+ if(!expected||terms.version!==expected.version||terms.sha256!==expected.sha256)throw new FlowError('TERMS_VERSION_MISMATCH',409);
+ const rentalTerms:RentalTermsAcceptance={version:terms.version,sha256:terms.sha256,locale:terms.locale};
+ return {displayName:v.displayName.trim(),email:v.email.trim(),termsAccepted:true,termsVersion:'ZAO_CANCELLATION_V1',rentalTerms};
 }
 export type SyntheticContact=ReturnType<typeof syntheticContact>;
 export type PaymentObservation={providerId:string;referenceId:string;idempotencyKey:string;merchantId:string;locationId:string;amountJpy:number;currency:'JPY';status:'PENDING'|'COMPLETED'|'FAILED'|'CANCELED';updatedAt:string;completedAt:string|null};

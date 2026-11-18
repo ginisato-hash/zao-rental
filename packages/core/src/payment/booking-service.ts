@@ -6,6 +6,7 @@ import {commercialPriceApproval,issueCommercialPriceAuthority,type CommercialPri
 import {HoldError} from '../../../contracts/src/hold';
 import {parseVerifiedSquareWebhook} from './square-boundary';
 import {randomUUID} from 'node:crypto';
+import {currentRentalTerms} from '../content/rental-terms';
 import type {Pool,PoolClient} from 'pg';
 import {loadStaff,type Permission} from '../../../auth/src/staff-auth';
 import {authorizeBookingActor,isGuest,type GuestActor} from '../../../auth/src/booking-actor';
@@ -23,7 +24,7 @@ export class BookingService{
  else if(gateway&&(process.env.NODE_ENV==='production'||!simulation||!['test','development'].includes(simulation.nodeEnv)))throw new FlowError('SIMULATION_FORBIDDEN',503);
  }
  commercialEnabled(){return Boolean(this.productionIdentity&&exactProductionIdentityConfiguration(this.productionIdentity)&&this.gateway?.kind==='SQUARE_PRODUCTION');}
- normalizeContact(value:unknown){return this.commercialEnabled()?commercialContact(value):syntheticContact(value);}
+ normalizeContact(value:unknown){return this.commercialEnabled()?commercialContact(value,currentRentalTerms()):syntheticContact(value);}
  private paymentBinding(){const c=this.productionIdentity&&exactProductionIdentityConfiguration(this.productionIdentity);return c?.payment??this.simulation!;}
 
  protected async time(c:Connection){return (await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;}

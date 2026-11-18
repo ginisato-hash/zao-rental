@@ -7,7 +7,7 @@ export const notificationStates=['PENDING','SENDING','SENT','RETRYABLE_FAILURE',
 export type NotificationState=typeof notificationStates[number];
 export type NotificationLocale='ja'|'en';
 export type SafeDeliveryFailure='DELIVERY_UNCONNECTED'|'RATE_LIMITED'|'PROVIDER_UNAVAILABLE'|'PERMANENT_REJECT'|'ACCEPTANCE_UNKNOWN'|'RETRY_EXHAUSTED'|'RECOVERY_EXPIRED_OR_REVOKED'|'TEMPLATE_UNAVAILABLE'|'RECIPIENT_UNAVAILABLE'|'NONE';
-export type NotificationMessage={idempotencyKey:string;eventType:NotificationEvent;recipient:string;locale:NotificationLocale;subject:string;text:string;html?:string};
+export type NotificationMessage={idempotencyKey:string;eventType:NotificationEvent|'STAFF_BOOKING_CONFIRMED';recipient:string;locale:NotificationLocale;subject:string;text:string;html?:string};
 export type DeliveryResult={state:'ACCEPTED';providerMessageId:string}|{state:'NOT_ACCEPTED';code:'RATE_LIMITED'|'PROVIDER_UNAVAILABLE'}|{state:'REJECTED';code:'PERMANENT_REJECT'}|{state:'UNKNOWN'};
 /** No default transport or credentials. Provider idempotency/lookup are capabilities,
  * not an exactly-once guarantee. A timeout always leaves acceptance ambiguous. */

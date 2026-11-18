@@ -33,4 +33,5 @@ export const migrationPlan = [
   {id:'0057',file:'0057_preparation_pole_v13.sql'},
   {id:'0058',file:'0058_provisional_catalog_bridge.sql'},
   {id:'0059',file:'0059_rental_terms_acceptance.sql'},
+  {id:'0060',file:'0060_staff_booking_notifications.sql'},
 ] as const;

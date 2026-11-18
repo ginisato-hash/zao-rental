@@ -29,6 +29,18 @@ export class OperationsContext{
    if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('OPERATION_FAILED',500);
   }finally{c.release();}
  }
+ /** Short transaction without the inventory serialization lock, for staff inbox reads and the single acknowledgement
+  * transition. The SQL functions re-check the actor, live session, permission and stores (ops_assert_actor). */
+ async light<T>(permission:Permission,stores:string[],work:(c:PoolClient)=>Promise<T>):Promise<T>{
+  await this.authorize(permission,stores);const c=await this.pool.connect();try{
+   await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='4000ms';SET LOCAL idle_in_transaction_session_timeout='8000ms'");
+   await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true)",[this.identity.subject,this.identity.sessionId]);
+   const result=await work(c);await c.query('COMMIT');return result;
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});if(e instanceof FlowError||e instanceof HoldError)throw e;const code=(e as {code?:string}).code;
+   if(code==='42501')throw new FlowError('FORBIDDEN',403);if(code==='22023'||code==='22P02')throw new FlowError('INVALID_INPUT',422);
+   if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('OPERATION_FAILED',500);
+  }finally{c.release();}
+ }
  async idempotent<T>(c:PoolClient,key:string,input:unknown,work:()=>Promise<T>):Promise<T>{
   flowId(key);const fingerprint=flowHash(input),prior=(await c.query<{fingerprint:string;result:T}>('SELECT fingerprint,result FROM ops_requests WHERE actor=$1 AND request_key=$2',[this.identity.subject,key])).rows[0];
   if(prior){if(prior.fingerprint!==fingerprint)throw new FlowError('IDEMPOTENCY_MISMATCH',409);return prior.result;}

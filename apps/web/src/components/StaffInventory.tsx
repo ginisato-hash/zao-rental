@@ -10,7 +10,7 @@ import './staff-orders.css';
 export type Counts={registered:number;onHand:number;availableNow:number;care:number;maintenance:number;out:number;incoming:number};
 type Row={id:string;code:string;name:string;brand:string;family:string;variants:number;counts:Counts};
 const FAMILIES=['SKI','SKI_BOOT','SNOWBOARD','SNOWBOARD_BOOT','POLE','WEAR'] as const;
-export const FAMILY_LABEL:Record<string,[string,string]>={SKI:['スキー','Skis'],SKI_BOOT:['スキーブーツ','Ski boots'],SNOWBOARD:['スノーボード','Snowboards'],SNOWBOARD_BOOT:['スノーボードブーツ','Snowboard boots'],POLE:['ポール','Poles'],WEAR:['ウェア','Wear']};
+export const FAMILY_LABEL:Record<string,[string,string]>={SKI:['スキー','Skis'],SKI_BOOT:['スキーブーツ','Ski boots'],SNOWBOARD:['スノーボード','Snowboards'],SNOWBOARD_BOOT:['スノーボードブーツ','Snowboard boots'],POLE:['ポール','Poles'],WEAR:['ウェア','Wear'],WEAR_JACKET:['ウェア（ジャケット）','Wear (jacket)'],WEAR_PANTS:['ウェア（パンツ）','Wear (pants)']};
 export const COUNT_LABEL:Record<keyof Counts,[string,string]>={registered:['台帳','Ledger'],onHand:['店内','On hand'],availableNow:['貸出可','Available now'],care:['点検・洗浄','Inspection / care'],maintenance:['整備','Maintenance'],out:['貸出中','Out'],incoming:['移送中','Incoming']};
 const L={
  search:['商品名・ブランド・コードで検索','Search by name, brand or code'],family:['種類','Type'],all:['すべて','All'],station:['店舗','Station'],product:['商品','Product'],
@@ -26,11 +26,11 @@ export function StaffInventory({locale,stamp,stores,can}:{locale:StaffLocale;sta
  const params=useSearchParams(),router=useRouter(),get=(k:string)=>params.get(k)??'';
  const store=stores.includes(get('store'))?get('store'):stores[0]??'',family=(FAMILIES as readonly string[]).includes(get('family'))?get('family'):'';
  const [search,setSearch]=useState(get('search')),[loaded,setLoaded]=useState<{key:string;rows:Row[]}|null>(null),[failedKey,setFailedKey]=useState<string|null>(null),[reload,setReload]=useState(0),gen=useRef(0);
- const query=new URLSearchParams({store,...(family?{family}:{}),...(get('search')?{search:get('search')}:{})}).toString(),rows=loaded?.key===query?loaded.rows:null;
+ const query=new URLSearchParams({store,...(family?{family}:{}),...(get('search')?{search:get('search')}:{})}).toString(),viewKey=query+'|'+stamp,rows=loaded?.key===viewKey&&failedKey!==viewKey?loaded.rows:null;
  const set=(patch:Record<string,string>)=>{const q=new URLSearchParams(params.toString());for(const [k,v] of Object.entries(patch))if(v)q.set(k,v);else q.delete(k);router.replace('/staff/inventory?'+q.toString(),{scroll:false});};
  useEffect(()=>{if(!store)return;const ticket=++gen.current;queueMicrotask(async()=>{
   try{const r=await fetch('/api/operations/products?'+query,{cache:'no-store',headers:{'x-zao-session':stamp}});if(r.status===401||r.status===403){invalidateStaffView();return;}
-   if(!r.ok)throw Error();const v=await r.json() as {rows:Row[]};if(ticket===gen.current){setLoaded({key:query,rows:v.rows});setFailedKey(null);}}catch{if(ticket===gen.current)setFailedKey(query);}
+   if(!r.ok)throw Error();const v=await r.json() as {rows:Row[]};if(ticket===gen.current){setLoaded({key:query+'|'+stamp,rows:v.rows});setFailedKey(null);}}catch{if(ticket===gen.current)setFailedKey(query+'|'+stamp);}
  });},[query,store,stamp,reload]);
  const cols:(keyof Counts)[]=['availableNow','onHand','out','care','maintenance','incoming','registered'];
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
@@ -50,9 +50,9 @@ export function StaffInventory({locale,stamp,stores,can}:{locale:StaffLocale;sta
      {can.transfer&&<li><Link href="/staff/transfers">{tx('transfers')}</Link></li>}<li><Link href="/admin/assets">{tx('labels')}</Link></li></ul></nav>
    </aside>
    <section className="ox-list" aria-live="polite">
-    {failedKey===query&&<p className="sx-alert" role="alert">{tx('failed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
+    {failedKey===viewKey&&<p className="sx-alert" role="alert">{tx('failed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
     {rows&&!rows.length&&<p className="sx-empty">{tx('none')}</p>}
-    {!rows&&failedKey!==query&&<p className="sx-status" role="status">…</p>}
+    {!rows&&failedKey!==viewKey&&<p className="sx-status" role="status">…</p>}
     {rows&&rows.length>0&&<div className="sx-card ox-table-wrap"><table className="sx-table ox-table">
      <thead><tr><th>{tx('product')}</th><th>{tx('family')}</th><th className="ox-num">{tx('sizes')}</th>{cols.map(c=><th key={c} className="ox-num">{COUNT_LABEL[c][en?1:0]}</th>)}</tr></thead>
      <tbody>{rows.map(r=><tr key={r.id} onClick={e=>{if(!(e.target as Element).closest('a'))router.push(`/staff/inventory/${r.id}?store=${store}`);}}>

@@ -9,6 +9,12 @@ import {writeAccount} from '../../packages/auth/src/accounts';
 import {OperationsContext} from '../../packages/core/src/operations/context';
 import {InventoryRead} from '../../packages/core/src/operations/inventory-read';
 import {variants} from '../inventory/fixture';
+import {registerWear} from '../wear/fixture';
+import {LedgerService} from '../../packages/core/src/catalog/ledger-service';
+import {WearService} from '../../packages/core/src/wear/service';
+import {ledgerPrincipal} from '../../packages/auth/src/staff-auth';
+import {verifyLedgerWrite} from '../../packages/auth/src/ledger-write-authority';
+import {reconcileLedgerProtection} from '../../packages/core/src/catalog/reconcile-protection';
 
 // Issue #47 consolidated order §4: inventory counts keep registered / on hand / available now / care / out / incoming apart.
 const x=await flowFixture();let custody:Awaited<ReturnType<typeof provisionCustodyRole>>|undefined,ops:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined,stage='setup',count=0,failed=false;
@@ -49,6 +55,26 @@ try{
   assert.ok((await inv.list({store:'MOUNTAIN_BASE',family:'SKI_BOOT'})).rows.every(r=>r.family==='SKI_BOOT'));
   await assert.rejects(inv.list({store:'MOUNTAIN_BASE',family:'BOATS'}),{code:'INVALID_INPUT'});await assert.rejects(inv.detail('x','MOUNTAIN_BASE'),{code:'INVALID_INPUT'});
   await assert.rejects(inv.detail(randomUUID(),'MOUNTAIN_BASE'),{code:'NOT_FOUND'});
+ });
+ await check('list totals equal the sum of the detail sizes for items, poles and wear (each with positive stock)',async()=>{
+  const ledger=new LedgerService(x.roles.ledgerPool,ledgerPrincipal(x.principal),(c,st,a)=>verifyLedgerWrite(c,x.roles.authPool,x.signed.identity,st,a),(r,id,v)=>reconcileLedgerProtection(x.roles.transferPool,x.roles.authPool,x.signed.identity,r,id,v));
+  const reg=await registerWear(ledger,new WearService(x.flow.flowPool,x.roles.authPool,x.signed.identity));
+  const list=await inv.list({store:'MOUNTAIN_BASE'});
+  for(const family of ['WEAR_JACKET','WEAR_PANTS','SKI','POLE'] as const){
+   const modelId=reg.models[family]!,row=list.rows.find(r=>r.id===modelId)!;assert.ok(row.counts.registered>0&&row.counts.availableNow>0,family+' has positive stock');
+   const sizes=(await inv.detail(modelId,'MOUNTAIN_BASE')).variants;
+   for(const k of Object.keys(row.counts) as (keyof typeof row.counts)[])assert.equal(sizes.reduce((n,v)=>n+v.counts[k],0),row.counts[k],family+' '+k);
+  }
+  assert.ok((await inv.list({store:'MOUNTAIN_BASE',family:'WEAR'})).rows.some(r=>r.id===reg.models.WEAR_JACKET),'Wear filter includes jacket/pants products');
+ });
+ await check('history is station-scoped: a Central-only staff member sees none of the same model\'s Mountain history',async()=>{
+  const onsen=new InventoryRead(new OperationsContext(ops!.operationsPool,x.roles.authPool,(await x.login('inv-onsen@example.invalid')).identity));
+  const mountain=(await inv.detail(skiModel,'MOUNTAIN_BASE')).history,central=(await onsen.detail(skiModel,'ONSEN_BASE')).history;
+  assert.ok(mountain.length>0,'Mountain registrations exist');
+  for(const h of central){const r=(await x.db.pool.query("SELECT after_data->>'store_id' a,before_data->>'store_id' b FROM ledger_history WHERE event_id=$1",[h.eventId])).rows[0];
+   assert.ok(r.a==='ONSEN_BASE'||r.b==='ONSEN_BASE','only events whose own record names Central reach Central staff');}
+  const mountainOnly=mountain.filter(h=>!central.some(c=>c.eventId===h.eventId));assert.ok(mountainOnly.length>0,'Mountain-only registrations are not shown to Central');
+  await assert.rejects(onsen.detail(skiModel,'MOUNTAIN_BASE'),{code:'FORBIDDEN'});
  });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,500),at:(e as Error).stack?.split('\n').filter(l=>/inventory-read|context\.ts/.test(l)).slice(0,3).join(' | ')}));}

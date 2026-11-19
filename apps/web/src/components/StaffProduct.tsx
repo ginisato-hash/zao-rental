@@ -24,22 +24,27 @@ const when=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':
  * existing holds availability (planMixedAllocation) for the selected size and station. */
 export function StaffProduct({locale,stamp,id,store,canCheck}:{locale:StaffLocale;stamp:string;id:string;store:string;canCheck:boolean}){
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],en=locale==='en';
- const [data,setData]=useState<Detail|null>(null),[error,setError]=useState<'NOT_FOUND'|'FAILED'|null>(null),[tab,setTab]=useState<'variants'|'items'|'history'>('variants'),[reload,setReload]=useState(0),gen=useRef(0);
- const [variant,setVariant]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[result,setResult]=useState<string|null>(null),[busy,setBusy]=useState(false);
- useEffect(()=>{const ticket=++gen.current;queueMicrotask(async()=>{
+ const [loadedDetail,setLoadedDetail]=useState<{key:string;data:Detail}|null>(null),[errState,setErrState]=useState<{key:string;kind:'NOT_FOUND'|'FAILED'}|null>(null),[tab,setTab]=useState<'variants'|'items'|'history'>('variants'),[reload,setReload]=useState(0),gen=useRef(0);
+ const [variant,setVariant]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[checked,setChecked]=useState<{key:string;result:string}|null>(null),[busy,setBusy]=useState(false),checkGen=useRef(0);
+ // A bookability answer is valid only for exactly this product, station, size, dates and session.
+ const checkKey=[id,store,variant,from,to,stamp].join('|'),result=checked?.key===checkKey?checked.result:null;
+ useEffect(()=>{const ticket=++gen.current,reqKey=id+'|'+store+'|'+stamp;queueMicrotask(async()=>{
   try{const r=await fetch(`/api/operations/products/${encodeURIComponent(id)}?store=${encodeURIComponent(store)}`,{cache:'no-store',headers:{'x-zao-session':stamp}});
-   if(r.status===401||r.status===403){invalidateStaffView();return;}if(r.status===404){if(ticket===gen.current)setError('NOT_FOUND');return;}
-   if(!r.ok)throw Error();const v=await r.json() as Detail;if(ticket===gen.current){setData(v);setError(null);}}catch{if(ticket===gen.current)setError('FAILED');}
+   if(r.status===401||r.status===403){invalidateStaffView();return;}if(r.status===404){if(ticket===gen.current)setErrState({key:reqKey,kind:'NOT_FOUND'});return;}
+   if(!r.ok)throw Error();const v=await r.json() as Detail;if(ticket===gen.current){setLoadedDetail({key:reqKey,data:v});setErrState(null);}}catch{if(ticket===gen.current)setErrState({key:reqKey,kind:'FAILED'});}
  });},[id,store,stamp,reload]);
+ // The shown detail and its actions belong to exactly this request key (target + session); failures and target
+ // changes hide them instead of leaving the previous record usable.
+ const viewKey=id+'|'+store+'|'+stamp,error=errState?.key===viewKey?errState.kind:null,data=loadedDetail?.key===viewKey&&!error?loadedDetail.data:null;
  async function check(){
-  const v=data?.variants.find(x=>x.id===variant);if(!v||!from||!to||!data)return;setBusy(true);setResult(null);
+  const v=data?.variants.find(x=>x.id===variant);if(!v||!from||!to||!data)return;const own=++checkGen.current,key=checkKey;setBusy(true);setChecked(null);
   const family=data.model.family;
   const conditions={reservationId:crypto.randomUUID(),pickupStore:store,returnStore:store,period:{startDate:from,endDate:to,slot:from===to?'DAY':'MULTIDAY'},
    members:[{key:'check-1',product:'SINGLE',age:v.age,tier:v.tier,items:[{family,variantIds:[v.id]}]}]};
   try{const r=await fetch('/api/holds/availability',{method:'POST',cache:'no-store',headers:{'content-type':'application/json','x-zao-session':stamp},body:JSON.stringify(conditions)});
    if(r.status===401){invalidateStaffView();return;}const body=await r.json() as {result?:{result?:string}|string;error?:string};
-   const verdict=typeof body.result==='string'?body.result:body.result?.result;setResult(r.ok?(verdict??'INDETERMINATE'):(body.error??'INDETERMINATE'));}
-  catch{setResult('INDETERMINATE');}finally{setBusy(false);}
+   const verdict=typeof body.result==='string'?body.result:body.result?.result;if(own===checkGen.current)setChecked({key,result:r.ok?(verdict??'INDETERMINATE'):(body.error??'INDETERMINATE')});}
+  catch{if(own===checkGen.current)setChecked({key,result:'INDETERMINATE'});}finally{if(own===checkGen.current)setBusy(false);}
  }
  const counts:(keyof Counts)[]=['availableNow','onHand','out','care','maintenance','incoming','registered'];
  const statusText=(i:Item)=>i.out?tx('out'):i.transitTo?`${tx('transit')} ${STORE_LABEL[i.transitTo]??''}`:i.uninspected?tx('care'):i.transferNotReady?tx('readying'):((L as Record<string,readonly [string,string]>)['status_'+i.status]?.[en?1:0]??i.status);
@@ -56,7 +61,7 @@ export function StaffProduct({locale,stamp,id,store,canCheck}:{locale:StaffLocal
    {tab==='items'&&(data.items.length?<div className="sx-card ox-table-wrap"><table className="sx-table"><thead><tr><th>ID</th><th>{tx('size')}</th><th>{tx('state')}</th><th>{tx('where')}</th>{data.model.family==='SKI_BOOT'&&<th>{tx('bsl')}</th>}</tr></thead>
     <tbody>{data.items.map(i=><tr key={i.id}><td><code>{i.id.slice(0,8).toUpperCase()}</code></td><td>{i.size}</td><td>{statusText(i)}</td><td>{STORE_LABEL[i.here]??i.here}</td>{data.model.family==='SKI_BOOT'&&<td>{i.bslMm?`${i.bslMm} mm`:'—'}</td>}</tr>)}</tbody></table></div>:<p className="sx-empty">{tx('none')}</p>)}
    {tab==='history'&&(data.history.length?<ul className="sx-inbox sx-card">{data.history.map((h,n)=><li key={n}><span><b>{h.resource} · {h.action}</b><br/><small className="sx-help">{h.reason} · {when(h.at,locale)}</small></span></li>)}</ul>:<p className="sx-empty">{tx('none')}</p>)}
-   {canCheck&&data.model.family!=='WEAR'&&<section className="sx-card" style={{padding:'16px 20px',marginTop:20}} aria-labelledby="pc-title"><h2 id="pc-title" style={{marginTop:0}}>{tx('check')}</h2><p className="sx-help">{tx('checkHelp')}</p>
+   {canCheck&&!data.model.family.startsWith('WEAR')&&<section className="sx-card" style={{padding:'16px 20px',marginTop:20}} aria-labelledby="pc-title"><h2 id="pc-title" style={{marginTop:0}}>{tx('check')}</h2><p className="sx-help">{tx('checkHelp')}</p>
     <div className="ox-controls"><label className="sx-field">{tx('size')}<select aria-label={tx('size')} value={variant} onChange={e=>setVariant(e.target.value)}><option value="">—</option>{data.variants.map(v=><option key={v.id} value={v.id}>{v.size} · {v.age} · {v.tier}</option>)}</select></label>
      <label className="sx-field">{tx('from')}<input type="date" aria-label={tx('from')} value={from} onChange={e=>setFrom(e.target.value)}/></label><label className="sx-field">{tx('to')}<input type="date" aria-label={tx('to')} value={to} onChange={e=>setTo(e.target.value)}/></label>
      <button type="button" className="sx-btn sx-btn--primary" disabled={busy||!variant||!from||!to} onClick={()=>void check()}>{tx('run')}</button></div>

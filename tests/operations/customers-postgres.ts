@@ -39,9 +39,15 @@ try{
   const resolved=await svc.detail('legacy:'+l1);assert.equal(resolved.key,first.customerId);assert.deepEqual(resolved.orders.map(o=>o.id).sort(),[l1,l2].sort());
   assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(b) v FROM rental_bookings b WHERE id=$1',[l2])).rows[0].v,bookingBefore,'booking contact/terms/price untouched');
  });
- await check('two concurrent links of the same legacy booking: exactly one succeeds',async()=>{
-  const target=await link(l1);const results=await Promise.allSettled([svc.link(randomUUID(),{bookingId:l3,target:target!}),svc.link(randomUUID(),{bookingId:l3,target:'legacy:'+l3.replace(/.$/,'0')})]);
-  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(await link(l3),target);
+ await check('two concurrent links of one legacy booking to two real, individually valid targets: exactly one wins, the other conflicts',async()=>{
+  const targetA=(await link(l1))!,l5=await legacy('2035-04-07');   // A: an existing profile; B: another visible legacy booking
+  const before=(await x.db.pool.query('SELECT to_jsonb(b) v FROM rental_bookings b WHERE id=$1',[l3])).rows[0].v;
+  const results=await Promise.allSettled([svc.link(randomUUID(),{bookingId:l3,target:targetA}),svc.link(randomUUID(),{bookingId:l3,target:'legacy:'+l5})]);
+  const won=results.filter(r=>r.status==='fulfilled'),lost=results.filter(r=>r.status==='rejected') as PromiseRejectedResult[];
+  assert.equal(won.length,1);assert.equal(lost.length,1);assert.equal((lost[0]!.reason as {code?:string}).code,'CONFLICT');
+  const winner=(won[0] as PromiseFulfilledResult<{customerId:string}>).value.customerId;assert.equal(await link(l3),winner);
+  if(winner===targetA)assert.equal(await link(l5),undefined,'the losing legacy target was not half-linked');
+  assert.deepEqual((await x.db.pool.query('SELECT to_jsonb(b) v FROM rental_bookings b WHERE id=$1',[l3])).rows[0].v,before,'booking row unchanged');
  });
  await check('another station sees none of it: list excludes, detail is not found, linking is refused',async()=>{
   await writeAccount(x.roles.authPool,x.bp,undefined,{email:'cust-onsen@example.invalid',password:x.password,displayName:'SYNTHETIC Cust Onsen',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:['ONSEN_BASE'],permissions:{BOOKING_CREATE:true}});

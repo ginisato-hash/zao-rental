@@ -34,11 +34,11 @@ export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;
  const toggle=(key:'status'|'payment',list:string[],v:string)=>set({[key]:(list.includes(v)?list.filter(x=>x!==v):[...list,v]).join(',')});
  const query=new URLSearchParams({stores:(selectedStores.length?selectedStores:stores).join(','),tab,page:String(page),pageSize:'25',...(statuses.length?{status:statuses.join(',')}:{}),...(payments.length?{payment:payments.join(',')}:{}),...(get('from')?{from:get('from')}:{}),...(get('to')?{to:get('to')}:{}),...(['out','back'].includes(get('direction'))?{direction:get('direction')}:{}),...(tab==='late'&&['out','back'].includes(get('late'))?{late:get('late')}:{}),...(get('search')?{search:get('search')}:{})}).toString();
  // Results belong to the exact query that produced them; after any change they are hidden until the new answer arrives.
- const data=loaded?.query===query?loaded.data:null,failed=failedQuery===query;
+ const failed=failedQuery===query+'|'+stamp,data=loaded?.query===query+'|'+stamp&&!failed?loaded.data:null;
  const [reload,setReload]=useState(0);
  useEffect(()=>{const ticket=++gen.current;queueMicrotask(async()=>{
   try{const r=await fetch('/api/operations/orders?'+query,{cache:'no-store',headers:{'x-zao-session':stamp}});if(r.status===401||r.status===403){invalidateStaffView();return;}
-   if(!r.ok)throw Error();const v=await r.json() as Data;if(ticket===gen.current){setLoaded({query,data:v});setFailedQuery(null);}}catch{if(ticket===gen.current)setFailedQuery(query);}
+   if(!r.ok)throw Error();const v=await r.json() as Data;if(ticket===gen.current){setLoaded({query:query+'|'+stamp,data:v});setFailedQuery(null);}}catch{if(ticket===gen.current)setFailedQuery(query+'|'+stamp);}
  });},[query,stamp,reload]);
  const pages=data?Math.max(1,Math.ceil(data.total/data.pageSize)):1;
  return <StaffSessionBoundary stamp={stamp}><main className="ox">

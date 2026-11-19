@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {st,type StaffLocale} from './staff-i18n';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
@@ -18,17 +18,27 @@ const L={
 export function StaffScan({locale,stamp,canOrders,canItems}:{locale:StaffLocale;stamp:string;canOrders:boolean;canItems:boolean}){
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],router=useRouter();
  const [mode,setMode]=useState<'order'|'item'>(canOrders?'order':'item'),[msg,setMsg]=useState('');
+ // Every lookup belongs to one generation (mode + stamp + mount). Switching mode, leaving the page or starting another
+ // lookup invalidates earlier ones, so a late answer can never navigate away from what the staff member chose since.
+ const generation=useRef(0),alive=useRef(true);
+ useEffect(()=>{alive.current=true;const g=generation;return()=>{alive.current=false;g.current++;};},[]);
+ useEffect(()=>{generation.current++;},[mode,stamp]);
+ const switchMode=(m:'order'|'item')=>{generation.current++;setMsg('');setMode(m);};
+ function openOrder(id:string){generation.current++;router.push('/staff/orders/'+encodeURIComponent(id));}
  async function onAsset(id:string){
+  const own=++generation.current,current=()=>alive.current&&generation.current===own;
   const r=await fetch('/api/operations/assets/'+encodeURIComponent(id),{cache:'no-store',headers:{'x-zao-session':stamp}});
+  if(!current())return;
   if(r.status===401){invalidateStaffView();return;}if(r.status===404||r.status===403){setMsg(tx('notFound'));return;}if(!r.ok){setMsg(tx('failed'));throw Error();}
-  const v=await r.json() as {modelId:string;store:string};router.push(`/staff/inventory/${v.modelId}?store=${v.store}`);
+  const v=await r.json() as {modelId:string;store:string};if(!current())return;
+  router.push('/staff/inventory/'+encodeURIComponent(v.modelId)+'?'+new URLSearchParams({store:v.store}).toString());
  }
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <h1>{st(locale,'scan')}</h1><p className="sx-help">{tx('help')}</p>
-  <div className="sx-seg ox-tabs" role="tablist">{canOrders&&<button type="button" role="tab" aria-selected={mode==='order'} onClick={()=>setMode('order')}>{tx('order')}</button>}
-   {canItems&&<button type="button" role="tab" aria-selected={mode==='item'} onClick={()=>setMode('item')}>{tx('item')}</button>}</div>
+  <div className="sx-seg ox-tabs" role="tablist">{canOrders&&<button type="button" role="tab" aria-selected={mode==='order'} onClick={()=>switchMode('order')}>{tx('order')}</button>}
+   {canItems&&<button type="button" role="tab" aria-selected={mode==='item'} onClick={()=>switchMode('item')}>{tx('item')}</button>}</div>
   <div className="sx-card" style={{padding:'16px 20px'}}>
-   {mode==='order'&&canOrders&&<BookingSearchInput onBooking={id=>router.push('/staff/orders/'+id)}/>}
+   {mode==='order'&&canOrders&&<BookingSearchInput onBooking={openOrder}/>}
    {mode==='item'&&canItems&&<AssetQrInput onAsset={onAsset}/>}
   </div>
   {msg&&<p role="alert">{msg}</p>}

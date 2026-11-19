@@ -29,14 +29,15 @@ export function StaffDashboard({locale,stamp,stores}:{locale:StaffLocale;stamp:s
  const range=(RANGES as string[]).includes(params.get('range')??'')?params.get('range') as Range:'today';
  const date=params.get('date')??'';
  const [loaded,setLoaded]=useState<{key:string;data:Data}|null>(null),[failed,setFailed]=useState<string|null>(null),[pane,setPane]=useState<'all'|'out'|'back'>('all');
- const key=[store,range,date].join('|'),data=loaded?.key===key?loaded.data:null;
+ // Results belong to (station, range, date, session). A failed refresh of the same key hides them too: no stale rows or links.
+ const key=[store,range,date,stamp].join('|'),data=loaded?.key===key&&failed!==key?loaded.data:null;
  const gen=useRef(0);
  const set=(patch:Record<string,string>)=>{const q=new URLSearchParams(params.toString());for(const [k,v] of Object.entries(patch))if(v)q.set(k,v);else q.delete(k);router.replace('/staff?'+q.toString(),{scroll:false});};
  const load=useCallback(async()=>{
   if(!store||(range==='date'&&!/^\d{4}-\d{2}-\d{2}$/.test(date)))return;const ticket=++gen.current;
   try{const q=new URLSearchParams({store,range,...(range==='date'?{date}:{})});const r=await fetch('/api/operations/dashboard?'+q,{cache:'no-store',headers:{'x-zao-session':stamp}});
-   if(r.status===401||r.status===403){invalidateStaffView();return;}if(!r.ok)throw Error();const v=await r.json() as Data;if(ticket===gen.current){setLoaded({key:[store,range,date].join('|'),data:v});setFailed(null);}}
-  catch{if(ticket===gen.current)setFailed([store,range,date].join('|'));}
+   if(r.status===401||r.status===403){invalidateStaffView();return;}if(!r.ok)throw Error();const v=await r.json() as Data;if(ticket===gen.current){setLoaded({key:[store,range,date,stamp].join('|'),data:v});setFailed(null);}}
+  catch{if(ticket===gen.current)setFailed([store,range,date,stamp].join('|'));}
  },[store,range,date,stamp]);
  useEffect(()=>{queueMicrotask(()=>void load());},[load]);
  const list=(rows:Row[],kind:'out'|'back')=>rows.length?<ul className="ox-rows">{rows.map(r=><li key={kind+r.id}><Link href={`/staff/orders/${encodeURIComponent(r.id)}`}>
@@ -49,7 +50,7 @@ export function StaffDashboard({locale,stamp,stores}:{locale:StaffLocale;stamp:s
    <header className="ox-panel-h"><h2 id={'ox-'+kind}>{kind==='out'?tx('goingOut'):tx('comingBack')} {data&&<span className="ox-count">{total}</span>}</h2>
     {kind==='out'&&<button type="button" className="sx-btn ox-noprint" onClick={()=>window.print()}>{tx('print')}</button>}</header>
    {data?list(rows,kind):failed!==key&&<p className="sx-status" role="status">…</p>}{data&&total>rows.length&&<p className="sx-help ox-more">{locale==='en'?`Showing ${rows.length} of ${total}. Use View all for the rest.`:`${total}件中${rows.length}件を表示中。残りは「すべて表示」から。`}</p>}
-   <footer className="ox-panel-f ox-noprint"><Link href={orders({tab:'late',late:kind})} className={late?'ox-late':''}>{kind==='out'?tx('lateOut'):tx('lateBack')} {late}</Link>
+   <footer className="ox-panel-f ox-noprint"><Link href={orders({tab:'late',late:kind,direction:kind})} className={late?'ox-late':''}>{kind==='out'?tx('lateOut'):tx('lateBack')} {late}</Link>
     {data&&<Link href={orders({direction:kind,from:data.from,to:data.to})}>{tx('viewAll')}</Link>}</footer>
   </section>;};
  return <StaffSessionBoundary stamp={stamp}><main className="ox">

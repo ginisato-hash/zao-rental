@@ -59,12 +59,13 @@ try{
   await x.db.pool.query('ALTER TABLE rental_bookings DISABLE TRIGGER staff_event_capture');
   let d;try{d=await confirmed();}finally{await x.db.pool.query('ALTER TABLE rental_bookings ENABLE TRIGGER staff_event_capture');}
   assert.equal((await events(d.booking.id)).length,0,'confirmed while capture was off: stands in for a booking confirmed before 0060');
-  // Lower-level capture mechanics: the booking contract guard forbids this direct write, so it is lifted only for this one
-  // same-state UPDATE (a stand-in for any legitimate write that touches state without changing it).
-  const c=await x.db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC same-state capture test',true)",[x.actor]);await c.query('ALTER TABLE rental_bookings DISABLE TRIGGER rental_booking_guard');
-   await c.query('UPDATE rental_bookings SET state=state WHERE id=$1',[d.booking.id]);await c.query('ALTER TABLE rental_bookings ENABLE TRIGGER rental_booking_guard');await c.query('COMMIT');}
+  // A legitimate same-state write with the booking guard ENABLED: proper actor and reason, version bumped, state unchanged.
+  const c=await x.db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC same-state version write',true)",[x.actor]);
+   await c.query('UPDATE rental_bookings SET state=state,version=version+1 WHERE id=$1',[d.booking.id]);await c.query('COMMIT');}
   catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM staff_notification_outbox o JOIN staff_booking_events e ON e.id=o.event_id WHERE e.booking_id=$1',[d.booking.id])).rows[0].n,0,'no email for an old confirmation');
   assert.equal((await events(d.booking.id)).length,0);assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM staff_event_deferred WHERE booking_id=$1',[d.booking.id])).rows[0].n,0);
+  const fresh=await confirmed(),fe=await events(fresh.booking.id);assert.equal(fe.length,1,'a new confirmation still records exactly one event');await admin.acknowledge(fe[0].id);
  });
  await check('pickup Mountain / return Central: Central-only staff can see and acknowledge it; the station is never client-chosen',async()=>{
   Object.assign(x.principal,(await loadStaff(x.roles.authPool,x.actor))!);
@@ -81,10 +82,10 @@ try{
   assert.equal(total,3);assert.deepEqual(new Set(seen),new Set(more.map(m=>m.booking.id)));
  });
  await check('worker sends one staff email per recipient with no customer name or amount, and replays are inert',async()=>{
-  const before=adapter.calls;const r=await worker.runBatch(20,deadline());assert.ok(r.processed>=5);
-  const sent=(await x.db.pool.query("SELECT count(*)::int n FROM staff_notification_outbox WHERE status='SENT'")).rows[0].n;assert.equal(sent,5);assert.equal(adapter.calls-before,5);
+  const before=adapter.calls;const r=await worker.runBatch(20,deadline());assert.ok(r.processed>=6);
+  const sent=(await x.db.pool.query("SELECT count(*)::int n FROM staff_notification_outbox WHERE status='SENT'")).rows[0].n;assert.equal(sent,6);assert.equal(adapter.calls-before,6);
   for(const m of adapter.accepted.values()){assert.equal(m.recipient,'flow-actor@example.invalid');assert.equal(m.eventType,'STAFF_BOOKING_CONFIRMED');assert.ok(!m.text.includes('SYNTHETIC Guest')&&!m.text.includes('synthetic-guest@')&&!/¥/.test(m.text));assert.match(m.text,/\/staff\/orders\/[0-9a-f-]{36}/);}
-  await worker.runBatch(20,deadline());assert.equal(adapter.calls-before,5,'no duplicate send');
+  await worker.runBatch(20,deadline());assert.equal(adapter.calls-before,6,'no duplicate send');
  });
  await check('lost response becomes UNKNOWN and lookup closes it without a second send',async()=>{
   adapter.scenario='TIMEOUT_AFTER_ACCEPT';const d=await confirmed();await worker.runBatch(20,deadline());const row=(await outbox(d.booking.id))[0];assert.equal(row.status,'UNKNOWN');

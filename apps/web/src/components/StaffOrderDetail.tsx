@@ -30,12 +30,15 @@ const when=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':
  * and the accepted terms. Readable with BOOKING_VIEW; each action is shown only to holders of its own permission. */
 export function StaffOrderDetail({locale,stamp,id,can}:{locale:StaffLocale;stamp:string;id:string;can:{checkout:boolean;ret:boolean;amend:boolean}}){
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],fam=(f:string)=>FAMILY[f]?.[locale==='en'?1:0]??f;
- const [data,setData]=useState<Detail|null>(null),[error,setError]=useState<'NOT_FOUND'|'FAILED'|null>(null),[reload,setReload]=useState(0),gen=useRef(0);
- useEffect(()=>{const ticket=++gen.current;queueMicrotask(async()=>{
+ const [loadedDetail,setLoadedDetail]=useState<{key:string;data:Detail}|null>(null),[errState,setErrState]=useState<{key:string;kind:'NOT_FOUND'|'FAILED'}|null>(null),[reload,setReload]=useState(0),gen=useRef(0);
+ useEffect(()=>{const ticket=++gen.current,reqKey=id+'|'+stamp;queueMicrotask(async()=>{
   try{const r=await fetch('/api/operations/orders/'+encodeURIComponent(id),{cache:'no-store',headers:{'x-zao-session':stamp}});
-   if(r.status===401){invalidateStaffView();return;}if(r.status===404||r.status===403){if(ticket===gen.current)setError('NOT_FOUND');return;}
-   if(!r.ok)throw Error();const v=await r.json() as Detail;if(ticket===gen.current){setData(v);setError(null);}}catch{if(ticket===gen.current)setError('FAILED');}
+   if(r.status===401){invalidateStaffView();return;}if(r.status===404||r.status===403){if(ticket===gen.current)setErrState({key:reqKey,kind:'NOT_FOUND'});return;}
+   if(!r.ok)throw Error();const v=await r.json() as Detail;if(ticket===gen.current){setLoadedDetail({key:reqKey,data:v});setErrState(null);}}catch{if(ticket===gen.current)setErrState({key:reqKey,kind:'FAILED'});}
  });},[id,stamp,reload]);
+ // The shown detail and its actions belong to exactly this request key (target + session); failures and target
+ // changes hide them instead of leaving the previous record usable.
+ const viewKey=id+'|'+stamp,error=errState?.key===viewKey?errState.kind:null,data=loadedDetail?.key===viewKey&&!error?loadedDetail.data:null;
  const o=data?.order;
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <p><Link href="/staff/orders" className="sx-link">‹ {tx('back')}</Link></p>

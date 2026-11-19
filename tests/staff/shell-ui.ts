@@ -56,9 +56,9 @@ try{
  await check('the shell lists only working destinations in Booqable order with settings at the bottom',async()=>{
   await page.goto('/staff');const nav=page.getByRole('complementary');
   const labels=(await nav.getByRole('link').allInnerTexts()).map(s=>s.trim()).filter(Boolean);
-  const order=['ダッシュボード','カレンダー','予約','顧客','在庫','一括操作','スキャン','設定','サインアウト'].filter(l=>labels.includes(l));
+  const order=['ダッシュボード','カレンダー','予約','顧客','在庫','書類','レポート','一括操作','スキャン','設定','サインアウト'].filter(l=>labels.includes(l));
   assert.deepEqual(labels.filter(l=>order.includes(l)),order);assert.ok(labels.includes('設定'));
-  assert.ok(labels.includes('カレンダー'),'Calendar is a working page');for(const missing of ['書類','レポート'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
+  for(const working of ['カレンダー','書類','レポート'])assert.ok(labels.includes(working),working+' is a working page');
   assert.equal(await page.locator('html').getAttribute('lang'),'ja');
  });
  await check('dashboard: Going out / Coming back for today with the confirmed booking; tomorrow shows the pending one',async()=>{
@@ -81,6 +81,24 @@ try{
   await page.setViewportSize({width:390,height:844});await page.goto('/staff/calendar?from='+businessDate);await page.getByRole('region',{name:'カレンダー'}).waitFor();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'no horizontal page scroll');await page.screenshot({path:`${shots}/calendar-ja-390.png`});
   await page.setViewportSize({width:1440,height:900});
+ });
+ await check('reports: real rows per station and period; CSV has the same rows; JA/EN',async()=>{
+  await page.goto('/staff/reports?type=pickups&from=2035-01-01&to=2035-12-31');await page.getByRole('tab',{name:'貸出',selected:true}).waitFor();
+  // Bookings are reported by creation date; fixture rows are created at the real clock, so ask for that period.
+  const created=(await db.pool.query("SELECT (created_at AT TIME ZONE 'Asia/Tokyo')::date::text d FROM rental_bookings WHERE id=$1",[confirmedId])).rows[0].d as string;
+  await page.goto('/staff/reports?from='+created+'&to='+created);const table=page.getByRole('table',{name:'予約'});await table.waitFor();
+  const bodyRows=await table.locator('tbody tr').count();assert.ok(bodyRows>=1);await page.screenshot({path:`${shots}/reports-ja-1440.png`});
+  const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'CSVを保存'}).click()]);
+  const csv=(await (await import('node:fs/promises')).readFile((await download.path())!,'utf8')).replace(/^\ufeff/,'').trim().split(/\r\n/);
+  assert.equal(csv[0],'date,station,created,confirmed,paymentPending,cancelled,bookedJpy');assert.equal(csv.length,bodyRows+1,'CSV rows equal screen rows');
+  await page.getByRole('button',{name:'English'}).click();await page.getByRole('table',{name:'Bookings'}).waitFor();await page.getByRole('button',{name:'日本語'}).click();await page.getByRole('table',{name:'予約'}).waitFor();
+ });
+ await check('documents: booking confirmation by order number (not a receipt) and the day work list print views',async()=>{
+  await page.goto('/staff/documents');await page.getByLabel('予約番号（8桁以上）').fill(confirmedId.slice(0,8).toUpperCase());await page.getByRole('button',{name:'開く'}).first().click();
+  await page.waitForURL(/doc=booking/);await page.getByRole('heading',{name:'予約確認書（店舗控え）'}).waitFor();await page.getByText('#'+confirmedId.slice(0,8).toUpperCase()).waitFor();
+  await page.getByText('領収書・請求書ではありません').waitFor();await page.screenshot({path:`${shots}/documents-booking-ja-1440.png`});
+  await page.goto('/staff/documents?doc=work&store=MOUNTAIN_BASE&date='+businessDate);await page.getByRole('region',{name:'貸出予定'}).getByText('SYNTHETIC Shell Confirmed').waitFor();
+  await page.goto('/staff/documents');await page.getByLabel('予約番号（8桁以上）').fill('ZZZZZZZZ');await page.getByRole('button',{name:'開く'}).first().click();await page.getByRole('alert').getByText('該当する予約が見つかりません。').waitFor();
  });
  await check('orders: tabs, status filter and server totals; row opens the order',async()=>{
   await page.goto('/staff/orders');const table=page.getByRole('table');await table.getByText('SYNTHETIC Shell Confirmed').waitFor();

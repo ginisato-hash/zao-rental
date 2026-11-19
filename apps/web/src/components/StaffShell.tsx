@@ -19,8 +19,10 @@ const WORK:Item[]=[
  {key:'orders',href:a=>a.bookingView?'/staff/orders':a.quoteView?'/staff/quotes':'/staff/holds',match:/^\/staff\/(orders|rentals|amendments|holds|quotes|recommendations|notifications)/,show:a=>a.bookingView||a.quoteView||a.holdView},
  {key:'customers',href:'/staff/customers',match:/^\/staff\/customers/,show:a=>a.bookingView},
  {key:'inventory',href:a=>a.inventoryView?'/staff/inventory':'/staff/transfers',match:/^\/(staff\/(inventory|ledger|wear|transfers)|admin\/assets)/,show:a=>a.inventoryView||a.transferView},
+ {key:'documents',href:'/staff/documents',match:/^\/staff\/documents/,show:a=>a.bookingView},
 ];
 const MORE:Item[]=[
+ {key:'reports',href:'/staff/reports',match:/^\/staff\/reports/,show:a=>a.bookingView},
  // Bulk operations = the real stocktake / CSV import screen (not a renamed exceptions console).
  {key:'bulk',href:'/admin/inventory',match:/^\/admin\/inventory/,show:a=>a.inventoryView},
 ];

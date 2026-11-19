@@ -38,6 +38,7 @@ export class OperationsContext{
    const result=await work(c);await c.query('COMMIT');return result;
   }catch(e){await c.query('ROLLBACK').catch(()=>{});if(e instanceof FlowError||e instanceof HoldError)throw e;const code=(e as {code?:string}).code;
    if(code==='42501')throw new FlowError('FORBIDDEN',403);if(code==='22023'||code==='22P02')throw new FlowError('INVALID_INPUT',422);
+   if(code==='23505')throw new FlowError('CONFLICT',409);if(code==='23503')throw new FlowError('NOT_FOUND',404);
    if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('OPERATION_FAILED',500);
   }finally{c.release();}
  }

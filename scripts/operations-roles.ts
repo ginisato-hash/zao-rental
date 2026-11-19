@@ -34,6 +34,8 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  if((await owner.query("SELECT to_regprocedure('notification_status(text)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION notification_status(text),notification_resend(uuid,uuid,text,text) TO ${user}`);
  // 0060 staff inbox / staff email outbox: SECURITY DEFINER functions only, never direct table access.
  if((await owner.query("SELECT to_regprocedure('staff_inbox_ack(uuid)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION staff_inbox_list(text[],boolean,timestamptz,uuid,integer),staff_inbox_ack(uuid),staff_notification_preference(boolean,text),staff_events_sync(),staff_notification_claim(uuid),staff_notification_material(uuid,uuid),staff_notification_settle(uuid,uuid,text,text,text),staff_notification_unknown(uuid),staff_notification_reconciled(uuid,text),staff_notification_due(integer),staff_order_contract(uuid) TO ${user}`);
+ // 0061 customer identity: read the projection tables; the only write is the locked, idempotent link function.
+ if((await owner.query("SELECT to_regprocedure('customer_link_legacy(uuid,uuid,text)') v")).rows[0].v){await owner.query(`GRANT SELECT ON customer_profiles,customer_booking_links TO ${user}`);await owner.query(`GRANT EXECUTE ON FUNCTION customer_link_legacy(uuid,uuid,text) TO ${user}`);}
  // V2 (TD correction): provisional_capacity_register_source is now SECURITY DEFINER (fixed
  // search_path, actor from current_setting('zao.actor')) — the function itself carries the INSERT
  // rights, so the operations role needs only the narrow EXECUTE the migration's REVOKE ALL FROM

@@ -6,3 +6,10 @@ export function productionStaffNotificationGrants(database:string,operationsRole
  if(!/^[a-z][a-z0-9_]{0,40}$/.test(database)||operationsRole!==database+'_operations')throw Error('PRODUCTION_STAFF_NOTIFICATION_GRANTS_REFUSED');
  return STAFF_NOTIFICATION_FUNCTIONS.map(fn=>`GRANT EXECUTE ON FUNCTION ${fn} TO ${operationsRole}`);
 }
+
+// 0061 customer identity: SELECT on the two projection tables and EXECUTE on the one link function; no INSERT/UPDATE/DELETE.
+export const CUSTOMER_TABLES=['customer_profiles','customer_booking_links'] as const;
+export function productionCustomerGrants(database:string,operationsRole:string):string[]{
+ if(!/^[a-z][a-z0-9_]{0,40}$/.test(database)||operationsRole!==database+'_operations')throw Error('PRODUCTION_CUSTOMER_GRANTS_REFUSED');
+ return [`GRANT SELECT ON ${CUSTOMER_TABLES.join(',')} TO ${operationsRole}`,`GRANT EXECUTE ON FUNCTION customer_link_legacy(uuid,uuid,text) TO ${operationsRole}`];
+}

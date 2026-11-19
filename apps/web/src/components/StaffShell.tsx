@@ -16,6 +16,7 @@ const TOP:Item[]=[
 const WORK:Item[]=[
  // Orders group: the order list for booking viewers; quote-only or hold-only staff land on the screen they can use.
  {key:'orders',href:a=>a.bookingView?'/staff/orders':a.quoteView?'/staff/quotes':'/staff/holds',match:/^\/staff\/(orders|rentals|amendments|holds|quotes|recommendations|notifications)/,show:a=>a.bookingView||a.quoteView||a.holdView},
+ {key:'customers',href:'/staff/customers',match:/^\/staff\/customers/,show:a=>a.bookingView},
  {key:'inventory',href:a=>a.inventoryView?'/staff/inventory':'/staff/transfers',match:/^\/(staff\/(inventory|ledger|wear|transfers)|admin\/assets)/,show:a=>a.inventoryView||a.transferView},
 ];
 const MORE:Item[]=[

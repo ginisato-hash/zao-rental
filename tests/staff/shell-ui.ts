@@ -56,9 +56,9 @@ try{
  await check('the shell lists only working destinations in Booqable order with settings at the bottom',async()=>{
   await page.goto('/staff');const nav=page.getByRole('complementary');
   const labels=(await nav.getByRole('link').allInnerTexts()).map(s=>s.trim()).filter(Boolean);
-  const order=['ダッシュボード','予約','在庫','一括操作','設定','サインアウト'].filter(l=>labels.includes(l));
+  const order=['ダッシュボード','予約','顧客','在庫','一括操作','設定','サインアウト'].filter(l=>labels.includes(l));
   assert.deepEqual(labels.filter(l=>order.includes(l)),order);assert.ok(labels.includes('設定'));
-  for(const missing of ['カレンダー','顧客','書類','レポート','スキャン'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
+  for(const missing of ['カレンダー','書類','レポート','スキャン'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
   assert.equal(await page.locator('html').getAttribute('lang'),'ja');
  });
  await check('dashboard: Going out / Coming back for today with the confirmed booking; tomorrow shows the pending one',async()=>{
@@ -94,6 +94,11 @@ try{
   await page.getByLabel('サイズ',{exact:true}).selectOption({index:1});await page.getByLabel('開始日').fill('2035-07-01');await page.getByLabel('終了日').fill('2035-07-01');
   await page.getByRole('button',{name:'確認',exact:true}).click();await page.getByRole('status').filter({hasText:/予約可能|在庫不足|判定できません/}).waitFor();
   assert.equal(Number((await db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n),before,'the check reserves nothing');
+ });
+ await check('customers: list from visible bookings, customer page with order history that opens the order',async()=>{
+  await page.goto('/staff/customers');const table=page.getByRole('table');await table.getByRole('link',{name:'SYNTHETIC Shell Confirmed'}).click();
+  await page.getByRole('heading',{name:'SYNTHETIC Shell Confirmed'}).waitFor();await page.screenshot({path:`${shots}/customer-ja-1440.png`});
+  await page.getByRole('link',{name:'#'+confirmedId.slice(0,8).toUpperCase()}).click();await page.waitForURL(u=>u.pathname==='/staff/orders/'+confirmedId);
  });
  await check('/admin opens the same working shell instead of a placeholder',async()=>{
   await page.goto('/admin');await page.waitForURL('**/staff');assert.equal(await page.getByText('準備中').count(),0);

@@ -21,7 +21,7 @@ export const RESTORE_REQUIRED=[
  'public.provisional_capacity_sources','public.provisional_capacity_buckets','public.provisional_capacity_adjustments','public.provisional_capacity_materializations','public.provisional_capacity_receipts','public.provisional_model_bindings','public.provisional_capacity_claims','public.inventory_buffer_override_log','public.inventory_pole_exemptions',
  'public.booking_cancellation_policies','public.booking_cancellations','public.booking_cancellation_refunds',
  'public.rental_terms_bundles','public.rental_terms_acceptances',
- 'public.staff_booking_events','public.staff_event_deferred','public.staff_notification_recipients','public.staff_notification_outbox',
+ 'public.staff_booking_events','public.staff_event_deferred','public.customer_profiles','public.customer_booking_links','public.customer_link_requests','public.staff_notification_recipients','public.staff_notification_outbox',
  'square_webhook.inbox','payment_reconciliation.streams','payment_reconciliation.jobs','payment_reconciliation.events','payment_reconciliation.audit','payment_reconciliation.provider_stops',
 ] as const;
 /** Deliberately not restored. Each entry names why the row cannot or must not come back. */

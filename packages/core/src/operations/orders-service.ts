@@ -16,7 +16,7 @@ export type OrderRow={id:string;ref:string;customer:string|null;email:string|nul
  pickupStore:string;returnStore:string;startDate:string;endDate:string;slot:string;originalStartDate:string;originalEndDate:string;amended:boolean;
  people:number;totalJpy:number|null;createdAt:string;lateOut:boolean;lateBack:boolean;outItems:number};
 
-const BASE=`WITH b AS (
+export const ORDER_BASE_SQL=`WITH b AS (
  SELECT r.id,r.state,r.mode,r.contact,r.price_snapshot,r.created_at,r.conditions original,coalesce(h.conditions,r.conditions) cond,
   coalesce(h.pickup_store,r.conditions->>'pickupStore') pickup_store,coalesce(h.return_store,r.conditions->>'returnStore') return_store
  FROM rental_bookings r LEFT JOIN inventory_holds h ON h.id=r.hold_id
@@ -57,7 +57,7 @@ const BASE=`WITH b AS (
   (d.state IN ('CONFIRMED','CONFIRMED_DEV') AND NOT d.all_handed AND NOT d.no_pickup AND d.start_date<$2::date) late_out,
   (d.any_out AND d.end_date<$2::date) late_back
  FROM d)`;
-const ROW=`json_build_object('id',s.id,'ref',upper(left(s.id::text,8)),'customer',s.contact->>'displayName','email',s.contact->>'email','state',s.state,'status',s.status,'paymentStatus',s.payment_status,
+export const ORDER_ROW_SQL=`json_build_object('id',s.id,'ref',upper(left(s.id::text,8)),'customer',s.contact->>'displayName','email',s.contact->>'email','state',s.state,'status',s.status,'paymentStatus',s.payment_status,
  'pickupStore',s.pickup_store,'returnStore',s.return_store,'startDate',s.start_date,'endDate',s.end_date,'slot',s.slot,
  'originalStartDate',s.original->'period'->>'startDate','originalEndDate',s.original->'period'->>'endDate','amended',(s.original->'period') IS DISTINCT FROM (s.cond->'period'),
  'people',jsonb_array_length(coalesce(s.cond->'members','[]'::jsonb)),'totalJpy',(s.price_snapshot->>'totalJpy')::bigint,'createdAt',s.created_at,
@@ -98,11 +98,11 @@ export class OrdersService{
    const upcomingSql="s.start_date>=$2::date AND s.status IN ('RESERVED','PAYMENT_PENDING','PAYMENT_REVIEW')";
    const tabSql={all:'TRUE',upcoming:upcomingSql,late:lateSql}[tab];
    const args=[stores,today,statuses.length?statuses:null,payments.length?payments:null,from,to,search.replace(/[%_\\]/g,m=>'\\'+m)];
-   const counts=(await c.query(`${BASE} SELECT count(*)::int all_n,count(*) FILTER (WHERE ${upcomingSql})::int upcoming_n,count(*) FILTER (WHERE ${lateSql})::int late_n,
+   const counts=(await c.query(`${ORDER_BASE_SQL} SELECT count(*)::int all_n,count(*) FILTER (WHERE ${upcomingSql})::int upcoming_n,count(*) FILTER (WHERE ${lateSql})::int late_n,
      count(*) FILTER (WHERE s.late_out)::int late_out_n,count(*) FILTER (WHERE s.late_back)::int late_back_n FROM s ${where}`,args)).rows[0];
    const total=Number({all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n}[tab]);
-   const rows=(await c.query(`${BASE} SELECT ${ROW} v FROM s ${where} AND ${tabSql} ORDER BY ${tab==='upcoming'?'s.start_date ASC,s.id':tab==='late'?`${late==='back'?'s.end_date':'s.start_date'} ASC,s.id`:'s.created_at DESC,s.id'} LIMIT ${size} OFFSET ${(page-1)*size}`,args)).rows.map(r=>r.v as OrderRow);
-   const paymentOptions=(await c.query(`${BASE} SELECT DISTINCT s.payment_status p FROM s WHERE s.payment_status IS NOT NULL ORDER BY 1`,[stores,today])).rows.map(r=>r.p as string);
+   const rows=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s ${where} AND ${tabSql} ORDER BY ${tab==='upcoming'?'s.start_date ASC,s.id':tab==='late'?`${late==='back'?'s.end_date':'s.start_date'} ASC,s.id`:'s.created_at DESC,s.id'} LIMIT ${size} OFFSET ${(page-1)*size}`,args)).rows.map(r=>r.v as OrderRow);
+   const paymentOptions=(await c.query(`${ORDER_BASE_SQL} SELECT DISTINCT s.payment_status p FROM s WHERE s.payment_status IS NOT NULL ORDER BY 1`,[stores,today])).rows.map(r=>r.p as string);
    return {today,tab,direction,late,from,to,total,page,pageSize:size,counts:{all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n,lateOut:counts.late_out_n,lateBack:counts.late_back_n},paymentOptions,rows};
   });
  }
@@ -116,7 +116,7 @@ export class OrdersService{
   // permitted in a READ ONLY transaction. Nothing here writes.
   return this.ctx.light('BOOKING_VIEW',[],async c=>{
    const today=await this.today(c as never);
-   const row=(await c.query(`${BASE} SELECT ${ROW} v,s.cond,s.original FROM s WHERE s.id=$3`,[visible,today,id])).rows[0];
+   const row=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v,s.cond,s.original FROM s WHERE s.id=$3`,[visible,today,id])).rows[0];
    if(!row)throw new FlowError('NOT_FOUND',404);
    const loans=(await c.query(`SELECT l.requirement_key "requirementKey",l.family,l.state,l.checked_out_at "checkedOutAt",l.due_at "dueAt",l.pickup_store "pickupStore",
      r.received_store "receivedStore",r.actual_received_at "receivedAt",i.inspected_at "inspectedAt"
@@ -142,10 +142,10 @@ export class OrdersService{
    const live="s.status NOT IN ('DRAFT','CANCELED')";
    const outWhere=`s.pickup_store=$3 AND ${live} AND s.start_date BETWEEN $4::date AND $5::date`,backWhere=`s.return_store=$3 AND ${live} AND s.end_date BETWEEN $4::date AND $5::date`;
    const args=[[store],today,store,from,to];
-   const totals=(await c.query(`${BASE} SELECT count(*) FILTER (WHERE ${outWhere})::int out_n,count(*) FILTER (WHERE ${backWhere})::int back_n,
+   const totals=(await c.query(`${ORDER_BASE_SQL} SELECT count(*) FILTER (WHERE ${outWhere})::int out_n,count(*) FILTER (WHERE ${backWhere})::int back_n,
      count(*) FILTER (WHERE s.pickup_store=$3 AND s.late_out)::int late_out,count(*) FILTER (WHERE s.return_store=$3 AND s.late_back)::int late_back FROM s`,args)).rows[0];
-   const out=(await c.query(`${BASE} SELECT ${ROW} v FROM s WHERE ${outWhere} ORDER BY s.start_date,CASE s.slot WHEN 'PM' THEN 1 ELSE 0 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
-   const back=(await c.query(`${BASE} SELECT ${ROW} v FROM s WHERE ${backWhere} ORDER BY s.end_date,CASE s.slot WHEN 'AM' THEN 0 ELSE 1 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
+   const out=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${outWhere} ORDER BY s.start_date,CASE s.slot WHEN 'PM' THEN 1 ELSE 0 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
+   const back=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${backWhere} ORDER BY s.end_date,CASE s.slot WHEN 'AM' THEN 0 ELSE 1 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
    return {today,store,range,from,to,goingOut:out,comingBack:back,goingOutTotal:Number(totals.out_n),comingBackTotal:Number(totals.back_n),cap:CAP,lateOut:Number(totals.late_out),lateBack:Number(totals.late_back)};
   });
  }

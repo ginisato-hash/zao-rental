@@ -2,7 +2,7 @@
 // A Neon-shaped neondb at canonical 0001–0056 (production foundation plan: rental_stage_guard() owned by neondb_custody_executor,
 // owner and role admin outside the custody roles) must accept canonical 0057 applied as neondb_owner, with no role bridge,
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
-import {productionStaffNotificationGrants,STAFF_NOTIFICATION_FUNCTIONS} from '../../scripts/production-staff-notifications';
+import {productionStaffNotificationGrants,STAFF_NOTIFICATION_FUNCTIONS,productionCustomerGrants,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
@@ -23,7 +23,7 @@ try{
  await db.pool.query(`CREATE DATABASE ${DB} OWNER ${OWNER}`);
  const owner=connect(OWNER,ownerPassword),observer=connect(db.identity.user,superPassword);
  const full=await productionFoundationPlan(DB),entries=full.bootstrap.entries;
- assert.equal(entries.length,60);assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
+ assert.equal(entries.length,61);assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
  stage='registry56 production topology';
  await runFoundationPlan(owner,{...full,bootstrap:{...full.bootstrap,entries:entries.slice(0,56)}});
  const q=async(sql:string,params:unknown[]=[])=>(await observer.query(sql,params)).rows;
@@ -101,7 +101,7 @@ try{
  // 0059 (rental terms acceptance) and 0060 (staff inbox/email) are additive and owner-applicable: one transaction each,
  // no role/membership/ownership/LOGIN change, guard unchanged, new objects owner-owned, then EXECUTE-only grants.
  const before60=await guard(),roles60=await roles();
- for(const entry of [entries[58]!,entries[59]!]){
+ for(const entry of [entries[58]!,entries[59]!,entries[60]!]){
   const c3=await owner.connect();
   try{
    await c3.query('BEGIN');
@@ -117,12 +117,16 @@ try{
  assert.deepEqual(await guard(),before60);
  const roles60After=await roles();assert.deepEqual({roles:roles60After.roles,members:roles60After.members},{roles:roles60.roles,members:roles60.members});
  const owners60=roles60After.owners.filter((o:{k:string})=>!roles60.owners.some((p:{k:string})=>p.k===o.k));
- assert.ok(owners60.length>0&&owners60.every((o:{o:string})=>o.o===OWNER),'every new 0059/0060 object is owner-owned');
+ assert.ok(owners60.length>0&&owners60.every((o:{o:string})=>o.o===OWNER),'every new 0059/0060/0061 object is owner-owned');
  assert.equal((await q('SELECT count(*)::int n FROM rental_terms_bundles'))[0].n,1);
- for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
+ for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
  const ops=DB+'_operations';assert.equal((await q("SELECT has_function_privilege($1,'staff_inbox_list(text[],boolean,timestamptz,uuid,integer)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0060 grant step');
  const c4=await owner.connect();try{await c4.query('BEGIN');for(const sql of productionStaffNotificationGrants(DB,ops))await c4.query(sql);await c4.query('COMMIT');}catch(e){await c4.query('ROLLBACK').catch(()=>{});throw e;}finally{c4.release();}
  for(const fn of STAFF_NOTIFICATION_FUNCTIONS)assert.equal((await q("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[ops,fn]))[0].ok,true,fn);
  for(const t of ['staff_booking_events','staff_notification_outbox','staff_notification_recipients','rental_terms_acceptances'])assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') OR has_table_privilege($1,$2,'INSERT') ok",[ops,t]))[0].ok,false,'function-only access to '+t);
- console.log('PASS canonical 0059+0060 apply as neondb_owner after 0058: registry 58 -> 60, guard/roles/memberships unchanged, new objects owner-owned, empty new tables, EXECUTE-only grants');
+ const c5=await owner.connect();try{await c5.query('BEGIN');for(const sql of productionCustomerGrants(DB,ops))await c5.query(sql);await c5.query('COMMIT');}catch(e){await c5.query('ROLLBACK').catch(()=>{});throw e;}finally{c5.release();}
+ for(const t of CUSTOMER_TABLES){assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') ok",[ops,t]))[0].ok,true,t);for(const priv of ['INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,false,t+' '+priv);}
+ assert.equal((await q("SELECT has_function_privilege($1,'customer_link_legacy(uuid,uuid,text)','EXECUTE') ok",[ops]))[0].ok,true);
+ assert.equal((await q("SELECT has_function_privilege('public','customer_link_legacy(uuid,uuid,text)','EXECUTE') ok"))[0].ok,false,'no PUBLIC execute');
+ console.log('PASS canonical 0059+0060+0061 apply as neondb_owner after 0058: registry 58 -> 61, guard/roles/memberships unchanged, new objects owner-owned, empty new tables, EXECUTE-only grants');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

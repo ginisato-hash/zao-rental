@@ -474,6 +474,13 @@
    "sha256": "69b62d44d911f774e8ff349894af366fbc07a387e4f94edb9a77f3c15318eece",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0061",
+   "file": "0061_customer_identity.sql",
+   "sha256": "55795d483e375e12c937454e128889712ac1fa38f854219286972d7d31c4a0f8",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

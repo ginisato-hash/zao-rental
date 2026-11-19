@@ -2,7 +2,8 @@
 // A Neon-shaped neondb at canonical 0001–0056 (production foundation plan: rental_stage_guard() owned by neondb_custody_executor,
 // owner and role admin outside the custody roles) must accept canonical 0057 applied as neondb_owner, with no role bridge,
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
-import {productionStaffNotificationGrants,STAFF_NOTIFICATION_FUNCTIONS,productionCustomerGrants,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
+import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
+import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof} from '../../scripts/production-staff-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
@@ -101,18 +102,16 @@ try{
  // 0059 (rental terms acceptance) and 0060 (staff inbox/email) are additive and owner-applicable: one transaction each,
  // no role/membership/ownership/LOGIN change, guard unchanged, new objects owner-owned, then EXECUTE-only grants.
  const before60=await guard(),roles60=await roles();
- for(const entry of [entries[58]!,entries[59]!,entries[60]!]){
-  const c3=await owner.connect();
-  try{
-   await c3.query('BEGIN');
-   await c3.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='15000ms';SET LOCAL search_path=public,pg_catalog");
-   await c3.query('SELECT pg_advisory_xact_lock(71820401),pg_advisory_xact_lock(71820600)');
-   await c3.query('LOCK TABLE public.foundation_migrations IN EXCLUSIVE MODE');
-   await c3.query(entry.sql);
-   await c3.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);
-   await c3.query('COMMIT');
-  }catch(e){await c3.query('ROLLBACK').catch(()=>{});throw e;}finally{c3.release();}
- }
+ // Through the fixed Production operator path (scripts/production-staff-delta.ts): grants before migrate are refused,
+ // migrate is one all-or-nothing transaction with read-back, and a second migrate is refused (never re-applied).
+ const delta=await owner.connect();
+ try{
+  await assert.rejects(applyProductionStaffDeltaGrants(delta,DB,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'grants need the exact 0061 registry');
+  await assert.rejects(applyProductionStaffDeltaMigration(delta,DB,'someone_else'),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'wrong owner identity');
+  const installed=await applyProductionStaffDeltaMigration(delta,DB,OWNER);
+  assert.equal(installed.status,'PRODUCTION_STAFF_DELTA_INSTALLED');assert.deepEqual(installed.applied.map(a=>a.id),['0059','0060','0061']);
+  await assert.rejects(applyProductionStaffDeltaMigration(delta,DB,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'no replay');
+ }finally{delta.release();}
  assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
  assert.deepEqual(await guard(),before60);
  const roles60After=await roles();assert.deepEqual({roles:roles60After.roles,members:roles60After.members},{roles:roles60.roles,members:roles60.members});
@@ -121,10 +120,9 @@ try{
  assert.equal((await q('SELECT count(*)::int n FROM rental_terms_bundles'))[0].n,1);
  for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests','staff_order_drafts','rental_terms_reconsents'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
  const ops=DB+'_operations';assert.equal((await q("SELECT has_function_privilege($1,'staff_inbox_list(text[],boolean,timestamptz,uuid,integer)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0060 grant step');
- const c4=await owner.connect();try{await c4.query('BEGIN');for(const sql of productionStaffNotificationGrants(DB,ops))await c4.query(sql);await c4.query('COMMIT');}catch(e){await c4.query('ROLLBACK').catch(()=>{});throw e;}finally{c4.release();}
+ const grantsClient=await owner.connect();try{const g=await applyProductionStaffDeltaGrants(grantsClient,DB,OWNER);assert.equal(g.status,'PRODUCTION_STAFF_DELTA_GRANTS_INSTALLED');await staffDeltaGrantProof(grantsClient,ops);}finally{grantsClient.release();}
  for(const fn of STAFF_NOTIFICATION_FUNCTIONS)assert.equal((await q("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[ops,fn]))[0].ok,true,fn);
- for(const t of ['staff_booking_events','staff_notification_outbox','staff_notification_recipients','rental_terms_acceptances'])assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') OR has_table_privilege($1,$2,'INSERT') ok",[ops,t]))[0].ok,false,'function-only access to '+t);
- const c5=await owner.connect();try{await c5.query('BEGIN');for(const sql of productionCustomerGrants(DB,ops))await c5.query(sql);await c5.query('COMMIT');}catch(e){await c5.query('ROLLBACK').catch(()=>{});throw e;}finally{c5.release();}
+ for(const t of ['staff_booking_events','staff_notification_outbox','staff_notification_recipients'])assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') OR has_table_privilege($1,$2,'INSERT') ok",[ops,t]))[0].ok,false,'function-only access to '+t);
  for(const t of CUSTOMER_TABLES){assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') ok",[ops,t]))[0].ok,true,t);for(const priv of ['INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,false,t+' '+priv);}
  assert.equal((await q("SELECT has_function_privilege($1,'customer_link_legacy(uuid,uuid,text)','EXECUTE') ok",[ops]))[0].ok,true);
  // Payment start reads the governing terms; re-consent is insert-only (no UPDATE/DELETE on either table).

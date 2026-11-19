@@ -71,6 +71,17 @@ export class InventoryRead{
   });
  }
 
+ /** Scan: an individual item id → its product and current station (INVENTORY_VIEW and that station). Read-only. */
+ async locate(id:unknown){
+  if(typeof id!=='string'||!UUID.test(id))throw new FlowError('INVALID_INPUT',422);
+  const principal=await this.ctx.authorize('INVENTORY_VIEW');
+  return this.ctx.snapshot('INVENTORY_VIEW',[],async c=>{
+   const r=(await c.query('SELECT v.model_id "modelId",a.store_id store,a.family FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.id=$1',[id])).rows[0];
+   if(!r||!(principal.storeIds as string[]).includes(r.store))throw new FlowError('NOT_FOUND',404);
+   return {assetId:id,modelId:r.modelId as string,store:r.store as string,family:r.family as string};
+  });
+ }
+
  /** Product detail: variants with per-station counts, individual items with their current state, and recent history. */
  async detail(id:unknown,storeValue:unknown){
   if(typeof id!=='string'||!UUID.test(id))throw new FlowError('INVALID_INPUT',422);const store=this.store(storeValue);

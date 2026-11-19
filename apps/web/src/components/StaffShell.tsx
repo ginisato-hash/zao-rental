@@ -24,6 +24,7 @@ const MORE:Item[]=[
  {key:'bulk',href:'/admin/inventory',match:/^\/admin\/inventory/,show:a=>a.inventoryView},
 ];
 const BOTTOM:Item[]=[
+ {key:'scan',href:'/staff/scan',match:/^\/staff\/scan/,show:a=>a.bookingView||a.inventoryView},
  {key:'settings',href:'/staff/settings',match:/^\/(staff\/(settings|users|password|content)|admin\/(ops|notifications|prices|launch))/,show:()=>true},
 ];
 

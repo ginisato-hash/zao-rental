@@ -56,9 +56,9 @@ try{
  await check('the shell lists only working destinations in Booqable order with settings at the bottom',async()=>{
   await page.goto('/staff');const nav=page.getByRole('complementary');
   const labels=(await nav.getByRole('link').allInnerTexts()).map(s=>s.trim()).filter(Boolean);
-  const order=['ダッシュボード','予約','顧客','在庫','一括操作','設定','サインアウト'].filter(l=>labels.includes(l));
+  const order=['ダッシュボード','予約','顧客','在庫','一括操作','スキャン','設定','サインアウト'].filter(l=>labels.includes(l));
   assert.deepEqual(labels.filter(l=>order.includes(l)),order);assert.ok(labels.includes('設定'));
-  for(const missing of ['カレンダー','書類','レポート','スキャン'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
+  for(const missing of ['カレンダー','書類','レポート'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
   assert.equal(await page.locator('html').getAttribute('lang'),'ja');
  });
  await check('dashboard: Going out / Coming back for today with the confirmed booking; tomorrow shows the pending one',async()=>{
@@ -99,6 +99,15 @@ try{
   await page.goto('/staff/customers');const table=page.getByRole('table');await table.getByRole('link',{name:'SYNTHETIC Shell Confirmed'}).click();
   await page.getByRole('heading',{name:'SYNTHETIC Shell Confirmed'}).waitFor();await page.screenshot({path:`${shots}/customer-ja-1440.png`});
   await page.getByRole('link',{name:'#'+confirmedId.slice(0,8).toUpperCase()}).click();await page.waitForURL(u=>u.pathname==='/staff/orders/'+confirmedId);
+ });
+ await check('scan: an order number opens the order; an item id opens its product; an unknown or foreign id is refused',async()=>{
+  await page.goto('/staff/scan');await page.getByLabel('予約番号または予約QR').fill(confirmedId);await page.getByRole('button',{name:'この予約を開く'}).click();
+  await page.waitForURL(u=>u.pathname==='/staff/orders/'+confirmedId);
+  const asset=(await db.pool.query('SELECT a.id,v.model_id FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=$1 LIMIT 1',[variants.ski])).rows[0];
+  await page.goto('/staff/scan');await page.getByRole('tab',{name:'用品'}).click();await page.getByLabel('用品の個体ID').fill(asset.id);await page.getByRole('button',{name:'入力したIDを照合へ送る'}).click();
+  await page.waitForURL(u=>u.pathname==='/staff/inventory/'+asset.model_id);
+  await page.goto('/staff/scan');await page.getByRole('tab',{name:'用品'}).click();await page.getByLabel('用品の個体ID').fill('00000000-0000-4000-8000-000000000000');await page.getByRole('button',{name:'入力したIDを照合へ送る'}).click();
+  await page.getByRole('alert').filter({hasText:'見つからない'}).waitFor();
  });
  await check('/admin opens the same working shell instead of a placeholder',async()=>{
   await page.goto('/admin');await page.waitForURL('**/staff');assert.equal(await page.getByText('準備中').count(),0);

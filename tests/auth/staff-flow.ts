@@ -79,7 +79,7 @@ try{
  });
  await check('logout revokes old session; re-login reads the same stored Asset and stale session stamp is refused',async()=>{
   const oldStamp=(await (await editor.request.get('/api/session')).json()).stamp;
-  await page.getByRole('button',{name:'ログアウト',exact:true}).click();await page.waitForURL(`${origin}/staff/login`);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
+  await page.goto('/staff/logout');await page.getByRole('button',{name:'サインアウトする',exact:true}).click();await page.waitForURL(`${origin}/staff/login`);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
   await page.close();page=await login(editor,emails.editor);await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/ledger/assets',{headers:{'x-zao-session':oldStamp}})).status(),409);assert.equal((await (await editor.request.get(`/api/ledger/assets/${assetId}`)).json()).notes,'E05 再読込確認');
  });
  await check('permission and store removals are enforced by normal APIs, while old displayed data is unmounted',async()=>{

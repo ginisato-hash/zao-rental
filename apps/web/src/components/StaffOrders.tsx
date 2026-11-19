@@ -22,11 +22,12 @@ const L={
  none:['該当する予約はありません。','No orders match.'],lateOut:['貸出遅れ','Late pickups'],lateBack:['返却遅れ','Late returns'],
  dirOut:['受取日・受取店で絞り込み中','Filtered by pickup date and station'],dirBack:['返却日・返却店で絞り込み中','Filtered by return date and station'],failed:['読み込めませんでした。','Could not load.'],retry:['再読み込み','Retry'],
  prev:['前へ','Previous'],next:['次へ','Next'],of:['件中','of'],
+ related:['関連する業務','Related work'],quotes:['見積','Quotes'],holds:['仮押さえ','Holds'],recommendations:['サイズ推薦','Size recommendations'],amendments:['変更・返金依頼','Changes and refunds'],
 } as const;
 
 /** Booqable Orders: title, search and New order; tabs All / Upcoming / Late; left filters (status, payment, date range,
  * station); table Order / Customer / Status / Pickup / Return / Total / Payment. Every count and page is server-side. */
-export function StaffOrders({locale:serverLocale,stamp,stores,canCreate}:{locale:StaffLocale;stamp:string;stores:string[];canCreate:boolean}){
+export function StaffOrders({locale:serverLocale,stamp,stores,canCreate,more}:{locale:StaffLocale;stamp:string;stores:string[];canCreate:boolean;more?:{quotes:boolean;holds:boolean;recommendations:boolean;amendments:boolean}}){
  const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],en=locale==='en';
  const params=useSearchParams(),router=useRouter();
@@ -51,6 +52,7 @@ export function StaffOrders({locale:serverLocale,stamp,stores,canCreate}:{locale
   <div className="ox-head"><h1>{st(locale,'orders')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>
    {canCreate&&<Link className="sx-btn sx-btn--primary" href="/staff/orders/new">{st(locale,'newOrder')}</Link>}</div>
+  {more&&(more.quotes||more.holds||more.recommendations||more.amendments)&&<nav className="ox-related" aria-label={tx('related')}>{more.quotes&&<Link href="/staff/quotes">{tx('quotes')}</Link>}{more.holds&&<Link href="/staff/holds">{tx('holds')}</Link>}{more.recommendations&&<Link href="/staff/recommendations">{tx('recommendations')}</Link>}{more.amendments&&<Link href="/staff/amendments">{tx('amendments')}</Link>}</nav>}
   <div className="sx-seg ox-tabs" role="tablist" aria-label={st(locale,'orders')}>{(['all','upcoming','late','shortage'] as const).map(t=><button key={t} type="button" role="tab" aria-selected={tab===t} onClick={()=>set({tab:t==='all'?'':t,late:''})}>{tx(t)}{data&&data.counts[t]!==null&&data.counts[t]!==undefined?` ${data.counts[t]}`:''}</button>)}</div>
   {tab==='late'&&<div className="sx-seg ox-tabs" role="group" aria-label={tx('late')}>{(['','out','back'] as const).map(k=><button key={k||'both'} type="button" aria-pressed={get('late')===k} onClick={()=>set({late:k})}>{k===''?tx('all'):k==='out'?tx('lateOut'):tx('lateBack')}{data?` ${k===''?data.counts.late:k==='out'?data.counts.lateOut:data.counts.lateBack}`:''}</button>)}</div>}
   {tab==='shortage'&&<p className="sx-help">{tx('shortageHelp')}{data&&(data.counts.shortageIndeterminate??0)>0&&<> <strong role="status">{en?`${data.counts.shortageIndeterminate} ${tx('undetermined')}`:`${data.counts.shortageIndeterminate}${tx('undetermined')}`}</strong></>}</p>}

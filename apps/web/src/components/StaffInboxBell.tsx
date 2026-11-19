@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {st,type StaffLocale} from './staff-i18n';
 import {STORE_LABEL} from './guest-format';
 import {invalidateStaffView} from './StaffSessionBoundary';
-import {currentStateNote} from './order-labels';
+import {currentStateNote,fmtDate} from './order-labels';
 
 type Item={id:string;bookingId:string;state:string;kind:'BOOKING_CONFIRMED'|'PAYMENT_REVIEW';source:'LIVE'|'HISTORY_IMPORT';store:string;returnStore:string;createdAt:string;acknowledgedAt:string|null;acknowledgedBy:string|null;startDate:string;endDate:string;slot:string;people:number;customer:string|null};
 type Page={unacknowledged:number;attention:number;total:number;latest:string|null;items:Item[];next:{before:string;beforeId:string}|null};
@@ -53,7 +53,7 @@ export function StaffInboxBell({locale,stamp,stores}:{locale:StaffLocale;stamp:s
    {page&&page.items.length>0&&<ul className="sx-inbox">{page.items.map(i=><li key={i.id}>
     <Link href={`/staff/orders/${encodeURIComponent(i.bookingId)}`} onClick={()=>setOpen(false)}>
      <span className={'sx-tag'+(i.kind==='PAYMENT_REVIEW'?' sx-tag--warn':'')}>{i.kind==='PAYMENT_REVIEW'?t('paymentReview'):i.source==='HISTORY_IMPORT'?t('imported'):t('confirmed')}</span>
-     <b>{i.customer??'—'}</b>{currentStateNote(locale,i.kind,i.state)&&<span className="sx-tag sx-tag--warn">{t('nowState')}{currentStateNote(locale,i.kind,i.state)}</span>}<span>{STORE_LABEL[i.store]??i.store} · {i.startDate}{i.endDate!==i.startDate?` – ${i.endDate}`:''} · {i.people}{locale==='en'?' ':''}{t('people')}</span>
+     <b>{i.customer??'—'}</b>{currentStateNote(locale,i.kind,i.state)&&<span className="sx-tag sx-tag--warn">{t('nowState')}{currentStateNote(locale,i.kind,i.state)}</span>}<span>{STORE_LABEL[i.store]??i.store} · {fmtDate(locale,i.startDate)}{i.endDate!==i.startDate?` – ${fmtDate(locale,i.endDate)}`:''} · {i.people}{locale==='en'?' ':''}{t('people')}</span>
      <small>{jst(i.createdAt,locale)} JST</small>
     </Link>
     <button type="button" className="sx-btn sx-btn--quiet" disabled={busyAck===i.id} onClick={()=>void ack(i)}>{t('acknowledge')}</button>

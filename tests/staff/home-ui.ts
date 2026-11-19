@@ -82,7 +82,7 @@ try{
  const storeContext=()=>page.getByRole('region',{name:'店舗・営業日'});
 
  await check('operational Staff Home replaces the one-link page; the Manifest server date (a synthetic year, never the real current year) controls the displayed business date; narrow (BOOKING_VIEW-only) permission keeps Today read-only and hides every capability-gated section/link',async()=>{
-  await page.goto('/staff/today');await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  await page.goto('/staff/today');await expect(page.getByRole('heading',{name:'当日作業・準備'})).toBeVisible();
   await expect(page.getByRole('region',{name:'予約QR・検索'})).toBeVisible();
   await expect(todayBooking()).toBeVisible();
   // Proves the client never derives "today" from the browser: this exact string can only
@@ -90,8 +90,11 @@ try{
   await expect(todayBooking()).toContainText(businessDate);
   await expect(dailyBusiness()).toBeVisible();
   await expect(page.getByRole('region',{name:'運用の注意事項'})).toBeVisible();
-  await page.getByText('その他の管理機能').click();
-  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・仮押さえ','サイズ推薦','ウェアの数量貸出・返却'])await expect(page.getByRole('link',{name})).toBeVisible();
+  // The former 'other functions' link list moved to the working screens: Orders → related work, Inventory → ledger/stock.
+  await page.goto('/staff/orders');const related=page.getByRole('navigation',{name:'関連する業務'});
+  for(const name of ['見積','仮押さえ','サイズ推薦','変更・返金依頼'])await expect(related.getByRole('link',{name,exact:true})).toBeVisible();
+  await page.goto('/staff/inventory');for(const name of ['台帳の登録・編集','棚卸・CSV','移送','ウェア'])await expect(page.getByRole('main').getByRole('link',{name,exact:true}).first()).toBeVisible();
+  await page.goto('/staff/today');
   await narrowPage.goto('/staff/today');
   await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toBeVisible();
   // UX5R-01/UX-5D: a BOOKING_VIEW-only account cannot actually use pickup, so the search/QR
@@ -102,9 +105,13 @@ try{
   await expect(narrowPage.locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'}).getByRole('button')).toHaveCount(0);
   // UX5R-03: secondary links must match the destination route's own permission gate, not
   // "every authorized user".
-  await narrowPage.getByText('その他の管理機能').click();
-  for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・仮押さえ','サイズ推薦','ウェアの数量貸出・返却','スタッフ管理'])await expect(narrowPage.getByRole('link',{name})).toHaveCount(0);
-  for(const name of ['変更・返金依頼','パスワード変更'])await expect(narrowPage.getByRole('link',{name})).toBeVisible();
+  // Each link matches its destination's own permission gate: a BOOKING_VIEW-only account sees changes/refunds but no
+  // quotes/holds/recommendations, and no Inventory in the sidebar.
+  await narrowPage.goto('/staff/orders');const narrowRelated=narrowPage.getByRole('navigation',{name:'関連する業務'});
+  for(const name of ['見積','仮押さえ','サイズ推薦'])await expect(narrowRelated.getByRole('link',{name,exact:true})).toHaveCount(0);
+  await expect(narrowRelated.getByRole('link',{name:'変更・返金依頼',exact:true})).toBeVisible();
+  await expect(narrowPage.getByRole('complementary').getByRole('link',{name:'在庫',exact:true})).toHaveCount(0);
+  await narrowPage.goto('/staff/today');
  });
 
  await check('R66 新着予約: a future confirmed booking (not today\'s rental) appears newest-first with ref/name/state/dates/stores/total/received time, a link to notification status and no customer email; payment-pending reads as attention',async()=>{
@@ -127,7 +134,7 @@ try{
  });
 
  await check('UX5R-04: RENTAL_CHECKOUT/RENTAL_RETURN without BOOKING_VIEW must not surface pickup/return/search surfaces the destination route would deny',async()=>{
-  await inversePage.goto('/staff/today');await expect(inversePage.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  await inversePage.goto('/staff/today');await expect(inversePage.getByRole('heading',{name:'当日作業・準備'})).toBeVisible();
   for(const label of ['予約QR・検索','本日の予約','本日の業務'])await expect(inversePage.getByRole('region',{name:label})).toHaveCount(0);
  });
 
@@ -422,13 +429,13 @@ try{
 
  await check('UX5E-03: Manifest 401/403 ends the Staff Home session view the same as any other endpoint, rather than being swallowed as a generic Manifest error message',async()=>{
   await page.goto('/staff/today');
-  await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'当日作業・準備'})).toBeVisible();
   await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();await route.fulfill({status:403,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'FORBIDDEN'})});});
   await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
   await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();
   await page.unroute('**/api/operations/manifest*');
   await page.goto('/staff/today'); // restore a normal session view for whatever runs next
-  await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'当日作業・準備'})).toBeVisible();
  });
 
  await check('Manifest loading, empty and error states are visually distinct and never shown as each other',async()=>{

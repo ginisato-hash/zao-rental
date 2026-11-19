@@ -47,7 +47,8 @@ export class StaffNotificationWorker{
  }
  /** One bounded pass: resynchronize missed captures, then at most `limit` deliveries before the deadline. */
  async runBatch(limit:number,deadline:Date){
-  await this.pool.query('SELECT staff_events_sync()');let processed=0;
+  if(limit<1||Date.now()>=deadline.getTime())return {processed:0};
+  await this.pool.query('SELECT staff_events_sync()');let processed=0;if(Date.now()>=deadline.getTime())return {processed};
   for(const row of (await this.pool.query('SELECT id,action FROM staff_notification_due($1)',[limit])).rows as {id:string;action:string}[]){
    if(Date.now()>=deadline.getTime())break;if(row.action==='LOOKUP')await this.reconcile(row.id);else await this.dispatch(row.id);processed++;
   }

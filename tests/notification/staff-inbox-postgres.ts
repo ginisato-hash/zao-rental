@@ -9,6 +9,7 @@ import {OperationsContext} from '../../packages/core/src/operations/context';
 import {StaffInbox} from '../../packages/core/src/notification/staff-inbox';
 import {StaffNotificationWorker} from '../../packages/core/src/notification/staff-worker';
 import {LoopbackDeliveryAdapter} from './loopback';
+import {skiSet} from '../inventory/fixture';
 
 // Issue #47 §6: durable staff inbox + opt-in staff email. Synthetic local PostgreSQL only; loopback transport only.
 const x=await flowFixture();let roles:Awaited<ReturnType<typeof provisionNotificationRole>>|undefined,ops:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined,stage='setup',count=0,failed=false;
@@ -42,18 +43,36 @@ try{
   const a=await admin.list({stores:[store]}),b=await admin.list({stores:[store]});
   assert.equal(a.unacknowledged,1);assert.equal(b.unacknowledged,1);assert.equal(a.items[0]!.bookingId,first);assert.equal(a.items[0]!.customer,'SYNTHETIC Guest');assert.equal(a.items[0]!.acknowledgedAt,null);
   await assert.rejects(onsen.list({stores:[store]}),{code:'FORBIDDEN'});
-  await assert.rejects(onsen.acknowledge(a.items[0]!.id,store),{code:'FORBIDDEN'});
-  await assert.rejects(onsen.acknowledge(a.items[0]!.id,'ONSEN_BASE'),{code:'FORBIDDEN'},'event belongs to another store');
+  await assert.rejects(onsen.acknowledge(a.items[0]!.id),{code:'FORBIDDEN'},'neither pickup nor return station is visible');
   const own=await onsen.list({stores:['ONSEN_BASE']});assert.ok(own.items.every(i=>i.store==='ONSEN_BASE'||i.returnStore==='ONSEN_BASE'));
   await assert.rejects(admin.list({stores:['NOWHERE']}),{code:'INVALID_STORE'});
  });
  await check('concurrent acknowledgements store one (who, when); other devices see it',async()=>{
   const store=(await events(first))[0].store_id as string,id=(await admin.list({stores:[store]})).items[0]!.id;
-  const acks=await Promise.all(Array.from({length:6},()=>admin.acknowledge(id,store)));
+  const acks=await Promise.all(Array.from({length:6},()=>admin.acknowledge(id)));
   assert.equal(new Set(acks.map(a=>a.acknowledgedAt)).size,1);assert.equal(acks[0]!.acknowledgedBy,'SYNTHETIC Creator');
   const after=await admin.list({stores:[store]});assert.equal(after.unacknowledged,0);assert.ok(after.items[0]!.acknowledgedAt);
   await assert.rejects(x.db.pool.query('UPDATE staff_booking_events SET acknowledged_at=NULL,acknowledged_by=NULL WHERE id=$1',[id]));
   await assert.rejects(x.db.pool.query('DELETE FROM staff_booking_events WHERE id=$1',[id]));
+ });
+ await check('only a real transition is new: a same-state update of an already confirmed booking creates no event or email',async()=>{
+  await x.db.pool.query('ALTER TABLE rental_bookings DISABLE TRIGGER staff_event_capture');
+  let d;try{d=await confirmed();}finally{await x.db.pool.query('ALTER TABLE rental_bookings ENABLE TRIGGER staff_event_capture');}
+  assert.equal((await events(d.booking.id)).length,0,'confirmed while capture was off: stands in for a booking confirmed before 0060');
+  // Lower-level capture mechanics: the booking contract guard forbids this direct write, so it is lifted only for this one
+  // same-state UPDATE (a stand-in for any legitimate write that touches state without changing it).
+  const c=await x.db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC same-state capture test',true)",[x.actor]);await c.query('ALTER TABLE rental_bookings DISABLE TRIGGER rental_booking_guard');
+   await c.query('UPDATE rental_bookings SET state=state WHERE id=$1',[d.booking.id]);await c.query('ALTER TABLE rental_bookings ENABLE TRIGGER rental_booking_guard');await c.query('COMMIT');}
+  catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  assert.equal((await events(d.booking.id)).length,0);assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM staff_event_deferred WHERE booking_id=$1',[d.booking.id])).rows[0].n,0);
+ });
+ await check('pickup Mountain / return Central: Central-only staff can see and acknowledge it; the station is never client-chosen',async()=>{
+  Object.assign(x.principal,(await loadStaff(x.roles.authPool,x.actor))!);
+  const c=skiSet('2035-03-03');c.pickupStore='MOUNTAIN_BASE';c.returnStore='ONSEN_BASE';
+  const d=await x.draft(undefined,c,{reason:'SYNTHETIC cross-station inbox test'});await x.service.startPayment(d.booking.id,randomUUID());
+  const page=await onsen.list({stores:['ONSEN_BASE']});const item=page.items.find(i=>i.bookingId===d.booking.id);assert.ok(item,'visible via the return station');
+  const ack=await onsen.acknowledge(item!.id);assert.equal(ack.acknowledgedBy,'SYNTHETIC Onsen Manager');
+  assert.equal((await admin.acknowledge(item!.id)).acknowledgedAt,ack.acknowledgedAt,'first acknowledgement is kept');
  });
  await check('keyset paging returns every open event beyond the page size; totals are not page-limited',async()=>{
   const more=[await confirmed(),await confirmed(),await confirmed()],store=more[0]!.conditions.pickupStore;
@@ -62,10 +81,10 @@ try{
   assert.equal(total,3);assert.deepEqual(new Set(seen),new Set(more.map(m=>m.booking.id)));
  });
  await check('worker sends one staff email per recipient with no customer name or amount, and replays are inert',async()=>{
-  const before=adapter.calls;const r=await worker.runBatch(20,deadline());assert.ok(r.processed>=4);
-  const sent=(await x.db.pool.query("SELECT count(*)::int n FROM staff_notification_outbox WHERE status='SENT'")).rows[0].n;assert.equal(sent,4);assert.equal(adapter.calls-before,4);
+  const before=adapter.calls;const r=await worker.runBatch(20,deadline());assert.ok(r.processed>=5);
+  const sent=(await x.db.pool.query("SELECT count(*)::int n FROM staff_notification_outbox WHERE status='SENT'")).rows[0].n;assert.equal(sent,5);assert.equal(adapter.calls-before,5);
   for(const m of adapter.accepted.values()){assert.equal(m.recipient,'flow-actor@example.invalid');assert.equal(m.eventType,'STAFF_BOOKING_CONFIRMED');assert.ok(!m.text.includes('SYNTHETIC Guest')&&!m.text.includes('synthetic-guest@')&&!/¥/.test(m.text));assert.match(m.text,/\/staff\/rentals\?booking=/);}
-  await worker.runBatch(20,deadline());assert.equal(adapter.calls-before,4,'no duplicate send');
+  await worker.runBatch(20,deadline());assert.equal(adapter.calls-before,5,'no duplicate send');
  });
  await check('lost response becomes UNKNOWN and lookup closes it without a second send',async()=>{
   adapter.scenario='TIMEOUT_AFTER_ACCEPT';const d=await confirmed();await worker.runBatch(20,deadline());const row=(await outbox(d.booking.id))[0];assert.equal(row.status,'UNKNOWN');

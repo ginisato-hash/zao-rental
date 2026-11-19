@@ -23,9 +23,10 @@ export class StaffInbox{
   const last=v.items.length===limit?v.items[v.items.length-1]:undefined;
   return {...v,unacknowledged:Number(v.unacknowledged),attention:Number(v.attention),total:Number(v.total),next:last?{before:last.createdAt,beforeId:last.id}:null};
  }
- async acknowledge(eventId:unknown,store:unknown){
-  if(typeof eventId!=='string')throw new FlowError('INVALID_INPUT',422);flowId(eventId);const stores=this.stores(store);
-  return this.ctx.light('BOOKING_VIEW',stores,async c=>(await c.query('SELECT staff_inbox_ack($1) v',[eventId])).rows[0].v as {id:string;acknowledgedAt:string;acknowledgedBy:string|null});
+ async acknowledge(eventId:unknown){
+  if(typeof eventId!=='string')throw new FlowError('INVALID_INPUT',422);flowId(eventId);
+  // The station comes from the event row (pickup or return), checked in SQL; the client does not choose it.
+  return this.ctx.light('BOOKING_VIEW',[],async c=>(await c.query('SELECT staff_inbox_ack($1) v',[eventId])).rows[0].v as {id:string;acknowledgedAt:string;acknowledgedBy:string|null});
  }
  /** Own email preference only. enabled=null reads it. */
  async preference(enabled:unknown,locale:unknown){

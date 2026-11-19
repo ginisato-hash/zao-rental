@@ -45,7 +45,10 @@ export class BookingNotificationWorker{
   const rows=(await this.pool.query(normal?'SELECT id,action FROM notification_due_normal($1,$2)':'SELECT id,action FROM notification_due()',normal?[normal.since,normal.limit]:[])).rows;let processed=0;
   for(const row of rows){if(normal&&Date.now()>=normal.deadline.getTime())break;if(row.action==='LOOKUP')await this.reconcile(row.id);else await this.dispatch(row.id);processed++;}
   // Staff new-booking emails (0060) share the transport and the tick, only once the role can run the staff queue.
-  let staff=0;if(await this.staffQueueReady())staff=(await new StaffNotificationWorker(this.pool,this.origin,this.adapter,this.timeoutMs).runBatch(normal?.limit??20,normal?.deadline??new Date(Date.now()+30000))).processed;
+  // One shared budget per tick: customer deliveries first, the staff queue gets what remains, and nothing new starts after
+  // the tick deadline (no extra sync/claim, no retry loop, no scheduler).
+  const deadline=normal?.deadline??new Date(Date.now()+30000),remaining=Math.max(0,(normal?.limit??20)-processed);
+  let staff=0;if(remaining>0&&Date.now()<deadline.getTime()&&await this.staffQueueReady())staff=(await new StaffNotificationWorker(this.pool,this.origin,this.adapter,this.timeoutMs).runBatch(remaining,deadline)).processed;
   return {state:'PROCESSED',processed,staff};
  }
 }

@@ -4,8 +4,9 @@ import Link from 'next/link';
 import {st,type StaffLocale} from './staff-i18n';
 import {STORE_LABEL} from './guest-format';
 import {invalidateStaffView} from './StaffSessionBoundary';
+import {currentStateNote} from './order-labels';
 
-type Item={id:string;bookingId:string;kind:'BOOKING_CONFIRMED'|'PAYMENT_REVIEW';source:'LIVE'|'HISTORY_IMPORT';store:string;returnStore:string;createdAt:string;acknowledgedAt:string|null;acknowledgedBy:string|null;startDate:string;endDate:string;slot:string;people:number;customer:string|null};
+type Item={id:string;bookingId:string;state:string;kind:'BOOKING_CONFIRMED'|'PAYMENT_REVIEW';source:'LIVE'|'HISTORY_IMPORT';store:string;returnStore:string;createdAt:string;acknowledgedAt:string|null;acknowledgedBy:string|null;startDate:string;endDate:string;slot:string;people:number;customer:string|null};
 type Page={unacknowledged:number;attention:number;total:number;latest:string|null;items:Item[];next:{before:string;beforeId:string}|null};
 const BASE=30000,MAX=300000;
 const jst=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':'ja-JP',{timeZone:'Asia/Tokyo',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
@@ -36,7 +37,7 @@ export function StaffInboxBell({locale,stamp,stores}:{locale:StaffLocale;stamp:s
  useEffect(()=>{const generation=gen;alive.current=true;void sync();const vis=()=>{if(document.visibilityState==='visible')void sync();else clearTimeout(timer.current);};
   document.addEventListener('visibilitychange',vis);return()=>{alive.current=false;generation.current++;clearTimeout(timer.current);document.removeEventListener('visibilitychange',vis);};},[sync]);
  async function ack(item:Item){if(busyAck)return;setBusyAck(item.id);
-  try{const r=await fetch('/api/operations/inbox/ack',{method:'POST',cache:'no-store',headers:{'content-type':'application/json','x-zao-session':stamp},body:JSON.stringify({requestKey:crypto.randomUUID(),input:{eventId:item.id,store:item.store}})});
+  try{const r=await fetch('/api/operations/inbox/ack',{method:'POST',cache:'no-store',headers:{'content-type':'application/json','x-zao-session':stamp},body:JSON.stringify({requestKey:crypto.randomUUID(),input:{eventId:item.id}})});
    if(r.status===401){invalidateStaffView();return;}if(r.ok){gen.current++;inflight.current=false;await sync();}else setFailed(true);}
   catch{setFailed(true);}finally{setBusyAck(null);}}
  const count=page?page.unacknowledged+page.attention:0;
@@ -52,7 +53,7 @@ export function StaffInboxBell({locale,stamp,stores}:{locale:StaffLocale;stamp:s
    {page&&page.items.length>0&&<ul className="sx-inbox">{page.items.map(i=><li key={i.id}>
     <Link href={`/staff/rentals?booking=${encodeURIComponent(i.bookingId)}`} onClick={()=>setOpen(false)}>
      <span className={'sx-tag'+(i.kind==='PAYMENT_REVIEW'?' sx-tag--warn':'')}>{i.kind==='PAYMENT_REVIEW'?t('paymentReview'):i.source==='HISTORY_IMPORT'?t('imported'):t('confirmed')}</span>
-     <b>{i.customer??'—'}</b><span>{STORE_LABEL[i.store]??i.store} · {i.startDate}{i.endDate!==i.startDate?` – ${i.endDate}`:''} · {i.people}{locale==='en'?' ':''}{t('people')}</span>
+     <b>{i.customer??'—'}</b>{currentStateNote(locale,i.kind,i.state)&&<span className="sx-tag sx-tag--warn">{t('nowState')}{currentStateNote(locale,i.kind,i.state)}</span>}<span>{STORE_LABEL[i.store]??i.store} · {i.startDate}{i.endDate!==i.startDate?` – ${i.endDate}`:''} · {i.people}{locale==='en'?' ':''}{t('people')}</span>
      <small>{jst(i.createdAt,locale)} JST</small>
     </Link>
     <button type="button" className="sx-btn sx-btn--quiet" disabled={busyAck===i.id} onClick={()=>void ack(i)}>{t('acknowledge')}</button>

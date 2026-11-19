@@ -17,6 +17,7 @@ const D={
  viewAll:['すべて表示','View all'],openOnly:['未確認のみ','Unacknowledged only'],all:['すべて','All'],loadMore:['さらに表示','Show more'],
  confirmed:['予約確定','Confirmed'],paymentReview:['決済要確認','Payment needs review'],imported:['導入前の予約','Before notifications'],
  people:['名','people'],by:['確認：','Seen by '],
+ nowState:['現在：','Now: '],
  browserAlerts:['このブラウザで通知を表示','Show alerts in this browser'],
  browserAlertsHelp:['画面を開いている間だけ表示されます。閉じている間はメールと受信箱で確認できます。','Shown only while this page is open. When it is closed, use email and the inbox.'],
  browserBlocked:['ブラウザ設定で通知が拒否されています。','Notifications are blocked in this browser’s settings.'],

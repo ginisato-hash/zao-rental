@@ -96,9 +96,12 @@ CREATE TABLE staff_event_deferred(
  PRIMARY KEY(booking_id,kind)
 );
 REVOKE ALL ON staff_event_deferred FROM PUBLIC;
--- Capture never blocks or rolls back the booking transition.
+-- Capture never blocks or rolls back the booking transition. Only a real transition counts: an INSERT already in the
+-- state, or an UPDATE whose previous state was different. A same-state update of an old confirmed booking is not new.
 CREATE FUNCTION staff_event_capture() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE k text;BEGIN
- k:=CASE WHEN booking_is_confirmed(NEW.mode,NEW.state) AND NEW.confirmed_at IS NOT NULL THEN 'BOOKING_CONFIRMED' WHEN NEW.state='PAYMENT_REVIEW' THEN 'PAYMENT_REVIEW' END;
+ k:=CASE
+  WHEN booking_is_confirmed(NEW.mode,NEW.state) AND NEW.confirmed_at IS NOT NULL AND (TG_OP='INSERT' OR NOT booking_is_confirmed(OLD.mode,OLD.state)) THEN 'BOOKING_CONFIRMED'
+  WHEN NEW.state='PAYMENT_REVIEW' AND (TG_OP='INSERT' OR OLD.state IS DISTINCT FROM 'PAYMENT_REVIEW') THEN 'PAYMENT_REVIEW' END;
  IF k IS NULL THEN RETURN NEW;END IF;
  BEGIN PERFORM staff_event_record(NEW.id,k,'LIVE');
  EXCEPTION WHEN OTHERS THEN
@@ -140,9 +143,12 @@ END$$;
 REVOKE ALL ON FUNCTION staff_inbox_list(text[],boolean,timestamptz,uuid,integer) FROM PUBLIC;
 
 -- Acknowledge once. Concurrent acknowledgements resolve to the first; the result is the stored (who, when).
-CREATE FUNCTION staff_inbox_ack(p_event uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE e staff_booking_events;BEGIN
+-- The same rule as reading: the actor (live session, BOOKING_VIEW) must see the pickup OR the return station of the event.
+-- The station is taken from the event itself, never from the client.
+CREATE FUNCTION staff_inbox_ack(p_event uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE e staff_booking_events;actor text:=current_setting('zao.actor',true);BEGIN
  SELECT * INTO e FROM staff_booking_events WHERE id=p_event FOR UPDATE;IF NOT FOUND THEN RAISE EXCEPTION 'STAFF_EVENT_NOT_FOUND' USING ERRCODE='42501';END IF;
- PERFORM ops_assert_actor('BOOKING_VIEW',ARRAY[e.store_id],current_setting('zao.actor',true));
+ PERFORM ops_assert_actor('BOOKING_VIEW','{}'::text[],actor);
+ IF NOT (staff_can_view_store(actor,e.store_id) OR staff_can_view_store(actor,e.return_store_id)) THEN RAISE EXCEPTION 'OPS_FORBIDDEN' USING ERRCODE='42501';END IF;
  IF e.acknowledged_at IS NULL THEN UPDATE staff_booking_events SET acknowledged_by=current_setting('zao.actor'),acknowledged_at=inventory_clock() WHERE id=e.id RETURNING * INTO e;END IF;
  RETURN jsonb_build_object('id',e.id,'acknowledgedAt',e.acknowledged_at,'acknowledgedBy',(SELECT u.name FROM auth_user u WHERE u.id=e.acknowledged_by));
 END$$;

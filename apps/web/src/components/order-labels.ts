@@ -19,3 +19,10 @@ export const fmtDate=(l:StaffLocale,d:string)=>new Intl.DateTimeFormat(l==='en'?
 export const fmtYen=(l:StaffLocale,n:number|null)=>n===null?'—':new Intl.NumberFormat(l==='en'?'en-JP':'ja-JP',{style:'currency',currency:'JPY'}).format(n);
 const PAY:Record<string,[string,string]>={COMPLETED:['支払済み','Paid'],SUCCEEDED:['支払済み','Paid'],PENDING:['処理中','Processing'],SUBMITTING:['処理中','Processing'],UNKNOWN:['照合中','Being verified'],REVIEW:['要確認','Needs review'],FAILED:['失敗','Failed'],CANCELED:['取消','Canceled'],REFUNDED:['返金済み','Refunded']};
 export const paymentLabel=(l:StaffLocale,p:string|null)=>p===null?(l==='en'?'Unpaid':'未決済'):(PAY[p]?.[l==='en'?1:0]??p);
+/** The inbox shows the past event (confirmed / payment review) and, only when it has since changed, the booking's current state. */
+export const currentStateNote=(l:StaffLocale,kind:string,state:string)=>{
+ const confirmed=state==='CONFIRMED'||state==='CONFIRMED_DEV';
+ if(kind==='BOOKING_CONFIRMED'&&confirmed)return '';if(kind==='PAYMENT_REVIEW'&&state==='PAYMENT_REVIEW')return '';
+ const m:Record<string,[string,string]>={CANCELLED:['キャンセル済み','Canceled'],COMPLETED:['完了','Completed'],COMPLETED_DEV:['完了','Completed'],CONFIRMED:['確定済み','Confirmed'],CONFIRMED_DEV:['確定済み','Confirmed'],PAYMENT_PENDING:['決済確認中','Payment pending'],PAYMENT_REVIEW:['決済要確認','Payment review'],DRAFT:['下書き','Draft']};
+ return m[state]?.[l==='en'?1:0]??'';
+};

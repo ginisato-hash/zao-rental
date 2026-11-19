@@ -84,6 +84,17 @@ try{
   await dialog.getByRole('button',{name:'確認済みにする'}).click();await page.getByRole('button',{name:'通知 (0)'}).waitFor();
   const ack=(await db.pool.query('SELECT acknowledged_by FROM staff_booking_events WHERE booking_id=$1',[confirmedId])).rows;assert.deepEqual(ack,[{acknowledged_by:admin}]);
  });
+ await check('inventory: product list with separated counts, product detail tabs, and a read-only date availability check',async()=>{
+  await page.goto('/staff/inventory');const table=page.getByRole('table');await table.getByRole('columnheader',{name:'貸出可'}).waitFor();
+  const skiName=(await db.pool.query('SELECT m.brand,m.name FROM ledger_models m JOIN ledger_variants v ON v.model_id=m.id WHERE v.id=$1',[variants.ski])).rows[0];
+  await table.getByRole('link',{name:new RegExp(skiName.name)}).first().click();await page.getByRole('tab',{name:'サイズ'}).waitFor();
+  await page.screenshot({path:`${shots}/product-ja-1440.png`});
+  await page.getByRole('tab',{name:'個体'}).click();await page.getByRole('columnheader',{name:'所在'}).waitFor();
+  const before=Number((await db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n);
+  await page.getByLabel('サイズ',{exact:true}).selectOption({index:1});await page.getByLabel('開始日').fill('2035-07-01');await page.getByLabel('終了日').fill('2035-07-01');
+  await page.getByRole('button',{name:'確認',exact:true}).click();await page.getByRole('status').filter({hasText:/予約可能|在庫不足|判定できません/}).waitFor();
+  assert.equal(Number((await db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n),before,'the check reserves nothing');
+ });
  await check('/admin opens the same working shell instead of a placeholder',async()=>{
   await page.goto('/admin');await page.waitForURL('**/staff');assert.equal(await page.getByText('準備中').count(),0);
  });

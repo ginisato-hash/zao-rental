@@ -53,3 +53,4 @@
  .ox-grid>section:nth-child(2){display:none}
 }
 .od-dl{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:0;padding:16px 20px}.od-dl dt{color:var(--sx-text2);font-size:13px}.od-dl dd{margin:0}
+.sx-table th.ox-num{text-align:right}

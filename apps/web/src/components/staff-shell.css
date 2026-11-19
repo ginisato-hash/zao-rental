@@ -118,3 +118,4 @@
 .sx-content .ledger-shell :is(input,select){border-width:1px!important;border-radius:8px}
 /* Print: content only, no shell chrome. */
 @media print{.sx-side,.sx-top,.sx-scrim{display:none!important}.sx{display:block}.sx-content{padding:0;max-width:none}}
+.sx-links{list-style:none;margin:0;padding:0;display:grid;gap:8px}

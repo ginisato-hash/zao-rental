@@ -1,11 +1,11 @@
 import type {StaffLocale} from './staff-i18n';
 // Booqable order states mapped onto rental facts. Payment-unsettled, partial and inspection states stay distinct;
 // they are never shown as "Reserved" or "Returned" to hide an internal state.
-export type OrderStatus='DRAFT'|'PAYMENT_PENDING'|'PAYMENT_REVIEW'|'RESERVED'|'PICKED_UP'|'PARTIALLY_RETURNED'|'RETURNED'|'INSPECTION_PENDING'|'NO_PICKUP'|'COMPLETED'|'CANCELED';
+export type OrderStatus='DRAFT'|'PAYMENT_PENDING'|'PAYMENT_REVIEW'|'RESERVED'|'PARTIALLY_PICKED_UP'|'PICKED_UP'|'PARTIALLY_RETURNED'|'RETURNED'|'INSPECTION_PENDING'|'NO_PICKUP'|'COMPLETED'|'CANCELED';
 const S:Record<OrderStatus,[string,string,'neutral'|'blue'|'green'|'orange'|'grey']>={
  DRAFT:['下書き','Draft','grey'],PAYMENT_PENDING:['決済確認中','Payment pending','orange'],PAYMENT_REVIEW:['決済要確認','Payment review','orange'],
- RESERVED:['予約済み','Reserved','blue'],PICKED_UP:['貸出中','Picked up','green'],PARTIALLY_RETURNED:['一部返却','Partially returned','orange'],
- RETURNED:['返却済み','Returned','neutral'],INSPECTION_PENDING:['点検待ち','Awaiting inspection','orange'],NO_PICKUP:['未受取','Not collected','grey'],
+ RESERVED:['予約済み','Reserved','blue'],PARTIALLY_PICKED_UP:['一部貸出','Partially picked up','orange'],PICKED_UP:['貸出中','Picked up','green'],PARTIALLY_RETURNED:['一部返却','Partially returned','orange'],
+ RETURNED:['返却済み','Returned','neutral'],INSPECTION_PENDING:['点検・洗浄待ち','Awaiting inspection or care','orange'],NO_PICKUP:['未受取','Not collected','grey'],
  COMPLETED:['完了','Completed','neutral'],CANCELED:['キャンセル','Canceled','grey'],
 };
 export const ORDER_STATUSES=Object.keys(S) as OrderStatus[];

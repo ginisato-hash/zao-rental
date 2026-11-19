@@ -80,3 +80,4 @@
 .sx-field{display:grid;gap:6px}
 .sx-field select{min-height:36px;border-radius:8px;border:1px solid var(--sx-line);padding:0 10px;font:inherit;background:var(--sx-bg);color:var(--sx-text)}
 .sx-status{min-height:20px;color:var(--sx-text2)}
+.sx-seg button[aria-selected=true]{background:var(--sx-bg);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}

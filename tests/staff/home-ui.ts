@@ -62,7 +62,7 @@ try{
  // across every logged-in page, for the whole run: the final check below asserts the two retired
  // summary endpoints never appear here even once.
  const requestedPaths:string[]=[];
- for(const p of [page,narrowPage,inversePage,checkoutPage,onsenPage])p.on('request',r=>{try{const u=new URL(r.url());if(u.origin!==origin)return;if(new URL(r.frame().url()).pathname!=='/staff')return;requestedPaths.push(u.pathname);}catch{/* ignore non-URL requests */}});
+ for(const p of [page,narrowPage,inversePage,checkoutPage,onsenPage])p.on('request',r=>{try{const u=new URL(r.url());if(u.origin!==origin)return;if(new URL(r.frame().url()).pathname!=='/staff/today')return;requestedPaths.push(u.pathname);}catch{/* ignore non-URL requests */}});
  const principal=(await loadStaff(db.pool,full))!,sessionId=(await db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[full])).rows[0].id as string;
  const holds=new HoldService(roles.holdPool,principal,()=>now),quotes=new QuoteService(roles.pricingPool,principal,()=>now);
  const year=now.getUTCFullYear();
@@ -82,7 +82,7 @@ try{
  const storeContext=()=>page.getByRole('region',{name:'店舗・営業日'});
 
  await check('operational Staff Home replaces the one-link page; the Manifest server date (a synthetic year, never the real current year) controls the displayed business date; narrow (BOOKING_VIEW-only) permission keeps Today read-only and hides every capability-gated section/link',async()=>{
-  await page.goto('/staff');await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  await page.goto('/staff/today');await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
   await expect(page.getByRole('region',{name:'予約QR・検索'})).toBeVisible();
   await expect(todayBooking()).toBeVisible();
   // Proves the client never derives "today" from the browser: this exact string can only
@@ -92,7 +92,7 @@ try{
   await expect(page.getByRole('region',{name:'運用の注意事項'})).toBeVisible();
   await page.getByText('その他の管理機能').click();
   for(const name of ['道具の台帳','棚卸・CSV投入','店舗間移動','見積','期間在庫・仮押さえ','サイズ推薦','ウェアの数量貸出・返却'])await expect(page.getByRole('link',{name})).toBeVisible();
-  await narrowPage.goto('/staff');
+  await narrowPage.goto('/staff/today');
   await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toBeVisible();
   // UX5R-01/UX-5D: a BOOKING_VIEW-only account cannot actually use pickup, so the search/QR
   // entry point and the operational Manifest section (and every Today card's action) must
@@ -111,7 +111,7 @@ try{
   const futureDate='2035-12-20',futureId=await makeBooking('COMPLETED',variants.ski,'SYNTHETIC R66 Future',futureDate);
   assert.equal((await db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[futureId])).rows[0].state,'CONFIRMED_DEV');
   for(const p of [page,narrowPage]){
-   await p.goto('/staff');const recent=p.getByRole('region',{name:'新着予約'});await expect(recent).toBeVisible();
+   await p.goto('/staff/today');const recent=p.getByRole('region',{name:'新着予約'});await expect(recent).toBeVisible();
    const first=recent.locator('.staff-card').first();await expect(first).toContainText('SYNTHETIC R66 Future');
    for(const text of ['#'+futureId.slice(0,8).toUpperCase(),'確定済み',futureDate,'Mountain Station','受付','確定 '])await expect(first).toContainText(text);
    await expect(p.getByRole('region',{name:'本日の予約'}).locator('.staff-card',{hasText:'SYNTHETIC R66 Future'})).toHaveCount(0);
@@ -122,24 +122,24 @@ try{
   // BOOKING_VIEW-only: still no pickup action from 新着予約.
   await expect(narrowPage.getByRole('region',{name:'新着予約'}).getByRole('button',{name:'予約の状態を確認'})).toHaveCount(0);
   await mkdir('.local/screenshots',{recursive:true});
-  for(const width of [390,1440]){await page.setViewportSize({width,height:1000});await page.goto('/staff');await page.getByRole('region',{name:'新着予約'}).screenshot({path:`.local/screenshots/r66-staff-recent-${width}.png`});}
+  for(const width of [390,1440]){await page.setViewportSize({width,height:1000});await page.goto('/staff/today');await page.getByRole('region',{name:'新着予約'}).screenshot({path:`.local/screenshots/r66-staff-recent-${width}.png`});}
   await page.setViewportSize({width:390,height:844});
  });
 
  await check('UX5R-04: RENTAL_CHECKOUT/RENTAL_RETURN without BOOKING_VIEW must not surface pickup/return/search surfaces the destination route would deny',async()=>{
-  await inversePage.goto('/staff');await expect(inversePage.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
+  await inversePage.goto('/staff/today');await expect(inversePage.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
   for(const label of ['予約QR・検索','本日の予約','本日の業務'])await expect(inversePage.getByRole('region',{name:label})).toHaveCount(0);
  });
 
  await check('checkout-only composition sees the operational Manifest section but never a return-domain action class',async()=>{
-  await checkoutPage.goto('/staff');
+  await checkoutPage.goto('/staff/today');
   const section=checkoutPage.getByRole('region',{name:'本日の業務'});await expect(section).toBeVisible();
   const card=section.locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'});await expect(card).toBeVisible();
   for(const forbidden of ['返却受付','検品待ち','ウェア整備中'])await expect(card).not.toContainText(forbidden);
  });
 
  await check('Today booking card action is gated by RENTAL_CHECKOUT, not by the booking state (UX5R-01), the operational Manifest card label matches the server nextAction mapping, and opens the real booking preselected into the pickup workflow',async()=>{
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   const confirmedCard=todayBooking().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'});await expect(confirmedCard).toBeVisible();
   await expect(confirmedCard).toContainText('確定済み');
   // The action is offered for a still-PAYMENT_PENDING booking too: the capability check
@@ -157,7 +157,7 @@ try{
  });
 
  await check('booking search accepts the reservation QR payload text and lands preselected in the pickup workflow',async()=>{
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   await page.getByLabel('予約番号または予約QR').fill('zao-rental:reservation:'+confirmedId);
   await page.getByRole('button',{name:'この予約を開く',exact:true}).click();
   await page.waitForURL(new RegExp('/staff/rentals\\?booking='+confirmedId));
@@ -175,7 +175,7 @@ try{
   const created=await page.request.post('/api/custody/batch',{headers:{origin},data:{requestKey:randomUUID(),input:{store:'MOUNTAIN_BASE'}}});assert.equal(created.status(),200);
   const batch=await created.json();
   const scanned=await page.request.post('/api/custody/scan',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:batch.version,assetId,poleLoanId:null}}});assert.equal(scanned.status(),200);
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   // Single-day DAY-slot booking: due_at is the same JST calendar date as pickup
   // (normalizePeriod, packages/contracts/src/hold.ts), so the item is simultaneously "due
   // today" the moment it's checked out -> RECEIVE_RETURN (返却受付), never OUT_WAIT_RETURN
@@ -183,7 +183,7 @@ try{
   // regardless of the exact due timestamp).
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toContainText('返却受付');
   const confirmed=await page.request.post('/api/custody/confirm',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:(await scanned.json()).version}}});assert.equal(confirmed.status(),200);
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toContainText('検品待ち');
  });
 
@@ -191,7 +191,7 @@ try{
   const before=dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'});
   await expect(before).toContainText('検品待ち');await expect(before).not.toContainText('要注意');
   await db.pool.query("INSERT INTO ops_exceptions(event_type,source_type,source_id,source_version,correlation_id,booking_id,store_id,severity,occurred_at) VALUES('NOTIFICATION_FAILED','NOTIFICATION',$1::uuid,md5('ux5d-generic-exception'),$1::uuid,$2,'MOUNTAIN_BASE','WARN',inventory_clock())",[randomUUID(),confirmedId]);
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   const after=dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'});
   await expect(after).toContainText('検品待ち');await expect(after).toContainText('要注意');
   assert.equal((await narrow.request.get('/api/operations/exceptions?store=MOUNTAIN_BASE&ageHours=0&status=UNACKNOWLEDGED')).status(),403);
@@ -200,7 +200,7 @@ try{
  await check('switching the active store discards the previous store\'s task cards immediately, never leaving them visible even transiently',async()=>{
   // Must run before the CUSTODY_ONLY check below, which is the only step in this suite that
   // ever puts a real task at ONSEN_BASE — until then it is genuinely empty for every account.
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible();
   await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE');
   // No equipment stock exists at ONSEN_BASE in this fixture, so a genuine empty page (not a
@@ -231,7 +231,7 @@ try{
   const batch=await created.json();
   const scanned=await page.request.post('/api/custody/scan',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:batch.version,assetId:crossAssetId,poleLoanId:null}}});assert.equal(scanned.status(),200);
   const confirmed=await page.request.post('/api/custody/confirm',{headers:{origin},data:{requestKey:randomUUID(),input:{batchId:batch.id,expectedVersion:(await scanned.json()).version}}});assert.equal(confirmed.status(),200);
-  await onsenPage.goto('/staff');
+  await onsenPage.goto('/staff/today');
   // Families are shown by name (final UI closure: no raw enum), so the SKI task card is found by its label.
   const custodyCard=onsenPage.getByRole('region',{name:'本日の業務'}).locator('.staff-card',{hasText:/^スキー(?!ブーツ)/});
   await expect(custodyCard).toBeVisible();
@@ -248,7 +248,7 @@ try{
    const url=new URL(route.request().url());
    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:url.searchParams.get('store'),date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+fakeBookingId,bookingId:fakeBookingId,displayName:'SYNTHETIC UX5D Unknown Action',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'FUTURE_ACTION_NOT_YET_INVENTED'}]})});
   });
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   const card=dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Unknown Action'});
   await expect(card).toContainText('詳細確認');
   await page.unroute('**/api/operations/manifest*');
@@ -265,7 +265,7 @@ try{
     :{store:url.searchParams.get('store'),date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:1,nextCursor:'ux5d-fake-cursor',hasMore:true,rows:[rowA]};
    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify(body)});
   });
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   const section=dailyBusiness();
   await expect(section.locator('.staff-card',{hasText:'Page Row A'})).toHaveCount(1);
   await section.getByRole('button',{name:'さらに読み込む'}).click();
@@ -290,7 +290,7 @@ try{
     await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'ONSEN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race ONSEN',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'ONSEN_BASE',returnStore:'ONSEN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
    }
   });
-  await page.goto('/staff'); // fires the initial MOUNTAIN_BASE request, which is held
+  await page.goto('/staff/today'); // fires the initial MOUNTAIN_BASE request, which is held
   // A <select> is never disabled by manifestBusy, unlike the Refresh/load-more buttons — this
   // is what lets the switch actually fire a new request while the old one is still pending.
   await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE');
@@ -319,7 +319,7 @@ try{
     await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'ONSEN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:1,nextCursor:null,hasMore:false,rows:[{rowKind:'BOOKING_SCOPED',key:'B:'+randomUUID(),bookingId:randomUUID(),displayName:'SYNTHETIC UX5D Race ONSEN Fresh',period:{startDate:businessDate,endDate:businessDate,slot:'DAY'},pickupStore:'ONSEN_BASE',returnStore:'ONSEN_BASE',bookingState:'CONFIRMED_DEV',equipmentCount:1,nextAction:'NO_ACTION'}]})});
    }
   });
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Race Page1'})).toBeVisible();
   await dailyBusiness().getByRole('button',{name:'さらに読み込む'}).click(); // the first page already settled, so this button is enabled; the load-more it triggers is what gets held
   await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE'); // switch stores while that load-more is still stuck
@@ -348,7 +348,7 @@ try{
     await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'ONSEN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
    }
   });
-  await page.goto('/staff'); // fires the initial MOUNTAIN_BASE request, held with a stale date
+  await page.goto('/staff/today'); // fires the initial MOUNTAIN_BASE request, held with a stale date
   await storeContext().getByLabel('対象店舗').selectOption('ONSEN_BASE');
   await expect.poll(()=>onsenRequested).toBe(true);
   await expect(todayBooking()).toContainText(businessDate);
@@ -367,7 +367,7 @@ try{
    const d=calls===1?businessDate:laterDate;
    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:d,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
   });
-  await narrowPage.goto('/staff');
+  await narrowPage.goto('/staff/today');
   await expect(narrowPage.getByRole('region',{name:'本日の予約'})).toContainText(businessDate);
   await expect(narrowPage.getByRole('region',{name:'本日の業務'})).toHaveCount(0);
   await narrowPage.getByRole('button',{name:'更新',exact:true}).click(); // the only Refresh a BOOKING_VIEW-only principal ever sees
@@ -383,7 +383,7 @@ try{
    if(calls===1){await route.fulfill({status:503,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'OPERATIONS_UNCONNECTED'})});return;}
    await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});
   });
-  await narrowPage.goto('/staff');
+  await narrowPage.goto('/staff/today');
   const today=narrowPage.getByRole('region',{name:'本日の予約'});
   // Either the pre-response "checking" text or the settled error message is acceptable here --
   // what matters is the status line is never blank and never claims a successful empty day.
@@ -403,7 +403,7 @@ try{
  });
 
  await check('UX5E-02: Manifest 409/503/network-failure on 本日の業務 never fabricate a successful empty day, surface an error, and preserve the last confirmed rows across a failed same-context refresh',async()=>{
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   await expect(dailyBusiness().locator('.staff-card',{hasText:'SYNTHETIC UX5D Confirmed'})).toBeVisible(); // the real, already-confirmed row from earlier in this suite
   for(const mode of ['409','503','network'] as const){
    await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();
@@ -421,18 +421,18 @@ try{
  });
 
  await check('UX5E-03: Manifest 401/403 ends the Staff Home session view the same as any other endpoint, rather than being swallowed as a generic Manifest error message',async()=>{
-  await page.goto('/staff');
+  await page.goto('/staff/today');
   await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
   await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();await route.fulfill({status:403,contentType:'application/json',headers:HEADERS,body:JSON.stringify({error:'FORBIDDEN'})});});
   await dailyBusiness().getByRole('button',{name:'更新',exact:true}).click();
   await expect(page.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();
   await page.unroute('**/api/operations/manifest*');
-  await page.goto('/staff'); // restore a normal session view for whatever runs next
+  await page.goto('/staff/today'); // restore a normal session view for whatever runs next
   await expect(page.getByRole('heading',{name:'スタッフホーム'})).toBeVisible();
  });
 
  await check('Manifest loading, empty and error states are visually distinct and never shown as each other',async()=>{
-  await mkdir('.local/screenshots',{recursive:true});await page.setViewportSize({width:390,height:900});await page.goto('/staff');
+  await mkdir('.local/screenshots',{recursive:true});await page.setViewportSize({width:390,height:900});await page.goto('/staff/today');
   await expect(dailyBusiness().locator('.staff-card').first()).toBeVisible();
   let release!:()=>void;const held=new Promise<void>(r=>{release=r;});
   await page.route('**/api/operations/manifest*',async route=>{if(new URL(route.request().url()).searchParams.get('section')==='preparation')return route.continue();await held;await route.fulfill({status:200,contentType:'application/json',headers:HEADERS,body:JSON.stringify({store:'MOUNTAIN_BASE',date:businessDate,section:'all',generatedAt:now.toISOString(),pageSize:50,nextCursor:null,hasMore:false,rows:[]})});});
@@ -453,12 +453,12 @@ try{
  await check('Staff Home is usable at 390 and 1440 with no horizontal overflow',async()=>{
   await mkdir('.local/screenshots',{recursive:true});
   for(const width of [390,1440]){
-   await page.setViewportSize({width,height:1000});await page.goto('/staff');
+   await page.setViewportSize({width,height:1000});await page.goto('/staff/today');
    await page.getByRole('button',{name:'更新',exact:true}).first().click();
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'width '+width);
    await page.screenshot({path:`.local/screenshots/staff-home-${width}.png`,fullPage:true});
   }
-  await onsenPage.goto('/staff'); // onsenPage's context is already 390x844, set at creation
+  await onsenPage.goto('/staff/today'); // onsenPage's context is already 390x844, set at creation
   assert.ok(await onsenPage.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'CUSTODY_ONLY 390');
   await onsenPage.screenshot({path:'.local/screenshots/staff-home-custody-only-390.png',fullPage:true});
   await page.goto('/staff/rentals?booking='+confirmedId);await expect(page.getByRole('region',{name:'貸出用品'})).toContainText(confirmedId);

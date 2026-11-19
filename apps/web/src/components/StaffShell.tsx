@@ -10,10 +10,10 @@ export type ShellAccess={bookingView:boolean;bookingCreate:boolean;inventoryView
 type Item={key:StaffKey;href:string;match:RegExp;show:(a:ShellAccess)=>boolean};
 // Booqable sidebar order. Only destinations that exist as working screens are listed; nothing is a placeholder.
 const TOP:Item[]=[
- {key:'dashboard',href:'/staff',match:/^\/staff\/?$/,show:()=>true},
+ {key:'dashboard',href:'/staff',match:/^\/staff(\/today)?\/?$/,show:()=>true},
 ];
 const WORK:Item[]=[
- {key:'orders',href:'/staff/rentals',match:/^\/staff\/(rentals|amendments|holds|quotes|recommendations)/,show:a=>a.bookingView},
+ {key:'orders',href:'/staff/orders',match:/^\/staff\/(orders|rentals|amendments|holds|quotes|recommendations|notifications)/,show:a=>a.bookingView},
  {key:'inventory',href:'/staff/ledger',match:/^\/(staff\/(ledger|wear|transfers)|admin\/(inventory|assets))/,show:a=>a.inventoryView},
 ];
 const MORE:Item[]=[

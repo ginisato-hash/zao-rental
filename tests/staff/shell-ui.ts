@@ -76,6 +76,12 @@ try{
   await table.getByText('SYNTHETIC Shell Confirmed').waitFor();
   await page.getByRole('tab',{name:/今後/}).click();await page.waitForURL(/tab=upcoming/);
  });
+ await check('with shortage: the dashboard count links to the same Orders set (station, going out, dates); normal stock lists none',async()=>{
+  await page.goto('/staff');const link=page.getByTestId('dashboard-shortage');await link.waitFor();assert.match((await link.textContent())??'',/不足あり 0/);
+  const href=new URL((await link.getAttribute('href'))!,'http://x');assert.equal(href.searchParams.get('tab'),'shortage');assert.equal(href.searchParams.get('direction'),'out');assert.ok(href.searchParams.get('from')&&href.searchParams.get('to'));
+  await link.click();await page.waitForURL(/tab=shortage/);await page.getByRole('tab',{name:/不足あり 0/,selected:true}).waitFor();
+  await page.getByText('まだ渡していない用品が').waitFor();await page.getByText('該当する予約はありません。').waitFor();await page.screenshot({path:`${shots}/orders-shortage-ja-1440.png`});
+ });
  await check('bell: the confirmed booking is an unacknowledged inbox item; opening does not acknowledge; acknowledging clears it',async()=>{
   await page.goto('/staff');const bell=page.getByRole('button',{name:'通知 (1)'});await bell.waitFor({timeout:40000});await bell.click();
   const dialog=page.getByRole('dialog',{name:'新しい予約'});await dialog.getByText('SYNTHETIC Shell Confirmed').waitFor();
@@ -130,6 +136,7 @@ try{
  await check('English dashboard and orders',async()=>{
   await page.goto('/staff');await page.getByRole('region',{name:/Going out/}).waitFor();await page.screenshot({path:`${shots}/dashboard-en-1440.png`});
   await page.goto('/staff/orders');await page.getByRole('columnheader',{name:'Payment'}).waitFor();await page.screenshot({path:`${shots}/orders-en-1440.png`});
+  await page.goto('/staff/orders?tab=shortage');await page.getByRole('tab',{name:/With shortage 0/,selected:true}).waitFor();await page.getByText('Orders whose items not yet handed out').waitFor();
  });
  await check('phone width: menu button opens the sidebar; no horizontal page scroll',async()=>{
   await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'English'}).waitFor();await page.getByRole('button',{name:'日本語'}).click();

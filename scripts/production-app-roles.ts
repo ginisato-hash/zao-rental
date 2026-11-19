@@ -194,6 +194,8 @@ export function productionAppRoleGrantPlan(databaseName:string):{authority:Produ
   `GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid),notification_sync_confirmed(),notification_claim(uuid),notification_material(uuid,uuid),notification_settle(uuid,uuid,text,text,text),notification_unknown(uuid),notification_reconciled(uuid,text),notification_due() TO ${n.operations}`,
   `GRANT EXECUTE ON FUNCTION booking_cancellation_preview(uuid),booking_cancellation_status(uuid),booking_cancellation_payment_observed(uuid),booking_cancel(uuid,uuid,jsonb),cancellation_refund_row(uuid),cancellation_refund_claim(uuid),cancellation_refund_observe(uuid,jsonb) TO ${n.operations}`,
   `GRANT SELECT ON provisional_capacity_claims,provisional_capacity_buckets,inventory_pole_exemptions TO ${n.operations}`,
+  // With shortage read (Orders/Dashboard) runs the read-only mixed allocation planner, which sizes provisional buckets.
+  `GRANT EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) TO ${n.operations}`,
   `GRANT INSERT ON ledger_assets,ledger_poles TO ${n.operations}`,
   `GRANT UPDATE(status) ON ledger_assets TO ${n.operations}`,
   `GRANT UPDATE(quantity,status) ON ledger_poles TO ${n.operations}`,

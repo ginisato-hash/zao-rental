@@ -13,5 +13,8 @@ export function productionCustomerGrants(database:string,operationsRole:string):
  if(!/^[a-z][a-z0-9_]{0,40}$/.test(database)||operationsRole!==database+'_operations')throw Error('PRODUCTION_CUSTOMER_GRANTS_REFUSED');
  return [`GRANT SELECT ON ${CUSTOMER_TABLES.join(',')} TO ${operationsRole}`,`GRANT EXECUTE ON FUNCTION customer_link_legacy(uuid,uuid,text),customer_booking_visible(text,uuid) TO ${operationsRole}`,
   // Staff New order drafts: the operations role reads, opens and advances its own drafts; no DELETE, no other columns.
-  `GRANT SELECT ON rental_terms_acceptances TO ${operationsRole}`,`GRANT SELECT,INSERT ON rental_terms_reconsents TO ${operationsRole}`,`GRANT SELECT,INSERT ON staff_order_drafts TO ${operationsRole}`,`GRANT UPDATE(revision,input,preview_key,preview_id,selection,selection_key,booking_id,customer_profile_id,closed_at,updated_at) ON staff_order_drafts TO ${operationsRole}`];
+  `GRANT SELECT ON rental_terms_acceptances TO ${operationsRole}`,`GRANT SELECT,INSERT ON rental_terms_reconsents TO ${operationsRole}`,`GRANT SELECT,INSERT ON staff_order_drafts TO ${operationsRole}`,`GRANT UPDATE(revision,input,preview_key,preview_id,selection,selection_key,booking_id,customer_profile_id,closed_at,updated_at) ON staff_order_drafts TO ${operationsRole}`,
+  // With shortage (Orders/Dashboard): the read-only mixed allocation planner needs the effective provisional bucket size. The
+  // role already reads the buckets and claims; this STABLE function only sums their immutable adjustment rows.
+  `GRANT EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) TO ${operationsRole}`];
 }

@@ -23,7 +23,7 @@
 .ox-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ox-ref{text-align:right}
 .ox-status{font-weight:600}
-.ox-status--blue{color:var(--sx-blue)}.ox-status--green{color:#248a3d}.ox-status--orange{color:var(--sx-warn)}.ox-status--grey{color:var(--sx-text2)}
+.ox-status--blue{color:var(--sx-blue)}.ox-status--green{color:#248a3d}.ox-status--orange{color:var(--sx-warn)}.ox-status--grey{color:var(--sx-text2)}.ox-status--red{color:var(--sx-red)}
 .ox-pane{display:none!important}
 .ox-tabs{margin-bottom:16px}
 .ox-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start}

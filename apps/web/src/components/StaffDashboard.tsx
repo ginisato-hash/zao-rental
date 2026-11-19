@@ -9,7 +9,7 @@ import {statusLabel,statusTone,pickupTime,returnTime,fmtDate} from './order-labe
 import './staff-orders.css';
 
 type Row={id:string;ref:string;customer:string|null;status:string;startDate:string;endDate:string;slot:string;people:number;pickupStore:string;returnStore:string;lateOut:boolean;lateBack:boolean};
-type Data={today:string;store:string;range:string;from:string;to:string;goingOut:Row[];comingBack:Row[];goingOutTotal:number;comingBackTotal:number;cap:number;lateOut:number;lateBack:number};
+type Data={today:string;store:string;range:string;from:string;to:string;goingOut:Row[];comingBack:Row[];goingOutTotal:number;comingBackTotal:number;cap:number;lateOut:number;lateBack:number;shortageOut:number;shortageOutIndeterminate:number};
 type Range='today'|'tomorrow'|'next7'|'nextWeek'|'nextMonth'|'date';
 const RANGES:Range[]=['today','tomorrow','next7','nextWeek','nextMonth','date'];
 const L={
@@ -17,7 +17,7 @@ const L={
  nextWeek:['来週','Next week'],nextMonth:['来月','Next month'],date:['日付を指定','Pick a date'],print:['帳票を印刷','Print list'],
  viewLate:['遅れ','Late'],lateOut:['貸出遅れ','Late pickups'],lateBack:['返却遅れ','Late returns'],viewAll:['すべて表示','View all'],none:['予定はありません。','Nothing scheduled.'],all:['すべて','All'],
  period:['期間','Period'],station:['店舗','Station'],failed:['読み込めませんでした。','Could not load.'],retry:['再読み込み','Retry'],
- prep:['当日作業・準備','Today’s work and preparation'],people:['名','people'],show:['表示','Show'],
+ prep:['当日作業・準備','Today’s work and preparation'],shortage:['不足あり','With shortage'],undetermined:['判定不能','Undetermined'],people:['名','people'],show:['表示','Show'],
 } as const;
 
 /** Booqable Dashboard: Going out (left) / Coming back (right) on desktop; on a phone the same data as one list with
@@ -51,6 +51,7 @@ export function StaffDashboard({locale,stamp,stores}:{locale:StaffLocale;stamp:s
     {kind==='out'&&<button type="button" className="sx-btn ox-noprint" onClick={()=>window.print()}>{tx('print')}</button>}</header>
    {data?list(rows,kind):failed!==key&&<p className="sx-status" role="status">…</p>}{data&&total>rows.length&&<p className="sx-help ox-more">{locale==='en'?`Showing ${rows.length} of ${total}. Use View all for the rest.`:`${total}件中${rows.length}件を表示中。残りは「すべて表示」から。`}</p>}
    <footer className="ox-panel-f ox-noprint"><Link href={orders({tab:'late',late:kind,direction:kind})} className={late?'ox-late':''}>{kind==='out'?tx('lateOut'):tx('lateBack')} {late}</Link>
+    {kind==='out'&&data&&<Link href={orders({tab:'shortage',direction:'out',from:data.from,to:data.to})} className={data.shortageOut?'ox-late':''} data-testid="dashboard-shortage">{tx('shortage')} {data.shortageOut}{data.shortageOutIndeterminate>0?` · ${tx('undetermined')} ${data.shortageOutIndeterminate}`:''}</Link>}
     {data&&<Link href={orders({direction:kind,from:data.from,to:data.to})}>{tx('viewAll')}</Link>}</footer>
   </section>;};
  return <StaffSessionBoundary stamp={stamp}><main className="ox">

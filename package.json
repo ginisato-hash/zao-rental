@@ -59,6 +59,7 @@
     "test:staff-acceptance-ui": "node --import tsx tests/staff/acceptance-ui.ts --built",
     "test:staff-order": "node --experimental-test-module-mocks --import tsx tests/operations/staff-order-postgres.ts",
     "test:orders": "node --import tsx tests/operations/orders-postgres.ts",
+    "test:shortage": "node --import tsx tests/operations/shortage-postgres.ts",
     "test:inventory-read": "node --import tsx tests/operations/inventory-read-postgres.ts",
     "test:customers": "node --import tsx tests/operations/customers-postgres.ts",
     "test:public-guest": "node --import tsx tests/public/guest-postgres.ts && node --import tsx tests/public/guest-malformed.ts && node --import tsx tests/public/guest-integrated.ts && node --experimental-test-module-mocks --import tsx tests/public/prepare-payment.ts",

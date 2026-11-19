@@ -8,10 +8,14 @@ import {STORE_LABEL} from './guest-format';
 import {ORDER_STATUSES,statusLabel,statusTone,paymentLabel,fmtDate,fmtYen} from './order-labels';
 import './staff-orders.css';
 
-type Row={id:string;ref:string;customer:string|null;email:string|null;status:string;paymentStatus:string|null;pickupStore:string;returnStore:string;startDate:string;endDate:string;totalJpy:number|null;lateOut:boolean;lateBack:boolean};
-type Data={today:string;tab:string;total:number;page:number;pageSize:number;counts:{all:number;upcoming:number;late:number;lateOut:number;lateBack:number};paymentOptions:string[];rows:Row[]};
+type Row={id:string;ref:string;customer:string|null;email:string|null;status:string;paymentStatus:string|null;pickupStore:string;returnStore:string;startDate:string;endDate:string;totalJpy:number|null;lateOut:boolean;lateBack:boolean;shortage?:Shortage};
+type Shortage='INSUFFICIENT'|'TRANSFER_PLAN_REQUIRED'|'INDETERMINATE';
+type Data={today:string;tab:string;total:number;page:number;pageSize:number;counts:{all:number;upcoming:number;late:number;lateOut:number;lateBack:number;shortage:number|null;shortageIndeterminate:number|null};paymentOptions:string[];rows:Row[]};
 const L={
- all:['すべて','All'],upcoming:['今後','Upcoming'],late:['遅れ','Late'],search:['予約番号・氏名・メールで検索','Search by order, name or email'],
+ all:['すべて','All'],upcoming:['今後','Upcoming'],late:['遅れ','Late'],shortage:['不足あり','With shortage'],
+ INSUFFICIENT:['在庫不足','Short of stock'],TRANSFER_PLAN_REQUIRED:['店舗間移動が必要','Transfer needed'],INDETERMINATE:['判定できません','Could not determine'],
+ shortageHelp:['まだ渡していない用品が、予約期間中に確保できない予約です。在庫・予約は変更していません。','Orders whose items not yet handed out cannot be covered for their period. Nothing in stock or bookings was changed.'],
+ undetermined:['件は判定できませんでした（不足なしという意味ではありません）。','could not be determined (this does not mean no shortage).'],search:['予約番号・氏名・メールで検索','Search by order, name or email'],
  order:['予約番号','Order'],customer:['顧客','Customer'],status:['状態','Status'],pickup:['受取','Pickup'],ret:['返却','Return'],total:['金額','Total'],payment:['支払状況','Payment'],
  filters:['絞り込み','Filters'],station:['店舗','Station'],from:['受取日（から）','Pickup from'],to:['受取日（まで）','Pickup to'],fromBack:['返却日（から）','Return from'],toBack:['返却日（まで）','Return to'],clear:['条件をクリア','Clear filters'],
  none:['該当する予約はありません。','No orders match.'],lateOut:['貸出遅れ','Late pickups'],lateBack:['返却遅れ','Late returns'],
@@ -26,7 +30,7 @@ export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;
  const params=useSearchParams(),router=useRouter();
  const get=(k:string)=>params.get(k)??'';
  const selectedStores=(get('stores')?get('stores').split(','):stores).filter(s=>stores.includes(s));
- const tab=['all','upcoming','late'].includes(get('tab'))?get('tab'):'all',page=Math.max(1,Number(get('page'))||1);
+ const tab=['all','upcoming','late','shortage'].includes(get('tab'))?get('tab'):'all',page=Math.max(1,Number(get('page'))||1);
  const statuses=get('status')?get('status').split(','):[],payments=get('payment')?get('payment').split(','):[];
  const [search,setSearch]=useState(get('search')),[loaded,setLoaded]=useState<{query:string;data:Data}|null>(null),[failedQuery,setFailedQuery]=useState<string|null>(null);
  const gen=useRef(0);
@@ -45,8 +49,9 @@ export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;
   <div className="ox-head"><h1>{st(locale,'orders')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>
    {canCreate&&<Link className="sx-btn sx-btn--primary" href="/staff/orders/new">{st(locale,'newOrder')}</Link>}</div>
-  <div className="sx-seg ox-tabs" role="tablist" aria-label={st(locale,'orders')}>{(['all','upcoming','late'] as const).map(t=><button key={t} type="button" role="tab" aria-selected={tab===t} onClick={()=>set({tab:t==='all'?'':t,late:''})}>{tx(t)}{data?` ${data.counts[t]}`:''}</button>)}</div>
+  <div className="sx-seg ox-tabs" role="tablist" aria-label={st(locale,'orders')}>{(['all','upcoming','late','shortage'] as const).map(t=><button key={t} type="button" role="tab" aria-selected={tab===t} onClick={()=>set({tab:t==='all'?'':t,late:''})}>{tx(t)}{data&&data.counts[t]!==null&&data.counts[t]!==undefined?` ${data.counts[t]}`:''}</button>)}</div>
   {tab==='late'&&<div className="sx-seg ox-tabs" role="group" aria-label={tx('late')}>{(['','out','back'] as const).map(k=><button key={k||'both'} type="button" aria-pressed={get('late')===k} onClick={()=>set({late:k})}>{k===''?tx('all'):k==='out'?tx('lateOut'):tx('lateBack')}{data?` ${k===''?data.counts.late:k==='out'?data.counts.lateOut:data.counts.lateBack}`:''}</button>)}</div>}
+  {tab==='shortage'&&<p className="sx-help">{tx('shortageHelp')}{data&&(data.counts.shortageIndeterminate??0)>0&&<> <strong role="status">{en?`${data.counts.shortageIndeterminate} ${tx('undetermined')}`:`${data.counts.shortageIndeterminate}${tx('undetermined')}`}</strong></>}</p>}
   {['out','back'].includes(get('direction'))&&<p className="sx-help">{get('direction')==='out'?tx('dirOut'):tx('dirBack')} <button type="button" className="sx-link" onClick={()=>set({direction:''})}>{tx('clear')}</button></p>}
   <div className="ox-layout">
    <aside className="ox-filters" aria-label={tx('filters')}>
@@ -64,7 +69,7 @@ export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;
      <tbody>{data.rows.map(r=><tr key={r.id} onClick={e=>{if(!(e.target as Element).closest('a'))router.push(`/staff/orders/${encodeURIComponent(r.id)}`);}}>
       <td><Link href={`/staff/orders/${encodeURIComponent(r.id)}`}>#{r.ref}</Link></td>
       <td>{r.customer??'—'}</td>
-      <td><span className={'ox-status ox-status--'+statusTone(r.status)}>{statusLabel(locale,r.status)}</span>{(r.lateOut||r.lateBack)&&<span className="ox-status ox-status--orange"> · {tx('late')}</span>}</td>
+      <td><span className={'ox-status ox-status--'+statusTone(r.status)}>{statusLabel(locale,r.status)}</span>{(r.lateOut||r.lateBack)&&<span className="ox-status ox-status--orange"> · {tx('late')}</span>}{r.shortage&&<><br/><span className={'ox-status ox-status--'+(r.shortage==='INDETERMINATE'?'grey':r.shortage==='INSUFFICIENT'?'red':'orange')} data-shortage={r.shortage}>{tx(r.shortage)}</span></>}</td>
       <td>{fmtDate(locale,r.startDate)}<br/><small className="sx-help">{STORE_LABEL[r.pickupStore]??'—'}</small></td>
       <td>{fmtDate(locale,r.endDate)}<br/><small className="sx-help">{STORE_LABEL[r.returnStore]??'—'}</small></td>
       <td className="ox-num">{fmtYen(locale,r.totalJpy)}</td><td>{paymentLabel(locale,r.paymentStatus)}</td></tr>)}</tbody></table></div>}

@@ -16,6 +16,8 @@ export async function provisionOperationsRole(owner:Pool,identity:{namespace:str
  await owner.query(`GRANT SELECT,INSERT,UPDATE ON ops_charge_requests,ops_refund_requests,ops_stocktakes TO ${user}`);
  await owner.query(`GRANT UPDATE(conditions,starts_at,due_at,occupancy_start,occupancy_end,allocation_stage,version,buffer_override) ON inventory_holds TO ${user}`);
  if((await owner.query("SELECT to_regclass('public.provisional_capacity_claims') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT UPDATE(state,released_at) ON provisional_capacity_claims TO ${user}`);
+ // With shortage: the read-only mixed allocation planner reads provisional buckets/claims and their effective size.
+ if((await owner.query("SELECT to_regprocedure('provisional_capacity_effective_quantity(uuid)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT SELECT ON provisional_capacity_buckets,provisional_capacity_claims TO ${user};GRANT EXECUTE ON FUNCTION provisional_capacity_effective_quantity(uuid) TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('inventory_buffer_override_record(uuid,text)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT EXECUTE ON FUNCTION inventory_buffer_override_record(uuid,text) TO ${user}`);
  if((await owner.query("SELECT to_regprocedure('ops_refund_claim(uuid)') IS NOT NULL AS present")).rows[0].present)await owner.query(`GRANT EXECUTE ON FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb) TO ${user}`);
  await owner.query(`GRANT INSERT,UPDATE(active) ON inventory_claims,wear_claims TO ${user}`);

@@ -1,6 +1,7 @@
 import {FlowError} from '../../../contracts/src/rental-flow';
 import {utcDate} from '../../../contracts/src/hold';
 import type {OperationsContext} from './context';
+import {evaluateShortage,SHORTAGE_BUDGET,SHORTAGE_COLUMNS_SQL,SHORTAGE_JOIN_SQL,SHORTAGE_STATUS_SQL,type ShortageCandidate,type ShortageState} from './shortage';
 
 // Orders and Dashboard reads (Issue #47 §2B/§2C, consolidated order §3.1–3.2). Booqable order list and dashboard structure,
 // backed only by real rental facts:
@@ -11,10 +12,10 @@ import type {OperationsContext} from './context';
 const STORES=['MOUNTAIN_BASE','ONSEN_BASE'] as const;
 export type OrderStatus='DRAFT'|'PAYMENT_PENDING'|'PAYMENT_REVIEW'|'RESERVED'|'PARTIALLY_PICKED_UP'|'PICKED_UP'|'PARTIALLY_RETURNED'|'RETURNED'|'INSPECTION_PENDING'|'NO_PICKUP'|'COMPLETED'|'CANCELED';
 export const ORDER_STATUS_VALUES:OrderStatus[]=['DRAFT','PAYMENT_PENDING','PAYMENT_REVIEW','RESERVED','PARTIALLY_PICKED_UP','PICKED_UP','PARTIALLY_RETURNED','RETURNED','INSPECTION_PENDING','NO_PICKUP','COMPLETED','CANCELED'];
-export type OrderTab='all'|'upcoming'|'late';
+export type OrderTab='all'|'upcoming'|'late'|'shortage';
 export type OrderRow={id:string;ref:string;customer:string|null;email:string|null;state:string;status:OrderStatus;paymentStatus:string|null;
  pickupStore:string;returnStore:string;startDate:string;endDate:string;slot:string;originalStartDate:string;originalEndDate:string;amended:boolean;
- people:number;totalJpy:number|null;createdAt:string;lateOut:boolean;lateBack:boolean;outItems:number};
+ people:number;totalJpy:number|null;createdAt:string;lateOut:boolean;lateBack:boolean;outItems:number;shortage?:ShortageState};
 
 export const ORDER_BASE_SQL=`WITH b AS (
  SELECT r.id,r.state,r.mode,r.contact,r.price_snapshot,r.created_at,r.conditions original,coalesce(h.conditions,r.conditions) cond,
@@ -70,7 +71,15 @@ const calendarDate=(v:unknown)=>{if(typeof v!=='string')return false;try{utcDate
 const optionalDate=(v:unknown)=>{if(v===undefined||v===null||v==='')return null;if(!calendarDate(v))throw new FlowError('INVALID_INPUT',422);return v as string;};
 
 export class OrdersService{
- constructor(private ctx:OperationsContext,private clock:()=>Date=()=>new Date()){}
+ constructor(private ctx:OperationsContext,private clock:()=>Date=()=>new Date(),private shortageBudget=SHORTAGE_BUDGET){}
+ /** With shortage over the already-filtered candidate set `${where}` (same args), in the caller's snapshot. Returns the
+  * judged orders in display order; the caller slices pages from this list so counts and rows always agree. */
+ private async shortage(c:{query:(sql:string,args?:unknown[])=>Promise<{rows:unknown[]}>},where:string,args:unknown[],order:string){
+  const now=((await c.query('SELECT inventory_clock() AS now')).rows[0] as {now:Date}).now;
+  const rows=(await c.query(`${ORDER_BASE_SQL} SELECT ${SHORTAGE_COLUMNS_SQL} FROM s ${SHORTAGE_JOIN_SQL} ${where} AND ${SHORTAGE_STATUS_SQL} ORDER BY ${order}`,args)).rows as ShortageCandidate[];
+  const judged=await evaluateShortage(c as never,rows,now,this.shortageBudget);
+  return rows.filter(r=>judged.has(r.id)).map(r=>({id:r.id,state:judged.get(r.id)!}));
+ }
  private stores(v:unknown){const list=(Array.isArray(v)?v:[v]).filter(s=>s!==''&&s!==undefined&&s!==null);
   if(!list.length||list.length>STORES.length||list.some(s=>typeof s!=='string'||!(STORES as readonly string[]).includes(s))||new Set(list).size!==list.length)throw new FlowError('INVALID_STORE',422);return list as string[];}
  private async today(c:{query:(sql:string)=>Promise<{rows:{now:Date}[]}>}){return jstToday((await c.query('SELECT inventory_clock() AS now')).rows[0]?.now??this.clock());}
@@ -78,7 +87,7 @@ export class OrdersService{
  /** Booqable Orders. direction=out applies the date range and station to pickup, direction=back to return; without it the
   * range is on pickup and the station on either. late=out|back narrows the Late tab; without it Late lists both kinds. */
  async list(q:{stores:unknown;tab?:unknown;status?:unknown;payment?:unknown;from?:unknown;to?:unknown;direction?:unknown;late?:unknown;search?:unknown;page?:unknown;pageSize?:unknown}){
-  const stores=this.stores(q.stores),tab=(q.tab??'all') as OrderTab;if(!['all','upcoming','late'].includes(tab))throw new FlowError('INVALID_INPUT',422);
+  const stores=this.stores(q.stores),tab=(q.tab??'all') as OrderTab;if(!['all','upcoming','late','shortage'].includes(tab))throw new FlowError('INVALID_INPUT',422);
   const statuses=q.status?String(q.status).split(',').filter(Boolean):[];if(statuses.some(s=>!ORDER_STATUS_VALUES.includes(s as OrderStatus)))throw new FlowError('INVALID_INPUT',422);
   const payments=q.payment?String(q.payment).split(',').filter(Boolean):[];if(payments.some(p=>!/^[A-Z_]{1,40}$/.test(p)))throw new FlowError('INVALID_INPUT',422);
   const from=optionalDate(q.from),to=optionalDate(q.to);if(from&&to&&from>to)throw new FlowError('INVALID_INPUT',422);
@@ -96,14 +105,21 @@ export class OrdersService{
     AND ($5::date IS NULL OR ${dateCol}>=$5) AND ($6::date IS NULL OR ${dateCol}<=$6)
     AND ($7='' OR upper(s.id::text) LIKE upper($7)||'%' OR s.contact->>'displayName' ILIKE '%'||$7||'%' OR s.contact->>'email' ILIKE '%'||$7||'%')`;
    const upcomingSql="s.start_date>=$2::date AND s.status IN ('RESERVED','PAYMENT_PENDING','PAYMENT_REVIEW')";
-   const tabSql={all:'TRUE',upcoming:upcomingSql,late:lateSql}[tab];
+   const tabSql={all:'TRUE',upcoming:upcomingSql,late:lateSql,shortage:SHORTAGE_STATUS_SQL}[tab];
    const args=[stores,today,statuses.length?statuses:null,payments.length?payments:null,from,to,search.replace(/[%_\\]/g,m=>'\\'+m)];
    const counts=(await c.query(`${ORDER_BASE_SQL} SELECT count(*)::int all_n,count(*) FILTER (WHERE ${upcomingSql})::int upcoming_n,count(*) FILTER (WHERE ${lateSql})::int late_n,
      count(*) FILTER (WHERE s.late_out)::int late_out_n,count(*) FILTER (WHERE s.late_back)::int late_back_n FROM s ${where}`,args)).rows[0];
-   const total=Number({all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n}[tab]);
-   const rows=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s ${where} AND ${tabSql} ORDER BY ${tab==='upcoming'?'s.start_date ASC,s.id':tab==='late'?`${late==='back'?'s.end_date':'s.start_date'} ASC,s.id`:'s.created_at DESC,s.id'} LIMIT ${size} OFFSET ${(page-1)*size}`,args)).rows.map(r=>r.v as OrderRow);
+   // With shortage is judged only when asked for (it runs the allocation planner per order, within a fixed budget).
+   const judged=tab==='shortage'?await this.shortage(c as never,where,args,'s.start_date ASC,s.id'):null;
+   const shortageCounts=judged?{shortage:judged.filter(j=>j.state!=='INDETERMINATE').length,shortageIndeterminate:judged.filter(j=>j.state==='INDETERMINATE').length}:{shortage:null,shortageIndeterminate:null};
+   const total=judged?judged.length:Number({all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n}[tab as 'all'|'upcoming'|'late']);
+   let rows:OrderRow[];
+   if(judged){const slice=judged.slice((page-1)*size,page*size),byId=new Map(slice.map(j=>[j.id,j.state]));
+    const found=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE s.id=ANY($3::uuid[])`,[args[0],args[1],slice.map(j=>j.id)])).rows.map(r=>r.v as OrderRow);
+    rows=slice.map(j=>found.find(o=>o.id===j.id)).filter((o):o is OrderRow=>!!o).map(o=>({...o,shortage:byId.get(o.id)!}));}
+   else rows=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s ${where} AND ${tabSql} ORDER BY ${tab==='upcoming'?'s.start_date ASC,s.id':tab==='late'?`${late==='back'?'s.end_date':'s.start_date'} ASC,s.id`:'s.created_at DESC,s.id'} LIMIT ${size} OFFSET ${(page-1)*size}`,args)).rows.map(r=>r.v as OrderRow);
    const paymentOptions=(await c.query(`${ORDER_BASE_SQL} SELECT DISTINCT s.payment_status p FROM s WHERE s.payment_status IS NOT NULL ORDER BY 1`,[stores,today])).rows.map(r=>r.p as string);
-   return {today,tab,direction,late,from,to,total,page,pageSize:size,counts:{all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n,lateOut:counts.late_out_n,lateBack:counts.late_back_n},paymentOptions,rows};
+   return {today,tab,direction,late,from,to,total,page,pageSize:size,counts:{all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n,lateOut:counts.late_out_n,lateBack:counts.late_back_n,...shortageCounts},paymentOptions,rows};
   });
  }
 
@@ -146,7 +162,11 @@ export class OrdersService{
      count(*) FILTER (WHERE s.pickup_store=$3 AND s.late_out)::int late_out,count(*) FILTER (WHERE s.return_store=$3 AND s.late_back)::int late_back FROM s`,args)).rows[0];
    const out=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${outWhere} ORDER BY s.start_date,CASE s.slot WHEN 'PM' THEN 1 ELSE 0 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
    const back=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${backWhere} ORDER BY s.end_date,CASE s.slot WHEN 'AM' THEN 0 ELSE 1 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
-   return {today,store,range,from,to,goingOut:out,comingBack:back,goingOutTotal:Number(totals.out_n),comingBackTotal:Number(totals.back_n),cap:CAP,lateOut:Number(totals.late_out),lateBack:Number(totals.late_back)};
+   // Shortage among the orders going out in this range: the same candidate set Orders evaluates for
+   // tab=shortage&stores=[store]&direction=out&from&to (same base, station, dates; the status set is a subset of `live`).
+   const judged=await this.shortage(c as never,`WHERE s.pickup_store=ANY($1::text[]) AND s.start_date>=$3::date AND s.start_date<=$4::date`,[[store],today,from,to],'s.start_date ASC,s.id');
+   return {today,store,range,from,to,goingOut:out,comingBack:back,goingOutTotal:Number(totals.out_n),comingBackTotal:Number(totals.back_n),cap:CAP,lateOut:Number(totals.late_out),lateBack:Number(totals.late_back),
+    shortageOut:judged.filter(j=>j.state!=='INDETERMINATE').length,shortageOutIndeterminate:judged.filter(j=>j.state==='INDETERMINATE').length};
   });
  }
 }

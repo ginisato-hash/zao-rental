@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter,useSearchParams} from 'next/navigation';
@@ -25,7 +26,8 @@ const L={
 
 /** Booqable Orders: title, search and New order; tabs All / Upcoming / Late; left filters (status, payment, date range,
  * station); table Order / Customer / Status / Pickup / Return / Total / Payment. Every count and page is server-side. */
-export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;stamp:string;stores:string[];canCreate:boolean}){
+export function StaffOrders({locale:serverLocale,stamp,stores,canCreate}:{locale:StaffLocale;stamp:string;stores:string[];canCreate:boolean}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],en=locale==='en';
  const params=useSearchParams(),router=useRouter();
  const get=(k:string)=>params.get(k)??'';
@@ -73,7 +75,7 @@ export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;
       <td>{fmtDate(locale,r.startDate)}<br/><small className="sx-help">{STORE_LABEL[r.pickupStore]??'—'}</small></td>
       <td>{fmtDate(locale,r.endDate)}<br/><small className="sx-help">{STORE_LABEL[r.returnStore]??'—'}</small></td>
       <td className="ox-num">{fmtYen(locale,r.totalJpy)}</td><td>{paymentLabel(locale,r.paymentStatus)}</td></tr>)}</tbody></table></div>}
-    {data&&data.total>0&&<nav className="ox-pager" aria-label="pagination"><span className="sx-help">{en?`${(page-1)*data.pageSize+1}–${Math.min(page*data.pageSize,data.total)} ${tx('of')} ${data.total}`:`${data.total}${tx('of')} ${(page-1)*data.pageSize+1}–${Math.min(page*data.pageSize,data.total)}`}</span>
+    {data&&data.total>0&&<nav className="ox-pager" aria-label={locale==='en'?'Pages':'ページ'}><span className="sx-help">{en?`${(page-1)*data.pageSize+1}–${Math.min(page*data.pageSize,data.total)} ${tx('of')} ${data.total}`:`${data.total}${tx('of')} ${(page-1)*data.pageSize+1}–${Math.min(page*data.pageSize,data.total)}`}</span>
      <button type="button" className="sx-btn" disabled={page<=1} onClick={()=>set({page:String(page-1)},true)}>{tx('prev')}</button><button type="button" className="sx-btn" disabled={page>=pages} onClick={()=>set({page:String(page+1)},true)}>{tx('next')}</button></nav>}
    </section>
   </div>

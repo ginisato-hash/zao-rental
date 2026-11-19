@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useEffect,useRef,useState} from 'react';
 import {invalidateStaffView} from './StaffSessionBoundary';
 
@@ -15,7 +16,8 @@ const L={
 /** Booqable New order "Customer" panel. The choice is explicit (new customer, or one existing profile the staff member
  * can see) and is stored on the server draft; the server re-checks visibility and the booking transaction checks again.
  * Search results are bound to query + stamp; a late answer from an earlier search is ignored. */
-export function StaffOrderCustomer({locale,stamp,selected,locked,busy,onSelect}:{locale:'ja'|'en';stamp:string;selected:string|null;locked:boolean;busy:boolean;onSelect:(customerId:string|null)=>void}){
+export function StaffOrderCustomer({locale:serverLocale,stamp,selected,locked,busy,onSelect}:{locale:'ja'|'en';stamp:string;selected:string|null;locked:boolean;busy:boolean;onSelect:(customerId:string|null)=>void}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0];
  const [search,setSearch]=useState(''),[query,setQuery]=useState<string|null>(null),[result,setResult]=useState<{key:string;rows:Customer[]}|null>(null),[failedKey,setFailedKey]=useState<string|null>(null),gen=useRef(0);
  const viewKey=query===null?null:query+'|'+stamp,rows=viewKey&&result?.key===viewKey&&failedKey!==viewKey?result.rows:null;

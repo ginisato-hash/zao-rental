@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {type StaffLocale} from './staff-i18n';
@@ -22,7 +23,8 @@ const when=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':
 
 /** Booqable product detail: tabs Sizes / Items / History, plus a read-only "bookable for dates" check that reuses the
  * existing holds availability (planMixedAllocation) for the selected size and station. */
-export function StaffProduct({locale,stamp,id,store,canCheck}:{locale:StaffLocale;stamp:string;id:string;store:string;canCheck:boolean}){
+export function StaffProduct({locale:serverLocale,stamp,id,store,canCheck}:{locale:StaffLocale;stamp:string;id:string;store:string;canCheck:boolean}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],en=locale==='en';
  const [loadedDetail,setLoadedDetail]=useState<{key:string;data:Detail}|null>(null),[errState,setErrState]=useState<{key:string;kind:'NOT_FOUND'|'FAILED'}|null>(null),[tab,setTab]=useState<'variants'|'items'|'history'>('variants'),[reload,setReload]=useState(0),gen=useRef(0);
  const [variant,setVariant]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[checked,setChecked]=useState<{key:string;result:string}|null>(null),[busy,setBusy]=useState(false),checkGen=useRef(0);

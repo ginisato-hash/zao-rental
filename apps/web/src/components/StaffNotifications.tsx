@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {st,type StaffKey,type StaffLocale} from './staff-i18n';
@@ -13,7 +14,8 @@ const when=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':
 const yen=(n:number|null,l:StaffLocale)=>n===null?'—':new Intl.NumberFormat(l==='en'?'en-JP':'ja-JP',{style:'currency',currency:'JPY'}).format(n);
 
 /** Full inbox: server-side filter and keyset paging, so every unacknowledged booking is reachable. */
-export function StaffNotifications({locale,stamp,stores}:{locale:StaffLocale;stamp:string;stores:string[]}){
+export function StaffNotifications({locale:serverLocale,stamp,stores}:{locale:StaffLocale;stamp:string;stores:string[]}){
+ const locale=useStaffLocaleOr(serverLocale);
  const t=(k:StaffKey)=>st(locale,k);
  const [openOnly,setOpenOnly]=useState(true),[items,setItems]=useState<Item[]>([]),[meta,setMeta]=useState<Omit<Page,'items'>|null>(null),[failed,setFailed]=useState(false),[busy,setBusy]=useState(false);
  const gen=useRef(0);

@@ -138,6 +138,21 @@ try{
   await page.reload();await page.getByRole('heading',{name:'New bookings'}).waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'en');
   await page.screenshot({path:`${shots}/notifications-en-1440.png`});
  });
+ await check('language switch re-renders page bodies at once: no old language while the server refresh is still pending',async()=>{
+  // Hold every React Server Component refresh for 8 s; the page body must already be in the new language.
+  await page.goto('/staff/orders');await page.getByRole('button',{name:'日本語'}).click();await page.waitForFunction(()=>document.documentElement.lang==='ja');
+  const held=async(route:import('@playwright/test').Route)=>{if(route.request().headers()['rsc']){await new Promise(r=>setTimeout(r,8000));}await route.continue().catch(()=>{});};
+  for(const [path,ja,en] of [['/staff/orders','予約','Orders'],['/staff/calendar','カレンダー','Calendar'],['/staff/customers','顧客','Customers'],['/staff/scan','スキャン','Scan']] as const){
+   await page.goto(path);await page.getByRole('main').getByRole('heading',{name:ja,exact:true}).waitFor();
+   await page.route('**/*',held);const t0=Date.now();
+   await page.getByRole('button',{name:'English'}).click();await page.getByRole('main').getByRole('heading',{name:en,exact:true}).waitFor({timeout:3000});
+   assert.ok(Date.now()-t0<3000,path+' switched without waiting for the refresh');assert.equal(await page.getByRole('main').getByText(ja,{exact:true}).count(),0,path+' shows no old-language heading');
+   await page.getByRole('button',{name:'日本語'}).click();await page.getByRole('main').getByRole('heading',{name:ja,exact:true}).waitFor({timeout:3000});
+   await page.unroute('**/*',held);
+  }
+  // Leave the saved language as the previous case left it (English) for the cases that follow.
+  await page.getByRole('button',{name:'English'}).click();await page.waitForFunction(()=>document.documentElement.lang==='en');await page.waitForLoadState('networkidle');
+ });
  await check('settings: own email opt-in saves on the server and reads back after reload',async()=>{
   await page.goto('/staff/settings');const box=page.getByRole('checkbox',{name:/Email me at my sign-in address/});await box.waitFor();
   assert.equal(await box.isChecked(),false);await box.check();await page.getByRole('button',{name:'Save'}).click();await page.getByText('Saved.').waitFor();

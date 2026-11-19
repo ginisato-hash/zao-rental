@@ -13,3 +13,7 @@ export function useStaffLocale():Ctx{
  const [local,setLocal]=useState<StaffLocale>('ja');
  return shared??{locale:local,setLocale:setLocal};
 }
+/** The shell's current locale for a screen rendered inside it; `fallback` (the server-rendered locale) is used only
+ * outside the shell. Screens read this instead of their server prop so a language switch re-renders them at once, in the
+ * same frame as the sidebar, without waiting for the server refresh. */
+export function useStaffLocaleOr(fallback:StaffLocale):StaffLocale{return useContext(StaffLocaleContext)?.locale??fallback;}

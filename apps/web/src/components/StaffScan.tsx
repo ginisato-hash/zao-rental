@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {st,type StaffLocale} from './staff-i18n';
@@ -15,7 +16,8 @@ const L={
 /** Booqable Scan: the purpose is chosen first. A booking QR/number opens the read-only order; an item QR (the item's own
  * UUID label; a ski's two labels are one item) opens its product at its current station. Only canonical ids are
  * accepted by the existing parsers; no scanned URL is ever opened. Business actions stay on the order/product screens. */
-export function StaffScan({locale,stamp,canOrders,canItems}:{locale:StaffLocale;stamp:string;canOrders:boolean;canItems:boolean}){
+export function StaffScan({locale:serverLocale,stamp,canOrders,canItems}:{locale:StaffLocale;stamp:string;canOrders:boolean;canItems:boolean}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],router=useRouter();
  const [mode,setMode]=useState<'order'|'item'>(canOrders?'order':'item'),[msg,setMsg]=useState('');
  // Every lookup belongs to one generation (mode + stamp + mount). Switching mode, leaving the page or starting another
@@ -29,7 +31,7 @@ export function StaffScan({locale,stamp,canOrders,canItems}:{locale:StaffLocale;
   const own=++generation.current,current=()=>alive.current&&generation.current===own;
   const r=await fetch('/api/operations/assets/'+encodeURIComponent(id),{cache:'no-store',headers:{'x-zao-session':stamp}});
   if(!current())return;
-  if(r.status===401){invalidateStaffView();return;}if(r.status===404||r.status===403){setMsg(tx('notFound'));return;}if(!r.ok){setMsg(tx('failed'));throw Error();}
+  if(r.status===401){invalidateStaffView();return;}if(r.status===404||r.status===403){setMsg('notFound');return;}if(!r.ok){setMsg('failed');throw Error();}
   const v=await r.json() as {modelId:string;store:string};if(!current())return;
   router.push('/staff/inventory/'+encodeURIComponent(v.modelId)+'?'+new URLSearchParams({store:v.store}).toString());
  }
@@ -41,6 +43,6 @@ export function StaffScan({locale,stamp,canOrders,canItems}:{locale:StaffLocale;
    {mode==='order'&&canOrders&&<BookingSearchInput onBooking={openOrder}/>}
    {mode==='item'&&canItems&&<AssetQrInput onAsset={onAsset}/>}
   </div>
-  {msg&&<p role="alert">{msg}</p>}
+  {msg&&<p role="alert">{tx(msg as 'notFound'|'failed')}</p>}
  </main></StaffSessionBoundary>;
 }

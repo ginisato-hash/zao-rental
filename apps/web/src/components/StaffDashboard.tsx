@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter,useSearchParams} from 'next/navigation';
@@ -22,7 +23,8 @@ const L={
 
 /** Booqable Dashboard: Going out (left) / Coming back (right) on desktop; on a phone the same data as one list with
  * All / Going out / Coming back. Rows open the order; late and view-all open the filtered order list. */
-export function StaffDashboard({locale,stamp,stores}:{locale:StaffLocale;stamp:string;stores:string[]}){
+export function StaffDashboard({locale:serverLocale,stamp,stores}:{locale:StaffLocale;stamp:string;stores:string[]}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0];
  const params=useSearchParams(),router=useRouter();
  const store=stores.includes(params.get('store')??'')?params.get('store')!:stores[0]??'';

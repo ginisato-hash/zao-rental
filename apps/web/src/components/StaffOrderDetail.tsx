@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {Fragment,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {type StaffLocale} from './staff-i18n';
@@ -28,7 +29,8 @@ const when=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':
 
 /** Booqable order detail: header with status and the primary actions top-right, then schedule, items/custody, payment,
  * and the accepted terms. Readable with BOOKING_VIEW; each action is shown only to holders of its own permission. */
-export function StaffOrderDetail({locale,stamp,id,can}:{locale:StaffLocale;stamp:string;id:string;can:{checkout:boolean;ret:boolean;amend:boolean}}){
+export function StaffOrderDetail({locale:serverLocale,stamp,id,can}:{locale:StaffLocale;stamp:string;id:string;can:{checkout:boolean;ret:boolean;amend:boolean}}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],fam=(f:string)=>FAMILY[f]?.[locale==='en'?1:0]??f;
  const [loadedDetail,setLoadedDetail]=useState<{key:string;data:Detail}|null>(null),[errState,setErrState]=useState<{key:string;kind:'NOT_FOUND'|'FAILED'}|null>(null),[reload,setReload]=useState(0),gen=useRef(0);
  useEffect(()=>{const ticket=++gen.current,reqKey=id+'|'+stamp;queueMicrotask(async()=>{

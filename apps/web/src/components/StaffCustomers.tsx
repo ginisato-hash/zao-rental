@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter,useSearchParams} from 'next/navigation';
@@ -20,7 +21,8 @@ const L={
  outcomeText:['この予約は関連付け先と同じ顧客として扱われます。取り消せません。','This order will be treated as the same customer as the target. This cannot be undone.'],confirm:['関連付ける','Link'],done:['関連付けました。','Linked.'],conflict:['この予約はすでに関連付けられています。画面を更新してください。','This order is already linked. Refresh the page.'],
 } as const;
 
-export function StaffCustomers({locale,stamp}:{locale:StaffLocale;stamp:string}){
+export function StaffCustomers({locale:serverLocale,stamp}:{locale:StaffLocale;stamp:string}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],en=locale==='en';
  const params=useSearchParams(),router=useRouter(),get=(k:string)=>params.get(k)??'';
  const page=Math.max(1,Number(get('page'))||1);
@@ -42,12 +44,13 @@ export function StaffCustomers({locale,stamp}:{locale:StaffLocale;stamp:string})
    <tbody>{data.rows.map(c=><tr key={c.key} onClick={e=>{if(!(e.target as Element).closest('a'))router.push('/staff/customers/'+encodeURIComponent(c.key));}}>
     <td><Link href={'/staff/customers/'+encodeURIComponent(c.key)}>{c.name??'—'}</Link>{c.legacy&&<><br/><small className="sx-help">{tx('legacy')}</small></>}</td>
     <td>{c.email??'—'}</td><td className="ox-num">{c.bookings}</td><td>{c.lastStart?fmtDate(locale,c.lastStart):'—'}</td></tr>)}</tbody></table></div>}
-  {data&&data.total>0&&<nav className="ox-pager" aria-label="pagination"><span className="sx-help">{en?`${data.total} customers`:`${data.total}件`}</span>
+  {data&&data.total>0&&<nav className="ox-pager" aria-label={locale==='en'?'Pages':'ページ'}><span className="sx-help">{en?`${data.total} customers`:`${data.total}件`}</span>
    <button type="button" className="sx-btn" disabled={page<=1} onClick={()=>set({page:String(page-1)})}>{tx('prev')}</button><button type="button" className="sx-btn" disabled={page>=pages} onClick={()=>set({page:String(page+1)})}>{tx('next')}</button></nav>}
  </main></StaffSessionBoundary>;
 }
 
-export function StaffCustomer({locale,stamp,customerKey,canLink}:{locale:StaffLocale;stamp:string;customerKey:string;canLink:boolean}){
+export function StaffCustomer({locale:serverLocale,stamp,customerKey,canLink}:{locale:StaffLocale;stamp:string;customerKey:string;canLink:boolean}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],router=useRouter();
  const [loadedDetail,setLoadedDetail]=useState<{key:string;data:Detail}|null>(null),[errState,setErrState]=useState<{key:string;kind:'NOT_FOUND'|'FAILED'}|null>(null),[reload,setReload]=useState(0),gen=useRef(0);
  const [q,setQ]=useState(''),[cands,setCands]=useState<{key:string;rows:Customer[]}|null>(null),[target,setTarget]=useState(''),[review,setReview]=useState<string|null>(null),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false),requestKey=useRef<string|null>(null);
@@ -63,9 +66,9 @@ export function StaffCustomer({locale,stamp,customerKey,canLink}:{locale:StaffLo
   const key=viewKey;if(r?.ok)setCands({key,rows:((await r.json()).rows as Customer[]).filter(c=>c.key!==data?.key)});}
  async function link(){if(!data||!target||busy||!confirming)return;setBusy(true);setMsg('');requestKey.current??=crypto.randomUUID();
   try{const r=await fetch('/api/operations/customers/link',{method:'POST',cache:'no-store',headers:{'content-type':'application/json','x-zao-session':stamp},body:JSON.stringify({requestKey:requestKey.current,input:{bookingId:data.orders[0]!.id,target}})});
-   if(r.status===401){invalidateStaffView();return;}if(r.status===409){setMsg(tx('conflict'));requestKey.current=null;return;}if(!r.ok)throw Error();
-   const v=await r.json() as {customerId:string};setMsg(tx('done'));requestKey.current=null;router.push('/staff/customers/'+encodeURIComponent(v.customerId));}
-  catch{setMsg(tx('failed'));}finally{setBusy(false);}}
+   if(r.status===401){invalidateStaffView();return;}if(r.status===409){setMsg('conflict');requestKey.current=null;return;}if(!r.ok)throw Error();
+   const v=await r.json() as {customerId:string};setMsg('done');requestKey.current=null;router.push('/staff/customers/'+encodeURIComponent(v.customerId));}
+  catch{setMsg('failed');}finally{setBusy(false);}}
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <p><Link href="/staff/customers" className="sx-link">‹ {tx('back')}</Link></p>
   {error==='NOT_FOUND'&&<p className="sx-alert" role="alert">{tx('notFound')}</p>}
@@ -83,7 +86,7 @@ export function StaffCustomer({locale,stamp,customerKey,canLink}:{locale:StaffLo
     {confirming&&chosen&&data&&<div className="sx-card" role="group" aria-label={tx('review')} style={{padding:'12px 16px',marginTop:12}}>
      <dl className="od-dl"><dt>{tx('thisOrder')}</dt><dd>#{data.orders[0]!.ref} · {data.name??'—'}</dd><dt>{tx('pick')}</dt><dd>{chosen.name??'—'} · {chosen.email??''} · {chosen.bookings} {tx('bookings')}</dd><dt>{tx('outcome')}</dt><dd>{tx('outcomeText')}</dd></dl>
      <div className="ox-controls"><button type="button" className="sx-btn sx-btn--primary" disabled={busy} onClick={()=>void link()}>{tx('confirm')}</button><button type="button" className="sx-btn" disabled={busy} onClick={()=>{setReview(null);requestKey.current=null;}}>{tx('cancel')}</button></div></div>}
-    {msg&&<p role="status">{msg}</p>}</section>}
+    {msg&&<p role="status">{tx(msg as 'conflict'|'done'|'failed')}</p>}</section>}
   </>}
  </main></StaffSessionBoundary>;
 }

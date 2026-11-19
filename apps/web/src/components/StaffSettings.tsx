@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {st,type StaffKey,type StaffLocale} from './staff-i18n';
@@ -8,7 +9,8 @@ import {localStorageFlag} from './StaffInboxBell';
 type Pref={emailEnabled:boolean;locale:StaffLocale;email:string};
 /** Settings (bottom of the Booqable sidebar): own notification preferences and links to staff administration. */
 import type {ShellAccess} from './StaffShell';
-export function StaffSettings({locale,stamp,access}:{locale:StaffLocale;stamp:string;access:ShellAccess}){
+export function StaffSettings({locale:serverLocale,stamp,access}:{locale:StaffLocale;stamp:string;access:ShellAccess}){
+ const locale=useStaffLocaleOr(serverLocale);
  const t=(k:StaffKey)=>st(locale,k);
  const [pref,setPref]=useState<Pref|null>(null),[draft,setDraft]=useState<{emailEnabled:boolean;locale:StaffLocale}|null>(null),[status,setStatus]=useState(''),[busy,setBusy]=useState(false),[failed,setFailed]=useState(false);
  const [alerts,setAlerts]=useState(false),[blocked,setBlocked]=useState(false);
@@ -16,8 +18,8 @@ export function StaffSettings({locale,stamp,access}:{locale:StaffLocale;stamp:st
   queueMicrotask(()=>{if(!alive)return;setAlerts(localStorageFlag()&&typeof Notification!=='undefined'&&Notification.permission==='granted');setBlocked(typeof Notification!=='undefined'&&Notification.permission==='denied');});return()=>{alive=false;};},[stamp]);
  async function save(){if(!draft||busy)return;setBusy(true);setStatus('');
   try{const r=await fetch('/api/operations/inbox/preference',{method:'POST',cache:'no-store',headers:{'content-type':'application/json','x-zao-session':stamp},body:JSON.stringify({requestKey:crypto.randomUUID(),input:draft})});
-   if(r.status===401){invalidateStaffView();return;}if(!r.ok)throw Error();const v=await r.json() as Pref;setPref(v);setDraft({emailEnabled:v.emailEnabled,locale:v.locale});setStatus(t('saved'));}
-  catch{setStatus(t('saveFailed'));}finally{setBusy(false);}}
+   if(r.status===401){invalidateStaffView();return;}if(!r.ok)throw Error();const v=await r.json() as Pref;setPref(v);setDraft({emailEnabled:v.emailEnabled,locale:v.locale});setStatus('saved');}
+  catch{setStatus('saveFailed');}finally{setBusy(false);}}
  async function toggleAlerts(on:boolean){
   if(!on){try{localStorage.removeItem('zao-staff-browser-alerts');}catch{/* storage unavailable */}setAlerts(false);return;}
   if(typeof Notification==='undefined')return;const p=Notification.permission==='granted'?'granted':await Notification.requestPermission();
@@ -34,7 +36,7 @@ export function StaffSettings({locale,stamp,access}:{locale:StaffLocale;stamp:st
     <div className="sx-field"><label htmlFor="sx-email-locale">{t('emailLocale')}</label>
      <select id="sx-email-locale" value={draft.locale} onChange={e=>setDraft(d=>({...d!,locale:e.target.value==='en'?'en':'ja'}))}><option value="ja">日本語</option><option value="en">English</option></select></div>
     <div><button type="button" className="sx-btn sx-btn--primary" disabled={busy||(draft.emailEnabled===pref.emailEnabled&&draft.locale===pref.locale)} onClick={()=>void save()}>{t('save')}</button></div>
-    <p className="sx-status" role="status" aria-live="polite">{status}</p>
+    <p className="sx-status" role="status" aria-live="polite">{status&&t(status as 'saved'|'saveFailed')}</p>
    </div>}
   </section>
   <section className="sx-card" style={{padding:'20px 24px',marginTop:16}} aria-labelledby="sx-alerts">

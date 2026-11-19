@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocaleOr} from './staff-locale';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter,useSearchParams} from 'next/navigation';
@@ -21,7 +22,8 @@ const L={
 
 /** Booqable Inventory list: search, left filters, product table with the separated stock counts, and entry points to the
  * existing stocktake/CSV, ledger, wear, transfer and label screens. */
-export function StaffInventory({locale,stamp,stores,can}:{locale:StaffLocale;stamp:string;stores:string[];can:{edit:boolean;transfer:boolean}}){
+export function StaffInventory({locale:serverLocale,stamp,stores,can}:{locale:StaffLocale;stamp:string;stores:string[];can:{edit:boolean;transfer:boolean}}){
+ const locale=useStaffLocaleOr(serverLocale);
  const tx=(k:keyof typeof L)=>L[k][locale==='en'?1:0],en=locale==='en';
  const params=useSearchParams(),router=useRouter(),get=(k:string)=>params.get(k)??'';
  const store=stores.includes(get('store'))?get('store'):stores[0]??'',family=(FAMILIES as readonly string[]).includes(get('family'))?get('family'):'';

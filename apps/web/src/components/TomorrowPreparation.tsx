@@ -6,7 +6,7 @@ import {storeDisplayName} from '../../../../packages/contracts/src/store-display
 import type {Profile} from '../../../../packages/contracts/src/recommendation';
 type Row={bookingId:string;displayName:string;period:{startDate:string;slot:string};pickupStore:string;pickup:{equipmentPrepared:boolean};preparationMembers:{key:string;product:string;tier:string;profile:Profile|null}[]};
 export function TomorrowPreparation({stamp,store,onOpen}:{stamp:string;store:string;onOpen:(id:string)=>void}){
- const [data,setData]=useState<{store:string;date:string;rows:Row[];nextCursor:string|null}|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(false),[shared]=[useStaffLocale()],en=shared.locale==='en',setEn=(v:boolean)=>shared.setLocale(v?'en':'ja');
+ const [data,setData]=useState<{store:string;date:string;rows:Row[];nextCursor:string|null}|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(false),[shared]=[useStaffLocale()],en=shared.locale==='en';
  const generation=useRef(0),t=(j:string,e:string)=>en?e:j;
  async function load(cursor:string|null=null){const g=++generation.current;
   try{const r=await fetch('/api/operations/manifest?store='+store+'&section=preparation&pageSize=50'+(cursor?'&cursor='+encodeURIComponent(cursor):''),{cache:'no-store',headers:{'x-zao-session':stamp}}),d=await r.json();
@@ -22,7 +22,7 @@ export function TomorrowPreparation({stamp,store,onOpen}:{stamp:string;store:str
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[store,stamp]);
  const current=data?.store===store?data:null;
- return <section className="staff-manifest tomorrow-preparation" aria-label={t('明日の準備','Tomorrow’s preparation')} lang={en?'en':'ja'}><div className="staff-section-head"><h2>{t('明日の準備','Tomorrow’s preparation')}</h2><button disabled={busy} onClick={()=>{setBusy(true);setError(false);void load();}}>{t('更新','Refresh')}</button><button onClick={()=>setEn(!en)}>{en?'日本語':'English'}</button></div>
+ return <section className="staff-manifest tomorrow-preparation" aria-label={t('明日の準備','Tomorrow’s preparation')} lang={en?'en':'ja'}><div className="staff-section-head"><h2>{t('明日の準備','Tomorrow’s preparation')}</h2><button disabled={busy} onClick={()=>{setBusy(true);setError(false);void load();}}>{t('更新','Refresh')}</button></div>
   <p>{storeDisplayName(store)} · {current?.date??'…'} JST</p>
   {error&&<p role="alert">{t('読み込めませんでした。更新してください。','Could not load. Please refresh.')}</p>}
   {(busy||!current&&!error)&&<p role="status">{t('読み込んでいます…','Loading…')}</p>}

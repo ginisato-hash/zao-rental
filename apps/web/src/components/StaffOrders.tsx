@@ -44,7 +44,7 @@ export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'orders')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>
-   {canCreate&&<Link className="sx-btn sx-btn--primary" href="/staff/quotes">{st(locale,'newOrder')}</Link>}</div>
+   {canCreate&&<Link className="sx-btn sx-btn--primary" href="/staff/orders/new">{st(locale,'newOrder')}</Link>}</div>
   <div className="sx-seg ox-tabs" role="tablist" aria-label={st(locale,'orders')}>{(['all','upcoming','late'] as const).map(t=><button key={t} type="button" role="tab" aria-selected={tab===t} onClick={()=>set({tab:t==='all'?'':t,late:''})}>{tx(t)}{data?` ${data.counts[t]}`:''}</button>)}</div>
   {tab==='late'&&<div className="sx-seg ox-tabs" role="group" aria-label={tx('late')}>{(['','out','back'] as const).map(k=><button key={k||'both'} type="button" aria-pressed={get('late')===k} onClick={()=>set({late:k})}>{k===''?tx('all'):k==='out'?tx('lateOut'):tx('lateBack')}{data?` ${k===''?data.counts.late:k==='out'?data.counts.lateOut:data.counts.lateBack}`:''}</button>)}</div>}
   {['out','back'].includes(get('direction'))&&<p className="sx-help">{get('direction')==='out'?tx('dirOut'):tx('dirBack')} <button type="button" className="sx-link" onClick={()=>set({direction:''})}>{tx('clear')}</button></p>}

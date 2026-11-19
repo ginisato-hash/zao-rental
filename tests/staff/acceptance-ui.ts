@@ -126,6 +126,29 @@ try{
   await p.getByRole('button',{name:'English'}).click();await p.getByLabel('Booking number or booking QR').waitFor();await p.getByRole('button',{name:'Open this booking'}).waitFor();
   await p.screenshot({path:`${shots}/scan-en-1440.png`});await ctx.close();
  });
+ await check('new order: staff API with the session header only, no browser storage, explicit customer choice; real route refuses without commercial composition',async()=>{
+  const seen:{url:string;method:string;session:string|null;body:string|null}[]=[];page.on('request',r=>{if(/\/api\/(guest|staff-orders)/.test(r.url()))seen.push({url:r.url(),method:r.method(),session:r.headers()['x-zao-session']??null,body:r.postData()});});
+  await page.goto('/staff/orders');const contextAnswer=page.waitForResponse(r=>r.url().endsWith('/api/staff-orders/context'));await page.locator('a[href="/staff/orders/new"]').first().click();await page.waitForURL('**/staff/orders/new');
+  await page.getByRole('heading',{name:'新規予約',level:1}).waitFor();
+  const refused=await contextAnswer;assert.equal(refused.status(),503,'the local app has no commercial composition: no simulated staff charge');
+  assert.equal(seen.filter(r=>r.url.includes('/api/guest')).length,0,'never the guest cookie API');assert.ok(seen.every(r=>r.session&&/^[0-9a-f]{64}$/.test(r.session)),'every call carries the staff session stamp');
+  assert.equal(await page.getByText('予約をお持ちの方はこちら').count(),0,'no guest recovery on the staff screen');
+  assert.equal(await page.getByRole('link',{name:'BOOK',exact:true}).count(),0,'no public site header inside the staff shell');
+  // UI wiring against a synthetic draft (the payment step itself needs the Production composition and is not exercised).
+  const draftId=randomUUID(),customer=randomUUID();let selected:string|null=null,revision=1;const posts:unknown[]=[];
+  const view=()=>({checkout:null,id:draftId,revision,input:null,locked:false,priceReviewRequired:false,selection:null,preview:null,hold:null,estimate:null,reviewHash:null,quote:null,booking:null,simulation:false,customerProfileId:selected});
+  await page.route('**/api/staff-orders/**',async r=>{const path=new URL(r.request().url()).pathname;if(path.endsWith('/options'))return r.fulfill({json:{revision:'synthetic',models:[],sizes:[]}});
+   if(r.request().method()==='POST'&&path.endsWith('/customer')){const b=r.request().postDataJSON();posts.push(b);selected=b.customerId;revision++;}return r.fulfill({json:view()});});
+  await page.route(/\/api\/operations\/customers\?/,r=>r.fulfill({json:{rows:[{key:customer,name:'SYNTHETIC Existing',email:'synthetic-existing@example.invalid',bookings:2,lastStart:'2035-06-10',legacy:false},{key:'legacy:'+randomUUID(),name:'SYNTHETIC Legacy',email:null,bookings:1,lastStart:null,legacy:true}],total:2}}));
+  await page.reload();const panel=page.getByRole('region',{name:'お客様'});await panel.getByRole('status').filter({hasText:'新しいお客様として登録'}).waitFor();
+  await panel.getByRole('searchbox').fill('SYNTHETIC');await panel.getByRole('button',{name:'検索'}).click();
+  assert.equal(await panel.getByRole('listitem').filter({hasText:'SYNTHETIC Legacy'}).getByRole('button').count(),0,'unlinked legacy rows cannot be chosen');
+  await panel.getByRole('listitem').filter({hasText:'SYNTHETIC Existing'}).getByRole('button',{name:'このお客様にする'}).click();
+  await panel.getByRole('status').filter({hasText:'SYNTHETIC Existing'}).waitFor();assert.deepEqual(posts,[{draftId,expectedRevision:1,customerId:customer}]);
+  await panel.getByRole('button',{name:'新しいお客様として登録'}).click();await panel.getByRole('status').filter({hasText:'新しいお客様として登録'}).waitFor();assert.deepEqual(posts[1],{draftId,expectedRevision:2,customerId:null});
+  assert.equal(await page.evaluate(()=>sessionStorage.length+localStorage.length),0,'nothing is kept in browser storage on the shared staff device');
+  await page.screenshot({path:`${shots}/new-order-ja-1440.png`});await page.unroute('**/api/staff-orders/**');await page.unroute(/\/api\/operations\/customers\?/);
+ });
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({status:'PASS',cases:count,screenshots:shots,externalRequests:0}));
  await context.close();

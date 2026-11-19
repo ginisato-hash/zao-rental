@@ -45,7 +45,7 @@ export function StaffShell({locale:serverLocale,stamp,stores,access,name,childre
  return <div className="sx" data-open={open||undefined}>
   <aside className="sx-side" aria-label={t('menu')} onClick={e=>{if((e.target as Element).closest('a'))setOpen(false);}}>
    <div className="sx-brand"><Link href="/staff">SALOMON <span>Rental Station Zao</span></Link></div>
-   {access.bookingCreate&&<Link className="sx-btn sx-btn--primary sx-new" href="/staff/quotes">{t('newOrder')}</Link>}
+   {access.bookingCreate&&<Link className="sx-btn sx-btn--primary sx-new" href="/staff/orders/new">{t('newOrder')}</Link>}
    <nav>{[TOP,WORK,MORE].filter(g=>g.some(i=>i.show(access))).map((g,n)=><ul key={n}>{g.map(link)}</ul>)}</nav>
    <nav className="sx-side-bottom"><ul>{BOTTOM.map(link)}<li><Link href="/staff/logout">{t('signOut')}</Link></li></ul>
     <p className="sx-user">{name}</p></nav>

@@ -3,6 +3,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {SaveBookingAccess} from './BookingAccess';
 import {BookingCancellation,type CancellationStatus} from './BookingCancellation';
 import {SquareCardPayment} from './SquareCardPayment';
+import {StaffOrderCustomer} from './StaffOrderCustomer';
 import {GuestRecovery} from './GuestRecovery';
 import {GuestAvatarPreview} from './GuestAvatarPreview';
 import {WEAR_COLOR_NOTICE} from './wear-copy';
@@ -19,8 +20,14 @@ type Period={startDate:string;endDate:string;startAt:'08:30'|'13:00';returnBy:'1
 type Input={contractVersion:'INTEGRATED_V1_4';pickupStore:string;returnStore:string;period:Period;members:Member[]};
 type Options={models:{key:string;name:string;season:string;sport:string;lengths:string[]}[];sizes:{key:string;label:string;family:string;age:string;tier:string;poleStores?:string[]}[]};
 type Contact={displayName:string;email:string;termsAccepted:boolean};
-type Draft={checkout?:{applicationId:string;locations:Record<string,string>}|null;id:string;revision:number;input:Input|null;locked:boolean;priceReviewRequired:boolean;selection:{directions:Record<string,string>;wantAdvance:boolean;contact?:Contact}|null;preview:{members:{key:string;reason:string|null;price:Record<string,unknown>|null;priceError:string|null;candidates:Record<string,{lengthCm:number;sizeLabel?:string}|null>}[]}|null;hold:{state:string;expiresAt:string}|null;estimate:{subtotalJpy:number;bundleDiscountJpy?:number;advanceDiscountJpy:number;totalJpy:number}|null;reviewHash:string|null;quote:{snapshot:{totalJpy:number};snapshotSha256:string;validity:string}|null;booking:{cancellation:CancellationStatus|null;id:string;state:string;qr:string|null;qrImage:string|null;payments:{state:string}[];priceSnapshot:{totalJpy:number}}|null;simulation?:boolean};
+type Draft={checkout?:{applicationId:string;locations:Record<string,string>}|null;id:string;revision:number;input:Input|null;locked:boolean;priceReviewRequired:boolean;selection:{directions:Record<string,string>;wantAdvance:boolean;contact?:Contact}|null;preview:{members:{key:string;reason:string|null;price:Record<string,unknown>|null;priceError:string|null;candidates:Record<string,{lengthCm:number;sizeLabel?:string}|null>}[]}|null;hold:{state:string;expiresAt:string}|null;estimate:{subtotalJpy:number;bundleDiscountJpy?:number;advanceDiscountJpy:number;totalJpy:number}|null;reviewHash:string|null;quote:{snapshot:{totalJpy:number};snapshotSha256:string;validity:string}|null;booking:{cancellation:CancellationStatus|null;id:string;state:string;qr:string|null;qrImage:string|null;payments:{state:string}[];priceSnapshot:{totalJpy:number}}|null;simulation?:boolean;customerProfileId?:string|null};
 let starting:Promise<unknown>|null=null;
+// Staff New order (Issue #47 §6) reuses this flow against /api/staff-orders as the signed-in staff member: the session
+// stamp header replaces the guest cookie, and nothing (not even step input) is kept in browser storage on a shared device.
+type Api={base:'/api/guest'|'/api/staff-orders';headers:Record<string,string>;storage:boolean};
+const GUEST_API:Api={base:'/api/guest',headers:{},storage:true};let api:Api=GUEST_API;
+function useBookingApi(stamp:string|undefined){useEffect(()=>{api=stamp?{base:'/api/staff-orders',headers:{'x-zao-session':stamp},storage:false}:GUEST_API;return()=>{api=GUEST_API;};},[stamp]);}
+function draftStorage(){if(!api.storage)throw Error('NO_STORAGE');return sessionStorage;}
 // CH-04 previously cached the whole Input (including body measurements) under this key,
 // unscoped to any context/draft id. UIR-01: a cookie expiry or explicit logout creates a
 // fresh guest context (POST /context returns 201, not 401) and open() only overwrites input
@@ -29,7 +36,7 @@ let starting:Promise<unknown>|null=null;
 // render code a malformed object. Full read/write of this cache is removed; only a one-time
 // discard of any value a pre-fix session already wrote remains.
 const INPUT_STORAGE_KEY='zao-guest-draft-input';
-function clearStoredInput(){try{sessionStorage.removeItem(INPUT_STORAGE_KEY);}catch{}}
+function clearStoredInput(){try{draftStorage().removeItem(INPUT_STORAGE_KEY);}catch{}}
 // CH-04B: reload-safe recovery of unsaved step 0-1 Input, scoped to exactly one server draft. Only
 // Input is stored (never contact, payment, access/recovery/QR or session data), under a versioned
 // per-draft key, and only in sessionStorage. A cached value is restored only while the same unlocked
@@ -52,21 +59,21 @@ function upgradeInput(v:unknown):Input|null{if(isInput(v))return v;if(!v||typeof
  const period:Period={startDate:String(p.startDate??''),endDate:String(p.endDate??''),startAt:slot==='PM'?'13:00':'08:30',returnBy:slot==='AM'?'12:00':'17:00'};
  const members=Array.isArray(i.members)?(i.members as Record<string,unknown>[]).map(m=>{const {itemFamily,...rest}=m;return {...rest,items:typeof itemFamily==='string'&&itemFamily?[itemFamily]:null} as unknown as Member;}):[];
  const out={contractVersion:'INTEGRATED_V1_4' as const,pickupStore:String(i.pickupStore??'MOUNTAIN_BASE'),returnStore:String(i.returnStore??'MOUNTAIN_BASE'),period,members};return isInput(out)?out:null;}
-function draftInputKeys(){const out:string[]=[];try{for(let n=0;n<sessionStorage.length;n++){const k=sessionStorage.key(n);if(k?.startsWith(DRAFT_INPUT_PREFIX))out.push(k);}}catch{}return out;}
+function draftInputKeys(){const out:string[]=[];try{for(let n=0;n<draftStorage().length;n++){const k=draftStorage().key(n);if(k?.startsWith(DRAFT_INPUT_PREFIX))out.push(k);}}catch{}return out;}
 /** Removes every draft-input cache except the one belonging to keepDraftId (if given). */
-function clearDraftInputs(keepDraftId?:string){for(const k of draftInputKeys())if(keepDraftId===undefined||k!==DRAFT_INPUT_PREFIX+keepDraftId)try{sessionStorage.removeItem(k);}catch{}}
-function writeDraftInput(e:InputEnvelope){try{sessionStorage.setItem(DRAFT_INPUT_PREFIX+e.draftId,JSON.stringify(e));}catch{}}
-function removeDraftInput(draftId:string){try{sessionStorage.removeItem(DRAFT_INPUT_PREFIX+draftId);}catch{}}
+function clearDraftInputs(keepDraftId?:string){for(const k of draftInputKeys())if(keepDraftId===undefined||k!==DRAFT_INPUT_PREFIX+keepDraftId)try{draftStorage().removeItem(k);}catch{}}
+function writeDraftInput(e:InputEnvelope){try{draftStorage().setItem(DRAFT_INPUT_PREFIX+e.draftId,JSON.stringify(e));}catch{}}
+function removeDraftInput(draftId:string){try{draftStorage().removeItem(DRAFT_INPUT_PREFIX+draftId);}catch{}}
 /** The restorable Input for exactly this draft, or null. A present but non-restorable value is discarded. */
 function takeDraftInput(d:{id:string;revision:number;input:Input|null;locked:boolean;booking:unknown}):Input|null{
- let raw:string|null;try{raw=sessionStorage.getItem(DRAFT_INPUT_PREFIX+d.id);}catch{return null;}
+ let raw:string|null;try{raw=draftStorage().getItem(DRAFT_INPUT_PREFIX+d.id);}catch{return null;}
  if(raw===null)return null;
  try{const e=JSON.parse(raw) as Partial<InputEnvelope>|null;
   if(e&&typeof e==='object'&&e.schemaVersion===2&&e.draftId===d.id&&!d.locked&&!d.booking&&e.baseRevision===d.revision&&e.baseServerInputFingerprint===inputFingerprint(d.input)&&isInput(e.input)&&JSON.stringify(e.input)!==JSON.stringify(d.input))return e.input;
  }catch{}
  removeDraftInput(d.id);return null;
 }
-async function request(path:string,body?:unknown){const r=await fetch('/api/guest'+path,{cache:'no-store',method:body===undefined?'GET':'POST',headers:{'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error),{status:r.status});return data;}
+async function request(path:string,body?:unknown){const r=await fetch(api.base+path,{cache:'no-store',method:body===undefined?'GET':'POST',headers:{'content-type':'application/json',...api.headers},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error),{status:r.status});return data;}
 // Body and safety values start unset: only what the guest explicitly enters is ever saved.
 const blankSki=()=>({weightKg:null,ageAtStart:null,skierType:null});
 // ISO 11088 skier type in behaviour-based wording. It is the DIN input and is never a generic ski level.
@@ -122,8 +129,10 @@ const previewReasonText=(ja:boolean,r:string)=>{const c=PREVIEW_REASON_COPY[r];r
 // so the saved draft is re-read (GET only) to show the actual current state. Never a payment retry.
 const REFRESH_ON_ERROR=new Set(['PRICE_CHANGED_REVIEW_REQUIRED','PRICE_REVIEW_REQUIRED','HOLD_OR_QUOTE_RECONCILIATION_REQUIRED']);
 export type GuestLegalLinks={complete:boolean;terms?:string|undefined;cancellation?:string|undefined;termsBundle?:{version:string;sha256:string}|undefined};
-export function GuestBooking({locale,legal}:{locale:Locale;legal?:GuestLegalLinks}){const productionCopy=useProductionCopy(),ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
+export function GuestBooking({locale,legal,staff}:{locale:Locale;legal?:GuestLegalLinks;staff?:{stamp:string}|undefined}){const productionCopy=useProductionCopy(),ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
  const [draft,setDraft]=useState<Draft|null>(null),[options,setOptions]=useState<Options>({models:[],sizes:[]}),[input,setInput]=useState<Input>(blankInput),[step,setStep]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[directions,setDirections]=useState<Record<string,string>>({}),[accepted,setAccepted]=useState(false),[advance,setAdvance]=useState(false),[contact,setContact]=useState<Contact>({displayName:'',email:'',termsAccepted:false}),[emailConfirm,setEmailConfirm]=useState(''),[simulation,setSimulation]=useState(false);
+ // Declared before the effect that opens the draft, so the endpoint is chosen before the first request.
+ useBookingApi(staff?.stamp);
  const alive=useRef(true),ticket=useRef(0),inFlight=useRef(false);
  // CH-04A: the displayed step is reflected in browser history so Back/Forward move one
  // step instead of leaving the app. Only the step number (an allowlisted, non-secret
@@ -350,13 +359,13 @@ export function GuestBooking({locale,legal}:{locale:Locale;legal?:GuestLegalLink
  const stockFailed=Boolean(draft&&!draft.booking&&draft.locked&&!draft.hold);
  const priceChanged=Boolean(draft&&!draft.booking&&!holdEnded&&draft.priceReviewRequired&&draft.quote?.validity==='VALID_PRIVATE_ESTIMATE');
  const legalBlocked=Boolean(draft?.checkout)&&legal?.complete!==true;const payBlocked=!contractSynced||Boolean(draft?.priceReviewRequired)||holdEnded||stockFailed||legalBlocked;
- function closeContext(){void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput();clearDraftInputs();setRestoredNotice(false);setSavedInputJson(null);location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
+ function closeContext(){if(staff){void run(async()=>{const d=await request('/restart',{});location.assign(new URL('/staff/orders/new',location.origin).href);return d;});return;}void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput();clearDraftInputs();setRestoredNotice(false);setSavedInputJson(null);location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
  const checkoutBody=()=>({locale,draftId:draft!.id,expectedRevision:draft!.revision,reviewHash:draft!.reviewHash,contact:{displayName:contact.displayName,email:contact.email,termsAccepted:contact.termsAccepted,...(legal?.termsBundle?{terms:{version:legal.termsBundle.version,sha256:legal.termsBundle.sha256,locale}}:{})}});
  // The field name is the label's whole text, so exact label matching and the accessible name stay
  // unchanged; the required/optional marker is rendered outside the <label>, beside it.
  const label=(text:string)=><span className="guest-label-text">{text}</span>;
  const bound=<F extends 'startAt'|'returnBy'>(f:F,opts:readonly (readonly [Period[F],string,string])[],name:string)=><fieldset className="guest-field guest-bound" key={f} role="radiogroup" aria-label={name}><legend>{flag(true)}{label(name)}</legend><div className="guest-seg">{opts.map(([v,j,e])=><label key={v} className="guest-seg-o"><input type="radio" name={f} value={v} checked={input.period[f]===v} {...(f==='returnBy'?invalid('returnBy'):{})} onChange={()=>{if(f==='returnBy')reveal('returnBy');editInput(i=>({...i,period:{...i.period,[f]:v}}));}}/><span><b>{ja?j:e}</b>{!(ja?j:e).includes(v)&&<small>{v}</small>}</span></label>)}</div>{f==='returnBy'&&fieldError('returnBy')}</fieldset>;
- return <div className="public-shell guest-shell" lang={locale}><PublicHeader locale={locale} page="book" guard={guardNav} context="BOOKING"/><main className="guest-main" id="main"><h1 className="guest-h1">{t('レンタル予約','Book rental')}</h1>{draft&&!draft.checkout&&!productionCopy&&<p className="guest-preview-note">{t('開発プレビューです。架空の情報だけを使用してください。実決済・本番予約は行いません。','Development preview: use synthetic details only. No real payment or production booking.')}</p>}
+ return <div className="public-shell guest-shell" lang={locale}>{!staff&&<PublicHeader locale={locale} page="book" guard={guardNav} context="BOOKING"/>}<main className="guest-main" id="main"><h1 className="guest-h1">{staff?t('新規予約','New order'):t('レンタル予約','Book rental')}</h1>{staff&&draft&&<StaffOrderCustomer locale={locale} stamp={staff.stamp} selected={draft.customerProfileId??null} locked={Boolean(draft.booking)} busy={busy} onSelect={customerId=>void run(()=>request('/customer',{draftId:draft.id,expectedRevision:draft.revision,customerId}))}/>}{draft&&!draft.checkout&&!productionCopy&&<p className="guest-preview-note">{t('開発プレビューです。架空の情報だけを使用してください。実決済・本番予約は行いません。','Development preview: use synthetic details only. No real payment or production booking.')}</p>}
  <ol className="guest-steps" aria-label={t('予約の流れ','Booking steps')}>{STEPS.map(([w,j,e],n)=><li key={n} aria-current={step===n?'step':undefined} className={n<step?'guest-step--done':undefined}><span className="guest-step-number" aria-hidden="true">{String(n+1).padStart(2,'0')}</span><span className="guest-step-w">{w}</span>{ja&&<span className="guest-step-j">{j}</span>}{!ja&&<span className="guest-step-j">{e}</span>}</li>)}</ol>
  {restoredNotice&&step<2&&<p role="status" className="guest-status">{t('未保存の入力を復元しました','Unsaved entries restored')}</p>}
  {showUnsavedHint&&<p role="status" className="guest-save-note">{t('入力内容は「候補と参考料金を確認」で保存されます。','Your entries are saved when you select “Review sizes and estimates”.')}</p>}
@@ -398,8 +407,8 @@ export function GuestBooking({locale,legal}:{locale:Locale;legal?:GuestLegalLink
  {step===2&&!draft.preview&&<p>{t('候補の内容を読み込めませんでした。前の画面からやり直してください。','The candidates could not be loaded. Go back and try again.')}</p>}
  </fieldset>}
  {step===3&&<section className="guest-review" aria-label={t('全員分の確認','Group review')}><h2>{t('最終確認','Final review')}</h2>
- {draft.booking&&<div role="status" className="guest-result"><h3>{bookingStatusText(draft.booking.state)}</h3>{confirmedBooking&&<p className="guest-result-ref">{t('予約番号','Booking reference')} <strong>#{draft.booking.id.slice(0,8).toUpperCase()}</strong></p>}<p className="guest-result-total">{money(draft.booking.priceSnapshot.totalJpy)}</p>{confirmedBooking&&<dl className="guest-facts guest-result-facts"><div><dt>{t('受取','Pickup')}</dt><dd>{input.period.startDate} · {storeLabel(input.pickupStore)}</dd></div><div><dt>{t('返却','Return')}</dt><dd>{input.period.endDate} · {storeLabel(input.returnStore)}</dd></div></dl>}{confirmedBooking&&<p className="guest-result-mail">{t('登録メールアドレスへ予約確認メールを送信します。数分かかる場合があります。','We will send a booking confirmation email to your registered address. It may take a few minutes.')}</p>}{draft.booking.payments.map((p,n)=><p key={n}>{t('決済状況','Payment status')}: {paymentStatusText(p.state)}</p>)}{confirmedBooking&&<SaveBookingAccess bookingId={draft.booking.id} locale={locale}/>}{draft.booking.qrImage&&<picture><img src={draft.booking.qrImage} width={240} height={240} alt={draft.booking.state==='CONFIRMED_DEV'&&!productionCopy?t('開発予約QR','Development booking QR'):t('予約QR','Booking QR')}/></picture>}{!['CONFIRMED_DEV','CONFIRMED','CANCELLED'].includes(draft.booking.state)&&<button disabled={busy} onClick={()=>void run(()=>request('/reconcile',{}))}>{t('決済状況を更新','Check for a payment update')}</button>}</div>}
- {draft.booking&&!['COMPLETED_DEV','COMPLETED'].includes(draft.booking.state)&&<BookingCancellation locale={locale} status={draft.booking.cancellation} onCancelled={async()=>{await run(()=>request('/draft'));}}/>}
+ {draft.booking&&<div role="status" className="guest-result"><h3>{bookingStatusText(draft.booking.state)}</h3>{confirmedBooking&&<p className="guest-result-ref">{t('予約番号','Booking reference')} <strong>#{draft.booking.id.slice(0,8).toUpperCase()}</strong></p>}<p className="guest-result-total">{money(draft.booking.priceSnapshot.totalJpy)}</p>{confirmedBooking&&<dl className="guest-facts guest-result-facts"><div><dt>{t('受取','Pickup')}</dt><dd>{input.period.startDate} · {storeLabel(input.pickupStore)}</dd></div><div><dt>{t('返却','Return')}</dt><dd>{input.period.endDate} · {storeLabel(input.returnStore)}</dd></div></dl>}{confirmedBooking&&<p className="guest-result-mail">{t('登録メールアドレスへ予約確認メールを送信します。数分かかる場合があります。','We will send a booking confirmation email to your registered address. It may take a few minutes.')}</p>}{draft.booking.payments.map((p,n)=><p key={n}>{t('決済状況','Payment status')}: {paymentStatusText(p.state)}</p>)}{staff?<p><a href={'/staff/orders/'+encodeURIComponent(draft.booking.id)}>{t('注文の詳細を開く','Open the order')}</a></p>:confirmedBooking&&<SaveBookingAccess bookingId={draft.booking.id} locale={locale}/>}{draft.booking.qrImage&&<picture><img src={draft.booking.qrImage} width={240} height={240} alt={draft.booking.state==='CONFIRMED_DEV'&&!productionCopy?t('開発予約QR','Development booking QR'):t('予約QR','Booking QR')}/></picture>}{!['CONFIRMED_DEV','CONFIRMED','CANCELLED'].includes(draft.booking.state)&&<button disabled={busy} onClick={()=>void run(()=>request('/reconcile',{}))}>{t('決済状況を更新','Check for a payment update')}</button>}</div>}
+ {!staff&&draft.booking&&!['COMPLETED_DEV','COMPLETED'].includes(draft.booking.state)&&<BookingCancellation locale={locale} status={draft.booking.cancellation} onCancelled={async()=>{await run(()=>request('/draft'));}}/>}
  {(()=>{const body=<>
   {!draft.locked&&<button className="guest-secondary-button" disabled={busy} onClick={()=>backToStep(1)}>{t('内容を変更','Change details')}</button>}
   {draft.estimate&&<dl className="guest-price"><dt>{t('小計','Subtotal')}</dt><dd>{money(draft.estimate.subtotalJpy)}</dd>{Boolean(draft.estimate.bundleDiscountJpy)&&<><dt>{t('ウェアセット割引','Wear set discount')}</dt><dd className="guest-price-discount">{discountYen(ja,draft.estimate.bundleDiscountJpy)}</dd></>}{Boolean(draft.estimate.advanceDiscountJpy)&&<><dt>{t('事前決済割引','Advance payment discount')}</dt><dd className="guest-price-discount">{discountYen(ja,draft.estimate.advanceDiscountJpy)}</dd></>}<dt>{t('お支払い金額（税込）','Total to pay (tax included)')}</dt><dd><strong>{money(draft.estimate.totalJpy)}</strong></dd></dl>}
@@ -421,6 +430,6 @@ export function GuestBooking({locale,legal}:{locale:Locale;legal?:GuestLegalLink
   {draft.hold&&(confirmedBooking?<p className="guest-hint">{t('予約確定済みのため、ご利用期間の在庫は確保されています。','Your booking is confirmed, so stock is reserved for your rental period.')}</p>:draft.hold.state==='ACTIVE'&&!draft.booking&&<p className="guest-hint">{t('在庫の確保期限','Stock reserved until')}: <time dateTime={draft.hold.expiresAt}>{jstTime(draft.hold.expiresAt)}</time></p>)}{draft.quote&&!draft.booking&&<p className="guest-hint">{t('保存済みの見積','Saved estimate')}: {money(draft.quote.snapshot.totalJpy)} / {quoteValidityText(ja,draft.quote.validity)}</p>}</>;
  return draft.booking?<details className="guest-secondary"><summary>{t('予約内容の詳細','Booking details')}</summary>{body}</details>:body;})()}
  </section>}
- <div className="guest-footer-actions"><button className="guest-secondary-button" disabled={busy} onClick={()=>void run(()=>request('/draft'))}>{t('最新の内容を確認','Refresh details')}</button><button className="guest-secondary-button" disabled={busy} onClick={closeContext}>{t('この予約画面を閉じる','Close this booking screen')}</button></div>
- </>}</main><details className="guest-secondary guest-main"><summary>{t('予約をお持ちの方はこちら','Already have a booking?')}</summary><GuestRecovery locale={locale}/></details></div>;
+ <div className="guest-footer-actions"><button className="guest-secondary-button" disabled={busy} onClick={()=>void run(()=>request('/draft'))}>{t('最新の内容を確認','Refresh details')}</button><button className="guest-secondary-button" disabled={busy} onClick={closeContext}>{staff?t('新しい注文を始める','Start a new order'):t('この予約画面を閉じる','Close this booking screen')}</button></div>
+ </>}</main>{!staff&&<details className="guest-secondary guest-main"><summary>{t('予約をお持ちの方はこちら','Already have a booking?')}</summary><GuestRecovery locale={locale}/></details>}</div>;
 }

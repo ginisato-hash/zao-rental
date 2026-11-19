@@ -12,6 +12,7 @@ type Item={key:StaffKey;href:string|((a:ShellAccess)=>string);match:RegExp;show:
 // Booqable sidebar order. Only destinations that exist as working screens are listed; nothing is a placeholder.
 const TOP:Item[]=[
  {key:'dashboard',href:a=>a.bookingView?'/staff':'/staff/today',match:/^\/staff(\/today)?\/?$/,show:()=>true},
+ {key:'calendar',href:'/staff/calendar',match:/^\/staff\/calendar/,show:a=>a.bookingView},
 ];
 const WORK:Item[]=[
  // Orders group: the order list for booking viewers; quote-only or hold-only staff land on the screen they can use.

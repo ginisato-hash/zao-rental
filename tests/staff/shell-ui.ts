@@ -56,9 +56,9 @@ try{
  await check('the shell lists only working destinations in Booqable order with settings at the bottom',async()=>{
   await page.goto('/staff');const nav=page.getByRole('complementary');
   const labels=(await nav.getByRole('link').allInnerTexts()).map(s=>s.trim()).filter(Boolean);
-  const order=['ダッシュボード','予約','顧客','在庫','一括操作','スキャン','設定','サインアウト'].filter(l=>labels.includes(l));
+  const order=['ダッシュボード','カレンダー','予約','顧客','在庫','一括操作','スキャン','設定','サインアウト'].filter(l=>labels.includes(l));
   assert.deepEqual(labels.filter(l=>order.includes(l)),order);assert.ok(labels.includes('設定'));
-  for(const missing of ['カレンダー','書類','レポート'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
+  assert.ok(labels.includes('カレンダー'),'Calendar is a working page');for(const missing of ['書類','レポート'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
   assert.equal(await page.locator('html').getAttribute('lang'),'ja');
  });
  await check('dashboard: Going out / Coming back for today with the confirmed booking; tomorrow shows the pending one',async()=>{
@@ -68,6 +68,19 @@ try{
   await page.getByLabel('期間').selectOption('tomorrow');await page.waitForURL(/range=tomorrow/);await out.getByText('SYNTHETIC Shell Pending').waitFor();
   assert.ok(await out.getByText(/決済確認中|決済要確認/).count()>0,'payment-unsettled booking is not shown as reserved');
   await out.getByRole('link',{name:/SYNTHETIC Shell Pending/}).click();await page.waitForURL(url=>url.pathname==='/staff/orders/'+pendingId);await page.getByRole('heading',{name:'#'+pendingId.slice(0,8).toUpperCase()}).waitFor();
+ });
+ await check('calendar: item rows with the confirmed order on its date; a bar opens the same order; JA/EN and phone width',async()=>{
+  await page.goto('/staff/calendar?from='+businessDate);const grid=page.getByRole('region',{name:'カレンダー'});await grid.waitFor();await page.screenshot({path:`${shots}/calendar-ja-1440.png`});
+  const bar=grid.getByRole('link',{name:new RegExp('#'+confirmedId.slice(0,8).toUpperCase())}).first();await bar.waitFor();
+  assert.match((await bar.getAttribute('title'))??'',/予約|貸出中/);await page.screenshot({path:`${shots}/calendar-ja-1440.png`});
+  await page.getByRole('group',{name:'表示期間'}).getByRole('button',{name:'2週間'}).click();await page.waitForURL(/days=14/);await grid.waitFor();
+  await bar.click();await page.waitForURL(u=>u.pathname==='/staff/orders/'+confirmedId);
+  await page.getByRole('button',{name:'English'}).click();await page.goto('/staff/calendar?from='+businessDate);
+  await page.getByRole('region',{name:'Calendar'}).waitFor();await page.getByText('Planned (booked, hold)').waitFor();await page.screenshot({path:`${shots}/calendar-en-1440.png`});
+  await page.getByRole('button',{name:'日本語'}).click();await page.getByRole('heading',{name:'カレンダー'}).waitFor();
+  await page.setViewportSize({width:390,height:844});await page.goto('/staff/calendar?from='+businessDate);await page.getByRole('region',{name:'カレンダー'}).waitFor();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'no horizontal page scroll');await page.screenshot({path:`${shots}/calendar-ja-390.png`});
+  await page.setViewportSize({width:1440,height:900});
  });
  await check('orders: tabs, status filter and server totals; row opens the order',async()=>{
   await page.goto('/staff/orders');const table=page.getByRole('table');await table.getByText('SYNTHETIC Shell Confirmed').waitFor();

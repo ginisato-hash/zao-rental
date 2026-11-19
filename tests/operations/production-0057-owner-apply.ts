@@ -119,7 +119,7 @@ try{
  const owners60=roles60After.owners.filter((o:{k:string})=>!roles60.owners.some((p:{k:string})=>p.k===o.k));
  assert.ok(owners60.length>0&&owners60.every((o:{o:string})=>o.o===OWNER),'every new 0059/0060/0061 object is owner-owned');
  assert.equal((await q('SELECT count(*)::int n FROM rental_terms_bundles'))[0].n,1);
- for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
+ for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests','staff_order_drafts'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
  const ops=DB+'_operations';assert.equal((await q("SELECT has_function_privilege($1,'staff_inbox_list(text[],boolean,timestamptz,uuid,integer)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0060 grant step');
  const c4=await owner.connect();try{await c4.query('BEGIN');for(const sql of productionStaffNotificationGrants(DB,ops))await c4.query(sql);await c4.query('COMMIT');}catch(e){await c4.query('ROLLBACK').catch(()=>{});throw e;}finally{c4.release();}
  for(const fn of STAFF_NOTIFICATION_FUNCTIONS)assert.equal((await q("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[ops,fn]))[0].ok,true,fn);

@@ -57,6 +57,7 @@
     "test:staff-home-ui": "node --import tsx tests/staff/home-ui.ts",
     "test:staff-shell-ui": "node --import tsx tests/staff/shell-ui.ts --built",
     "test:staff-acceptance-ui": "node --import tsx tests/staff/acceptance-ui.ts --built",
+    "test:staff-order": "node --experimental-test-module-mocks --import tsx tests/operations/staff-order-postgres.ts",
     "test:orders": "node --import tsx tests/operations/orders-postgres.ts",
     "test:inventory-read": "node --import tsx tests/operations/inventory-read-postgres.ts",
     "test:customers": "node --import tsx tests/operations/customers-postgres.ts",

@@ -38,7 +38,12 @@ CREATE TRIGGER customer_link_requests_immutable BEFORE UPDATE OR DELETE ON custo
 CREATE FUNCTION customer_capture_booking() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE selected uuid;cid uuid;BEGIN
  IF NEW.contact ? 'customerProfileId' THEN
   selected:=(NEW.contact->>'customerProfileId')::uuid;
-  IF NOT EXISTS(SELECT 1 FROM customer_profiles WHERE id=selected) THEN RAISE EXCEPTION 'CUSTOMER_PROFILE_NOT_FOUND' USING ERRCODE='23503';END IF;
+  -- A staff selection is re-checked here, in the booking-creation transaction: the creating actor must hold a live session
+  -- (zao.session, set by the server from the verified stamp), BOOKING_CREATE for both stations of this booking, and must be
+  -- able to see at least one booking already linked to the chosen customer (BOOKING_VIEW + station).
+  IF current_setting('zao.actor',true) IS DISTINCT FROM NEW.owner_id THEN RAISE EXCEPTION 'OPS_FORBIDDEN' USING ERRCODE='42501';END IF;
+  PERFORM ops_assert_actor('BOOKING_CREATE',ARRAY[NEW.conditions->>'pickupStore',NEW.conditions->>'returnStore'],NEW.owner_id);
+  IF NOT EXISTS(SELECT 1 FROM customer_booking_links l WHERE l.customer_id=selected AND customer_booking_visible(NEW.owner_id,l.booking_id)) THEN RAISE EXCEPTION 'CUSTOMER_PROFILE_NOT_VISIBLE' USING ERRCODE='42501';END IF;
   INSERT INTO customer_booking_links(booking_id,customer_id,source,linked_by) VALUES(NEW.id,selected,'STAFF_SELECTED',NEW.owner_id);
  ELSE
   INSERT INTO customer_profiles(display_name,email,created_by) VALUES(coalesce(nullif(btrim(NEW.contact->>'displayName'),''),'—'),nullif(NEW.contact->>'email',''),NEW.owner_id) RETURNING id INTO cid;
@@ -88,3 +93,20 @@ DECLARE v_actor text:=current_setting('zao.actor',true);prior customer_link_requ
  RETURN out;
 END$$;
 REVOKE ALL ON FUNCTION customer_link_legacy(uuid,uuid,text) FROM PUBLIC;
+
+-- Staff New order drafts (consolidated order §3/§6). Same shape as guest_drafts so the shared booking flow runs unchanged,
+-- but bound to the staff member and the server-verified session, never to a guest context. One open draft per session;
+-- an optional explicitly chosen customer (re-checked again when the booking is created).
+CREATE TABLE staff_order_drafts(
+ id uuid PRIMARY KEY,
+ context_id text NOT NULL REFERENCES staff_members(id),
+ session_id text NOT NULL CHECK(length(session_id) BETWEEN 1 AND 200),
+ revision integer NOT NULL DEFAULT 1 CHECK(revision>0),
+ input jsonb,preview_key uuid,preview_id uuid REFERENCES recommendation_previews(id),selection jsonb,selection_key uuid,
+ booking_key uuid NOT NULL,booking_id uuid REFERENCES rental_bookings(id),
+ customer_profile_id uuid REFERENCES customer_profiles(id),
+ closed_at timestamptz,
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE UNIQUE INDEX staff_order_drafts_open ON staff_order_drafts(context_id,session_id) WHERE closed_at IS NULL;
+REVOKE ALL ON staff_order_drafts FROM PUBLIC;

@@ -34,8 +34,9 @@ try{
  const original=productionConfiguration(x.input().configuration);
  config=productionConfiguration({...original,flags:{...original.flags,payment:true},payment:{provider:'SQUARE',environment:'PRODUCTION',merchantId:'SYNTHETIC-PREPARE-MERCHANT',locations:{MOUNTAIN_BASE:'SYNTHETIC-MOUNTAIN',ONSEN_BASE:'SYNTHETIC-ONSEN'}}});
  // The development flow role lacks the commercial book read used by source(); the
- // existing Production operations plan already grants it. Add it only in this owned fixture.
- await x.db.pool.query(`GRANT SELECT ON price_books TO ${x.flow.flowDb.user}`);
+ // existing Production operations plan already grants it (terms acceptance: the 0061 customer grant set, re-checked at
+ // payment start). Add them only in this owned fixture.
+ await x.db.pool.query(`GRANT SELECT ON price_books,rental_terms_acceptances TO ${x.flow.flowDb.user}`);
  const authority=issueCommercialPriceAuthority(identity),calls:PaymentRequest[]=[];
  const gateway={kind:'SQUARE_PRODUCTION' as const,async create(r:PaymentRequest):Promise<PaymentObservation>{calls.push(r);return {providerId:'synthetic-'+r.attemptId,referenceId:r.bookingId,idempotencyKey:r.idempotencyKey,merchantId:r.merchantId,locationId:r.locationId,amountJpy:r.amountJpy,currency:'JPY',status:'PENDING',updatedAt:x.now().toISOString(),completedAt:null};},async lookup(){throw Error('UNEXPECTED_PROVIDER_LOOKUP');}};
  const ledger=new LedgerService(x.roles.ledgerPool,ledgerPrincipal(x.principal),(c,s,a)=>verifyLedgerWrite(c,x.roles.authPool,x.signed.identity,s,a),(r,id,v)=>reconcileLedgerProtection(x.roles.transferPool,x.roles.authPool,x.signed.identity,r,id,v));

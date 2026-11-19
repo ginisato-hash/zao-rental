@@ -81,3 +81,40 @@
 .sx-field select{min-height:36px;border-radius:8px;border:1px solid var(--sx-line);padding:0 10px;font:inherit;background:var(--sx-bg);color:var(--sx-text)}
 .sx-status{min-height:20px;color:var(--sx-text2)}
 .sx-seg button[aria-selected=true]{background:var(--sx-bg);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+
+/* ── Staff scope: Apple look for every screen inside the shell (Issue #47 consolidated order §2).
+   The public SALOMON tokens are remapped ONLY inside .sx, so existing staff components that read var(--d)/var(--ink)/…
+   switch to Apple type and colours without touching the public site. Legacy uppercase/2px/square treatments are
+   normalised here; component-specific meaning (danger, selected) keeps its own colour. */
+.sx{--d:var(--sx-font);--b:var(--sx-font);--ink:var(--sx-text);--snow:var(--sx-bg);--paper:var(--sx-bg2);--fog:var(--sx-line);--sub:var(--sx-text2);--mute:var(--sx-text2);--dim:var(--sx-text);--acc:var(--sx-blue);--signal:#d70015}
+@media (prefers-color-scheme:dark){.sx{--signal:#ff453a}}
+.sx-content :is(h1,h2,h3,h4,legend,th,label,button,a,.st-lbl,.st-tag,.st-link,.st-btn,.st-cta,summary){text-transform:none;letter-spacing:-.01em}
+.sx-content :is(h1){font:600 32px/1.125 var(--sx-font)}
+.sx-content :is(h2){font:600 21px/1.2 var(--sx-font)}
+.sx-content :is(h3){font:600 17px/1.3 var(--sx-font)}
+.sx-content :is(section,fieldset){border-top-width:1px;border-top-color:var(--sx-line)}
+.sx-content legend{font:600 17px/1.3 var(--sx-font)}
+.sx-content label{font:500 13px/1.4 var(--sx-font);color:var(--sx-text)}
+.sx-content :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){border:1px solid var(--sx-line)!important;border-radius:8px;background:var(--sx-bg);font:400 15px/1.3 var(--sx-font);min-height:36px}
+.sx-content :is(input,select,textarea):focus-visible{outline:3px solid rgba(0,125,250,.6);outline-offset:1px}
+.sx-content :is(input[type=checkbox],input[type=radio]){accent-color:var(--sx-blue)}
+.sx-content :is(button,.st-btn):not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-seg button){border:0;border-radius:980px;min-height:36px;padding:0 18px;background:var(--sx-bg2);color:var(--sx-text);font:400 14px/1 var(--sx-font)}
+.sx-content :is(button,.st-btn):not(.sx-link):not(:disabled):hover{background:#e8e8ed}
+.sx-content :is(button[type=submit],.st-cta,.sx-btn--primary):not(:disabled){background:var(--sx-blue);color:#fff}
+.sx-content :is(button[type=submit],.st-cta,.sx-btn--primary):not(:disabled):hover{background:var(--sx-blue-h)}
+.sx-content :is(button.st-danger,.st-btn--danger){background:transparent;color:var(--signal);box-shadow:inset 0 0 0 1px var(--signal)}
+.sx-content :is(button.st-danger,.st-btn--danger):not(:disabled):hover{background:var(--signal);color:#fff}
+.sx-content .st-cta{border-radius:980px;min-height:44px;font:500 15px/1 var(--sx-font)}
+.sx-content .st-tag{border:1px solid var(--sx-line);border-radius:6px;font:600 12px/1 var(--sx-font)}
+.sx-content .st-link{border-bottom:0;font:400 15px/1.3 var(--sx-font);color:var(--sx-blue)}
+.sx-content .st-lbl{font:600 12px/1.3 var(--sx-font);color:var(--sx-text2)}
+.sx-content a:not(.sx-btn):not(.st-cta){color:var(--sx-blue);text-decoration:none;font-weight:inherit}
+.sx-content a:not(.sx-btn):not(.st-cta):hover{text-decoration:underline}
+.sx-content table:not(.sx-table) :is(th){border-top:0;border-bottom:1px solid var(--sx-line);font:600 12px/1.3 var(--sx-font);color:var(--sx-text2)}
+.sx-content table:not(.sx-table) :is(td){border-bottom:1px solid var(--sx-line)}
+.sx-content [role=alert]{border-left:0;border-radius:10px;background:#fff4f4;color:#b00020;padding:10px 14px;font-weight:500}
+@media (prefers-color-scheme:dark){.sx-content [role=alert]{background:#3a1d1d;color:#ffb4ab}}
+.sx-content :is(.ledger-list,.ledger-detail){border:1px solid var(--sx-line)!important;border-radius:14px}
+.sx-content .ledger-shell :is(input,select){border-width:1px!important;border-radius:8px}
+/* Print: content only, no shell chrome. */
+@media print{.sx-side,.sx-top,.sx-scrim{display:none!important}.sx{display:block}.sx-content{padding:0;max-width:none}}

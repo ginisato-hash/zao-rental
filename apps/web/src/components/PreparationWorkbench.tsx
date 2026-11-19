@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocale} from './staff-locale';
 import {useState} from 'react';
 import {DIN_REFERENCE} from '../../../../packages/contracts/src/din';
 import {memberDin,recordPreparation,type PreparationMember,type PreparationInput,type PreparationEvidence} from '../../../../packages/contracts/src/preparation';
@@ -6,7 +7,7 @@ import {centimetres} from '../../../../packages/contracts/src/recommendation';
 import {shortRef} from './staff-labels';
 import './preparation.css';
 export function PreparationWorkbench({members,customerName,ready,evidence,disabled,onPrepare}:{members:PreparationMember[];customerName:string;ready:boolean;evidence?:PreparationEvidence;disabled:boolean;onPrepare:(input:PreparationInput)=>void}){
- const [en,setEn]=useState(false),t=(j:string,e:string)=>en?e:j;
+ const [shared]=[useStaffLocale()],en=shared.locale==='en',setEn=(v:boolean)=>shared.setLocale(v?'en':'ja'),t=(j:string,e:string)=>en?e:j;
  const [rows,setRows]=useState<PreparationInput['members']>(()=>members.map(m=>({memberKey:m.memberKey,bootAssetId:m.bootAssetId,bslMm:m.bslMm,ownBootConfirmed:false,equipmentConfirmed:false,bindingCompatibilityConfirmed:false,bindingSetupConfirmed:false,poleSelectedCm:m.needsPole?centimetres(m.items.find(i=>i.family==='POLE')?.size??'')??m.poleSuggestedCm:null,wearPrepared:false})));
  const update=(n:number,patch:Partial<PreparationInput['members'][number]>)=>setRows(old=>old.map((r,i)=>i===n?{...r,...patch}:r));
  const input:PreparationInput={version:'ZAO_PREP_V2',members:rows};let complete=false;

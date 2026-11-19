@@ -7,7 +7,8 @@ import {localStorageFlag} from './StaffInboxBell';
 
 type Pref={emailEnabled:boolean;locale:StaffLocale;email:string};
 /** Settings (bottom of the Booqable sidebar): own notification preferences and links to staff administration. */
-export function StaffSettings({locale,stamp,manageStaff}:{locale:StaffLocale;stamp:string;manageStaff:boolean}){
+import type {ShellAccess} from './StaffShell';
+export function StaffSettings({locale,stamp,access}:{locale:StaffLocale;stamp:string;access:ShellAccess}){
  const t=(k:StaffKey)=>st(locale,k);
  const [pref,setPref]=useState<Pref|null>(null),[draft,setDraft]=useState<{emailEnabled:boolean;locale:StaffLocale}|null>(null),[status,setStatus]=useState(''),[busy,setBusy]=useState(false),[failed,setFailed]=useState(false);
  const [alerts,setAlerts]=useState(false),[blocked,setBlocked]=useState(false);
@@ -41,8 +42,13 @@ export function StaffSettings({locale,stamp,manageStaff}:{locale:StaffLocale;sta
    <label className="sx-check"><input type="checkbox" checked={alerts} disabled={blocked} onChange={e=>void toggleAlerts(e.target.checked)}/><span>{t('browserAlerts')}<p className="sx-help">{blocked?t('browserBlocked'):t('browserAlertsHelp')}</p></span></label>
   </section>
   <section style={{marginTop:24}}><ul className="sx-links">
-   {manageStaff&&<li><Link href="/staff/users">{t('staffUsers')}</Link></li>}
+   {access.manageStaff&&<li><Link href="/staff/users">{t('staffUsers')}</Link></li>}
    <li><Link href="/staff/password">{t('password')}</Link></li>
+   {access.priceEdit&&<li><Link href="/admin/prices">{t('prices')}</Link></li>}
+   <li><Link href="/staff/content">{t('content')}</Link></li>
+   {access.bookingView&&<li><Link href="/admin/notifications">{t('customerMail')}</Link></li>}
+   {access.operationsView&&<li><Link href="/admin/ops">{t('opsConsole')}</Link></li>}
+   {access.operationsView&&<li><Link href="/admin/launch">{t('launch')}</Link></li>}
   </ul></section>
  </main></StaffSessionBoundary>;
 }

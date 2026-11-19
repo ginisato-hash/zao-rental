@@ -26,7 +26,7 @@ const D={
  emailHelp:['予約番号・店舗・受取日時・人数と、ログインが必要な詳細リンクだけを送ります。','Only the booking number, station, pickup date and party size are sent, with a link that requires sign-in.'],
  emailLocale:['メールの言語','Email language'],save:['保存','Save'],saved:['保存しました。','Saved.'],
  saveFailed:['保存できませんでした。もう一度お試しください。','Could not save. Please try again.'],
- staffUsers:['スタッフと権限','Staff and permissions'],stations:['店舗','Stations'],
+ staffUsers:['スタッフと権限','Staff and permissions'],prices:['料金','Prices'],content:['公開コンテンツ','Public content'],customerMail:['顧客メール配送','Customer email delivery'],opsConsole:['運用状況（例外）','Operations status'],launch:['公開準備状況','Launch readiness'],stations:['店舗','Stations'],
  search:['予約を検索','Search orders'],
 } as const;
 export type StaffKey=keyof typeof D;

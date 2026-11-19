@@ -8,7 +8,7 @@ const D={
  newOrder:['新規予約','New order'],dashboard:['ダッシュボード','Dashboard'],calendar:['カレンダー','Calendar'],
  orders:['予約','Orders'],customers:['顧客','Customers'],inventory:['在庫','Inventory'],documents:['書類','Documents'],
  reports:['レポート','Reports'],bulk:['一括操作','Bulk operations'],scan:['スキャン','Scan'],settings:['設定','Settings'],
- signOut:['ログアウト','Sign out'],password:['パスワード変更','Change password'],menu:['メニュー','Menu'],close:['閉じる','Close'],
+ signOut:['サインアウト','Sign out'],password:['パスワード変更','Change password'],menu:['メニュー','Menu'],close:['閉じる','Close'],
  language:['表示言語','Language'],notifications:['通知','Notifications'],
  inboxTitle:['新しい予約','New bookings'],inboxEmpty:['未確認の予約はありません。','No unacknowledged bookings.'],
  inboxAllEmpty:['予約通知はまだありません。','No booking notifications yet.'],

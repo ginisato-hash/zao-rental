@@ -56,7 +56,7 @@ try{
  await check('the shell lists only working destinations in Booqable order with settings at the bottom',async()=>{
   await page.goto('/staff');const nav=page.getByRole('complementary');
   const labels=(await nav.getByRole('link').allInnerTexts()).map(s=>s.trim()).filter(Boolean);
-  const order=['ダッシュボード','予約','在庫','一括操作','設定','ログアウト'].filter(l=>labels.includes(l));
+  const order=['ダッシュボード','予約','在庫','一括操作','設定','サインアウト'].filter(l=>labels.includes(l));
   assert.deepEqual(labels.filter(l=>order.includes(l)),order);assert.ok(labels.includes('設定'));
   for(const missing of ['カレンダー','顧客','書類','レポート','スキャン'])assert.ok(!labels.includes(missing),'no placeholder '+missing);
   assert.equal(await page.locator('html').getAttribute('lang'),'ja');

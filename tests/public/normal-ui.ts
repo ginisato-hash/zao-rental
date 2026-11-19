@@ -162,7 +162,7 @@ try{
   await fillGuestProfile(page,'ja');await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByLabel('全員の内容を確認しました').check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(page.getByRole('region',{name:'全員分の確認'})).toContainText('お支払い金額');assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // CL-02: no wear items and advance was never requested in this flow, so both adjustment
   // rows must stay hidden -- only the subtotal and group-total rows are present.
-  await expect(page.locator('dl.guest-price dt')).toHaveText(['小計','お支払い金額']);
+  await expect(page.locator('dl.guest-price dt')).toHaveText(['小計','お支払い金額（税込）']);
   await expect(page.locator('dl.guest-price')).not.toContainText('ウェアセット割引');
   await expect(page.locator('dl.guest-price')).not.toContainText('事前決済調整');
   await page.screenshot({path:'.local/screenshots/guest-review-mobile.png',fullPage:true});
@@ -306,7 +306,7 @@ try{
   // no wear items are selected here, so the wear-adjustment row must stay absent.
   const jaCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});jaCtx.setDefaultTimeout(15000);const ja=await jaCtx.newPage();last=ja;
   await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(ja,'ja');await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
-  await expect(ja.locator('dl.guest-price dt')).toHaveText(['小計','事前決済割引','お支払い金額']);
+  await expect(ja.locator('dl.guest-price dt')).toHaveText(['小計','事前決済割引','お支払い金額（税込）']);
   await expect(ja.locator('dl.guest-price')).not.toContainText('ウェアセット割引');
   const advanceRowValue=await ja.locator('dl.guest-price dd').nth(1).innerText();assert.notEqual(advanceRowValue.trim(),'');assert.doesNotMatch(advanceRowValue,/¥0(?:[^0-9]|$)/);
   assert.ok(await ja.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -325,7 +325,7 @@ try{
   await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(en,'en');await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   // Match the human-readable English recommendation label.
   await en.getByRole('radio',{name:/RECOMMENDED/i}).check();await en.getByLabel('I have checked everyone’s selections').check();await en.getByRole('button',{name:'Review the whole group',exact:true}).click();await expect(en.getByRole('region',{name:'Group review'})).toBeVisible();
-  await expect(en.locator('dl.guest-price dt')).toHaveText(['Subtotal','Total to pay']);
+  await expect(en.locator('dl.guest-price dt')).toHaveText(['Subtotal','Total to pay (tax included)']);
   await expect(en.locator('dl.guest-price')).not.toContainText('Wear set discount');
   await expect(en.locator('dl.guest-price')).not.toContainText('Advance payment discount');
   assert.ok(await en.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

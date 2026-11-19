@@ -50,7 +50,7 @@ try{
   await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');await expect(warning).toBeVisible();
   await fillGuestProfile(p,locale);await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(t('全員の内容を確認しました','I have checked everyone’s selections')).check();await p.getByLabel(t('事前に支払って5%OFFを利用する','Use the 5% advance payment discount')).check();await capture(p,locale+'-book-candidate',!ja);
   await p.getByRole('button',{name:t('全員分の最終確認へ','Review the whole group'),exact:true}).click();await expect(p.getByRole('region',{name:t('全員分の確認','Group review')})).toBeVisible();
-  await p.getByLabel(t('お名前','Name'),{exact:true}).fill('Aki Sato');await p.getByLabel(t('メール','Email'),{exact:true}).fill('aki@example.invalid');await p.getByRole('checkbox',{name:ja?/利用開始48時間前/:/I accept the cancellation policy/}).check();
+  await p.getByLabel(t('お名前','Name'),{exact:true}).fill('Aki Sato');await p.getByLabel(t('メール','Email'),{exact:true}).fill('aki@example.invalid');await p.getByRole('checkbox',{name:ja?/利用規約とキャンセル・返金条件を確認し/:/I have read and agree to the Rental Terms/}).check();
   // R66: a mistyped confirmation copy blocks checkout client-side (no request); a trimmed/case-different copy matches;
   // the confirmation value never enters the checkout payload (contact shape unchanged).
   const checkouts:Record<string,unknown>[]=[];p.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/guest/checkout')checkouts.push(r.postDataJSON());});

@@ -104,6 +104,15 @@ try{
   await x.clock('2035-01-03T08:00:00+09:00');
   const week=await orders.dashboard({store,range:'next7'});assert.equal(week.goingOutTotal,week.goingOut.length);assert.equal(week.cap,300);assert.ok(week.comingBackTotal>=1);
  });
+ await check('read-only detail: view-only staff can open it; another station cannot; contract snapshot is shown',async()=>{
+  await writeAccount(x.roles.authPool,x.bp,undefined,{email:'orders-viewer@example.invalid',password:x.password,displayName:'SYNTHETIC Orders Viewer',active:true,role:'VIEWER',scope:'ASSIGNED',storeIds:[store],permissions:{BOOKING_VIEW:true}});
+  const viewer=new OrdersService(new OperationsContext(ops!.operationsPool,x.roles.authPool,(await x.login('orders-viewer@example.invalid')).identity));
+  const d=await viewer.detail(out.booking.id);assert.equal(d.order.id,out.booking.id);assert.equal(d.order.status,'INSPECTION_PENDING');
+  assert.ok(d.loans.length>0&&d.loans.every(l=>l.state==='RECEIVED'));assert.equal(d.cancellationPolicy?.policyVersion,'ZAO_CANCELLATION_V1');
+  assert.equal(d.terms,null,'fixture bookings predate a V2 acceptance');
+  if(store!=='ONSEN_BASE')await assert.rejects(onsen.detail(out.booking.id),{code:'NOT_FOUND'},'another station gets not-found, not a hint that it exists');
+  await assert.rejects(viewer.detail('not-a-uuid'),{code:'INVALID_INPUT'});await assert.rejects(viewer.detail(randomUUID()),{code:'NOT_FOUND'});
+ });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,500),at:(e as Error).stack?.split('\n').filter(l=>/orders-postgres|amendment-service|context\.ts/.test(l)).slice(0,4).join(' | ')}));}
 finally{await ops?.close();await custody?.close();await x.close();}

@@ -168,6 +168,18 @@ CREATE FUNCTION staff_notification_preference(p_enabled boolean,p_locale text) R
 END$$;
 REVOKE ALL ON FUNCTION staff_notification_preference(boolean,text) FROM PUBLIC;
 
+-- Read-only contract facts for the staff order detail: which terms bundle was accepted (version, locale, time) and the
+-- cancellation snapshot. Same visibility rule as the inbox: live session, BOOKING_VIEW, pickup OR return station visible.
+CREATE FUNCTION staff_order_contract(p_booking uuid) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE actor text:=current_setting('zao.actor',true);h record;BEGIN
+ PERFORM ops_assert_actor('BOOKING_VIEW','{}'::text[],actor);
+ SELECT coalesce(i.pickup_store,b.conditions->>'pickupStore') ps,coalesce(i.return_store,b.conditions->>'returnStore') rs INTO h FROM rental_bookings b LEFT JOIN inventory_holds i ON i.id=b.hold_id WHERE b.id=p_booking;
+ IF NOT FOUND OR NOT (staff_can_view_store(actor,h.ps) OR staff_can_view_store(actor,h.rs)) THEN RAISE EXCEPTION 'OPS_FORBIDDEN' USING ERRCODE='42501';END IF;
+ RETURN jsonb_build_object(
+  'terms',(SELECT jsonb_build_object('version',a.version,'locale',a.locale,'acceptedAt',a.accepted_at) FROM rental_terms_acceptances a WHERE a.booking_id=p_booking),
+  'cancellationPolicy',(SELECT jsonb_build_object('policyVersion',c.policy_version,'freeCancellationUntil',c.free_cancellation_until) FROM booking_cancellation_policies c WHERE c.booking_id=p_booking));
+END$$;
+REVOKE ALL ON FUNCTION staff_order_contract(uuid) FROM PUBLIC;
+
 -- Delivery bookkeeping, same semantics as notification_claim/settle/unknown/reconciled/due.
 CREATE FUNCTION staff_notification_claim(p_id uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE o staff_notification_outbox;t timestamptz;BEGIN
  SELECT * INTO o FROM staff_notification_outbox WHERE id=p_id FOR UPDATE;IF NOT FOUND THEN RETURN NULL;END IF;t:=inventory_clock();

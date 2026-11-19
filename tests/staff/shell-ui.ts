@@ -67,7 +67,7 @@ try{
   await page.screenshot({path:`${shots}/dashboard-ja-1440.png`});
   await page.getByLabel('期間').selectOption('tomorrow');await page.waitForURL(/range=tomorrow/);await out.getByText('SYNTHETIC Shell Pending').waitFor();
   assert.ok(await out.getByText(/決済確認中|決済要確認/).count()>0,'payment-unsettled booking is not shown as reserved');
-  await out.getByRole('link',{name:/SYNTHETIC Shell Pending/}).click();await page.waitForURL(url=>url.searchParams.get('booking')===pendingId);
+  await out.getByRole('link',{name:/SYNTHETIC Shell Pending/}).click();await page.waitForURL(url=>url.pathname==='/staff/orders/'+pendingId);await page.getByRole('heading',{name:'#'+pendingId.slice(0,8).toUpperCase()}).waitFor();
  });
  await check('orders: tabs, status filter and server totals; row opens the order',async()=>{
   await page.goto('/staff/orders');const table=page.getByRole('table');await table.getByText('SYNTHETIC Shell Confirmed').waitFor();

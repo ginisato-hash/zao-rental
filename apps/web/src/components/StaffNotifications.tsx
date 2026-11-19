@@ -39,7 +39,7 @@ export function StaffNotifications({locale,stamp,stores}:{locale:StaffLocale;sta
   {items.length>0&&<div className="sx-card" style={{overflowX:'auto'}}><table className="sx-table">
    <thead><tr><th>{locale==='en'?'Order':'予約番号'}</th><th>{t('customers')}</th><th>{locale==='en'?'Status':'状態'}</th><th>{locale==='en'?'Pickup':'受取'}</th><th>{t('stations')}</th><th>{locale==='en'?'Total':'金額'}</th><th>{locale==='en'?'Received':'受信'}</th><th/></tr></thead>
    <tbody>{items.map(i=><tr key={i.id}>
-    <td><Link href={`/staff/rentals?booking=${encodeURIComponent(i.bookingId)}`}>{i.bookingId.slice(0,8).toUpperCase()}</Link></td>
+    <td><Link href={`/staff/orders/${encodeURIComponent(i.bookingId)}`}>{i.bookingId.slice(0,8).toUpperCase()}</Link></td>
     <td>{i.customer??'—'}<br/><small className="sx-help">{i.people} {t('people')}</small></td>
     <td>{i.kind==='PAYMENT_REVIEW'?<span className="sx-tag sx-tag--warn">{t('paymentReview')}</span>:i.source==='HISTORY_IMPORT'?t('imported'):t('confirmed')}{currentStateNote(locale,i.kind,i.state)&&<><br/><small className="sx-tag sx-tag--warn">{t('nowState')}{currentStateNote(locale,i.kind,i.state)}</small></>}</td>
     <td>{i.startDate}{i.endDate!==i.startDate?` – ${i.endDate}`:''}</td><td>{STORE_LABEL[i.store]??'—'}</td><td>{yen(i.totalJpy,locale)}</td>

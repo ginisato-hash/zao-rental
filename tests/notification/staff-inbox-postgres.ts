@@ -83,7 +83,7 @@ try{
  await check('worker sends one staff email per recipient with no customer name or amount, and replays are inert',async()=>{
   const before=adapter.calls;const r=await worker.runBatch(20,deadline());assert.ok(r.processed>=5);
   const sent=(await x.db.pool.query("SELECT count(*)::int n FROM staff_notification_outbox WHERE status='SENT'")).rows[0].n;assert.equal(sent,5);assert.equal(adapter.calls-before,5);
-  for(const m of adapter.accepted.values()){assert.equal(m.recipient,'flow-actor@example.invalid');assert.equal(m.eventType,'STAFF_BOOKING_CONFIRMED');assert.ok(!m.text.includes('SYNTHETIC Guest')&&!m.text.includes('synthetic-guest@')&&!/¥/.test(m.text));assert.match(m.text,/\/staff\/rentals\?booking=/);}
+  for(const m of adapter.accepted.values()){assert.equal(m.recipient,'flow-actor@example.invalid');assert.equal(m.eventType,'STAFF_BOOKING_CONFIRMED');assert.ok(!m.text.includes('SYNTHETIC Guest')&&!m.text.includes('synthetic-guest@')&&!/¥/.test(m.text));assert.match(m.text,/\/staff\/orders\/[0-9a-f-]{36}/);}
   await worker.runBatch(20,deadline());assert.equal(adapter.calls-before,5,'no duplicate send');
  });
  await check('lost response becomes UNKNOWN and lookup closes it without a second send',async()=>{

@@ -39,7 +39,7 @@ export function StaffDashboard({locale,stamp,stores}:{locale:StaffLocale;stamp:s
   catch{if(ticket===gen.current)setFailed([store,range,date].join('|'));}
  },[store,range,date,stamp]);
  useEffect(()=>{queueMicrotask(()=>void load());},[load]);
- const list=(rows:Row[],kind:'out'|'back')=>rows.length?<ul className="ox-rows">{rows.map(r=><li key={kind+r.id}><Link href={`/staff/rentals?booking=${encodeURIComponent(r.id)}`}>
+ const list=(rows:Row[],kind:'out'|'back')=>rows.length?<ul className="ox-rows">{rows.map(r=><li key={kind+r.id}><Link href={`/staff/orders/${encodeURIComponent(r.id)}`}>
   <span className="ox-time">{data&&data.from!==data.to&&<small>{fmtDate(locale,kind==='out'?r.startDate:r.endDate)}</small>}{kind==='out'?pickupTime(r.slot):returnTime(r.slot)}</span>
   <span className="ox-who"><b>{r.customer??'—'}</b><small>{r.people} {tx('people')} · <span className={'ox-status ox-status--'+statusTone(r.status)}>{statusLabel(locale,r.status)}</span>{(kind==='out'?r.lateOut:r.lateBack)&&<span className="ox-status ox-status--orange"> · {tx('viewLate')}</span>}</small></span>
   <span className="ox-ref"><b>#{r.ref}</b><small>{STORE_LABEL[kind==='out'?r.pickupStore:r.returnStore]??'—'}</small></span></Link></li>)}</ul>:<p className="sx-empty">{tx('none')}</p>;

@@ -51,7 +51,7 @@ export function StaffInboxBell({locale,stamp,stores}:{locale:StaffLocale;stamp:s
    {failed&&<p className="sx-alert" role="alert">{t('inboxUnavailable')} <button type="button" className="sx-link" onClick={()=>{delay.current=BASE;void sync();}}>{t('retry')}</button></p>}
    {page&&!page.items.length&&!failed&&<p className="sx-empty">{t('inboxEmpty')}</p>}
    {page&&page.items.length>0&&<ul className="sx-inbox">{page.items.map(i=><li key={i.id}>
-    <Link href={`/staff/rentals?booking=${encodeURIComponent(i.bookingId)}`} onClick={()=>setOpen(false)}>
+    <Link href={`/staff/orders/${encodeURIComponent(i.bookingId)}`} onClick={()=>setOpen(false)}>
      <span className={'sx-tag'+(i.kind==='PAYMENT_REVIEW'?' sx-tag--warn':'')}>{i.kind==='PAYMENT_REVIEW'?t('paymentReview'):i.source==='HISTORY_IMPORT'?t('imported'):t('confirmed')}</span>
      <b>{i.customer??'—'}</b>{currentStateNote(locale,i.kind,i.state)&&<span className="sx-tag sx-tag--warn">{t('nowState')}{currentStateNote(locale,i.kind,i.state)}</span>}<span>{STORE_LABEL[i.store]??i.store} · {i.startDate}{i.endDate!==i.startDate?` – ${i.endDate}`:''} · {i.people}{locale==='en'?' ':''}{t('people')}</span>
      <small>{jst(i.createdAt,locale)} JST</small>

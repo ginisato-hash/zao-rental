@@ -61,8 +61,8 @@ export function StaffOrders({locale,stamp,stores,canCreate}:{locale:StaffLocale;
     {data&&!data.rows.length&&!failed&&<p className="sx-empty">{tx('none')}</p>}
     {data&&data.rows.length>0&&<div className="sx-card ox-table-wrap"><table className="sx-table ox-table">
      <thead><tr><th>{tx('order')}</th><th>{tx('customer')}</th><th>{tx('status')}</th><th>{tx('pickup')}</th><th>{tx('ret')}</th><th className="ox-num">{tx('total')}</th><th>{tx('payment')}</th></tr></thead>
-     <tbody>{data.rows.map(r=><tr key={r.id} onClick={e=>{if(!(e.target as Element).closest('a'))router.push(`/staff/rentals?booking=${encodeURIComponent(r.id)}`);}}>
-      <td><Link href={`/staff/rentals?booking=${encodeURIComponent(r.id)}`}>#{r.ref}</Link></td>
+     <tbody>{data.rows.map(r=><tr key={r.id} onClick={e=>{if(!(e.target as Element).closest('a'))router.push(`/staff/orders/${encodeURIComponent(r.id)}`);}}>
+      <td><Link href={`/staff/orders/${encodeURIComponent(r.id)}`}>#{r.ref}</Link></td>
       <td>{r.customer??'—'}</td>
       <td><span className={'ox-status ox-status--'+statusTone(r.status)}>{statusLabel(locale,r.status)}</span>{(r.lateOut||r.lateBack)&&<span className="ox-status ox-status--orange"> · {tx('late')}</span>}</td>
       <td>{fmtDate(locale,r.startDate)}<br/><small className="sx-help">{STORE_LABEL[r.pickupStore]??'—'}</small></td>

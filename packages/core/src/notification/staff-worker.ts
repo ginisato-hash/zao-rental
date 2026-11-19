@@ -13,7 +13,7 @@ const EMAIL=/^[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+$/;
 export function renderStaffBookingNotification(m:Omit<Material,'id'|'recipient'>,origin:string){
  const ja=m.locale==='ja',store=(s:string)=>STORE_DISPLAY_NAMES[s as keyof typeof STORE_DISPLAY_NAMES]??s,slot=SLOT[m.slot]?.[m.locale]??m.slot;
  if(!/^https:\/\/[^/]+$|^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)||!/^\d{4}-\d{2}-\d{2}$/.test(m.startDate)||!/^\d{4}-\d{2}-\d{2}$/.test(m.endDate))throw Error('TEMPLATE_UNAVAILABLE');
- const ref=m.bookingId.slice(0,8).toUpperCase(),link=`${origin}/staff/rentals?booking=${encodeURIComponent(m.bookingId)}`;
+ const ref=m.bookingId.slice(0,8).toUpperCase(),link=`${origin}/staff/orders/${encodeURIComponent(m.bookingId)}`;
  const period=m.startDate===m.endDate?m.startDate:`${m.startDate} – ${m.endDate}`;
  const subject=ja?`新規予約 ${ref}｜${store(m.store)} ${m.startDate}`:`New booking ${ref} | ${store(m.store)} ${m.startDate}`;
  const text=(ja?[

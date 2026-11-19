@@ -107,6 +107,27 @@ export class OrdersService{
   });
  }
 
+ /** Read-only order detail for BOOKING_VIEW (consolidated order §3.3). The booking must touch a station the actor can see;
+  * otherwise it is reported as not found. Operations (prepare/checkout/return/amend) stay behind their own permissions. */
+ async detail(id:unknown){
+  if(typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id))throw new FlowError('INVALID_INPUT',422);
+  const principal=await this.ctx.authorize('BOOKING_VIEW');const visible=principal.storeIds as string[];
+  // light(), not snapshot(): the contract read re-checks the session with ops_assert_actor, whose FOR SHARE lock is not
+  // permitted in a READ ONLY transaction. Nothing here writes.
+  return this.ctx.light('BOOKING_VIEW',[],async c=>{
+   const today=await this.today(c as never);
+   const row=(await c.query(`${BASE} SELECT ${ROW} v,s.cond,s.original FROM s WHERE s.id=$3`,[visible,today,id])).rows[0];
+   if(!row)throw new FlowError('NOT_FOUND',404);
+   const loans=(await c.query(`SELECT l.requirement_key "requirementKey",l.family,l.state,l.checked_out_at "checkedOutAt",l.due_at "dueAt",l.pickup_store "pickupStore",
+     r.received_store "receivedStore",r.actual_received_at "receivedAt",i.inspected_at "inspectedAt"
+    FROM rental_loan_items l LEFT JOIN rental_receipts r ON r.loan_item_id=l.id LEFT JOIN rental_inspections i ON i.loan_item_id=l.id WHERE l.booking_id=$1 ORDER BY l.requirement_key`,[id])).rows;
+   const wear=(await c.query(`SELECT w.member_key "memberKey",w.requirement_key "requirementKey",w.quantity,w.returned,w.checked_out_at "checkedOutAt" FROM wear_loans w WHERE w.booking_id=$1 ORDER BY w.requirement_key`,[id])).rows;
+   const payments=(await c.query(`SELECT a.state,a.amount_jpy "amountJpy",a.created_at "createdAt" FROM rental_payment_attempts a WHERE a.booking_id=$1 ORDER BY a.created_at`,[id])).rows;
+   const contract=(await c.query('SELECT staff_order_contract($1) v',[id])).rows[0].v as {terms:{version:string;locale:string;acceptedAt:string}|null;cancellationPolicy:{policyVersion:string;freeCancellationUntil:string}|null};
+   return {order:row.v as OrderRow,current:{period:row.cond.period,members:row.cond.members},original:{period:row.original.period},loans,wear,payments,terms:contract.terms,cancellationPolicy:contract.cancellationPolicy};
+  });
+ }
+
  /** Booqable Dashboard: Going out (current pickups in range at this station) / Coming back (current returns in range).
   * Each panel reports its true total; rows are capped for display only and the cap is reported. */
  async dashboard(q:{store:unknown;range?:unknown;date?:unknown}){

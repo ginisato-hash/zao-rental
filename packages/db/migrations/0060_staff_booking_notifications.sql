@@ -6,7 +6,8 @@
 --   Addresses are never guessed from names or public contacts. Customers' outbox (recipient = booking) is untouched.
 -- * staff_notification_outbox: per event and recipient, the same lease / bounded retry / UNKNOWN-lookup model as
 --   booking_notification_outbox. Email failure never rolls back a booking: capture is guarded and resynchronized.
--- * Bookings confirmed before this migration are imported once as HISTORY_IMPORT (upcoming only) with no email.
+-- * Nothing is backfilled: bookings confirmed before this migration never become inbox items or emails (they remain in
+--   Orders/Dashboard). source keeps 'HISTORY_IMPORT' reserved for an explicit, separately approved import.
 CREATE TABLE staff_booking_events(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  booking_id uuid NOT NULL REFERENCES rental_bookings(id),
@@ -86,34 +87,36 @@ CREATE FUNCTION staff_event_record(p_booking uuid,p_kind text,p_source text) RET
 END$$;
 REVOKE ALL ON FUNCTION staff_event_record(uuid,text,text) FROM PUBLIC;
 
--- Capture never blocks or rolls back the booking transition; a missed capture is recovered by staff_events_sync().
-CREATE FUNCTION staff_event_capture() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$BEGIN
- BEGIN
-  IF booking_is_confirmed(NEW.mode,NEW.state) AND NEW.confirmed_at IS NOT NULL THEN PERFORM staff_event_record(NEW.id,'BOOKING_CONFIRMED','LIVE');
-  ELSIF NEW.state='PAYMENT_REVIEW' THEN PERFORM staff_event_record(NEW.id,'PAYMENT_REVIEW','LIVE');END IF;
- EXCEPTION WHEN OTHERS THEN RAISE WARNING 'STAFF_EVENT_CAPTURE_DEFERRED';
+-- A capture that fails is recorded as deferred in the same transaction and replayed by staff_events_sync(); only those
+-- bookings are replayed, so nothing confirmed before this migration is ever turned into an inbox item or an email.
+CREATE TABLE staff_event_deferred(
+ booking_id uuid NOT NULL REFERENCES rental_bookings(id),
+ kind text NOT NULL CHECK(kind IN ('BOOKING_CONFIRMED','PAYMENT_REVIEW')),
+ created_at timestamptz NOT NULL DEFAULT inventory_clock(),
+ PRIMARY KEY(booking_id,kind)
+);
+REVOKE ALL ON staff_event_deferred FROM PUBLIC;
+-- Capture never blocks or rolls back the booking transition.
+CREATE FUNCTION staff_event_capture() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE k text;BEGIN
+ k:=CASE WHEN booking_is_confirmed(NEW.mode,NEW.state) AND NEW.confirmed_at IS NOT NULL THEN 'BOOKING_CONFIRMED' WHEN NEW.state='PAYMENT_REVIEW' THEN 'PAYMENT_REVIEW' END;
+ IF k IS NULL THEN RETURN NEW;END IF;
+ BEGIN PERFORM staff_event_record(NEW.id,k,'LIVE');
+ EXCEPTION WHEN OTHERS THEN
+  BEGIN INSERT INTO staff_event_deferred(booking_id,kind) VALUES(NEW.id,k) ON CONFLICT DO NOTHING;
+  EXCEPTION WHEN OTHERS THEN RAISE WARNING 'STAFF_EVENT_CAPTURE_LOST';END;
  END;
  RETURN NEW;
 END$$;
 REVOKE ALL ON FUNCTION staff_event_capture() FROM PUBLIC;
 CREATE TRIGGER staff_event_capture AFTER INSERT OR UPDATE OF state ON rental_bookings FOR EACH ROW EXECUTE FUNCTION staff_event_capture();
 
--- Live capture starts now. Anything confirmed later but missed is resynchronized as LIVE (with email); never older rows.
-CREATE TABLE staff_notification_epoch(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),started_at timestamptz NOT NULL);
-INSERT INTO staff_notification_epoch(started_at) VALUES(inventory_clock());
-REVOKE ALL ON staff_notification_epoch FROM PUBLIC;
-CREATE FUNCTION staff_events_sync() RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE n integer:=0;b record;BEGIN
- FOR b IN SELECT r.id FROM rental_bookings r WHERE booking_is_confirmed(r.mode,r.state) AND r.confirmed_at>=(SELECT started_at FROM staff_notification_epoch)
-  AND NOT EXISTS(SELECT 1 FROM staff_booking_events e WHERE e.booking_id=r.id AND e.kind='BOOKING_CONFIRMED') ORDER BY r.confirmed_at LIMIT 100 LOOP
-  PERFORM staff_event_record(b.id,'BOOKING_CONFIRMED','LIVE');n:=n+1;
+CREATE FUNCTION staff_events_sync() RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE n integer:=0;d record;BEGIN
+ FOR d IN SELECT booking_id,kind FROM staff_event_deferred ORDER BY created_at,booking_id LIMIT 100 FOR UPDATE SKIP LOCKED LOOP
+  PERFORM staff_event_record(d.booking_id,d.kind,'LIVE');DELETE FROM staff_event_deferred WHERE booking_id=d.booking_id AND kind=d.kind;n:=n+1;
  END LOOP;RETURN n;
 END$$;
 REVOKE ALL ON FUNCTION staff_events_sync() FROM PUBLIC;
 
--- History import: upcoming confirmed bookings appear in the inbox once, clearly marked, and never emailed.
-INSERT INTO staff_booking_events(booking_id,kind,store_id,return_store_id,source)
-SELECT b.id,'BOOKING_CONFIRMED',b.conditions->>'pickupStore',b.conditions->>'returnStore','HISTORY_IMPORT' FROM rental_bookings b
- WHERE booking_is_confirmed(b.mode,b.state) AND b.confirmed_at IS NOT NULL AND (b.conditions->'period'->>'startDate')::date>=(inventory_clock() AT TIME ZONE 'Asia/Tokyo')::date;
 
 -- Inbox read for one signed-in staff member. Every requested store must be visible to the actor (ops_assert_actor), so
 -- no customer data from another store can be returned. Keyset paging; counts are exact, not limited to the page.

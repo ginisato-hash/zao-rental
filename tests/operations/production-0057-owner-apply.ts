@@ -2,6 +2,7 @@
 // A Neon-shaped neondb at canonical 0001–0056 (production foundation plan: rental_stage_guard() owned by neondb_custody_executor,
 // owner and role admin outside the custody roles) must accept canonical 0057 applied as neondb_owner, with no role bridge,
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
+import {productionStaffNotificationGrants,STAFF_NOTIFICATION_FUNCTIONS} from '../../scripts/production-staff-notifications';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
@@ -87,7 +88,7 @@ try{
   await c2.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[57]!.id,entries[57]!.checksum]);
   await c2.query('COMMIT');
  }catch(e){await c2.query('ROLLBACK').catch(()=>{});throw e;}finally{c2.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,58).map(e=>({id:e.id,checksum:e.checksum})));
  assert.deepEqual(await guard(),before58);
  const roles58After=await roles();assert.deepEqual({roles:roles58After.roles,members:roles58After.members},{roles:roles58.roles,members:roles58.members});
  const owners58=roles58After.owners.filter((o:{k:string})=>!roles58.owners.some((p:{k:string})=>p.k===o.k));
@@ -96,4 +97,32 @@ try{
  for(const r of readers)assert.equal((await q(`SELECT has_table_privilege($1,'public.provisional_model_bindings'::regclass,'SELECT') ok`,[r.rolname]))[0].ok,true,r.rolname);
  assert.equal((await q("SELECT provisional_size_key('SNOWBOARD','145') k"))[0].k,'145 cm');
  console.log('PASS canonical 0058 applies as neondb_owner after 0057: registry 57 -> 58, guard/roles/memberships unchanged, new objects owner-owned, bucket readers can read bindings');
+ stage='Issue #47 0059+0060 applied as neondb_owner';
+ // 0059 (rental terms acceptance) and 0060 (staff inbox/email) are additive and owner-applicable: one transaction each,
+ // no role/membership/ownership/LOGIN change, guard unchanged, new objects owner-owned, then EXECUTE-only grants.
+ const before60=await guard(),roles60=await roles();
+ for(const entry of [entries[58]!,entries[59]!]){
+  const c3=await owner.connect();
+  try{
+   await c3.query('BEGIN');
+   await c3.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='15000ms';SET LOCAL search_path=public,pg_catalog");
+   await c3.query('SELECT pg_advisory_xact_lock(71820401),pg_advisory_xact_lock(71820600)');
+   await c3.query('LOCK TABLE public.foundation_migrations IN EXCLUSIVE MODE');
+   await c3.query(entry.sql);
+   await c3.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);
+   await c3.query('COMMIT');
+  }catch(e){await c3.query('ROLLBACK').catch(()=>{});throw e;}finally{c3.release();}
+ }
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await guard(),before60);
+ const roles60After=await roles();assert.deepEqual({roles:roles60After.roles,members:roles60After.members},{roles:roles60.roles,members:roles60.members});
+ const owners60=roles60After.owners.filter((o:{k:string})=>!roles60.owners.some((p:{k:string})=>p.k===o.k));
+ assert.ok(owners60.length>0&&owners60.every((o:{o:string})=>o.o===OWNER),'every new 0059/0060 object is owner-owned');
+ assert.equal((await q('SELECT count(*)::int n FROM rental_terms_bundles'))[0].n,1);
+ for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
+ const ops=DB+'_operations';assert.equal((await q("SELECT has_function_privilege($1,'staff_inbox_list(text[],boolean,timestamptz,uuid,integer)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0060 grant step');
+ const c4=await owner.connect();try{await c4.query('BEGIN');for(const sql of productionStaffNotificationGrants(DB,ops))await c4.query(sql);await c4.query('COMMIT');}catch(e){await c4.query('ROLLBACK').catch(()=>{});throw e;}finally{c4.release();}
+ for(const fn of STAFF_NOTIFICATION_FUNCTIONS)assert.equal((await q("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[ops,fn]))[0].ok,true,fn);
+ for(const t of ['staff_booking_events','staff_notification_outbox','staff_notification_recipients','rental_terms_acceptances'])assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') OR has_table_privilege($1,$2,'INSERT') ok",[ops,t]))[0].ok,false,'function-only access to '+t);
+ console.log('PASS canonical 0059+0060 apply as neondb_owner after 0058: registry 58 -> 60, guard/roles/memberships unchanged, new objects owner-owned, empty new tables, EXECUTE-only grants');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

@@ -471,7 +471,7 @@
   {
    "id": "0060",
    "file": "0060_staff_booking_notifications.sql",
-   "sha256": "6a12572323642eb9358717d171966534a94ac9b01eab575f51a2b5f3192f6fb2",
+   "sha256": "6bdada8552e34dcdd2409ed80218a80e8e7a46e724f30434acfe3dd36d0a7853",
    "runtimeGuards": 0,
    "guard": null
   }

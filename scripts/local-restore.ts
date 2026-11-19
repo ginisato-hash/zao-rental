@@ -20,6 +20,8 @@ export const RESTORE_REQUIRED=[
  'public.booking_notification_outbox',
  'public.provisional_capacity_sources','public.provisional_capacity_buckets','public.provisional_capacity_adjustments','public.provisional_capacity_materializations','public.provisional_capacity_receipts','public.provisional_model_bindings','public.provisional_capacity_claims','public.inventory_buffer_override_log','public.inventory_pole_exemptions',
  'public.booking_cancellation_policies','public.booking_cancellations','public.booking_cancellation_refunds',
+ 'public.rental_terms_bundles','public.rental_terms_acceptances',
+ 'public.staff_booking_events','public.staff_event_deferred','public.staff_notification_recipients','public.staff_notification_outbox',
  'square_webhook.inbox','payment_reconciliation.streams','payment_reconciliation.jobs','payment_reconciliation.events','payment_reconciliation.audit','payment_reconciliation.provider_stops',
 ] as const;
 /** Deliberately not restored. Each entry names why the row cannot or must not come back. */
@@ -55,6 +57,7 @@ export async function exportOwnedDatabase(pool:Pool,identity:{namespace:string;d
  // An active reconciliation lease is contractual state; never reset it silently.
  if(Number((await pool.query("SELECT count(*)::int n FROM payment_reconciliation.jobs WHERE lease_token IS NOT NULL")).rows[0].n))throw new Error('BACKUP_ACTIVE_LEASE_REFUSED');
  if(Number((await pool.query("SELECT count(*)::int n FROM booking_notification_outbox WHERE status='SENDING'")).rows[0].n))throw new Error('BACKUP_ACTIVE_DELIVERY_REFUSED');
+ if(present.includes('public.staff_notification_outbox')&&Number((await pool.query("SELECT count(*)::int n FROM staff_notification_outbox WHERE status='SENDING'")).rows[0].n))throw new Error('BACKUP_ACTIVE_DELIVERY_REFUSED');
  const out:{name:string;rows:unknown[]}[]=[];
  for(const name of RESTORE_REQUIRED){
   // Recovery deliveries depend on proofs this drill deliberately revokes.

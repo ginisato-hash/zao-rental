@@ -1,6 +1,7 @@
 // Exact three-image intake for R67. No connection, credential, role or provider operation here.
 // The live operator must prove accepted main, TLS, backup freshness and matching private R2 bytes.
 import {randomUUID,createHash} from 'node:crypto';
+import {migrationPlan} from '../packages/db/src/migration-plan';
 import {readFile} from 'node:fs/promises';
 import type {PoolClient} from 'pg';
 import {validateLocalArtwork,approvedManifestSha256} from './avatar-artwork-local';
@@ -30,7 +31,8 @@ export async function applyProductionAvatarArtwork(c:PoolClient,database:string,
   const id=(await c.query('SELECT current_database() db,current_user role,pg_get_userbyid(datdba) owner FROM pg_database WHERE datname=current_database()')).rows[0];
   if(id?.db!==database||id.role!==owner||id.owner!==owner)fail('OWNER_IDENTITY');
   const registry=(await c.query('SELECT count(*)::int n,max(id) latest FROM foundation_migrations')).rows[0];
-  if(registry.n!==58||registry.latest!=='0058')fail('REGISTRY_MISMATCH');
+  // The registry must be exactly the canonical plan this source carries (58 at R67, later additive migrations included).
+  if(registry.n!==migrationPlan.length||registry.latest!==migrationPlan[migrationPlan.length-1]!.id)fail('REGISTRY_MISMATCH');
   await c.query('LOCK TABLE content_workspace,content_media_objects,content_revision_records,content_outbox,avatar_visuals IN EXCLUSIVE MODE');
   for(const table of ['content_workspace','content_media_objects','content_revision_records','content_outbox','avatar_visuals'])if((await c.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n!==0)fail('EXISTING_CONTENT_RECONCILE');
   for(const {entry,bytes}of checked.assets)await c.query('INSERT INTO content_media_objects(sha256,bytes) VALUES($1,$2)',[entry.sha256,bytes]);

@@ -83,11 +83,16 @@ try{
   await x.db.pool.query('UPDATE staff_notification_recipients SET email_enabled=false WHERE staff_id=$1',[x.actor]);
   const calls=adapter.calls;await worker.runBatch(20,deadline());assert.equal((await outbox(e.booking.id))[0].status,'SUPPRESSED');assert.equal(adapter.calls,calls);
  });
- await check('a missed capture is resynchronized as LIVE; nothing older than the epoch is emailed',async()=>{
+ await check('a failed capture never blocks the booking; it is deferred in the same transaction and replayed once as LIVE',async()=>{
   await x.db.pool.query('UPDATE staff_notification_recipients SET email_enabled=true WHERE staff_id=$1',[x.actor]);
-  await x.db.pool.query('ALTER TABLE rental_bookings DISABLE TRIGGER staff_event_capture');
-  const d=await confirmed();await x.db.pool.query('ALTER TABLE rental_bookings ENABLE TRIGGER staff_event_capture');assert.equal((await events(d.booking.id)).length,0);
-  await worker.runBatch(20,deadline());assert.equal((await events(d.booking.id))[0].source,'LIVE');assert.equal((await outbox(d.booking.id))[0].status,'SENT');
+  await x.db.pool.query('ALTER TABLE staff_booking_events RENAME TO staff_booking_events_unavailable');
+  let d;try{d=await confirmed();}finally{await x.db.pool.query('ALTER TABLE staff_booking_events_unavailable RENAME TO staff_booking_events');}
+  assert.equal((await x.db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[d.booking.id])).rows[0].state,'CONFIRMED_DEV','booking confirmed despite capture failure');
+  assert.equal((await events(d.booking.id)).length,0);assert.deepEqual((await x.db.pool.query('SELECT kind FROM staff_event_deferred WHERE booking_id=$1',[d.booking.id])).rows,[{kind:'BOOKING_CONFIRMED'}]);
+  await worker.runBatch(20,deadline());
+  assert.equal((await events(d.booking.id))[0].source,'LIVE');assert.equal((await outbox(d.booking.id))[0].status,'SENT');
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM staff_event_deferred')).rows[0].n,0);
+  const before=adapter.calls;await worker.runBatch(20,deadline());assert.equal(adapter.calls,before,'replay is once');
  });
  console.log(JSON.stringify({status:'PASS',cases:count,actualMailRequests:0,realCustomer:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,400),location:(e as Error).stack?.split('\n').filter(s=>s.includes('/tests/notification/')).join('\n')}));}

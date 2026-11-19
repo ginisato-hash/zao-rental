@@ -78,7 +78,8 @@ try{
   assert.equal(await page.locator('input[type="password"]').count(),0);
   assert.equal(await page.locator('form').count(),0);
   for(const forbidden of ['本番接続','デプロイ','有効化','決済実行','秘密'])await expect(page.getByRole('button',{name:new RegExp(forbidden)})).toHaveCount(0);
-  assert.equal((await page.getByRole('button').allInnerTexts()).filter(t=>t.trim()&&t.trim()!=='読み込む'&&!t.includes('ログアウト')).length,0);
+  // Shared shell chrome (language switch, menu, notifications) is outside main; the launch page content itself is checked.
+  assert.equal((await page.getByRole('main').getByRole('button').allInnerTexts()).filter(t=>t.trim()&&t.trim()!=='読み込む'&&!t.includes('ログアウト')).length,0);
  });
 
  await check('the launch gate is operable at 390, 768 and 1440 with no external request',async()=>{

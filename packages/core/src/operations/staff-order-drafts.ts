@@ -3,6 +3,7 @@ import type {Pool,PoolClient} from 'pg';
 import {HoldError} from '../../../contracts/src/hold';
 import type {GuestDraft} from '../guest/context';
 import type {BookingDraftStore} from '../guest/service';
+import {STAFF_NEW_ORDER_PERMISSIONS} from '../../../auth/src/staff-order-access';
 
 /** The server-verified staff identity (subject + session id taken from the staff stamp, never from the client). */
 export type StaffOrderActor={subject:string;sessionId:string};
@@ -19,7 +20,8 @@ export class StaffOrderDrafts implements BookingDraftStore<StaffOrderActor>{
   try{
    await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='5000ms'");
    await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true)",[actor.subject,actor.sessionId]);
-   await c.query("SELECT ops_assert_actor($1,'{}'::text[],$2)",[permission,actor.subject]);
+   // Reads need BOOKING_VIEW; every change needs the whole New order rule, checked live in this transaction.
+   for(const p of permission==='BOOKING_VIEW'?['BOOKING_VIEW']:STAFF_NEW_ORDER_PERMISSIONS)await c.query("SELECT ops_assert_actor($1,'{}'::text[],$2)",[p,actor.subject]);
    const v=await fn(c);await c.query('COMMIT');return v;
   }catch(e){await c.query('ROLLBACK').catch(()=>{});if(e instanceof HoldError)throw e;const code=(e as {code?:string}).code;
    if(code==='42501')throw new HoldError('FORBIDDEN',403);if(code==='23505')throw new HoldError('STALE_DRAFT',409);throw e;}

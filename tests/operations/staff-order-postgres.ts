@@ -109,6 +109,21 @@ try{
   const now=await ok(await me.get('/draft')),r=await me.post('/checkout',{...body,expectedRevision:now.revision,reviewHash:now.reviewHash,paymentSource:'synthetic-source'});
   assert.equal(r.status,409);assert.equal((await r.json()).error,'TERMS_REACCEPT_REQUIRED');assert.equal(calls.length,1);assert.equal(await attempts(d.booking!.id),0);
  });
+ await check('permission table: each missing flow permission, a DB-side deny, narrowed or empty station scope all refuse New order',async()=>{
+  const {STAFF_NEW_ORDER_PERMISSIONS}=await import('../../packages/auth/src/staff-order-access');
+  for(const missing of STAFF_NEW_ORDER_PERMISSIONS){const p={...x.principal,permissions:x.principal.permissions.filter(q=>q!==missing)} as StaffPrincipal,c=client(x.signed.identity.sessionId,p);
+   assert.equal((await c.post('/context',{})).status,403,missing+' POST');assert.equal((await c.get('/draft')).status,403,missing+' GET');}
+  const noStores={...x.principal,storeIds:[]} as unknown as StaffPrincipal;assert.equal((await client(x.signed.identity.sessionId,noStores).post('/context',{})).status,403,'no station');
+  // Narrowed scope: the station outside it is refused before any save.
+  const onsen={...x.principal,storeIds:['ONSEN_BASE']} as unknown as StaffPrincipal,c=client(x.signed.identity.sessionId,onsen);const d=await ok(await c.post('/restart',{}));
+  const r=await c.post('/draft',{draftId:d.id,expectedRevision:d.revision,input:{pickupStore:'MOUNTAIN_BASE',returnStore:'ONSEN_BASE',period:{startDate:'2035-03-20',endDate:'2035-03-20',slot:'DAY'},members:[]}});
+  assert.equal(r.status,403);assert.equal((await r.json()).error,'STORE_FORBIDDEN');assert.equal((await ok(await c.get('/draft'))).revision,d.revision,'nothing saved');
+  // The browser-side principal can be stale: the draft store re-checks every flow permission in the DB transaction.
+  const prior=(await x.db.pool.query('SELECT allowed FROM staff_permission_overrides WHERE staff_id=$1 AND permission=$2',[x.signed.identity.subject,'HOLD_EDIT'])).rows[0] as {allowed:boolean}|undefined;
+  await x.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,false) ON CONFLICT(staff_id,permission) DO UPDATE SET allowed=false',[x.signed.identity.subject,'HOLD_EDIT']);
+  try{const denied=await me.post('/restart',{});assert.equal(denied.status,403,'DB deny of HOLD_EDIT refuses a change even with a stale principal');assert.equal((await ok(await me.get('/draft'))).id.length,36,'read with BOOKING_VIEW still works');}
+  finally{if(prior)await x.db.pool.query('UPDATE staff_permission_overrides SET allowed=$3 WHERE staff_id=$1 AND permission=$2',[x.signed.identity.subject,'HOLD_EDIT',prior.allowed]);else await x.db.pool.query('DELETE FROM staff_permission_overrides WHERE staff_id=$1 AND permission=$2',[x.signed.identity.subject,'HOLD_EDIT']);}
+ });
  await check('a revoked session can no longer read or change its draft',async()=>{
   const other=await x.login('flow-actor@example.invalid'),c=client(other.identity.sessionId);await ok(await c.post('/context',{}));
   await x.db.pool.query('DELETE FROM auth_session WHERE id=$1',[other.identity.sessionId]);

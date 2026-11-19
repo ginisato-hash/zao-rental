@@ -21,13 +21,19 @@ type Input={contractVersion:'INTEGRATED_V1_4';pickupStore:string;returnStore:str
 type Options={models:{key:string;name:string;season:string;sport:string;lengths:string[]}[];sizes:{key:string;label:string;family:string;age:string;tier:string;poleStores?:string[]}[]};
 type Contact={displayName:string;email:string;termsAccepted:boolean};
 type Draft={checkout?:{applicationId:string;locations:Record<string,string>}|null;id:string;revision:number;input:Input|null;locked:boolean;priceReviewRequired:boolean;selection:{directions:Record<string,string>;wantAdvance:boolean;contact?:Contact}|null;preview:{members:{key:string;reason:string|null;price:Record<string,unknown>|null;priceError:string|null;candidates:Record<string,{lengthCm:number;sizeLabel?:string}|null>}[]}|null;hold:{state:string;expiresAt:string}|null;estimate:{subtotalJpy:number;bundleDiscountJpy?:number;advanceDiscountJpy:number;totalJpy:number}|null;reviewHash:string|null;quote:{snapshot:{totalJpy:number};snapshotSha256:string;validity:string}|null;booking:{cancellation:CancellationStatus|null;id:string;state:string;qr:string|null;qrImage:string|null;payments:{state:string}[];priceSnapshot:{totalJpy:number}}|null;simulation?:boolean;customerProfileId?:string|null};
-let starting:Promise<unknown>|null=null;
-// Staff New order (Issue #47 §6) reuses this flow against /api/staff-orders as the signed-in staff member: the session
-// stamp header replaces the guest cookie, and nothing (not even step input) is kept in browser storage on a shared device.
-type Api={base:'/api/guest'|'/api/staff-orders';headers:Record<string,string>;storage:boolean};
-const GUEST_API:Api={base:'/api/guest',headers:{},storage:true};let api:Api=GUEST_API;
-function useBookingApi(stamp:string|undefined){useEffect(()=>{api=stamp?{base:'/api/staff-orders',headers:{'x-zao-session':stamp},storage:false}:GUEST_API;return()=>{api=GUEST_API;};},[stamp]);}
-function draftStorage(){if(!api.storage)throw Error('NO_STORAGE');return sessionStorage;}
+// Each mounted booking flow owns one client (Issue #47 TD FB #7010252887): endpoint, headers, whether browser storage may be
+// used, and the in-flight context start. Nothing is shared between mounts, so a guest flow and a staff New order flow (or two
+// staff sessions) can never borrow each other's route, header, storage or pending /context. The guest flow keeps its existing
+// draft-scoped sessionStorage recovery; the staff flow (a shared counter device) never touches browser storage at all.
+type BookingClient={readonly mode:'guest'|'staff';readonly storage:boolean;request(path:string,body?:unknown):ReturnType<Response["json"]>;start():Promise<unknown>};
+function bookingClient(stamp?:string):BookingClient{
+ const base=stamp?'/api/staff-orders':'/api/guest',headers:Record<string,string>=stamp?{'content-type':'application/json','x-zao-session':stamp}:{'content-type':'application/json'};
+ // One POST /context per client even when React mounts effects twice; another client never sees this promise.
+ let starting:Promise<unknown>|null=null;
+ const client:BookingClient={mode:stamp?'staff':'guest',storage:!stamp,start(){if(!starting)starting=client.request('/context',{}).finally(()=>{starting=null;});return starting;},async request(path:string,body?:unknown){const r=await fetch(base+path,{cache:'no-store',method:body===undefined?'GET':'POST',headers,...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error),{status:r.status});return data;}};
+ return client;
+}
+function draftStorage(c:BookingClient){if(!c.storage)throw Error('NO_STORAGE');return sessionStorage;}
 // CH-04 previously cached the whole Input (including body measurements) under this key,
 // unscoped to any context/draft id. UIR-01: a cookie expiry or explicit logout creates a
 // fresh guest context (POST /context returns 201, not 401) and open() only overwrites input
@@ -36,7 +42,7 @@ function draftStorage(){if(!api.storage)throw Error('NO_STORAGE');return session
 // render code a malformed object. Full read/write of this cache is removed; only a one-time
 // discard of any value a pre-fix session already wrote remains.
 const INPUT_STORAGE_KEY='zao-guest-draft-input';
-function clearStoredInput(){try{draftStorage().removeItem(INPUT_STORAGE_KEY);}catch{}}
+function clearStoredInput(c:BookingClient){if(!c.storage)return;try{draftStorage(c).removeItem(INPUT_STORAGE_KEY);}catch{}}
 // CH-04B: reload-safe recovery of unsaved step 0-1 Input, scoped to exactly one server draft. Only
 // Input is stored (never contact, payment, access/recovery/QR or session data), under a versioned
 // per-draft key, and only in sessionStorage. A cached value is restored only while the same unlocked
@@ -59,21 +65,20 @@ function upgradeInput(v:unknown):Input|null{if(isInput(v))return v;if(!v||typeof
  const period:Period={startDate:String(p.startDate??''),endDate:String(p.endDate??''),startAt:slot==='PM'?'13:00':'08:30',returnBy:slot==='AM'?'12:00':'17:00'};
  const members=Array.isArray(i.members)?(i.members as Record<string,unknown>[]).map(m=>{const {itemFamily,...rest}=m;return {...rest,items:typeof itemFamily==='string'&&itemFamily?[itemFamily]:null} as unknown as Member;}):[];
  const out={contractVersion:'INTEGRATED_V1_4' as const,pickupStore:String(i.pickupStore??'MOUNTAIN_BASE'),returnStore:String(i.returnStore??'MOUNTAIN_BASE'),period,members};return isInput(out)?out:null;}
-function draftInputKeys(){const out:string[]=[];try{for(let n=0;n<draftStorage().length;n++){const k=draftStorage().key(n);if(k?.startsWith(DRAFT_INPUT_PREFIX))out.push(k);}}catch{}return out;}
+function draftInputKeys(c:BookingClient){const out:string[]=[];if(!c.storage)return out;try{for(let n=0;n<draftStorage(c).length;n++){const k=draftStorage(c).key(n);if(k?.startsWith(DRAFT_INPUT_PREFIX))out.push(k);}}catch{}return out;}
 /** Removes every draft-input cache except the one belonging to keepDraftId (if given). */
-function clearDraftInputs(keepDraftId?:string){for(const k of draftInputKeys())if(keepDraftId===undefined||k!==DRAFT_INPUT_PREFIX+keepDraftId)try{draftStorage().removeItem(k);}catch{}}
-function writeDraftInput(e:InputEnvelope){try{draftStorage().setItem(DRAFT_INPUT_PREFIX+e.draftId,JSON.stringify(e));}catch{}}
-function removeDraftInput(draftId:string){try{draftStorage().removeItem(DRAFT_INPUT_PREFIX+draftId);}catch{}}
+function clearDraftInputs(c:BookingClient,keepDraftId?:string){for(const k of draftInputKeys(c))if(keepDraftId===undefined||k!==DRAFT_INPUT_PREFIX+keepDraftId)try{draftStorage(c).removeItem(k);}catch{}}
+function writeDraftInput(c:BookingClient,e:InputEnvelope){if(!c.storage)return;try{draftStorage(c).setItem(DRAFT_INPUT_PREFIX+e.draftId,JSON.stringify(e));}catch{}}
+function removeDraftInput(c:BookingClient,draftId:string){if(!c.storage)return;try{draftStorage(c).removeItem(DRAFT_INPUT_PREFIX+draftId);}catch{}}
 /** The restorable Input for exactly this draft, or null. A present but non-restorable value is discarded. */
-function takeDraftInput(d:{id:string;revision:number;input:Input|null;locked:boolean;booking:unknown}):Input|null{
- let raw:string|null;try{raw=draftStorage().getItem(DRAFT_INPUT_PREFIX+d.id);}catch{return null;}
+function takeDraftInput(c:BookingClient,d:{id:string;revision:number;input:Input|null;locked:boolean;booking:unknown}):Input|null{
+ if(!c.storage)return null;let raw:string|null;try{raw=draftStorage(c).getItem(DRAFT_INPUT_PREFIX+d.id);}catch{return null;}
  if(raw===null)return null;
  try{const e=JSON.parse(raw) as Partial<InputEnvelope>|null;
   if(e&&typeof e==='object'&&e.schemaVersion===2&&e.draftId===d.id&&!d.locked&&!d.booking&&e.baseRevision===d.revision&&e.baseServerInputFingerprint===inputFingerprint(d.input)&&isInput(e.input)&&JSON.stringify(e.input)!==JSON.stringify(d.input))return e.input;
  }catch{}
- removeDraftInput(d.id);return null;
+ removeDraftInput(c,d.id);return null;
 }
-async function request(path:string,body?:unknown){const r=await fetch(api.base+path,{cache:'no-store',method:body===undefined?'GET':'POST',headers:{'content-type':'application/json',...api.headers},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error),{status:r.status});return data;}
 // Body and safety values start unset: only what the guest explicitly enters is ever saved.
 const blankSki=()=>({weightKg:null,ageAtStart:null,skierType:null});
 // ISO 11088 skier type in behaviour-based wording. It is the DIN input and is never a generic ski level.
@@ -129,10 +134,11 @@ const previewReasonText=(ja:boolean,r:string)=>{const c=PREVIEW_REASON_COPY[r];r
 // so the saved draft is re-read (GET only) to show the actual current state. Never a payment retry.
 const REFRESH_ON_ERROR=new Set(['PRICE_CHANGED_REVIEW_REQUIRED','PRICE_REVIEW_REQUIRED','HOLD_OR_QUOTE_RECONCILIATION_REQUIRED']);
 export type GuestLegalLinks={complete:boolean;terms?:string|undefined;cancellation?:string|undefined;termsBundle?:{version:string;sha256:string}|undefined};
-export function GuestBooking({locale,legal,staff}:{locale:Locale;legal?:GuestLegalLinks;staff?:{stamp:string}|undefined}){const productionCopy=useProductionCopy(),ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
+type GuestBookingProps={locale:Locale;legal?:GuestLegalLinks;staff?:{stamp:string}|undefined};
+/** Remounts the flow whenever the mode or staff session changes, so no state, request or pending answer crosses over. */
+export function GuestBooking(props:GuestBookingProps){return <BookingFlow key={props.staff?'staff:'+props.staff.stamp:'guest'} {...props}/>;}
+function BookingFlow({locale,legal,staff}:GuestBookingProps){const [client]=useState(()=>bookingClient(staff?.stamp)),request=client.request;const productionCopy=useProductionCopy(),ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
  const [draft,setDraft]=useState<Draft|null>(null),[options,setOptions]=useState<Options>({models:[],sizes:[]}),[input,setInput]=useState<Input>(blankInput),[step,setStep]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[directions,setDirections]=useState<Record<string,string>>({}),[accepted,setAccepted]=useState(false),[advance,setAdvance]=useState(false),[contact,setContact]=useState<Contact>({displayName:'',email:'',termsAccepted:false}),[emailConfirm,setEmailConfirm]=useState(''),[simulation,setSimulation]=useState(false);
- // Declared before the effect that opens the draft, so the endpoint is chosen before the first request.
- useBookingApi(staff?.stamp);
  const alive=useRef(true),ticket=useRef(0),inFlight=useRef(false);
  // CH-04A: the displayed step is reflected in browser history so Back/Forward move one
  // step instead of leaving the app. Only the step number (an allowlisted, non-secret
@@ -237,8 +243,8 @@ export function GuestBooking({locale,legal,staff}:{locale:Locale;legal?:GuestLeg
   // CH-04B: a cache belongs to exactly the current draft (another draft's is a different guest
   // context and is dropped); a locked or booked draft keeps none. Only the initial load of this
   // mount (a hard reload or new visit) may restore, and only under takeDraftInput's conditions.
-  clearDraftInputs(d.locked||d.booking?undefined:d.id);
-  const restored=!initializedRef.current?takeDraftInput(d):null;
+  clearDraftInputs(client,d.locked||d.booking?undefined:d.id);
+  const restored=!initializedRef.current?takeDraftInput(client,d):null;
   setDraft(d);const upgraded=upgradeInput(d.input);if(upgraded){setInput(upgraded);setSavedInputJson(JSON.stringify(d.input));}if(restored){setInput(restored);setRestoredNotice(true);}if(d.selection){setDirections(d.selection.directions);setAdvance(d.selection.wantAdvance);if(d.selection.contact){setContact(d.selection.contact);setEmailConfirm(d.selection.contact.email);}}
   // Server state is authoritative, history is not: maxForDraft is the step this draft's own
   // data actually supports right now, computed against what local state will become right
@@ -265,7 +271,7 @@ export function GuestBooking({locale,legal,staff}:{locale:Locale;legal?:GuestLeg
   }
   initializedRef.current=true;
   if(d.simulation!==undefined){setSimulation(d.simulation);if(d.simulation&&!productionCopy&&!d.selection?.contact){setContact(c=>c.displayName||c.email?c:{...c,displayName:'SYNTHETIC Guest',email:'synthetic-guest@example.invalid'});setEmailConfirm(v=>v||'synthetic-guest@example.invalid');}}
- },[productionCopy]);
+ },[productionCopy,client]);
  // Forward: only pushes a new entry when this is genuinely new progress (n beyond anything
  // already recorded in our own known stack). Back: always pushes a fresh entry too, rather
  // than retracing an existing one with history.go() -- go() was observed, live, to sometimes
@@ -278,20 +284,20 @@ export function GuestBooking({locale,legal,staff}:{locale:Locale;legal?:GuestLeg
  function pushStep(n:number){if(n>historyStackRef.current[historyPosRef.current]!.step){history.pushState({step:n},'');historyStackRef.current=historyStackRef.current.slice(0,historyPosRef.current+1).concat({step:n});historyPosRef.current++;}setStepEntryInput(JSON.stringify(liveRef.current.input));setTouched(false);setAttempted(-1);setStep(n);}
  function backToStep(n:number){history.pushState({step:n},'');historyStackRef.current=historyStackRef.current.slice(0,historyPosRef.current+1).concat({step:n});historyPosRef.current++;setStepEntryInput(JSON.stringify(liveRef.current.input));setTouched(false);setAttempted(-1);setStep(n);}
  function editInput(fn:(i:Input)=>Input){setTouched(true);setInput(fn);}
- useEffect(()=>{alive.current=true;const n=++ticket.current;if(!starting)starting=request('/context',{}).finally(()=>{starting=null;});starting.then(async()=>{const [d,o]=await Promise.all([request('/draft'),request('/options')]);if(alive.current&&n===ticket.current){open(d);setOptions(o);}}).catch(e=>{if(alive.current&&n===ticket.current)setMessage(e.message);});return()=>{alive.current=false;};},[open]);
- useEffect(()=>{clearStoredInput();},[]);
+ useEffect(()=>{alive.current=true;const n=++ticket.current;client.start().then(async()=>{const [d,o]=await Promise.all([client.request('/draft'),client.request('/options')]);if(alive.current&&n===ticket.current){open(d);setOptions(o);}}).catch(e=>{if(alive.current&&n===ticket.current)setMessage(e.message);});return()=>{alive.current=false;};},[open,client]);
+ useEffect(()=>{clearStoredInput(client);},[client]);
  // CH-04B: keep the draft-scoped envelope exactly while step 0-1 Input is unsaved; remove it once the
  // server has the same Input (a successful save) or the draft is locked/booked.
- useEffect(()=>{if(!draft)return;if(draft.locked||draft.booking){clearDraftInputs();return;}
-  if(unsavedInput)writeDraftInput({schemaVersion:2,draftId:draft.id,baseRevision:draft.revision,baseServerInputFingerprint:inputFingerprint(draft.input),input});else removeDraftInput(draft.id);
- },[draft,input,unsavedInput]);
+ useEffect(()=>{if(!draft)return;if(draft.locked||draft.booking){clearDraftInputs(client);return;}
+  if(unsavedInput)writeDraftInput(client,{schemaVersion:2,draftId:draft.id,baseRevision:draft.revision,baseServerInputFingerprint:inputFingerprint(draft.input),input});else removeDraftInput(client,draft.id);
+ },[draft,input,unsavedInput,client]);
  // Auxiliary only, per CH-04B's scope: beforeunload is not guaranteed to fire (notably on
  // mobile), so this is a best-effort browser-native prompt for a real tab close/reload, not
  // a substitute for the in-app link guard below, which is the actual mechanism for the
  // cases this app controls (locale switch, closing the booking context).
  useEffect(()=>{const onBeforeUnload=(e:BeforeUnloadEvent)=>{if(unsavedInput){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',onBeforeUnload);return()=>window.removeEventListener('beforeunload',onBeforeUnload);},[unsavedInput]);
  function guardNav(e:React.MouseEvent){if(unsavedInput&&!window.confirm(t('保存されていない入力があります。移動すると内容が失われます。続けますか？','You have unsaved input. Leaving now will lose it. Continue?')))e.preventDefault();}
- async function run(fn:()=>Promise<Draft>){if(inFlight.current)return;inFlight.current=true;setBusy(true);const n=++ticket.current;try{const d=await fn();if(alive.current&&n===ticket.current){open(d);setMessage('');setRestoredNotice(false);}}catch(e){if(alive.current&&n===ticket.current){const code=(e as Error).message;if((e as {status?:number}).status===401){setDraft(null);setInput(blankInput());setDirections({});clearStoredInput();clearDraftInputs();setSavedInputJson(null);}setMessage(code);
+ async function run(fn:()=>Promise<Draft>){if(inFlight.current)return;inFlight.current=true;setBusy(true);const n=++ticket.current;try{const d=await fn();if(alive.current&&n===ticket.current){open(d);setMessage('');setRestoredNotice(false);}}catch(e){if(alive.current&&n===ticket.current){const code=(e as Error).message;if((e as {status?:number}).status===401){setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setSavedInputJson(null);}setMessage(code);
   // The draft changed server-side; show its actual state. A read only -- nothing is resubmitted.
   if(REFRESH_ON_ERROR.has(code)){try{const fresh=await request('/draft');if(alive.current&&n===ticket.current)open(fresh);}catch{}}}}finally{inFlight.current=false;if(alive.current)setBusy(false);}}
  function member(n:number,patch:Partial<Member>){editInput(i=>({...i,members:i.members.map((m,j)=>j===n?{...m,...patch}:m)}));}
@@ -359,7 +365,7 @@ export function GuestBooking({locale,legal,staff}:{locale:Locale;legal?:GuestLeg
  const stockFailed=Boolean(draft&&!draft.booking&&draft.locked&&!draft.hold);
  const priceChanged=Boolean(draft&&!draft.booking&&!holdEnded&&draft.priceReviewRequired&&draft.quote?.validity==='VALID_PRIVATE_ESTIMATE');
  const legalBlocked=Boolean(draft?.checkout)&&legal?.complete!==true;const payBlocked=!contractSynced||Boolean(draft?.priceReviewRequired)||holdEnded||stockFailed||legalBlocked;
- function closeContext(){if(staff){void run(async()=>{const d=await request('/restart',{});location.assign(new URL('/staff/orders/new',location.origin).href);return d;});return;}void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput();clearDraftInputs();setRestoredNotice(false);setSavedInputJson(null);location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
+ function closeContext(){if(staff){void run(async()=>{const d=await request('/restart',{});location.assign(new URL('/staff/orders/new',location.origin).href);return d;});return;}void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setRestoredNotice(false);setSavedInputJson(null);location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
  const checkoutBody=()=>({locale,draftId:draft!.id,expectedRevision:draft!.revision,reviewHash:draft!.reviewHash,contact:{displayName:contact.displayName,email:contact.email,termsAccepted:contact.termsAccepted,...(legal?.termsBundle?{terms:{version:legal.termsBundle.version,sha256:legal.termsBundle.sha256,locale}}:{})}});
  // The field name is the label's whole text, so exact label matching and the accessible name stay
  // unchanged; the required/optional marker is rendered outside the <label>, beside it.

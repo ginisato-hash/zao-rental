@@ -149,6 +149,58 @@ try{
   assert.equal(await page.evaluate(()=>sessionStorage.length+localStorage.length),0,'nothing is kept in browser storage on the shared staff device');
   await page.screenshot({path:`${shots}/new-order-ja-1440.png`});await page.unroute('**/api/staff-orders/**');await page.unroute(/\/api\/operations\/customers\?/);
  });
+ await check('new order isolation: guest/staff flows never share a route, header, pending context, draft or browser storage (TD FB #7010252887)',async()=>{
+  const {ctx,p}=await login('accept-admin@example.invalid');
+  // Storage instrumentation: count every Storage call made while a /staff page is shown, and make them throw.
+  let staffStorage=0;await ctx.exposeFunction('__staffStorageHit',()=>{staffStorage++;});
+  await ctx.addInitScript(()=>{const w=window as unknown as {__staffStorageHit:()=>void};const proto=Storage.prototype as unknown as Record<string,unknown>;
+   for(const name of ['getItem','setItem','removeItem','key','clear']){const original=proto[name] as (...a:unknown[])=>unknown;proto[name]=function(this:Storage,...a:unknown[]){if(location.pathname==='/staff/orders/new'){void w.__staffStorageHit();throw new Error('STAFF_STORAGE_FORBIDDEN');}return original.apply(this,a);};}
+   const len=Object.getOwnPropertyDescriptor(Storage.prototype,'length')!;Object.defineProperty(Storage.prototype,'length',{configurable:true,get(){if(location.pathname==='/staff/orders/new'){void w.__staffStorageHit();throw new Error('STAFF_STORAGE_FORBIDDEN');}return len.get!.call(this);}});});
+  const guestId=randomUUID(),staffId=randomUUID(),customer=randomUUID();
+  const view=(id:string,staff:boolean)=>({checkout:null,id,revision:1,input:null,locked:false,priceReviewRequired:false,selection:null,preview:null,hold:null,estimate:null,reviewHash:null,quote:null,booking:null,simulation:false,...(staff?{customerProfileId:null}:{})});
+  const log:{route:'guest'|'staff'|'other';method:string;path:string;session:string|null;body:string|null;page:string}[]=[];
+  ctx.on('request',r=>{const u=new URL(r.url());const route=u.origin!==origin?'other':u.pathname.startsWith('/api/guest')?'guest':u.pathname.startsWith('/api/staff-orders')?'staff':null;if(route)log.push({route,method:r.method(),path:u.pathname,session:r.headers()['x-zao-session']??null,body:r.postData(),page:r.frame().url()});});
+  let releaseGuest=()=>{},releaseStaff=()=>{};const gate={guest:Promise.resolve(),staff:Promise.resolve()};
+  await ctx.route('**/api/guest/**',async r=>{const path=new URL(r.request().url()).pathname;if(path.endsWith('/context')){await gate.guest;return r.fulfill({status:201,json:{}});}
+   if(path.endsWith('/options'))return r.fulfill({json:{revision:'synthetic',models:[],sizes:[]}});return r.fulfill({json:view(guestId,false)});});
+  await ctx.route('**/api/staff-orders/**',async r=>{const path=new URL(r.request().url()).pathname;if(path.endsWith('/context'))await gate.staff;
+   if(path.endsWith('/options'))return r.fulfill({json:{revision:'synthetic',models:[],sizes:[]}});return r.fulfill({json:view(staffId,true)});});
+  await ctx.route(/\/api\/operations\/customers\?/,r=>r.fulfill({json:{rows:[{key:customer,name:'SYNTHETIC Isolation',email:null,bookings:1,lastStart:null,legacy:false}],total:1}}));
+  const push=(to:string)=>p.evaluate(path=>(window as unknown as {next:{router:{push(h:string):void}}}).next.router.push(path),to);
+  const staffReady=async()=>{await p.getByRole('heading',{name:'新規予約',level:1}).waitFor();await p.getByRole('region',{name:'お客様'}).getByRole('status').waitFor();};
+  const invariants=(label:string)=>{
+   assert.equal(log.filter(r=>r.route==='other'&&r.method!=='GET').length,0,label+': no external POST');
+   assert.ok(log.filter(r=>r.route==='staff').every(r=>r.session&&/^[0-9a-f]{64}$/.test(r.session)),label+': every staff call carries the session header');
+   assert.equal(log.filter(r=>r.route==='guest'&&r.session).length,0,label+': no guest call carries a staff header');
+   for(const r of log.filter(r=>r.route==='staff'&&r.body&&r.body.includes('draftId')))assert.equal(JSON.parse(r.body!).draftId,staffId,label+': staff writes only target the staff draft');
+   for(const r of log.filter(r=>r.route==='guest'&&r.body&&r.body.includes('draftId')))assert.equal(JSON.parse(r.body!).draftId,guestId,label+': guest writes only target the guest draft');
+  };
+  // 1. guest /context pending -> client-side switch to the staff New order -> the guest answer arrives late.
+  gate.guest=new Promise<void>(f=>{releaseGuest=f;});
+  await p.goto('/ja/book');await p.waitForFunction(()=>performance.getEntriesByType('resource').some(e=>e.name.endsWith('/api/guest/context')),undefined,{timeout:30000}).catch(()=>{});
+  await push('/staff/orders/new');await staffReady();releaseGuest();await p.waitForTimeout(1500);
+  await p.getByRole('region',{name:'お客様'}).getByRole('listitem').waitFor({state:'detached'}).catch(()=>{});
+  await p.getByRole('region',{name:'お客様'}).getByRole('searchbox').fill('SYNTHETIC');await p.getByRole('region',{name:'お客様'}).getByRole('button',{name:'検索'}).click();
+  await p.getByRole('region',{name:'お客様'}).getByRole('button',{name:'このお客様にする'}).click();await p.waitForTimeout(500);
+  assert.ok(log.some(r=>r.route==='staff'&&r.path.endsWith('/customer')&&JSON.parse(r.body!).draftId===staffId),'the selection went to the staff draft');invariants('guest->staff');
+  // 2. reverse: staff /context pending -> switch to the public booking -> the staff answer arrives late.
+  gate.staff=new Promise<void>(f=>{releaseStaff=f;});await p.reload();await p.waitForTimeout(500);
+  await push('/ja/book');await p.getByRole('heading',{name:'レンタル予約',level:1}).waitFor();releaseStaff();await p.waitForTimeout(1500);
+  assert.equal(await p.getByRole('region',{name:'お客様'}).count(),0,'a late staff answer never shows staff UI on the guest page');invariants('staff->guest');
+  // 3. two mounts at once (guest tab + staff tab in one browser).
+  const q=await ctx.newPage();await Promise.all([q.goto('/ja/book'),p.goto('/staff/orders/new')]);await staffReady();await q.getByRole('heading',{name:'レンタル予約',level:1}).waitFor();await p.waitForTimeout(500);invariants('parallel');
+  assert.equal(await q.getByRole('region',{name:'お客様'}).count(),0);await q.close();
+  // 4. session revoked -> sign in again: the old stamp is never reused; the new flow carries only the new one.
+  const before=log.filter(r=>r.route==='staff').at(-1)!.session;
+  await db.pool.query('DELETE FROM auth_session WHERE "userId"=$1',[admin]);await p.reload();assert.equal(await p.getByRole('region',{name:'お客様'}).count(),0,'no staff flow without a session');
+  await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill('accept-admin@example.invalid');await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();
+  await p.waitForURL(u=>!u.pathname.startsWith('/staff/login'),{timeout:60000});const mark=log.length;await p.goto('/staff/orders/new');await staffReady();
+  const after=log.slice(mark).filter(r=>r.route==='staff');assert.ok(after.length>0);assert.ok(after.every(r=>r.session&&r.session!==before),'only the new session stamp after re-login');invariants('relogin');
+  // 5. storage: the staff flow made zero Storage calls even though every Storage API throws there; the guest flow still loads.
+  assert.equal(staffStorage,0,'staff flows (all cases above) never touched browser storage');
+  await p.goto('/ja/book');await p.getByRole('heading',{name:'レンタル予約',level:1}).waitFor();
+  await ctx.close();
+ });
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({status:'PASS',cases:count,screenshots:shots,externalRequests:0}));
  await context.close();

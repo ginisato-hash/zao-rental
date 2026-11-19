@@ -37,6 +37,7 @@ export function staffOrderHandler(state:(h:Headers)=>Promise<StaffState>,factory
   case '/accept-price':await svc.acceptPrice(v);result=await withCustomer();break;
   case '/prepare-payment':if(!svc.commercialEnabled())throw new HoldError('PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',503);await svc.preparePayment(v);result=await withCustomer();break;
   case '/checkout':if(!svc.commercialEnabled())throw new HoldError('PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',503);await svc.checkout(v);result=await withCustomer();break;
+  case '/reconsent':if(!svc.commercialEnabled())throw new HoldError('PAYMENT_NOT_CONNECTED_CHARGE_DISABLED',503);await svc.reconsent(v);result=await withCustomer();break;
   case '/reconcile':exact(v,[]);await svc.reconcile();result=await withCustomer();break;
   default:throw new HoldError('NOT_FOUND',404);
  }

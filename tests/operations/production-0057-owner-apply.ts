@@ -119,7 +119,7 @@ try{
  const owners60=roles60After.owners.filter((o:{k:string})=>!roles60.owners.some((p:{k:string})=>p.k===o.k));
  assert.ok(owners60.length>0&&owners60.every((o:{o:string})=>o.o===OWNER),'every new 0059/0060/0061 object is owner-owned');
  assert.equal((await q('SELECT count(*)::int n FROM rental_terms_bundles'))[0].n,1);
- for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests','staff_order_drafts'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
+ for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests','staff_order_drafts','rental_terms_reconsents'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
  const ops=DB+'_operations';assert.equal((await q("SELECT has_function_privilege($1,'staff_inbox_list(text[],boolean,timestamptz,uuid,integer)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0060 grant step');
  const c4=await owner.connect();try{await c4.query('BEGIN');for(const sql of productionStaffNotificationGrants(DB,ops))await c4.query(sql);await c4.query('COMMIT');}catch(e){await c4.query('ROLLBACK').catch(()=>{});throw e;}finally{c4.release();}
  for(const fn of STAFF_NOTIFICATION_FUNCTIONS)assert.equal((await q("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[ops,fn]))[0].ok,true,fn);
@@ -127,6 +127,8 @@ try{
  const c5=await owner.connect();try{await c5.query('BEGIN');for(const sql of productionCustomerGrants(DB,ops))await c5.query(sql);await c5.query('COMMIT');}catch(e){await c5.query('ROLLBACK').catch(()=>{});throw e;}finally{c5.release();}
  for(const t of CUSTOMER_TABLES){assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') ok",[ops,t]))[0].ok,true,t);for(const priv of ['INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,false,t+' '+priv);}
  assert.equal((await q("SELECT has_function_privilege($1,'customer_link_legacy(uuid,uuid,text)','EXECUTE') ok",[ops]))[0].ok,true);
+ // Payment start reads the governing terms; re-consent is insert-only (no UPDATE/DELETE on either table).
+ for(const [t,allowed] of [['rental_terms_acceptances',['SELECT']],['rental_terms_reconsents',['SELECT','INSERT']]] as const)for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,(allowed as readonly string[]).includes(priv),t+' '+priv);
  assert.equal((await q("SELECT has_function_privilege('public','customer_link_legacy(uuid,uuid,text)','EXECUTE') ok"))[0].ok,false,'no PUBLIC execute');
  console.log('PASS canonical 0059+0060+0061 apply as neondb_owner after 0058: registry 58 -> 61, guard/roles/memberships unchanged, new objects owner-owned, empty new tables, EXECUTE-only grants');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

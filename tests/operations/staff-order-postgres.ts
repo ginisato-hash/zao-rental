@@ -11,6 +11,9 @@ import type {PaymentRequest,PaymentObservation} from '../../packages/contracts/s
 // production identity lookup and the Square gateway are local test doubles; no provider, card data or network is used.
 const identity=Object.freeze({kind:'EXACT_PRODUCTION_IDENTITY' as const});let config:Readonly<ProductionConfiguration>;
 const identityModule=await import('../../packages/auth/src/production-identity');
+// Terms bundle changes are simulated by overriding only the current-bundle lookup; the later bundles exist in the owned DB.
+const termsModule=await import('../../packages/core/src/content/rental-terms');const terms:{current:{version:string;sha256:string}|null}={current:null};
+const termsMock=mock.module(new URL('../../packages/core/src/content/rental-terms.ts',import.meta.url).href,{namedExports:{...termsModule,currentRentalTerms:()=>terms.current??termsModule.currentRentalTerms()}});
 const identityMock=mock.module(new URL('../../packages/auth/src/production-identity.ts',import.meta.url).href,{namedExports:{...identityModule,exactProductionIdentityConfiguration:(value:unknown)=>value===identity?config:identityModule.exactProductionIdentityConfiguration(value as never)}});
 const {normalProductionFixture}=await import('../readiness/normal-production-fixture');
 const {productionConfiguration}=await import('../../packages/auth/src/production-config');
@@ -36,7 +39,9 @@ try{
  config=productionConfiguration({...original,flags:{...original.flags,payment:true},payment:{provider:'SQUARE',environment:'PRODUCTION',merchantId:'SYNTHETIC-STAFF-MERCHANT',locations:{MOUNTAIN_BASE:'SYNTHETIC-MOUNTAIN',ONSEN_BASE:'SYNTHETIC-ONSEN'}}});
  // The local development operations role is narrower than the Production operations plan
  // (scripts/production-app-roles.ts), which already grants these booking/payment writes. Mirror only those statements here.
- {const u=x.operationsRole.operationsDb.user;for(const sql of [`GRANT SELECT ON price_books,rental_bookings,rental_payment_attempts TO ${u}`,`GRANT INSERT,UPDATE(state,confirmed_at,version) ON rental_bookings TO ${u}`,`GRANT INSERT,UPDATE(state,provider_id,provider_state,provider_updated_at,completed_at,updated_at) ON rental_payment_attempts TO ${u}`,`GRANT UPDATE(payment_state,confirmed_at,version) ON inventory_holds TO ${u}`])await x.db.pool.query(sql);}
+ {const u=x.operationsRole.operationsDb.user;for(const sql of [`GRANT SELECT ON price_books,rental_bookings,rental_payment_attempts TO ${u}`,`GRANT INSERT,UPDATE(state,confirmed_at,version) ON rental_bookings TO ${u}`,`GRANT INSERT,UPDATE(state,provider_id,provider_state,provider_updated_at,completed_at,updated_at) ON rental_payment_attempts TO ${u}`,`GRANT UPDATE(payment_state,confirmed_at,version) ON inventory_holds TO ${u}`,`GRANT SELECT,INSERT ON rental_provider_events,rental_notifications TO ${u}`,`GRANT EXECUTE ON FUNCTION notification_enqueue_confirmed(uuid) TO ${u}`])await x.db.pool.query(sql);}
+ const bundle=async(version:string)=>{const canonical=JSON.stringify({version,synthetic:true});const sha256=createHash('sha256').update(canonical).digest('hex');await x.db.pool.query("INSERT INTO rental_terms_bundles(version,sha256,canonical,authority) VALUES($1,$2,$3,'SYNTHETIC test bundle')",[version,sha256,canonical]);return {version,sha256};};
+ const v3=await bundle('ZAO_RENTAL_TERMS_V3'),v4=await bundle('ZAO_RENTAL_TERMS_V4');
  const authority=issueCommercialPriceAuthority(identity),calls:PaymentRequest[]=[];
  const gateway={kind:'SQUARE_PRODUCTION' as const,async create(r:PaymentRequest):Promise<PaymentObservation>{calls.push(r);await new Promise(f=>setTimeout(f,30));return {providerId:'synthetic-'+r.attemptId,referenceId:r.bookingId,idempotencyKey:r.idempotencyKey,merchantId:r.merchantId,locationId:r.locationId,amountJpy:r.amountJpy,currency:'JPY',status:'PENDING',updatedAt:x.now().toISOString(),completedAt:null};},async lookup(){throw Error('UNEXPECTED_PROVIDER_LOOKUP');}};
  const ledger=new LedgerService(x.roles.ledgerPool,ledgerPrincipal(x.principal),(c,s,a)=>verifyLedgerWrite(c,x.roles.authPool,x.signed.identity,s,a),(r,id,v)=>reconcileLedgerProtection(x.roles.transferPool,x.roles.authPool,x.signed.identity,r,id,v));
@@ -87,7 +92,7 @@ try{
   const d=await ok(await me.get('/draft')),body={draftId:d.id,expectedRevision:d.revision,reviewHash:d.reviewHash,locale:'ja',contact:{displayName:'SYNTHETIC Counter',email:'synthetic-counter@example.invalid',termsAccepted:true,terms:{...currentRentalTerms(),locale:'ja'}}};
   assert.equal((await me.post('/checkout',body)).status,422);assert.equal((await me.post('/checkout',{...body,paymentSource:'CASH'})).status,422);assert.equal(calls.length,0);
   const rs=await Promise.all([me.post('/checkout',{...body,paymentSource:'synthetic-source'}),me.post('/checkout',{...body,paymentSource:'synthetic-source'})]);
-  assert.ok(rs.some(r=>r.status===200),JSON.stringify(await Promise.all(rs.map(r=>r.clone().json()))));assert.equal(calls.length,1);assert.equal(await attempts(first.booking),1);
+  assert.deepEqual(rs.map(r=>r.status),[200,200],JSON.stringify(await Promise.all(rs.map(r=>r.clone().json()))));assert.equal(calls.length,1);assert.equal(await attempts(first.booking),1);
   assert.equal(calls[0]!.bookingId,first.booking);assert.equal(calls[0]!.locationId,'SYNTHETIC-MOUNTAIN');
  });
  await check('another session of the same staff member cannot see or continue this draft',async()=>{
@@ -102,12 +107,41 @@ try{
   const link=(await x.db.pool.query('SELECT customer_id,source FROM customer_booking_links WHERE booking_id=$1',[d.booking!.id])).rows[0];assert.equal(link.customer_id,first.customer);assert.equal(calls.length,1);
   const locked=await me.post('/customer',{draftId:d.id,expectedRevision:d.revision,customerId:null});assert.equal(locked.status,409);
  });
- await check('payment start refuses a booking whose recorded terms no longer match the current bundle',async()=>{
-  const {body}=await order(me);const d=await ok(await me.post('/prepare-payment',body));
-  // Simulate a bundle change after booking creation in this owned DB only (the immutability trigger is restored at once).
-  const c=await x.db.pool.connect();try{await c.query('BEGIN');await c.query('ALTER TABLE rental_terms_acceptances DISABLE TRIGGER rental_terms_acceptances_immutable');await c.query('DELETE FROM rental_terms_acceptances WHERE booking_id=$1',[d.booking!.id]);await c.query('ALTER TABLE rental_terms_acceptances ENABLE TRIGGER rental_terms_acceptances_immutable');await c.query('COMMIT');}finally{c.release();}
-  const now=await ok(await me.get('/draft')),r=await me.post('/checkout',{...body,expectedRevision:now.revision,reviewHash:now.reviewHash,paymentSource:'synthetic-source'});
-  assert.equal(r.status,409);assert.equal((await r.json()).error,'TERMS_REACCEPT_REQUIRED');assert.equal(calls.length,1);assert.equal(await attempts(d.booking!.id),0);
+ await check('terms change after DRAFT: payment start refuses, explicit insert-only re-consent recovers, nothing else is rewritten',async()=>{
+  const {body}=await order(me);const d=await ok(await me.post('/prepare-payment',body)),booking=d.booking!.id;
+  const original=(await x.db.pool.query('SELECT version,sha256,locale,accepted_at FROM rental_terms_acceptances WHERE booking_id=$1',[booking])).rows[0];
+  const snapshot=async()=>(await x.db.pool.query('SELECT b.contact,b.price_snapshot,b.price_sha256,b.state,b.quote_id,h.expires_at,h.state hold_state FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1',[booking])).rows[0];
+  const before=await snapshot();
+  // Same bundle: nothing to re-consent; the normal path is unchanged.
+  let r=await me.post('/reconsent',{draftId:d.id,expectedRevision:d.revision,termsAccepted:true,terms:{...currentRentalTerms(),locale:'ja'}});assert.equal(r.status,409);assert.equal((await r.json()).error,'TERMS_RECONSENT_NOT_REQUIRED');
+  terms.current=v3;
+  const now=await ok(await me.get('/draft'));r=await me.post('/checkout',{...body,expectedRevision:now.revision,reviewHash:now.reviewHash,paymentSource:'synthetic-source'});
+  assert.equal(r.status,409);assert.equal((await r.json()).error,'TERMS_REACCEPT_REQUIRED');assert.equal(await attempts(booking),0);const providerBefore=calls.length;
+  // Never implicit: no checkbox, the old bundle, or a forged bundle are refused.
+  for(const [patch,code] of [[{termsAccepted:false},'INVALID_INPUT'],[{terms:{...currentRentalTerms(),locale:'ja'}},'TERMS_VERSION_MISMATCH'],[{terms:{...v3,sha256:'0'.repeat(64),locale:'ja'}},'TERMS_VERSION_MISMATCH']] as const){
+   const x2=await me.post('/reconsent',Object.assign({draftId:now.id,expectedRevision:now.revision,termsAccepted:true,terms:{...v3,locale:'ja'}},patch));assert.notEqual(x2.status,200);assert.equal((await x2.json()).error,code);}
+  // Another actor cannot add a consent row for this booking, even directly in the DB.
+  await assert.rejects(x.db.pool.query("SELECT set_config('zao.actor','someone-else',false)").then(()=>x.db.pool.query('INSERT INTO rental_terms_reconsents(booking_id,version,sha256,locale,actor) VALUES($1,$2,$3,$4,$5)',[booking,v3.version,v3.sha256,'ja','someone-else'])));
+  r=await me.post('/reconsent',{draftId:now.id,expectedRevision:now.revision,termsAccepted:true,terms:{...v3,locale:'en'}});assert.equal(r.status,200,JSON.stringify(await r.clone().json()));
+  assert.deepEqual((await x.db.pool.query('SELECT version,sha256,locale,accepted_at FROM rental_terms_acceptances WHERE booking_id=$1',[booking])).rows[0],original,'original acceptance untouched');
+  assert.deepEqual((await x.db.pool.query('SELECT version,sha256,locale,actor FROM rental_terms_reconsents WHERE booking_id=$1',[booking])).rows,[{version:v3.version,sha256:v3.sha256,locale:'en',actor:x.signed.identity.subject}]);
+  assert.deepEqual(await snapshot(),before,'contact, price, quote, HOLD and state are not rewritten');
+  await assert.rejects(x.db.pool.query('UPDATE rental_terms_reconsents SET locale=$1 WHERE booking_id=$2',['ja',booking]));
+  r=await me.post('/checkout',{...body,expectedRevision:now.revision,reviewHash:now.reviewHash,paymentSource:'synthetic-source'});assert.equal(r.status,200,JSON.stringify(await r.clone().json()));
+  assert.equal(calls.length,providerBefore+1);assert.equal(await attempts(booking),1);
+  // Once an attempt exists (PENDING here), a later bundle change cannot be re-consented into a new charge.
+  terms.current=v4;const after=await ok(await me.get('/draft'));
+  r=await me.post('/reconsent',{draftId:after.id,expectedRevision:after.revision,termsAccepted:true,terms:{...v4,locale:'ja'}});assert.equal(r.status,409);assert.equal((await r.json()).error,'TERMS_RECONSENT_NOT_ALLOWED');
+  r=await me.post('/checkout',{...body,expectedRevision:after.revision,reviewHash:after.reviewHash,paymentSource:'synthetic-source'});await r.json();assert.equal(calls.length,providerBefore+1,'a replay returns the existing attempt: no second charge');assert.equal(await attempts(booking),1);
+  terms.current=null;
+ });
+ await check('expired HOLD: re-consent is refused and nothing is revived or charged',async()=>{
+  const {body}=await order(me);const d=await ok(await me.post('/prepare-payment',body)),booking=d.booking!.id;terms.current=v3;
+  const h=(await x.db.pool.query('SELECT h.expires_at FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1',[booking])).rows[0];
+  await x.clock(new Date(h.expires_at.getTime()+1000).toISOString());const before=calls.length;
+  const r=await me.post('/reconsent',{draftId:d.id,expectedRevision:d.revision,termsAccepted:true,terms:{...v3,locale:'ja'}});assert.equal(r.status,409);assert.equal((await r.json()).error,'TERMS_RECONSENT_NOT_ALLOWED');
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM rental_terms_reconsents WHERE booking_id=$1',[booking])).rows[0].n,0);assert.equal(calls.length,before);
+  terms.current=null;await x.clock(new Date(h.expires_at.getTime()-24*3600e3).toISOString());
  });
  await check('permission table: each missing flow permission, a DB-side deny, narrowed or empty station scope all refuse New order',async()=>{
   const {STAFF_NEW_ORDER_PERMISSIONS}=await import('../../packages/auth/src/staff-order-access');
@@ -131,4 +165,4 @@ try{
  });
  console.log(JSON.stringify({suite:'staff-order-postgres',passed,localPostgres:true,productionIdentityLookup:'TEST_DOUBLE_ONLY',paymentGateway:'TEST_DOUBLE_ONLY',externalCalls:0}));
 }catch(error){failed=true;console.error(JSON.stringify({stage,code:(error as {code?:string}).code??(error as Error).name}));if(error instanceof assert.AssertionError)console.error(error.message);console.error((error as Error).stack?.split('\n').filter(l=>l.includes('/tests/operations/staff-order')).join('\n'));}
-finally{await x.close();identityMock.restore();if(failed)process.exitCode=1;}
+finally{await x.close();identityMock.restore();termsMock.restore();if(failed)process.exitCode=1;}

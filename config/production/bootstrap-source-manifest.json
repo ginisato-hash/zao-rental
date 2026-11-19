@@ -478,7 +478,7 @@
   {
    "id": "0061",
    "file": "0061_customer_identity.sql",
-   "sha256": "c5eab2bbc46b7f3dd447b28f11750d79961b0ad161d1aa46e7b47398826e00c3",
+   "sha256": "10f8ef4571a0c0bcaf583086b683c73fcd4ee45e2b6030707ab25faddcad803e",
    "runtimeGuards": 0,
    "guard": null
   }

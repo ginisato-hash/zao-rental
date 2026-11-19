@@ -110,3 +110,37 @@ CREATE TABLE staff_order_drafts(
 );
 CREATE UNIQUE INDEX staff_order_drafts_open ON staff_order_drafts(context_id,session_id) WHERE closed_at IS NULL;
 REVOKE ALL ON staff_order_drafts FROM PUBLIC;
+
+-- Terms re-consent for an unpaid DRAFT (Issue #47 initial spec; TD FB #7010252887 §4). When the terms bundle changes after a
+-- booking was prepared but before any payment attempt, the customer may explicitly accept the current bundle again. This is an
+-- insert-only, audit-only record: the original acceptance, contact, price, HOLD and booking rows are never rewritten. Only the
+-- booking's own actor may add it, only while the booking is DRAFT with no payment attempt and an ACTIVE, unexpired HOLD.
+-- Anything else (attempt present, PENDING/UNKNOWN, confirmed, expired) is refused here and goes to reconciliation instead.
+CREATE TABLE rental_terms_reconsents(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ booking_id uuid NOT NULL REFERENCES rental_bookings(id),
+ version text NOT NULL,
+ sha256 text NOT NULL,
+ locale text NOT NULL CHECK(locale IN ('ja','en')),
+ actor text NOT NULL CHECK(length(actor) BETWEEN 1 AND 160),
+ accepted_at timestamptz NOT NULL DEFAULT inventory_clock(),
+ FOREIGN KEY(version,sha256) REFERENCES rental_terms_bundles(version,sha256),
+ UNIQUE(booking_id,version)
+);
+CREATE TRIGGER rental_terms_reconsents_immutable BEFORE UPDATE OR DELETE ON rental_terms_reconsents FOR EACH ROW EXECUTE FUNCTION pricing_immutable();
+CREATE FUNCTION rental_terms_reconsent_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+DECLARE b record;
+BEGIN
+ SELECT id,state,owner_id,hold_id INTO b FROM rental_bookings WHERE id=NEW.booking_id FOR UPDATE;
+ IF b.id IS NULL OR NEW.actor IS DISTINCT FROM current_setting('zao.actor',true) OR NEW.actor<>b.owner_id THEN RAISE EXCEPTION 'OPS_FORBIDDEN' USING ERRCODE='42501';END IF;
+ IF b.state<>'DRAFT' OR EXISTS(SELECT 1 FROM rental_payment_attempts a WHERE a.booking_id=b.id)
+  OR NOT EXISTS(SELECT 1 FROM inventory_holds h WHERE h.id=b.hold_id AND h.state='ACTIVE' AND h.payment_state='NONE' AND h.expires_at>inventory_clock())
+ THEN RAISE EXCEPTION 'TERMS_RECONSENT_NOT_ALLOWED' USING ERRCODE='P0001';END IF;
+ IF EXISTS(SELECT 1 FROM rental_terms_acceptances a WHERE a.booking_id=b.id AND a.version=NEW.version AND a.sha256=NEW.sha256)
+ THEN RAISE EXCEPTION 'TERMS_RECONSENT_NOT_REQUIRED' USING ERRCODE='P0001';END IF;
+ NEW.accepted_at:=inventory_clock();
+ RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION rental_terms_reconsent_guard() FROM PUBLIC;
+CREATE TRIGGER rental_terms_reconsent_guard BEFORE INSERT ON rental_terms_reconsents FOR EACH ROW EXECUTE FUNCTION rental_terms_reconsent_guard();
+REVOKE ALL ON rental_terms_reconsents FROM PUBLIC;

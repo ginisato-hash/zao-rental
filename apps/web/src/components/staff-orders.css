@@ -25,7 +25,10 @@
 .ox-status{font-weight:600}
 .ox-status--blue{color:var(--sx-blue)}.ox-status--green{color:#248a3d}.ox-status--orange{color:var(--sx-warn)}.ox-status--grey{color:var(--sx-text2)}.ox-status--red{color:var(--sx-red)}
 .ox-pane{display:none!important}
-.ox-tabs{margin-bottom:16px}
+.ox-tabs{margin-bottom:16px;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.ox-tabs::-webkit-scrollbar{display:none}
+/* Segments never wrap or squeeze: on a narrow screen the row scrolls inside itself, the page never scrolls sideways. */
+.ox-tabs button{white-space:nowrap;flex:0 0 auto}
 .ox-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start}
 .ox-filters{display:grid;gap:16px;font-size:14px}
 .ox-filters fieldset{border:0;margin:0;padding:0;display:grid;gap:6px}

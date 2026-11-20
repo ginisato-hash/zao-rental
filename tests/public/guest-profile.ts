@@ -6,13 +6,20 @@ export async function fillGuestProfile(scope:Page|Locator,locale:'ja'|'en'='ja',
  // Multi-person forms show one person card at a time: open each in turn, as a guest would.
  const cards=scope.locator('details.guest-person-toggle');
  if(await cards.count()){for(const card of await cards.all()){for(let pass=0;pass<5;pass++){
-   for(let n=0;n<5&&!await card.evaluate(e=>(e as HTMLDetailsElement).open);n++){await card.locator('summary').click();await card.page().waitForTimeout(150);}
+   // Click once and wait for the card to report open (React re-renders it from activePersonIdx); press again only if it
+   // never opened. A fixed 150 ms wait re-clicked a card that was still opening under load and closed it again (UX-4A flake).
+   for(let n=0;n<3&&!await card.evaluate(e=>(e as HTMLDetailsElement).open);n++){await card.locator('summary').click();
+    await card.page().waitForFunction(el=>(el as HTMLDetailsElement).open,await card.elementHandle(),{timeout:3000}).catch(()=>{/* not opened: press again */});}
    await fillOne(card,locale,values);
-   // Done once no required number is empty and any skier-type group has a choice (checked regardless of visibility).
-   if(await card.evaluate(e=>[...e.querySelectorAll('input[type=number][aria-required=true]')].every(i=>(i as HTMLInputElement).value!=='')&&[...e.querySelectorAll('.guest-skier-type')].every(g=>!!g.querySelector('input:checked'))))break;
-  }}return;}
+   if(await complete(card))break;
+  }
+  // After the attempts, a card that never opened or still has an empty required value is a failure, not a silent return.
+  if(!await complete(card))throw new Error('GUEST_PROFILE_INCOMPLETE person '+(await card.getAttribute('data-person'))+' open='+String(await card.evaluate(e=>(e as HTMLDetailsElement).open)));
+ }return;}
  await fillOne(scope,locale,values);
 }
+/** Every required number has a value and every skier-type group has a choice (checked regardless of visibility). */
+const complete=(card:Locator)=>card.evaluate(e=>[...e.querySelectorAll('input[type=number][aria-required=true]')].every(i=>(i as HTMLInputElement).value!=='')&&[...e.querySelectorAll('.guest-skier-type')].every(g=>!!g.querySelector('input:checked')));
 async function fillOne(scope:Page|Locator,locale:'ja'|'en',values:GuestProfile){
  const t=(j:string,e:string)=>locale==='ja'?j:e,v={heightCm:170,footCm:25.5,weightKg:60,ageAtStart:30,skierType:'TYPE_I' as const,...values};
  for(const [label,value] of [[t('身長（cm）','Height (cm)'),v.heightCm],[t('足のサイズ（cm）','Foot size (cm)'),v.footCm],[t('体重（kg）','Weight (kg)'),v.weightKg],[t('年齢','Age at start'),v.ageAtStart]] as const){

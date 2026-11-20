@@ -10,23 +10,35 @@ import type {Browser,BrowserContext} from '@playwright/test';
  * Production builds have no such socket.
  *
  * The socket stays connected to the dev server (it also carries on-demand compilation and other dev traffic the pages
- * need; silencing it entirely broke the guest pages), page→server traffic is forwarded untouched, and only the
- * server→page messages that reload or hot-swap the page are dropped. `dropped` counts them, so a test can show the guard
- * applied. Binary frames are forwarded unchanged. The earlier pattern matched only `/_next/webpack-hmr` and never applied. */
+ * need; silencing it entirely broke the guest pages) and page→server traffic is forwarded untouched. Server→page:
+ *  - `sync` and `built` are always delivered (a page that loaded during a compile waits for `built` before hydrating:
+ *    dropping it left the guest page uninitialised after a dev restart in CI #44828188951), but a later hash is rewritten
+ *    to the first hash this connection received, so the page sees "nothing changed": no reload, no hot swap;
+ *  - messages that only reload or hot-swap (reloadPage, serverComponentChanges, ...) are dropped.
+ * What is NOT changed (TD #7053195635): the errors/warnings that sync/built carry, serverError and every other message
+ * type, binary frames, page→server traffic, ordinary API responses and any reload the product itself performs. The hash
+ * baseline is per connection: after a reconnect (dev server restart, new document) the first sync is delivered as sent,
+ * so the page's own restart detection and initialisation work as in normal development.
+ * `dropped` / `rewritten` count what was changed, so a test can show the guard applied.
+ * The earlier pattern matched only `/_next/webpack-hmr` and never applied. */
 export const DEV_HMR_SOCKET=/\/_next\/(?:webpack-)?hmr(?:[?#]|$)/;
-const RELOADING=new Set(['reloadPage','built','building','serverComponentChanges','staticParamsChanged','middlewareChanges','clientChanges','serverOnlyChanges','addedPage','removedPage']);
+const RELOADING=new Set(['reloadPage','serverComponentChanges','staticParamsChanged','middlewareChanges','clientChanges','serverOnlyChanges','addedPage','removedPage']);
 
-export type DevHmrGuard={sockets:number;dropped:Record<string,number>};
+export type DevHmrGuard={sockets:number;dropped:Record<string,number>;rewritten:number};
 export async function guardDevHmr(context:BrowserContext):Promise<DevHmrGuard>{
- const guard:DevHmrGuard={sockets:0,dropped:{}};
+ const guard:DevHmrGuard={sockets:0,dropped:{},rewritten:0};
  await context.routeWebSocket(DEV_HMR_SOCKET,ws=>{
-  guard.sockets++;const server=ws.connectToServer();let synced=false;
+  guard.sockets++;const server=ws.connectToServer();let base:string|null=null;
   server.onMessage(message=>{
    if(typeof message==='string'){
-    let type='';try{const m=JSON.parse(message) as {type?:unknown;action?:unknown};type=String(m.type??m.action??'');}catch{/* not JSON: forward */}
-    // The first sync of a connection sets the page's baseline hash; a later one with another hash would reload it.
-    const drop=RELOADING.has(type)||(type==='sync'&&synced);if(type==='sync')synced=true;
-    if(drop){guard.dropped[type]=(guard.dropped[type]??0)+1;return;}
+    type HmrMessage={type?:unknown;action?:unknown;hash?:unknown};
+    const m=((()=>{try{const v:unknown=JSON.parse(message);return v&&typeof v==='object'?v as HmrMessage:null;}catch{return null;/* not JSON: forward */}})());
+    const type=m?String(m.type??m.action??''):'';
+    if(RELOADING.has(type)){guard.dropped[type]=(guard.dropped[type]??0)+1;return;}
+    if(m&&(type==='sync'||type==='built')&&typeof m.hash==='string'){
+     if(base===null)base=m.hash;
+     else if(m.hash!==base){m.hash=base;guard.rewritten++;ws.send(JSON.stringify(m));return;}
+    }
    }
    ws.send(message);
   });

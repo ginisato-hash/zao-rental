@@ -12,7 +12,7 @@
 | 対象 | 確認結果 | 本人の操作 |
 |---|---|---|
 | Vercel CLI | `~/.npm/_npx/.../vercel`（59.23.2）があり、`vercel whoami` が成功（既存の認証が有効） | **不要**。stage/promoteは実装担当が既存の認証で行う。期限切れなどで再認証が必要になった場合だけ依頼する |
-| Neon（DB所有者） | 適用スクリプトが固定で参照するNeon CLI（`~/.npm/_npx/978debf9b3a75271/node_modules/.bin/neon`）が**この端末に存在しない**。GitHub Actionsの本番用secretは読み取り専用のbackupロールだけで、DB変更用のworkflowは無い | **必要**（所有者セッションのブラウザ認証・MFA）。あわせて、固定パスのCLIを正規手順で用意する |
+| Neon（DB所有者） | 2026-11-21 08時台：Owner承認のうえ公式 `neonctl` 9.9.0（npm公式）を導入し、Owner本人が内蔵ブラウザで許可（`Auth complete`、profile DEFAULT）。CLIの読み取り一覧で `curly-union-23141081` / `zao-rental-production`（org `org-delicate-dream-81592413`）を確認。接続文字列・資格情報は取得していない。**ただし適用スクリプトが固定で参照するパス（`~/.npm/_npx/978debf9b3a75271/node_modules/.bin/neon`）とは別の場所（`83c76687887d2a83`）に入っており、固定パスはリポジトリの記録から再現できない** | 本人認証は**完了**。固定パスの扱い（公式CLIを固定パスへ置くか、レビュー済みの差分でpinを更新するか）はTDの最終レビューで判断 |
 | 本番backup | `production-backup` workflowが `533902cc` で毎時SUCCESS（直近5回） | 復元試験の復号鍵の扱いは既存手順どおり（§2） |
 
 ## 1. merge（実装担当、既存のOwner包括承認の条件内）

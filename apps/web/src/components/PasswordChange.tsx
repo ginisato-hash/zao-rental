@@ -44,10 +44,10 @@ export function PasswordChange(){
   <form className="sx-card sx-form" style={{padding:'20px 24px',maxWidth:520}} onSubmit={e=>void submit(e)} aria-busy={busy} noValidate>
    {field('currentPassword',t('現在のパスワード','Current password'),'current-password')}
    {field('newPassword',t('新しいパスワード','New password'),'new-password',{minLength:15,describedBy:'pw-rule'})}
-   <p id="pw-rule" className="sx-help">{t('15〜128文字。ほかのサービスと同じものは使わないでください。','15 to 128 characters. Do not reuse one from another service.')}</p>
+   
    {field('confirmPassword',t('新しいパスワード（確認）','Confirm new password'),'new-password',{minLength:15})}
    {failure&&<p ref={alert} tabIndex={-1} role="alert" className="sx-alert" style={{margin:0}}>{message[failure]}</p>}
-   <p className="sx-help">{t('変更すると、この端末を含むすべての端末でログアウトします。新しいパスワードでログインし直してください。','After the change you are signed out on every device, including this one. Sign in again with the new password.')}</p>
+   
    <button type="submit" className="sx-btn sx-btn--primary" disabled={busy}>{busy?t('変更しています…','Changing…'):t('パスワードを変更','Change password')}</button>
   </form>
  </div>;

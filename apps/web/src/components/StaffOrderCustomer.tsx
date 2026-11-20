@@ -31,7 +31,7 @@ export function StaffOrderCustomer({locale:serverLocale,stamp,selected,locked,bu
   <h2 id="staff-order-customer">{tx('title')}</h2>
   <p role="status">{tx('selected')}: {selected?(chosen?`${chosen.name??'—'} ${chosen.email?'· '+chosen.email:''}`:tx('existing')):tx('newCustomer')}</p>
   {locked?<p className="sx-help">{tx('fixed')}</p>:<>
-   <p className="sx-help">{tx('help')}</p>
+   
    {selected&&<button type="button" className="guest-secondary-button" disabled={busy} onClick={()=>onSelect(null)}>{tx('newCustomer')}</button>}
    <form role="search" onSubmit={e=>{e.preventDefault();const q=search.trim();if(q)setQuery(q);}}>
     <input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/> <button type="submit" className="guest-secondary-button" disabled={!search.trim()}>{tx('find')}</button>

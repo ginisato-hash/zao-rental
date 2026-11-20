@@ -17,7 +17,7 @@ export function LaunchGateView({stamp}:{stamp:string}){
    if(!r.ok)throw Error();const body=await r.json() as {rows:Row[]};setRows(body.rows);setMessage('');
   }catch{setRows([]);setMessage(p('公開準備状況を取得できません。権限と接続を確認してください。','Could not load the launch status. Check your permissions and the connection.'));}finally{active.current=false;setBusy(false);}}
  return <StaffSessionBoundary stamp={stamp}><main><h1>{t('公開準備状況','Launch readiness')}</h1><nav><Link href="/admin/ops">{t('運用例外','Operations exceptions')}</Link></nav>
- <p>{t('公開に必要な各項目の準備状況を確認できます。','Shows how ready each item needed for launch is.')}</p><details><summary>{t('確認範囲と技術情報','Scope and technical details')}</summary><p>{t('この画面は状態の確認だけを行います。接続・公開設定は変更しません。','This screen only shows status. It does not change connections or launch settings.')}</p>
+ <details><summary>{t('確認範囲と技術情報','Scope and technical details')}</summary>
  <label>{t('現場確認ID（任意）','Field check ID (optional)')}<input aria-label={t('現場確認ID','Field check ID')} value={runId} disabled={busy} onChange={e=>setRunId(e.target.value.trim())} /></label></details>
  <button disabled={busy} onClick={()=>void load()}>{t('読み込む','Load')}</button>
  {message&&<p role="status">{pick(message)}</p>}

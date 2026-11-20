@@ -54,15 +54,15 @@ export function StaffDocuments({stamp,stores}:{stamp:string;stores:string[]}){
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'documents')}</h1></div>
   <div className="ox-docs">
-   <section className="sx-card ox-doc" aria-labelledby="doc-booking"><h2 id="doc-booking">{tx('booking')}</h2><p className="sx-help">{tx('bookingHelp')}</p>
+   <section className="sx-card ox-doc" aria-labelledby="doc-booking"><h2 id="doc-booking">{tx('booking')}</h2>
     <form onSubmit={e=>{e.preventDefault();void openBooking();}}><label className="sx-field">{tx('orderNo')}<input value={ref} onChange={e=>setRef(e.target.value)} maxLength={40} autoComplete="off"/></label><button className="sx-btn sx-btn--primary">{tx('open')}</button></form>
     {find&&<p role="alert" className="sx-alert">{tx(find)}</p>}</section>
-   <section className="sx-card ox-doc" aria-labelledby="doc-work"><h2 id="doc-work">{tx('work')}</h2><p className="sx-help">{tx('workHelp')}</p>
+   <section className="sx-card ox-doc" aria-labelledby="doc-work"><h2 id="doc-work">{tx('work')}</h2>
     <form onSubmit={e=>{e.preventDefault();if(pickStore&&pickDate)go({doc:'work',store:pickStore,date:pickDate});}}>
      {stores.length>1&&<label className="sx-field">{tx('station')}<select value={pickStore} onChange={e=>setPickStore(e.target.value)}>{stores.map(s=><option key={s} value={s}>{STORE_LABEL[s]??s}</option>)}</select></label>}
      <label className="sx-field">{tx('date')}<input type="date" value={pickDate} onChange={e=>setPickDate(e.target.value)} required/></label><button className="sx-btn sx-btn--primary">{tx('show')}</button></form></section>
-   <section className="sx-card ox-doc" aria-labelledby="doc-quotes"><h2 id="doc-quotes">{tx('quotes')}</h2><p className="sx-help">{tx('quotesHelp')}</p><Link href="/staff/quotes">{tx('quotes')}</Link></section>
-   <section className="sx-card ox-doc" aria-labelledby="doc-labels"><h2 id="doc-labels">{tx('labels')}</h2><p className="sx-help">{tx('labelsHelp')}</p><Link href="/staff/ledger">{st(locale,'inventory')}</Link></section>
+   <section className="sx-card ox-doc" aria-labelledby="doc-quotes"><h2 id="doc-quotes">{tx('quotes')}</h2><Link href="/staff/quotes">{tx('quotes')}</Link></section>
+   <section className="sx-card ox-doc" aria-labelledby="doc-labels"><h2 id="doc-labels">{tx('labels')}</h2><Link href="/staff/ledger">{st(locale,'inventory')}</Link></section>
   </div>
  </main></StaffSessionBoundary>;
 }

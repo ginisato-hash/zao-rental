@@ -19,7 +19,7 @@ import {permissions} from '../../packages/auth/src/staff-auth';
 const built=process.argv.includes('--built');
 const ROUTES=['/staff','/staff/today','/staff/orders','/staff/orders/new','/staff/calendar','/staff/customers','/staff/inventory','/staff/documents','/staff/reports','/staff/scan',
  '/staff/notifications','/staff/settings','/staff/holds','/staff/quotes','/staff/recommendations','/staff/rentals','/staff/amendments','/staff/transfers','/staff/ledger','/staff/wear',
- '/staff/content','/staff/users','/staff/password','/admin','/admin/assets','/admin/inventory','/admin/launch','/admin/notifications','/admin/ops','/admin/prices'];
+ '/staff/content','/staff/users','/staff/password','/admin','/admin/assets','/admin/inventory','/admin/launch','/admin/notifications','/admin/ops','/admin/prices','/staff/help'];
 let app:Awaited<ReturnType<typeof startDevelopmentApp>>|undefined,failed=false,stage='startup';const problems:string[]=[];let visited=0;
 const browser=await chromium.launch(),password=randomBytes(24).toString('base64url'),shots='.local/evidence/issue47-console-unity';
 try{
@@ -70,6 +70,11 @@ try{
       const disabled=(e as HTMLButtonElement).disabled||!!e.closest(':disabled,[aria-disabled=true]');
       if(!disabled&&ratio<((size>=24||(bold&&size>=18.66))?3:4.5))out.push(`contrast ${ratio.toFixed(2)} ${name(e)} "${(e.textContent??'').trim().slice(0,20)}"`);
       if(size>40)out.push(`poster text ${size}px ${name(e)}`);}
+     // Owner 2026-11-20: no explanations, slogans or footnotes scattered on screens; they live in Staff Q&A (/staff/help).
+     if(location.pathname!=='/staff/help')for(const e of root.querySelectorAll('p,small,[class*=help],[class*=note],[class*=lead],[class*=kicker],[class*=footnote],[class*=eyebrow],footer')){
+      if(!visible(e)||e.closest('table,[role=alert],[role=status],button,label,legend,summary,.sx-empty,.staff-empty,.guest-main,.sx-pop,.sx-alert,dialog'))continue;
+      const t=(e.textContent??'').replace(/\s+/g,' ').trim();
+      if(/^(ONE RECORD|REGISTER DETAIL|SALOMON RENTAL STATION ZAO \/)/.test(t)||(t.length>=20&&/(。|\.\s|\.$)/.test(t)))out.push('explanation "'+t.slice(0,40)+'" '+name(e));}
      // The submit action of a form is the one blue primary.
      for(const b of root.querySelectorAll('button[type=submit]:not(:disabled),button.staff-card-primary:not(:disabled)')){if(!visible(b)||b.closest('.guest-main'))continue;const c=rgb(getComputedStyle(b).backgroundColor);if(!(c.b>c.r+60&&c.b>c.g+20))out.push('primary not blue '+name(b)+' "'+(b.textContent??'').trim().slice(0,24)+'"');}
      return [...new Set(out)].slice(0,16);

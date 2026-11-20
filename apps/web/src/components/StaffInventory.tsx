@@ -44,7 +44,7 @@ export function StaffInventory({locale:serverLocale,stamp,stores,can}:{locale:St
    {rows&&<CsvButton csv={csv} url={'/api/operations/products?'+csvQuery} filename={`inventory-${store}.csv`}/>}
    {can.edit&&<Link className="sx-btn" href="/admin/inventory">{tx('stocktake')}</Link>}
   </div>
-  <p className="sx-help">{tx('note')}</p>
+  
   <div className="ox-layout">
    <aside className="ox-filters" aria-label={tx('family')}>
     {stores.length>1&&<fieldset><legend>{tx('station')}</legend>{stores.map(s=><label key={s} className="sx-check"><input type="radio" name="inv-store" checked={s===store} onChange={()=>set({store:s})}/>{STORE_LABEL[s]??'—'}</label>)}</fieldset>}

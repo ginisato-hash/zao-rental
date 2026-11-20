@@ -32,7 +32,7 @@ export function StaffSettings({locale:serverLocale,stamp,access}:{locale:StaffLo
    {failed&&<p className="sx-alert" role="alert">{t('saveFailed')}</p>}
    {pref&&draft&&<div className="sx-form">
     <label className="sx-check"><input type="checkbox" checked={draft.emailEnabled} onChange={e=>setDraft(d=>({...d!,emailEnabled:e.target.checked}))}/>
-     <span>{t('emailOn')}<br/><b>{pref.email}</b><p className="sx-help">{t('emailHelp')}</p></span></label>
+     <span>{t('emailOn')}<br/><b>{pref.email}</b></span></label>
     <div className="sx-field"><label htmlFor="sx-email-locale">{t('emailLocale')}</label>
      <select id="sx-email-locale" value={draft.locale} onChange={e=>setDraft(d=>({...d!,locale:e.target.value==='en'?'en':'ja'}))}><option value="ja">日本語</option><option value="en">English</option></select></div>
     <div><button type="button" className="sx-btn sx-btn--primary" disabled={busy||(draft.emailEnabled===pref.emailEnabled&&draft.locale===pref.locale)} onClick={()=>void save()}>{t('save')}</button></div>
@@ -41,7 +41,7 @@ export function StaffSettings({locale:serverLocale,stamp,access}:{locale:StaffLo
   </section>
   <section className="sx-card" style={{padding:'20px 24px',marginTop:16}} aria-labelledby="sx-alerts">
    <h2 id="sx-alerts" style={{marginTop:0}}>{t('notifications')}</h2>
-   <label className="sx-check"><input type="checkbox" checked={alerts} disabled={blocked} onChange={e=>void toggleAlerts(e.target.checked)}/><span>{t('browserAlerts')}<p className="sx-help">{blocked?t('browserBlocked'):t('browserAlertsHelp')}</p></span></label>
+   <label className="sx-check"><input type="checkbox" checked={alerts} disabled={blocked} onChange={e=>void toggleAlerts(e.target.checked)}/><span>{t('browserAlerts')}{blocked&&<p className="sx-help">{t('browserBlocked')}</p>}</span></label>
   </section>
   <section style={{marginTop:24}}><ul className="sx-links">
    {access.manageStaff&&<li><Link href="/staff/users">{t('staffUsers')}</Link></li>}

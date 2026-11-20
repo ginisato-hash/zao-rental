@@ -36,7 +36,7 @@ export function StaffScan({locale:serverLocale,stamp,canOrders,canItems}:{locale
   router.push('/staff/inventory/'+encodeURIComponent(v.modelId)+'?'+new URLSearchParams({store:v.store}).toString());
  }
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
-  <h1>{st(locale,'scan')}</h1><p className="sx-help">{tx('help')}</p>
+  <h1>{st(locale,'scan')}</h1>
   <div className="sx-seg ox-tabs" role="tablist">{canOrders&&<button type="button" role="tab" aria-selected={mode==='order'} onClick={()=>switchMode('order')}>{tx('order')}</button>}
    {canItems&&<button type="button" role="tab" aria-selected={mode==='item'} onClick={()=>switchMode('item')}>{tx('item')}</button>}</div>
   <div className="sx-card" style={{padding:'16px 20px'}}>

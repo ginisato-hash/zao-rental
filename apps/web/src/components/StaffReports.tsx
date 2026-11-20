@@ -49,10 +49,10 @@ export function StaffReports({stamp,stores}:{stamp:string;stores:string[]}){
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'reports')}</h1>{data&&<button type="button" className="sx-btn" disabled={csvBusy} aria-busy={csvBusy} onClick={()=>void download()}>{tx('csv')}</button>}</div>
   <div className="sx-seg ox-tabs" role="tablist" aria-label={tx('type')}>{TYPES.map(t=><button key={t} type="button" role="tab" aria-selected={type===t} onClick={()=>set({type:t==='bookings'?'':t})}>{tx(t)}</button>)}</div>
-  <p className="sx-help">{tx(`${type}Help` as 'bookingsHelp')}</p>
+  
   <div className="ox-controls">
    {stores.length>1&&<div className="sx-seg" role="group" aria-label={tx('station')}>{stores.map(s=><button key={s} type="button" aria-pressed={selected.includes(s)} onClick={()=>{const next=selected.includes(s)?selected.filter(x=>x!==s):[...selected,s];set({stores:next.length&&next.length<stores.length?next.join(','):''});}}>{STORE_LABEL[s]??s}</button>)}</div>}
-   {type!=='care'&&<><label className="sx-field">{tx('from')}<input type="date" value={get('from')||data?.from||''} onChange={e=>set({from:e.target.value})}/></label><label className="sx-field">{tx('to')}<input type="date" value={get('to')||data?.to||''} onChange={e=>set({to:e.target.value})}/></label><span className="sx-help">{tx('range')}</span></>}
+   {type!=='care'&&<><label className="sx-field">{tx('from')}<input type="date" value={get('from')||data?.from||''} onChange={e=>set({from:e.target.value})}/></label><label className="sx-field">{tx('to')}<input type="date" value={get('to')||data?.to||''} onChange={e=>set({to:e.target.value})}/></label></>}
   </div>
   {(failed===key||csv.failed)&&<p className="sx-alert" role="alert">{tx('failed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
   {data&&!data.rows.length&&<p className="sx-empty">{tx('none')}</p>}

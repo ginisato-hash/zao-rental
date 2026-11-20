@@ -35,7 +35,7 @@ export function OpsWorkspace({stamp,stores,systemScope,canAcknowledge}:{stamp:st
    setMessage(p('スタッフが確認したことのみ記録しました。入金・返金・在庫・予約の状態は変わりません。','Only the staff acknowledgement was recorded. Payments, refunds, stock and bookings did not change.'));
   }catch{setMessage(p('受付結果は未確認です。同じ操作を繰り返しても同じ要求として照合します。','Not confirmed yet. Repeating the action reconciles the same request.'));}finally{active.current=false;setBusy(false);}}
  return <StaffSessionBoundary stamp={stamp}><main><h1>{tr_('運用例外','Operations exceptions')}</h1>
- <p>{tr_('発生した問題を確認し、担当者と対応を決めてください。','Review the issues and decide who handles them and how.')}</p><details><summary>{tr_('「確認済み」の意味','What “acknowledged” means')}</summary><p>{tr_('スタッフが内容を確認したことを記録します。入金・返金・予約・在庫などの状態は変わりません。対応結果は各業務画面で確認してください。','Records that staff reviewed it. Payments, refunds, bookings and stock do not change. Check results on each business screen.')}</p></details>
+ <details><summary>{tr_('「確認済み」の意味','What “acknowledged” means')}</summary></details>
  <section aria-label={tr_('絞り込み','Filters')}>
   <label>{tr_('範囲','Scope')}<select aria-label={tr_('範囲','Scope')} value={store} disabled={busy} onChange={e=>{setStore(e.target.value);setRows([]);setCursor(null);}}>{scopes.map(s=><option key={s} value={s}>{storeDisplayName(s)}</option>)}</select></label>
   <label>{tr_('種別','Type')}<select aria-label={tr_('種別','Type')} value={type} disabled={busy} onChange={e=>setType(e.target.value)}><option value="">{tr_('すべて','All')}</option>{TYPES.map(t=><option key={t} value={t}>{staffLabel(t,locale)}</option>)}</select></label>

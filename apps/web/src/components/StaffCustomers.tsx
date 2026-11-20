@@ -20,7 +20,7 @@ const L={
  legacy:['導入前の予約','Before customer records'],back:['顧客一覧','Customers'],history:['予約履歴','Order history'],notFound:['顧客が見つからないか、閲覧権限がありません。','Customer not found or not visible to you.'],
  linkTitle:['同じ顧客に関連付ける','Link to the same customer'],linkHelp:['この予約を、同じ方の別の予約と同じ顧客として扱います。取り消しはできません。名前やメールが同じでも自動では関連付けません。','Treat this order as the same person as another order. This cannot be undone. Matching names or emails are never linked automatically.'],
  pick:['関連付け先','Link to'],review:['内容を確認','Review'],thisOrder:['対象の予約','This order'],outcome:['結果','Result'],cancel:['取消','Cancel'],
- outcomeText:['この予約は関連付け先と同じ顧客として扱われます。取り消せません。','This order will be treated as the same customer as the target. This cannot be undone.'],confirm:['関連付ける','Link'],done:['関連付けました。','Linked.'],conflict:['この予約はすでに関連付けられています。画面を更新してください。','This order is already linked. Refresh the page.'],
+ outcomeText:['この予約は関連付け先と同じ顧客として扱われます。取り消せません。','This order will be treated as the same customer as the target. This cannot be undone.'],confirm:['関連付ける（取り消し不可）','Link (cannot be undone)'],done:['関連付けました。','Linked.'],conflict:['この予約はすでに関連付けられています。画面を更新してください。','This order is already linked. Refresh the page.'],
 } as const;
 
 export function StaffCustomers({locale:serverLocale,stamp}:{locale:StaffLocale;stamp:string}){
@@ -83,7 +83,7 @@ export function StaffCustomer({locale:serverLocale,stamp,customerKey,canLink}:{l
    <h2>{tx('history')}</h2>
    <div className="sx-card ox-table-wrap"><table className="sx-table ox-table"><tbody>{data.orders.map(o=><tr key={o.id}><td><Link href={'/staff/orders/'+o.id}>#{o.ref}</Link></td>
     <td><span className={'ox-status ox-status--'+statusTone(o.status)}>{statusLabel(locale,o.status)}</span></td><td>{fmtDate(locale,o.startDate)} – {fmtDate(locale,o.endDate)}</td><td>{STORE_LABEL[o.pickupStore]??'—'}</td><td className="ox-num">{fmtYen(locale,o.totalJpy)}</td></tr>)}</tbody></table></div>
-   {canLink&&data.legacy&&<section className="sx-card" style={{padding:'16px 20px',marginTop:20}} aria-labelledby="cl-title"><h2 id="cl-title" style={{marginTop:0}}>{tx('linkTitle')}</h2><p className="sx-help">{tx('linkHelp')}</p>
+   {canLink&&data.legacy&&<section className="sx-card" style={{padding:'16px 20px',marginTop:20}} aria-labelledby="cl-title"><h2 id="cl-title" style={{marginTop:0}}>{tx('linkTitle')}</h2>
     <div className="ox-controls"><input type="search" aria-label={tx('search')} placeholder={tx('search')} value={q} onChange={e=>setQ(e.target.value)}/><button type="button" className="sx-btn" onClick={()=>void find()}>{tx('search')}</button></div>
     {candidates.length>0&&<div className="ox-controls"><select aria-label={tx('pick')} value={target} onChange={e=>{setTarget(e.target.value);setReview(null);requestKey.current=null;}}><option value="">—</option>{candidates.map(c=><option key={c.key} value={c.key}>{c.name??'—'} · {c.email??''} · {c.bookings}</option>)}</select>
      <button type="button" className="sx-btn" disabled={!chosen||busy} onClick={()=>setReview(viewKey+'|'+target)}>{tx('review')}</button></div>}

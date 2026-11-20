@@ -69,7 +69,7 @@ export function StaffCalendar({stamp,stores}:{stamp:string;stores:string[]}){
    <label className="ox-range"><span className="sx-visually-hidden">{tx('family')}</span><select value={family} onChange={e=>set({family:e.target.value})}><option value="">{tx('allFamilies')}</option>{FAMILIES.map(f=><option key={f} value={f}>{tx(f)}</option>)}</select></label>
    {data&&<span className="sx-help">{`${fmtDate(locale,data.from)} – ${fmtDate(locale,data.to)}`}</span>}
   </div>
-  <p className="sx-help">{tx('help')}</p>
+  
   <ul className="cx-legend" aria-label={tx('legend')}>{(['BOOKING','HOLD','OUT','OVERDUE','RETURNED','CARE','BLOCK','TRANSFER'] as const).map(k=><li key={k}><span className={'cx-swatch cx-bar--'+k}/>{tx(k)}</li>)}</ul>
   {failed===key&&<p className="sx-alert" role="alert">{tx('failed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
   {data&&!data.items.length&&<p className="sx-empty">{tx('none')}</p>}

@@ -238,6 +238,38 @@ try{
   release();await p.waitForTimeout(1500);await p.unroute(/format=csv/);assert.equal(downloads,0,'no CSV after the filter changed');
   await ctx.close();
  });
+ await check('UX-02: real order, customer, product and item screens read correctly at 1440, 390 and 200% zoom in Japanese and English, and their main actions are reachable by keyboard',async()=>{
+  const {ctx,p}=await login('accept-admin@example.invalid');const errors:string[]=[];p.on('pageerror',e=>errors.push(e.message));
+  const ref=confirmedId.slice(0,8).toUpperCase(),customer=(await db.pool.query('SELECT customer_id FROM customer_booking_links WHERE booking_id=$1',[confirmedId])).rows[0].customer_id as string;
+  // The profile's name is that of its most recent booking (same email), as the Customers list shows it.
+  const customerName=((await (await p.request.get('/api/operations/customers/'+customer)).json()) as {name:string}).name;assert.ok(customerName?.startsWith('SYNTHETIC'));
+  const model=(await db.pool.query('SELECT v.model_id FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.id=$1',[mountainItem])).rows[0].model_id as string;
+  // Each screen: a real record (never a not-found state), its own heading, and the control a person uses next.
+  const screens=[{path:'/staff/orders/'+confirmedId,heading:'#'+ref,name:'order'},{path:'/staff/customers/'+customer,heading:customerName,name:'customer'},
+   {path:`/staff/inventory/${model}?store=MOUNTAIN_BASE`,heading:null,name:'product'},{path:'/staff/scan',heading:null,name:'scan'}];
+  // 200% browser zoom is the same CSS layout as half the window width (1440 → 720 CSS px at device scale 2).
+  for(const [label,width,height,scale] of [['1440',1440,900,1],['390',390,844,1],['zoom200',720,450,2]] as const){
+   const z=await ctx.browser()!.newContext({baseURL:origin,viewport:{width,height},deviceScaleFactor:scale,storageState:await ctx.storageState()});const zp=await z.newPage();zp.on('pageerror',e=>errors.push(e.message));
+   for(const locale of ['ja','en'] as const){await z.addCookies([{name:'zao_staff_locale',value:locale,url:origin}]);
+    for(const sc of screens){
+     await zp.goto(sc.path,{waitUntil:'load'});const h1=zp.locator('main h1').first();await h1.waitFor({timeout:20000});
+     if(sc.heading)assert.ok((await h1.innerText()).includes(sc.heading),`${label} ${locale} ${sc.name}: heading shows the real record (${await h1.innerText()})`);
+     assert.equal(await zp.getByText(/見つかりません|not found/i).count(),0,`${label} ${locale} ${sc.name}: not a not-found state`);
+     assert.equal(await zp.evaluate(()=>document.documentElement.lang),locale);
+     assert.ok(await zp.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),`${label} ${locale} ${sc.name}: no horizontal scroll`);
+     // Keyboard: Tab from the top reaches a control inside main with a visible focus indicator.
+     await zp.locator('body').focus();let reached=false;
+     for(let i=0;i<40&&!reached;i++){await zp.keyboard.press('Tab');reached=await zp.evaluate(()=>{const a=document.activeElement as HTMLElement|null;if(!a||!a.closest('main'))return false;const st=getComputedStyle(a);return st.outlineStyle!=='none'&&st.outlineWidth!=='0px'||st.boxShadow!=='none';});}
+     assert.ok(reached,`${label} ${locale} ${sc.name}: a main control is reachable by Tab with a visible focus ring`);
+     await zp.screenshot({path:`${shots}/ux02-${label}-${locale}-${sc.name}.png`,fullPage:true});
+    }
+   }
+   await z.close();
+  }
+  // From the order: the booking confirmation document opens for the same record.
+  await p.goto('/staff/documents?doc=booking&id='+confirmedId);await p.getByText('#'+ref).first().waitFor();assert.equal(await p.getByRole('button',{name:'印刷'}).isEnabled(),true);
+  assert.deepEqual(errors,[],'no page errors');await ctx.close();
+ });
  await check('new order: staff API with the session header only, no browser storage, explicit customer choice; real route refuses without commercial composition',async()=>{
   const seen:{url:string;method:string;session:string|null;body:string|null}[]=[];page.on('request',r=>{if(/\/api\/(guest|staff-orders)/.test(r.url()))seen.push({url:r.url(),method:r.method(),session:r.headers()['x-zao-session']??null,body:r.postData()});});
   await page.goto('/staff/orders');const contextAnswer=page.waitForResponse(r=>r.url().endsWith('/api/staff-orders/context'));await page.locator('a[href="/staff/orders/new"]').first().click();await page.waitForURL('**/staff/orders/new');

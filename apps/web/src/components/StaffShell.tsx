@@ -30,6 +30,7 @@ const MORE:Item[]=[
 ];
 const BOTTOM:Item[]=[
  {key:'scan',href:'/staff/scan',match:/^\/staff\/scan/,show:a=>a.bookingView||a.inventoryView},
+ {key:'help',href:'/staff/help',match:/^\/staff\/help/,show:()=>true},
  {key:'settings',href:'/staff/settings',match:/^\/(staff\/(settings|users|password|content)|admin\/(ops|notifications|prices|launch))/,show:()=>true},
 ];
 

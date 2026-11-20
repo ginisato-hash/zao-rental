@@ -151,3 +151,12 @@
 .sx .sx-content .ledger-shell .ledger-detail h2{font:600 19px/1.35 var(--sx-font);margin:8px 0 12px}
 .sx .sx-content .ledger-shell *:not(button):not(input):not(select):not(textarea){border-color:var(--sx-line)}
 .sx .sx-content .ledger-shell .ledger-detail{border-width:1px!important;border-radius:14px;background:var(--sx-bg)}
+
+/* ── Staff Q&A ─────────────────────────────────────────────────────────────────────────── */
+.sx .sx-content .staff-qa-toc ul{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:0 0 20px}
+.sx .sx-content .staff-qa-toc a{display:inline-flex;align-items:center;min-height:32px;padding:0 14px;border-radius:980px;background:var(--sx-bg2);color:var(--sx-text);text-decoration:none;font:400 14px/1 var(--sx-font)}
+.sx .sx-content .staff-qa-section{padding:8px 24px 12px;margin:0 0 16px;scroll-margin-top:72px}
+.sx .sx-content .staff-qa-section h2{font:600 19px/1.25 var(--sx-font);margin:16px 0 8px}
+.sx .sx-content .staff-qa-section details{border-top:1px solid var(--sx-line)}
+.sx .sx-content .staff-qa-section summary{cursor:pointer;padding:14px 0;font:500 15px/1.4 var(--sx-font);color:var(--sx-text);list-style-position:outside}
+.sx .sx-content .staff-qa-section details p{margin:0 0 14px;color:var(--sx-text2);font:400 14px/1.6 var(--sx-font);max-width:72ch}

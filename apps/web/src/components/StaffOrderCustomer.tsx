@@ -10,7 +10,7 @@ const L={
  search:['名前・メールで検索','Search by name or email'],find:['検索','Search'],none:['該当するお客様はいません。','No customers match.'],
  failed:['検索できませんでした。','Could not search.'],choose:['このお客様にする','Use this customer'],selected:['選択中','Selected'],
  help:['既存のお客様を選ぶと、この注文はそのお客様の履歴に入ります。連絡先は次の画面でお客様ご本人に入力・確認していただきます。','Choosing an existing customer adds this order to their history. Contact details are entered and confirmed by the customer on the next screens.'],
- fixed:['予約作成後はお客様を変更できません。','The customer cannot be changed after the booking is created.'],legacy:['旧予約（未リンク）は選べません。顧客画面でリンクしてください。','Unlinked legacy bookings cannot be chosen; link them on the Customers page first.'],
+ fixed:['予約作成後はお客様を変更できません。','The customer cannot be changed after the booking is created.'],legacy:['未リンクの旧予約','Unlinked legacy booking'],
 } as const;
 
 /** Booqable New order "Customer" panel. The choice is explicit (new customer, or one existing profile the staff member

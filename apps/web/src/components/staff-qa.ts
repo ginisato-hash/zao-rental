@@ -19,6 +19,7 @@ export const STAFF_QA:QaSection[]=[
  ]},
  {id:'scan',title:['スキャン・予約検索','Scan and booking search'],items:[
   {q:['何を読み取れますか？','What can I scan?'],a:['読み取る対象（予約／用品）を選び、予約QR、または予約番号を入力します。','Choose what you are scanning (booking or item), then scan a booking QR or enter the booking number.']},
+  {q:['用品QRは左右で2回読み取りますか？','Do I scan both ski or boot labels?'],a:['左右が同じIDのスキー・ブーツは、片方を1回読み取れば1組です。','For skis and boots with the same ID on both sides, scan one side once for the pair.']},
  ]},
  {id:'calendar',title:['カレンダー','Calendar'],items:[
   {q:['バーは何を表していますか？','What do the bars show?'],a:['予定（予約・仮押さえ）と現物（貸出・返却・点検）を分けて表示します。ここでは日程を変更できません。','Planned (booked, hold) and physical (out, returned, care) are shown separately. Dates cannot be changed here.']},
@@ -30,6 +31,7 @@ export const STAFF_QA:QaSection[]=[
   {q:['スキー左右のラベルは？','How are the two ski labels counted?'],a:['スキー左右のラベルは同じIDです。2枚貼っても、台帳は1ペアです。','Both ski labels carry the same ID. Two labels, still one pair in the ledger.']},
   {q:['台帳登録後に変更できない項目は？','What cannot be changed after registration?'],a:['ID・区分・サイズ・所属店舗・出典は登録後に基本編集できません。BSLは実物の値を記録し、靴サイズから推測しません。','ID, type, size, station and source cannot be edited after registration. BSL records the measured value and is never guessed from the shoe size.']},
   {q:['ウェアの管理方法は？','How is wear tracked?'],a:['ウェアは上下・サイズ別の数量管理です。衣類の個体IDやQRは発行しません。','Wear is counted by top/bottom and size. No item IDs or QR codes are issued for clothing.']},
+  {q:['台帳の「セット構成」とは？','What are set rules in the ledger?'],a:['同じ年齢区分・クラスの構成条件です。予約確保は行いません。','Set rules within the same age group and class. Nothing is reserved.']},
  ]},
  {id:'customers',title:['顧客・商品','Customers and products'],items:[
   {q:['「同じ顧客に関連付ける」とは？','What does “Link to the same customer” do?'],a:['この予約を、同じ方の別の予約と同じ顧客として扱います。取り消しはできません。名前やメールが同じでも自動では関連付けません。','Treat this order as the same person as another order. This cannot be undone. Matching names or emails are never linked automatically.']},
@@ -55,10 +57,21 @@ export const STAFF_QA:QaSection[]=[
   {q:['サイズ推薦で予約は完了しますか？','Does the size recommendation complete a booking?'],a:['いいえ。候補の照会だけでは在庫を確保しません。全員分を選んでから一括確認します。変更しても10分の期限は延長しません。','No. Checking options does not hold stock. Choose for everyone, then confirm together. Changes do not extend the 10-minute limit.']},
   {q:['返却・検品と返金の関係は？','How do returns, inspection and refunds relate?'],a:['返却受領、検品、同日再貸出の制限は別です。早期返却で自動返金はしません。','Receiving a return, inspection and the same-day re-rental limit are separate. Early returns are not refunded automatically.']},
   {q:['予約変更・返金依頼はどこで？','Where are changes and refund requests made?'],a:['予約変更・返金の画面で行います。早期返却による自動返金はありません。返金状況は「入金と返金残額」で確認してください。','On the changes and refunds screen. Early returns are never refunded automatically. Check refund status under “Payments and refund balance”.']},
+  {q:['準備画面の長さ・設定はどう確定しますか？','How are length and settings finalised in preparation?'],a:['最終設定は実物の適合・調整・解放検査で確認します。別の長さを使う場合は、用品の割当を変更してください。','Confirm the final setting through compatibility, physical adjustment and release checks. Change the equipment assignment before using a different length.']},
+  {q:['ブーツの初期候補は？','What is the first boot option?'],a:['ブーツは「大きめ推奨」：足サイズ＋1cmの初期候補です。店頭で試着・最終確認が必要です。BSL・DINを推測しません。','Boots “a bit larger”: the first option is foot size + 1 cm. A fitting and final check at the station are required. BSL and DIN are never guessed.']},
+  {q:['サイズ推薦の料金表示は？','How are prices shown in the size recommendation?'],a:['表示料金は税込です。見積を確認後、お支払いへ進んでください。早割の適用は前日15時までの決済完了が条件です。非公開の参考額（税込）。候補表示だけでは在庫未確保です。','Prices include tax. Review the quote, then go on to payment. The early discount needs payment by 15:00 the day before. Private reference amount (tax included). Showing options does not hold stock.']},
+  {q:['ウェアのセットに含まれるものは？','What is in a wear set?'],a:['ウェアは上着・パンツの上下セットです。小物は含みません。早割5％は見積で適用見込みを確認し、前日15時までの決済完了が必要です。','Wear is a jacket-and-pants set; accessories are not included. Check the 5% early discount on the quote; it needs payment by 15:00 the day before.']},
+  {q:['見積の料金は請求額ですか？','Is a quote price a charge?'],a:['表示料金は税込です。請求確定ではありません。','Prices include tax. This is not a confirmed charge.']},
+  {q:['仮押さえ画面の在庫数は？','What are the numbers on the holds screen?'],a:['台帳・有効な確保から算出した参考値です。店舗への配置、移動、点検、実際の貸出状況は確保時に再検証します。在庫占有：開始日から最終日までの全日。AM後の同日PM再利用はできません。','An estimate from the ledger and active holds. Station placement, transfers, inspection and actual rentals are re-checked when holding. Stock is occupied every day from start to last day. A morning item cannot be reused the same afternoon.']},
+  {q:['後日受取の扱いは？','What happens with a later pickup?'],a:['後日受取でも元の返却期限・料金は変わりません。未利用日分の自動返金はありません。','A later pickup does not change the return deadline or price. Unused days are not refunded automatically.']},
+  {q:['ウェアはどこで貸し出しますか？','Where is wear handed out?'],a:['ウェアの貸出は「ウェアの数量貸出・返却」で行ってください。','Hand out wear on “Wear quantities: out and back”.']},
+  {q:['帰属不明の返却数量は？','What about returned quantities of unknown origin?'],a:['帰属不明の混在数量を、特定予約の返却完了へ自動で割り当てません。','Mixed quantities of unknown origin are never assigned to a specific booking’s return automatically.']},
+  {q:['With shortage（不足あり）の一覧とは？','What is the With shortage list?'],a:['まだ渡していない用品が、予約期間中に確保できない予約です。在庫・予約は変更していません。','Orders whose items not yet handed out cannot be covered for their period. Nothing in stock or bookings was changed.']},
  ]},
  {id:'transfers',title:['店舗間移動','Transfers'],items:[
   {q:['移動予定と所在地の関係は？','How do transfer plans relate to location?'],a:['17時便の移動予定と実所在地は別の記録です。自動受領はありません。受領後も準備完了の確認が必要です。','The 17:00 run plan and the actual location are separate records. There is no automatic receipt. After receipt, readiness still has to be confirmed.']},
   {q:['到着見込みの入力は？','When do I enter an arrival estimate?'],a:['担当者が運搬・積込・準備の成立を確認してから入力します。未確認の時間や臨時便を約束しないでください。','Only after checking transport, loading and preparation. Do not promise unconfirmed times or extra runs.']},
+  {q:['受領を記録すると予約はどうなりますか？','What happens to bookings when a receipt is recorded?'],a:['受領は事実として記録します。要対応の予約を自動取消・返金しません。','A receipt is recorded as a fact. Bookings that need action are never cancelled or refunded automatically.']},
  ]},
  {id:'wear',title:['ウェアの貸出・返却','Wear loans and returns'],items:[
   {q:['ウェアの返却手順は？','How are wear returns recorded?'],a:['予約番号で貸出を確認し、ジャケット・パンツそれぞれの返却数量を記録します。候補の保存では返却を確定しません。受領数量を確認して一括確定してください。古い候補は別の貸出へ付け替えません。','Find the loan by booking number and record returned jackets and pants separately. Saving candidates does not confirm the return; check the received quantities and confirm together. Old candidates are never moved to another loan.']},
@@ -76,6 +89,8 @@ export const STAFF_QA:QaSection[]=[
   {q:['予約確認メールで送る内容は？','What does the booking email contain?'],a:['予約番号・店舗・受取日時・人数と、ログインが必要な詳細リンクだけを送ります。','Only the booking number, station, pickup date and time, number of people and a details link that needs sign-in.']},
   {q:['運用例外の画面では？','What is the operations exceptions screen for?'],a:['発生した問題を確認し、担当者と対応を決めます。「確認」はスタッフが内容を確認したことの記録で、入金・返金・予約・在庫などの状態は変わりません。対応結果は各業務画面で確認します。','Review issues and decide who handles them and how. “Reviewed” only records that staff looked at it; payments, refunds, bookings and stock do not change. Check outcomes on each work screen.']},
   {q:['公開準備の画面では？','What is the launch readiness screen?'],a:['公開に必要な各項目の準備状況を確認します。状態の確認だけで、接続・公開設定は変更しません。','Shows how ready each item needed for launch is. It only shows status and changes no connection or publication settings.']},
+  {q:['棚卸差異の確定で何が起きますか？','What does confirming stocktake differences do?'],a:['不足用品を利用不可へ変更し、数量の確認済み差異を反映します。予約・貸出中・検品中の保護を破る変更は拒否されます。','Marks missing items unavailable and applies the checked quantity differences. Changes that would break protection for bookings, items out or under inspection are refused.']},
+  {q:['写真取込の一覧の件数は？','How many photo results are listed?'],a:['初期表示は先頭20件。全件の結果・再開状態は処理履歴に保存します。','The first 20 are shown. All results and resume state are kept in the run history.']},
  ]},
  {id:'new-order',title:['新規予約','New order'],items:[
   {q:['既存のお客様を選ぶと？','What happens when I choose an existing customer?'],a:['この注文はそのお客様の履歴に入ります。連絡先は次の画面でお客様ご本人に入力・確認していただきます。','The order is added to that customer’s history. Contact details are entered and confirmed by the customer on the next screens.']},

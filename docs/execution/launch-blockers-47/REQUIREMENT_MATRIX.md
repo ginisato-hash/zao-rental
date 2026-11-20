@@ -22,17 +22,14 @@
 | R8 | Booqable型の業務導線 | Dashboard/Orders/New order/Customers/Inventory/Calendar/Documents/Reports/Scan/Settings | `BOOQABLE_APPLE_REFERENCE.md`, `test:staff-shell-ui`, `test:staff-acceptance-ui` | PASS | PASS | PENDING | PENDING | NOT_RUN | — |
 | R9 | 全staff/admin UIの抜本統一（Apple系の視覚言語） | `staff-console.css`（旧画面＋台帳＋New order）, `staff-login.css` | `tests/staff/console-unity-ui.ts`：30ルート×JA/EN×1440/800/720(200%)/390、ダーク(1440/390)で300頁。見出しサイズ、2px以上の濃色罫、ボタン形状、入力枠、WCAGコントラスト、ポスター文字、主ボタン青、横スクロール、コンソールエラー、外部通信 | PASS | PASS（300/300） | PENDING | PENDING | NOT_RUN | — |
 | R10 | 公式SALOMONロゴ（staff/adminシェル、ログイン、印刷） | `StaffShell.tsx`, `app/staff/login/page.tsx`, `StaffDocuments.tsx`。素材は既存の承認済み派生 `brand/logo-stacked-black.webp`（sha256 `d5b7dad0…dd4ac`）のみ。ダーク時は同ファイルを反転表示 | console-unity-ui のスクリーンショット | PASS | PASS | PENDING | PENDING | NOT_RUN | — |
-| R11 | 管理者によるスタッフアカウント作成 | `StaffManagement.tsx`（確認欄、詳細権限の折りたたみ、強い権限・ADMIN・全店舗の付与確認、二重送信防止）。API/Argon2id/認可は既存のまま | `tests/staff/accounts-ui.ts`、既存のフォーム試験7本 | PASS | 実行中 | PENDING | PENDING | NOT_RUN | — |
-| R12 | 各スタッフの本人パスワード変更 | `PasswordChange.tsx`（確認欄、文言の区別、入力保持、エラーへのフォーカス）。APIは既存 | `tests/staff/accounts-ui.ts`（旧セッション失効、旧パスワード拒否、新パスワードでログイン、閲覧担当もEN/390/キーボードで変更可） | PASS | 実行中 | PENDING | PENDING | NOT_RUN | — |
-| R13 | ログイン後の入口（Dashboard、権限別） | `app/staff/page.tsx`, `StaffLogin`（UX-01） | 33試験のログイン待機を更新、`test:auth` | PASS | 実行中 | PENDING | PENDING | NOT_RUN | — |
+| R11 | 管理者によるスタッフアカウント作成 | `StaffManagement.tsx`（確認欄、詳細権限の折りたたみ、強い権限・ADMIN・全店舗の付与確認、二重送信防止）。API/Argon2id/認可は既存のまま | `tests/staff/accounts-ui.ts`、既存のフォーム試験7本 | PASS | PASS | PENDING | PENDING | NOT_RUN | — |
+| R12 | 各スタッフの本人パスワード変更 | `PasswordChange.tsx`（確認欄、文言の区別、入力保持、エラーへのフォーカス）。APIは既存 | `tests/staff/accounts-ui.ts`（旧セッション失効、旧パスワード拒否、新パスワードでログイン、閲覧担当もEN/390/キーボードで変更可） | PASS | PASS | PENDING | PENDING | NOT_RUN | — |
+| R13 | ログイン後の入口（Dashboard、権限別） | `app/staff/page.tsx`, `StaffLogin`（UX-01） | 33試験のログイン待機を更新、`test:auth` | PASS | PASS | PENDING | PENDING | NOT_RUN | — |
 | R14 | Orders/Customers/Inventory/Reports CSV | Reports CSV（REP-02/CSV-SAFE/CSV-UX）、他画面のCSV（旧B実装） | `test:staff-acceptance-ui`, `test:reports` | PASS | PASS（前回実行） | PENDING | PENDING | NOT_RUN | — |
 | R15 | Dashboardの印刷は全件の作業リストのみ | `workList()`, `StaffDocuments`（DASH-PRINT-01） | `test:orders`, `test:staff-acceptance-ui` | PASS | PASS | PENDING | PENDING | NOT_RUN | — |
 | R16 | 認可の縮小・失効に対するfail-closed | CAL-01/SNAP-01（`OperationsContext.snapshot` + `confirmScope`） | calendar/orders/customers/reports の実PG競合試験（mutationで旧コードの漏えいを確認済み） | PASS | PASS | PENDING | PENDING | NOT_RUN | — |
 | R17 | ゲスト終了／スタッフ再開の確実な離脱 | `GuestBooking`（AVATAR-EXIT-01：受理後のみ離脱、警告抑止、旧draft再表示なし、停止時は同じ行き先へ再遷移しPOSTは再送しない） | `test:avatar`×3、`guest-exit-ui` 5件、TEST-TRACE-01のlistener登録 | PASS | PASS（avatar 3/3、flow-ui、public-ui） | PENDING（`8fe8888`はFAIL） | PENDING | NOT_RUN | — |
 | R18 | 本番delta 0059〜0061とgrants | `production-staff-delta.ts`（DELTA-01）, operator | `production-0057-owner-apply`、restore drill、role plans | PASS | PASS | PENDING | PENDING | BLOCKED（Owner本人のNeonログイン/MFAが必要） | — |
 | R19 | New orderのSquare決済（顧客本人がiframeに入力） | `SquareCardPayment`, staff-orders API | `test:staff-order`（gatewayは合成のtest double） | PASS | PASS | PENDING | PENDING | NOT_RUN | BLOCKED（実Squareは本番gate） |
-
-## 未実施（NOT_RUN）
-- `test:controller:macos`：このMacに `codex` CLIが無い。Linux CIでは対象外。
-- 本番：backup → delta/grants → readback → 同一artifactでstage → promote。Owner本人の認証・MFAが必要。
-- 実Square決済、実メール送信：既存の承認範囲と本番gateに従う。
+| R20 | 画面に謳い文句・説明文を散らさない／説明はスタッフQAに集約 | 全staff/admin画面から説明文を撤去（ブラウザで94件を棚卸し）、`/staff/help`（日英のQ&A、画面別） | `console-unity-ui.ts` が文章状の説明・謳い文句・脚注を検出すると失敗（31ルート・310表示） | PASS | PASS（第1弾）／第2弾は適用待ち | PENDING | PENDING | NOT_RUN | — |
+| R21 | 本番公開の手順（Owner操作の区別つき） | `RELEASE_RUNBOOK_PR73.md` | 文書 | PASS | — | — | PENDING | BLOCKED（Owner本人の認証が必要） | — |

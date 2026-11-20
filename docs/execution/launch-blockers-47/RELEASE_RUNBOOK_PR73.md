@@ -1,0 +1,53 @@
+# PR #73 本番公開の手順書（Owner操作の区別つき）
+
+作成：2026-11-20 JST、実装担当（新担当C）。各手順の担当と、コードが強制している前提条件を記す。**Owner** と書いた手順は本人の認証（ログイン・MFA）が必要で、実装担当は代行しない。
+
+## 0. 公開前の前提（実装担当）
+1. 最終候補のコミットを確定する（SHA・treeを記録）。
+2. その exact SHA の GitHub 自然CI（Foundation）が **SUCCESS** であること。前のSHAの成功は流用しない。
+3. ChatGPT TD の独立最終レビューで **BLOCKER / HIGH / MEDIUM が0件**であること。
+4. main との競合がないこと。
+
+## 1. merge（実装担当、既存のOwner包括承認の条件内）
+- 条件0がすべて揃ってから、PR #73 を通常の手順で merge する。branch保護は迂回しない。
+- merge後の `origin/main` のSHAを記録する。以降のDB変更スクリプトは、作業フォルダが **`origin/main` と完全に一致し、未commitの変更がない**場合だけ動く（`assertAcceptedMainRelease`）。
+
+## 2. 本番backupと復元試験（**Owner** ＋実装担当）
+- DB変更スクリプトは、**24時間以内に完了した本番復元試験の合格記録**（`.local/evidence/production-backup/restore-pass.json`）を要求する（`requireRestorePass`）。古い記録や手で編集した記録は拒否される。
+- 手順：
+  1. **Owner**：最新の暗号化backupを取得し、既存の手順で復元試験を実施する。生成物は `object-key.txt`、暗号化本体、`restore-drill-result.json`。
+  2. 実装担当：`npm run production:restore-evidence-finalize` で `restore-pass.json` を作る。
+
+## 3. DB変更 0059〜0061 と権限（**Owner** のNeonログイン ＋ 実装担当）
+- **Owner**：Neon CLIにログインする（本人のブラウザ認証・MFA）。実装担当は資格情報を扱わない。
+- 実装担当（main と完全一致した作業フォルダで実行）：
+  1. `npm run production:install-staff-delta-migration`
+     - 前提：registry が 0001〜0058 で、checksum が正規であること。
+     - 0059→0061 を1つのtransactionで適用し、2回目の実行は拒否される。
+     - commit後の読み戻しで、registry・checksum・所有者・必須trigger 4本・承認済み規約bundleを確認する。
+  2. `npm run production:install-staff-delta-grants`
+     - operationsロールに、承認済みの最小権限だけを付与する。
+     - あるべき権限と、あってはならない権限（insert-only の同意表への UPDATE / DELETE、PUBLIC EXECUTE など）の両方を読み戻して確認する。
+- 失敗時：「commit後の読み戻しが必要」と表示された場合は、**再実行しない**。現状態の読み戻しから再開する。
+
+## 4. 配信（**Owner** のVercelログイン ＋ 実装担当）
+- 既存の公開手順（`docs/execution/release-code-closure/release-operations-v1/`、`PUBLICATION_GATES.md`）に従う。
+  1. 同じartifactを保護付きでstageし、低並行の2小窓で確認する。
+  2. 正規にpromoteする。
+- 公開許可（indexing・公開origin）は、`PRODUCTION_PUBLICATION_APPROVAL` と配信リリースの `PRODUCTION_RELEASE_ID` が一致した場合だけ有効になる。
+- 古いdeploymentが READY でも、本PRの公開証拠とはしない。
+
+## 5. 公開後の確認（実装担当、実データは既存の承認範囲内のみ）
+- 正式ドメイン `https://salomon-rental.yuge-zao.com` で以下を確認する。
+  - 公開ページ（日英）、2店舗、予約〜規約同意〜決済画面。
+  - スタッフ/管理画面：各役割の主要画面、スタッフQA、アカウント作成、本人のパスワード変更。
+- 実決済・返金・実メールは、既存のOwner決定（#6090166024 等）で拘束された上限と宛先だけで行う。実顧客を試験台にしない。
+- 結果を Issue #47 / PR #73 に記録する。デプロイID・URL・release SHA・確認結果、未実施（NOT_RUN）の項目を含める。
+
+## 6. 戻し方（rollback）
+- 配信：直前の正常なdeploymentへ戻す（Vercel）。
+- DB：0059〜0061 は追加のみの変更で、既存の表・データを書き換えない。旧版の配信は新しい表を使わないため、配信を戻すだけで旧動作に戻る。データの破棄は行わない。
+
+## 現在の位置（2026-11-20）
+- 手順0：未完了。全体検証の実行中で、手元の変更は未push。
+- 手順1〜5：未実施。

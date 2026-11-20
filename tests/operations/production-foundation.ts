@@ -87,7 +87,8 @@ try{
  await check('bootstrapProductionFoundation commits 61 migrations and the 17 operational roles under the manager',async()=>{
   assert.equal(result.applied,61);assert.equal(result.guardsRewritten,12);assert.equal(result.planSha256,plan.bootstrap.planSha256);
   assert.equal(result.foundationPlanSha256,plan.foundationPlanSha256);assert.equal(result.roleProvisioning.planSha256,plan.roles.planSha256);
-  assert.deepEqual([result.roleProvisioning.operationalRoles,result.roleProvisioning.ownerGrantStatements,result.roleProvisioning.custodyExecutorGrantStatements],[17,152,1]);
+  // 153 owner grants: Issue #47 bd914d6 added EXECUTE provisional_capacity_effective_quantity(uuid) for the operations role (With shortage read).
+  assert.deepEqual([result.roleProvisioning.operationalRoles,result.roleProvisioning.ownerGrantStatements,result.roleProvisioning.custodyExecutorGrantStatements],[17,153,1]);
   const q=async(sql:string,params:unknown[]=[])=>scalar(a.neon,sql,params);
   const all=[plan.roles.managerRole,...plan.roles.operationalRoleNames];
   const facts={

@@ -6,7 +6,9 @@
 .ox-paper{background:var(--sx-bg);border:1px solid var(--sx-line);border-radius:12px;padding:28px 32px;max-width:820px}
 .ox-paper h1{font-size:22px;margin:4px 0 20px}
 .ox-paper h2{font-size:16px;margin:24px 0 8px}
-.ox-paper-brand{margin:0;font-size:12px;letter-spacing:.08em;color:var(--sx-text2)}
+.ox-paper-logo{display:block;height:24px;width:auto;margin:0 0 8px}
+@media (prefers-color-scheme:dark){.ox-paper-logo{filter:invert(1)}}
+@media print{.ox-paper-logo{filter:none}}
 .ox-dl{display:grid;grid-template-columns:max-content 1fr;gap:8px 20px;margin:0}
 .ox-dl dt{color:var(--sx-text2)}
 .ox-dl dd{margin:0}

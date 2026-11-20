@@ -5,6 +5,7 @@ import {useRouter,useSearchParams} from 'next/navigation';
 import {st} from './staff-i18n';
 import {useStaffLocale} from './staff-locale';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
+import {logo} from './brand/media';
 import {STORE_LABEL} from './guest-format';
 import {fmtDate,fmtYen,statusLabel,paymentLabel,pickupTime,returnTime} from './order-labels';
 import './staff-orders.css';
@@ -81,7 +82,9 @@ function useJson<T>(url:string,stamp:string){
 function DocFrame({title,children}:{title:string;children:React.ReactNode}){
  const {locale}=useStaffLocale(),en=locale==='en',tx=(k:keyof typeof L)=>L[k][en?1:0];
  return <main className="ox ox-print"><div className="ox-head ox-noprint"><Link href="/staff/documents">← {tx('back')}</Link><button type="button" className="sx-btn sx-btn--primary" onClick={()=>window.print()}>{tx('print')}</button></div>
-  <article className="ox-paper"><p className="ox-paper-brand">SALOMON RENTAL STATION ZAO</p><h1>{title}</h1>{children}</article></main>;
+  <article className="ox-paper">
+{/* eslint-disable-next-line @next/next/no-img-element -- fixed-size official logo raster, as in PublicChrome */}
+<img className="ox-paper-logo" src={logo.src} width={logo.width} height={logo.height} alt="SALOMON RENTAL STATION ZAO"/><h1>{title}</h1>{children}</article></main>;
 }
 
 function BookingDoc({stamp,id}:{stamp:string;id:string}){

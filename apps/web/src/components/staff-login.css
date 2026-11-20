@@ -1,0 +1,22 @@
+/* Staff sign-in (outside the staff shell): the same Apple-style language as the console (Issue #47 Owner 2026-11-20,
+   UI-ALL-01/LOGO-01). One centred card, the approved logo image, a quiet title, hairline fields, one blue pill action.
+   Scoped to .staff-login-page so the public site and globals.css stay as they are. */
+.staff-login-page{--sl-bg:#f5f5f7;--sl-card:#fff;--sl-text:#1d1d1f;--sl-text2:#6e6e73;--sl-line:#d2d2d7;--sl-blue:#0071e3;--sl-blue-h:#0077ed;
+ min-height:100vh;margin:0;padding:clamp(32px,10vh,96px) 16px 48px;background:var(--sl-bg);color:var(--sl-text);
+ font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Hiragino Sans","Helvetica Neue",Arial,sans-serif;box-sizing:border-box}
+@media (prefers-color-scheme:dark){.staff-login-page{--sl-bg:#000;--sl-card:#1d1d1f;--sl-text:#f5f5f7;--sl-text2:#a1a1a6;--sl-line:#424245;--sl-blue:#2997ff;--sl-blue-h:#47a6ff}.staff-login-page .staff-login-logo{filter:invert(1)}}
+.staff-login-page .staff-login-logo{display:block;height:32px;width:auto;margin:0 auto 24px}
+.staff-login-page .staff-login{max-width:400px;margin:0 auto;padding:28px 28px 24px;background:var(--sl-card);border:1px solid var(--sl-line);border-radius:18px;display:grid;gap:14px}
+.staff-login-page .staff-login h1{font-weight:600;font-size:26px;line-height:1.15;font-family:inherit;letter-spacing:-.02em;margin:4px 0 0}
+.staff-login-page .staff-login>p{margin:0;color:var(--sl-text2);font-size:14px;line-height:1.5}
+.staff-login-page .staff-login>p[role=alert]{color:#d70015;background:rgba(215,0,21,.06);border-radius:10px;padding:10px 12px}
+.staff-login-page .staff-login fieldset{border:0;padding:0;margin:0;display:grid;gap:14px;min-width:0}
+.staff-login-page .staff-login label{display:grid;gap:6px;font-size:13px;font-weight:500}
+.staff-login-page .staff-login input{font-weight:400;font-size:16px;line-height:1.3;font-family:inherit;color:var(--sl-text);background:var(--sl-card);border:1px solid var(--sl-line);border-radius:10px;min-height:44px;padding:0 12px;box-sizing:border-box;width:100%}
+.staff-login-page .staff-login input:focus-visible{outline:3px solid rgba(0,113,227,.45);outline-offset:1px;border-color:var(--sl-blue)}
+.staff-login-page .staff-login form button{width:100%;min-height:44px;border:0;border-radius:980px;background:var(--sl-blue);color:#fff;font-weight:600;font-size:16px;line-height:1;font-family:inherit;cursor:pointer}
+.staff-login-page .staff-login form button:hover:not(:disabled){background:var(--sl-blue-h)}
+.staff-login-page .staff-login form button:disabled{opacity:.5;cursor:default}
+.staff-login-page .staff-login .sx-seg{justify-self:end;display:inline-flex;padding:2px;border-radius:9px;background:var(--sl-bg)}
+.staff-login-page .staff-login .sx-seg button{min-height:28px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:var(--sl-text);font-weight:400;font-size:13px;line-height:1;font-family:inherit;cursor:pointer;width:auto}
+.staff-login-page .staff-login .sx-seg button[aria-pressed=true]{background:var(--sl-card);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}

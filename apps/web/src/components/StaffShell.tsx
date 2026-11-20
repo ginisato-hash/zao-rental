@@ -5,7 +5,9 @@ import {usePathname,useRouter} from 'next/navigation';
 import {st,STAFF_LOCALE_COOKIE,type StaffKey,type StaffLocale} from './staff-i18n';
 import {StaffInboxBell} from './StaffInboxBell';
 import {StaffLocaleContext} from './staff-locale';
+import {logo} from './brand/media';
 import './staff-shell.css';
+import './staff-console.css';
 
 export type ShellAccess={bookingView:boolean;bookingCreate:boolean;inventoryView:boolean;operationsView:boolean;manageStaff:boolean;transferView:boolean;quoteView:boolean;holdView:boolean;priceEdit:boolean;resend:boolean};
 type Item={key:StaffKey;href:string|((a:ShellAccess)=>string);match:RegExp;show:(a:ShellAccess)=>boolean};
@@ -47,7 +49,9 @@ export function StaffShell({locale:serverLocale,stamp,stores,access,name,childre
  const link=(i:Item)=>i.show(access)&&<li key={i.key}><Link href={typeof i.href==='function'?i.href(access):i.href} aria-current={i.match.test(path)?'page':undefined}>{t(i.key)}</Link></li>;
  return <div className="sx" data-open={open||undefined}>
   <aside className="sx-side" aria-label={t('menu')} onClick={e=>{if((e.target as Element).closest('a'))setOpen(false);}}>
-   <div className="sx-brand"><Link href="/staff">SALOMON <span>Rental Station Zao</span></Link></div>
+   <div className="sx-brand"><Link href="/staff" aria-label={t('dashboard')+' · SALOMON RENTAL STATION ZAO'}>
+{/* eslint-disable-next-line @next/next/no-img-element -- fixed-size official logo raster, as in PublicChrome */}
+<img className="sx-logo" src={logo.src} width={logo.width} height={logo.height} alt="SALOMON RENTAL STATION ZAO"/></Link></div>
    {access.bookingCreate&&<Link className="sx-btn sx-btn--primary sx-new" href="/staff/orders/new">{t('newOrder')}</Link>}
    <nav>{[TOP,WORK,MORE].filter(g=>g.some(i=>i.show(access))).map((g,n)=><ul key={n}>{g.map(link)}</ul>)}</nav>
    <nav className="sx-side-bottom"><ul>{BOTTOM.map(link)}<li><Link href="/staff/logout">{t('signOut')}</Link></li></ul>
@@ -57,6 +61,9 @@ export function StaffShell({locale:serverLocale,stamp,stores,access,name,childre
    <header className="sx-top">
     <button type="button" className="sx-iconbtn sx-menu" aria-expanded={open} onClick={()=>setOpen(o=>!o)} aria-label={t('menu')}>
      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <Link className="sx-top-brand" href="/staff" aria-label={t('dashboard')+' · SALOMON RENTAL STATION ZAO'}>
+{/* eslint-disable-next-line @next/next/no-img-element -- fixed-size official logo raster, as in PublicChrome */}
+<img className="sx-logo" src={logo.src} width={logo.width} height={logo.height} alt=""/></Link>
     <div className="sx-top-r">
      <div className="sx-seg" role="group" aria-label={t('language')}>
       <button type="button" aria-pressed={locale==='ja'} onClick={()=>setLocale('ja')} lang="ja">日本語</button>

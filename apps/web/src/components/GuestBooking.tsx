@@ -375,7 +375,11 @@ function BookingFlow({locale,legal,staff}:GuestBookingProps){const [client]=useS
  // the pre-close input; tests/public/guest-exit-ui.ts reproduced the prompt cancelling /ja after logout 200), run() opens
  // nothing more (the pre-close draft is not shown again) and starts no further action. A failed or unanswered request
  // throws before this point, so the input, its leave protection and the retry stay as they were.
- function closeContext(){if(staff){void run(async()=>{const d=await request('/restart',{});leaving.current=true;location.assign(new URL('/staff/orders/new',location.origin).href);return d;});return;}void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setRestoredNotice(false);setSavedInputJson(null);leaving.current=true;location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
+ // Leave once the server has accepted the close. If the browser has not left after a few seconds (navigation stopped or
+ // aborted), go there again with replace(): never a second logout/restart request, and nothing is re-enabled on the closed
+ // draft meanwhile.
+ function leave(path:string){leaving.current=true;const url=new URL(path,location.origin).href;location.assign(url);window.setTimeout(()=>{if(alive.current)location.replace(url);},6000);}
+ function closeContext(){if(staff){void run(async()=>{const d=await request('/restart',{});leave('/staff/orders/new');return d;});return;}void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setRestoredNotice(false);setSavedInputJson(null);leave('/'+locale);return draft!;});}
  const checkoutBody=()=>({locale,draftId:draft!.id,expectedRevision:draft!.revision,reviewHash:draft!.reviewHash,contact:{displayName:contact.displayName,email:contact.email,termsAccepted:contact.termsAccepted,...(legal?.termsBundle?{terms:{version:legal.termsBundle.version,sha256:legal.termsBundle.sha256,locale}}:{})}});
  // The field name is the label's whole text, so exact label matching and the accessible name stay
  // unchanged; the required/optional marker is rendered outside the <label>, beside it.

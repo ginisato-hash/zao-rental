@@ -34,7 +34,7 @@ const L={
  time:['時刻','Time'],order:['予約番号','Order'],checked:['確認','Check'],
  splitTitle:['この期間は1枚の作業リストに収まりません','This period does not fit in one work list'],
  splitHelp:['欠けた作業リストは印刷しません。日ごとの作業リストを開いて、それぞれ印刷してください。','A partial work list is never printed. Open each day’s work list and print it.'],
- splitDay:['日付','Day'],splitOpen:['作業リストを開く','Open work list'],splitTooMany:['1日分も上限を超えています。予約一覧のCSVで全件を出力してください。','Even this day is over the limit. Export all orders as CSV from Orders.'],
+ splitDay:['日付','Day'],splitOpen:['作業リストを開く','Open work list'],splitTooMany:['この日だけで1,000件を超えます。予約一覧でこの日を絞り込み、CSV（1回5,000件まで）で出力してください。','This day alone has over 1,000. Filter Orders to this day and export CSV (up to 5,000 per file).'],
  notPrintable:['この画面は不完全なため、作業リストとして印刷できません。','This page is incomplete and cannot be printed as a work list.'],
 } as const;
 

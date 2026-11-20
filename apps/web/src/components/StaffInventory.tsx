@@ -37,7 +37,7 @@ export function StaffInventory({locale:serverLocale,stamp,stores,can}:{locale:St
    if(!r.ok)throw Error();const v=await r.json() as {rows:Row[]};if(ticket===gen.current){setLoaded({key:query+'|'+stamp,rows:v.rows});setFailedKey(null);}}catch{if(ticket===gen.current)setFailedKey(query+'|'+stamp);}
  });},[query,store,stamp,reload]);
  const cols:(keyof Counts)[]=['availableNow','onHand','out','care','maintenance','incoming','registered'];
- const csv=useCsvDownload(viewKey,stamp),csvQuery=new URLSearchParams(query);csvQuery.set('format','csv');csvQuery.set('lang',locale);
+ const csv=useCsvDownload(viewKey+'|'+locale,stamp),csvQuery=new URLSearchParams(query);csvQuery.set('format','csv');csvQuery.set('lang',locale);
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'inventory')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>

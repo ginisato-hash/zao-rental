@@ -51,7 +51,7 @@ export function StaffOrders({locale:serverLocale,stamp,stores,canCreate,more}:{l
  });},[query,stamp,reload]);
  const pages=data?Math.max(1,Math.ceil(data.total/data.pageSize)):1;
  // CSV: the same filters as the list (all pages), saved only for this query and session (REP-02).
- const csv=useCsvDownload(query+'|'+stamp,stamp),csvQuery=new URLSearchParams(query);csvQuery.delete('page');csvQuery.delete('pageSize');csvQuery.set('format','csv');csvQuery.set('lang',locale);
+ const csv=useCsvDownload(query+'|'+stamp+'|'+locale,stamp),csvQuery=new URLSearchParams(query);csvQuery.delete('page');csvQuery.delete('pageSize');csvQuery.set('format','csv');csvQuery.set('lang',locale);
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'orders')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>

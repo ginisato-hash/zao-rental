@@ -3,10 +3,10 @@ import {useEffect,useRef,useState} from 'react';
 import {invalidateStaffView} from './StaffSessionBoundary';
 
 /** REP-02 for every staff CSV (Reports, Orders, Customers, Inventory). A CSV belongs to the view key it was requested for
- * (the screen's query and the session stamp) and to this mounted page. It is saved only if, after the response and again
+ * (the screen's query, the session stamp and the display language — CSV-UX-01) and to this mounted page. It is saved only if, after the response and again
  * after the body, the page is still mounted, still shows that same key, and no newer CSV request started; otherwise it is
- * discarded and the request aborted. One CSV request at a time. 401/403 ends the staff view; any other failure is reported
- * to the caller and saves nothing. */
+ * discarded and the request aborted. One CSV request at a time. 401/403 ends the staff view; an HTTP error or a network
+ * failure is reported (shown by CsvButton) and saves nothing; a request this page aborted itself is silent. */
 export function useCsvDownload(key:string,stamp:string){
  const live=useRef({key,mounted:true}),gen=useRef(0),abort=useRef<AbortController|null>(null);
  const [busy,setBusy]=useState(false),[failed,setFailed]=useState<{key:string;code:string}|null>(null);
@@ -20,7 +20,7 @@ export function useCsvDownload(key:string,stamp:string){
    if(!r.ok){const code=await r.json().then((v:{error?:string})=>v.error??'FAILED',()=>'FAILED');if(current())setFailed({key:startKey,code});return;}
    const blob=await r.blob();if(!current())return;
    const href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download=filename;document.body.append(a);a.click();a.remove();URL.revokeObjectURL(href);
-  }catch{/* aborted or failed: nothing is saved */}finally{if(live.current.mounted)setBusy(false);}
+  }catch{if(!ctl.signal.aborted&&current())setFailed({key:startKey,code:'NETWORK'});/* nothing is saved */}finally{if(live.current.mounted)setBusy(false);}
  }
  return {busy,failed:failed?.key===key?failed.code:null,download};
 }

@@ -3,7 +3,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {st,type StaffLocale} from './staff-i18n';
 import {STORE_LABEL} from './guest-format';
-import {invalidateStaffView} from './StaffSessionBoundary';
+import {endViewIfSessionIs} from './StaffSessionBoundary';
 import {currentStateNote,fmtDate} from './order-labels';
 
 type Item={id:string;bookingId:string;state:string;kind:'BOOKING_CONFIRMED'|'PAYMENT_REVIEW';source:'LIVE'|'HISTORY_IMPORT';store:string;returnStore:string;createdAt:string;acknowledgedAt:string|null;acknowledgedBy:string|null;startDate:string;endDate:string;slot:string;people:number;customer:string|null};
@@ -19,8 +19,9 @@ const jst=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':'
 export function StaffInboxBell({locale,stamp,stores}:{locale:StaffLocale;stamp:string;stores:string[]}){
  const t=(k:Parameters<typeof st>[1])=>st(locale,k);
  const [page,setPage]=useState<Page|null>(null),[failed,setFailed]=useState(false),[open,setOpen]=useState(false),[busyAck,setBusyAck]=useState<string|null>(null);
- const gen=useRef(0),inflight=useRef(false),delay=useRef(BASE),timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined),baseline=useRef<{key:string;at:string}|null>(null),leader=useRef(false),alive=useRef(true),[syncedAt,setSyncedAt]=useState<string|null>(null);
+ const gen=useRef(0),inflight=useRef(false),delay=useRef(BASE),timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined),baseline=useRef<{key:string;at:string}|null>(null),leader=useRef(false),request=useRef<AbortController|null>(null),viewKey=useRef(''),alive=useRef(true),[syncedAt,setSyncedAt]=useState<string|null>(null);
  const query='/api/operations/inbox?'+new URLSearchParams({stores:storeQuery(stores),openOnly:'1',limit:'10'});
+ useEffect(()=>{viewKey.current=stamp+'|'+query;},[stamp,query]);
  // BROWSER-01. The first successful read for this session stamp and station scope only sets the baseline (the backlog and
  // anything already there never notify; a new login or scope starts over). After that, only LIVE confirmed bookings that
  // are unacknowledged and newer than the baseline count, each event id at most once across all tabs of this browser, and
@@ -36,17 +37,24 @@ export function StaffInboxBell({locale,stamp,stores}:{locale:StaffLocale;stamp:s
   const first=fresh.find(i=>mine.includes(i.id))!;
   try{new Notification(t('inboxTitle'),{body:(mine.length>1?(locale==='en'?`${mine.length} new bookings · `:`新しい予約 ${mine.length}件 · `):'')+`${STORE_LABEL[first.store]??''} ${first.startDate}`,tag:'zao-booking'});}catch{/* not supported */}
  },[locale]);// eslint-disable-line react-hooks/exhaustive-deps
+ // BELL-RACE-01: every read is owned by the generation and AbortController that started it. When the session stamp, the
+ // station scope or the language changes (or the bell unmounts), the effect cleanup aborts the old read, frees the
+ // in-flight slot and clears its timer, so the new view starts its own read at once. A late answer of an old read is
+ // dropped before anything else: it never ends the current session view (401/403/409), never updates state or notifies,
+ // and never schedules a timer.
  const sync=useCallback(async()=>{
-  if(inflight.current||!stores.length)return;inflight.current=true;const ticket=++gen.current;
-  try{const r=await fetch(query,{cache:'no-store',headers:{'x-zao-session':stamp}});
-   if(r.status===401||r.status===403||r.status===409){baseline.current=null;invalidateStaffView();return;}
-   if(!r.ok)throw Error();const v=await r.json() as Page;if(!alive.current||ticket!==gen.current)return;
+  if(inflight.current||!stores.length)return;inflight.current=true;const ticket=++gen.current,ctl=new AbortController();request.current=ctl;
+  const mine=()=>alive.current&&ticket===gen.current&&!ctl.signal.aborted;
+  try{const r=await fetch(query,{cache:'no-store',headers:{'x-zao-session':stamp},signal:ctl.signal});if(!mine())return;
+   if(r.status===401||r.status===403||r.status===409){baseline.current=null;await endViewIfSessionIs(stamp);return;}
+   if(!r.ok)throw Error();const v=await r.json() as Page;if(!mine())return;
    setPage(v);setFailed(false);setSyncedAt(new Date().toISOString());delay.current=BASE;notify(v,stamp+'|'+query);
-  }catch{if(alive.current&&ticket===gen.current){setFailed(true);delay.current=Math.min(MAX,delay.current*2);}}
-  finally{inflight.current=false;if(alive.current){clearTimeout(timer.current);timer.current=setTimeout(()=>void sync(),document.visibilityState==='visible'?delay.current:Math.max(delay.current,HIDDEN));}}
+  }catch{if(mine()){setFailed(true);delay.current=Math.min(MAX,delay.current*2);}}
+  finally{if(request.current===ctl){request.current=null;inflight.current=false;}
+   if(mine()){clearTimeout(timer.current);timer.current=setTimeout(()=>void sync(),document.visibilityState==='visible'?delay.current:Math.max(delay.current,HIDDEN));}}
  },[query,stamp,stores.length,notify]);
- useEffect(()=>{const generation=gen;alive.current=true;void sync();const vis=()=>{if(document.visibilityState==='visible'){clearTimeout(timer.current);void sync();}};
-  document.addEventListener('visibilitychange',vis);return()=>{alive.current=false;generation.current++;clearTimeout(timer.current);document.removeEventListener('visibilitychange',vis);};},[sync]);
+ useEffect(()=>{const generation=gen,owned=request;alive.current=true;void sync();const vis=()=>{if(document.visibilityState==='visible'){clearTimeout(timer.current);void sync();}};
+  document.addEventListener('visibilitychange',vis);return()=>{alive.current=false;generation.current++;owned.current?.abort();owned.current=null;inflight.current=false;clearTimeout(timer.current);document.removeEventListener('visibilitychange',vis);};},[sync]);
  // One notifying tab per browser: among the hidden staff tabs, the one holding this Web Lock shows notifications. A tab
  // asks for it when it is hidden and gives it back when it is shown, closed or unmounted; the next hidden tab takes over.
  useEffect(()=>{const locks=typeof navigator!=='undefined'?navigator.locks:undefined;if(!locks){leader.current=true;return;}
@@ -56,10 +64,14 @@ export function StaffInboxBell({locale,stamp,stores}:{locale:StaffLocale;stamp:s
    locks.request('zao-staff-browser-alerts',{signal:h.stop.signal},()=>{if(held!==h)return;leader.current=true;return new Promise<void>(r=>{h.release=r;});}).catch(()=>{/* aborted */});};
   const vis=()=>{if(document.visibilityState==='visible')drop();else take();};vis();
   document.addEventListener('visibilitychange',vis);return()=>{document.removeEventListener('visibilitychange',vis);drop();};},[]);
- async function ack(item:Item){if(busyAck)return;setBusyAck(item.id);
+ // ACK belongs to the view it was pressed in: if the session stamp or scope changed meanwhile, its answer is ignored
+ // (an old 401 never ends the new view). After an ACK in the same view, the running read is replaced by a fresh one.
+ async function ack(item:Item){if(busyAck)return;setBusyAck(item.id);const at=viewKey.current;
   try{const r=await fetch('/api/operations/inbox/ack',{method:'POST',cache:'no-store',headers:{'content-type':'application/json','x-zao-session':stamp},body:JSON.stringify({requestKey:crypto.randomUUID(),input:{eventId:item.id}})});
-   if(r.status===401){invalidateStaffView();return;}if(r.ok){gen.current++;inflight.current=false;await sync();}else setFailed(true);}
-  catch{setFailed(true);}finally{setBusyAck(null);}}
+   if(!alive.current||viewKey.current!==at)return;
+   if(r.status===401||r.status===403||r.status===409){await endViewIfSessionIs(stamp);return;}
+   if(r.ok){gen.current++;request.current?.abort();request.current=null;inflight.current=false;clearTimeout(timer.current);await sync();}else setFailed(true);}
+  catch{if(alive.current&&viewKey.current===at)setFailed(true);}finally{if(alive.current)setBusyAck(null);}}
  const count=page?page.unacknowledged+page.attention:0;
  return <div className="sx-bell">
   <button type="button" className="sx-iconbtn" aria-haspopup="dialog" aria-expanded={open} onClick={()=>setOpen(o=>!o)} aria-label={t('notifications')+(page?` (${count})`:'')}>

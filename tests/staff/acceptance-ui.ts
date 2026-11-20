@@ -238,6 +238,50 @@ try{
   release();await p.waitForTimeout(1500);await p.unroute(/format=csv/);assert.equal(downloads,0,'no CSV after the filter changed');
   await ctx.close();
  });
+ await check('BELL-RACE-01: a late 401 of the previous session’s inbox read or ACK never ends the new session’s view; the new session reads at once',async()=>{
+  const a=await login('accept-admin@example.invalid'),b=await login('accept-docb@example.invalid');const cookiesA=await a.ctx.cookies(),cookiesB=await b.ctx.cookies();await b.ctx.close();
+  const p=a.p;let ended=0;await p.exposeFunction('__ended',()=>{ended++;});const unauth:string[]=[];p.on('response',r=>{if([401,403,409].includes(r.status()))unauth.push(r.status()+' '+new URL(r.url()).pathname);});await p.addInitScript(()=>{window.addEventListener('zao-auth-ended',()=>{void (window as unknown as {__ended:()=>void}).__ended();});});
+  const stamps:string[]=[];let holdStamp='',release=()=>{};
+  await p.route('**/api/operations/inbox?*',async r=>{const st=r.request().headers()['x-zao-session']??'';stamps.push(st);
+   if(st&&st===holdStamp){await new Promise<void>(f=>{release=f;});await r.fulfill({status:401,json:{error:'UNAUTHENTICATED'}}).catch(()=>{/* aborted by the page */});}else await r.continue();});
+  const swapToB=async(path:string)=>{await a.ctx.clearCookies();await a.ctx.addCookies(cookiesB);const refreshed=p.waitForResponse(r=>r.request().headers()['rsc']==='1'&&new URL(r.url()).pathname===path);
+   await p.evaluate(()=>(window as unknown as {next:{router:{refresh():void}}}).next.router.refresh());await refreshed.catch(()=>{});};
+  // 1. Inbox GET of A held, the same mounted shell switches to B, then A's read answers 401.
+  await p.goto('/staff/settings');await p.locator('.sx-bell').waitFor();await p.waitForFunction(()=>true);await p.waitForTimeout(800);const stampA=stamps.at(-1)!;assert.ok(stampA);
+  holdStamp=stampA;const held=p.waitForRequest(r=>r.url().includes('/api/operations/inbox?')&&r.headers()['x-zao-session']===stampA);
+  await p.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await held;
+  const readB=p.waitForResponse(r=>r.url().includes('/api/operations/inbox?')&&r.headers()['x-zao-session']!==stampA&&r.request().headers()['x-zao-session']!==stampA,{timeout:20000});
+  await swapToB('/staff/settings');const rb=await readB;assert.equal(rb.status(),200,'B reads its own inbox at once, while A is still pending');
+  release();await p.waitForTimeout(1500);assert.equal(ended,0,'A’s late 401 did not end B’s view');
+  assert.equal(await p.getByRole('heading',{name:/セッションを確認してください|Check your session/}).count(),0);
+  // 2. ACK pressed in A's view and held; the shell switches to B; the late 401 of that ACK does not end B's view.
+  holdStamp='';let ackRelease=()=>{};await p.route('**/api/operations/inbox/ack',async r=>{await new Promise<void>(f=>{ackRelease=f;});await r.fulfill({status:401,json:{error:'UNAUTHENTICATED'}}).catch(()=>{});});
+  await a.ctx.clearCookies();await a.ctx.addCookies(cookiesA);await p.goto('/staff/settings');await p.locator('.sx-bell').waitFor();
+  await p.locator('.sx-bell button.sx-iconbtn').click();const ackButton=p.getByRole('button',{name:'確認済みにする'}).first();await ackButton.waitFor();
+  const ackSent=p.waitForRequest(r=>r.url().endsWith('/api/operations/inbox/ack'));await ackButton.click();await ackSent;
+  await swapToB('/staff/settings');ackRelease();await p.waitForTimeout(1500);assert.equal(ended,0,'a late 401 of the earlier ACK did not end the new view: '+JSON.stringify(unauth));
+  await p.unroute('**/api/operations/inbox/ack');await p.unroute('**/api/operations/inbox?*');
+  // 3. Fail closed is kept: a 401 for the session that is still current ends that view.
+  await p.goto('/staff/settings');await p.locator('.sx-bell').waitFor();await p.waitForTimeout(800);
+  await p.route('**/api/operations/inbox?*',r=>r.fulfill({status:401,json:{error:'UNAUTHENTICATED'}}));await p.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+  await p.waitForFunction(()=>true);for(let i=0;i<20&&ended===0;i++)await p.waitForTimeout(250);assert.equal(ended,1,'a 401 for the current session still ends the view');
+  await p.unroute('**/api/operations/inbox?*');await a.ctx.close();
+ });
+ await check('CSV-UX-01: a CSV requested in Japanese is not saved after switching to English; network failure and 503 are shown; an aborted request is silent',async()=>{
+  const {ctx,p}=await login('accept-admin@example.invalid');let downloads=0;p.on('download',()=>{downloads++;});
+  await p.goto('/staff/customers');const ja=p.locator('main').getByRole('button',{name:'CSVを保存'});await ja.waitFor();
+  let release=()=>{};const held=new Promise<void>(f=>{release=f;});await p.route(/format=csv/,async r=>{await held;await r.continue();});
+  const asked=p.waitForRequest(r=>r.url().includes('format=csv'));await ja.click();const req=await asked;assert.equal(new URL(req.url()).searchParams.get('lang'),'ja');
+  await p.getByRole('button',{name:'English',exact:true}).click();const en=p.locator('main').getByRole('button',{name:'Download CSV'});await en.waitFor();
+  release();await p.waitForTimeout(1500);await p.unroute(/format=csv/);assert.equal(downloads,0,'the Japanese CSV is not saved on the English page');
+  assert.equal(await p.getByRole('alert').filter({hasText:/CSV/}).count(),0,'the dropped request shows no error');
+  const one=p.waitForEvent('download');await en.click();const d=await one;const body=await (await import('node:fs/promises')).readFile((await d.path())!,'utf8');
+  assert.equal(body.replace(/^\uFEFF/,'').split('\r\n')[0]!.split(',')[0],'Name','English CSV after the switch');assert.equal(downloads,1);
+  await p.route(/format=csv/,r=>r.abort('internetdisconnected'));await en.click();await p.getByRole('alert').filter({hasText:'Could not create the CSV.'}).waitFor();await p.unroute(/format=csv/);
+  await p.route(/format=csv/,r=>r.fulfill({status:503,json:{error:'OPERATIONS_UNAVAILABLE'}}));await en.click();await p.getByRole('alert').filter({hasText:'Could not create the CSV.'}).waitFor();await p.unroute(/format=csv/);
+  assert.equal(downloads,1,'failures save nothing');
+  await p.getByRole('button',{name:'日本語',exact:true}).click();await ctx.close();
+ });
  await check('UX-02: real order, customer, product and item screens read correctly at 1440, 390 and 200% zoom in Japanese and English, and their main actions are reachable by keyboard',async()=>{
   const {ctx,p}=await login('accept-admin@example.invalid');const errors:string[]=[];p.on('pageerror',e=>errors.push(e.message));
   const ref=confirmedId.slice(0,8).toUpperCase(),customer=(await db.pool.query('SELECT customer_id FROM customer_booking_links WHERE booking_id=$1',[confirmedId])).rows[0].customer_id as string;

@@ -44,7 +44,7 @@ export function StaffReports({stamp,stores}:{stamp:string;stores:string[]}){
  const data=loaded?.key===key&&failed!==key?loaded.data:null;
  const cell=(c:Column,v:string|number|undefined)=>c.kind==='date'?fmtDate(locale,String(v)):c.kind==='station'?STORE_LABEL[String(v)]??String(v):c.kind==='jpy'?fmtYen(locale,Number(v)):String(v??0);
  // REP-02 (shared with the Orders / Customers / Inventory CSVs): saved only for this query, session and mounted page.
- const csv=useCsvDownload(key,stamp),csvBusy=csv.busy;
+ const csv=useCsvDownload(key+'|'+locale,stamp),csvBusy=csv.busy;
  const download=()=>csv.download('/api/operations/reports?'+query+'&format=csv',`report-${type}-${data?.from??'now'}-${data?.to??''}.csv`.replace(/-\.csv$/,'.csv'));
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'reports')}</h1>{data&&<button type="button" className="sx-btn" disabled={csvBusy} aria-busy={csvBusy} onClick={()=>void download()}>{tx('csv')}</button>}</div>

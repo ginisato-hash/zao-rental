@@ -1,4 +1,5 @@
 import {FlowError} from '../../../contracts/src/rental-flow';
+import {csvCell} from './exports';
 import {utcDate} from '../../../contracts/src/hold';
 import type {OperationsContext} from './context';
 
@@ -82,7 +83,7 @@ export class ReportsService{
 }
 /** CSV (UTF-8 with BOM for spreadsheet apps) from exactly the rows the screen shows. Header names are stable keys. */
 export function reportCsv(r:ReportResult):string{
- const esc=(v:unknown)=>{const s=String(v??'');return /[",\r\n]/.test(s)||/^[=+\-@]/.test(s)?'"'+(/^[=+\-@]/.test(s)?"'":'')+s.replace(/"/g,'""')+'"':s;};
- const head=r.columns.map(c=>c.key),lines=[head.join(','),...r.rows.map(row=>head.map(k=>esc(row[k])).join(','))];
+ // Same cell rule as the list CSVs (CSV-SAFE-01): formula-like text, including full-width and after leading spaces, stays text.
+ const head=r.columns.map(c=>c.key),lines=[head.join(','),...r.rows.map(row=>head.map(k=>csvCell(row[k])).join(','))];
  return '﻿'+lines.join('\r\n')+'\r\n';
 }

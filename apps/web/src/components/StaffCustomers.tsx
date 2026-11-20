@@ -36,7 +36,7 @@ export function StaffCustomers({locale:serverLocale,stamp}:{locale:StaffLocale;s
    if(!r.ok)throw Error();const v=await r.json();if(ticket===gen.current){setLoaded({key:query+'|'+stamp,data:v});setFailedKey(null);}}catch{if(ticket===gen.current)setFailedKey(query+'|'+stamp);}
  });},[query,stamp,reload]);
  const pages=data?Math.max(1,Math.ceil(data.total/data.pageSize)):1;
- const csv=useCsvDownload(viewKey,stamp),csvQuery=new URLSearchParams({...(get('search')?{search:get('search')}:{}),format:'csv',lang:locale});
+ const csv=useCsvDownload(viewKey+'|'+locale,stamp),csvQuery=new URLSearchParams({...(get('search')?{search:get('search')}:{}),format:'csv',lang:locale});
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'customers')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim(),page:''});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>

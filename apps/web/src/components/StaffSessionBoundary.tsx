@@ -2,6 +2,15 @@
 import {useContext,useEffect,useState,type ReactNode} from 'react';
 import {StaffLocaleContext} from './staff-locale';
 export function invalidateStaffView(){window.dispatchEvent(new Event('zao-auth-ended'));}
+/** BELL-RACE-01: a 401/403/409 answer to a request made with `stamp` ends the view only if `stamp` is still the browser's
+ * current session (its access really ended) or there is no session at all. If another valid session has replaced it
+ * (sign-in as someone else while the request was pending), the answer belongs to the old session: the view for the new
+ * stamp is not ended here, and StaffSessionBoundary keeps verifying whichever stamp is shown. A failed check ends it. */
+export async function endViewIfSessionIs(stamp:string){
+ try{const r=await fetch('/api/session',{cache:'no-store'});const body=await r.json() as {stamp?:string};
+  if(r.ok&&body.stamp&&body.stamp!==stamp)return;}catch{/* cannot tell: fail closed */}
+ invalidateStaffView();
+}
 export function StaffSessionBoundary({stamp,children}:{stamp:string;children:ReactNode}){
  // DOC-01: 'ready' is bound to the stamp the server verified. When the stamp changes, the previous ready never shows the
  // children: they stay hidden until this stamp itself is confirmed.

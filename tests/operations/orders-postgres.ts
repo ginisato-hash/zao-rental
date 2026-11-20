@@ -12,6 +12,7 @@ import {AmendmentService} from '../../packages/core/src/operations/amendment-ser
 import {CustomersService} from '../../packages/core/src/operations/customers-service';
 import {InventoryRead} from '../../packages/core/src/operations/inventory-read';
 import {listCsv} from '../../packages/core/src/operations/list-exports';
+import {reportCsv} from '../../packages/core/src/operations/reports-service';
 import {csvCell,csvLang,exportBound,EXPORT_MAX,toCsv} from '../../packages/core/src/operations/exports';
 
 // Issue #47 §2B/§2C: Booqable-style Orders and Dashboard reads over real rental facts. Synthetic local PostgreSQL only.
@@ -208,6 +209,16 @@ try{
   // Unit: neutralizing, quoting, numbers, booleans, language and the bound.
   assert.deepEqual(['=1','+1','-x','@a','\tx','a,b','a"b','line\nbreak','plain',-5,true,null].map(csvCell),[`"'=1"`,`"'+1"`,`"'-x"`,`"'@a"`,`"'\tx"`,'"a,b"','"a""b"','"line\nbreak"','plain','-5','1','']);
   assert.equal(toCsv([{key:'k',ja:'キー',en:'Key',value:(r:{v:number})=>r.v}],[{v:1}],'en'),'\uFEFFKey\r\n1\r\n');
+  // CSV-SAFE-01: full-width and other formula starts, and formulas after leading whitespace/control characters, stay text;
+  // the parsed cell is exactly ' + the original (nothing else changes). Ordinary text, mid-text = and numbers are untouched.
+  for(const v of ['\uFF1D1+1','\uFF0BA1','\uFF0DA1','\uFF20SUM(A1)','\u22121','\uFE631','\n=1+1','\r\n=1+1','  =1+1','\u3000=1+1','\u00A0@x','\u0000=1','\uFEFF=1','\t','\u2028=1']){
+   const cell=csvCell(v);assert.ok(cell.startsWith(`"'`),JSON.stringify(v)+' → '+cell);
+   const back=parse('\uFEFF'+cell+',x\r\n')[0]!;assert.deepEqual(back,["'"+v,'x'],'round trip of '+JSON.stringify(v));}
+  for(const v of ['山田 太郎','a=b','x@example.invalid','  plain','1+1','(=)'])assert.ok(!csvCell(v).startsWith(`"'`),JSON.stringify(v));
+  assert.deepEqual([csvCell(-500),csvCell(0),csvCell(12000)],['-500','0','12000'],'amounts stay numbers');
+  // Reports CSV uses the same cell rule.
+  const rep=reportCsv({type:'bookings',from:'2035-01-01',to:'2035-01-01',stores:[store],asOf:'',columns:[{key:'station',kind:'station'}],rows:[{station:'\uFF1Dcmd'}],totals:{}} as never);
+  assert.ok(rep.includes(`"'\uFF1Dcmd"`),'reports CSV neutralizes full-width formulas too');
   assert.equal(csvLang(undefined),'ja');assert.throws(()=>csvLang('fr'),{code:'INVALID_QUERY'});exportBound(EXPORT_MAX);assert.throws(()=>exportBound(EXPORT_MAX+1),{code:'EXPORT_TOO_LARGE'});
  });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));

@@ -167,7 +167,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  </section>}
  {effectivePickup&&<BookingSearchInput onBooking={openBooking}/>}
  {showManifest&&<section aria-label={t('本日の業務','Today’s work')} aria-busy={manifestBusy} className="staff-manifest"><div className="staff-section-head"><h2>{t('本日の業務','Today’s work')}</h2><button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>{t('更新','Refresh')}</button></div>
-  
+  <p className="staff-secondary">{storeName(activeStore)}{manifestDate?' · '+manifestDate:''}</p>
   <div className={'staff-state staff-state--'+manifestKind}><p role="status">{manifestStatus}</p>{manifestKind==='error'&&<button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>{t('もう一度読み込む','Load again')}</button>}</div>
   {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:!manifestError&&!manifestBusy&&<p className="staff-empty">{t('現在対応が必要な項目はありません。','Nothing needs attention right now.')}</p>)}
   {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>{t('さらに読み込む','Load more')}</button>}
@@ -197,7 +197,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
       button is the only way to recover without a full page reload. */}
   <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>{t('更新','Refresh')}</button></div>
   <p role="status">{bookingsReq.message?loadErrorText(t('本日の予約','Today’s bookings'),bookingsReq.message):manifestError||(manifestDate?'':t('業務日付を確認しています…','Checking the business date…'))}</p>
-  {manifestDate&&<>
+  {manifestDate&&<><p className="staff-secondary">{manifestDate} JST</p>
    {bookings&&(todays.length?<div className="staff-card-grid">{todays.map(b=><article className="staff-card" key={b.id}><div className="staff-card-head"><strong>{b.display_name??t('（氏名未取得）','(name not recorded)')}</strong><span className="staff-chip">{stateLabel(b.state)}</span></div><p>{b.period!.startDate} → {b.period!.endDate} · {slotLabel(b.period!.slot)}</p><p>{storeName(b.pickup_store)} → {storeName(b.return_store)} · {money(b.total_jpy)}</p>{effectivePickup&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(b.id)}>{t('貸出・受付で状態を確認','Check it at pickup / front desk')}</button>}</article>)}</div>:<p className="staff-empty">{t('本日が利用期間に含まれる予約はありません。','No bookings include today in their period.')}</p>)}
   </>}
  </section>}

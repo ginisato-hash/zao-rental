@@ -110,9 +110,13 @@ try{
   const onFail=(r:import('@playwright/test').Request)=>{timeline.push(at()+' failed '+new URL(r.url()).pathname+' '+(r.failure()?.errorText??''));};
   const onDialog=(d:import('@playwright/test').Dialog)=>{timeline.push(at()+' dialog '+d.type());void d.dismiss().catch(()=>{});};// same as Playwright's default (dismiss), now recorded
   const onConsole=(m:import('@playwright/test').ConsoleMessage)=>{if(m.type()==='error')timeline.push(at()+' console-error '+m.text().slice(0,120));};
-  page.on('framenavigated',onNav);page.on('request',onReq);page.on('response',onRes);
+  // TEST-TRACE-01: every listener is registered before the click (requestfailed: an aborted /ja document; dialog: a
+  // beforeunload prompt, which Playwright would otherwise dismiss silently and so cancel the navigation; console errors).
+  page.on('framenavigated',onNav);page.on('request',onReq);page.on('response',onRes);page.on('requestfailed',onFail);page.on('dialog',onDialog);page.on('console',onConsole);
   const logout=await closeGuestAndAwaitLogout(page,page.getByRole('button',{name:'この予約画面を閉じる'}));assert.equal(logout.status(),200);timeline.push(at()+' logout 200');
-  try{await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});if(process.env.ZAO_TEST_TIMELINE==='1')console.log('CLOSE_TIMELINE '+timeline.join(' | '));}
+  try{await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});
+   assert.equal(timeline.filter(x=>/ dialog /.test(x)).length,0,'no leave prompt after a successful close: '+timeline.join(' | '));
+   assert.equal(timeline.filter(x=>/ req POST \/api\/guest\/logout/.test(x)).length,1,'exactly one logout POST: '+timeline.join(' | '));if(process.env.ZAO_TEST_TIMELINE==='1')console.log('CLOSE_TIMELINE '+timeline.join(' | '));}
   catch(e){assert.fail(`no navigation to /ja after logout 200; now ${new URL(page.url()).pathname}; timeline: ${timeline.join(' | ')}; ${(e as Error).message.split('\n')[0]}`);}
   finally{page.off('framenavigated',onNav);page.off('request',onReq);page.off('response',onRes);page.off('requestfailed',onFail);page.off('dialog',onDialog);page.off('console',onConsole);}for(const p of [imagePath,metadataPath])assert.equal((await c.request.get(p)).status(),404);assert.equal((await other.request.get('/api/guest/draft')).status(),200);});
  await check('BROWSER','no fatal/hydration errors or external attempts',async()=>{assert.deepEqual(fatals,[]);assert.equal(externalAttempts,0);});

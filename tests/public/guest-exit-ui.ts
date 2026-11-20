@@ -47,7 +47,11 @@ try{
   assert.equal(await draftStatus(g.ctx)===200,false,'the closed guest context no longer answers');
   await g.p.goBack();await g.p.waitForURL(app.origin+'/ja/book');await expect(g.p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   assert.notEqual(await g.p.getByLabel('利用開始日',{exact:true}).inputValue(),'2035-01-05','the previous draft is not shown after Back');
-  assert.equal(await g.p.getByText('171',{exact:true}).count(),0);assert.equal(g.posts.length,1,'Back does not send another logout');await g.ctx.close();
+  // The unsaved height must not come back: read the field's value wherever the step shows it (a text search cannot see
+  // an <input> value, so it could never fail). If the field is not on screen, read every height field in the page.
+  const heights=await g.p.getByLabel('身長（cm）',{exact:true}).evaluateAll(els=>els.map(e=>(e as HTMLInputElement).value));
+  assert.equal(heights.includes('171'),false,'the unsaved height is not restored after Back: '+JSON.stringify(heights));
+  assert.equal(g.posts.length,1,'Back does not send another logout');await g.ctx.close();
  });
  for(const [kind,answer] of [['logout 500',(r:import('@playwright/test').Route)=>r.fulfill({status:500,json:{error:'GUEST_UNAVAILABLE'}})],['network error',(r:import('@playwright/test').Route)=>r.abort('failed')]] as const)
   await check(`${kind}: stays on the booking screen with an error, the unsaved input and its leave protection remain, a retry sends one new POST`,async()=>{

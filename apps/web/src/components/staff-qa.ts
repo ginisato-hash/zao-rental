@@ -1,12 +1,13 @@
 /** Staff Q&A (Owner 2026-11-20): every explanation that used to be scattered over the staff screens lives here, once.
  * Screens show only titles, data, controls, states and errors. Each answer is the screen's former wording (JA/EN). */
+import {passwordPolicy} from '../../../../packages/auth/src/password-policy';
 type Pair=readonly [string,string];
 export type QaItem={q:Pair;a:Pair};
 export type QaSection={id:string;title:Pair;items:QaItem[]};
 export const STAFF_QA:QaSection[]=[
  {id:'account',title:['ログイン・アカウント','Sign-in and account'],items:[
   {q:['どのアカウントでログインしますか？','Which account do I sign in with?'],a:['管理者が登録した個別のスタッフアカウントでログインします。自由な新規登録はできません。パスワード再設定のメール送信は未接続です。','Sign in with the personal staff account an administrator created for you. There is no self sign-up. Password-reset emails are not connected.']},
-  {q:['パスワードの条件は？','What makes a valid password?'],a:['15〜128文字。ほかのサービスと同じものは使わないでください。','15 to 128 characters. Do not reuse one from another service.']},
+  {q:['パスワードの条件は？','What makes a valid password?'],a:[`${passwordPolicy.min}〜${passwordPolicy.max}文字。ほかのサービスと同じものは使わないでください。管理者は長めのパスワードにしてください。`,`${passwordPolicy.min} to ${passwordPolicy.max} characters. Do not reuse one from another service. Administrators should use a longer one.`]},
   {q:['パスワードを変更するとどうなりますか？','What happens when I change my password?'],a:['この端末を含むすべての端末でログアウトします。新しいパスワードでログインし直してください。','You are signed out on every device, including this one. Sign in again with the new password.']},
   {q:['スタッフを作成するときの初期パスワードは？','How is the initial password handled for a new staff member?'],a:['初期パスワードは本人へ安全な方法で伝え、本人が変更してください。画面やログへ再表示しません。','Give the initial password to the person securely and have them change it. It is never shown again on screen or in logs.']},
   {q:['担当業務ごとの標準の権限は？','What does each role allow by default?'],a:['受付担当・責任者・管理者は担当店舗の予約閲覧と返金が標準で可能です（取り消し不可）。閲覧担当の標準は台帳閲覧のみ。料金版設定は全店の管理者への明示付与が必要です。権限の付与と決済・返金・通知の実行は別の操作です。','Front desk, managers and administrators can view bookings and refund at their stations by default (cannot be revoked). Viewers can only view the ledger by default. Setting price versions needs an explicit grant to an all-station administrator. Granting a permission is separate from carrying out payments, refunds or notifications.']},

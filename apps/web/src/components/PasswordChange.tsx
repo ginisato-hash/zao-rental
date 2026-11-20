@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {useStaffLocale} from './staff-locale';
+import {passwordPolicy} from '../../../../packages/auth/src/password-policy';
 import './staff-orders.css';
 
 /** Change one's own password (every role). The existing API is unchanged: POST /api/auth/change-password with the
@@ -16,7 +17,7 @@ export function PasswordChange(){
  useEffect(()=>{if(failure)alert.current?.focus();},[failure]);
  const message:Record<Failure,string>={
   mismatch:t('新しいパスワードと確認用の入力が一致しません。','The new password and its confirmation do not match.'),
-  length:t('新しいパスワードは15〜128文字にしてください。','Use 15 to 128 characters for the new password.'),
+  length:t(`新しいパスワードは${passwordPolicy.min}〜${passwordPolicy.max}文字にしてください。`,`Use ${passwordPolicy.min} to ${passwordPolicy.max} characters for the new password.`),
   // The server answers LOGIN_REJECTED both for a wrong/locked current password and for a new password the library refuses.
   current:t('変更できませんでした。現在のパスワードが正しいか、新しいパスワードが条件を満たすかを確認してください。失敗が続くと一時的にロックされます。','The password was not changed. Check the current password and that the new one meets the rule. Repeated failures lock the account for a while.'),
   rejected:t('このパスワードには変更できませんでした。別のパスワードにしてください。','This password could not be set. Choose a different one.'),
@@ -26,7 +27,7 @@ export function PasswordChange(){
  async function submit(event:React.FormEvent<HTMLFormElement>){
   event.preventDefault();if(sending.current)return;
   const d=new FormData(event.currentTarget),current=String(d.get('currentPassword')??''),next=String(d.get('newPassword')??''),confirm=String(d.get('confirmPassword')??'');
-  if(next.length<15||next.length>128){setFailure('length');return;}if(next!==confirm){setFailure('mismatch');return;}
+  if(next.length<passwordPolicy.min||next.length>passwordPolicy.max){setFailure('length');return;}if(next!==confirm){setFailure('mismatch');return;}
   sending.current=true;setBusy(true);setFailure(null);
   try{
    const r=await fetch('/api/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({currentPassword:current,newPassword:next})});
@@ -38,16 +39,15 @@ export function PasswordChange(){
   finally{if(!done.current){sending.current=false;setBusy(false);}}
  }
  const field=(name:string,label:string,auto:string,extra:{minLength?:number;describedBy?:string}={})=><label className="sx-field">{label}
-  <input name={name} type="password" autoComplete={auto} required maxLength={128} minLength={extra.minLength} aria-describedby={extra.describedBy} aria-invalid={failure!==null&&(name!=='currentPassword'?failure==='mismatch'||failure==='length':failure==='current')||undefined}/></label>;
+  <input name={name} type="password" autoComplete={auto} required maxLength={passwordPolicy.max} minLength={extra.minLength} aria-describedby={extra.describedBy} aria-invalid={failure!==null&&(name!=='currentPassword'?failure==='mismatch'||failure==='length':failure==='current')||undefined}/></label>;
  return <div className="ox" lang={locale}>
   <div className="ox-head"><h1>{t('パスワード変更','Change password')}</h1></div>
   <form className="sx-card sx-form" style={{padding:'20px 24px',maxWidth:520}} onSubmit={e=>void submit(e)} aria-busy={busy} noValidate>
    {field('currentPassword',t('現在のパスワード','Current password'),'current-password')}
-   {field('newPassword',t('新しいパスワード','New password'),'new-password',{minLength:15,describedBy:'pw-rule'})}
-   
-   {field('confirmPassword',t('新しいパスワード（確認）','Confirm new password'),'new-password',{minLength:15})}
+   {field('newPassword',t('新しいパスワード','New password'),'new-password',{minLength:passwordPolicy.min,describedBy:'pw-rule'})}
+   <p id="pw-rule" className="sx-help" style={{margin:'-8px 0 0'}}>{t(`${passwordPolicy.min}〜${passwordPolicy.max}文字`,`${passwordPolicy.min} to ${passwordPolicy.max} characters`)}</p>
+   {field('confirmPassword',t('新しいパスワード（確認）','Confirm new password'),'new-password',{minLength:passwordPolicy.min})}
    {failure&&<p ref={alert} tabIndex={-1} role="alert" className="sx-alert" style={{margin:0}}>{message[failure]}</p>}
-   
    <button type="submit" className="sx-btn sx-btn--primary" disabled={busy}>{busy?t('変更しています…','Changing…'):t('パスワードを変更','Change password')}</button>
   </form>
  </div>;

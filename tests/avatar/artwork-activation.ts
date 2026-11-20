@@ -113,12 +113,28 @@ try{
   // TEST-TRACE-01: every listener is registered before the click (requestfailed: an aborted /ja document; dialog: a
   // beforeunload prompt, which Playwright would otherwise dismiss silently and so cancel the navigation; console errors).
   page.on('framenavigated',onNav);page.on('request',onReq);page.on('response',onRes);page.on('requestfailed',onFail);page.on('dialog',onDialog);page.on('console',onConsole);
-  const logout=await closeGuestAndAwaitLogout(page,page.getByRole('button',{name:'この予約画面を閉じる'}));assert.equal(logout.status(),200);timeline.push(at()+' logout 200');
+  // AVATAR-NAV-01 (TD #7044766407): who starts each top-level navigation, from the browser itself (CDP): the reason
+  // (scriptInitiated / reload / metaTagRefresh / httpHeaderRefresh / ...) and, for document requests, the initiator type
+  // and the first script frames (chunk file:function:line). Paths and code locations only; no bodies, cookies or values.
+  const cdp=await page.context().newCDPSession(page);await cdp.send('Page.enable');await cdp.send('Network.enable');
+  type Frame={url:string;functionName:string;lineNumber:number};type Init={type?:string;stack?:{callFrames?:Frame[];parent?:{callFrames?:Frame[]}}};
+  const frames=(i?:Init)=>[...(i?.stack?.callFrames??[]),...(i?.stack?.parent?.callFrames??[])].slice(0,6).map(f=>`${(f.url||'?').split('/').pop()!.split('?')[0]}:${f.functionName||'anon'}:${f.lineNumber}`).join('<');
+  const onCdpNav=(e:{reason:string;disposition:string;url:string})=>{timeline.push(at()+' cdp-nav '+e.reason+' '+e.disposition+' '+new URL(e.url).pathname);};
+  const onWill=(e:{type?:string;request:{url:string;method:string};initiator?:Init})=>{if(e.type==='Document'||new URL(e.request.url).pathname==='/api/guest/logout')timeline.push(at()+' cdp-req '+e.request.method+' '+new URL(e.request.url).pathname+' by '+(e.initiator?.type??'?')+(frames(e.initiator)?' '+frames(e.initiator):''));};
+  const onLoadFail=(e:{type?:string;errorText:string;canceled?:boolean})=>{if(e.type==='Document'||e.type==='Fetch'||e.type==='XHR')timeline.push(at()+' cdp-fail '+e.type+' '+e.errorText+(e.canceled?' canceled':''));};
+  cdp.on('Page.frameRequestedNavigation',onCdpNav);cdp.on('Network.requestWillBeSent',onWill);cdp.on('Network.loadingFailed',onLoadFail);
+  const onLogoutRes=(r:import('@playwright/test').Response)=>{if(new URL(r.url()).pathname==='/api/guest/logout')timeline.push(at()+' res '+r.status()+' /api/guest/logout');};page.on('response',onLogoutRes);
+  const dump=()=>timeline.join(' | ');
+  // A helper failure (no POST, POST without answer, aborted POST) must still report the timeline (TD #7044766407 item 1).
+  let logout:import('@playwright/test').Response;
+  try{logout=await closeGuestAndAwaitLogout(page,page.getByRole('button',{name:'この予約画面を閉じる'}));}
+  catch(e){page.off('response',onLogoutRes);await cdp.detach().catch(()=>{});assert.fail(`guest close failed: ${(e as Error).message.split('\n')[0]}; now ${new URL(page.url()).pathname}; timeline: ${dump()}`);}
+  assert.equal(logout.status(),200);timeline.push(at()+' logout 200');
   try{await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});
    assert.equal(timeline.filter(x=>/ dialog /.test(x)).length,0,'no leave prompt after a successful close: '+timeline.join(' | '));
    assert.equal(timeline.filter(x=>/ req POST \/api\/guest\/logout/.test(x)).length,1,'exactly one logout POST: '+timeline.join(' | '));if(process.env.ZAO_TEST_TIMELINE==='1')console.log('CLOSE_TIMELINE '+timeline.join(' | '));}
   catch(e){assert.fail(`no navigation to /ja after logout 200; now ${new URL(page.url()).pathname}; timeline: ${timeline.join(' | ')}; ${(e as Error).message.split('\n')[0]}`);}
-  finally{page.off('framenavigated',onNav);page.off('request',onReq);page.off('response',onRes);page.off('requestfailed',onFail);page.off('dialog',onDialog);page.off('console',onConsole);}for(const p of [imagePath,metadataPath])assert.equal((await c.request.get(p)).status(),404);assert.equal((await other.request.get('/api/guest/draft')).status(),200);});
+  finally{page.off('framenavigated',onNav);page.off('request',onReq);page.off('response',onRes);page.off('response',onLogoutRes);page.off('requestfailed',onFail);page.off('dialog',onDialog);page.off('console',onConsole);await cdp.detach().catch(()=>{});}for(const p of [imagePath,metadataPath])assert.equal((await c.request.get(p)).status(),404);assert.equal((await other.request.get('/api/guest/draft')).status(),200);});
  await check('BROWSER','no fatal/hydration errors or external attempts',async()=>{assert.deepEqual(fatals,[]);assert.equal(externalAttempts,0);});
  await writeFile(evidence+'/browser-measurements.json',JSON.stringify({tolerancePx:1,engine:'Chromium; mobile viewport, not physical Safari',measurements},null,2)+'\n');await writeFile(evidence+'/screenshots.json',JSON.stringify(screenshots,null,2)+'\n');
 }catch(e){failed=true;console.error('ARTWORK_ACTIVATION_FAILED '+stage+' '+String((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected,message:e.message.slice(0,1500)}));console.error((e as Error).stack?.split('\n').filter(s=>s.includes('/tests/avatar/')||s.includes('/scripts/avatar-artwork')).join('\n'));}

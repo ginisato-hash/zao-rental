@@ -59,7 +59,7 @@
     "test:staff-acceptance-ui": "node --import tsx tests/staff/acceptance-ui.ts --built",
     "test:staff-all-routes-ui": "node --import tsx tests/staff/all-routes-ui.ts --built",
     "test:staff-console-unity-ui": "node --import tsx tests/staff/console-unity-ui.ts --built",
-    "test:staff-accounts-ui": "node --import tsx tests/staff/accounts-ui.ts --built",
+    "test:staff-accounts-ui": "node --import tsx tests/staff/accounts-ui.ts --built && node --import tsx tests/staff/role-sweep-ui.ts --built",
     "test:public-all-routes-ui": "node --import tsx tests/public/all-routes-ui.ts --built",
     "test:public-map-ui": "node --import tsx tests/public/map-ui.ts --built",
     "test:staff-order": "node --experimental-test-module-mocks --import tsx tests/operations/staff-order-postgres.ts",

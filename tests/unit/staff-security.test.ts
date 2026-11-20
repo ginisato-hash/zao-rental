@@ -10,7 +10,7 @@ test('Argon2id has independent salts and verifies only the supplied password',as
  assert.ok(a!==b);assert.ok(a.startsWith('$argon2id$v=19$m=65536,t=3,p=1$'));assert.ok(await verifyStaffPassword({hash:a,password}));assert.equal(await verifyStaffPassword({hash:a,password:password+'x'}),false);assert.equal(await verifyStaffPassword({hash:'invalid',password}),false);
 });
 test('canonical email is case/outer-space stable; password policy adds no composition rules',()=>{
- assert.equal(canonicalEmail(' Synthetic-Staff@Example.Invalid '),'synthetic-staff@example.invalid');assert.throws(()=>canonicalEmail('invalid'));assert.equal(validPassword('long pass phrase without symbols'),true);assert.equal(validPassword('short'),false);assert.equal(validPassword('x'.repeat(129)),false);
+ assert.equal(canonicalEmail(' Synthetic-Staff@Example.Invalid '),'synthetic-staff@example.invalid');assert.throws(()=>canonicalEmail('invalid'));assert.equal(validPassword('long pass phrase without symbols'),true);assert.equal(validPassword('short'),false);assert.equal(validPassword('sixsix'),true,'Owner 2026-11-21: 6 characters are enough');assert.equal(validPassword('x'.repeat(128)),true);assert.equal(validPassword('x'.repeat(129)),false);
 });
 test('role, permission and ALL scope are independently required for staff management',()=>{
  const principal:StaffPrincipal={subject:'synthetic',role:'ADMIN',scope:'ALL',permissions:['STAFF_MANAGE'],storeIds:['MOUNTAIN_BASE','ONSEN_BASE'],revision:1};

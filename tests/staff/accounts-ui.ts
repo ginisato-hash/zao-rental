@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
-import {chromium,type BrowserContext,type Page} from '@playwright/test';
+import {chromium,expect,type BrowserContext,type Page} from '@playwright/test';
 import {startDevelopmentApp} from '../../scripts/development-app';
 import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 
@@ -36,7 +36,7 @@ try{
   assert.equal(await form.locator('details.staff-perm-details').evaluate(d=>(d as HTMLDetailsElement).open),false,'detailed permissions start folded');
   assert.equal(await form.getByLabel('台帳の閲覧',{exact:true}).isVisible(),false);
   await form.getByLabel('表示名',{exact:true}).fill('SYNTHETIC Front Desk');await form.getByLabel('メールアドレス',{exact:true}).fill('accounts-desk@example.invalid');
-  await form.getByLabel('初期パスワード（15〜128文字）').fill(staffPassword);await form.getByLabel('初期パスワード（確認）').fill(staffPassword+'x');
+  await form.getByLabel('初期パスワード（6〜128文字）').fill(staffPassword);await form.getByLabel('初期パスワード（確認）').fill(staffPassword+'x');
   await form.getByLabel('Mountain Station',{exact:true}).check();let posts=0;const count=(r:import('@playwright/test').Request)=>{if(r.method()==='POST'&&r.url().endsWith('/api/staff-users'))posts++;};p.on('request',count);
   await form.getByRole('button',{name:'スタッフ設定を保存'}).click();await form.getByRole('alert').filter({hasText:'一致しません'}).waitFor();assert.equal(posts,0,'nothing sent on a mismatch');
   assert.equal(await form.getByLabel('表示名',{exact:true}).inputValue(),'SYNTHETIC Front Desk','entries are kept');
@@ -58,6 +58,9 @@ try{
  await check('the new person signs in and changes their own password; mismatch and a wrong current password keep the form; old sessions end',async()=>{
   const first=await signIn('accounts-desk@example.invalid',staffPassword),other=await signIn('accounts-desk@example.invalid',staffPassword);
   const p=first.p;await p.goto('/staff/password');await p.getByRole('heading',{name:'パスワード変更'}).waitFor();
+  // Every aria-describedby on the page points at an element that exists; the new password's rule is its description.
+  assert.deepEqual(await p.evaluate(()=>[...document.querySelectorAll('[aria-describedby]')].flatMap(e=>e.getAttribute('aria-describedby')!.split(/\s+/)).filter(id=>!document.getElementById(id))),[],'no dangling aria-describedby');
+  await expect(p.getByLabel('新しいパスワード',{exact:true})).toHaveAccessibleDescription('6〜128文字');
   await p.getByLabel('現在のパスワード',{exact:true}).fill(staffPassword);await p.getByLabel('新しいパスワード',{exact:true}).fill(newPassword);await p.getByLabel('新しいパスワード（確認）',{exact:true}).fill(newPassword+'y');
   await p.getByRole('button',{name:'パスワードを変更'}).click();const mismatch=p.getByRole('alert').filter({hasText:'一致しません'});await mismatch.waitFor();
   assert.equal(await mismatch.evaluate(e=>document.activeElement===e),true,'focus moves to the error');assert.equal(await p.getByLabel('新しいパスワード',{exact:true}).inputValue(),newPassword,'typed values are kept');
@@ -72,15 +75,21 @@ try{
   await first.ctx.close();await other.ctx.close();await again.ctx.close();
  });
  await check('non-administrators: staff management is refused, own password change works (EN, 390 px, keyboard)',async()=>{
-  const p=admin.p,viewerPassword=secret(),viewerNew=secret();await p.goto('/staff/users');await p.getByRole('button',{name:'スタッフを作成'}).click();const form=p.getByRole('form',{name:'スタッフ作成'});
+  // Owner 2026-11-21: 6 characters are enough. The viewer's new password is exactly 6 characters (synthetic); 5 are refused.
+  const p=admin.p,viewerPassword=secret(),viewerNew='Zao6pw';await p.goto('/staff/users');await p.getByRole('button',{name:'スタッフを作成'}).click();const form=p.getByRole('form',{name:'スタッフ作成'});
   await form.getByLabel('表示名',{exact:true}).fill('SYNTHETIC Viewer');await form.getByLabel('メールアドレス',{exact:true}).fill('accounts-viewer@example.invalid');
-  await form.getByLabel('初期パスワード（15〜128文字）').fill(viewerPassword);await form.getByLabel('初期パスワード（確認）').fill(viewerPassword);
+  await form.getByLabel('初期パスワード（6〜128文字）').fill(viewerPassword);await form.getByLabel('初期パスワード（確認）').fill(viewerPassword);
   await form.getByLabel('担当業務',{exact:true}).selectOption('VIEWER');await form.getByLabel('Mountain Station',{exact:true}).check();
   const created=p.waitForResponse(r=>r.url().endsWith('/api/staff-users')&&r.request().method()==='POST');await form.getByRole('button',{name:'スタッフ設定を保存'}).click();assert.equal((await created).status(),201);
   const v=await signIn('accounts-viewer@example.invalid',viewerPassword,390,'en');
   assert.equal((await v.ctx.request.get('/api/staff-users')).status()>=400,true,'a viewer cannot list staff');
   await v.p.goto('/staff/users');assert.equal(await v.p.getByRole('button',{name:'Create staff member'}).count(),0,'no staff management for a viewer');
   await v.p.goto('/staff/password');await v.p.getByRole('heading',{name:'Change password'}).waitFor();
+  {let sent=0;const count=(r:import('@playwright/test').Request)=>{if(r.url().endsWith('/api/auth/change-password'))sent++;};v.p.on('request',count);
+   await v.p.getByLabel('Current password',{exact:true}).fill(viewerPassword);await v.p.getByLabel('New password',{exact:true}).fill('Zao5p');await v.p.getByLabel('Confirm new password',{exact:true}).fill('Zao5p');
+   await v.p.getByRole('button',{name:'Change password'}).click();await v.p.getByRole('alert').filter({hasText:'Use 6 to 128 characters'}).waitFor();
+   assert.equal(sent,0,'5 characters are refused before anything is sent');v.p.off('request',count);
+   for(const label of ['Current password','New password','Confirm new password'])await v.p.getByLabel(label,{exact:true}).fill('');}
   await v.p.getByLabel('Current password',{exact:true}).focus();await v.p.keyboard.type(viewerPassword);await v.p.keyboard.press('Tab');await v.p.keyboard.type(viewerNew);
   await v.p.keyboard.press('Tab');await v.p.keyboard.type(viewerNew);
   assert.equal(await v.p.getByLabel('Confirm new password',{exact:true}).inputValue(),viewerNew,'Tab order: current → new → confirm');

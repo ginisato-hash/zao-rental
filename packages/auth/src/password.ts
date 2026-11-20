@@ -1,5 +1,6 @@
 import {hash,verify} from '@node-rs/argon2';
-export const passwordPolicy={min:15,max:128} as const;
+import {passwordPolicy} from './password-policy';
+export {passwordPolicy};
 export function validPassword(value:unknown):value is string{return typeof value==='string'&&value.length>=passwordPolicy.min&&value.length<=passwordPolicy.max;}
 export function hashStaffPassword(value:string){return hash(value,{algorithm:2,version:1,memoryCost:65536,timeCost:3,parallelism:1,outputLen:32});}
 export async function verifyStaffPassword(input:{hash:string;password:string}){try{return await verify(input.hash,input.password);}catch{return false;}}

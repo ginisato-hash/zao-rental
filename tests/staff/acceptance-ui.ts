@@ -170,6 +170,52 @@ try{
   await hold();await csvButton().click();await p.goto('/staff/orders');release();await p.waitForTimeout(1500);await p.unroute(csv);assert.equal(downloads,1,'no CSV after leaving Reports');
   await a.ctx.close();
  });
+ await check('DASH-PRINT-01: the Dashboard print link opens the complete work list for the same station and period; an incomplete list cannot be printed',async()=>{
+  const {ctx,p}=await login('accept-admin@example.invalid');await p.goto('/staff');const link=p.getByRole('link',{name:'作業リストを印刷'});await link.waitFor();
+  const href=new URL((await link.getAttribute('href'))!,origin);assert.equal(href.pathname,'/staff/documents');assert.equal(href.searchParams.get('doc'),'work');
+  assert.ok(href.searchParams.get('store')&&href.searchParams.get('from')&&href.searchParams.get('to'),'station and period carried over');
+  await link.click();await p.waitForURL(u=>u.pathname==='/staff/documents');await p.getByRole('button',{name:'印刷'}).waitFor();assert.equal(await p.getByRole('button',{name:'印刷'}).isEnabled(),true);
+  // Over the bound (stubbed): no rows, no print button, one complete list per day, and ⌘P prints only the refusal.
+  await p.route('**/api/operations/work-list?*',r=>{const u=new URL(r.request().url());return u.searchParams.get('from')!==u.searchParams.get('to')
+   ?r.fulfill({json:{store:'MOUNTAIN_BASE',from:'2035-06-16',to:'2035-06-17',goingOut:[],comingBack:[],goingOutTotal:1500,comingBackTotal:0,max:1000,complete:false,days:[{date:'2035-06-16',goingOut:700,comingBack:0,complete:true},{date:'2035-06-17',goingOut:800,comingBack:0,complete:true}]}})
+   :r.fulfill({json:{store:'MOUNTAIN_BASE',from:'2035-06-17',to:'2035-06-17',goingOut:[{id:crypto.randomUUID(),ref:'SYNTH001',customer:'SYNTHETIC Day',status:'RESERVED',startDate:'2035-06-17',endDate:'2035-06-17',slot:'DAY',people:1,pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE'}],comingBack:[],goingOutTotal:1,comingBackTotal:0,max:1000,complete:true,days:[{date:'2035-06-17',goingOut:1,comingBack:0,complete:true}]}});});
+  await p.goto('/staff/documents?doc=work&store=MOUNTAIN_BASE&from=2035-06-16&to=2035-06-17');await p.getByRole('alert').filter({hasText:'収まりません'}).waitFor();
+  assert.equal(await p.getByRole('button',{name:'印刷'}).count(),0,'no print button for an over-limit period');assert.equal(await p.locator('.ox-paper').count(),0,'no partial work list on the page');
+  await p.emulateMedia({media:'print'});assert.equal(await p.locator('.ox-print-refusal').isVisible(),true,'printing the page shows only the refusal');assert.equal(await p.locator('.ox-split').isVisible(),false);await p.emulateMedia({media:'screen'});
+  const dayLinks=p.getByRole('link',{name:'作業リストを開く'});assert.equal(await dayLinks.count(),2);await dayLinks.nth(1).click();
+  await p.waitForURL(u=>u.searchParams.get('from')==='2035-06-17'&&u.searchParams.get('to')==='2035-06-17');await p.getByText('#SYNTH001').waitFor();assert.equal(await p.getByRole('button',{name:'印刷'}).isEnabled(),true);
+  await ctx.close();
+ });
+ await check('BROWSER-01: opt-in browser notifications fire for a new booking while the tab is hidden, once across tabs; never for the backlog, after opt-out or without a session',async()=>{
+  const {ctx}=await login('accept-admin@example.invalid');let shown=0;await ctx.exposeFunction('__notified',()=>{shown++;});
+  const reads:string[]=[];ctx.on('request',r=>{if(r.url().includes('/api/operations/inbox?'))reads.push(new URL(r.url()).search);});
+  // tsx adds __name(...) calls to serialized functions; define it in the page so the init script really runs.
+  await ctx.addInitScript({content:'window.__name=window.__name||(f=>f);'});
+  await ctx.addInitScript(()=>{const w=window as unknown as {__hidden:boolean;__notified:()=>void;Notification:unknown};w.__hidden=false;
+   Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>w.__hidden?'hidden':'visible'});Object.defineProperty(document,'hidden',{configurable:true,get:()=>w.__hidden});
+   class FakeNotification{static permission='granted';static requestPermission=async()=>'granted';constructor(){void w.__notified();}}w.Notification=FakeNotification;
+   try{localStorage.setItem('zao-staff-browser-alerts','1');}catch{/* blocked */}});
+  // Stable event ids per timestamp (as the real inbox has); `source` lets a step serve a historical import instead.
+  let latest='2035-06-16T01:00:00.000Z',status=200,source:'LIVE'|'HISTORY_IMPORT'='LIVE';const idFor=(at:string,n:number)=>'00000000-0000-4000-8000-'+(Date.parse(at)/1000+n).toString(16).padStart(12,'0');
+  const item=(at:string,n:number)=>({id:idFor(at,n),bookingId:idFor(at,n+7),state:'CONFIRMED',kind:'BOOKING_CONFIRMED',source:n===0?source:'LIVE',store:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',createdAt:n===0?at:'2035-06-16T00:00:00.000Z',acknowledgedAt:null,acknowledgedBy:null,startDate:'2035-06-17',endDate:'2035-06-17',slot:'DAY',people:1,customer:'SYNTHETIC Bell'});
+  await ctx.route('**/api/operations/inbox?*',r=>status===200?r.fulfill({json:{unacknowledged:3,attention:0,total:3,latest,items:[item(latest,0),item(latest,1),item(latest,2)],next:null}}):r.fulfill({status,json:{error:'UNAUTHENTICATED'}}));
+  const open=async()=>{const p=await ctx.newPage();await p.clock.install();await p.goto('/staff/settings');await p.locator('.sx-bell').waitFor();return p;};
+  const hide=(p:import('@playwright/test').Page,hidden:boolean)=>p.evaluate(h=>{(window as unknown as {__hidden:boolean}).__hidden=h;document.dispatchEvent(new Event('visibilitychange'));},hidden);
+  const p1=await open();await p1.clock.fastForward(1000);assert.equal(shown,0,'the first read (backlog) never notifies');
+  await hide(p1,true);latest='2035-06-16T02:00:00.000Z';await p1.clock.fastForward(61000);await p1.waitForTimeout(300);assert.equal(shown,1,'a new booking while hidden notifies once; inbox reads='+reads.length+' '+JSON.stringify(await p1.evaluate(()=>({vis:document.visibilityState,flag:localStorage.getItem('zao-staff-browser-alerts'),perm:(window as unknown as {Notification:{permission:string}}).Notification.permission,bell:!!document.querySelector('.sx-bell')}))));
+  await p1.clock.fastForward(61000);await p1.waitForTimeout(300);assert.equal(shown,1,'the same booking does not notify again');
+  const p2=await open();await p2.clock.fastForward(1000);await hide(p2,true);latest='2035-06-16T03:00:00.000Z';
+  await p1.clock.fastForward(61000);await p2.clock.fastForward(61000);await p1.waitForTimeout(300);assert.equal(shown,2,'two hidden tabs: one notification for one new booking');
+  await p1.evaluate(()=>localStorage.removeItem('zao-staff-browser-alerts'));latest='2035-06-16T04:00:00.000Z';await p1.clock.fastForward(61000);await p2.clock.fastForward(61000);await p1.waitForTimeout(300);
+  assert.equal(shown,2,'after opt-out: none');
+  await p1.evaluate(()=>localStorage.setItem('zao-staff-browser-alerts','1'));source='HISTORY_IMPORT';latest='2035-06-16T05:00:00.000Z';await p1.clock.fastForward(61000);await p2.clock.fastForward(61000);await p1.waitForTimeout(300);
+  assert.equal(shown,2,'a newer historical import never notifies');source='LIVE';
+  await p1.evaluate(()=>{(window as unknown as {Notification:{permission:string}}).Notification.permission='denied';});await p2.close();latest='2035-06-16T06:00:00.000Z';await p1.clock.fastForward(61000);await p1.waitForTimeout(300);
+  assert.equal(shown,2,'browser permission denied: none');await p1.evaluate(()=>{(window as unknown as {Notification:{permission:string}}).Notification.permission='granted';});
+  status=401;latest='2035-06-16T07:00:00.000Z';await p1.clock.fastForward(61000);await p1.waitForTimeout(300);
+  assert.equal(shown,2,'without a session: none');
+  assert.ok(reads.length<=40,'bounded reads while hidden: '+reads.length);await ctx.close();
+ });
  await check('new order: staff API with the session header only, no browser storage, explicit customer choice; real route refuses without commercial composition',async()=>{
   const seen:{url:string;method:string;session:string|null;body:string|null}[]=[];page.on('request',r=>{if(/\/api\/(guest|staff-orders)/.test(r.url()))seen.push({url:r.url(),method:r.method(),session:r.headers()['x-zao-session']??null,body:r.postData()});});
   await page.goto('/staff/orders');const contextAnswer=page.waitForResponse(r=>r.url().endsWith('/api/staff-orders/context'));await page.locator('a[href="/staff/orders/new"]').first().click();await page.waitForURL('**/staff/orders/new');
@@ -197,6 +243,7 @@ try{
   const {ctx,p}=await login('accept-admin@example.invalid');
   // Storage instrumentation: count every Storage call made while a /staff page is shown, and make them throw.
   let staffStorage=0;await ctx.exposeFunction('__staffStorageHit',()=>{staffStorage++;});
+  await ctx.addInitScript({content:'window.__name=window.__name||(f=>f);'});
   await ctx.addInitScript(()=>{const w=window as unknown as {__staffStorageHit:()=>void};const proto=Storage.prototype as unknown as Record<string,unknown>;
    for(const name of ['getItem','setItem','removeItem','key','clear']){const original=proto[name] as (...a:unknown[])=>unknown;proto[name]=function(this:Storage,...a:unknown[]){if(location.pathname==='/staff/orders/new'){void w.__staffStorageHit();throw new Error('STAFF_STORAGE_FORBIDDEN');}return original.apply(this,a);};}
    const len=Object.getOwnPropertyDescriptor(Storage.prototype,'length')!;Object.defineProperty(Storage.prototype,'length',{configurable:true,get(){if(location.pathname==='/staff/orders/new'){void w.__staffStorageHit();throw new Error('STAFF_STORAGE_FORBIDDEN');}return len.get!.call(this);}});});
@@ -240,6 +287,8 @@ try{
   await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill('accept-admin@example.invalid');await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();
   await p.waitForURL(u=>!u.pathname.startsWith('/staff/login'),{timeout:60000});const mark=log.length;await p.goto('/staff/orders/new');await staffReady();
   const after=log.slice(mark).filter(r=>r.route==='staff');assert.ok(after.length>0);assert.ok(after.every(r=>r.session&&r.session!==before),'only the new session stamp after re-login');invariants('relogin');
+  // The instrumentation is live: a deliberate Storage call on the staff page is counted (then excluded).
+  await p.goto('/staff/orders/new');await staffReady();const probe=staffStorage;await p.evaluate(()=>{try{sessionStorage.getItem('x');}catch{/* counted */}});assert.equal(staffStorage,probe+1,'storage probe counted');staffStorage=probe;
   // 5. storage: the staff flow made zero Storage calls even though every Storage API throws there; the guest flow still loads.
   assert.equal(staffStorage,0,'staff flows (all cases above) never touched browser storage');
   await p.goto('/ja/book');await p.getByRole('heading',{name:'レンタル予約',level:1}).waitFor();

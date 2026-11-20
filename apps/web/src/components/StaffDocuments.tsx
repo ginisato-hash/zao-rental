@@ -18,7 +18,7 @@ type Row={id:string;ref:string;customer:string|null;status:string;startDate:stri
 type Detail={order:Row&{email:string|null;state:string;paymentStatus:string|null;originalStartDate:string;originalEndDate:string;amended:boolean;totalJpy:number|null};
  current:{period:{startDate:string;endDate:string;slot:string};members:{key:string;product?:string;items:{family:string}[]}[]};
  terms:{version:string;locale:string;acceptedAt:string}|null;cancellationPolicy:{policyVersion:string;freeCancellationUntil:string}|null};
-type Dash={from:string;to:string;goingOut:Row[];comingBack:Row[];goingOutTotal:number;comingBackTotal:number;cap:number};
+type Dash={from:string;to:string;goingOut:Row[];comingBack:Row[];goingOutTotal:number;comingBackTotal:number;max:number;complete:boolean;days:{date:string;goingOut:number;comingBack:number;complete:boolean}[]};
 const FAMILY:Record<string,[string,string]>={SKI:['スキー','Ski'],SKI_BOOT:['スキーブーツ','Ski boots'],SNOWBOARD:['スノーボード','Snowboard'],SNOWBOARD_BOOT:['スノーボードブーツ','Snowboard boots'],POLE:['ポール','Poles'],WEAR_JACKET:['ウェア（上）','Wear (top)'],WEAR_PANTS:['ウェア（下）','Wear (bottom)']};
 const L={
  booking:['予約確認書（店舗控え）','Booking confirmation (station copy)'],bookingHelp:['予約番号で予約を開き、内容を表示・印刷します。領収書・請求書ではありません。','Open a booking by its number to view and print it. This is not a receipt or invoice.'],
@@ -30,21 +30,26 @@ const L={
  customer:['お客様','Customer'],status:['状態','Status'],payment:['支払状況','Payment'],pickup:['受取','Pickup'],ret:['返却','Return'],people:['人数','Guests'],items:['用品','Items'],total:['予約金額（税込）','Booked amount (tax incl.)'],
  terms:['同意した規約','Accepted terms'],cancel:['無料キャンセル期限','Free cancellation until'],original:['当初の日程','Original dates'],guest:['利用者','Guest'],
  notReceipt:['この書類は予約内容の確認用です。領収書・請求書ではありません。','This document confirms the booking details. It is not a receipt or an invoice.'],
- goingOut:['貸出予定','Going out'],comingBack:['返却予定','Coming back'],none:['予定はありません。','Nothing scheduled.'],capped:['件まで表示。全件は予約一覧で確認してください。','shown; see Orders for all.'],
+ goingOut:['貸出予定','Going out'],comingBack:['返却予定','Coming back'],none:['予定はありません。','Nothing scheduled.'],
  time:['時刻','Time'],order:['予約番号','Order'],checked:['確認','Check'],
+ splitTitle:['この期間は1枚の作業リストに収まりません','This period does not fit in one work list'],
+ splitHelp:['欠けた作業リストは印刷しません。日ごとの作業リストを開いて、それぞれ印刷してください。','A partial work list is never printed. Open each day’s work list and print it.'],
+ splitDay:['日付','Day'],splitOpen:['作業リストを開く','Open work list'],splitTooMany:['1日分も上限を超えています。予約一覧のCSVで全件を出力してください。','Even this day is over the limit. Export all orders as CSV from Orders.'],
+ notPrintable:['この画面は不完全なため、作業リストとして印刷できません。','This page is incomplete and cannot be printed as a work list.'],
 } as const;
 
 export function StaffDocuments({stamp,stores}:{stamp:string;stores:string[]}){
  const {locale}=useStaffLocale(),en=locale==='en',tx=(k:keyof typeof L)=>L[k][en?1:0];
  const params=useSearchParams(),router=useRouter(),doc=params.get('doc')??'',id=params.get('id')??'';
- const store=stores.includes(params.get('store')??'')?params.get('store')!:stores[0]??'',date=/^\d{4}-\d{2}-\d{2}$/.test(params.get('date')??'')?params.get('date')!:'';
+ const ymd=(k:string)=>/^\d{4}-\d{2}-\d{2}$/.test(params.get(k)??'')?params.get(k)!:'';
+ const store=stores.includes(params.get('store')??'')?params.get('store')!:stores[0]??'',date=ymd('date'),from=ymd('from')||date,to=ymd('to')||from;
  const [ref,setRef]=useState(''),[find,setFind]=useState<'notFound'|'several'|'failed'|null>(null),[pickDate,setPickDate]=useState(date),[pickStore,setPickStore]=useState(store);
  const go=(q:Record<string,string>)=>router.push('/staff/documents?'+new URLSearchParams(q).toString());
  async function openBooking(){const v=ref.trim().replace(/^#/,'');if(v.length<8)return setFind('notFound');setFind(null);
   try{const r=await fetch('/api/operations/orders?'+new URLSearchParams({stores:[...stores].join(','),search:v,pageSize:'2'}),{cache:'no-store',headers:{'x-zao-session':stamp}});if(r.status===401||r.status===403){invalidateStaffView();return;}if(!r.ok)throw Error();
    const d=await r.json() as {total:number;rows:Row[]};if(d.total===0)return setFind('notFound');if(d.total>1)return setFind('several');go({doc:'booking',id:d.rows[0]!.id});}catch{setFind('failed');}}
  if(doc==='booking'&&/^[0-9a-f-]{36}$/.test(id))return <StaffSessionBoundary stamp={stamp}><BookingDoc stamp={stamp} id={id}/></StaffSessionBoundary>;
- if(doc==='work'&&store&&date)return <StaffSessionBoundary stamp={stamp}><WorkDoc stamp={stamp} store={store} date={date}/></StaffSessionBoundary>;
+ if(doc==='work'&&store&&from)return <StaffSessionBoundary stamp={stamp}><WorkDoc stamp={stamp} store={store} from={from} to={to}/></StaffSessionBoundary>;
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'documents')}</h1></div>
   <div className="ox-docs">
@@ -99,15 +104,26 @@ function BookingDoc({stamp,id}:{stamp:string;id:string}){
  </dl><p className="sx-help">{tx('notReceipt')}</p></DocFrame>;
 }
 
-function WorkDoc({stamp,store,date}:{stamp:string;store:string;date:string}){
+// DASH-PRINT-01: the work list is complete or it is not shown. It reads the dedicated work-list endpoint (same rules as the
+// Dashboard panels, one snapshot); over the bound the page lists the days instead, each of which opens a complete list.
+function WorkDoc({stamp,store,from,to}:{stamp:string;store:string;from:string;to:string}){
  const {locale}=useStaffLocale(),en=locale==='en',tx=(k:keyof typeof L)=>L[k][en?1:0];
- const s=useJson<Dash>('/api/operations/dashboard?'+new URLSearchParams({store,range:'date',date}),stamp);
+ const s=useJson<Dash>('/api/operations/work-list?'+new URLSearchParams({store,from,to}),stamp);
  if(!s)return <main className="ox"><p role="status">…</p></main>;
  if(s.error||!s.data)return <main className="ox"><p role="alert" className="sx-alert">{tx('failed')}</p><Link href="/staff/documents">{tx('back')}</Link></main>;
- const d=s.data;
+ const d=s.data,multi=from!==to,title=`${tx('work')} · ${STORE_LABEL[store]??store} · ${fmtDate(locale,from)}${multi?' – '+fmtDate(locale,to):''}`;
+ // Over the bound the server withholds the rows (never a partial list). Offer one complete list per day from the same
+ // snapshot's per-day counts; nothing on this page is a work list, and the print stylesheet says so if printed anyway.
+ if(!d.complete)return <main className="ox ox-print ox-incomplete"><div className="ox-head"><Link href="/staff/documents">← {tx('back')}</Link></div>
+  <p className="ox-print-refusal">{tx('notPrintable')}</p>
+  <section className="sx-card ox-split" aria-labelledby="ox-split-h"><h1 id="ox-split-h">{title}</h1>
+   <p role="alert" className="sx-alert">{tx('splitTitle')} ({tx('goingOut')} {d.goingOutTotal} · {tx('comingBack')} {d.comingBackTotal} / {en?'limit':'上限'} {d.max})</p><p className="sx-help">{tx('splitHelp')}</p>
+   <table className="sx-table"><thead><tr><th>{tx('splitDay')}</th><th>{tx('goingOut')}</th><th>{tx('comingBack')}</th><th><span className="sx-visually-hidden">{tx('splitOpen')}</span></th></tr></thead>
+    <tbody>{d.days.filter(x=>x.goingOut+x.comingBack>0).map(x=><tr key={x.date}><td>{fmtDate(locale,x.date)}</td><td>{x.goingOut}</td><td>{x.comingBack}</td>
+     <td>{x.complete?<Link href={'/staff/documents?'+new URLSearchParams({doc:'work',store,from:x.date,to:x.date})}>{tx('splitOpen')}</Link>:<span className="sx-help">{tx('splitTooMany')}</span>}</td></tr>)}</tbody></table>
+  </section></main>;
  const table=(rows:Row[],kind:'out'|'back',totalN:number)=><section aria-label={kind==='out'?tx('goingOut'):tx('comingBack')}><h2>{kind==='out'?tx('goingOut'):tx('comingBack')} · {totalN}</h2>
-  {rows.length?<table className="sx-table"><thead><tr><th>{tx('time')}</th><th>{tx('order')}</th><th>{tx('customer')}</th><th>{tx('people')}</th><th>{tx('status')}</th><th>{tx('checked')}</th></tr></thead>
-   <tbody>{rows.map(r=><tr key={r.id}><td>{kind==='out'?pickupTime(r.slot):returnTime(r.slot)}</td><td>#{r.ref}</td><td>{r.customer??'—'}</td><td>{r.people}</td><td>{statusLabel(locale,r.status)}</td><td>☐</td></tr>)}</tbody></table>:<p>{tx('none')}</p>}
-  {totalN>rows.length&&<p className="sx-help">{en?`${rows.length} of ${totalN} ${tx('capped')}`:`${totalN}件中${rows.length}${tx('capped')}`}</p>}</section>;
- return <DocFrame title={`${tx('work')} · ${STORE_LABEL[store]??store} · ${fmtDate(locale,date)}`}>{table(d.goingOut,'out',d.goingOutTotal)}{table(d.comingBack,'back',d.comingBackTotal)}</DocFrame>;
+  {rows.length?<table className="sx-table"><thead><tr>{multi&&<th>{tx('date')}</th>}<th>{tx('time')}</th><th>{tx('order')}</th><th>{tx('customer')}</th><th>{tx('people')}</th><th>{tx('status')}</th><th>{tx('checked')}</th></tr></thead>
+   <tbody>{rows.map(r=><tr key={r.id}>{multi&&<td>{fmtDate(locale,kind==='out'?r.startDate:r.endDate)}</td>}<td>{kind==='out'?pickupTime(r.slot):returnTime(r.slot)}</td><td>#{r.ref}</td><td>{r.customer??'—'}</td><td>{r.people}</td><td>{statusLabel(locale,r.status)}</td><td>☐</td></tr>)}</tbody></table>:<p>{tx('none')}</p>}</section>;
+ return <DocFrame title={title}>{table(d.goingOut,'out',d.goingOutTotal)}{table(d.comingBack,'back',d.comingBackTotal)}</DocFrame>;
 }

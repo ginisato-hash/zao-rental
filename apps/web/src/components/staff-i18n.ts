@@ -19,7 +19,7 @@ const D={
  people:['名','people'],by:['確認：','Seen by '],
  nowState:['現在：','Now: '],
  browserAlerts:['このブラウザで通知を表示','Show alerts in this browser'],
- browserAlertsHelp:['画面を開いている間だけ表示されます。閉じている間はメールと受信箱で確認できます。','Shown only while this page is open. When it is closed, use email and the inbox.'],
+ browserAlertsHelp:['このブラウザで管理画面を開いている間だけ、別のタブを見ているときに新しい予約をお知らせします（約1分ごとに確認、遅れることがあります）。ブラウザを閉じている間は届きません。受信箱とメールで確認してください。','Only while the staff screen is open in this browser: a new booking is announced when you are on another tab (checked about every minute; may be late). Nothing arrives while the browser is closed. Use the inbox and email.'],
  browserBlocked:['ブラウザ設定で通知が拒否されています。','Notifications are blocked in this browser’s settings.'],
  emailTitle:['新規予約メール','New booking emails'],
  emailOn:['新しい予約が確定したら、自分のログイン用メールアドレスに送る','Email me at my sign-in address when a new booking is confirmed'],

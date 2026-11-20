@@ -133,7 +133,7 @@ try{
   const dropStation=(id:{subject:string},station:string)=>()=>x.db.pool.query('DELETE FROM staff_store_access WHERE staff_id=$1 AND store_id=$2',[id.subject,station]);
   const denyView=(id:{subject:string})=>()=>x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'BOOKING_VIEW',false) ON CONFLICT(staff_id,permission) DO UPDATE SET allowed=false",[id.subject]);
   const endSession=(id:{sessionId:string})=>()=>x.db.pool.query('DELETE FROM auth_session WHERE id=$1',[id.sessionId]);
-  const cases:[string,(s:InstanceType<typeof OrdersService>)=>Promise<unknown>][]=[['list',s=>s.list({stores:[store,other]})],['dashboard',s=>s.dashboard({store,range:'date',date:'2035-01-05'})]];
+  const cases:[string,(s:InstanceType<typeof OrdersService>)=>Promise<unknown>][]=[['list',s=>s.list({stores:[store,other]})],['dashboard',s=>s.dashboard({store,range:'date',date:'2035-01-05'})],['workList',s=>s.workList({store,from:'2035-01-01',to:'2035-01-31'})]];
   let n=0;for(const [name,read] of cases)for(const [kind,mutate] of [['station',dropStation],['permission',denyView],['session',endSession]] as const){
    const id=await mk(`snap-orders-${n++}@example.invalid`);const code=await refusedCode(()=>read(new OrdersService(race(id,(mutate as (i:typeof id,st:string)=>()=>Promise<unknown>)(id,other)))));
    assert.ok(['AUTHORIZATION_CHANGED','FORBIDDEN','UNAUTHENTICATED'].includes(code),`${name}/${kind}: refused, got ${code}`);
@@ -141,7 +141,35 @@ try{
   // After the station is gone, a plain read of the remaining station works and the removed one is refused.
   const id=await mk('snap-orders-after@example.invalid');await dropStation(id,other)();const plain=new OrdersService(new OperationsContext(ops!.operationsPool,x.roles.authPool,id));
   assert.ok((await plain.list({stores:[store]})).rows.length>0);await assert.rejects(plain.list({stores:[store,other]}),{code:'FORBIDDEN'});
-  await plain.dashboard({store,range:'date',date:'2035-01-05'});
+  await plain.dashboard({store,range:'date',date:'2035-01-05'});await plain.workList({store,from:'2035-01-05',to:'2035-01-05'});
+ });
+ await check('DASH-PRINT-01: the work list is the Dashboard panels for the exact same station and period, never cut; over the bound it withholds rows and gives per-day counts',async()=>{
+  const ids=(rows:{id:string}[])=>rows.map(r=>r.id);
+  // Every Dashboard range: the work list for the Dashboard's own from/to has the same totals and the same rows in the same order.
+  for(const q of [{range:'today'},{range:'tomorrow'},{range:'next7'},{range:'nextWeek'},{range:'nextMonth'},{range:'date',date:'2035-01-03'},{range:'date',date:'2035-01-05'},{range:'date',date:'2035-01-06'},{range:'date',date:'2035-01-08'}]){
+   const dash=await orders.dashboard({store,...q}),w=await orders.workList({store,from:dash.from,to:dash.to}),tag=JSON.stringify(q);
+   assert.equal(w.from,dash.from,tag);assert.equal(w.to,dash.to,tag);assert.equal(w.goingOutTotal,dash.goingOutTotal,tag+' out');assert.equal(w.comingBackTotal,dash.comingBackTotal,tag+' back');
+   assert.equal(w.complete,true,tag);assert.deepEqual(ids(w.goingOut),ids(dash.goingOut),tag);assert.deepEqual(ids(w.comingBack),ids(dash.comingBack),tag);
+   assert.equal(w.days.reduce((n,d)=>n+d.goingOut,0),w.goingOutTotal,tag+' days add up (out)');assert.equal(w.days.reduce((n,d)=>n+d.comingBack,0),w.comingBackTotal,tag+' days add up (back)');
+  }
+  // The amended booking (01-05 → 01-06) comes back on its current date only; the draft (01-08) never appears.
+  const jan=await orders.workList({store,from:'2035-01-01',to:'2035-01-31'});
+  assert.ok(ids(jan.comingBack).includes(reserved.booking.id));assert.equal(jan.days.find(d=>d.date==='2035-01-06')!.comingBack>=1,true);
+  assert.ok(!ids(jan.goingOut).includes(draft.booking.id)&&!ids(jan.comingBack).includes(draft.booking.id),'draft excluded');
+  assert.equal(jan.days.length,31);assert.equal(jan.goingOut.length,jan.goingOutTotal);assert.equal(jan.max,1000);
+  // Bound: exactly at the bound is complete with every row; one over withholds all rows (never a partial list) and the
+  // per-day counts from the same snapshot still add up; a one-sided overflow is still incomplete; an empty day is complete.
+  const n=Math.max(jan.goingOutTotal,jan.comingBackTotal);assert.ok(n>=2,'fixture has at least two rows on one side');
+  const at=await orders.workList({store,from:'2035-01-01',to:'2035-01-31'},n);assert.equal(at.complete,true);assert.equal(at.goingOut.length,at.goingOutTotal);assert.equal(at.comingBack.length,at.comingBackTotal);
+  const over=await orders.workList({store,from:'2035-01-01',to:'2035-01-31'},n-1);assert.equal(over.complete,false);assert.deepEqual([over.goingOut.length,over.comingBack.length],[0,0],'no partial rows');
+  assert.equal(over.goingOutTotal,jan.goingOutTotal);assert.equal(over.days.reduce((k,d)=>k+d.goingOut,0),jan.goingOutTotal);assert.ok(over.days.every(d=>d.complete===(d.goingOut<=n-1&&d.comingBack<=n-1)));
+  const oneSide=Math.min(jan.goingOutTotal,jan.comingBackTotal)<n?await orders.workList({store,from:'2035-01-01',to:'2035-01-31'},n-1):null;if(oneSide)assert.equal(oneSide.complete,false,'one side over is enough to withhold');
+  for(const d of over.days.filter(x=>x.goingOut+x.comingBack>0)){const day=await orders.workList({store,from:d.date,to:d.date});assert.equal(day.complete,true);assert.equal(day.goingOut.length,d.goingOut,d.date);assert.equal(day.comingBack.length,d.comingBack,d.date);}
+  const empty=await orders.workList({store,from:'2035-03-01',to:'2035-03-01'},1);assert.deepEqual([empty.complete,empty.goingOutTotal,empty.comingBackTotal,empty.goingOut.length],[true,0,0,0]);
+  // Strict period: at most 31 days, from ≤ to, real calendar dates.
+  for(const bad of [{from:'2035-01-01',to:'2035-02-01'},{from:'2035-01-10',to:'2035-01-01'},{from:'x',to:'2035-01-01'},{from:'2035-02-29',to:'2035-03-01'},{from:'2035-01-01',to:undefined}])await assert.rejects(orders.workList({store,...bad}),{code:'INVALID_INPUT'},JSON.stringify(bad));
+  // Another station's staff is refused; no rows for a station outside the actor's scope.
+  if(store!=='ONSEN_BASE')await assert.rejects(onsen.workList({store,from:'2035-01-01',to:'2035-01-05'}),{code:'FORBIDDEN'});
  });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,500),at:(e as Error).stack?.split('\n').filter(l=>/orders-postgres|amendment-service|context\.ts/.test(l)).slice(0,4).join(' | ')}));}

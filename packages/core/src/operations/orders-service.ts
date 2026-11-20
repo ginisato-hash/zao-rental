@@ -67,6 +67,12 @@ export const ORDER_ROW_SQL=`json_build_object('id',s.id,'ref',upper(left(s.id::t
 const jstToday=(now:Date)=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo'}).format(now);
 const addDays=(date:string,n:number)=>{const t=new Date(date+'T00:00:00Z');t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10);};
 /** Real calendar date (rejects 2035-02-30 etc.), using the hold contract's own date parser. */
+/** Dashboard panels and the printable work list share these, so the two can never disagree about which orders belong to a
+ * station and period ($3 station, $4/$5 first/last day; current period after amendments; DRAFT/CANCELED excluded). */
+const LIVE_SQL="s.status NOT IN ('DRAFT','CANCELED')";
+const PANEL_SQL={out:{where:`s.pickup_store=$3 AND ${LIVE_SQL} AND s.start_date BETWEEN $4::date AND $5::date`,order:"s.start_date,CASE s.slot WHEN 'PM' THEN 1 ELSE 0 END,s.created_at,s.id"},
+ back:{where:`s.return_store=$3 AND ${LIVE_SQL} AND s.end_date BETWEEN $4::date AND $5::date`,order:"s.end_date,CASE s.slot WHEN 'AM' THEN 0 ELSE 1 END,s.created_at,s.id"}} as const;
+export const WORK_LIST_MAX=1000;
 const calendarDate=(v:unknown)=>{if(typeof v!=='string')return false;try{utcDate(v);return true;}catch{return false;}};
 const optionalDate=(v:unknown)=>{if(v===undefined||v===null||v==='')return null;if(!calendarDate(v))throw new FlowError('INVALID_INPUT',422);return v as string;};
 
@@ -146,6 +152,32 @@ export class OrdersService{
   await this.ctx.confirmScope('BOOKING_VIEW',disclosed);return detail;
  }
 
+ /** DASH-PRINT-01 / Booqable "Run report": the printable work list for one station and a period (at most 31 days), with
+  * exactly the Dashboard panel rules (PANEL_SQL: same station attribution, live statuses, current period, time order) but
+  * never silently cut. One REPEATABLE READ READ ONLY snapshot holds the true totals, the per-day counts and the rows, and the
+  * session/store scope is re-authorized by snapshot() before anything is returned. If either panel has more than `max` rows
+  * the rows are withheld (complete:false) and `days` gives the per-day counts from the same snapshot, so the page can offer
+  * one complete list per day instead of a partial one. `max` below WORK_LIST_MAX is for tests only. */
+ async workList(q:{store:unknown;from:unknown;to:unknown},max=WORK_LIST_MAX){
+  const store=this.stores(q.store)[0]!;
+  if(!calendarDate(q.from)||!calendarDate(q.to))throw new FlowError('INVALID_INPUT',422);const from=q.from as string,to=q.to as string;
+  if(to<from||(Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000>30)throw new FlowError('INVALID_INPUT',422);
+  const bound=Math.max(1,Math.min(WORK_LIST_MAX,Math.trunc(max)));
+  return this.ctx.snapshot('BOOKING_VIEW',[store],async c=>{
+   const today=await this.today(c as never),args=[[store],today,store,from,to];
+   const totals=(await c.query(`${ORDER_BASE_SQL} SELECT count(*) FILTER (WHERE ${PANEL_SQL.out.where})::int out_n,count(*) FILTER (WHERE ${PANEL_SQL.back.where})::int back_n FROM s`,args)).rows[0];
+   const goingOutTotal=Number(totals.out_n),comingBackTotal=Number(totals.back_n),complete=goingOutTotal<=bound&&comingBackTotal<=bound;
+   const perDay=(k:'out'|'back')=>PANEL_SQL[k].where.replace('BETWEEN $4::date AND $5::date','= wd.day');
+   const days=(await c.query(`${ORDER_BASE_SQL},wd AS (SELECT g::date AS day FROM generate_series($4::date,$5::date,interval '1 day') g)
+     SELECT to_char(wd.day,'YYYY-MM-DD') AS date,(SELECT count(*) FROM s WHERE ${perDay('out')})::int AS out,(SELECT count(*) FROM s WHERE ${perDay('back')})::int AS back FROM wd ORDER BY wd.day`,args)).rows as {date:string;out:number;back:number}[];
+   const rows=async(k:'out'|'back')=>complete?(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${PANEL_SQL[k].where} ORDER BY ${PANEL_SQL[k].order} LIMIT ${bound+1}`,args)).rows.map(r=>r.v as OrderRow):[];
+   const goingOut=await rows('out'),comingBack=await rows('back');
+   // Same snapshot, so this cannot differ; if it ever did, fail closed rather than print a list that disagrees with its total.
+   if(complete&&(goingOut.length!==goingOutTotal||comingBack.length!==comingBackTotal))throw new FlowError('SNAPSHOT_MISMATCH',503);
+   return {today,store,from,to,goingOut,comingBack,goingOutTotal,comingBackTotal,max:bound,complete,
+    days:days.map(d=>({date:d.date,goingOut:Number(d.out),comingBack:Number(d.back),complete:Number(d.out)<=bound&&Number(d.back)<=bound}))};
+  });
+ }
  /** Booqable Dashboard: Going out (current pickups in range at this station) / Coming back (current returns in range).
   * Each panel reports its true total; rows are capped for display only and the cap is reported. */
  async dashboard(q:{store:unknown;range?:unknown;date?:unknown}){
@@ -157,13 +189,12 @@ export class OrdersService{
    const [from,to]=range==='today'?[today,today]:range==='tomorrow'?[addDays(today,1),addDays(today,1)]:range==='next7'?[today,addDays(today,6)]
     :range==='nextWeek'?[addDays(today,7-dow),addDays(today,13-dow)]:range==='nextMonth'?(()=>{const t=new Date(today+'T00:00:00Z');const a=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,1)),b=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+2,0));return [a.toISOString().slice(0,10),b.toISOString().slice(0,10)];})()
     :[q.date as string,q.date as string];
-   const live="s.status NOT IN ('DRAFT','CANCELED')";
-   const outWhere=`s.pickup_store=$3 AND ${live} AND s.start_date BETWEEN $4::date AND $5::date`,backWhere=`s.return_store=$3 AND ${live} AND s.end_date BETWEEN $4::date AND $5::date`;
+   const outWhere=PANEL_SQL.out.where,backWhere=PANEL_SQL.back.where;
    const args=[[store],today,store,from,to];
    const totals=(await c.query(`${ORDER_BASE_SQL} SELECT count(*) FILTER (WHERE ${outWhere})::int out_n,count(*) FILTER (WHERE ${backWhere})::int back_n,
      count(*) FILTER (WHERE s.pickup_store=$3 AND s.late_out)::int late_out,count(*) FILTER (WHERE s.return_store=$3 AND s.late_back)::int late_back FROM s`,args)).rows[0];
-   const out=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${outWhere} ORDER BY s.start_date,CASE s.slot WHEN 'PM' THEN 1 ELSE 0 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
-   const back=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${backWhere} ORDER BY s.end_date,CASE s.slot WHEN 'AM' THEN 0 ELSE 1 END,s.created_at,s.id LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
+   const out=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${outWhere} ORDER BY ${PANEL_SQL.out.order} LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
+   const back=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE ${backWhere} ORDER BY ${PANEL_SQL.back.order} LIMIT ${CAP}`,args)).rows.map(r=>r.v as OrderRow);
    // Shortage among the orders going out in this range: the same candidate set Orders evaluates for
    // tab=shortage&stores=[store]&direction=out&from&to (same base, station, dates; the status set is a subset of `live`).
    const judged=await this.shortage(c as never,`WHERE s.pickup_store=ANY($1::text[]) AND s.start_date>=$3::date AND s.start_date<=$4::date`,[[store],today,from,to],'s.start_date ASC,s.id');

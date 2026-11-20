@@ -15,7 +15,7 @@ type Range='today'|'tomorrow'|'next7'|'nextWeek'|'nextMonth'|'date';
 const RANGES:Range[]=['today','tomorrow','next7','nextWeek','nextMonth','date'];
 const L={
  goingOut:['貸出予定','Going out'],comingBack:['返却予定','Coming back'],today:['今日','Today'],tomorrow:['明日','Tomorrow'],next7:['次の7日間','Next 7 days'],
- nextWeek:['来週','Next week'],nextMonth:['来月','Next month'],date:['日付を指定','Pick a date'],print:['帳票を印刷','Print list'],
+ nextWeek:['来週','Next week'],nextMonth:['来月','Next month'],date:['日付を指定','Pick a date'],print:['作業リストを印刷','Print work list'],
  viewLate:['遅れ','Late'],lateOut:['貸出遅れ','Late pickups'],lateBack:['返却遅れ','Late returns'],viewAll:['すべて表示','View all'],none:['予定はありません。','Nothing scheduled.'],all:['すべて','All'],
  period:['期間','Period'],station:['店舗','Station'],failed:['読み込めませんでした。','Could not load.'],retry:['再読み込み','Retry'],
  prep:['当日作業・準備','Today’s work and preparation'],shortage:['不足あり','With shortage'],undetermined:['判定不能','Undetermined'],people:['名','people'],show:['表示','Show'],
@@ -50,7 +50,8 @@ export function StaffDashboard({locale:serverLocale,stamp,stores}:{locale:StaffL
  const panel=(kind:'out'|'back')=>{const rows=kind==='out'?data?.goingOut??[]:data?.comingBack??[],late=kind==='out'?data?.lateOut??0:data?.lateBack??0,total=kind==='out'?data?.goingOutTotal??0:data?.comingBackTotal??0;
   return <section className={'ox-panel sx-card'+(pane!=='all'&&pane!==kind?' ox-hide-m':'')} aria-labelledby={'ox-'+kind}>
    <header className="ox-panel-h"><h2 id={'ox-'+kind}>{kind==='out'?tx('goingOut'):tx('comingBack')} {data&&<span className="ox-count">{total}</span>}</h2>
-    {kind==='out'&&<button type="button" className="sx-btn ox-noprint" onClick={()=>window.print()}>{tx('print')}</button>}</header>
+    {/* DASH-PRINT-01 / Booqable Run report: the complete printable work list for this station and period (never a capped panel). */}
+    {kind==='out'&&data&&<Link className="sx-btn ox-noprint" href={'/staff/documents?'+new URLSearchParams({doc:'work',store:data.store,from:data.from,to:data.to})}>{tx('print')}</Link>}</header>
    {data?list(rows,kind):failed!==key&&<p className="sx-status" role="status">…</p>}{data&&total>rows.length&&<p className="sx-help ox-more">{locale==='en'?`Showing ${rows.length} of ${total}. Use View all for the rest.`:`${total}件中${rows.length}件を表示中。残りは「すべて表示」から。`}</p>}
    <footer className="ox-panel-f ox-noprint"><Link href={orders({tab:'late',late:kind,direction:kind})} className={late?'ox-late':''}>{kind==='out'?tx('lateOut'):tx('lateBack')} {late}</Link>
     {kind==='out'&&data&&<Link href={orders({tab:'shortage',direction:'out',from:data.from,to:data.to})} className={data.shortageOut?'ox-late':''} data-testid="dashboard-shortage">{tx('shortage')} {data.shortageOut}{data.shortageOutIndeterminate>0?` · ${tx('undetermined')} ${data.shortageOutIndeterminate}`:''}</Link>}

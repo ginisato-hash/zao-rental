@@ -13,3 +13,8 @@
 .ox-dl ul{margin:0;padding-left:18px}
 @media (max-width:600px){.ox-paper{padding:20px 16px}.ox-dl{grid-template-columns:1fr}.ox-dl dt{margin-top:6px}}
 @media print{.ox-paper{border:0;border-radius:0;padding:0;max-width:none}.ox-print .ox-head{display:none}}
+.ox-split{padding:20px 24px;max-width:820px}
+.ox-split h1{font-size:20px;margin:0 0 12px}
+/* DASH-PRINT-01: an over-limit page holds no work list; if printed anyway (⌘P / Ctrl+P), the sheet says only that. */
+.ox-print-refusal{display:none}
+@media print{.ox-incomplete .ox-split{display:none!important}.ox-incomplete .ox-print-refusal{display:block;font-size:16px}}

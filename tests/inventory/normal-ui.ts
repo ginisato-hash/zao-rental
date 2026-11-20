@@ -13,7 +13,7 @@ try{
  app=await startDevelopmentApp({built:true});const {origin}=app;await seedInventory(app.db.pool,true);await bootstrapDevelopmentAdmin(app.db.pool,{email:'synthetic-e06-admin@example.invalid',displayName:'合成ADMIN',password});
  for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:1280,height:960}});c.setDefaultTimeout(10000);return c;}
- async function login(c:BrowserContext,email:string){const page=await c.newPage();await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(password);await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(origin+'/staff/ledger');return page;}
+ async function login(c:BrowserContext,email:string){const page=await c.newPage();await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(password);await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return page;}
  const admin=await context(),editor=await context(),anonymous=await context();const ap=await login(admin,'synthetic-e06-admin@example.invalid');
  const settings={displayName:'合成HOLDスタッフ',active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{HOLD_VIEW:true,HOLD_EDIT:true}};
  let actor:string;

@@ -30,6 +30,7 @@ try{
  await seedRecommendation(db.pool);
  const context=await browser.newContext({baseURL:origin,viewport:{width:1440,height:900}}),page=await context.newPage();
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ const external:string[]=[];page.on('request',r=>{const u=new URL(r.url());if(u.protocol!=='data:'&&u.protocol!=='blob:'&&u.origin!==origin)external.push(u.origin+u.pathname);});
  stage='login';await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill('routes-root@example.invalid');await page.getByLabel('パスワード',{exact:true}).fill(password);
  await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(u=>!u.pathname.startsWith('/staff/login'),{timeout:60000});
  for(const locale of ['ja','en'] as const){
@@ -57,7 +58,7 @@ try{
    }
   }
  }
- stage='report';
+ stage='report';if(external.length)problems.push('external requests: '+JSON.stringify([...new Set(external)].slice(0,8)));
  assert.deepEqual(problems,[],problems.join('\n'));
  console.log(JSON.stringify({status:'PASS',routes:ROUTES.length,visited,locales:2,widths:2,screenshots:shots,externalRequests:0}));
  await context.close();

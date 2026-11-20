@@ -19,7 +19,7 @@ try{
  await clock('2035-01-01T00:00:00Z');
  for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:1280,height:960}});c.setDefaultTimeout(10000);return c;}
- async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(origin+'/staff/ledger');return p;}
+ async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return p;}
  const bootstrap=await context();await login(bootstrap,'audit-bootstrap@example.invalid');
  const created=await bootstrap.request.post('/api/staff-users',{headers:{origin},data:{displayName:'合成監査担当',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true,INVENTORY_VIEW:true,INVENTORY_EDIT:true},email:'audit-staff@example.invalid',password}});assert.equal(created.status(),201);
  const staff=await context(),page=await login(staff,'audit-staff@example.invalid');

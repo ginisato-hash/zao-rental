@@ -95,7 +95,7 @@ try{
  await check('BROWSER','normal local staff login for permission comparison',async()=>{
   await staff.request.get('/api/auth/get-session');
   await staffPage.goto('/staff/login');await staffPage.getByLabel('メールアドレス',{exact:true}).fill('avatar-phase5@example.invalid');await staffPage.getByLabel('パスワード',{exact:true}).fill(password);
-  const signed=staffPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/sign-in/email');await staffPage.getByRole('button',{name:'ログイン',exact:true}).click();const response=await signed;console.log('LOCAL_STAFF_SIGNIN_HTTP '+response.status());assert.equal(response.status(),200);await staffPage.waitForURL(origin+'/staff/ledger');
+  const signed=staffPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/sign-in/email');await staffPage.getByRole('button',{name:'ログイン',exact:true}).click();const response=await signed;console.log('LOCAL_STAFF_SIGNIN_HTTP '+response.status());assert.equal(response.status(),200);await staffPage.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
  });
  const staffImage='/avatar-media/'+body.id+'/'+body.derivativeSha256,staffPreview='/preview/avatar?preview='+seed.previewId+'&member='+seed.memberKey;
  await check('PG','full staff permissions retain preview and derivative access',async()=>{assert.equal((await staff.request.get(staffImage)).status(),200);assert.ok((await (await staff.request.get(staffPreview)).text()).includes(body.derivativeSha256));});

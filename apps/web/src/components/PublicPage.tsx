@@ -129,7 +129,8 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
   const ski=path==='rental/ski',word=ski?'SKI':'SNOWBOARD';
   const [reg,prem]=ski?['ski-regular','ski-premium']:['snowboard-regular','snowboard-premium'];
   head=<PageHead word={word}><p className="st-ph-l"><a href={'#'+reg}>REGULAR</a> / <a href={'#'+prem}>PREMIUM</a></p><div className="st-ph-acts">{book('BOOK '+word)}</div></PageHead>;
-  const rows=(keys:string[])=>keys.map(k=>[k,yen(dayPrice(k))] as const);
+  // TAX-01: every shown price carries the tax-included note right after it (display only; amounts and arithmetic unchanged).
+  const rows=(keys:string[])=>keys.map(k=>[k,yt(dayPrice(k))] as const);
   body=<><section className="st-sec st-sec--tight" aria-label={word}><Lineup locale={locale} only={[reg!,prem!]}/></section>
    <section className="st-sec" aria-label={t('1日料金','1-day prices')}><dl className="st-spec">{rows(ski?['SKI_SET_ADULT_REGULAR','SKI_SET_ADULT_PREMIUM','SKI_SET_KIDS_REGULAR']:['SNOWBOARD_SET_ADULT_REGULAR','SNOWBOARD_SET_ADULT_PREMIUM','SNOWBOARD_SET_KIDS_REGULAR']).map(([k,v])=><div key={k}><dt>{(k.includes('KIDS')?t('子供','KIDS'):t('大人','ADULT'))+' · '+(k.endsWith('PREMIUM')?'PREMIUM':'REGULAR')+' · '+t('セット 1日','SET · 1 DAY')}</dt><dd>{v}</dd></div>)}</dl>
     <p className="st-more"><Link className="st-link" href={r+'/prices'}>{t('すべての料金','ALL PRICES')} →</Link></p></section></>;
@@ -146,7 +147,7 @@ export function PublicPage({page,locale,origin,latePickup}:{latePickup:string;mo
    <div className="st-pm-list"><h2 id={'pm-'+family} className="st-sec-h">{family}<span className="st-tone"> PREMIUM</span></h2>
     <dl className="st-spec">
      {premiumOpen(family)?<div><dt>{t('予約で選ぶ','CHOSEN IN BOOKING')}</dt><dd>MODEL / SEASON / LENGTH</dd></div>:<div><dt>{t('モデル','MODEL')}</dt><dd>{t('発表準備中','TO BE ANNOUNCED')}</dd></div>}
-     <div><dt>{t('セット 1日','SET · 1 DAY')}</dt><dd>{yen(dayPrice(family==='SKI'?'SKI_SET_ADULT_PREMIUM':'SNOWBOARD_SET_ADULT_PREMIUM'))}</dd></div>
+     <div><dt>{t('セット 1日','SET · 1 DAY')}</dt><dd>{yenTax(ja,dayPrice(family==='SKI'?'SKI_SET_ADULT_PREMIUM':'SNOWBOARD_SET_ADULT_PREMIUM'))}</dd></div>
      <div><dt>{t('対象','FOR')}</dt><dd>{t('大人','ADULTS')}</dd></div></dl>
     <div className="st-ph-acts st-pm-acts">{premiumOpen(family)?book('BOOK '+family+' PREMIUM'):<p className="st-soon st-soon--lg">COMING SOON</p>}</div></div>
   </section>;

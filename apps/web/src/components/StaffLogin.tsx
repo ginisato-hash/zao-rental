@@ -9,7 +9,7 @@ export function StaffLogin({configured,initialLocale}:{configured:boolean;initia
  function setLocale(next:StaffLocale){setLocaleState(next);document.cookie=`${STAFF_LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;document.documentElement.lang=next;}
  async function login(event:React.FormEvent<HTMLFormElement>){event.preventDefault();if(busy||!ready||!configured)return;setBusy(true);setFailed(false);const form=event.currentTarget;const data=new FormData(form);
   try{const response=await fetch('/api/auth/sign-in/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:data.get('email'),password:data.get('password')})});
-   form.reset();if(!response.ok)throw new Error();const channel=new BroadcastChannel('zao-rental-session');channel.postMessage('login-changed');channel.close();window.location.replace('/staff/ledger');
+   form.reset();if(!response.ok)throw new Error();const channel=new BroadcastChannel('zao-rental-session');channel.postMessage('login-changed');channel.close();window.location.replace('/staff');
   }catch{setFailed(true);setBusy(false);}
  }
  return <section className="staff-login" lang={locale}>

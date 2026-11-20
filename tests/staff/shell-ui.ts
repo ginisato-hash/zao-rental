@@ -39,7 +39,7 @@ try{
  const context=await browser.newContext({baseURL:origin,viewport:{width:1440,height:900}}),page=await context.newPage();
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill('shell-admin@example.invalid');await page.getByLabel('パスワード',{exact:true}).fill(password);
- await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL('**/staff/ledger',{timeout:60000});
+ await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
  const principal=(await loadStaff(db.pool,admin))!,sessionId=(await db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[admin])).rows[0].id as string;
  const holds=new HoldService(app.roles.holdPool,principal,()=>now),quotes=new QuoteService(app.roles.pricingPool,principal,()=>now);
  await quotes.initializePrivate(randomUUID(),'2032-01-01','2038-12-31');flow=await provisionFlowRole(db.pool,db.identity);

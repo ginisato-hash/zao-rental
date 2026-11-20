@@ -59,6 +59,7 @@
     "test:staff-acceptance-ui": "node --import tsx tests/staff/acceptance-ui.ts --built",
     "test:staff-all-routes-ui": "node --import tsx tests/staff/all-routes-ui.ts --built",
     "test:public-all-routes-ui": "node --import tsx tests/public/all-routes-ui.ts --built",
+    "test:public-map-ui": "node --import tsx tests/public/map-ui.ts --built",
     "test:staff-order": "node --experimental-test-module-mocks --import tsx tests/operations/staff-order-postgres.ts",
     "test:orders": "node --import tsx tests/operations/orders-postgres.ts",
     "test:shortage": "node --import tsx tests/operations/shortage-postgres.ts",

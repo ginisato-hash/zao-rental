@@ -22,7 +22,7 @@ try{
  await seedLedgerSample(owner);
  const adminId=await bootstrapDevelopmentAdmin(owner,{email:emails.admin,displayName:'合成ADMIN',password});
  async function context(){const ctx=await browser.newContext({baseURL:origin,viewport:{width:1280,height:900}});ctx.setDefaultTimeout(10000);ctx.setDefaultNavigationTimeout(15000);return ctx;}
- async function login(ctx:BrowserContext,email:string,secret=password){const page=await ctx.newPage();await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(secret);await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(`${origin}/staff/ledger`);return page;}
+ async function login(ctx:BrowserContext,email:string,secret=password){const page=await ctx.newPage();await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(secret);await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return page;}
  const admin=await context();let adminPage:Page;let editorId:string,readerId:string,assetId:string;
  const settings={displayName:'合成STAFF',active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{INVENTORY_EDIT:true}};
  await check('no public signup, social login, fixture login or ambient identity bypass; anonymous API is 401',async()=>{

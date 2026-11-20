@@ -42,10 +42,21 @@ export function StaffReports({stamp,stores}:{stamp:string;stores:string[]}){
  // Rows belong to the exact query that produced them; a failed refresh hides them too.
  const data=loaded?.key===key&&failed!==key?loaded.data:null;
  const cell=(c:Column,v:string|number|undefined)=>c.kind==='date'?fmtDate(locale,String(v)):c.kind==='station'?STORE_LABEL[String(v)]??String(v):c.kind==='jpy'?fmtYen(locale,Number(v)):String(v??0);
- async function download(){const r=await fetch('/api/operations/reports?'+query+'&format=csv',{cache:'no-store',headers:{'x-zao-session':stamp}});if(r.status===401||r.status===403){invalidateStaffView();return;}if(!r.ok){setFailed(key);return;}
-  const url=URL.createObjectURL(await r.blob()),a=document.createElement('a');a.href=url;a.download=`report-${type}-${data?.from??'now'}-${data?.to??''}.csv`.replace(/-\.csv$/,'.csv');document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);}
+ // REP-02: a CSV belongs to the (query, stamp) it was requested for and to this mounted page. It is saved only if, after the
+ // response and again after the body, the page is still mounted, still shows that same query under the same session, and no
+ // newer CSV request started; otherwise it is discarded (and the request aborted). One CSV request at a time.
+ const live=useRef({key,mounted:true}),csvGen=useRef(0),csvAbort=useRef<AbortController|null>(null),[csvBusy,setCsvBusy]=useState(false);
+ useEffect(()=>{live.current.key=key;csvGen.current++;csvAbort.current?.abort();},[key]);
+ useEffect(()=>{const l=live.current,g=csvGen,ab=csvAbort;l.mounted=true;return()=>{l.mounted=false;g.current++;ab.current?.abort();};},[]);
+ async function download(){if(csvBusy)return;const ticket=++csvGen.current,startKey=key,abort=new AbortController();csvAbort.current?.abort();csvAbort.current=abort;
+  const current=()=>live.current.mounted&&live.current.key===startKey&&csvGen.current===ticket;setCsvBusy(true);
+  try{const r=await fetch('/api/operations/reports?'+query+'&format=csv',{cache:'no-store',headers:{'x-zao-session':stamp},signal:abort.signal});
+   if(!current())return;if(r.status===401||r.status===403){invalidateStaffView();return;}if(!r.ok){setFailed(startKey);return;}
+   const blob=await r.blob();if(!current())return;
+   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`report-${type}-${data?.from??'now'}-${data?.to??''}.csv`.replace(/-\.csv$/,'.csv');document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+  }catch{/* aborted or failed: nothing is saved */}finally{if(live.current.mounted)setCsvBusy(false);}}
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
-  <div className="ox-head"><h1>{st(locale,'reports')}</h1>{data&&<button type="button" className="sx-btn" onClick={()=>void download()}>{tx('csv')}</button>}</div>
+  <div className="ox-head"><h1>{st(locale,'reports')}</h1>{data&&<button type="button" className="sx-btn" disabled={csvBusy} aria-busy={csvBusy} onClick={()=>void download()}>{tx('csv')}</button>}</div>
   <div className="sx-seg ox-tabs" role="tablist" aria-label={tx('type')}>{TYPES.map(t=><button key={t} type="button" role="tab" aria-selected={type===t} onClick={()=>set({type:t==='bookings'?'':t})}>{tx(t)}</button>)}</div>
   <p className="sx-help">{tx(`${type}Help` as 'bookingsHelp')}</p>
   <div className="ox-controls">

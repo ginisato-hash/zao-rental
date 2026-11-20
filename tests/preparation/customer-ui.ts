@@ -20,7 +20,7 @@ try{
  const password=randomBytes(24).toString('base64url'),email='r65-catalog@example.invalid',subject=await bootstrapDevelopmentAdmin(app.db.pool,{email,password,displayName:'受付担当'});
  for(const permission of permissions)await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true) ON CONFLICT DO NOTHING',[subject,permission]);
  const staff=await browser.newContext({baseURL:app.origin}),sp=await staff.newPage();staff.setDefaultTimeout(30000);
- await sp.goto('/staff/login');await sp.getByLabel('メールアドレス',{exact:true}).fill(email);await sp.getByLabel('パスワード',{exact:true}).fill(password);await sp.getByRole('button',{name:'ログイン',exact:true}).click();await sp.waitForURL('**/staff/ledger');
+ await sp.goto('/staff/login');await sp.getByLabel('メールアドレス',{exact:true}).fill(email);await sp.getByLabel('パスワード',{exact:true}).fill(password);await sp.getByRole('button',{name:'ログイン',exact:true}).click();await sp.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
  const principal=(await loadStaff(app.db.pool,subject))!,identity={subject,sessionId:(await app.db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1',[subject])).rows[0].id};
  const ledger=new LedgerService(app.roles.ledgerPool,ledgerPrincipal(principal),(c,s,a)=>verifyLedgerWrite(c,app.roles.authPool,identity,s,a),async()=>{/* Only newly created test stock. */});
  await new QuoteService(app.roles.pricingPool,principal).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');

@@ -39,7 +39,7 @@ try{
  const context=await browser.newContext({baseURL:origin,viewport:{width:1440,height:900}}),page=await context.newPage();
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill('accept-admin@example.invalid');await page.getByLabel('パスワード',{exact:true}).fill(password);
- await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL('**/staff/ledger',{timeout:60000});
+ await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
  const principal=(await loadStaff(db.pool,admin))!,sessionId=(await db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[admin])).rows[0].id as string;
  const holds=new HoldService(app.roles.holdPool,principal,()=>now),quotes=new QuoteService(app.roles.pricingPool,principal,()=>now);
  await quotes.initializePrivate(randomUUID(),'2032-01-01','2038-12-31');flow=await provisionFlowRole(db.pool,db.identity);
@@ -146,6 +146,28 @@ try{
   await p.unroute('**/api/operations/orders/'+confirmedId);
   // Back to A: a fresh, correctly authorized read shows it again.
   await a.ctx.clearCookies();await a.ctx.addCookies(cookiesA);await p.goto(url);await p.getByText('SYNTHETIC Shell Confirmed').waitFor();await p.getByRole('button',{name:'印刷'}).waitFor();
+  await a.ctx.close();
+ });
+ await check('REP-02: a CSV is saved only for the session, conditions and page it was requested from; one at a time',async()=>{
+  const a=await login('accept-admin@example.invalid'),b=await login('accept-docb@example.invalid');const cookiesA=await a.ctx.cookies(),cookiesB=await b.ctx.cookies();await b.ctx.close();
+  const p=a.p;let downloads=0;p.on('download',()=>{downloads++;});
+  const csv=/\/api\/operations\/reports\?.*format=csv/;let release=()=>{};
+  const hold=async()=>{let f=()=>{};const held=new Promise<void>(r=>{f=r;});release=f;await p.route(csv,async r=>{await held;await r.continue();});};
+  const open=async()=>{await p.goto('/staff/reports?type=bookings&stores=MOUNTAIN_BASE&from=2035-06-01&to=2035-06-30');await p.getByRole('button',{name:'CSV',exact:false}).first().waitFor();};
+  const csvButton=()=>p.locator('main').getByRole('button',{name:/CSV/}).first();
+  // 1. Session switch while the CSV is held: the late 200 saves nothing.
+  await open();await hold();await csvButton().click();await a.ctx.clearCookies();await a.ctx.addCookies(cookiesB);
+  const refreshed=p.waitForResponse(r=>r.request().headers()['rsc']==='1'&&new URL(r.url()).pathname==='/staff/reports');
+  await p.evaluate(()=>(window as unknown as {next:{router:{refresh():void}}}).next.router.refresh());await refreshed.catch(()=>{});
+  release();await p.waitForTimeout(1500);await p.unroute(csv);assert.equal(downloads,0,'no CSV after the session changed');
+  // 2. Back to A: a normal CSV downloads exactly once, even with a double click.
+  await a.ctx.clearCookies();await a.ctx.addCookies(cookiesA);await open();
+  const one=p.waitForEvent('download');await csvButton().dblclick();await one;await p.waitForTimeout(1000);assert.equal(downloads,1,'double click saves one CSV');
+  // 3. Conditions change while the CSV is held: the old-condition file is never saved.
+  await hold();await csvButton().click();await p.getByLabel('開始日',{exact:true}).fill('2035-06-10');await p.waitForURL(/from=2035-06-10/);
+  release();await p.waitForTimeout(1500);await p.unroute(csv);assert.equal(downloads,1,'no CSV for the previous conditions');
+  // 4. Leaving the page while the CSV is held: nothing is saved.
+  await hold();await csvButton().click();await p.goto('/staff/orders');release();await p.waitForTimeout(1500);await p.unroute(csv);assert.equal(downloads,1,'no CSV after leaving Reports');
   await a.ctx.close();
  });
  await check('new order: staff API with the session header only, no browser storage, explicit customer choice; real route refuses without commercial composition',async()=>{

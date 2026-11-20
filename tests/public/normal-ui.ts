@@ -14,7 +14,7 @@ async function check(name:string,f:()=>Promise<void>){stage=name;await f();count
 async function staffLogin(page:Page,email:string){
  await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(password);
  const [signed]=await Promise.all([page.waitForResponse(r=>r.url()===app!.origin+'/api/auth/sign-in/email'&&r.request().method()==='POST',{timeout:60000}),page.getByRole('button',{name:'ログイン',exact:true}).click()]);
- assert.equal(signed.status(),200);await page.waitForURL(app!.origin+'/staff/ledger',{timeout:60000});
+ assert.equal(signed.status(),200);await page.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
 }
 try{
  app=await startFlowApp({publicP0:true});await seedRecommendation(app.db.pool,true);await app.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:00Z'::timestamptz$$");

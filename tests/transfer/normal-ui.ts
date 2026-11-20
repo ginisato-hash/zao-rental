@@ -13,7 +13,7 @@ try{
  async function clock(value:string){assert.match(value,/^2033-01-0[1-9]T\d\d:\d\d:\d\dZ$/);await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${value}'::timestamptz$$`);}
  await clock('2033-01-01T07:50:00Z');for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:1280,height:960}});c.setDefaultTimeout(10000);return c;}
- async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(origin+'/staff/ledger');return p;}
+ async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return p;}
  const admin=await context(),editor=await context(),anon=await context();const ap=await login(admin,'e07-ui-admin@example.invalid');
  await check('normal ADMIN UI creates scoped staff with explicit transfer permissions; anonymous and default ADMIN rejected',async()=>{
   assert.equal((await anon.request.get('/api/transfers')).status(),401);assert.equal((await admin.request.get('/api/transfers')).status(),403);

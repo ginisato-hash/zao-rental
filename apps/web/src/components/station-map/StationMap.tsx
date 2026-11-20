@@ -82,6 +82,9 @@ export function StationMap({locale,initial='all'}:{locale:'ja'|'en';initial?:Vie
    if(done){e.preventDefault();if(e.key!=='0')moved=true;}};
   const onZin=()=>zoomAt(1.4,mv.clientWidth/2,mv.clientHeight/2),onZout=()=>zoomAt(1/1.4,mv.clientWidth/2,mv.clientHeight/2),onZall=()=>show('all');
   mv.addEventListener('pointerdown',onDown);mv.addEventListener('pointermove',onMove);mv.addEventListener('pointerup',onUp);mv.addEventListener('pointercancel',onUp);
+  // MAP-01: pressing on the terrain image must pan the map, never start the browser's native image drag (which cancels
+  // the pointer stream after the first move, so a desktop drag only moved a few pixels).
+  const noNativeDrag=(e:DragEvent)=>e.preventDefault();mv.addEventListener('dragstart',noNativeDrag);
   mv.addEventListener('wheel',onWheel,{passive:false});mv.addEventListener('keydown',onKey);
   zin.addEventListener('click',onZin);zout.addEventListener('click',onZout);zall.addEventListener('click',onZall);
   const tabs=$$('.tabs button'),gos=$$('[data-go]'),onTab=(e:Event)=>show((e.currentTarget as HTMLElement).dataset.v!),onGo=(e:Event)=>show((e.currentTarget as HTMLElement).dataset.go!,false,true);
@@ -91,7 +94,7 @@ export function StationMap({locale,initial='all'}:{locale:'ja'|'en';initial?:Vie
   addEventListener('resize',resize);const ro=new ResizeObserver(()=>{if(live)resize();});ro.observe(mv);addEventListener('hashchange',hash);
   return ()=>{live=false;tabs.forEach(b=>b.removeEventListener('click',onTab));gos.forEach(b=>b.removeEventListener('click',onGo));removeEventListener('resize',resize);ro.disconnect();removeEventListener('hashchange',hash);
    mv.removeEventListener('pointerdown',onDown);mv.removeEventListener('pointermove',onMove);mv.removeEventListener('pointerup',onUp);mv.removeEventListener('pointercancel',onUp);
-   mv.removeEventListener('wheel',onWheel);mv.removeEventListener('keydown',onKey);zin.removeEventListener('click',onZin);zout.removeEventListener('click',onZout);zall.removeEventListener('click',onZall);};
+   mv.removeEventListener('dragstart',noNativeDrag);mv.removeEventListener('wheel',onWheel);mv.removeEventListener('keydown',onKey);zin.removeEventListener('click',onZin);zout.removeEventListener('click',onZout);zall.removeEventListener('click',onZall);};
  },[ja,initial]);
  const card=(id:'mountain'|'central')=>{const s=S[id],d=dir(id),[a,b]=s.name.split(' ');
   return <article className="card" data-v={id} hidden={initial!==id} key={id}><h2 className="nm2">{a}<br/>{b}</h2><p className="ln">{s.tag}<br/>{s.hours}</p><p className="ad">{ja?s.ja:s.en}</p>
@@ -103,7 +106,7 @@ export function StationMap({locale,initial='all'}:{locale:'ja'|'en';initial?:Vie
     <div className="mv" tabIndex={0} role="application" aria-roledescription={ja?'地図':'map'} aria-label={ja?'地図。矢印キーで移動、+ と − で拡大縮小、0 で全体表示':'Map. Arrow keys move, + and − zoom, 0 shows both stations'}>
      <div className="cv">
       {/* eslint-disable-next-line @next/next/no-img-element -- 2976×2164 LP terrain artwork transformed as one layer, exactly as on the LP */}
-      <img src={terrain.src} alt="" width={2976} height={2164}/>
+      <img src={terrain.src} alt="" width={2976} height={2164} draggable={false}/>
      </div>
      <div className="pins"/>
      <div className="zm" role="group" aria-label={ja?'拡大縮小':'Zoom'}><button type="button" className="zm-in" aria-label={ja?'拡大':'Zoom in'}>+</button><button type="button" className="zm-out" aria-label={ja?'縮小':'Zoom out'}>−</button><button type="button" className="zm-all">{ja?'全体表示':'Show all'}</button></div>

@@ -139,7 +139,7 @@ type GuestBookingProps={locale:Locale;legal?:GuestLegalLinks;staff?:{stamp:strin
 export function GuestBooking(props:GuestBookingProps){return <BookingFlow key={props.staff?'staff:'+props.staff.stamp:'guest'} {...props}/>;}
 function BookingFlow({locale,legal,staff}:GuestBookingProps){const [client]=useState(()=>bookingClient(staff?.stamp)),request=client.request;const productionCopy=useProductionCopy(),ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
  const [draft,setDraft]=useState<Draft|null>(null),[options,setOptions]=useState<Options>({models:[],sizes:[]}),[input,setInput]=useState<Input>(blankInput),[step,setStep]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[directions,setDirections]=useState<Record<string,string>>({}),[accepted,setAccepted]=useState(false),[advance,setAdvance]=useState(false),[contact,setContact]=useState<Contact>({displayName:'',email:'',termsAccepted:false}),[emailConfirm,setEmailConfirm]=useState(''),[simulation,setSimulation]=useState(false),[reconsentNeeded,setReconsentNeeded]=useState(false),[reconsentChecked,setReconsentChecked]=useState(false);
- const alive=useRef(true),ticket=useRef(0),inFlight=useRef(false);
+ const alive=useRef(true),ticket=useRef(0),inFlight=useRef(false),leaving=useRef(false);
  // CH-04A: the displayed step is reflected in browser history so Back/Forward move one
  // step instead of leaving the app. Only the step number (an allowlisted, non-secret
  // integer) ever goes into history.state -- never input, contact, tokens or booking data.
@@ -295,9 +295,9 @@ function BookingFlow({locale,legal,staff}:GuestBookingProps){const [client]=useS
  // mobile), so this is a best-effort browser-native prompt for a real tab close/reload, not
  // a substitute for the in-app link guard below, which is the actual mechanism for the
  // cases this app controls (locale switch, closing the booking context).
- useEffect(()=>{const onBeforeUnload=(e:BeforeUnloadEvent)=>{if(unsavedInput){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',onBeforeUnload);return()=>window.removeEventListener('beforeunload',onBeforeUnload);},[unsavedInput]);
+ useEffect(()=>{const onBeforeUnload=(e:BeforeUnloadEvent)=>{if(unsavedInput&&!leaving.current){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',onBeforeUnload);return()=>window.removeEventListener('beforeunload',onBeforeUnload);},[unsavedInput]);
  function guardNav(e:React.MouseEvent){if(unsavedInput&&!window.confirm(t('保存されていない入力があります。移動すると内容が失われます。続けますか？','You have unsaved input. Leaving now will lose it. Continue?')))e.preventDefault();}
- async function run(fn:()=>Promise<Draft>){if(inFlight.current)return;inFlight.current=true;setBusy(true);const n=++ticket.current;try{const d=await fn();if(alive.current&&n===ticket.current){open(d);setMessage('');setRestoredNotice(false);}}catch(e){if(alive.current&&n===ticket.current){const code=(e as Error).message;if(code==='TERMS_REACCEPT_REQUIRED')setReconsentNeeded(true);if((e as {status?:number}).status===401){setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setSavedInputJson(null);}setMessage(code);
+ async function run(fn:()=>Promise<Draft>){if(inFlight.current||leaving.current)return;inFlight.current=true;setBusy(true);const n=++ticket.current;try{const d=await fn();if(alive.current&&n===ticket.current&&!leaving.current){open(d);setMessage('');setRestoredNotice(false);}}catch(e){if(alive.current&&n===ticket.current){const code=(e as Error).message;if(code==='TERMS_REACCEPT_REQUIRED')setReconsentNeeded(true);if((e as {status?:number}).status===401){setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setSavedInputJson(null);}setMessage(code);
   // The draft changed server-side; show its actual state. A read only -- nothing is resubmitted.
   if(REFRESH_ON_ERROR.has(code)){try{const fresh=await request('/draft');if(alive.current&&n===ticket.current)open(fresh);}catch{}}}}finally{inFlight.current=false;if(alive.current)setBusy(false);}}
  function member(n:number,patch:Partial<Member>){editInput(i=>({...i,members:i.members.map((m,j)=>j===n?{...m,...patch}:m)}));}
@@ -367,7 +367,15 @@ function BookingFlow({locale,legal,staff}:GuestBookingProps){const [client]=useS
  const stockFailed=Boolean(draft&&!draft.booking&&draft.locked&&!draft.hold);
  const priceChanged=Boolean(draft&&!draft.booking&&!holdEnded&&draft.priceReviewRequired&&draft.quote?.validity==='VALID_PRIVATE_ESTIMATE');
  const legalBlocked=Boolean(draft?.checkout)&&legal?.complete!==true;const payBlocked=!contractSynced||Boolean(draft?.priceReviewRequired)||holdEnded||stockFailed||legalBlocked;
- function closeContext(){if(staff){void run(async()=>{const d=await request('/restart',{});location.assign(new URL('/staff/orders/new',location.origin).href);return d;});return;}void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setRestoredNotice(false);setSavedInputJson(null);location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
+ // A page restored from the back/forward cache after it was deliberately left is stale (its session or draft was closed):
+ // load it fresh instead of showing it with every action blocked.
+ useEffect(()=>{const onShow=(e:PageTransitionEvent)=>{if(e.persisted&&leaving.current)location.reload();};window.addEventListener('pageshow',onShow);return()=>window.removeEventListener('pageshow',onShow);},[]);
+ // AVATAR-EXIT-01: leaving after the server has accepted the close (guest logout / staff restart succeeded). Only then is
+ // `leaving` set: the unsaved-input beforeunload prompt is skipped for this explicit navigation (its handler still sees
+ // the pre-close input; tests/public/guest-exit-ui.ts reproduced the prompt cancelling /ja after logout 200), run() opens
+ // nothing more (the pre-close draft is not shown again) and starts no further action. A failed or unanswered request
+ // throws before this point, so the input, its leave protection and the retry stay as they were.
+ function closeContext(){if(staff){void run(async()=>{const d=await request('/restart',{});leaving.current=true;location.assign(new URL('/staff/orders/new',location.origin).href);return d;});return;}void run(async()=>{await request('/logout',{});setDraft(null);setInput(blankInput());setDirections({});clearStoredInput(client);clearDraftInputs(client);setRestoredNotice(false);setSavedInputJson(null);leaving.current=true;location.assign(new URL('/'+locale,location.origin).href);return draft!;});}
  const checkoutBody=()=>({locale,draftId:draft!.id,expectedRevision:draft!.revision,reviewHash:draft!.reviewHash,contact:{displayName:contact.displayName,email:contact.email,termsAccepted:contact.termsAccepted,...(legal?.termsBundle?{terms:{version:legal.termsBundle.version,sha256:legal.termsBundle.sha256,locale}}:{})}});
  // The field name is the label's whole text, so exact label matching and the accessible name stay
  // unchanged; the required/optional marker is rendered outside the <label>, beside it.

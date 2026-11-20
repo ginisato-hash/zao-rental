@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
-import {chromium} from '@playwright/test';
+import {chromium,expect} from '@playwright/test';
 import {startDevelopmentApp} from '../../scripts/development-app';
 import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {randomUUID} from 'node:crypto';
@@ -336,6 +336,21 @@ try{
   await panel.getByRole('button',{name:'新しいお客様として登録'}).click();await panel.getByRole('status').filter({hasText:'新しいお客様として登録'}).waitFor();assert.deepEqual(posts[1],{draftId,expectedRevision:2,customerId:null});
   assert.equal(await page.evaluate(()=>sessionStorage.length+localStorage.length),0,'nothing is kept in browser storage on the shared staff device');
   await page.screenshot({path:`${shots}/new-order-ja-1440.png`});await page.unroute('**/api/staff-orders/**');await page.unroute(/\/api\/operations\/customers\?/);
+ });
+ await check('AVATAR-EXIT-01 staff restart: a failed restart stays with an error; a successful one reloads the new order without a leave prompt, one POST each',async()=>{
+  const {ctx,p}=await login('accept-admin@example.invalid');const draftId=randomUUID();let restartStatus=500;const restarts:string[]=[],documents:string[]=[],dialogs:string[]=[];
+  p.on('dialog',d=>{dialogs.push(d.type());void d.dismiss().catch(()=>{});});
+  p.on('request',r=>{if(r.isNavigationRequest()&&r.frame()===p.mainFrame())documents.push(new URL(r.url()).pathname);});
+  const view=()=>({checkout:null,id:draftId,revision:1,input:null,locked:false,priceReviewRequired:false,selection:null,preview:null,hold:null,estimate:null,reviewHash:null,quote:null,booking:null,simulation:false,customerProfileId:null});
+  await ctx.route('**/api/staff-orders/**',async r=>{const path=new URL(r.request().url()).pathname;if(path.endsWith('/options'))return r.fulfill({json:{revision:'synthetic',models:[],sizes:[]}});
+   if(r.request().method()==='POST'&&path.endsWith('/restart')){restarts.push(path);if(restartStatus!==200)return r.fulfill({status:restartStatus,json:{error:'STAFF_ORDER_UNAVAILABLE'}});}return r.fulfill({json:view()});});
+  await p.goto('/staff/orders/new');await p.getByRole('heading',{name:'新規予約',level:1}).waitFor();const start=p.getByLabel('利用開始日',{exact:true});await expect(start).toBeEnabled();
+  await start.fill('2035-06-20');const restart=p.getByRole('button',{name:'新しい注文を始める'});
+  const before=documents.length;await restart.click();await expect(p.locator('.guest-alert[role="alert"]')).toBeVisible();
+  assert.equal(restarts.length,1);assert.equal(documents.length,before,'no navigation after a failed restart');assert.equal(await start.inputValue(),'2035-06-20','the input is kept');await expect(restart).toBeEnabled();
+  restartStatus=200;const reloaded=p.waitForRequest(r=>r.isNavigationRequest()&&new URL(r.url()).pathname==='/staff/orders/new');await restart.click();await reloaded;
+  await p.getByRole('heading',{name:'新規予約',level:1}).waitFor();assert.equal(restarts.length,2,'one POST for the retry');assert.deepEqual(dialogs,[],'no leave prompt after the server accepted the restart');
+  await ctx.unroute('**/api/staff-orders/**');await ctx.close();
  });
  await check('new order isolation: guest/staff flows never share a route, header, pending context, draft or browser storage (TD FB #7010252887)',async()=>{
   const {ctx,p}=await login('accept-admin@example.invalid');

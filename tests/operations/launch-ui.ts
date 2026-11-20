@@ -60,7 +60,7 @@ try{
   assert.equal(breaks,'avoid');
   await page.emulateMedia({media:'print'});
   assert.equal(await page.locator('.asset-label').first().evaluate(el=>getComputedStyle(el).visibility),'visible');
-  assert.equal(await page.locator('footer.ledger-footer').evaluate(el=>getComputedStyle(el).visibility),'hidden');
+  assert.equal(await page.locator('header.ledger-header h1').evaluate(el=>getComputedStyle(el).visibility),'hidden');
   await page.emulateMedia({media:'screen'});
  });
 

@@ -65,7 +65,7 @@ try{
  const invOnly=(await writeAccount(app.roles.authPool,rootPrincipal,undefined,{active:true,role:'STAFF',password,email:'accept-inv@example.invalid',displayName:'SYNTHETIC Inventory Only',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{BOOKING_VIEW:false}})).id!;
  await writeAccount(app.roles.authPool,rootPrincipal,undefined,{active:true,role:'VIEWER',password,email:'accept-book@example.invalid',displayName:'SYNTHETIC Booking Only',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{BOOKING_VIEW:true,INVENTORY_VIEW:false}});
  async function login(email:string){const ctx=await browser.newContext({baseURL:origin,viewport:{width:1440,height:900}}),p=await ctx.newPage();await p.goto('/staff/login');
-  await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff/')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return {ctx,p};}
+  await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return {ctx,p};}
 
  await check('orders: a failed refresh with new filters hides the previous rows instead of leaving them usable',async()=>{
   await page.goto('/staff/orders');await page.getByRole('table').getByText('SYNTHETIC Shell Confirmed').waitFor();

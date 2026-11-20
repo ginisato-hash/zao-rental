@@ -46,7 +46,7 @@ try{
  });
  const editor=await context();let page:Page;
  await check('individual email/password login establishes a real DB session with HttpOnly SameSite cookie and no token response body',async()=>{
-  page=await login(editor,emails.editor);await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/session')).status(),200);
+  page=await login(editor,emails.editor);await page.goto('/staff/ledger');await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/session')).status(),200);
   const ttl=(await owner.query('SELECT extract(epoch from ("expiresAt"-"createdAt")) AS seconds FROM auth_session WHERE "userId"=$1',[editorId])).rows[0].seconds;assert.ok(Number(ttl)<=28801&&Number(ttl)>=28790);
   const c=(await editor.cookies(origin)).find(c=>c.name.endsWith('session_token'));assert.ok(c?.httpOnly);assert.equal(c.sameSite,'Lax');assert.equal(c.secure,false);
   assert.equal((await owner.query('SELECT count(*)::int AS n FROM auth_session WHERE "userId"=$1',[editorId])).rows[0].n,1);
@@ -80,7 +80,7 @@ try{
  await check('logout revokes old session; re-login reads the same stored Asset and stale session stamp is refused',async()=>{
   const oldStamp=(await (await editor.request.get('/api/session')).json()).stamp;
   await page.goto('/staff/logout');await page.getByRole('button',{name:'サインアウトする',exact:true}).click();await page.waitForURL(`${origin}/staff/login`);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
-  await page.close();page=await login(editor,emails.editor);await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/ledger/assets',{headers:{'x-zao-session':oldStamp}})).status(),409);assert.equal((await (await editor.request.get(`/api/ledger/assets/${assetId}`)).json()).notes,'E05 再読込確認');
+  await page.close();page=await login(editor,emails.editor);await page.goto('/staff/ledger');await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/ledger/assets',{headers:{'x-zao-session':oldStamp}})).status(),409);assert.equal((await (await editor.request.get(`/api/ledger/assets/${assetId}`)).json()).notes,'E05 再読込確認');
  });
  await check('permission and store removals are enforced by normal APIs, while old displayed data is unmounted',async()=>{
   assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision,role:'MANAGER',permissions:{INVENTORY_EDIT:false}}})).status(),200);
@@ -128,7 +128,7 @@ try{
  });
  await check('expired session and missing store scope cannot continue; another user sees only its permitted store',async()=>{
   await owner.query(`UPDATE auth_session SET "expiresAt"=now()-interval '1 second' WHERE "userId"=$1`,[editorId]);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
-  const reader=await context();const rp=await login(reader,emails.reader);await expect(rp.getByRole('heading',{name:'道具の台帳'})).toBeVisible();await expect(rp.getByRole('button',{name:'＋ 登録',exact:true})).toHaveCount(0);
+  const reader=await context();const rp=await login(reader,emails.reader);await rp.goto('/staff/ledger');await expect(rp.getByRole('heading',{name:'道具の台帳'})).toBeVisible();await expect(rp.getByRole('button',{name:'＋ 登録',exact:true})).toHaveCount(0);
   const rows=(await (await reader.request.get('/api/ledger/assets')).json()).items;assert.ok(rows.length>0);assert.ok(rows.every((r:{storeId:string})=>r.storeId==='ONSEN_BASE'));assert.ok(rows.every((r:{notes:string})=>r.notes!=='E05 再読込確認'));
   await owner.query('DELETE FROM staff_store_access WHERE staff_id=$1',[readerId]);assert.equal((await reader.request.get('/api/ledger/assets')).status(),403);await reader.close();
  });

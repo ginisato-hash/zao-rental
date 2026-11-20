@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {closeGuestAndAwaitLogout} from './guest-close';
 import {fillGuestProfile} from '../public/guest-profile';
 import {decodeReference} from './reference-browser';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
@@ -95,11 +96,8 @@ try{
  await check('BROWSER','normal local staff login for PHASE4-1 permission proof',async()=>{await staffPage.goto('/staff/login');await staffPage.getByLabel('メールアドレス',{exact:true}).fill('avatar-artwork@example.invalid');await staffPage.getByLabel('パスワード',{exact:true}).fill(password);const signed=staffPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/sign-in/email');await staffPage.getByRole('button',{name:'ログイン',exact:true}).click();assert.equal((await signed).status(),200);await staffPage.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});});
  await check('PG','PHASE4-1 all three permissions allow bytes; BOOKING_VIEW-only denies bytes and page',async()=>{const path='/avatar-media/'+body.id+'/'+body.derivativeSha256,response=await staff.request.get(path);if(response.status()!==200)console.error(JSON.stringify(await safeHttpResponseDiagnostic('AVATAR_STAFF_MEDIA',response)));assert.equal(response.status(),200);assert.match(await(await staff.request.get('/preview/avatar')).text(),/認可済みの保存済み推薦ID/);await db.pool.query("UPDATE staff_permission_overrides SET allowed=false WHERE staff_id=$1 AND permission IN ('HOLD_VIEW','QUOTE_VIEW')",[subject]);assert.equal((await staff.request.get(path)).status(),404);assert.match(await(await staff.request.get('/preview/avatar')).text(),/Staff sign-in/);});
  await check('BROWSER','normal logout revokes owner media/metadata while other guest remains valid',async()=>{
-  // The close button is disabled while the page is busy (e.g. an automatic draft refresh). A click that lands in the instant it
-  // turns busy does nothing, so wait for the logout answer and press again (only while it is enabled) if none came (CI #44680871844).
-  const close=page.getByRole('button',{name:'この予約画面を閉じる'});let logout:import('@playwright/test').Response|null=null;
-  for(let i=0;i<5&&!logout;i++){await close.click();logout=await page.waitForResponse(r=>new URL(r.url()).pathname==='/api/guest/logout',{timeout:6000}).catch(()=>null);}
-  assert.ok(logout,'logout request sent');assert.equal(logout.status(),200);await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});for(const p of [imagePath,metadataPath])assert.equal((await c.request.get(p)).status(),404);assert.equal((await other.request.get('/api/guest/draft')).status(),200);});
+  // AVATAR-CI-01: listener armed before the click; re-press only if no logout POST was issued; never re-send (tests/avatar/guest-close.ts).
+  const logout=await closeGuestAndAwaitLogout(page,page.getByRole('button',{name:'この予約画面を閉じる'}));assert.equal(logout.status(),200);await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});for(const p of [imagePath,metadataPath])assert.equal((await c.request.get(p)).status(),404);assert.equal((await other.request.get('/api/guest/draft')).status(),200);});
  await check('BROWSER','no fatal/hydration errors or external attempts',async()=>{assert.deepEqual(fatals,[]);assert.equal(externalAttempts,0);});
  await writeFile(evidence+'/browser-measurements.json',JSON.stringify({tolerancePx:1,engine:'Chromium; mobile viewport, not physical Safari',measurements},null,2)+'\n');await writeFile(evidence+'/screenshots.json',JSON.stringify(screenshots,null,2)+'\n');
 }catch(e){failed=true;console.error('ARTWORK_ACTIVATION_FAILED '+stage+' '+String((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').filter(s=>s.includes('/tests/avatar/')||s.includes('/scripts/avatar-artwork')).join('\n'));}

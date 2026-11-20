@@ -124,6 +124,25 @@ try{
   assert.ok(!leaked&&['AUTHORIZATION_CHANGED','NOT_FOUND','FORBIDDEN'].includes(code??''),'no detail from the revoked station: '+JSON.stringify({code,leaked:Boolean(leaked)}));
   await assert.rejects(new OrdersService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both)).detail(reserved.booking.id),{code:'NOT_FOUND'});
  });
+ await check('SNAP-01: Orders list and Dashboard read under a scope narrowed or ended mid-read return nothing (fail closed)',async()=>{
+  const other=store==='MOUNTAIN_BASE'?'ONSEN_BASE':'MOUNTAIN_BASE';
+  const mk=async(email:string)=>{await writeAccount(x.roles.authPool,x.bp,undefined,{email,password:x.password,displayName:'SYNTHETIC Snap',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:[store as 'ONSEN_BASE',other as 'ONSEN_BASE'],permissions:{}});return (await x.login(email)).identity;};
+  // The mutation runs right after the first authorization of the read (before any row is read) and is undone afterwards.
+  const race=(identity:{subject:string;sessionId:string},mutate:()=>Promise<unknown>)=>{let calls=0;return new (class extends OperationsContext{override async authorize(...a:Parameters<OperationsContext['authorize']>){const r=await super.authorize(...a);if(++calls===1)await mutate();return r;}})(ops!.operationsPool,x.roles.authPool,identity);};
+  const refusedCode=async(read:()=>Promise<unknown>)=>{try{await read();return 'RETURNED';}catch(e){return (e as {code?:string}).code??'ERROR';}};
+  const dropStation=(id:{subject:string},station:string)=>()=>x.db.pool.query('DELETE FROM staff_store_access WHERE staff_id=$1 AND store_id=$2',[id.subject,station]);
+  const denyView=(id:{subject:string})=>()=>x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'BOOKING_VIEW',false) ON CONFLICT(staff_id,permission) DO UPDATE SET allowed=false",[id.subject]);
+  const endSession=(id:{sessionId:string})=>()=>x.db.pool.query('DELETE FROM auth_session WHERE id=$1',[id.sessionId]);
+  const cases:[string,(s:InstanceType<typeof OrdersService>)=>Promise<unknown>][]=[['list',s=>s.list({stores:[store,other]})],['dashboard',s=>s.dashboard({store,range:'date',date:'2035-01-05'})]];
+  let n=0;for(const [name,read] of cases)for(const [kind,mutate] of [['station',dropStation],['permission',denyView],['session',endSession]] as const){
+   const id=await mk(`snap-orders-${n++}@example.invalid`);const code=await refusedCode(()=>read(new OrdersService(race(id,(mutate as (i:typeof id,st:string)=>()=>Promise<unknown>)(id,other)))));
+   assert.ok(['AUTHORIZATION_CHANGED','FORBIDDEN','UNAUTHENTICATED'].includes(code),`${name}/${kind}: refused, got ${code}`);
+  }
+  // After the station is gone, a plain read of the remaining station works and the removed one is refused.
+  const id=await mk('snap-orders-after@example.invalid');await dropStation(id,other)();const plain=new OrdersService(new OperationsContext(ops!.operationsPool,x.roles.authPool,id));
+  assert.ok((await plain.list({stores:[store]})).rows.length>0);await assert.rejects(plain.list({stores:[store,other]}),{code:'FORBIDDEN'});
+  await plain.dashboard({store,range:'date',date:'2035-01-05'});
+ });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,500),at:(e as Error).stack?.split('\n').filter(l=>/orders-postgres|amendment-service|context\.ts/.test(l)).slice(0,4).join(' | ')}));}
 finally{await ops?.close();await custody?.close();await x.close();}

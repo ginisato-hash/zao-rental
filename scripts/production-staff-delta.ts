@@ -1,5 +1,6 @@
 import type {PoolClient} from 'pg';
 import {bootstrapPlan} from './production-bootstrap';
+import {currentRentalTerms} from '../packages/core/src/content/rental-terms';
 import {productionStaffNotificationGrants,productionCustomerGrants,STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from './production-staff-notifications';
 
 // Issue #47 Production delta for 0059 (rental terms acceptance), 0060 (staff inbox / booking email) and 0061 (customer
@@ -29,6 +30,15 @@ async function begin(c:PoolClient,readOnly=false){
  await c.query(readOnly?'BEGIN READ ONLY':'BEGIN');
  await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='15000ms';SET LOCAL idle_in_transaction_session_timeout='20000ms';SET LOCAL search_path=public,pg_catalog");
 }
+// The triggers the delta depends on (terms acceptance, staff booking events, customer capture, re-consent guard), all enabled.
+const REQUIRED_TRIGGERS=[['rental_bookings','booking_record_terms_acceptance'],['rental_bookings','staff_event_capture'],['rental_bookings','customer_capture_booking'],['rental_terms_reconsents','rental_terms_reconsent_guard']] as const;
+/** DELTA-01: after COMMIT the live service may already have recorded new rows (a new booking's terms acceptance, staff event,
+ * customer). The read-back therefore proves structure, ownership, triggers and the approved bundle, never "still empty". */
+export async function committedProof(c:PoolClient,owner:string){
+ for(const t of NEW_TABLES){const r=(await c.query('SELECT pg_get_userbyid(c.relowner)=$1 owner_ok FROM pg_class c WHERE c.oid=to_regclass($2)',[owner,'public.'+t])).rows[0];if(!r||r.owner_ok!==true)throw Error(refused);}
+ for(const [table,trigger] of REQUIRED_TRIGGERS)if((await c.query("SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass($1) AND tgname=$2 AND tgenabled<>'D' AND NOT tgisinternal",['public.'+table,trigger])).rowCount!==1)throw Error(refused);
+ const t=currentRentalTerms();if((await c.query('SELECT 1 FROM public.rental_terms_bundles WHERE version=$1 AND sha256=$2',[t.version,t.sha256])).rowCount!==1)throw Error(refused);
+}
 async function objectsProof(c:PoolClient,owner:string){
  for(const t of NEW_TABLES){
   const r=(await c.query(`SELECT pg_get_userbyid(c.relowner)=$1 owner_ok,c.relrowsecurity IS NOT NULL present FROM pg_class c WHERE c.oid=to_regclass('public.'||$2)`,[owner,t])).rows[0];
@@ -38,7 +48,8 @@ async function objectsProof(c:PoolClient,owner:string){
  }
 }
 
-export async function applyProductionStaffDeltaMigration(c:PoolClient,database:string,owner:string){
+/** `afterCommit` exists only so a test can let the live service write between COMMIT and the read-back. */
+export async function applyProductionStaffDeltaMigration(c:PoolClient,database:string,owner:string,seams:{afterCommit?:()=>Promise<void>}={}){
  const entries=await plan(database);let committing=false,committed=false;
  try{
   await begin(c);
@@ -51,8 +62,10 @@ export async function applyProductionStaffDeltaMigration(c:PoolClient,database:s
   await registry(c,entries,61);await objectsProof(c,owner);
   const after=(await c.query('SELECT count(*)::int r,(SELECT count(*)::int FROM pg_auth_members) m FROM pg_roles')).rows[0];
   if(after.r!==roles.r||after.m!==roles.m)throw Error(refused);
-  committing=true;await c.query('COMMIT');committed=true;
-  await begin(c,true);await registry(c,entries,61);await objectsProof(c,owner);await c.query('ROLLBACK');
+  committing=true;await c.query('COMMIT');committed=true;await seams.afterCommit?.();
+  // Inside the migration transaction the new tables were proven empty (bundle: one). After COMMIT only invariants that
+  // normal service traffic cannot change are read back; a failure reports readback-required and never re-migrates.
+  await begin(c,true);await registry(c,entries,61);await committedProof(c,owner);await c.query('ROLLBACK');
   return {status:'PRODUCTION_STAFF_DELTA_INSTALLED',applied:entries.slice(58).map(({id,checksum})=>({id,checksum})),grantsAdded:0,roleChanges:0,credentialChanges:0,businessWrites:0};
  }catch(error){
   await c.query('ROLLBACK').catch(()=>{});

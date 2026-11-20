@@ -3,7 +3,7 @@
 // owner and role admin outside the custody roles) must accept canonical 0057 applied as neondb_owner, with no role bridge,
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
 import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
-import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof} from '../../scripts/production-staff-delta';
+import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
@@ -108,9 +108,15 @@ try{
  try{
   await assert.rejects(applyProductionStaffDeltaGrants(delta,DB,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'grants need the exact 0061 registry');
   await assert.rejects(applyProductionStaffDeltaMigration(delta,DB,'someone_else'),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'wrong owner identity');
-  const installed=await applyProductionStaffDeltaMigration(delta,DB,OWNER);
+  // DELTA-01: the live service may record a new booking's rows between COMMIT and the read-back; that is a normal install.
+  let natural:string|null=null;
+  const installed=await applyProductionStaffDeltaMigration(delta,DB,OWNER,{afterCommit:async()=>{natural=(await owner.query("INSERT INTO customer_profiles(display_name,email,created_by) VALUES('SYNTHETIC natural','synthetic-natural@example.invalid','synthetic-service') RETURNING id")).rows[0].id;}});
+  assert.ok(natural,'a row was written after COMMIT (immutable, so it stays: counted below)');
   assert.equal(installed.status,'PRODUCTION_STAFF_DELTA_INSTALLED');assert.deepEqual(installed.applied.map(a=>a.id),['0059','0060','0061']);
   await assert.rejects(applyProductionStaffDeltaMigration(delta,DB,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'no replay');
+  // The post-commit read-back still refuses a real defect: a disabled required trigger (inside a rolled-back transaction).
+  await delta.query('BEGIN');try{await delta.query('ALTER TABLE rental_terms_reconsents DISABLE TRIGGER rental_terms_reconsent_guard');await assert.rejects(committedProof(delta,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/);}finally{await delta.query('ROLLBACK');}
+  await committedProof(delta,OWNER);
  }finally{delta.release();}
  assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
  assert.deepEqual(await guard(),before60);
@@ -118,7 +124,7 @@ try{
  const owners60=roles60After.owners.filter((o:{k:string})=>!roles60.owners.some((p:{k:string})=>p.k===o.k));
  assert.ok(owners60.length>0&&owners60.every((o:{o:string})=>o.o===OWNER),'every new 0059/0060/0061 object is owner-owned');
  assert.equal((await q('SELECT count(*)::int n FROM rental_terms_bundles'))[0].n,1);
- for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests','staff_order_drafts','rental_terms_reconsents'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty: nothing is backfilled or emailed');
+ for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests','staff_order_drafts','rental_terms_reconsents'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,t==='customer_profiles'?1:0,t+' starts empty: nothing is backfilled or emailed');
  const ops=DB+'_operations';assert.equal((await q("SELECT has_function_privilege($1,'staff_inbox_list(text[],boolean,timestamptz,uuid,integer)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0060 grant step');
  const grantsClient=await owner.connect();try{const g=await applyProductionStaffDeltaGrants(grantsClient,DB,OWNER);assert.equal(g.status,'PRODUCTION_STAFF_DELTA_GRANTS_INSTALLED');await staffDeltaGrantProof(grantsClient,ops);}finally{grantsClient.release();}
  for(const fn of STAFF_NOTIFICATION_FUNCTIONS)assert.equal((await q("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[ops,fn]))[0].ok,true,fn);

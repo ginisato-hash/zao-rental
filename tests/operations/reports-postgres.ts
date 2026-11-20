@@ -84,6 +84,22 @@ try{
   const o=new ReportsService(new OperationsContext(ops!.operationsPool,x.roles.authPool,(await x.login('reports-other@example.invalid')).identity));
   await assert.rejects(o.run({type:'bookings',stores:[store]}),{code:'FORBIDDEN'});
  });
+ await check('SNAP-01: a report read under a scope narrowed or ended mid-read returns nothing (fail closed)',async()=>{
+  const mk=async(email:string)=>{await writeAccount(x.roles.authPool,x.bp,undefined,{email,password:x.password,displayName:'SYNTHETIC Snap',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:[store as 'ONSEN_BASE',other as 'ONSEN_BASE'],permissions:{}});return (await x.login(email)).identity;};
+  // The mutation runs right after the first authorization of the read (before any row is read) and is undone afterwards.
+  const race=(identity:{subject:string;sessionId:string},mutate:()=>Promise<unknown>)=>{let calls=0;return new (class extends OperationsContext{override async authorize(...a:Parameters<OperationsContext['authorize']>){const r=await super.authorize(...a);if(++calls===1)await mutate();return r;}})(ops!.operationsPool,x.roles.authPool,identity);};
+  const refusedCode=async(read:()=>Promise<unknown>)=>{try{await read();return 'RETURNED';}catch(e){return (e as {code?:string}).code??'ERROR';}};
+  const dropStation=(id:{subject:string},station:string)=>()=>x.db.pool.query('DELETE FROM staff_store_access WHERE staff_id=$1 AND store_id=$2',[id.subject,station]);
+  const denyView=(id:{subject:string})=>()=>x.db.pool.query("INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,'BOOKING_VIEW',false) ON CONFLICT(staff_id,permission) DO UPDATE SET allowed=false",[id.subject]);
+  const endSession=(id:{sessionId:string})=>()=>x.db.pool.query('DELETE FROM auth_session WHERE id=$1',[id.sessionId]);
+  let n=0;for(const type of ['bookings','money'] as const)for(const [kind,mutate] of [['station',dropStation],['permission',denyView],['session',endSession]] as const){
+   const id=await mk(`snap-reports-${n++}@example.invalid`);const code=await refusedCode(()=>new ReportsService(race(id,(mutate as (i:typeof id,st:string)=>()=>Promise<unknown>)(id,other))).run({type,stores:[store,other],from:'2035-01-01',to:'2035-01-31'}));
+   assert.ok(['AUTHORIZATION_CHANGED','FORBIDDEN','UNAUTHENTICATED'].includes(code),`${type}/${kind}: refused, got ${code}`);
+  }
+  const id=await mk('snap-reports-after@example.invalid');await dropStation(id,other)();const plain=new ReportsService(new OperationsContext(ops!.operationsPool,x.roles.authPool,id));
+  for(const type of ['pickups','returns','money'] as const){const q={type,stores:[store],from:'2035-01-01',to:'2035-01-31'};assert.deepEqual((await plain.run(q)).totals,(await reports.run(q)).totals,type+': the remaining station reads normally');}
+  await assert.rejects(plain.run({type:'bookings',stores:[store,other],from:'2035-01-01',to:'2035-01-31'}),{code:'FORBIDDEN'});
+ });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,700),at:(e as Error).stack?.split('\n').filter(l=>/reports|context\.ts/.test(l)).slice(0,5).join(' | ')}));}
 finally{await ops?.close();await custody?.close();await x.close();}

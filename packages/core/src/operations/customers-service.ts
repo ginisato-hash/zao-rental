@@ -1,5 +1,6 @@
 import {FlowError,flowId} from '../../../contracts/src/rental-flow';
 import type {OperationsContext} from './context';
+import {EXPORT_MAX,exportBound} from './exports';
 import {ORDER_BASE_SQL,ORDER_ROW_SQL,type OrderRow} from './orders-service';
 
 // Customers (Issue #47 consolidated order §5): a read projection over VISIBLE bookings only, plus one explicit link
@@ -19,15 +20,16 @@ export class CustomersService{
  constructor(private ctx:OperationsContext){}
 
  /** Booqable Customers list: search, server total and paging. One row per customer key, built from visible bookings. */
- async list(q:{search?:unknown;page?:unknown;pageSize?:unknown}){
+ async list(q:{search?:unknown;page?:unknown;pageSize?:unknown},opts:{all?:boolean}={}){
   let disclosed:string[]=[];const search=typeof q.search==='string'?q.search.trim().slice(0,80).replace(/[%_\\]/g,m=>'\\'+m):'';
-  const page=q.page===undefined?1:Number(q.page),size=q.pageSize===undefined?25:Number(q.pageSize);
-  if(!Number.isInteger(page)||page<1||page>10000||!Number.isInteger(size)||size<1||size>100)throw new FlowError('INVALID_INPUT',422);
+  // opts.all (CSV export): every customer matching the search in one snapshot; over EXPORT_MAX the export is refused.
+  const page=opts.all?1:q.page===undefined?1:Number(q.page),size=opts.all?EXPORT_MAX:q.pageSize===undefined?25:Number(q.pageSize);
+  if(!opts.all&&(!Number.isInteger(page)||page<1||page>10000||!Number.isInteger(size)||size<1||size>100))throw new FlowError('INVALID_INPUT',422);
   const out=await this.ctx.snapshot('BOOKING_VIEW',[],async(c,principal)=>{const stores=[...principal.storeIds] as string[];disclosed=stores;
    const grouped=`${VISIBLE}, g AS (SELECT v.key,(array_agg(v.contact->>'displayName' ORDER BY v.created_at DESC))[1] name,(array_agg(v.contact->>'email' ORDER BY v.created_at DESC))[1] email,
      count(*)::int bookings,max(v.start_date)::text last_start,bool_and(v.customer_id IS NULL) legacy FROM v GROUP BY v.key)`;
    const where=`WHERE $2='' OR g.name ILIKE '%'||$2||'%' OR g.email ILIKE '%'||$2||'%'`;
-   const total=Number((await c.query(`${grouped} SELECT count(*)::int n FROM g ${where}`,[stores,search])).rows[0].n);
+   const total=Number((await c.query(`${grouped} SELECT count(*)::int n FROM g ${where}`,[stores,search])).rows[0].n);if(opts.all)exportBound(total);
    const rows=(await c.query(`${grouped} SELECT g.key,g.name,g.email,g.bookings,g.last_start "lastStart",g.legacy FROM g ${where} ORDER BY g.last_start DESC NULLS LAST,g.key LIMIT ${size} OFFSET ${(page-1)*size}`,[stores,search])).rows;
    return {total,page,pageSize:size,rows};
   });

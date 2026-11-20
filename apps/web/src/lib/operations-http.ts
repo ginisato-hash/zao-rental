@@ -16,6 +16,8 @@ import {InventoryRead} from '../../../../packages/core/src/operations/inventory-
 import {CustomersService} from '../../../../packages/core/src/operations/customers-service';
 import {CalendarService} from '../../../../packages/core/src/operations/calendar-service';
 import {ReportsService,reportCsv} from '../../../../packages/core/src/operations/reports-service';
+import {listCsv} from '../../../../packages/core/src/operations/list-exports';
+import {csvLang} from '../../../../packages/core/src/operations/exports';
 import {OperationsConsole} from '../../../../packages/core/src/operations/console-service';
 import {ManifestService} from '../../../../packages/core/src/operations/manifest-service';
 import {FieldAcceptance} from '../../../../packages/core/src/operations/field-acceptance';
@@ -33,8 +35,15 @@ export function operationsHandler(state:(headers:Headers)=>Promise<StaffState>,f
  let result:unknown;
  if(request.method==='GET'){
   const customerKey=/^\/customers\/(?:legacy(?::|%3A)[0-9a-f-]{36}|[0-9a-f-]{36})$/i.test(path)?decodeURIComponent(path.slice('/customers/'.length)):null;
-  const allowed=/^\/assets\/[0-9a-f-]{36}$/.test(path)?[]:customerKey?[]:path==='/customers'?['search','page','pageSize']:/^\/products\/[0-9a-f-]{36}$/.test(path)?['store']:path==='/products'?['store','family','search']:/^\/orders\/[0-9a-f-]{36}$/.test(path)?[]:path==='/orders'?['stores','tab','status','payment','from','to','direction','late','search','page','pageSize']:path==='/dashboard'?['store','range','date']:path==='/work-list'?['store','from','to']:path==='/calendar'?['store','from','days','family','page','pageSize']:path==='/reports'?['type','stores','from','to','format']:path==='/inbox'?['stores','openOnly','before','beforeId','limit']:path==='/inbox/preference'?[]:path==='/exceptions'?['store','type','severity','ageHours','status','beforeTime','beforeId']:path==='/field-acceptance'?['runId','store']:path==='/real-data'?[]:path==='/manifest'?['store','date','section','cursor','pageSize']:['id','store'];
+  const allowed=/^\/assets\/[0-9a-f-]{36}$/.test(path)?[]:customerKey?[]:path==='/customers'?['search','page','pageSize','format','lang']:/^\/products\/[0-9a-f-]{36}$/.test(path)?['store']:path==='/products'?['store','family','search','format','lang']:/^\/orders\/[0-9a-f-]{36}$/.test(path)?[]:path==='/orders'?['stores','tab','status','payment','from','to','direction','late','search','page','pageSize','format','lang']:path==='/dashboard'?['store','range','date']:path==='/work-list'?['store','from','to']:path==='/calendar'?['store','from','days','family','page','pageSize']:path==='/reports'?['type','stores','from','to','format']:path==='/inbox'?['stores','openOnly','before','beforeId','limit']:path==='/inbox/preference'?[]:path==='/exceptions'?['store','type','severity','ageHours','status','beforeTime','beforeId']:path==='/field-acceptance'?['runId','store']:path==='/real-data'?[]:path==='/manifest'?['store','date','section','cursor','pageSize']:['id','store'];
   if([...url.searchParams.keys()].some(k=>!allowed.includes(k)))throw new FlowError('INVALID_QUERY',422);
+  // Orders / Customers / Inventory CSV: the screen's own read and filters, every page, current permission and stations;
+  // paging keys are not accepted with it. Private, never cached, saved as a file.
+  if(['/orders','/customers','/products'].includes(path)&&(url.searchParams.has('format')||url.searchParams.has('lang'))){
+   if(url.searchParams.get('format')!=='csv'||url.searchParams.has('page')||url.searchParams.has('pageSize'))throw new FlowError('INVALID_QUERY',422);
+   const csv=await listCsv(ctx,path,url.searchParams,csvLang(url.searchParams.get('lang')??undefined));
+   return new Response(csv.body,{headers:{...headers,'Content-Type':'text/csv; charset=utf-8','Content-Disposition':`attachment; filename="${csv.name.replace(/[^A-Za-z0-9_-]/g,'')}.csv"`,'X-Content-Type-Options':'nosniff'}});
+  }
   if(path==='/reports'){const g=(k:string)=>url.searchParams.get(k)??undefined;const format=g('format');if(format!==undefined&&format!=='csv')throw new FlowError('INVALID_QUERY',422);const r=await new ReportsService(ctx).run({type:g('type'),stores:g('stores'),from:g('from'),to:g('to')});
    // CSV: the same rows as the screen, same permission; private, never cached.
    if(format==='csv')return new Response(reportCsv(r),{headers:{...headers,'Content-Type':'text/csv; charset=utf-8','Content-Disposition':`attachment; filename="report-${r.type}.csv"`}});result=r;}

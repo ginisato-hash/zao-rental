@@ -1,6 +1,7 @@
 import {FlowError} from '../../../contracts/src/rental-flow';
 import {utcDate} from '../../../contracts/src/hold';
 import type {OperationsContext} from './context';
+import {EXPORT_MAX,exportBound} from './exports';
 import {evaluateShortage,SHORTAGE_BUDGET,SHORTAGE_COLUMNS_SQL,SHORTAGE_JOIN_SQL,SHORTAGE_STATUS_SQL,type ShortageCandidate,type ShortageState} from './shortage';
 
 // Orders and Dashboard reads (Issue #47 §2B/§2C, consolidated order §3.1–3.2). Booqable order list and dashboard structure,
@@ -92,7 +93,7 @@ export class OrdersService{
 
  /** Booqable Orders. direction=out applies the date range and station to pickup, direction=back to return; without it the
   * range is on pickup and the station on either. late=out|back narrows the Late tab; without it Late lists both kinds. */
- async list(q:{stores:unknown;tab?:unknown;status?:unknown;payment?:unknown;from?:unknown;to?:unknown;direction?:unknown;late?:unknown;search?:unknown;page?:unknown;pageSize?:unknown}){
+ async list(q:{stores:unknown;tab?:unknown;status?:unknown;payment?:unknown;from?:unknown;to?:unknown;direction?:unknown;late?:unknown;search?:unknown;page?:unknown;pageSize?:unknown},opts:{all?:boolean}={}){
   const stores=this.stores(q.stores),tab=(q.tab??'all') as OrderTab;if(!['all','upcoming','late','shortage'].includes(tab))throw new FlowError('INVALID_INPUT',422);
   const statuses=q.status?String(q.status).split(',').filter(Boolean):[];if(statuses.some(s=>!ORDER_STATUS_VALUES.includes(s as OrderStatus)))throw new FlowError('INVALID_INPUT',422);
   const payments=q.payment?String(q.payment).split(',').filter(Boolean):[];if(payments.some(p=>!/^[A-Z_]{1,40}$/.test(p)))throw new FlowError('INVALID_INPUT',422);
@@ -100,8 +101,9 @@ export class OrdersService{
   const direction=q.direction===undefined||q.direction===''?null:q.direction;if(direction!==null&&direction!=='out'&&direction!=='back')throw new FlowError('INVALID_INPUT',422);
   const late=q.late===undefined||q.late===''?null:q.late;if(late!==null&&late!=='out'&&late!=='back')throw new FlowError('INVALID_INPUT',422);
   const search=typeof q.search==='string'?q.search.trim().slice(0,80):'';
-  const page=q.page===undefined?1:Number(q.page),size=q.pageSize===undefined?25:Number(q.pageSize);
-  if(!Number.isInteger(page)||page<1||page>10000||!Number.isInteger(size)||size<1||size>100)throw new FlowError('INVALID_INPUT',422);
+  // opts.all (CSV export): every row of these filters in one snapshot, no paging; over EXPORT_MAX the whole export is refused.
+  const page=opts.all?1:q.page===undefined?1:Number(q.page),size=opts.all?EXPORT_MAX:q.pageSize===undefined?25:Number(q.pageSize);
+  if(!opts.all&&(!Number.isInteger(page)||page<1||page>10000||!Number.isInteger(size)||size<1||size>100))throw new FlowError('INVALID_INPUT',422);
   return this.ctx.snapshot('BOOKING_VIEW',stores,async c=>{
    const today=await this.today(c as never);
    const dateCol=direction==='back'?'s.end_date':'s.start_date';
@@ -118,7 +120,7 @@ export class OrdersService{
    // With shortage is judged only when asked for (it runs the allocation planner per order, within a fixed budget).
    const judged=tab==='shortage'?await this.shortage(c as never,where,args,'s.start_date ASC,s.id'):null;
    const shortageCounts=judged?{shortage:judged.filter(j=>j.state!=='INDETERMINATE').length,shortageIndeterminate:judged.filter(j=>j.state==='INDETERMINATE').length}:{shortage:null,shortageIndeterminate:null};
-   const total=judged?judged.length:Number({all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n}[tab as 'all'|'upcoming'|'late']);
+   const total=judged?judged.length:Number({all:counts.all_n,upcoming:counts.upcoming_n,late:counts.late_n}[tab as 'all'|'upcoming'|'late']);if(opts.all)exportBound(total);
    let rows:OrderRow[];
    if(judged){const slice=judged.slice((page-1)*size,page*size),byId=new Map(slice.map(j=>[j.id,j.state]));
     const found=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v FROM s WHERE s.id=ANY($3::uuid[])`,[args[0],args[1],slice.map(j=>j.id)])).rows.map(r=>r.v as OrderRow);

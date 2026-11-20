@@ -9,6 +9,10 @@ import {writeAccount} from '../../packages/auth/src/accounts';
 import {OperationsContext} from '../../packages/core/src/operations/context';
 import {OrdersService} from '../../packages/core/src/operations/orders-service';
 import {AmendmentService} from '../../packages/core/src/operations/amendment-service';
+import {CustomersService} from '../../packages/core/src/operations/customers-service';
+import {InventoryRead} from '../../packages/core/src/operations/inventory-read';
+import {listCsv} from '../../packages/core/src/operations/list-exports';
+import {csvCell,csvLang,exportBound,EXPORT_MAX,toCsv} from '../../packages/core/src/operations/exports';
 
 // Issue #47 §2B/§2C: Booqable-style Orders and Dashboard reads over real rental facts. Synthetic local PostgreSQL only.
 const x=await flowFixture();let custody:Awaited<ReturnType<typeof provisionCustodyRole>>|undefined,ops:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined,stage='setup',count=0,failed=false;
@@ -170,6 +174,41 @@ try{
   for(const bad of [{from:'2035-01-01',to:'2035-02-01'},{from:'2035-01-10',to:'2035-01-01'},{from:'x',to:'2035-01-01'},{from:'2035-02-29',to:'2035-03-01'},{from:'2035-01-01',to:undefined}])await assert.rejects(orders.workList({store,...bad}),{code:'INVALID_INPUT'},JSON.stringify(bad));
   // Another station's staff is refused; no rows for a station outside the actor's scope.
   if(store!=='ONSEN_BASE')await assert.rejects(onsen.workList({store,from:'2035-01-01',to:'2035-01-05'}),{code:'FORBIDDEN'});
+ });
+ await check('CSV export (Orders / Customers / Inventory): the screen read with the same filters, every page, current scope; formulas stay text; header in the staff language; bounded',async()=>{
+  const ctx=new OperationsContext(ops!.operationsPool,x.roles.authPool,x.signed.identity);
+  // Rows of a CSV (BOM, CRLF, quoted cells) → arrays of strings.
+  const parse=(body:string)=>{assert.ok(body.startsWith('\uFEFF'),'BOM');assert.ok(body.endsWith('\r\n'),'CRLF');const out:string[][]=[];let row:string[]=[],cell='',q=false;
+   for(let i=1;i<body.length;i++){const ch=body[i]!;if(q){if(ch==='"'&&body[i+1]==='"'){cell+='"';i++;}else if(ch==='"')q=false;else cell+=ch;}
+    else if(ch==='"')q=true;else if(ch===','){row.push(cell);cell='';}else if(ch==='\r'&&body[i+1]==='\n'){row.push(cell);out.push(row);row=[];cell='';i++;}else cell+=ch;}
+   return out;};
+  // Orders: every filter combination the screen sends; the CSV has exactly the list's rows (all pages, same order).
+  for(const q of [{stores:store},{stores:store,tab:'upcoming'},{stores:store,tab:'late'},{stores:store,status:'RESERVED'},{stores:store,from:'2035-01-04',to:'2035-01-31',direction:'back'},{stores:store,search:out.booking.id.slice(0,8)}]){
+   const params=new URLSearchParams(q),list=await orders.list({...q,stores:[store]} as never),pages:string[]=[];
+   for(let page=1;page<=Math.ceil(list.total/1)||page===1;page++){const r=await orders.list({...q,stores:[store],page:String(page),pageSize:'1'} as never);pages.push(...r.rows.map(o=>o.ref));if(page>=Math.max(1,list.total))break;}
+   const csv=parse((await listCsv(ctx,'/orders',params,'ja')).body);assert.deepEqual(csv[0]!.slice(0,3),['予約番号','お客様','状態'],JSON.stringify(q));
+   assert.deepEqual(csv.slice(1).map(r=>r[0]),pages,'CSV rows = all pages of the screen '+JSON.stringify(q));
+  }
+  const all=parse((await listCsv(ctx,'/orders',new URLSearchParams({stores:store}),'en')).body);assert.equal(all[0]![0],'Order','English header');
+  const listed=await orders.list({stores:[store],pageSize:'100'});assert.deepEqual(all.slice(1).map(r=>r[1]),listed.rows.map(r=>r.customer??''),'customer cells = screen names (text cells, see csvCell cases)');
+  assert.deepEqual(all.slice(1).map(r=>[r[2],r[8]===''?null:Number(r[8]),r[9]===''?null:r[9]]),listed.rows.map(r=>[r.status,r.totalJpy,r.paymentStatus]),'status/total/payment as the screen’s codes and numbers');
+  assert.ok(all.slice(1).every(r=>!r.includes(out.booking.id)),'internal ids are not exported');
+  // Customers: same rows as all pages of the list; email shown on the screen is included.
+  const cl=await new CustomersService(ctx).list({pageSize:'100'});const cc=parse((await listCsv(ctx,'/customers',new URLSearchParams(),'ja')).body);
+  assert.equal(cc.length-1,cl.total);assert.deepEqual(cc.slice(1).map(r=>r[1]),cl.rows.map(r=>r.email??''));assert.ok(cc.slice(1).every(r=>!r[0]!.startsWith('=')),'no live formula in names');
+  // Inventory: same products and counts as the screen for the station and family.
+  const il=await new InventoryRead(ctx).list({store});const ic=parse((await listCsv(ctx,'/products',new URLSearchParams({store}),'ja')).body);
+  assert.equal(ic.length-1,il.rows.length);assert.deepEqual(ic.slice(1).map(r=>[r[1],Number(r[6]),Number(r[12])]),il.rows.map(p=>[p.code,p.counts.availableNow,p.counts.registered]));
+  // Scope: another station's manager gets nothing from this station (orders/inventory refused; customers only its own).
+  const onsenCtx=new OperationsContext(ops!.operationsPool,x.roles.authPool,(await x.login('orders-onsen@example.invalid')).identity);
+  if(store!=='ONSEN_BASE'){await assert.rejects(listCsv(onsenCtx,'/orders',new URLSearchParams({stores:store}),'ja'),{code:'FORBIDDEN'});
+   const oc=parse((await listCsv(onsenCtx,'/customers',new URLSearchParams(),'ja')).body),ol=await new CustomersService(onsenCtx).list({pageSize:'100'});
+   assert.deepEqual(oc.slice(1).map(r=>r[1]),ol.rows.map(r=>r.email??''),'customers CSV = that manager’s own customer list only');
+   await assert.rejects(listCsv(onsenCtx,'/products',new URLSearchParams({store}),'ja'),{code:'FORBIDDEN'});}
+  // Unit: neutralizing, quoting, numbers, booleans, language and the bound.
+  assert.deepEqual(['=1','+1','-x','@a','\tx','a,b','a"b','line\nbreak','plain',-5,true,null].map(csvCell),[`"'=1"`,`"'+1"`,`"'-x"`,`"'@a"`,`"'\tx"`,'"a,b"','"a""b"','"line\nbreak"','plain','-5','1','']);
+  assert.equal(toCsv([{key:'k',ja:'キー',en:'Key',value:(r:{v:number})=>r.v}],[{v:1}],'en'),'\uFEFFKey\r\n1\r\n');
+  assert.equal(csvLang(undefined),'ja');assert.throws(()=>csvLang('fr'),{code:'INVALID_QUERY'});exportBound(EXPORT_MAX);assert.throws(()=>exportBound(EXPORT_MAX+1),{code:'EXPORT_TOO_LARGE'});
  });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,500),at:(e as Error).stack?.split('\n').filter(l=>/orders-postgres|amendment-service|context\.ts/.test(l)).slice(0,4).join(' | ')}));}

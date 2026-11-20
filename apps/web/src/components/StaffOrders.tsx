@@ -4,6 +4,8 @@ import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter,useSearchParams} from 'next/navigation';
 import {st,type StaffLocale} from './staff-i18n';
+import {useCsvDownload} from './use-csv-download';
+import {CsvButton} from './CsvButton';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
 import {STORE_LABEL} from './guest-format';
 import {ORDER_STATUSES,statusLabel,statusTone,paymentLabel,fmtDate,fmtYen} from './order-labels';
@@ -48,9 +50,12 @@ export function StaffOrders({locale:serverLocale,stamp,stores,canCreate,more}:{l
    if(!r.ok)throw Error();const v=await r.json() as Data;if(ticket===gen.current){setLoaded({query:query+'|'+stamp,data:v});setFailedQuery(null);}}catch{if(ticket===gen.current)setFailedQuery(query+'|'+stamp);}
  });},[query,stamp,reload]);
  const pages=data?Math.max(1,Math.ceil(data.total/data.pageSize)):1;
+ // CSV: the same filters as the list (all pages), saved only for this query and session (REP-02).
+ const csv=useCsvDownload(query+'|'+stamp,stamp),csvQuery=new URLSearchParams(query);csvQuery.delete('page');csvQuery.delete('pageSize');csvQuery.set('format','csv');csvQuery.set('lang',locale);
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'orders')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>
+   {data&&<CsvButton csv={csv} url={'/api/operations/orders?'+csvQuery} filename={`orders-${data.today}.csv`}/>}
    {canCreate&&<Link className="sx-btn sx-btn--primary" href="/staff/orders/new">{st(locale,'newOrder')}</Link>}</div>
   {more&&(more.quotes||more.holds||more.recommendations||more.amendments)&&<nav className="ox-related" aria-label={tx('related')}>{more.quotes&&<Link href="/staff/quotes">{tx('quotes')}</Link>}{more.holds&&<Link href="/staff/holds">{tx('holds')}</Link>}{more.recommendations&&<Link href="/staff/recommendations">{tx('recommendations')}</Link>}{more.amendments&&<Link href="/staff/amendments">{tx('amendments')}</Link>}</nav>}
   <div className="sx-seg ox-tabs" role="tablist" aria-label={st(locale,'orders')}>{(['all','upcoming','late','shortage'] as const).map(t=><button key={t} type="button" role="tab" aria-selected={tab===t} onClick={()=>set({tab:t==='all'?'':t,late:''})}>{tx(t)}{data&&data.counts[t]!==null&&data.counts[t]!==undefined?` ${data.counts[t]}`:''}</button>)}</div>

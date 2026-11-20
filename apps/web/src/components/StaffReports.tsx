@@ -4,6 +4,7 @@ import {useRouter,useSearchParams} from 'next/navigation';
 import {st} from './staff-i18n';
 import {useStaffLocale} from './staff-locale';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
+import {useCsvDownload} from './use-csv-download';
 import {STORE_LABEL} from './guest-format';
 import {fmtDate,fmtYen} from './order-labels';
 import './staff-orders.css';
@@ -42,19 +43,9 @@ export function StaffReports({stamp,stores}:{stamp:string;stores:string[]}){
  // Rows belong to the exact query that produced them; a failed refresh hides them too.
  const data=loaded?.key===key&&failed!==key?loaded.data:null;
  const cell=(c:Column,v:string|number|undefined)=>c.kind==='date'?fmtDate(locale,String(v)):c.kind==='station'?STORE_LABEL[String(v)]??String(v):c.kind==='jpy'?fmtYen(locale,Number(v)):String(v??0);
- // REP-02: a CSV belongs to the (query, stamp) it was requested for and to this mounted page. It is saved only if, after the
- // response and again after the body, the page is still mounted, still shows that same query under the same session, and no
- // newer CSV request started; otherwise it is discarded (and the request aborted). One CSV request at a time.
- const live=useRef({key,mounted:true}),csvGen=useRef(0),csvAbort=useRef<AbortController|null>(null),[csvBusy,setCsvBusy]=useState(false);
- useEffect(()=>{live.current.key=key;csvGen.current++;csvAbort.current?.abort();},[key]);
- useEffect(()=>{const l=live.current,g=csvGen,ab=csvAbort;l.mounted=true;return()=>{l.mounted=false;g.current++;ab.current?.abort();};},[]);
- async function download(){if(csvBusy)return;const ticket=++csvGen.current,startKey=key,abort=new AbortController();csvAbort.current?.abort();csvAbort.current=abort;
-  const current=()=>live.current.mounted&&live.current.key===startKey&&csvGen.current===ticket;setCsvBusy(true);
-  try{const r=await fetch('/api/operations/reports?'+query+'&format=csv',{cache:'no-store',headers:{'x-zao-session':stamp},signal:abort.signal});
-   if(!current())return;if(r.status===401||r.status===403){invalidateStaffView();return;}if(!r.ok){setFailed(startKey);return;}
-   const blob=await r.blob();if(!current())return;
-   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`report-${type}-${data?.from??'now'}-${data?.to??''}.csv`.replace(/-\.csv$/,'.csv');document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
-  }catch{/* aborted or failed: nothing is saved */}finally{if(live.current.mounted)setCsvBusy(false);}}
+ // REP-02 (shared with the Orders / Customers / Inventory CSVs): saved only for this query, session and mounted page.
+ const csv=useCsvDownload(key,stamp),csvBusy=csv.busy;
+ const download=()=>csv.download('/api/operations/reports?'+query+'&format=csv',`report-${type}-${data?.from??'now'}-${data?.to??''}.csv`.replace(/-\.csv$/,'.csv'));
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'reports')}</h1>{data&&<button type="button" className="sx-btn" disabled={csvBusy} aria-busy={csvBusy} onClick={()=>void download()}>{tx('csv')}</button>}</div>
   <div className="sx-seg ox-tabs" role="tablist" aria-label={tx('type')}>{TYPES.map(t=><button key={t} type="button" role="tab" aria-selected={type===t} onClick={()=>set({type:t==='bookings'?'':t})}>{tx(t)}</button>)}</div>
@@ -63,7 +54,7 @@ export function StaffReports({stamp,stores}:{stamp:string;stores:string[]}){
    {stores.length>1&&<div className="sx-seg" role="group" aria-label={tx('station')}>{stores.map(s=><button key={s} type="button" aria-pressed={selected.includes(s)} onClick={()=>{const next=selected.includes(s)?selected.filter(x=>x!==s):[...selected,s];set({stores:next.length&&next.length<stores.length?next.join(','):''});}}>{STORE_LABEL[s]??s}</button>)}</div>}
    {type!=='care'&&<><label className="sx-field">{tx('from')}<input type="date" value={get('from')||data?.from||''} onChange={e=>set({from:e.target.value})}/></label><label className="sx-field">{tx('to')}<input type="date" value={get('to')||data?.to||''} onChange={e=>set({to:e.target.value})}/></label><span className="sx-help">{tx('range')}</span></>}
   </div>
-  {failed===key&&<p className="sx-alert" role="alert">{tx('failed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
+  {(failed===key||csv.failed)&&<p className="sx-alert" role="alert">{tx('failed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
   {data&&!data.rows.length&&<p className="sx-empty">{tx('none')}</p>}
   {data&&data.rows.length>0&&<div className="sx-card ox-table-wrap"><table className="sx-table ox-table" aria-label={tx(type)}>
    <thead><tr>{data.columns.map(c=><th key={c.key} className={c.kind==='count'||c.kind==='jpy'?'ox-num':undefined}>{tx(c.key as 'date')}</th>)}</tr></thead>

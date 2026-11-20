@@ -216,6 +216,28 @@ try{
   assert.equal(shown,2,'without a session: none');
   assert.ok(reads.length<=40,'bounded reads while hidden: '+reads.length);await ctx.close();
  });
+ await check('CSV export: Orders, Customers and Inventory save the screen’s full row set in the staff language, never cached; a CSV requested before a filter change is never saved',async()=>{
+  const {ctx,p}=await login('accept-admin@example.invalid');let session='';p.on('request',r=>{const h=r.headers()['x-zao-session'];if(h&&r.url().includes('/api/operations/'))session=h;});
+  const rows=(body:string)=>body.replace(/^\uFEFF/,'').split('\r\n').filter(Boolean);
+  for(const [path,api,head,total] of [['/staff/orders','orders','予約番号',(j:{total:number})=>j.total],['/staff/customers','customers','お名前',(j:{total:number})=>j.total],['/staff/inventory','products','店舗',(j:{rows:unknown[]})=>j.rows.length]] as const){
+   const listed=p.waitForResponse(r=>new URL(r.url()).pathname==='/api/operations/'+api&&!r.url().includes('format=csv')&&r.ok());await p.goto(path);const listResponse=await listed;const json=await listResponse.json();
+   const button=p.locator('main').getByRole('button',{name:'CSVを保存'});await button.waitFor();
+   const dl=p.waitForEvent('download');const csvResponse=p.waitForResponse(r=>r.url().includes('format=csv'));await button.click();const [download,res]=await Promise.all([dl,csvResponse]);
+   assert.match(res.headers()['cache-control']??'',/no-store/,path+' no-store');assert.match(res.headers()['content-disposition']??'',/^attachment; filename="[a-z0-9_-]+\.csv"$/i,path);
+   const body=await (await import('node:fs/promises')).readFile((await download.path())!,'utf8');const lines=rows(body);
+   assert.equal(lines[0]!.split(',')[0],head,path+' Japanese header');assert.equal(lines.length-1,(total as (j:unknown)=>number)(json),path+' every row of the screen’s filters (all pages)');
+   const url=new URL(res.url());url.searchParams.set('page','1');const paged=await ctx.request.get(url.toString(),{headers:{'x-zao-session':session}});assert.equal(paged.status(),422,path+' paging keys are refused with CSV');
+  }
+  // English header follows the staff language.
+  const en=new URL('/api/operations/customers?format=csv&lang=en',origin);const enBody=await (await ctx.request.get(en.toString(),{headers:{'x-zao-session':session}})).text();assert.equal(rows(enBody)[0]!.split(',')[0],'Name');
+  // REP-02 on the new screens: the CSV is held, the filter changes, the late 200 saves nothing.
+  let downloads=0;p.on('download',()=>{downloads++;});let release=()=>{};const held=new Promise<void>(r=>{release=r;});
+  await p.goto('/staff/orders');const button=p.locator('main').getByRole('button',{name:'CSVを保存'});await button.waitFor();
+  await p.route(/format=csv/,async r=>{await held;await r.continue();});await button.click();
+  await p.getByRole('tab',{name:/今後|Upcoming/}).click();await p.waitForURL(u=>u.searchParams.get('tab')==='upcoming');
+  release();await p.waitForTimeout(1500);await p.unroute(/format=csv/);assert.equal(downloads,0,'no CSV after the filter changed');
+  await ctx.close();
+ });
  await check('new order: staff API with the session header only, no browser storage, explicit customer choice; real route refuses without commercial composition',async()=>{
   const seen:{url:string;method:string;session:string|null;body:string|null}[]=[];page.on('request',r=>{if(/\/api\/(guest|staff-orders)/.test(r.url()))seen.push({url:r.url(),method:r.method(),session:r.headers()['x-zao-session']??null,body:r.postData()});});
   await page.goto('/staff/orders');const contextAnswer=page.waitForResponse(r=>r.url().endsWith('/api/staff-orders/context'));await page.locator('a[href="/staff/orders/new"]').first().click();await page.waitForURL('**/staff/orders/new');

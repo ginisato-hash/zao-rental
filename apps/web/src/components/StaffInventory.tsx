@@ -4,6 +4,8 @@ import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter,useSearchParams} from 'next/navigation';
 import {st,type StaffLocale} from './staff-i18n';
+import {useCsvDownload} from './use-csv-download';
+import {CsvButton} from './CsvButton';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
 import {STORE_LABEL} from './guest-format';
 import './staff-orders.css';
@@ -35,9 +37,11 @@ export function StaffInventory({locale:serverLocale,stamp,stores,can}:{locale:St
    if(!r.ok)throw Error();const v=await r.json() as {rows:Row[]};if(ticket===gen.current){setLoaded({key:query+'|'+stamp,rows:v.rows});setFailedKey(null);}}catch{if(ticket===gen.current)setFailedKey(query+'|'+stamp);}
  });},[query,store,stamp,reload]);
  const cols:(keyof Counts)[]=['availableNow','onHand','out','care','maintenance','incoming','registered'];
+ const csv=useCsvDownload(viewKey,stamp),csvQuery=new URLSearchParams(query);csvQuery.set('format','csv');csvQuery.set('lang',locale);
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
   <div className="ox-head"><h1>{st(locale,'inventory')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>
+   {rows&&<CsvButton csv={csv} url={'/api/operations/products?'+csvQuery} filename={`inventory-${store}.csv`}/>}
    {can.edit&&<Link className="sx-btn" href="/admin/inventory">{tx('stocktake')}</Link>}
   </div>
   <p className="sx-help">{tx('note')}</p>

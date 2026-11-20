@@ -17,14 +17,13 @@ const jstToday=(now:Date)=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo
 
 export class CustomersService{
  constructor(private ctx:OperationsContext){}
- private async visibleStores(){return (await this.ctx.authorize('BOOKING_VIEW')).storeIds as string[];}
 
  /** Booqable Customers list: search, server total and paging. One row per customer key, built from visible bookings. */
  async list(q:{search?:unknown;page?:unknown;pageSize?:unknown}){
-  const stores=await this.visibleStores(),search=typeof q.search==='string'?q.search.trim().slice(0,80).replace(/[%_\\]/g,m=>'\\'+m):'';
+  let disclosed:string[]=[];const search=typeof q.search==='string'?q.search.trim().slice(0,80).replace(/[%_\\]/g,m=>'\\'+m):'';
   const page=q.page===undefined?1:Number(q.page),size=q.pageSize===undefined?25:Number(q.pageSize);
   if(!Number.isInteger(page)||page<1||page>10000||!Number.isInteger(size)||size<1||size>100)throw new FlowError('INVALID_INPUT',422);
-  return this.ctx.snapshot('BOOKING_VIEW',[],async c=>{
+  const out=await this.ctx.snapshot('BOOKING_VIEW',[],async(c,principal)=>{const stores=[...principal.storeIds] as string[];disclosed=stores;
    const grouped=`${VISIBLE}, g AS (SELECT v.key,(array_agg(v.contact->>'displayName' ORDER BY v.created_at DESC))[1] name,(array_agg(v.contact->>'email' ORDER BY v.created_at DESC))[1] email,
      count(*)::int bookings,max(v.start_date)::text last_start,bool_and(v.customer_id IS NULL) legacy FROM v GROUP BY v.key)`;
    const where=`WHERE $2='' OR g.name ILIKE '%'||$2||'%' OR g.email ILIKE '%'||$2||'%'`;
@@ -32,14 +31,15 @@ export class CustomersService{
    const rows=(await c.query(`${grouped} SELECT g.key,g.name,g.email,g.bookings,g.last_start "lastStart",g.legacy FROM g ${where} ORDER BY g.last_start DESC NULLS LAST,g.key LIMIT ${size} OFFSET ${(page-1)*size}`,[stores,search])).rows;
    return {total,page,pageSize:size,rows};
   });
+  await this.ctx.confirmScope('BOOKING_VIEW',disclosed);return out;
  }
 
  /** Customer detail: visible bookings of the profile (or the single legacy booking). A legacy key whose booking has since
   * been linked resolves to its current profile (still subject to visibility). */
  async detail(key:unknown){
   if(typeof key!=='string'||!(LEGACY.test(key)||UUID.test(key)))throw new FlowError('INVALID_INPUT',422);
-  const stores=await this.visibleStores();
-  return this.ctx.snapshot('BOOKING_VIEW',[],async c=>{
+  let disclosed:string[]=[];
+  const out=await this.ctx.snapshot('BOOKING_VIEW',[],async(c,principal)=>{const stores=[...principal.storeIds] as string[];disclosed=stores;
    let resolved=key;const legacy=LEGACY.exec(key);
    if(legacy){const linked=(await c.query('SELECT customer_id FROM customer_booking_links WHERE booking_id=$1',[legacy[1]])).rows[0];if(linked)resolved=linked.customer_id;}
    const ids=(await c.query(`${VISIBLE} SELECT v.id FROM v WHERE v.key=$2 ORDER BY v.start_date DESC,v.id`,[stores,resolved])).rows.map(r=>r.id as string);
@@ -49,6 +49,7 @@ export class CustomersService{
    const latest=orders.slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0]!;
    return {key:resolved,requestedKey:key,legacy:resolved.startsWith('legacy:'),name:latest.customer,email:latest.email,orders};
   });
+  await this.ctx.confirmScope('BOOKING_VIEW',disclosed);return out;
  }
 
  /** Link an unlinked legacy booking to the customer of another visible booking or profile. Idempotent per request key. */

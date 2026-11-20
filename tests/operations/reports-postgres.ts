@@ -54,14 +54,24 @@ try{
   const r=await reports.run({type:'returns',stores:[store],from:'2035-01-10',to:'2035-01-10'});assert.equal(r.totals.items,loans.length);
   const care=await reports.run({type:'care',stores:[store]});assert.equal(care.from,null);assert.equal(care.rows[0]!.awaitingInspection,loans.length);
  });
- await check('stations never double count: each station alone sums to both together',async()=>{
-  const day=await createdOn(a.booking.id);
-  for(const type of ['bookings','pickups','returns','money'] as const){
-   const both=await reports.run({type,stores:[store,other],from:'2035-01-01',to:'2035-01-31'}).catch(async()=>null);
-   const one=await reports.run({type,stores:[store],from:'2035-01-01',to:'2035-01-31'}),two=await reports.run({type,stores:[other],from:'2035-01-01',to:'2035-01-31'});
-   if(both)for(const k of Object.keys(both.totals))assert.equal(both.totals[k],one.totals[k]!+two.totals[k]!,type+' '+k);
+ await check('stations never double count: for every report type and every numeric column, both stations together = each alone (REP-01)',async()=>{
+  // The principal here is scoped to both stations, so the both-station read must succeed: a failure is a FAIL, never skipped.
+  const p=await new OperationsContext(ops!.operationsPool,x.roles.authPool,x.signed.identity).authorize('BOOKING_VIEW',[store,other]);assert.ok(p.storeIds.includes(store as never)&&p.storeIds.includes(other as never));
+  let compared=0;
+  for(const type of ['bookings','pickups','returns','money','care'] as const){
+   const range=type==='care'?{}:{from:'2035-01-01',to:'2035-01-31'};
+   const both=await reports.run({type,stores:[store,other],...range}),one=await reports.run({type,stores:[store],...range}),two=await reports.run({type,stores:[other],...range});
+   const numeric=both.columns.filter(c=>c.kind==='count'||c.kind==='jpy').map(c=>c.key);assert.ok(numeric.length>0,type+' has numeric columns');
+   assert.deepEqual(Object.keys(both.totals).sort(),[...numeric].sort(),type+' totals cover every numeric column');
+   for(const k of numeric){assert.equal(both.totals[k],one.totals[k]!+two.totals[k]!,type+' '+k);compared++;}
+   // Row level too: the rows of both stations are exactly the rows of each station (no row counted twice or dropped).
+   assert.equal(both.rows.length,one.rows.length+two.rows.length,type+' rows');
   }
-  void day;
+  assert.ok(compared>=10,'compared '+compared+' totals');console.log('REP-01 compared totals: '+compared);
+  // An other-station-only principal is still refused a both-station request.
+  await writeAccount(x.roles.authPool,x.bp,undefined,{email:'reports-other-only@example.invalid',password:x.password,displayName:'SYNTHETIC Reports Other',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:[other as 'ONSEN_BASE'],permissions:{}});
+  const otherOnly=new ReportsService(new OperationsContext(ops!.operationsPool,x.roles.authPool,(await x.login('reports-other-only@example.invalid')).identity));
+  await assert.rejects(otherOnly.run({type:'bookings',stores:[store,other],from:'2035-01-01',to:'2035-01-31'}),{code:'FORBIDDEN'});
  });
  await check('CSV has exactly the screen rows and columns; spreadsheet formulas are neutralised',async()=>{
   const r=await reports.run({type:'pickups',stores:[store],from:'2035-01-01',to:'2035-01-31'});const csv=reportCsv(r);

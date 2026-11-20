@@ -126,6 +126,28 @@ try{
   await p.getByRole('button',{name:'English'}).click();await p.getByLabel('Booking number or booking QR').waitFor();await p.getByRole('button',{name:'Open this booking'}).waitFor();
   await p.screenshot({path:`${shots}/scan-en-1440.png`});await ctx.close();
  });
+ await check('DOC-01: a document never shows the previous session’s booking or print button after a session switch on the same URL',async()=>{
+  await writeAccount(app!.roles.authPool,rootPrincipal,undefined,{active:true,role:'VIEWER',password,email:'accept-docb@example.invalid',displayName:'SYNTHETIC Docs B',scope:'ASSIGNED',storeIds:['ONSEN_BASE'],permissions:{BOOKING_VIEW:true}});
+  const a=await login('accept-admin@example.invalid'),b=await login('accept-docb@example.invalid');const cookiesA=await a.ctx.cookies(),cookiesB=await b.ctx.cookies();await b.ctx.close();
+  const p=a.p,url='/staff/documents?doc=booking&id='+confirmedId;await p.goto(url);
+  await p.getByText('SYNTHETIC Shell Confirmed').waitFor();await p.getByRole('button',{name:'印刷'}).waitFor();
+  // Session B (cannot see this MOUNTAIN booking) takes over the same tab; its answer for the same URL is held back.
+  let release=()=>{};const held=new Promise<void>(f=>{release=f;});
+  await p.route('**/api/operations/orders/'+confirmedId,async r=>{await held;await r.continue();});
+  await a.ctx.clearCookies();await a.ctx.addCookies(cookiesB);
+  // Sampling starts once the refreshed server payload (which carries B's stamp) has arrived; before that the tab still shows
+  // A's own render, which B has not received.
+  const refreshed=p.waitForResponse(r=>r.request().headers()['rsc']==='1'&&new URL(r.url()).pathname==='/staff/documents');
+  await p.evaluate(()=>(window as unknown as {next:{router:{refresh():void}}}).next.router.refresh());await refreshed;await p.waitForTimeout(50);
+  const leaks:string[]=[];for(let i=0;i<25;i++){if(await p.getByText('SYNTHETIC Shell Confirmed').count())leaks.push('customer@'+i);if(await p.getByRole('button',{name:'印刷'}).count())leaks.push('print@'+i);await p.waitForTimeout(100);}
+  release();await p.waitForTimeout(1500);
+  for(let i=0;i<10;i++){if(await p.getByText('SYNTHETIC Shell Confirmed').count())leaks.push('customer-after@'+i);if(await p.getByRole('button',{name:'印刷'}).count())leaks.push('print-after@'+i);await p.waitForTimeout(100);}
+  assert.deepEqual(leaks,[],'session B never sees A’s booking content or print button');
+  await p.unroute('**/api/operations/orders/'+confirmedId);
+  // Back to A: a fresh, correctly authorized read shows it again.
+  await a.ctx.clearCookies();await a.ctx.addCookies(cookiesA);await p.goto(url);await p.getByText('SYNTHETIC Shell Confirmed').waitFor();await p.getByRole('button',{name:'印刷'}).waitFor();
+  await a.ctx.close();
+ });
  await check('new order: staff API with the session header only, no browser storage, explicit customer choice; real route refuses without commercial composition',async()=>{
   const seen:{url:string;method:string;session:string|null;body:string|null}[]=[];page.on('request',r=>{if(/\/api\/(guest|staff-orders)/.test(r.url()))seen.push({url:r.url(),method:r.method(),session:r.headers()['x-zao-session']??null,body:r.postData()});});
   await page.goto('/staff/orders');const contextAnswer=page.waitForResponse(r=>r.url().endsWith('/api/staff-orders/context'));await page.locator('a[href="/staff/orders/new"]').first().click();await page.waitForURL('**/staff/orders/new');

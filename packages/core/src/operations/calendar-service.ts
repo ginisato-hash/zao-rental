@@ -30,8 +30,10 @@ export class CalendarService{
   if(q.from!==undefined&&q.from!==''){if(typeof q.from!=='string')throw new FlowError('INVALID_INPUT',422);try{utcDate(q.from);}catch{throw new FlowError('INVALID_INPUT',422);}}
   const page=q.page===undefined?1:Number(q.page),size=q.pageSize===undefined?40:Number(q.pageSize);
   if(!Number.isInteger(page)||page<1||page>10000||!Number.isInteger(size)||size<1||size>100)throw new FlowError('INVALID_INPUT',422);
-  const principal=await this.ctx.authorize('BOOKING_VIEW',[store]);const visible=principal.storeIds as string[];
-  return this.ctx.snapshot('BOOKING_VIEW',[store],async c=>{
+  // CAL-01: customer-name disclosure uses the station scope of the very authorization that gated this snapshot (never one
+  // fetched earlier), and the result is only released if that scope still holds after the read (a station revoked mid-read
+  // refuses the response instead of showing names from the revoked station).
+  const result=await this.ctx.snapshot('BOOKING_VIEW',[store],async(c,principal)=>{const visible=[...principal.storeIds] as string[];
    const now=(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now,today=jstToday(now);
    const from=typeof q.from==='string'&&q.from?q.from:today,to=addDays(from,days-1);
    // Items registered here now, plus items elsewhere that are promised to an order picking up here in the period.
@@ -72,7 +74,9 @@ export class CalendarService{
    const order=['OVERDUE','OUT','RETURNED','BOOKING','HOLD','CARE','BLOCK','TRANSFER'];
    const rows:CalendarItem[]=items.map(i=>({id:i.id,ref:i.id.slice(0,8).toUpperCase(),family:i.family,model:i.model,size:i.size,age:i.age,tier:i.tier,status:i.status,station:i.station,
     bars:(bars.get(i.id)??[]).sort((a,b)=>a.start.localeCompare(b.start)||order.indexOf(a.kind)-order.indexOf(b.kind))}));
-   return {store,today,from,to,days,family,total,page,pageSize:size,items:rows};
+   return {store,today,from,to,days,family,total,page,pageSize:size,items:rows,visible};
   });
+  await this.ctx.authorize('BOOKING_VIEW',[store]);await this.ctx.confirmScope('BOOKING_VIEW',result.visible);
+  const {visible:_,...view}=result;void _;return view;
  }
 }

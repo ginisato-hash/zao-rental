@@ -61,11 +61,16 @@ export function StaffDocuments({stamp,stores}:{stamp:string;stores:string[]}){
  </main></StaffSessionBoundary>;
 }
 
+// DOC-01: a document result belongs to exactly one (url, staff session stamp). Another session — even on the same url —
+// never sees it, not even while its own request is pending; 401/403/404/failure replace it with an error (no content, no
+// print button); a late answer from an earlier url or stamp is dropped by the request generation.
 function useJson<T>(url:string,stamp:string){
- const [state,setState]=useState<{url:string;data?:T;error?:'notFound'|'failed'}|null>(null),gen=useRef(0);
- useEffect(()=>{const ticket=++gen.current;queueMicrotask(async()=>{try{const r=await fetch(url,{cache:'no-store',headers:{'x-zao-session':stamp}});if(r.status===401||r.status===403){invalidateStaffView();return;}
-  if(ticket!==gen.current)return;if(r.status===404){setState({url,error:'notFound'});return;}if(!r.ok)throw Error();const v=await r.json() as T;if(ticket===gen.current)setState({url,data:v});}catch{if(ticket===gen.current)setState({url,error:'failed'});}});},[url,stamp]);
- return state?.url===url?state:null;
+ const key=url+'|'+stamp;
+ const [state,setState]=useState<{key:string;data?:T;error?:'notFound'|'failed'|'forbidden'}|null>(null),gen=useRef(0);
+ useEffect(()=>{const ticket=++gen.current;queueMicrotask(async()=>{try{const r=await fetch(url,{cache:'no-store',headers:{'x-zao-session':stamp}});
+  if(ticket!==gen.current)return;if(r.status===401||r.status===403){setState({key,error:'forbidden'});invalidateStaffView();return;}
+  if(r.status===404){setState({key,error:'notFound'});return;}if(!r.ok)throw Error();const v=await r.json() as T;if(ticket===gen.current)setState({key,data:v});}catch{if(ticket===gen.current)setState({key,error:'failed'});}});},[url,stamp,key]);
+ return state?.key===key?state:null;
 }
 
 function DocFrame({title,children}:{title:string;children:React.ReactNode}){

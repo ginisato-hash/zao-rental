@@ -61,6 +61,34 @@ try{
   for(const bad of [{days:'5'},{from:'2035-02-30'},{family:'WEAR'},{pageSize:'500'}])await assert.rejects(cal.view({store,...bad}),{code:'INVALID_INPUT'},JSON.stringify(bad));
   await assert.rejects(cal.view({store:'ELSEWHERE'}),{code:'INVALID_STORE'});
  });
+ await check('CAL-01: a station revoked between authorization and read never discloses that station’s customer; scope stays exact',async()=>{
+  // An order whose stations are both the other station but which holds an item registered at this station (as a transfer
+  // allocation does). Built in this owned DB by moving order b's HOLD stations; its claims stay on this station's item.
+  const c=b;
+  const o=await x.db.pool.connect();try{await o.query('BEGIN');await o.query('ALTER TABLE inventory_holds DISABLE TRIGGER USER');
+   await o.query('UPDATE inventory_holds SET pickup_store=$2,return_store=$2 WHERE id=(SELECT hold_id FROM rental_bookings WHERE id=$1)',[c.booking.id,other]);
+   await o.query('ALTER TABLE inventory_holds ENABLE TRIGGER USER');await o.query('COMMIT');}catch(e){await o.query('ROLLBACK');throw e;}finally{o.release();}
+  const skiC=await claimed(c.booking.id);
+  await writeAccount(x.roles.authPool,x.bp,undefined,{email:'calendar-both@example.invalid',password:x.password,displayName:'SYNTHETIC Calendar Both',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:[store as 'ONSEN_BASE',other as 'ONSEN_BASE'],permissions:{}});
+  const both=(await x.login('calendar-both@example.invalid')).identity;
+  const customerOf=(r:Awaited<ReturnType<typeof cal.view>>,bookingId:string)=>r.items.flatMap(i=>i.bars).find(b=>b.bookingId===bookingId)?.customer;
+  // Baseline: with both stations in scope the other-station order's customer is shown, and so is this station's.
+  const full=await new CalendarService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both)).view({store,from:'2035-01-09',days:'7'});
+  assert.ok(full.items.some(i=>i.id===skiC),'the other-station order is on this station’s item');assert.equal(customerOf(full,c.booking.id),'SYNTHETIC Guest');
+  // Race: the other station is revoked right after the first authorization this read performs.
+  const revoke=()=>x.db.pool.query('DELETE FROM staff_store_access WHERE staff_id=$1 AND store_id=$2',[both.subject,other]);
+  let calls=0;class Racing extends OperationsContext{override async authorize(...a:Parameters<OperationsContext['authorize']>){const r=await super.authorize(...a);if(++calls===1)await revoke();return r;}}
+  let raced:Awaited<ReturnType<typeof cal.view>>|null=null,refused:string|null=null;
+  try{raced=await new CalendarService(new Racing(ops!.operationsPool,x.roles.authPool,both)).view({store,from:'2035-01-09',days:'7'});}catch(e){refused=(e as {code?:string}).code??'ERROR';}
+  assert.ok(refused==='AUTHORIZATION_CHANGED'||(raced&&customerOf(raced,c.booking.id)==null),'never the revoked station’s customer: '+JSON.stringify({refused,customer:raced&&customerOf(raced,c.booking.id)}));
+  // After the revocation: this station's own order keeps its name, the other-station order's name is null, the other
+  // station's calendar is refused, and a revoked session is refused outright.
+  const after=await new CalendarService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both)).view({store,from:'2035-01-09',days:'7'});
+  assert.equal(customerOf(after,c.booking.id),null);assert.equal(customerOf(after,a.booking.id),'SYNTHETIC Guest','this station’s own order keeps its name');
+  await assert.rejects(new CalendarService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both)).view({store:other}),{code:'FORBIDDEN'});
+  await x.db.pool.query('DELETE FROM auth_session WHERE id=$1',[both.sessionId]);
+  await assert.rejects(new CalendarService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both)).view({store}),{code:'UNAUTHENTICATED'});
+ });
  await check('scope: a manager of the other station cannot open this station’s calendar',async()=>{
   await writeAccount(x.roles.authPool,x.bp,undefined,{email:'calendar-other@example.invalid',password:x.password,displayName:'SYNTHETIC Calendar Other',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:[other as 'ONSEN_BASE'],permissions:{}});
   const o=new CalendarService(new OperationsContext(ops!.operationsPool,x.roles.authPool,(await x.login('calendar-other@example.invalid')).identity));

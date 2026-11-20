@@ -127,10 +127,11 @@ export class OrdersService{
   * otherwise it is reported as not found. Operations (prepare/checkout/return/amend) stay behind their own permissions. */
  async detail(id:unknown){
   if(typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id))throw new FlowError('INVALID_INPUT',422);
-  const principal=await this.ctx.authorize('BOOKING_VIEW');const visible=principal.storeIds as string[];
   // light(), not snapshot(): the contract read re-checks the session with ops_assert_actor, whose FOR SHARE lock is not
-  // permitted in a READ ONLY transaction. Nothing here writes.
-  return this.ctx.light('BOOKING_VIEW',[],async c=>{
+  // permitted in a READ ONLY transaction. Nothing here writes. The station scope is the one light() authorized with, and the
+  // detail is released only if that scope still holds afterwards (CAL-01 class).
+  let disclosed:string[]=[];
+  const detail=await this.ctx.light('BOOKING_VIEW',[],async(c,principal)=>{const visible=[...principal.storeIds] as string[];disclosed=visible;
    const today=await this.today(c as never);
    const row=(await c.query(`${ORDER_BASE_SQL} SELECT ${ORDER_ROW_SQL} v,s.cond,s.original FROM s WHERE s.id=$3`,[visible,today,id])).rows[0];
    if(!row)throw new FlowError('NOT_FOUND',404);
@@ -142,6 +143,7 @@ export class OrdersService{
    const contract=(await c.query('SELECT staff_order_contract($1) v',[id])).rows[0].v as {terms:{version:string;locale:string;acceptedAt:string}|null;cancellationPolicy:{policyVersion:string;freeCancellationUntil:string}|null};
    return {order:row.v as OrderRow,current:{period:row.cond.period,members:row.cond.members},original:{period:row.original.period},loans,wear,payments,terms:contract.terms,cancellationPolicy:contract.cancellationPolicy};
   });
+  await this.ctx.confirmScope('BOOKING_VIEW',disclosed);return detail;
  }
 
  /** Booqable Dashboard: Going out (current pickups in range at this station) / Coming back (current returns in range).

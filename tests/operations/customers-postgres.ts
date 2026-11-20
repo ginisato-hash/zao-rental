@@ -57,6 +57,22 @@ try{
   const l4=await legacy('2035-04-06');await assert.rejects(onsen.link(randomUUID(),{bookingId:l4,target:'legacy:'+l1}),{code:'FORBIDDEN'});
   await assert.rejects(svc.link(randomUUID(),{bookingId:l4,target:'legacy:'+l4}),{code:'INVALID_INPUT'});
  });
+ await check('CAL-01 class: a station revoked while customers are read never returns that station’s customers',async()=>{
+  const station=(await x.db.pool.query("SELECT conditions->>'pickupStore' s FROM rental_bookings WHERE id=$1",[a])).rows[0].s as string,other=station==='MOUNTAIN_BASE'?'ONSEN_BASE':'MOUNTAIN_BASE';
+  await writeAccount(x.roles.authPool,x.bp,undefined,{email:'cust-both@example.invalid',password:x.password,displayName:'SYNTHETIC Cust Both',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:[station as 'ONSEN_BASE',other as 'ONSEN_BASE'],permissions:{}});
+  const both=(await x.login('cust-both@example.invalid')).identity,key=(await link(a))!;
+  let calls=0;const revoke=(subject:string,station:string)=>x.db.pool.query('DELETE FROM staff_store_access WHERE staff_id=$1 AND store_id=$2',[subject,station]);
+  const racing=(identity:{subject:string;sessionId:string},station:string)=>{calls=0;return new (class extends OperationsContext{override async authorize(...a:Parameters<OperationsContext['authorize']>){const r=await super.authorize(...a);if(++calls===1)await revoke(identity.subject,station);return r;}})(ops!.operationsPool,x.roles.authPool,identity);};
+  const plain=()=>new CustomersService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both));
+  assert.ok((await plain().list({})).rows.some(r=>r.key===key),'baseline: listed with both stations');
+  for(const [name,read] of [['list',(svc:InstanceType<typeof CustomersService>)=>svc.list({})],['detail',(svc:InstanceType<typeof CustomersService>)=>svc.detail(key)]] as const){
+   await x.db.pool.query('INSERT INTO staff_store_access(staff_id,store_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[both.subject,station]);
+   let code:string|null=null,out:unknown=null;try{out=await read(new CustomersService(racing(both,station)));}catch(e){code=(e as {code?:string}).code??'ERROR';}
+   const leaked=name==='list'?Boolean((out as {rows?:{key:string}[]}|null)?.rows?.some(r=>r.key===key)):Boolean(out);
+   assert.ok(code==='AUTHORIZATION_CHANGED'||code==='NOT_FOUND'||!leaked,name+': no customer from the revoked station: '+JSON.stringify({code,leaked}));
+  }
+  assert.equal((await plain().list({})).rows.some(r=>r.key===key),false);await assert.rejects(plain().detail(key),{code:'NOT_FOUND'});
+ });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,500),at:(e as Error).stack?.split('\n').filter(l=>/customers|context\.ts/.test(l)).slice(0,3).join(' | ')}));}
 finally{await ops?.close();await x.close();}

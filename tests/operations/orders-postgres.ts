@@ -113,6 +113,17 @@ try{
   if(store!=='ONSEN_BASE')await assert.rejects(onsen.detail(out.booking.id),{code:'NOT_FOUND'},'another station gets not-found, not a hint that it exists');
   await assert.rejects(viewer.detail('not-a-uuid'),{code:'INVALID_INPUT'});await assert.rejects(viewer.detail(randomUUID()),{code:'NOT_FOUND'});
  });
+ await check('CAL-01 class: a station revoked while the detail is read never returns that station’s order',async()=>{
+  const other=store==='MOUNTAIN_BASE'?'ONSEN_BASE':'MOUNTAIN_BASE';
+  await writeAccount(x.roles.authPool,x.bp,undefined,{email:'orders-both@example.invalid',password:x.password,displayName:'SYNTHETIC Orders Both',active:true,role:'MANAGER',scope:'ASSIGNED',storeIds:[store as 'ONSEN_BASE',other as 'ONSEN_BASE'],permissions:{}});
+  const both=(await x.login('orders-both@example.invalid')).identity;
+  let calls=0;const revoke=(subject:string,station:string)=>x.db.pool.query('DELETE FROM staff_store_access WHERE staff_id=$1 AND store_id=$2',[subject,station]);
+  const racing=(identity:{subject:string;sessionId:string},station:string)=>{calls=0;return new (class extends OperationsContext{override async authorize(...a:Parameters<OperationsContext['authorize']>){const r=await super.authorize(...a);if(++calls===1)await revoke(identity.subject,station);return r;}})(ops!.operationsPool,x.roles.authPool,identity);};
+  assert.equal((await new OrdersService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both)).detail(reserved.booking.id)).order.id,reserved.booking.id,'baseline: visible with both stations');
+  let code:string|null=null,leaked:unknown=null;try{leaked=await new OrdersService(racing(both,store)).detail(reserved.booking.id);}catch(e){code=(e as {code?:string}).code??'ERROR';}
+  assert.ok(!leaked&&['AUTHORIZATION_CHANGED','NOT_FOUND','FORBIDDEN'].includes(code??''),'no detail from the revoked station: '+JSON.stringify({code,leaked:Boolean(leaked)}));
+  await assert.rejects(new OrdersService(new OperationsContext(ops!.operationsPool,x.roles.authPool,both)).detail(reserved.booking.id),{code:'NOT_FOUND'});
+ });
  console.log(JSON.stringify({status:'PASS',cases:count,externalCalls:0}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??'ASSERTION',message:(e as Error).message?.slice(0,500),at:(e as Error).stack?.split('\n').filter(l=>/orders-postgres|amendment-service|context\.ts/.test(l)).slice(0,4).join(' | ')}));}
 finally{await ops?.close();await custody?.close();await x.close();}

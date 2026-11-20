@@ -60,7 +60,9 @@ try{
   const summary=p.getByRole('region',{name:t('お支払い前の確認','Before you pay')});for(const text of [ja?'2035-02-05':'2035-02-06','Mountain Station',t('利用者','Person')+' 1',t('お支払い合計（税込）','Total (tax included)')])await expect(summary).toContainText(text);
   await capture(p,locale+'-book-review-payment');
   await p.getByRole('button',{name:t('支払いへ進む','Continue to payment'),exact:true}).click();await expect(p.getByRole('heading',{name:t('予約が確定しました','Booking confirmed'),exact:true})).toBeVisible();
-  assert.equal(checkouts.length,1);assert.deepEqual(Object.keys(checkouts[0]!.contact as object).sort(),['displayName','email','termsAccepted']);assert.equal((checkouts[0]!.contact as {email:string}).email,'aki@example.invalid');assert.ok(!JSON.stringify(checkouts[0]).includes('AKI@'),'confirmation copy is never sent');
+  assert.equal(checkouts.length,1);assert.deepEqual(Object.keys(checkouts[0]!.contact as object).sort(),['displayName','email','terms','termsAccepted']);
+  // Terms V2 pre-purchase consent: the exact bundle shown (version + content hash) in the page language, nothing else.
+  {const t=(checkouts[0]!.contact as {terms:Record<string,string>}).terms;assert.deepEqual(Object.keys(t).sort(),['locale','sha256','version']);assert.match(t.sha256!,/^[0-9a-f]{64}$/);assert.match(t.version!,/^ZAO_RENTAL_TERMS_V2/);}assert.equal((checkouts[0]!.contact as {email:string}).email,'aki@example.invalid');assert.ok(!JSON.stringify(checkouts[0]).includes('AKI@'),'confirmation copy is never sent');
   const result=p.locator('.guest-result');for(const text of [t('予約番号','Booking reference'),t('受取','Pickup'),t('返却','Return'),'Mountain Station',t('登録メールアドレスへ予約確認メールを送信します。数分かかる場合があります。','We will send a booking confirmation email to your registered address. It may take a few minutes.')])await expect(result).toContainText(text);
   await expect(result).not.toContainText(ja?'送信しました':'has been sent');await capture(p,locale+'-book-success');
   const draft=await (await ctx.request.get('/api/guest/draft')).json();assert.equal(draft.booking.state,'CONFIRMED_DEV');assert.equal(draft.booking.payments[0].state,'COMPLETED');

@@ -49,6 +49,10 @@ try{
   const role=(await db.pool.query('SELECT rolsuper,rolcreatedb,rolcreaterole,rolinherit,rolreplication,rolbypassrls FROM pg_roles WHERE rolname=$1',[app!.avatar!.avatarDb.user])).rows[0];assert.ok(Object.values(role).every(x=>x===false));assert.equal((await db.pool.query('SELECT count(*)::int n FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=$1)',[app!.avatar!.avatarDb.user])).rows[0].n,0);
  });
  browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}}),other=await browser.newContext({baseURL:origin}),anon=await browser.newContext({baseURL:origin}),staff=await browser.newContext({baseURL:origin});
+ // Guest browsers run without the next dev HMR channel (AVATAR-EXIT-01 / CI #44701174510, #44707581667): production
+ // builds have no HMR, and a dev reload broadcast can reload a page that is navigating. The socket is answered by a silent
+ // mock (never connected to the dev server). Staff/anon contexts are unchanged.
+ for(const context of [c,other])await context.routeWebSocket(/\/_next\/webpack-hmr/,()=>{/* silent: no dev reload messages */});
  for(const context of [c,other,anon,staff]){context.setDefaultTimeout(25000);await context.route('**/*',async route=>{const r=route.request(),url=new URL(r.url());if(url.origin!==origin){externalAttempts++;await route.abort();}else{if(measuring&&r.method()==='POST'&&url.pathname!=='/api/guest/context')visualPosts.push(url.pathname);if(measuring&&url.pathname.startsWith('/api/guest/avatar/'))metadataRequests.push(url.pathname);await route.continue();}});}
  for(const p of ['/ja','/ja/book','/staff/login','/staff/ledger','/api/auth/get-session'])await anon.request.get(p);
  const page=await c.newPage();page.on('pageerror',()=>fatals.push('PAGE_ERROR'));page.on('console',m=>{if(m.type()==='error'&&/hydration|uncaught|maximum update/i.test(m.text()))fatals.push('CONSOLE_FATAL');});
@@ -100,14 +104,15 @@ try{
   // Timeline (paths only, no values) so a failure states what the page actually did after the close.
   const t0=Date.now(),timeline:string[]=[],at=()=>String(Date.now()-t0).padStart(5);
   const onNav=(f:import('@playwright/test').Frame)=>{if(f===page.mainFrame())timeline.push(at()+' nav '+new URL(f.url()).pathname);};
-  const onReq=(r:import('@playwright/test').Request)=>{if(r.isNavigationRequest()||r.url().includes('/api/guest/'))timeline.push(at()+' req '+r.method()+' '+new URL(r.url()).pathname+(r.isNavigationRequest()?' (document)':''));};
+  const onReq=(r:import('@playwright/test').Request)=>{const u=new URL(r.url());if(/^\/(_next\/static|_next\/image|avatar-media|media)\//.test(u.pathname)||/\.(png|webp|jpg|svg|css|js|woff2?)$/.test(u.pathname))return;
+   timeline.push(at()+' req '+r.method()+' '+u.pathname+(u.searchParams.has('_rsc')||r.headers()['rsc']==='1'?' (rsc)':'')+(r.isNavigationRequest()?' (document)':''));};
   const onRes=(r:import('@playwright/test').Response)=>{if(r.request().isNavigationRequest())timeline.push(at()+' res '+r.status()+' '+new URL(r.url()).pathname+' (document)');};
   const onFail=(r:import('@playwright/test').Request)=>{timeline.push(at()+' failed '+new URL(r.url()).pathname+' '+(r.failure()?.errorText??''));};
   const onDialog=(d:import('@playwright/test').Dialog)=>{timeline.push(at()+' dialog '+d.type());void d.dismiss().catch(()=>{});};// same as Playwright's default (dismiss), now recorded
   const onConsole=(m:import('@playwright/test').ConsoleMessage)=>{if(m.type()==='error')timeline.push(at()+' console-error '+m.text().slice(0,120));};
-  page.on('framenavigated',onNav);page.on('request',onReq);page.on('response',onRes);page.on('requestfailed',onFail);page.on('dialog',onDialog);page.on('console',onConsole);
+  page.on('framenavigated',onNav);page.on('request',onReq);page.on('response',onRes);
   const logout=await closeGuestAndAwaitLogout(page,page.getByRole('button',{name:'この予約画面を閉じる'}));assert.equal(logout.status(),200);timeline.push(at()+' logout 200');
-  try{await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});}
+  try{await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});if(process.env.ZAO_TEST_TIMELINE==='1')console.log('CLOSE_TIMELINE '+timeline.join(' | '));}
   catch(e){assert.fail(`no navigation to /ja after logout 200; now ${new URL(page.url()).pathname}; timeline: ${timeline.join(' | ')}; ${(e as Error).message.split('\n')[0]}`);}
   finally{page.off('framenavigated',onNav);page.off('request',onReq);page.off('response',onRes);page.off('requestfailed',onFail);page.off('dialog',onDialog);page.off('console',onConsole);}for(const p of [imagePath,metadataPath])assert.equal((await c.request.get(p)).status(),404);assert.equal((await other.request.get('/api/guest/draft')).status(),200);});
  await check('BROWSER','no fatal/hydration errors or external attempts',async()=>{assert.deepEqual(fatals,[]);assert.equal(externalAttempts,0);});

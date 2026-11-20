@@ -122,7 +122,7 @@
       },
       "password": {
         "type": "string",
-        "minLength": 15,
+        "minLength": 6,
         "maxLength": 128
       }
     },

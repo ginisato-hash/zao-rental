@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from './dev-hmr';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {chromium,expect,type BrowserContext} from '@playwright/test';
 import {startFlowApp} from './launcher';
@@ -10,8 +11,8 @@ try{
  app=await startFlowApp({paymentFault:'SAVE_THEN_LOSE'});await seedRecommendation(app.db.pool,true);await bootstrapDevelopmentAdmin(app.db.pool,{email:'restart-root@example.invalid',displayName:'SYNTHETIC Root',password});const {origin}=app;
  await app.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T01:00:00Z'::timestamptz$$");
  async function ready(){for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw new Error('APP_START_TIMEOUT');}await ready();
- stage='unhydrated login safety';const noJs=await browser.newContext({baseURL:origin,javaScriptEnabled:false});const noJsPage=await noJs.newPage();await noJsPage.goto('/staff/login');await expect(noJsPage.getByLabel('メールアドレス',{exact:true})).toBeDisabled();await expect(noJsPage.getByLabel('パスワード',{exact:true})).toBeDisabled();await expect(noJsPage.getByRole('button',{name:'ログイン',exact:true})).toBeDisabled();assert.equal(await noJsPage.locator('form').getAttribute('method'),'post');await noJs.close();console.log('PASS unhydrated login cannot submit credentials; native form transport is POST');
- async function context(){const c=await browser.newContext({baseURL:origin});c.setDefaultTimeout(15000);return c;}
+ stage='unhydrated login safety';const noJs=await newQuietContext(browser,{baseURL:origin,javaScriptEnabled:false});const noJsPage=await noJs.newPage();await noJsPage.goto('/staff/login');await expect(noJsPage.getByLabel('メールアドレス',{exact:true})).toBeDisabled();await expect(noJsPage.getByLabel('パスワード',{exact:true})).toBeDisabled();await expect(noJsPage.getByRole('button',{name:'ログイン',exact:true})).toBeDisabled();assert.equal(await noJsPage.locator('form').getAttribute('method'),'post');await noJs.close();console.log('PASS unhydrated login cannot submit credentials; native form transport is POST');
+ async function context(){const c=await newQuietContext(browser,{baseURL:origin});c.setDefaultTimeout(15000);return c;}
  async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return p;}
  const root=await context();await login(root,'restart-root@example.invalid');assert.equal((await root.request.post('/api/staff-users',{headers:{origin},data:{email:'restart-creator@example.invalid',password,displayName:'SYNTHETIC Restart',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{BOOKING_VIEW:true,BOOKING_CREATE:true,HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true}}})).status(),201);
  const staff=await context(),p=await login(staff,'restart-creator@example.invalid');

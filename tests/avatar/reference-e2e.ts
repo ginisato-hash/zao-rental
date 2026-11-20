@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium,expect,type BrowserContext} from '@playwright/test';
@@ -29,7 +30,7 @@ try{
  for(const permission of ['PRICE_EDIT','QUOTE_VIEW','INVENTORY_EDIT','INVENTORY_VIEW','BOOKING_VIEW','BOOKING_CREATE','TRANSFER_VIEW'])await db.pool.query('INSERT INTO staff_permission_overrides VALUES($1,$2,true)',[subject,permission]);
  const principal=(await loadStaff(db.pool,subject))!;
  await new QuoteService(app.roles.pricingPool,principal).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
- browser=await chromium.launch();const staff=await browser.newContext({baseURL:origin});
+ browser=await chromium.launch();const staff=await newQuietContext(browser,{baseURL:origin});
  const signed=await staff.request.post('/api/auth/sign-in/email',{headers:{origin},data:{email,password}});assert.equal(signed.status(),200);
  const sessionId=(await db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[subject])).rows[0].id,identity={subject,sessionId};
  const ledger=new LedgerService(app.roles.ledgerPool,ledgerPrincipal(principal),(c,stores,global)=>verifyLedgerWrite(c,app!.roles.authPool,identity,stores,global),(resource,id,version)=>reconcileLedgerProtection(app!.roles.transferPool,app!.roles.authPool,identity,resource,id,version));
@@ -38,7 +39,7 @@ try{
  // Warm the two normal booking routes before opening a form; no business request is repeated.
  for(const locale of ['ja','en'])assert.equal((await fetch(origin+'/'+locale+'/book')).status,200);
  for(const locale of ['ja','en'] as const){stage=locale+' mixed group';const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
-  const c:BrowserContext=await browser.newContext({baseURL:origin,viewport:{width:390,height:844},reducedMotion:'reduce'}),p=await c.newPage();p.setDefaultTimeout(30000);
+  const c:BrowserContext=await newQuietContext(browser,{baseURL:origin,viewport:{width:390,height:844},reducedMotion:'reduce'}),p=await c.newPage();p.setDefaultTimeout(30000);
   const errors:string[]=[];let external=0,posts=0,measuring=false;
   p.on('pageerror',()=>errors.push('PAGE_ERROR'));await c.route('**/*',async route=>{const r=route.request();if(new URL(r.url()).origin!==origin){external++;await route.abort();return;}if(measuring&&r.method()==='POST')posts++;await route.continue();});
   await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();

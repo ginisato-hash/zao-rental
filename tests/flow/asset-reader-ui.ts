@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from './dev-hmr';
 import {chromium,expect,type Page} from '@playwright/test';
 import QRCode from 'qrcode';
 import jsQR from 'jsqr';
@@ -8,7 +9,7 @@ const a='00000000-0000-4000-8000-000000001201',b='00000000-0000-4000-8000-000000
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();passed++;console.log('PASS '+name);}
 try{
  app=await startFlowApp();for(let i=0;i<100;i++){try{if((await fetch(app.origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
- const context=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});context.setDefaultTimeout(15000);
+ const context=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});context.setDefaultTimeout(15000);
  // tsx names nested callbacks; helper belongs only to the browser test harness.
  await context.addInitScript('window.__name = (fn) => fn');
  async function page(){const p=await context.newPage();p.on('pageerror',e=>console.error('SYNTHETIC_PAGE_ERROR '+e.message));last=p;await p.goto('/test-asset-reader');await expect(p.getByRole('button',{name:'カメラを開く'})).toBeEnabled();return p;}

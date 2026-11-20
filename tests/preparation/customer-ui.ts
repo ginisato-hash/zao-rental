@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {chromium,expect} from '@playwright/test';
 import {startFlowApp} from '../flow/launcher';
@@ -19,7 +20,7 @@ try{
  await seedRecommendation(app.db.pool,true,false);await app.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-01T10:00:00+09:00'::timestamptz$$");
  const password=randomBytes(24).toString('base64url'),email='r65-catalog@example.invalid',subject=await bootstrapDevelopmentAdmin(app.db.pool,{email,password,displayName:'受付担当'});
  for(const permission of permissions)await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true) ON CONFLICT DO NOTHING',[subject,permission]);
- const staff=await browser.newContext({baseURL:app.origin}),sp=await staff.newPage();staff.setDefaultTimeout(30000);
+ const staff=await newQuietContext(browser,{baseURL:app.origin}),sp=await staff.newPage();staff.setDefaultTimeout(30000);
  await sp.goto('/staff/login');await sp.getByLabel('メールアドレス',{exact:true}).fill(email);await sp.getByLabel('パスワード',{exact:true}).fill(password);await sp.getByRole('button',{name:'ログイン',exact:true}).click();await sp.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
  const principal=(await loadStaff(app.db.pool,subject))!,identity={subject,sessionId:(await app.db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1',[subject])).rows[0].id};
  const ledger=new LedgerService(app.roles.ledgerPool,ledgerPrincipal(principal),(c,s,a)=>verifyLedgerWrite(c,app.roles.authPool,identity,s,a),async()=>{/* Only newly created test stock. */});
@@ -34,7 +35,7 @@ try{
  }
  await seedPublicContent(app.db.pool,subject,{id:board,variantIds:[boardVariant],season:'2026/27'},{source:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#e5edf2"/></svg>'),content:{ja:{title:'Mountain Board',summary:'モデル・シーズン・長さを選択',fit_note:'店頭で最終確認'},en:{title:'Mountain Board',summary:'Choose model, season and length',fit_note:'Final fit at pickup'}}});
  stage='no released model / no pole pool';
- for(const locale of ['ja','en'] as const){const t=(j:string,e:string)=>locale==='ja'?j:e,ctx=await browser.newContext({baseURL:app.origin});ctx.setDefaultTimeout(30000);const p=await ctx.newPage();await p.goto('/'+locale+'/book');await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill('2035-03-01');await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
+ for(const locale of ['ja','en'] as const){const t=(j:string,e:string)=>locale==='ja'?j:e,ctx=await newQuietContext(browser,{baseURL:app.origin});ctx.setDefaultTimeout(30000);const p=await ctx.newPage();await p.goto('/'+locale+'/book');await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill('2035-03-01');await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
   const equipment=p.getByLabel(t('用品','Equipment'),{exact:true});
   for(const sport of ['SKI','SNOWBOARD']){await equipment.selectOption(sport);const premium=p.getByLabel(t('プラン','Plan'),{exact:true}).locator('option[value="PREMIUM"]');await expect(premium).toHaveJSProperty('disabled',true);await expect(premium).toHaveText(t('Premium（準備中）','Premium — coming soon'));await expect(p.getByLabel(t('モデルとシーズン','Model and season'),{exact:true})).toHaveCount(0);await capture(p,locale+'-'+sport.toLowerCase()+'-premium-unavailable');}
   // R67: without any cm POLE catalogue variant the POLES toggle stays disabled and says so.
@@ -45,7 +46,7 @@ try{
  let serial=5;
  for(const locale of ['ja','en'] as const){const t=(j:string,e:string)=>locale==='ja'?j:e;
   for(const scenario of ['ski','board','premium','individual','wear','pole','mixed']){stage=locale+' '+scenario;
-   const ctx=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
+   const ctx=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
    await ctx.route('**/api/guest/checkout',async route=>{const body=route.request().postDataJSON();assert.equal(body.contact.displayName,'Aki Sato');assert.equal(body.contact.email,'aki@example.invalid');await route.continue({postData:JSON.stringify({...body,contact:{...body.contact,displayName:'SYNTHETIC Aki Sato',email:'synthetic-aki@example.invalid'}})});});
    const p=await ctx.newPage();await p.goto('/'+locale+'/book');await p.getByLabel(t('利用開始日','Start date'),{exact:true}).fill('2035-02-'+String(serial++).padStart(2,'0'));await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
    const equipment=p.getByLabel(t('用品','Equipment'),{exact:true});assert.deepEqual(await equipment.locator('option').allTextContents(),locale==='ja'?['スキーセット','スノーボードセット','単品','ウェア']:['Ski Set','Snowboard Set','Individual Items','Wear']);

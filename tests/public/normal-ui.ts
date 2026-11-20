@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {fillGuestProfile} from './guest-profile';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {mkdir} from 'node:fs/promises';
@@ -22,7 +23,7 @@ try{
 
  await new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  for(let n=0;n<100;n++){try{if((await fetch(app.origin+'/api/health')).ok)break;}catch{}if(n===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
- const context=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844}});context.setDefaultTimeout(15000);const page=await context.newPage();last=page;
+ const context=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844}});context.setDefaultTimeout(15000);const page=await context.newPage();last=page;
  // Finish dev-only cold compilation before any staff form is filled. Anonymous
  // reads must retain their normal status; no staff/session fixture is injected.
  for(const path of ['/staff/login','/staff/ledger','/staff/users'])assert.equal((await context.request.get(path)).status(),200);
@@ -48,7 +49,7 @@ try{
  });
  await check('R64 home rental desk: one h1, the booking action and live facts from the system; modal menu traps focus, Escape restores focus and scroll',async()=>{
   for(const width of [390,375]){
-   const touch=await browser.newContext({baseURL:app!.origin,viewport:{width,height:width===390?844:812},hasTouch:true,isMobile:true});touch.setDefaultTimeout(15000);const m=await touch.newPage();
+   const touch=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width,height:width===390?844:812},hasTouch:true,isMobile:true});touch.setDefaultTimeout(15000);const m=await touch.newPage();
    await m.goto('/ja');
    await expect(m.getByRole('heading',{level:1})).toHaveCount(1);await expect(m.getByRole('heading',{level:1})).toBeVisible();
    // R67 first view: RENTAL + BOOK RENTAL above the fold; prices/stores facts come from the system.
@@ -87,7 +88,7 @@ try{
    await touch.close();
   }
   // Desktop: the board and the photograph share the first viewport; the menu offers every rental category.
-  const pc=await browser.newContext({baseURL:app!.origin,viewport:{width:1440,height:900}});const d=await pc.newPage();await d.goto('/en');
+  const pc=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:1440,height:900}});const d=await pc.newPage();await d.goto('/en');
   await expect(d.getByRole('heading',{level:1})).toHaveCount(1);
   const box=await d.getByRole('region',{name:'RENTAL',exact:true}).getByRole('link',{name:'BOOK RENTAL'}).boundingBox();assert.ok(box&&box.y+box.height<=900,'BOOK RENTAL is in the first viewport');
   await d.getByRole('button',{name:'Open menu'}).click();for(const name of ['SKI','SNOWBOARD','WEAR','PREMIUM','RENTAL','PRICES','STORES','FAQ','MY BOOKING'])await expect(d.getByRole('dialog',{name:'Menu'}).getByRole('link',{name,exact:true})).toBeVisible();await expect(d.getByRole('dialog',{name:'Menu'})).not.toContainText('FAMILY');
@@ -101,7 +102,7 @@ try{
   await pc.close();
  });
  await check('R69: public footer has no staff entry (JA/EN) while /staff/login still serves; the LP station map works on pickup-return, store pages and from /book',async()=>{
-  const ctx=await browser.newContext({baseURL:app!.origin});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   for(const locale of ['ja','en'] as const){await p.goto('/'+locale);await expect(p.locator('footer.st-ft')).toBeVisible();
    assert.equal(await p.locator('footer a[href^="/staff"],footer a[href^="/admin"],header a[href^="/staff"],header a[href^="/admin"]').count(),0);
    await expect(p.locator('footer')).not.toContainText(locale==='ja'?'スタッフ入口':'STAFF');}
@@ -127,7 +128,7 @@ try{
   // Production adult labels arrive unordered (S, XS, M, 2XL, XL, L); only the options response is extended, nothing is saved.
   const shuffled=[['WEAR_JACKET',['S','XS','M','2XL','XL','L']],['WEAR_PANTS',['XS','XL','S','M','L','2XL']]] as const;
   for(const [width,height] of [[390,844],[1440,900]] as const)for(const locale of ['ja','en'] as const){const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
-   const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width,height}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+   const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width,height}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
    await p.route('**/api/guest/options',async route=>{const r=await route.fetch(),body=await r.json() as {sizes:{key:string;label:string;family:string;age:string;tier:string}[]};
     body.sizes=[...body.sizes.filter(v=>!v.family.startsWith('WEAR_')),...shuffled.flatMap(([family,labels])=>labels.map(label=>({key:'r70-'+family+'-'+label,label,family,age:'ADULT',tier:'STANDARD'})))];await route.fulfill({response:r,json:body});});
    await p.goto('/'+locale+'/book');await expect(p.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();
@@ -168,7 +169,7 @@ try{
   await page.screenshot({path:'.local/screenshots/guest-review-mobile.png',fullPage:true});
  });
  await check('UX-3A regression: the unsaved-changes banner does not appear on first arrival at a step, only after an actual edit on it',async()=>{
-  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await expect(p.getByText('入力内容は「候補と参考料金を確認」で保存されます')).toHaveCount(0);
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-03-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-03-01');
@@ -182,7 +183,7 @@ try{
   await ctx.close();
  });
  await check('UX3R-01 regression: hiding the unsaved-changes banner on step arrival must never disable the actual guardNav/beforeunload protection',async()=>{
-  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-04-01');await p.getByLabel('利用終了日',{exact:true}).fill('2035-04-01');
   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
@@ -211,7 +212,7 @@ try{
   await ctx.close();
  });
  await check('UX-4A regression: a second person card starts collapsed, expands on request, and both reach the candidate step',async()=>{
-  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-07');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-07');
   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
@@ -226,7 +227,7 @@ try{
   await ctx.close();
  });
  await check('R67 smoke fix: opening another person card brings its summary below the opaque header without stealing focus; keyboard toggle too',async()=>{
-  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p.getByLabel('利用開始日',{exact:true}).fill('2035-01-08');await p.getByLabel('利用終了日',{exact:true}).fill('2035-01-08');
   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();await p.getByLabel('利用人数',{exact:true}).fill('2');
@@ -267,7 +268,7 @@ try{
   });await page.getByRole('button',{name:'この内容で支払う（開発用決済）'}).click();await lost;assert.ok(cm06Checked,'CM-06 busy-state assertions must actually run inside the gated request, not be skipped');await expect(page.getByRole('button',{name:'最新の内容を確認'})).toBeEnabled();await expect(page.getByRole('main').getByRole('alert')).toContainText('処理でエラーが発生しました');await page.unroute('**/api/guest/checkout');await page.reload();await expect(page.getByRole('heading',{name:'予約が確定しました',exact:true})).toBeVisible();await expect(page.getByRole('img',{name:'開発予約QR',exact:true})).toBeVisible();const before=(await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString();await page.getByRole('button',{name:'最新の内容を確認'}).click();assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM rental_payment_attempts')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n,1);assert.equal((await app!.db.pool.query('SELECT expires_at FROM inventory_holds')).rows[0].expires_at.toISOString(),before);await page.screenshot({path:'.local/screenshots/guest-confirmed-mobile.png',fullPage:true});
  });
  await check('UIR-01/UIR-02 regression: no cross-context input leak, malformed cache does not crash, server-saved input still restores',async()=>{
-  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/ja/book');await expect(p.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   // A sentinel from an unrelated key prefix (what a real booking-access/recovery flow would set)
   // must survive whatever cleanup this scenario triggers -- only zao-guest-draft-input is in scope.
@@ -304,7 +305,7 @@ try{
   // JA: requesting the advance-payment estimate (still within its qualification window)
   // must surface a nonzero "事前決済割引" row alongside the subtotal/total;
   // no wear items are selected here, so the wear-adjustment row must stay absent.
-  const jaCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});jaCtx.setDefaultTimeout(15000);const ja=await jaCtx.newPage();last=ja;
+  const jaCtx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});jaCtx.setDefaultTimeout(15000);const ja=await jaCtx.newPage();last=ja;
   await ja.goto('/ja/book');await expect(ja.getByLabel('利用開始日',{exact:true})).toBeEnabled();await ja.getByLabel('利用開始日',{exact:true}).fill('2035-01-10');await ja.getByLabel('利用終了日',{exact:true}).fill('2035-01-10');await ja.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(ja,'ja');await ja.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await ja.getByRole('radio',{name:/おすすめ/}).check();await ja.getByLabel('全員の内容を確認しました').check();await ja.getByLabel('事前に支払って5%OFFを利用する').check();await ja.getByRole('button',{name:'全員分の最終確認へ'}).click();await expect(ja.getByRole('region',{name:'全員分の確認'})).toBeVisible();
   await expect(ja.locator('dl.guest-price dt')).toHaveText(['小計','事前決済割引','お支払い金額（税込）']);
   await expect(ja.locator('dl.guest-price')).not.toContainText('ウェアセット割引');
@@ -321,7 +322,7 @@ try{
   await jaCtx.close();
   // EN, same narrow viewport, default (zero-adjustment) flow: labels localize and no
   // adjustment rows leak in when nothing triggers them, mirroring the JA zero case above.
-  const enCtx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});enCtx.setDefaultTimeout(15000);const en=await enCtx.newPage();last=en;
+  const enCtx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});enCtx.setDefaultTimeout(15000);const en=await enCtx.newPage();last=en;
   await en.goto('/en/book');await expect(en.getByLabel('Start date',{exact:true})).toBeEnabled();await en.getByLabel('Start date',{exact:true}).fill('2035-01-11');await en.getByLabel('End date',{exact:true}).fill('2035-01-11');await en.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(en,'en');await en.getByRole('button',{name:'Review sizes and estimates',exact:true}).click();
   // Match the human-readable English recommendation label.
   await en.getByRole('radio',{name:/RECOMMENDED/i}).check();await en.getByLabel('I have checked everyone’s selections').check();await en.getByRole('button',{name:'Review the whole group',exact:true}).click();await expect(en.getByRole('region',{name:'Group review'})).toBeVisible();
@@ -333,7 +334,7 @@ try{
  });
  await check('UIR-03/UIR-04 regression: history never guesses go() distance, never revives a stale review as checkout-ready after a local edit, and causes no extra HOLD',async()=>{
   const holdsBefore=(await app!.db.pool.query('SELECT count(*)::int n FROM inventory_holds')).rows[0].n;
-  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   // 1) fresh context: valid dates -> step 1 -> real Back -> real Forward returns to step 1
   // without ever leaving /book (this exact app was observed, live, to fall back to a full
   // document reload on some in-app Back/Forward transitions -- a real Next.js dev-mode
@@ -405,7 +406,7 @@ try{
   // matters: after editing equipment post-review, a stale review is never shown as
   // checkout-ready -- before CH-04B the reload dropped the edit and showed only the server's own
   // contract; since CH-04B it restores the edit and no review/checkout is reachable at all.
-  const ctx2=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx2.setDefaultTimeout(15000);const p2=await ctx2.newPage();last=p2;
+  const ctx2=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx2.setDefaultTimeout(15000);const p2=await ctx2.newPage();last=p2;
   await p2.goto('/ja/book');await expect(p2.getByLabel('利用開始日',{exact:true})).toBeEnabled();
   await p2.getByLabel('利用開始日',{exact:true}).fill('2035-02-03');await p2.getByLabel('利用終了日',{exact:true}).fill('2035-02-03');
   await p2.getByRole('button',{name:'CONTINUE',exact:true}).click();
@@ -441,7 +442,7 @@ try{
   await ctx2.close();
  });
  await check('UIR-03 regression (EN): a stale review is never shown as checkout-ready after an unsubmitted equipment edit',async()=>{
-  const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
+  const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;
   await p.goto('/en/book');await expect(p.getByLabel('Start date',{exact:true})).toBeEnabled();
   await p.getByLabel('Start date',{exact:true}).fill('2035-02-02');await p.getByLabel('End date',{exact:true}).fill('2035-02-02');
   await p.getByRole('button',{name:'CONTINUE',exact:true}).click();
@@ -475,7 +476,7 @@ try{
   await p.getByLabel(ja?'全員の内容を確認しました':'I have checked everyone’s selections').check();
   await p.getByRole('button',{name:ja?'全員分の最終確認へ':'Review the whole group',exact:true}).click();await expect(p.getByRole('region',{name:ja?'全員分の確認':'Group review'})).toBeVisible();
  }
- const newPage=async(width=390,height=844)=>{const ctx=await browser.newContext({baseURL:app!.origin,viewport:{width,height}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;p.on('dialog',d=>void d.accept());return {ctx,p};};
+ const newPage=async(width=390,height=844)=>{const ctx=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width,height}});ctx.setDefaultTimeout(15000);const p=await ctx.newPage();last=p;p.on('dialog',d=>void d.accept());return {ctx,p};};
  const countOf=async(table:string)=>(await app!.db.pool.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n as number;
  const noRawCode=async(p:Page)=>assert.doesNotMatch(await p.getByRole('main').innerText(),/\b[A-Z]{2,}_[A-Z_]{2,}\b/,'no internal enum or error code is customer-visible');
  await check('UI-FINAL-R01: static date and slot constraints stop invalid periods inline before any save',async()=>{
@@ -660,12 +661,12 @@ try{
   }
  });
  await check('cross-guest/CSRF and role/amount tampering rejected; logout drops the former context',async()=>{
-  const old=await (await context.request.get('/api/guest/draft')).json();const other=await browser.newContext({baseURL:app!.origin});assert.equal((await other.request.get('/api/guest/draft')).status(),401);assert.equal((await other.request.post('/api/guest/context',{data:{}})).status(),403);await other.request.post('/api/guest/context',{headers:{origin:app!.origin},data:{}});assert.equal((await other.request.post('/api/guest/draft',{headers:{origin:app!.origin},data:{draftId:old.id,expectedRevision:old.revision,input:old.input}})).status(),403);assert.equal((await context.request.post('/api/guest/checkout',{headers:{origin:app!.origin},data:{paid:true,amount:1,role:'ADMIN'}})).status(),422);await page.getByRole('button',{name:'この予約画面を閉じる'}).click();await page.waitForURL(app!.origin+'/ja');assert.equal((await context.request.get('/api/guest/draft')).status(),401);await other.close();
+  const old=await (await context.request.get('/api/guest/draft')).json();const other=await newQuietContext(browser,{baseURL:app!.origin});assert.equal((await other.request.get('/api/guest/draft')).status(),401);assert.equal((await other.request.post('/api/guest/context',{data:{}})).status(),403);await other.request.post('/api/guest/context',{headers:{origin:app!.origin},data:{}});assert.equal((await other.request.post('/api/guest/draft',{headers:{origin:app!.origin},data:{draftId:old.id,expectedRevision:old.revision,input:old.input}})).status(),403);assert.equal((await context.request.post('/api/guest/checkout',{headers:{origin:app!.origin},data:{paid:true,amount:1,role:'ADMIN'}})).status(),422);await page.getByRole('button',{name:'この予約画面を閉じる'}).click();await page.waitForURL(app!.origin+'/ja');assert.equal((await context.request.get('/api/guest/draft')).status(),401);await other.close();
  });
  await check('guest-confirmed MULTIDAY first-day no-show -> normal staff login/UI -> day2 actual checkout, original contract/price unchanged',async()=>{
   const booking=(await app!.db.pool.query('SELECT * FROM rental_bookings ORDER BY created_at LIMIT 1')).rows[0];const before={conditions:booking.conditions,price:booking.price_snapshot,hash:booking.price_sha256};
   await app!.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-05T17:01:00+09:00'::timestamptz$$");assert.equal((await app!.db.pool.query('SELECT count(*)::int n FROM inventory_claims WHERE hold_id=$1 AND active',[booking.hold_id])).rows[0].n,6);
-  const adminContext=await browser.newContext({baseURL:app!.origin}),adminPage=await adminContext.newPage();last=adminPage;adminContext.setDefaultTimeout(15000);await staffLogin(adminPage,'public-root@example.invalid');
+  const adminContext=await newQuietContext(browser,{baseURL:app!.origin}),adminPage=await adminContext.newPage();last=adminPage;adminContext.setDefaultTimeout(15000);await staffLogin(adminPage,'public-root@example.invalid');
   // URL navigation alone is not a completed authenticated UI. Create the handoff
   // operator through the existing management form after its session boundary opens.
   // One submission only: neither a 500 nor a lost response is retried here.
@@ -673,7 +674,7 @@ try{
   const form=adminPage.getByRole('form',{name:'スタッフ作成'});await form.getByLabel('表示名',{exact:true}).fill('SYNTHETIC Handoff');await form.getByLabel('メールアドレス',{exact:true}).fill('public-custody@example.invalid');await form.getByLabel('初期パスワード（6〜128文字）').fill(password);await form.getByLabel('初期パスワード（確認）').fill(password);await form.locator('details.staff-perm-details').evaluate(d=>{(d as HTMLDetailsElement).open=true;});await form.getByLabel('Mountain Station',{exact:true}).check();
   for(const label of ['台帳の閲覧','予約の閲覧','受付・貸出'])await form.getByLabel(label,{exact:true}).selectOption('allow');
   const [created]=await Promise.all([adminPage.waitForResponse(r=>r.url()===app!.origin+'/api/staff-users'&&r.request().method()==='POST',{timeout:60000}),form.getByRole('button',{name:'スタッフ設定を保存'}).click()]);console.log('STAFF_CREATION '+JSON.stringify({status:created.status(),json:created.headers()['content-type']?.includes('application/json')===true}));assert.equal(created.status(),201);await expect(adminPage.getByRole('heading',{name:'SYNTHETIC Handoff',exact:true})).toBeVisible();await adminContext.close();
-  const staff=await browser.newContext({baseURL:app!.origin,viewport:{width:390,height:844}});staff.setDefaultTimeout(15000);const p=await staff.newPage();last=p;await staffLogin(p,'public-custody@example.invalid');
+  const staff=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width:390,height:844}});staff.setDefaultTimeout(15000);const p=await staff.newPage();last=p;await staffLogin(p,'public-custody@example.invalid');
   await app!.db.pool.query("CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '2035-01-06T10:00:00+09:00'::timestamptz$$");await p.goto('/staff/rental');await expect.poll(()=>p.getByRole('button',{name:'予約と用品を確認'}).evaluate(b=>typeof (b as HTMLButtonElement).onclick)).toBe('function');await p.getByLabel('予約番号または予約QR').fill('zao-rental:reservation:'+booking.id);await p.evaluate(async()=>{window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:false}));await new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));});await expect(p.getByLabel('予約番号または予約QR')).toHaveValue('zao-rental:reservation:'+booking.id);const assignmentResponse=p.waitForResponse(r=>r.url().includes('/api/custody/booking/')&&r.request().method()==='GET');await expect(p.getByLabel('予約番号または予約QR')).toHaveValue('zao-rental:reservation:'+booking.id);await p.getByRole('button',{name:'予約と用品を確認'}).click();const ar=await assignmentResponse;const av=await ar.json();console.log('HANDOFF_RESPONSE '+JSON.stringify({status:ar.status(),error:av.error,pickupTiming:av.pickupTiming}));await expect(p.getByRole('region',{name:'貸出用品'})).toContainText('詳細確認');await p.getByLabel('刻印・実測したソール長（mm）').fill('314');await p.getByLabel('ブーツとビンディングの適合を確認した').check();await p.getByLabel('ビンディング調整・現物検査済み').check();await p.getByLabel('割当用品・サイズ・モデルを現物と照合した').check();await p.getByRole('button',{name:'準備完了にする'}).click();await p.getByRole('button',{name:'道具の貸出を記録'}).click();await expect(p.getByRole('region',{name:'貸出用品'})).toContainText('貸出中');const after=(await app!.db.pool.query('SELECT * FROM rental_bookings WHERE id=$1',[booking.id])).rows[0];assert.deepEqual({conditions:after.conditions,price:after.price_snapshot,hash:after.price_sha256},before);const loans=(await app!.db.pool.query('SELECT checked_out_at,due_at FROM rental_loan_items WHERE booking_id=$1',[booking.id])).rows;assert.equal(loans.length,3);assert.ok(loans.every(l=>l.checked_out_at.toISOString()==='2035-01-06T01:00:00.000Z'&&l.due_at.toISOString()==='2035-01-06T08:00:00.000Z'));await p.screenshot({path:'.local/screenshots/late-pickup-staff-mobile.png',fullPage:true});await staff.close();
  });
  console.log(`Public/guest UI ${count} cases passed; synthetic adapter and mobile viewport, not real device/Square.`);

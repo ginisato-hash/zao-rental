@@ -1,5 +1,6 @@
 /** R64 production-copy visual proof. Local fixture app, unchanged real API/PG, fake payment only. */
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {fillGuestProfile} from './guest-profile';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -31,7 +32,7 @@ try{
  for(const permission of ['PRICE_EDIT','QUOTE_VIEW'])await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true) ON CONFLICT DO NOTHING',[root,permission]);
  await new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  for(const locale of ['ja','en'] as const){const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
-  const ctx=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
+  const ctx=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
   // Fixture-boundary aliases only: the service's mandatory SYNTHETIC contact guard is unchanged.
   // Only this exact fictional name/address is accepted. No real contact is forwarded or stored.
   await ctx.route('**/*',async route=>{const req=route.request(),url=new URL(req.url());if(url.origin!==app.origin){external++;await route.abort();return;}

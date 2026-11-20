@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {fillGuestProfile} from '../public/guest-profile';
 import {decodeReference} from './reference-browser';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
@@ -26,7 +27,7 @@ try{
  for(const permission of ['PRICE_EDIT','BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'])await db.pool.query('INSERT INTO staff_permission_overrides VALUES($1,$2,true)',[subject,permission]);
  await new QuoteService(app.roles.pricingPool,(await loadStaff(db.pool,subject))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  await check('PG','fresh canonical0001–0032 with dedicated Avatar role',async()=>{assert.equal((await db.pool.query("SELECT count(*)::int n FROM foundation_migrations WHERE id<='0032'")).rows[0].n,32);assert.ok(app!.avatar);});
- browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}}),anon=await browser.newContext({baseURL:origin}),other=await browser.newContext({baseURL:origin}),staff=await browser.newContext({baseURL:origin});
+ browser=await chromium.launch();const c=await newQuietContext(browser,{baseURL:origin,viewport:{width:390,height:844}}),anon=await newQuietContext(browser,{baseURL:origin}),other=await newQuietContext(browser,{baseURL:origin}),staff=await newQuietContext(browser,{baseURL:origin});
  let failArtwork=false;
  // Keep interception ownership stable while injecting the bundled reference-image failure.
  // Adding/removing a page route can race the context route for requests in flight.

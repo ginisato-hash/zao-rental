@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {fillGuestProfile} from '../public/guest-profile';
 import {chromium,expect} from '@playwright/test';
 import {randomUUID,randomBytes} from 'node:crypto';
@@ -13,7 +14,7 @@ try{
  app=await startFlowApp({publicP0:true,publicP1:true,publicP4:true,publicP5:true,warmRoutes:true});await seedRecommendation(app.db.pool,true);
  const clock=async(t:string)=>{assert.match(t,/^[0-9:T+-]+$/);await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${t}'::timestamptz$$`);};await clock('2035-01-01T10:00:00+09:00');
  const root=await bootstrapDevelopmentAdmin(app.db.pool,{email:'p4-root@example.invalid',displayName:'SYNTHETIC P4',password:randomBytes(24).toString('base64url')});for(const permission of ['QUOTE_VIEW','QUOTE_CREATE','PRICE_EDIT'])await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true)',[root,permission]);await new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
- const context=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});context.setDefaultTimeout(15000);const page=await context.newPage();
+ const context=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});context.setDefaultTimeout(15000);const page=await context.newPage();
  stage='ordinary guest UI confirmation';await page.goto('/ja/book');await expect(page.getByLabel('利用開始日',{exact:true})).toBeEnabled();await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-05');await page.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(page,'ja');await page.getByRole('button',{name:'候補と参考料金を確認',exact:true}).click();await page.getByRole('radio',{name:/おすすめ/}).check();await page.getByRole('checkbox',{name:'全員の内容を確認しました'}).check();await page.getByRole('button',{name:'全員分の最終確認へ'}).click();await page.getByRole('checkbox',{name:'合成データによる開発確認であることを確認'}).check();await page.getByRole('button',{name:'この内容で支払う（開発用決済）'}).click();await expect(page.getByRole('heading',{name:'予約が確定しました',exact:true})).toBeVisible();
  console.log('PASS normal guest UI -> protected API -> synthetic payment -> confirmed real PostgreSQL booking');
  stage='in-memory delivery enrollment';
@@ -26,7 +27,7 @@ try{
  await app.recoveryFixture!.enroll(guest.value,bookingId,randomUUID());const code=app.recoveryFixture!.code();await context.close();
  await clock('2035-01-02T10:00:00+09:00');
  assert.equal((await app.db.pool.query('SELECT bool_and(expires_at<inventory_clock()) v FROM guest_contexts')).rows[0].v,true);
- const fresh=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});fresh.setDefaultTimeout(15000);let recovered=await fresh.newPage();
+ const fresh=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844},hasTouch:true});fresh.setDefaultTimeout(15000);let recovered=await fresh.newPage();
  stage='fresh browser exchange response loss';await recovered.goto('/ja/reservation');await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toHaveCount(0);
  // The code input is a controlled React input that is already enabled in the server HTML: text filled before hydration is reset
  // to the empty state (CI 38097026148: button disabled, input length 0). Fill only once React owns the node.
@@ -48,12 +49,12 @@ try{
  console.log('PASS fresh browser/no guest -> UI code POST -> normal Next API -> real PostgreSQL -> readonly QR; response-loss reload same-key exchange');
  stage='Web restart retains recovered booking';await recovered.close();const restarted=await app.restartWeb(['/ja/reservation','/api/booking-access']);assert.notEqual(restarted.oldPid,restarted.newPid);let ready=false;for(let i=0;i<100;i++){try{if((await fetch(app.origin+'/api/health')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}assert.ok(ready,'restarted Web reaches liveness before browser navigation');recovered=await fresh.newPage();await recovered.goto('/ja/reservation');await expect(recovered.getByRole('img',{name:'保存済み予約QR'})).toBeVisible();
  assert.deepEqual((await app.db.pool.query('SELECT b.conditions,b.price_snapshot,b.price_sha256,h.expires_at,h.due_at FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1',[bookingId])).rows[0],before);
- const stranger=await browser.newContext({baseURL:app.origin});assert.equal((await stranger.request.post('/api/booking-access/recovery/exchange',{headers:{origin:app.origin},data:{code,requestId:randomUUID()}})).status(),401);await stranger.close();
+ const stranger=await newQuietContext(browser,{baseURL:app.origin});assert.equal((await stranger.request.post('/api/booking-access/recovery/exchange',{headers:{origin:app.origin},data:{code,requestId:randomUUID()}})).status(),401);await stranger.close();
  console.log('PASS process restart preserves one-time binding; another exchange key refused; original price/due/HOLD expiry unchanged');
  stage='recovered cancellation authority and lost response';
  const action=(await fresh.cookies()).find(c=>c.name==='zao_booking_cancel')!;assert.ok(action.httpOnly);assert.equal(action.sameSite,'Strict');
  for(const secret of [action.value]){assert.equal((await recovered.content()).includes(secret),false);assert.equal(await recovered.evaluate(v=>JSON.stringify({...localStorage,...sessionStorage}).includes(v),secret),false);}
- const readOnly=await browser.newContext({baseURL:app.origin});await readOnly.addCookies([cookie]);assert.equal((await readOnly.request.post('/api/booking-access/cancel',{headers:{origin:app.origin},data:{bookingId,requestKey:randomUUID(),previewHash:'a'.repeat(64)}})).status(),401);await readOnly.close();
+ const readOnly=await newQuietContext(browser,{baseURL:app.origin});await readOnly.addCookies([cookie]);assert.equal((await readOnly.request.post('/api/booking-access/cancel',{headers:{origin:app.origin},data:{bookingId,requestKey:randomUUID(),previewHash:'a'.repeat(64)}})).status(),401);await readOnly.close();
  await recovered.getByRole('button',{name:'予約をキャンセル',exact:true}).click();await expect(recovered.getByRole('heading',{name:'キャンセル内容の最終確認'})).toBeVisible();
  let cancelCommitted!:()=>void;const cancelled=new Promise<void>(resolve=>cancelCommitted=resolve);await recovered.route('**/api/booking-access/cancel',async route=>{const response=await route.fetch();assert.equal(response.status(),200);await route.abort('failed');cancelCommitted();});
  await recovered.getByRole('button',{name:'この返金額でキャンセルを確定'}).click();await cancelled;await recovered.unroute('**/api/booking-access/cancel');await recovered.reload();

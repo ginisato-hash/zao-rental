@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {chromium,expect,type BrowserContext,type Page} from '@playwright/test';
 import {startFlowApp} from '../flow/launcher';
@@ -18,8 +19,7 @@ const app=await startFlowApp({publicP0:true,publicP1:true,warmRoutes:true}),brow
 let failed=false,stage='start',count=0,external=0;
 async function check(name:string,fn:()=>Promise<void>){stage=name;await fn();count++;console.log('PASS '+name);}
 async function guest(){
- const ctx=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(20000);
- await ctx.routeWebSocket(/\/_next\/webpack-hmr/,()=>{/* silent: no dev reload */});
+ const ctx=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(20000);
  await ctx.route('**/*',async r=>{if(new URL(r.request().url()).origin!==app.origin){external++;await r.abort();return;}await r.fallback();});
  const p=await ctx.newPage(),posts:string[]=[],dialogs:string[]=[];
  p.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/guest/logout')posts.push(r.url());});

@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import {newQuietContext} from '../flow/dev-hmr';
 import {createHash} from 'node:crypto';
 import {PrivatePhotoJobs} from '../../packages/core/src/content/photo-job';
 import {preparePhotoDrafts} from '../../packages/core/src/content/media-plan';
@@ -20,13 +21,13 @@ try{
  const subject=(await app.db.pool.query("SELECT id FROM staff_users WHERE email='content-root@example.invalid'")).rows[0].id;
  await seedContentFixture(namespace,subject);owned=true;const fixture=new FileFixture(namespace);
  async function ready(){for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw new Error('APP_START_TIMEOUT');}await ready();
- const context=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}});context.setDefaultTimeout(15000);const p=await context.newPage();
+ const context=await newQuietContext(browser,{baseURL:origin,viewport:{width:390,height:844}});context.setDefaultTimeout(15000);const p=await context.newPage();
  await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill('content-root@example.invalid');await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
  const session=await context.request.get('/api/session');assert.equal(session.status(),200);const stamp=(await session.json()).stamp;
  const headers={origin,'x-zao-session':stamp};const body=(input:unknown)=>({requestKey:randomUUID(),input});
  await check('normal password authentication plus explicit synthetic CONTENT fixture grant, not role auto-publish',async()=>{
   await p.goto('/staff/content-fixture');await expect(p.getByRole('region',{name:'現在の下書き'})).toContainText('合成 SKI');
-  const anon=await browser.newContext({baseURL:origin});assert.equal((await anon.request.get('/api/content-fixture')).status(),401);await anon.close();
+  const anon=await newQuietContext(browser,{baseURL:origin});assert.equal((await anon.request.get('/api/content-fixture')).status(),401);await anon.close();
   assert.equal((await context.request.get('/api/content-fixture')).status(),409);
   assert.equal((await context.request.post('/api/content-fixture/bulk-prepare',{headers:{'x-zao-session':stamp},data:body({csv:''})})).status(),403);
   assert.equal((await context.request.post('/api/content-fixture/bulk-prepare',{headers,data:{...body({csv:''}),actor:'forged'}})).status(),409);
@@ -123,7 +124,7 @@ try{
   const request=body({csv:header+'1,BOARD,ja,1,summary,SET,denied'}),prep=await context.request.post('/api/content-fixture/bulk-prepare',{headers,data:request});assert.equal(prep.status(),200);const plan=await prep.json();const before=(await fixture.read()).state.catalog.revisions.length;
   await fixture.edit(async r=>{r.grants[subject]=['CONTENT_EDIT'];});assert.equal((await context.request.post('/api/content-fixture/bulk-commit',{headers,data:body({planId:plan.planId,hash:plan.hash})})).status(),403);assert.equal((await fixture.read()).state.catalog.revisions.length,before);
   const created=await context.request.post('/api/staff-users',{headers:{origin},data:{email:'content-manager@example.invalid',password,displayName:'SYNTHETIC Manager',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:{}}});assert.equal(created.status(),201);
-  const manager=await browser.newContext({baseURL:origin}),mp=await manager.newPage();await mp.goto('/staff/login');await mp.getByLabel('メールアドレス',{exact:true}).fill('content-manager@example.invalid');await mp.getByLabel('パスワード',{exact:true}).fill(password);await mp.getByRole('button',{name:'ログイン',exact:true}).click();await mp.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});const target=(await (await manager.request.get('/api/staff-users')).json()).items.find((a:{id:string})=>a.id===subject);assert.equal((await manager.request.patch('/api/staff-users/'+subject,{headers:{origin},data:{expectedRevision:target.revision,displayName:target.displayName,active:false,role:target.role,scope:target.scope,storeIds:target.storeIds,permissions:target.permissions}})).status(),200);await manager.close();assert.equal((await context.request.get('/api/content-fixture',{headers})).status(),401);
+  const manager=await newQuietContext(browser,{baseURL:origin}),mp=await manager.newPage();await mp.goto('/staff/login');await mp.getByLabel('メールアドレス',{exact:true}).fill('content-manager@example.invalid');await mp.getByLabel('パスワード',{exact:true}).fill(password);await mp.getByRole('button',{name:'ログイン',exact:true}).click();await mp.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});const target=(await (await manager.request.get('/api/staff-users')).json()).items.find((a:{id:string})=>a.id===subject);assert.equal((await manager.request.patch('/api/staff-users/'+subject,{headers:{origin},data:{expectedRevision:target.revision,displayName:target.displayName,active:false,role:target.role,scope:target.scope,storeIds:target.storeIds,permissions:target.permissions}})).status(),200);await manager.close();assert.equal((await context.request.get('/api/content-fixture',{headers})).status(),401);
   const normal=await readFile('apps/web/src/lib/staff-runtime.ts','utf8');assert.ok(!normal.includes('content-fixture'));const source=await readFile('tests/content/http.ts','utf8');assert.ok(source.includes("process.env.NODE_ENV!=='development'"));
  });
  console.log(`CONTENT fixture ${count} passed: normal password/real session DB, local synthetic content file; no production CMS role/storage/permissions or public release.`);

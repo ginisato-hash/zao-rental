@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {randomBytes,createHash} from 'node:crypto';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
@@ -23,7 +24,7 @@ try{
  const seed=await seedAvatarPhase4(db.pool,subject),base=structuredClone(seed.state),body=seed.metadata[0]!,path='/avatar-media/'+body.id+'/'+body.derivativeSha256,preview='/preview/avatar?preview='+seed.previewId+'&member='+seed.memberKey;
  const save=async(state:ContentWorkflowState)=>db.pool.query('UPDATE content_workspace SET value=$1,revision=revision+1',[JSON.stringify(state)]);
  const business=async()=>{const out:Record<string,unknown>={};for(const table of ['recommendation_previews','recommendation_selections','inventory_holds','inventory_claims','price_quotes','rental_bookings','rental_payment_attempts','ledger_assets','ledger_poles','wear_pools'])out[table]=(await db.pool.query(`SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') value FROM ${table} t`)).rows[0].value;return out;};
- const before=await business();browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:1440,height:1000}}),anon=await browser.newContext({baseURL:origin});
+ const before=await business();browser=await chromium.launch();const c=await newQuietContext(browser,{baseURL:origin,viewport:{width:1440,height:1000}}),anon=await newQuietContext(browser,{baseURL:origin});
  for(const context of [c,anon])await context.route('**/*',async route=>{if(new URL(route.request().url()).origin!==origin){externalAttempts++;await route.abort();}else{if(route.request().method()==='POST'&&!route.request().url().includes('/api/auth/'))businessPosts++;await route.continue();}});
  const page=await c.newPage(),fatal:string[]=[];page.on('pageerror',()=>fatal.push('PAGE_ERROR'));page.on('console',m=>{if(m.type()==='error'&&/hydration|uncaught|maximum update/i.test(m.text()))fatal.push('CONSOLE_FATAL');});
  await check('BROWSER','anonymous preview and image cannot expose payload/bytes',async()=>{const html=await (await anon.request.get(preview)).text();assert.match(html,/Staff sign-in/);assert.ok(!html.includes(body.derivativeSha256));assert.equal((await anon.request.get(path)).status(),404);});

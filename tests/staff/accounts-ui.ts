@@ -98,6 +98,44 @@ try{
   await v.ctx.close();const again=await signIn('accounts-viewer@example.invalid',viewerNew);await again.ctx.close();
  });
  assert.deepEqual(errors,[]);
+ await check('failures never look like success: a duplicate email, a server error and another administrator\'s change are shown and saved nothing; a slow save is sent once; a failed password change keeps the form',async()=>{
+  const p=admin.p,list=async()=>((await (await p.request.get('/api/staff-users')).json()) as {items:{email:string}[]}).items.map(i=>i.email).sort();
+  const before=await list(),open=async()=>{await p.goto('/staff/users');await p.getByRole('button',{name:'スタッフを作成'}).click();const f=p.getByRole('form',{name:'スタッフ作成'});
+   await f.getByLabel('表示名',{exact:true}).fill('SYNTHETIC Failure');await f.getByLabel('初期パスワード（6〜128文字）').fill('fail-pass-1');await f.getByLabel('初期パスワード（確認）').fill('fail-pass-1');
+   await f.getByLabel('Mountain Station',{exact:true}).check();return f;};
+  // 1. Duplicate email (the front desk account exists): the server refuses, the page says so, the entries stay.
+  let f=await open();await f.getByLabel('メールアドレス',{exact:true}).fill('accounts-desk@example.invalid');
+  const dup=p.waitForResponse(r=>r.url().endsWith('/api/staff-users')&&r.request().method()==='POST');await f.getByRole('button',{name:'スタッフ設定を保存'}).click();
+  {const res=await dup;assert.ok(res.status()>=400,'duplicate email refused');console.log('DUPLICATE_ANSWER '+res.status());}await f.getByRole('alert').filter({hasText:'保存できませんでした'}).waitFor();
+  assert.equal(await f.getByLabel('表示名',{exact:true}).inputValue(),'SYNTHETIC Failure','entries kept');assert.deepEqual(await list(),before,'no account added');
+  // 2. Server error 500: shown as a failure, nothing created.
+  f=await open();await f.getByLabel('メールアドレス',{exact:true}).fill('accounts-500@example.invalid');
+  await p.route('**/api/staff-users',r=>r.request().method()==='POST'?r.fulfill({status:500,json:{error:'STAFF_MANAGEMENT_FAILED'}}):r.fallback());
+  await f.getByRole('button',{name:'スタッフ設定を保存'}).click();await f.getByRole('alert').filter({hasText:'保存できませんでした'}).waitFor();await p.unroute('**/api/staff-users');
+  assert.deepEqual(await list(),before,'nothing created on 500');
+  // 3. A slow save pressed again while waiting: exactly one request, one account.
+  let posts=0;const count=(r:import('@playwright/test').Request)=>{if(r.method()==='POST'&&r.url().endsWith('/api/staff-users'))posts++;};p.on('request',count);
+  await p.route('**/api/staff-users',async r=>{if(r.request().method()==='POST')await new Promise(x=>setTimeout(x,2000));await r.fallback();});
+  f=await open();await f.getByLabel('メールアドレス',{exact:true}).fill('accounts-slow@example.invalid');const slow=p.waitForResponse(r=>r.url().endsWith('/api/staff-users')&&r.request().method()==='POST');
+  await f.getByRole('button',{name:'スタッフ設定を保存'}).click();for(let i=0;i<3;i++)await f.getByRole('button',{name:'スタッフ設定を保存'}).click({timeout:400}).catch(()=>{/* disabled while saving */});
+  {const res=await slow;assert.equal(res.status(),201,'slow save status');}await p.unroute('**/api/staff-users');await p.waitForTimeout(500);p.off('request',count);
+  assert.equal(posts,1,'one request for a slow save pressed repeatedly');assert.equal((await list()).filter(e=>e==='accounts-slow@example.invalid').length,1);
+  // 4. Another administrator changed the person meanwhile (stale revision): the page asks to reload and does not claim success.
+  await p.goto('/staff/users');await p.getByRole('button',{name:'スタッフを編集：SYNTHETIC Front Desk'}).click();const edit=p.getByRole('form').first();
+  await p.route('**/api/staff-users/*',r=>r.request().method()==='PATCH'?r.fulfill({status:409,json:{error:'STALE_STAFF_REVISION'}}):r.fallback());
+  await edit.getByLabel('表示名',{exact:true}).fill('SYNTHETIC Front Desk Renamed');await edit.getByRole('button',{name:'スタッフ設定を保存'}).click();
+  await p.getByText('別の管理者が更新したため再読込が必要です',{exact:false}).first().waitFor();await p.unroute('**/api/staff-users/*');
+  assert.ok((await (await p.request.get('/api/staff-users')).text()).includes('SYNTHETIC Front Desk')&&!(await (await p.request.get('/api/staff-users')).text()).includes('Renamed'),'nothing saved on a stale revision');
+  // 5. Own password change: a server error and a lost connection keep the typed values and show an error.
+  const v=await signIn('accounts-slow@example.invalid','fail-pass-1');await v.p.goto('/staff/password');
+  for(const [kind,answer] of [['500',(r:import('@playwright/test').Route)=>r.fulfill({status:500,json:{error:'INTERNAL'}})],['offline',(r:import('@playwright/test').Route)=>r.abort('internetdisconnected')]] as const){
+   await v.p.route('**/api/auth/change-password',answer);
+   await v.p.getByLabel('現在のパスワード',{exact:true}).fill('fail-pass-1');await v.p.getByLabel('新しいパスワード',{exact:true}).fill('next-pass-2');await v.p.getByLabel('新しいパスワード（確認）',{exact:true}).fill('next-pass-2');
+   await v.p.getByRole('button',{name:'パスワードを変更'}).click();await v.p.getByRole('alert').first().waitFor();await v.p.unroute('**/api/auth/change-password');
+   assert.equal(new URL(v.p.url()).pathname,'/staff/password',kind+': stays on the form');assert.equal(await v.p.getByLabel('新しいパスワード',{exact:true}).inputValue(),'next-pass-2',kind+': typed values kept');
+  }
+  assert.equal((await v.ctx.request.get('/api/session')).status(),200,'still signed in: nothing was changed');await v.ctx.close();
+ });
  console.log(JSON.stringify({status:'PASS',cases:count,screenshots:shots,secretsPrinted:0}));
  await admin.ctx.close();
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage,message:(e as Error).message?.slice(0,700)}));}

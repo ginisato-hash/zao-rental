@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {closeGuestAndAwaitLogout} from './guest-close';
 import {fillGuestProfile} from '../public/guest-profile';
 import {decodeReference} from './reference-browser';
@@ -48,14 +49,13 @@ try{
   const p=(await db.pool.query("SELECT prosecdef,proconfig,EXISTS(SELECT 1 FROM aclexplode(proacl) a WHERE grantee=0 AND privilege_type='EXECUTE') public_execute FROM pg_proc WHERE oid='avatar_visual_derivative(uuid,text)'::regprocedure")).rows[0];assert.equal(p.prosecdef,true);assert.equal(p.public_execute,false);assert.deepEqual(p.proconfig,['search_path=pg_catalog, public, pg_temp']);
   const role=(await db.pool.query('SELECT rolsuper,rolcreatedb,rolcreaterole,rolinherit,rolreplication,rolbypassrls FROM pg_roles WHERE rolname=$1',[app!.avatar!.avatarDb.user])).rows[0];assert.ok(Object.values(role).every(x=>x===false));assert.equal((await db.pool.query('SELECT count(*)::int n FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=$1)',[app!.avatar!.avatarDb.user])).rows[0].n,0);
  });
- browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}}),other=await browser.newContext({baseURL:origin}),anon=await browser.newContext({baseURL:origin}),staff=await browser.newContext({baseURL:origin});
+ browser=await chromium.launch();const c=await newQuietContext(browser,{baseURL:origin,viewport:{width:390,height:844}}),other=await newQuietContext(browser,{baseURL:origin}),anon=await newQuietContext(browser,{baseURL:origin}),staff=await newQuietContext(browser,{baseURL:origin});
  // Guest browsers run without the next dev HMR channel (AVATAR-EXIT-01 / CI #44701174510, #44707581667): production
  // builds have no HMR, and a dev reload broadcast can reload a page that is navigating. The socket is answered by a silent
  // mock (never connected to the dev server). Staff/anon contexts are unchanged.
- for(const context of [c,other])await context.routeWebSocket(/\/_next\/webpack-hmr/,()=>{/* silent: no dev reload messages */});
  for(const context of [c,other,anon,staff]){context.setDefaultTimeout(25000);await context.route('**/*',async route=>{const r=route.request(),url=new URL(r.url());if(url.origin!==origin){externalAttempts++;await route.abort();}else{if(measuring&&r.method()==='POST'&&url.pathname!=='/api/guest/context')visualPosts.push(url.pathname);if(measuring&&url.pathname.startsWith('/api/guest/avatar/'))metadataRequests.push(url.pathname);await route.continue();}});}
  for(const p of ['/ja','/ja/book','/staff/login','/staff/ledger','/api/auth/get-session'])await anon.request.get(p);
- const page=await c.newPage();page.on('pageerror',()=>fatals.push('PAGE_ERROR'));page.on('console',m=>{if(m.type()==='error'&&/hydration|uncaught|maximum update/i.test(m.text()))fatals.push('CONSOLE_FATAL');});
+ const page=await c.newPage();if(process.env.ZAO_TEST_CPU_THROTTLE){const t=await c.newCDPSession(page);await t.send('Emulation.setCPUThrottlingRate',{rate:Number(process.env.ZAO_TEST_CPU_THROTTLE)});}page.on('pageerror',()=>fatals.push('PAGE_ERROR'));page.on('console',m=>{if(m.type()==='error'&&/hydration|uncaught|maximum update/i.test(m.text()))fatals.push('CONSOLE_FATAL');});
  await check('BROWSER','normal GuestBooking creates two synthetic member candidates before artwork interactions',async()=>{
   await page.goto('/ja/book');await page.getByLabel('利用開始日',{exact:true}).fill('2035-01-05');await page.getByLabel('利用終了日',{exact:true}).fill('2035-01-05');await page.getByRole('button',{name:'CONTINUE',exact:true}).click();await page.getByLabel('利用人数',{exact:true}).fill('2');
   for(const n of [1,2]){if(n===2)await page.getByText('利用者 2').first().click();await page.getByRole('article',{name:'利用者 '+n,exact:true}).getByLabel('身長（cm）',{exact:true}).fill(n===1?'170':'180');}
@@ -132,6 +132,8 @@ try{
   assert.equal(logout.status(),200);timeline.push(at()+' logout 200');
   try{await page.waitForURL(origin+'/ja',{waitUntil:'domcontentloaded'});
    assert.equal(timeline.filter(x=>/ dialog /.test(x)).length,0,'no leave prompt after a successful close: '+timeline.join(' | '));
+   // AVATAR-CI-02: with the dev reload channel silenced (tests/flow/dev-hmr.ts) nothing reloads the page during the close.
+   assert.equal(timeline.filter(x=>/ cdp-nav reload /.test(x)).length,0,'no reload during the close: '+timeline.join(' | '));
    assert.equal(timeline.filter(x=>/ req POST \/api\/guest\/logout/.test(x)).length,1,'exactly one logout POST: '+timeline.join(' | '));if(process.env.ZAO_TEST_TIMELINE==='1')console.log('CLOSE_TIMELINE '+timeline.join(' | '));}
   catch(e){assert.fail(`no navigation to /ja after logout 200; now ${new URL(page.url()).pathname}; timeline: ${timeline.join(' | ')}; ${(e as Error).message.split('\n')[0]}`);}
   finally{page.off('framenavigated',onNav);page.off('request',onReq);page.off('response',onRes);page.off('response',onLogoutRes);page.off('requestfailed',onFail);page.off('dialog',onDialog);page.off('console',onConsole);await cdp.detach().catch(()=>{});}for(const p of [imagePath,metadataPath])assert.equal((await c.request.get(p)).status(),404);assert.equal((await other.request.get('/api/guest/draft')).status(),200);});

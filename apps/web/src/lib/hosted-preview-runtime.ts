@@ -49,7 +49,8 @@ async function createHostedPreview(){
   stage='R2_INIT';
   const r2=new R2MediaProvider(c.r2.accountId,c.r2.bucket,async()=>({...c.r2,expiresAt:new Date(c.r2.expiresAt),revoked:false}),async()=>{throw Error('PHASE6_READ_ONLY');});
   const service=(actor:GuestActor)=>{const holds=new HoldService(pools.hold,actor),quotes=new QuoteService(pools.pricing,actor),recs=new RecommendationService(pools.recommendation,actor,holds,quotes,async variants=>guestVariants(await guestCatalog(pools.content_read,variants),variants));return new GuestBookingService(contexts,actor,recs,null,async()=>guestCatalog(pools.content_read,await holds.recommendationCatalog()));};
-  const avatar:GuestAvatarBoundary={guard:r=>avatarSecurity.guard(peer(r)),load:(headers,scope)=>loadGuestAvatar(contexts,pools.recommendation,visuals,headers,scope),reader:()=>({findForDelivery:(id,hash,now)=>visuals.findForDelivery(id,hash,now),readBytes:async hash=>{
+  // Avatar media keeps its own global byte-delivery cost budget (separate policy version).
+  const avatar:GuestAvatarBoundary={guard:r=>avatarSecurity.guard(peer(r),{entry:true}),load:(headers,scope)=>loadGuestAvatar(contexts,pools.recommendation,visuals,headers,scope),reader:()=>({findForDelivery:(id,hash,now)=>visuals.findForDelivery(id,hash,now),readBytes:async hash=>{
    // avatarDerivative checks eligibility before and after this private provider IO.
    const entry=approvedArtwork.files.find(x=>x.sha256===hash);if(!entry)return null;
    const bytes=await r2.readPrivate(mediaObjectKey({kind:'DERIVATIVE',sha256:hash,bytes:entry.bytes,mime:'image/webp'}));return bytes?.byteLength===entry.bytes?Buffer.from(bytes):null;

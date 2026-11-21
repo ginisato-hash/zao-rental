@@ -1,4 +1,5 @@
 import {createHash,createHmac,randomBytes} from 'node:crypto';
+import {isIP} from 'node:net';
 import type {Pool,PoolClient} from 'pg';
 import {type GuestActor} from '../../../auth/src/booking-actor';
 import {canonical,HoldError} from '../../../contracts/src/hold';
@@ -8,17 +9,32 @@ import {GuestContexts} from './context';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 const milliseconds=(n:number)=>n*1000;
 /** Peer identity comes from a configured trusted ingress/socket adapter, NEVER arbitrary request headers. */
-export function guestPeerKey(verifiedAddress:string,serverKey:string){if(!verifiedAddress||verifiedAddress.length>200||serverKey.length<32)throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);return createHmac('sha256',serverKey).update('guest-peer-v1\0').update(verifiedAddress).digest('hex');}
+/** One IPv6 subscriber normally holds a whole /64, so per-address keys would hand one client
+ * unlimited peer budgets. Callers pass canonicalPeer() output; IPv4 and other values are unchanged. */
+function rateSubject(address:string){
+ if(isIP(address)!==6)return address;
+ const [head,tail]=address.split('::'),left=head?head.split(':'):[],right=tail?tail.split(':'):[];
+ const groups=tail===undefined?left:[...left,...Array(8-left.length-right.length).fill('0'),...right];
+ return groups.slice(0,4).map(g=>parseInt(g,16).toString(16)).join(':')+'::/64';
+}
+export function guestPeerKey(verifiedAddress:string,serverKey:string){if(!verifiedAddress||verifiedAddress.length>200||serverKey.length<32)throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);return createHmac('sha256',serverKey).update('guest-peer-v1\0').update(rateSubject(verifiedAddress)).digest('hex');}
 export class GuestSecurity{
  readonly policy:Readonly<GuestSecurityPolicy>;
  constructor(readonly pool:Pool,readonly contexts:GuestContexts,policy:unknown,private serverKey:string){this.policy=guestSecurityPolicy(policy);if(serverKey.length<32)throw new HoldError('GUEST_KEY_REQUIRED',503);}
  private async checkPolicy(c:Pick<PoolClient,'query'>){const fingerprint=hash(canonical(this.policy));await c.query('INSERT INTO guest_policy_versions VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[this.policy.version,fingerprint,JSON.stringify(this.policy)]);if((await c.query('SELECT fingerprint FROM guest_policy_versions WHERE version=$1',[this.policy.version])).rows[0]?.fingerprint!==fingerprint)throw new HoldError('GUEST_POLICY_VERSION_CONFLICT',503);}
  async transaction<T>(fn:(c:PoolClient)=>Promise<T>){const c=await this.pool.connect();try{await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='5000ms'");await this.checkPolicy(c);const v=await fn(c);await c.query('COMMIT');return v;}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}}
  async create(){await this.checkPolicy(this.pool);return this.contexts.create({contextSeconds:this.policy.contextSeconds,absoluteSeconds:this.policy.absoluteSeconds,policyVersion:this.policy.version});}
- async guard(peer:string|undefined){if(!peer||!/^[a-f0-9]{64}$/.test(peer))throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);await this.transaction(async c=>{
+ async guard(peer:string|undefined,{entry=false}:{entry?:boolean}={}){if(!peer||!/^[a-f0-9]{64}$/.test(peer))throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);
+ // The global budget bounds only anonymous entry (new context, recovery). Charging it for requests
+ // that already hold a guest context would let a few peers deny service to every guest in a flow.
+ // Stable order when both apply.
+ await this.charge([...(entry?[['global',this.policy.globalRequests]] as const:[]),[peer,this.policy.peerRequests]]);}
+ /** Global budget only, for a route whose anonymous branch is known after the per-peer guard ran
+  * (POST /context creates a new context only when no existing guest context resolves). */
+ async admitEntry(){await this.charge([['global',this.policy.globalRequests]]);}
+ private async charge(budgets:readonly (readonly [string,number])[]){await this.transaction(async c=>{
   const now=(await c.query<{now:Date}>('SELECT inventory_clock() now')).rows[0]!.now,window=Math.floor(now.getTime()/milliseconds(this.policy.windowSeconds)),end=new Date((window+1)*milliseconds(this.policy.windowSeconds));
-  // Stable order, one global budget bounds distinct peer buckets even during anonymous abuse.
-  for(const [key,limit] of [['global',this.policy.globalRequests],[peer,this.policy.peerRequests]] as const){const bucket=this.policy.version+':'+key+':'+window;const row=(await c.query('INSERT INTO guest_rate_buckets VALUES($1,1,$2) ON CONFLICT(bucket) DO UPDATE SET count=guest_rate_buckets.count+1 WHERE guest_rate_buckets.count<$3 RETURNING count',[bucket,end,limit])).rows[0];if(!row)throw new HoldError('GUEST_RATE_LIMITED',429);}
+  for(const [key,limit] of budgets){const bucket=this.policy.version+':'+key+':'+window;const row=(await c.query('INSERT INTO guest_rate_buckets VALUES($1,1,$2) ON CONFLICT(bucket) DO UPDATE SET count=guest_rate_buckets.count+1 WHERE guest_rate_buckets.count<$3 RETURNING count',[bucket,end,limit])).rows[0];if(!row)throw new HoldError('GUEST_RATE_LIMITED',429);}
  });}
  async metadata(actor:GuestActor){await this.contexts.read(actor);const r=(await this.pool.query('SELECT revision,recovery_until,absolute_at FROM guest_lifecycle WHERE context_id=$1',[actor.contextId])).rows[0];if(!r)throw new HoldError('GUEST_SECURITY_CONTEXT_REQUIRED',409);return {revision:r.revision,recoveryUntil:r.recovery_until,absoluteAt:r.absolute_at};}
  async enroll(actor:GuestActor,revision:unknown){if(!Number.isSafeInteger(revision))throw new HoldError('INVALID_RECOVERY_INPUT',422);const code=randomBytes(32).toString('base64url');return this.contexts.change(actor,async(c)=>{

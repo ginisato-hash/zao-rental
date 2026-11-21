@@ -6,7 +6,8 @@ import {homedir} from 'node:os';
 import {join} from 'node:path';
 import {neonCliPort} from './production-backup-credential';
 import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants} from './production-staff-delta';
-import {assertAcceptedMainRelease,assertNoTlsOverrides,openOwnerSession,requireRestorePass,type OwnerSession} from './lib/production-owner-session';
+import {assertAcceptedMainRelease,assertNoTlsOverrides,openOwnerSession,type OwnerSession} from './lib/production-owner-session';
+import {requirePre0059RestorePass} from './production-restore-evidence-pre0059';
 
 const COMMANDS=['migrate','grants'] as const;
 type Command=typeof COMMANDS[number];
@@ -25,7 +26,9 @@ export async function main(argv:string[],root:string=process.cwd(),seams:Install
  if(rest.length||!COMMANDS.includes(command as Command))throw new Error('PRODUCTION_INSTALL_ARGUMENTS_REJECTED');
  assertNoTlsOverrides();
  const head=seams.release();
- await requireRestorePass(root);
+ // PR73-RESTORE-01: both commands need a fresh restore proof of the database they run on, the 0001-0058 Production database
+ // (scripts/production-restore-evidence-pre0059.ts). The frozen 53-migration gate could never accept it.
+ await requirePre0059RestorePass(root);
  const session=await seams.openSession();
  try{
   const result=command==='migrate'?await applyProductionStaffDeltaMigration(session.client,'neondb','neondb_owner'):await applyProductionStaffDeltaGrants(session.client,'neondb','neondb_owner');

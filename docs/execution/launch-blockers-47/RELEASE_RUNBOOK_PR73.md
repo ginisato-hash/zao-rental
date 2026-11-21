@@ -12,7 +12,7 @@
 | 対象 | 確認結果 | 本人の操作 |
 |---|---|---|
 | Vercel CLI | `~/.npm/_npx/.../vercel`（59.23.2）があり、`vercel whoami` が成功（既存の認証が有効） | **不要**。stage/promoteは実装担当が既存の認証で行う。期限切れなどで再認証が必要になった場合だけ依頼する |
-| Neon（DB所有者） | 2026-11-21 08時台：Owner承認のうえ公式 `neonctl` 9.9.0（npm公式）を導入し、Owner本人が内蔵ブラウザで許可（`Auth complete`、profile DEFAULT）。CLIの読み取り一覧で `curly-union-23141081` / `zao-rental-production`（org `org-delicate-dream-81592413`）を確認。接続文字列・資格情報は取得していない。**ただし適用スクリプトが固定で参照するパス（`~/.npm/_npx/978debf9b3a75271/node_modules/.bin/neon`）とは別の場所（`83c76687887d2a83`）に入っており、固定パスはリポジトリの記録から再現できない** | 本人認証は**完了**。固定パスの扱い（公式CLIを固定パスへ置くか、レビュー済みの差分でpinを更新するか）はTDの最終レビューで判断 |
+| Neon（DB所有者） | Owner本人の許可で `neonctl` 9.9.0 の認証が完了（2026-11-21）。固定パスへ実体のシンボリックリンクを置き、同じ呼出形式で本番project/branchのmetadata読み取りに成功 | **不要**（完了）。期限切れ時のみ依頼 |
 | 本番backup | `production-backup` workflowが `533902cc` で毎時SUCCESS（直近5回） | 復元試験の復号鍵の扱いは既存手順どおり（§2） |
 
 ## 1. merge（実装担当、既存のOwner包括承認の条件内）
@@ -20,14 +20,16 @@
 - merge後の `origin/main` のSHAを記録する。以降のDB変更スクリプトは、作業フォルダが **`origin/main` と完全に一致し、未commitの変更がない**場合だけ動く（`assertAcceptedMainRelease`）。
 
 ## 2. 本番backupと復元試験（**Owner** ＋実装担当）
-- DB変更スクリプトは、**24時間以内に完了した本番復元試験の合格記録**（`.local/evidence/production-backup/restore-pass.json`）を要求する（`requireRestorePass`）。古い記録や手で編集した記録は拒否される。
+- DB変更スクリプト（migrate・grantsの両方）は、**適用対象そのもの＝0001〜0058の本番DBを、24時間以内に復元した合格記録**（`.local/evidence/production-backup/restore-pass-pre-0059.json`）を要求する（`requirePre0059RestorePass`、PR73-RESTORE-01で是正）。古い記録、手で編集した記録、53本用（`restore-pass.json`）や55本用（`restore-pass-pre-0056.json`）の記録は拒否される。
 - 手順：
-  1. **Owner**：最新の暗号化backupを取得し、既存の手順で復元試験を実施する。生成物は `object-key.txt`、暗号化本体、`restore-drill-result.json`。
-  2. 実装担当：`npm run production:restore-evidence-finalize` で `restore-pass.json` を作る。
+  1. **Owner**：最新の暗号化backupを取得し、既存の手順で復元試験を**58本の登録（`expectedMigrations: 58`）として**実施する。生成物は `object-key.txt`、暗号化本体、`restore-drill-result-pre-0059.json`（受付台帳 `provisional_capacity_receipts` の指紋を含むこと）。
+  2. 実装担当：`npm run production:restore-evidence-finalize-pre-0059` で `restore-pass-pre-0059.json` を作る。
+- 検証済み（合成）：58本の状態から作った実際の復元結果を、新しい検証だけが受け入れ、53本用と55本用の検証は拒否する（`test:production-restore-drill`）。正しい記録があるとmigrate・grantsの両方がowner接続の手前まで進み、記録が無い・53本・55本・改変後はowner接続に届かない（`tests/unit/production-restore-evidence-pre0059.test.ts`）。
 
-## 3. DB変更 0059〜0061 と権限（**Owner** のNeonログイン ＋ 実装担当）
-- 準備：適用スクリプトは固定パスのNeon CLIを使う。2026-11-21時点でこの端末に無いため、適用の前に正規の手順で用意する（パスを書き換えて迂回しない）。
-- **Owner**：Neon CLIにログインする（本人のブラウザ認証・MFA）。実装担当は資格情報を扱わない。
+## 3. DB変更 0059〜0061 と権限（実装担当。Neonの本人認証は2026-11-21に完了済み）
+- Neon CLI：Ownerが公式 `neonctl` 9.9.0 で認証済み。適用スクリプトが参照する固定パス `~/.npm/_npx/978debf9b3a75271/node_modules/.bin/neon` には、TD #7054081173 の判断(a)に従い、実体（`~/.npm/_npx/83c76687887d2a83/...`、package `neonctl` 9.9.0、`registry.npmjs.org` の tgz と package-lock の sha512 が一致、`--version` 9.9.0）へのシンボリックリンクを1本だけ置いた（作成前に固定パスが空であることを確認）。
+- 照合：固定パス経由で `neonCliPort` と同じ `api <path>` 形式により、project `curly-union-23141081`（zao-rental-production、PostgreSQL 18）と branch `br-long-king-azkou4fy`（既定、ready）のmetadataを読み取れた。接続文字列の取得・DB操作はしていない。DB所有者・host・verify-full TLSの確認は、`openOwnerSession` が正しい前提（accepted main・復元証拠）で行う別段階。
+- 認証の期限切れなどで再ログインが必要になった場合だけ、**Owner** に依頼する。
 - 実装担当（main と完全一致した作業フォルダで実行）：
   1. `npm run production:install-staff-delta-migration`
      - 前提：registry が 0001〜0058 で、checksum が正規であること。
@@ -62,5 +64,6 @@
   - 追加された行（同意記録・通知イベント・プロフィール）は残す。データの破棄は行わない。
 
 ## 現在の位置（2026-11-21 後任D）
-- 手順0：未完了。`c7d4fed` の自然CI #44764308823 は FAILURE（`test:avatar` のみ、後続19件はNOT_RUN）。是正をまとめた次の候補で自然CIを確認する。
-- 手順1〜5：未実施。本番への操作は行っていない。
+- 手順0：未完了。最終候補の自然CIと、ChatGPT TDの独立最終レビューが未了。
+- 手順2の前提（58本用の復元証拠）と手順3の前提（Neonの認証・CLIの配置）は整った。復元試験の実施（暗号化backupの復号鍵を扱う工程）は手順どおりOwnerが行う。
+- 手順1〜5：未実施。本番への変更は行っていない。

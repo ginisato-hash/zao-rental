@@ -11,15 +11,17 @@ import {STORE_LABEL} from './guest-format';
 import {ORDER_STATUSES,statusLabel,statusTone,paymentLabel,fmtDate,fmtYen} from './order-labels';
 import './staff-orders.css';
 
-type Row={id:string;ref:string;customer:string|null;email:string|null;status:string;paymentStatus:string|null;pickupStore:string;returnStore:string;startDate:string;endDate:string;totalJpy:number|null;lateOut:boolean;lateBack:boolean;shortage?:Shortage};
+type Row={id:string;ref:string;customer:string|null;email:string|null;status:string;paymentStatus:string|null;pickupStore:string;returnStore:string;startDate:string;endDate:string;totalJpy:number|null;createdAt:string;lateOut:boolean;lateBack:boolean;shortage?:Shortage};
 type Shortage='INSUFFICIENT'|'TRANSFER_PLAN_REQUIRED'|'INDETERMINATE';
 type Data={today:string;tab:string;total:number;page:number;pageSize:number;counts:{all:number;upcoming:number;late:number;lateOut:number;lateBack:number;shortage:number|null;shortageIndeterminate:number|null};paymentOptions:string[];rows:Row[]};
+// Booking time (JST): when the order was received, shown so staff can see new bookings at a glance.
+const bookedAt=(l:StaffLocale,iso:string)=>new Intl.DateTimeFormat(l==='en'?'en-GB':'ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
 const L={
  all:['すべて','All'],upcoming:['今後','Upcoming'],late:['遅れ','Late'],shortage:['不足あり','With shortage'],
  INSUFFICIENT:['在庫不足','Short of stock'],TRANSFER_PLAN_REQUIRED:['店舗間移動が必要','Transfer needed'],INDETERMINATE:['判定できません','Could not determine'],
  shortageHelp:['まだ渡していない用品が、予約期間中に確保できない予約です。在庫・予約は変更していません。','Orders whose items not yet handed out cannot be covered for their period. Nothing in stock or bookings was changed.'],
  undetermined:['件は判定できませんでした（不足なしという意味ではありません）。','could not be determined (this does not mean no shortage).'],search:['予約番号・氏名・メールで検索','Search by order, name or email'],
- order:['予約番号','Order'],customer:['顧客','Customer'],status:['状態','Status'],pickup:['受取','Pickup'],ret:['返却','Return'],total:['金額','Total'],payment:['支払状況','Payment'],
+ order:['予約番号','Order'],booked:['受付日時','Booked at'],customer:['顧客','Customer'],status:['状態','Status'],pickup:['受取','Pickup'],ret:['返却','Return'],total:['金額','Total'],payment:['支払状況','Payment'],
  filters:['絞り込み','Filters'],station:['店舗','Station'],from:['受取日（から）','Pickup from'],to:['受取日（まで）','Pickup to'],fromBack:['返却日（から）','Return from'],toBack:['返却日（まで）','Return to'],clear:['条件をクリア','Clear filters'],
  none:['該当する予約はありません。','No orders match.'],lateOut:['貸出遅れ','Late pickups'],lateBack:['返却遅れ','Late returns'],
  dirOut:['受取日・受取店で絞り込み中','Filtered by pickup date and station'],dirBack:['返却日・返却店で絞り込み中','Filtered by return date and station'],failed:['読み込めませんでした。','Could not load.'],retry:['再読み込み','Retry'],
@@ -74,9 +76,10 @@ export function StaffOrders({locale:serverLocale,stamp,stores,canCreate,more}:{l
     {failed&&<p className="sx-alert" role="alert">{tx('failed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
     {data&&!data.rows.length&&!failed&&<p className="sx-empty">{tx('none')}</p>}
     {data&&data.rows.length>0&&<div className="sx-card ox-table-wrap"><table className="sx-table ox-table">
-     <thead><tr><th>{tx('order')}</th><th>{tx('customer')}</th><th>{tx('status')}</th><th>{tx('pickup')}</th><th>{tx('ret')}</th><th className="ox-num">{tx('total')}</th><th>{tx('payment')}</th></tr></thead>
+     <thead><tr><th>{tx('order')}</th><th>{tx('booked')}</th><th>{tx('customer')}</th><th>{tx('status')}</th><th>{tx('pickup')}</th><th>{tx('ret')}</th><th className="ox-num">{tx('total')}</th><th>{tx('payment')}</th></tr></thead>
      <tbody>{data.rows.map(r=><tr key={r.id} onClick={e=>{if(!(e.target as Element).closest('a'))router.push(`/staff/orders/${encodeURIComponent(r.id)}`);}}>
       <td><Link href={`/staff/orders/${encodeURIComponent(r.id)}`}>#{r.ref}</Link></td>
+      <td className="ox-booked">{bookedAt(locale,r.createdAt)}</td>
       <td>{r.customer??'—'}</td>
       <td><span className={'ox-status ox-status--'+statusTone(r.status)}>{statusLabel(locale,r.status)}</span>{(r.lateOut||r.lateBack)&&<span className="ox-status ox-status--orange"> · {tx('late')}</span>}{r.shortage&&<><br/><span className={'ox-status ox-status--'+(r.shortage==='INDETERMINATE'?'grey':r.shortage==='INSUFFICIENT'?'red':'orange')} data-shortage={r.shortage}>{tx(r.shortage)}</span></>}</td>
       <td>{fmtDate(locale,r.startDate)}<br/><small className="sx-help">{STORE_LABEL[r.pickupStore]??'—'}</small></td>

@@ -13,6 +13,8 @@ type Selection={preview_id:string;owner_id:string;request_key:string;fingerprint
 const hash=(x:unknown)=>createHash('sha256').update(canonical(x)).digest('hex');
 export class RecommendationService {
  constructor(private pool:Pool,private principal:BookingActor,private holds:HoldService,private quotes:QuoteService,private variantFilter?:(variants:Variant[])=>Promise<Variant[]>){}
+ /** Stopped sales days for the booking date picker (read-only; see HoldService.salesStops). */
+ salesStops(){return this.holds.salesStops();}
  private async auth(c:Conn,edit=false,stores:string[]=[]){return authorizeBookingActor(c,this.principal,['HOLD_VIEW','QUOTE_VIEW',...(edit?['HOLD_EDIT','QUOTE_CREATE']:[])],stores);}
  private async owned(c:Conn,previewId:string,edit=false){id(previewId);await this.auth(c,edit);const p=(await c.query<Preview>('SELECT * FROM recommendation_previews WHERE id=$1 AND owner_id=$2',[previewId,this.principal.subject])).rows[0];if(!p)throw new RecommendationError('FORBIDDEN',403);await this.auth(c,edit,[p.input.pickupStore,p.input.returnStore]);return p;}
  private normalize(e:unknown):never{if(e instanceof HoldError)throw e;const code=(e as {code?:string})?.code;if(['55P03','57014','40001','40P01'].includes(code??'')||e instanceof Error&&/timeout|timed out/i.test(e.message))throw new RecommendationError('INDETERMINATE',503);throw new RecommendationError('RECOMMENDATION_FAILED',500);}

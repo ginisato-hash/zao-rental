@@ -4,6 +4,7 @@
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
 import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
 import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
+import {applyProductionSalesStopMigration,applyProductionSalesStopGrants,salesStopGrantProof,salesStopCommittedProof} from '../../scripts/production-sales-stop-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
@@ -24,7 +25,7 @@ try{
  await db.pool.query(`CREATE DATABASE ${DB} OWNER ${OWNER}`);
  const owner=connect(OWNER,ownerPassword),observer=connect(db.identity.user,superPassword);
  const full=await productionFoundationPlan(DB),entries=full.bootstrap.entries;
- assert.equal(entries.length,61);assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
+ assert.equal(entries.length,62);assert.equal(entries[61]!.id,'0062');assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
  stage='registry56 production topology';
  await runFoundationPlan(owner,{...full,bootstrap:{...full.bootstrap,entries:entries.slice(0,56)}});
  const q=async(sql:string,params:unknown[]=[])=>(await observer.query(sql,params)).rows;
@@ -118,7 +119,7 @@ try{
   await delta.query('BEGIN');try{await delta.query('ALTER TABLE rental_terms_reconsents DISABLE TRIGGER rental_terms_reconsent_guard');await assert.rejects(committedProof(delta,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/);}finally{await delta.query('ROLLBACK');}
   await committedProof(delta,OWNER);
  }finally{delta.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,61).map(e=>({id:e.id,checksum:e.checksum})));
  assert.deepEqual(await guard(),before60);
  const roles60After=await roles();assert.deepEqual({roles:roles60After.roles,members:roles60After.members},{roles:roles60.roles,members:roles60.members});
  const owners60=roles60After.owners.filter((o:{k:string})=>!roles60.owners.some((p:{k:string})=>p.k===o.k));
@@ -135,4 +136,31 @@ try{
  for(const [t,allowed] of [['rental_terms_acceptances',['SELECT']],['rental_terms_reconsents',['SELECT','INSERT']]] as const)for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,(allowed as readonly string[]).includes(priv),t+' '+priv);
  assert.equal((await q("SELECT has_function_privilege('public','customer_link_legacy(uuid,uuid,text)','EXECUTE') ok"))[0].ok,false,'no PUBLIC execute');
  console.log('PASS canonical 0059+0060+0061 apply as neondb_owner after 0058: registry 58 -> 61, guard/roles/memberships unchanged, new objects owner-owned, empty new tables, EXECUTE-only grants');
+ stage='0062 sales stops applied as neondb_owner';
+ // 0062 (day-level sales stop) through its fixed operator path: grants before migrate refused, one transaction with read-back,
+ // no replay, no role/membership change, new objects owner-owned and empty; then SELECT + set-function EXECUTE for operations only.
+ const before62=await guard(),roles62=await roles();
+ const ss=await owner.connect();
+ try{
+  await assert.rejects(applyProductionSalesStopGrants(ss,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'grants need the exact 0062 registry');
+  await assert.rejects(applyProductionSalesStopMigration(ss,DB,'someone_else'),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'wrong owner identity');
+  await assert.rejects(applyProductionStaffDeltaMigration(ss,DB,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'the 0059-0061 delta never re-applies on 0061');
+  const installed=await applyProductionSalesStopMigration(ss,DB,OWNER,{afterCommit:async()=>{await owner.query("BEGIN;SELECT set_config('zao.actor','synthetic-staff',true);SELECT store_sales_stop_set(ARRAY['MOUNTAIN_BASE'],'2030-01-02','2030-01-02',true,'SYNTHETIC natural');COMMIT");}});
+  assert.equal(installed.status,'PRODUCTION_SALES_STOP_INSTALLED');assert.deepEqual(installed.applied.map(a=>a.id),['0062']);
+  await assert.rejects(applyProductionSalesStopMigration(ss,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'no replay');
+  await ss.query('BEGIN');try{await ss.query('ALTER TABLE store_sales_stop_history DISABLE TRIGGER store_sales_stop_history_append_only');await assert.rejects(salesStopCommittedProof(ss,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/);}finally{await ss.query('ROLLBACK');}
+  await salesStopCommittedProof(ss,OWNER);
+ }finally{ss.release();}
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await guard(),before62);
+ const roles62After=await roles();assert.deepEqual({roles:roles62After.roles,members:roles62After.members},{roles:roles62.roles,members:roles62.members});
+ const owners62=roles62After.owners.filter((o:{k:string})=>!roles62.owners.some((p:{k:string})=>p.k===o.k));
+ assert.ok(owners62.length>0&&owners62.every((o:{o:string})=>o.o===OWNER),'every new 0062 object is owner-owned');
+ assert.deepEqual((await q("SELECT store_id,to_char(day,'YYYY-MM-DD') d FROM store_sales_stops")),[{store_id:'MOUNTAIN_BASE',d:'2030-01-02'}],'the row written after COMMIT stays');
+ assert.equal((await q("SELECT has_function_privilege($1,'store_sales_stop_set(text[],date,date,boolean,text)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0062 grant step');
+ const g62=await owner.connect();try{const g=await applyProductionSalesStopGrants(g62,DB,OWNER);assert.equal(g.status,'PRODUCTION_SALES_STOP_GRANTS_INSTALLED');await salesStopGrantProof(g62,ops);}finally{g62.release();}
+ for(const t of ['store_sales_stops','store_sales_stop_history'])for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,priv==='SELECT',t+' '+priv);
+ assert.equal((await q("SELECT has_function_privilege('public','store_sales_stop_set(text[],date,date,boolean,text)','EXECUTE') ok"))[0].ok,false,'no PUBLIC set');
+ for(const r of ['neondb_hold','neondb_guest','neondb_recommendation','neondb_transfer'])if((await q('SELECT 1 FROM pg_roles WHERE rolname=$1',[r])).length)assert.equal((await q("SELECT has_function_privilege($1,'store_sales_stopped_days(text[],date,date)','EXECUTE') ok",[r]))[0].ok,true,r+' reads stopped days');
+ console.log('PASS canonical 0062 applies as neondb_owner after 0061: registry 61 -> 62, guard/roles/memberships unchanged, new objects owner-owned, operations SELECT + set EXECUTE only, PUBLIC reads stopped days only');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

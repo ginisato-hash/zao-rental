@@ -5,6 +5,7 @@ import {writeProvisionalClaims,releaseProvisionalClaims} from './provisional-cap
 import {createHash,randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
 import {authorizeBookingActor,isGuest,type BookingActor} from '../../../auth/src/booking-actor';
+import {assertNotSalesStopped,stoppedDays} from './sales-stop';
 import {HoldError,parseConditions,normalizePeriod,canonical,HOLD_TTL_SECONDS,paymentDecision,type HoldConditions,type Feasibility,type PaymentBoundary} from '../../../contracts/src/hold';
 import {heldIntake} from './intake-context';
 import type {CandidateContext} from '../../../contracts/src/hold-intake';
@@ -86,6 +87,8 @@ export class HoldService {
  });}
  // Narrow catalog read through the existing authorized inventory reader. Recommendation
  // has no model-table grants; never broaden its DB role to obtain display metadata.
+ /** Stopped days (0062) for both stations from today (JST) for 400 days: station and day only, for the booking date picker. */
+ async salesStops(){return this.read(async(c,now)=>{const from=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo'}).format(now),t=new Date(from+'T00:00:00Z');t.setUTCDate(t.getUTCDate()+400);return stoppedDays(c,['MOUNTAIN_BASE','ONSEN_BASE'],from,t.toISOString().slice(0,10));});}
  async recommendationCatalog(){return this.read(async c=>{const rows=(await c.query<import('../../../contracts/src/recommendation').Variant>(`SELECT v.id,v.family,v.age,v.tier,v.size,v.model_id,v.compatible_sports,m.catalog_season,m.name AS model_name,ARRAY(SELECT DISTINCT p.store_id FROM ledger_poles p WHERE p.variant_id=v.id AND p.status='AVAILABLE' AND p.quantity>0 ORDER BY p.store_id) AS "poleStores" FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.id LIMIT 2001`)).rows;if(rows.length>2000)throw new HoldError('INDETERMINATE_CATALOG_LIMIT',503);return rows;});}
  async managementCapacity(input:unknown){if(isGuest(this.principal))throw new HoldError('FORBIDDEN',403);const conditions=parseConditions(input);return this.read(async(c,now)=>{await this.authorize(c,false,[conditions.pickupStore,conditions.returnStore]);return capacitySummary(c,conditions,now);});}
  async options(){return this.read(async c=>(await c.query("SELECT v.id,v.family,v.age,v.tier,v.size,m.name FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id ORDER BY v.family,v.size,v.id LIMIT 500")).rows);}
@@ -101,7 +104,7 @@ export class HoldService {
  // read-only: planMixedAllocation itself never writes anything (only writeProvisionalClaims/
  // writeAllocationClaims/writeWearClaims, called separately by command(), do), so no provisional
  // claim is created here, only the same advisory-only feasibility result as before.
- },async(c,now)=>{const h=replaceHoldId?await this.owned(c,replaceHoldId,false):null;await heldIntake(c,conditions,now,h,context);return {result:(await planMixedAllocation(c,conditions,now,replaceHoldId??null,undefined,bufferOverride??h?.buffer_override??false)).result,period:normalizePeriod(conditions.period),advisory:true};});}
+ },async(c,now)=>{const h=replaceHoldId?await this.owned(c,replaceHoldId,false):null;await heldIntake(c,conditions,now,h,context);if(isGuest(this.principal))await assertNotSalesStopped(c,conditions);return {result:(await planMixedAllocation(c,conditions,now,replaceHoldId??null,undefined,bufferOverride??h?.buffer_override??false)).result,period:normalizePeriod(conditions.period),advisory:true};});}
  // `bufferOverride` (release-code-closure, staff-only, explicit per-booking): a request to draw
  // on the reserved 5% of physical/wear/provisional capacity, never authority by itself — see
  // authorizeBufferOverride()'s own comment. Guest/public routes must never construct a
@@ -134,7 +137,8 @@ export class HoldService {
     if(!conditions)throw new HoldError('INVALID_CONDITIONS');
     if(op==='create'&&(await c.query("SELECT 1 FROM inventory_holds WHERE reservation_id=$1 AND state='ACTIVE'",[conditions.reservationId])).rowCount)throw new HoldError('RESERVATION_ALREADY_HELD',409);
     // Same-key reconciliation above is distinct from permission to start new work.
-    const admit=async(at:Date)=>{const intake=await heldIntake(c,conditions!,at,old);if(op==='amend'&&intake.mode==='HOLD_CONTINUATION'&&expectedVersion===undefined)throw new HoldError('EXPECTED_VERSION_REQUIRED',409);};
+    // Sales stop (0062): the public may not book a period touching a stopped day; staff are warned on screen and may continue.
+    const admit=async(at:Date)=>{const intake=await heldIntake(c,conditions!,at,old);if(op==='amend'&&intake.mode==='HOLD_CONTINUATION'&&expectedVersion===undefined)throw new HoldError('EXPECTED_VERSION_REQUIRED',409);if(isGuest(this.principal))await assertNotSalesStopped(c,conditions!);};
     await admit(now);
     const useReserve=bufferOverride?bufferOverride.useReserve!==false:old?.buffer_override??false;
     const auditReason=overrideReason??(useReserve?'PRESERVE_EXISTING_OVERRIDE_'+op.toUpperCase():undefined);

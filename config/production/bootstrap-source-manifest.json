@@ -481,6 +481,13 @@
    "sha256": "10f8ef4571a0c0bcaf583086b683c73fcd4ee45e2b6030707ab25faddcad803e",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0062",
+   "file": "0062_store_sales_stops.sql",
+   "sha256": "39cd5dc692d6e0dc4f5f22d7edd598c4b824e7e310492827690f89943fc193e8",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

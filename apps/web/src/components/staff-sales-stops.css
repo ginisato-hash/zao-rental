@@ -1,0 +1,14 @@
+/* Sales stop screen: same card/table language as Orders; form wraps to one column at narrow widths. */
+.ox .sx-card{padding:16px 18px;margin-bottom:16px}
+.ox .sx-card h2{font-size:17px;margin:0 0 12px}
+.ss-form{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end}
+.ss-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.ss-form input[type=date],.ss-form input[type=text]{font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--sx-line);border-radius:10px;background:var(--sx-bg);color:inherit;min-height:40px}
+.ss-form fieldset{border:0;padding:0;margin:0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ss-form legend{font-size:13px;font-weight:600;padding:0;margin-bottom:4px}
+.ss-form .ss-check{flex-direction:row;align-items:center;gap:6px;font-weight:400;font-size:14px}
+.ss-reason{flex:1 1 260px}
+.ss-reason input{width:100%}
+.ss-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.ss-range{margin-bottom:12px}
+@media (max-width:600px){.ss-form{flex-direction:column;align-items:stretch}.ss-form input[type=date]{width:100%}}

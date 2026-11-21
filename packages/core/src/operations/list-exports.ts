@@ -13,12 +13,16 @@ import {EXPORT_MAX,exportBound,toCsv,type CsvColumn,type CsvLang} from './export
 type Customer={key:string;name:string|null;email:string|null;bookings:number;lastStart:string|null;legacy:boolean};
 type Product={id:string;code:string;name:string;brand:string;family:string;variants:number;counts:{availableNow:number;onHand:number;out:number;care:number;maintenance:number;incoming:number;registered:number}};
 
+/** Booking time in JST as 'YYYY-MM-DD HH:mm', the same moment the Orders screen shows. */
+export const bookedAtJst=(iso:string)=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).map(x=>[x.type,x.value]));return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;};
 const ORDER_COLUMNS:CsvColumn<OrderRow&{shortage?:string}>[]=[
  {key:'ref',ja:'予約番号',en:'Order',value:r=>r.ref},{key:'customer',ja:'お客様',en:'Customer',value:r=>r.customer},
  {key:'status',ja:'状態',en:'Status',value:r=>r.status},{key:'late',ja:'遅れ',en:'Late',value:r=>r.lateOut?'PICKUP':r.lateBack?'RETURN':''},
  {key:'pickupDate',ja:'受取日',en:'Pickup date',value:r=>r.startDate},{key:'pickupStore',ja:'受取店舗',en:'Pickup station',value:r=>r.pickupStore},
  {key:'returnDate',ja:'返却日',en:'Return date',value:r=>r.endDate},{key:'returnStore',ja:'返却店舗',en:'Return station',value:r=>r.returnStore},
  {key:'totalJpy',ja:'金額（税込・円）',en:'Total (JPY, tax incl.)',value:r=>r.totalJpy},{key:'payment',ja:'支払状況',en:'Payment',value:r=>r.paymentStatus},
+ // Appended (not inserted) so existing spreadsheets keep their column positions.
+ {key:'bookedAt',ja:'受付日時（JST）',en:'Booked at (JST)',value:r=>bookedAtJst(r.createdAt)},
 ];
 const SHORTAGE_COLUMN:CsvColumn<OrderRow&{shortage?:string}>={key:'shortage',ja:'不足判定',en:'Shortage',value:r=>r.shortage};
 const CUSTOMER_COLUMNS:CsvColumn<Customer>[]=[

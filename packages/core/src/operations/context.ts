@@ -29,6 +29,39 @@ export class OperationsContext{
    if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('OPERATION_FAILED',500);
   }finally{c.release();}
  }
+ /** Short transaction without the inventory serialization lock, for staff inbox reads and the single acknowledgement
+  * transition. The SQL functions re-check the actor, live session, permission and stores (ops_assert_actor). */
+ async light<T>(permission:Permission,stores:string[],work:(c:PoolClient,principal:Awaited<ReturnType<OperationsContext['authorize']>>)=>Promise<T>):Promise<T>{
+  const principal=await this.authorize(permission,stores);const c=await this.pool.connect();try{
+   await c.query('BEGIN');await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='4000ms';SET LOCAL idle_in_transaction_session_timeout='8000ms'");
+   await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true)",[this.identity.subject,this.identity.sessionId]);
+   const result=await work(c,principal);await c.query('COMMIT');return result;
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});if(e instanceof FlowError||e instanceof HoldError)throw e;const code=(e as {code?:string}).code;
+   if(code==='42501')throw new FlowError('FORBIDDEN',403);if(code==='22023'||code==='22P02')throw new FlowError('INVALID_INPUT',422);
+   if(code==='23505')throw new FlowError('CONFLICT',409);if(code==='23503')throw new FlowError('NOT_FOUND',404);
+   if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('OPERATION_FAILED',500);
+  }finally{c.release();}
+ }
+ /** One REPEATABLE READ READ ONLY snapshot for list reads, so counts and rows describe the same moment. Writes are refused by
+  * PostgreSQL itself; acknowledgements and other writes use light()/transaction() instead. The principal this snapshot was
+  * authorized with is handed to the work, so scope-dependent disclosure uses exactly the authorization that gated the read. */
+ async snapshot<T>(permission:Permission,stores:string[],work:(c:PoolClient,principal:Awaited<ReturnType<OperationsContext['authorize']>>)=>Promise<T>):Promise<T>{
+  const principal=await this.authorize(permission,stores);const c=await this.pool.connect();try{
+   await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');await c.query("SET LOCAL statement_timeout='5000ms';SET LOCAL idle_in_transaction_session_timeout='8000ms'");
+   await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.session',$2,true)",[this.identity.subject,this.identity.sessionId]);
+   const result=await work(c,principal);await c.query('COMMIT');
+   // SNAP-01: a read-only result is released only if the live session, the permission and every station it was read under
+   // still hold now; a narrowed scope or ended session refuses it (nothing was written, so refusing is always safe).
+   await this.confirmScope(permission,principal.storeIds as string[],stores);return result;
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});if(e instanceof FlowError||e instanceof HoldError)throw e;const code=(e as {code?:string}).code;
+   if(code==='42501')throw new FlowError('FORBIDDEN',403);if(code==='22023'||code==='22P02'||code==='22008'||code==='22007')throw new FlowError('INVALID_INPUT',422);
+   if(['55P03','57014','40001','40P01'].includes(code??''))throw new FlowError('INDETERMINATE',503);throw new FlowError('OPERATION_FAILED',500);
+  }finally{c.release();}
+ }
+ /** CAL-01 class: a read that disclosed data by station scope is released only if that scope still holds now. A station
+  * revoked (or the session ended) while the read ran refuses the response rather than returning the revoked station's data. */
+ async confirmScope(permission:Permission,disclosed:readonly string[],required:string[]=[]){const now=await this.authorize(permission,required);
+  if(disclosed.some(s=>!(now.storeIds as string[]).includes(s)))throw new FlowError('AUTHORIZATION_CHANGED',409);}
  async idempotent<T>(c:PoolClient,key:string,input:unknown,work:()=>Promise<T>):Promise<T>{
   flowId(key);const fingerprint=flowHash(input),prior=(await c.query<{fingerprint:string;result:T}>('SELECT fingerprint,result FROM ops_requests WHERE actor=$1 AND request_key=$2',[this.identity.subject,key])).rows[0];
   if(prior){if(prior.fingerprint!==fingerprint)throw new FlowError('IDEMPOTENCY_MISMATCH',409);return prior.result;}

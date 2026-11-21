@@ -1,4 +1,6 @@
 import {issuePublicationAuthority,installPublicationAuthority,revokePublicationAuthority,type PublicationApproval,type PublicationAuthority} from '../../../auth/src/publication-authority';
+import {StaffOrderDrafts,type StaffOrderActor} from '../operations/staff-order-drafts';
+import type {StaffPrincipal} from '../../../auth/src/staff-auth';
 import {CancellationRefundWorker} from '../payment/cancellation-refund-worker';
 import type {CancellationRefundGateway} from '../payment/square-refund';
 import {BookingNotificationWorker} from '../notification/worker';
@@ -83,6 +85,15 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
    // Read existing canonical payment/booking state even with Avatar/media absent.
    // Commercial create authority remains the existing payment activation boundary.
    const bookings=new BookingService(required('operations'),required('guest'),actor,commercialIdentity?validatedPayment:null,null,commercialIdentity);return new GuestBookingService(guest.contexts,actor,recommendations,bookings,async()=>guestCatalog(required('content_read'),await holds.recommendationCatalog()),commercialIdentity?{applicationId:input.payment!.applicationId!,locations:c.payment!.locations}:undefined,legalCheckoutReady);};
+  // Staff New order (consolidated order §3/§6): the same Hold/Recommendation/Quote/Booking services as the guest flow, bound to
+  // the verified commercial identity, validated payment binding, price authority and legal gate. The actor is the signed-in
+  // staff member; drafts live in staff_order_drafts (never a guest context). The browser cannot choose mode, identity,
+  // merchant or location. Existing pools are reused; nothing is created per request beyond these service objects.
+  const staffOrders=c.flags.staffOperations&&guest&&commercialIdentity?(principal:StaffPrincipal,identity:StaffOrderActor)=>{
+   const holds=new HoldService(required('hold'),principal),quotes=new QuoteService(required('pricing'),principal,undefined,priceAuthority),recommendations=new RecommendationService(required('recommendation'),principal,holds,quotes,async variants=>guestVariants(await guestCatalog(required('content_read'),variants),variants));
+   const bookings=new BookingService(required('operations'),required('auth'),identity,validatedPayment,null,commercialIdentity),drafts=new StaffOrderDrafts(required('operations'));
+   return {drafts,service:new GuestBookingService<StaffOrderActor>(drafts,identity,recommendations,bookings,async()=>guestCatalog(required('content_read'),await holds.recommendationCatalog()),{applicationId:input.payment!.applicationId!,locations:c.payment!.locations},legalCheckoutReady)};
+  }:null;
   stage='BOOKING_ACCESS';const access=guest?new BookingAccess(required('booking_access'),Buffer.from(secrets.accessKey,'hex'),secrets.accessKeyVersion):null;
   const recovery=guest&&c.flags.guestRecovery?new BookingRecovery(required('booking_access'),Buffer.from(secrets.recoveryKey,'hex'),secrets.recoveryKeyVersion,undefined,5000,true):null;
   const refundWorker=input.refunds&&commercialIdentity?new CancellationRefundWorker(required('operations'),input.refunds,commercialIdentity):null;
@@ -95,7 +106,7 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
    avatar={guard:(request:Request)=>rate.guard(guest.security.peer(request)),load:(headers:Headers,scope:Parameters<typeof loadGuestAvatar>[4])=>loadGuestAvatar(guest.contexts,required('recommendation'),visuals,headers,scope),reader:()=>({findForDelivery:(id:string,hash:string,now:Date)=>visuals.findForDelivery(id,hash,now),readBytes:async(hash:string)=>{const bytes=await readDerivative(hash);return bytes?Buffer.from(bytes):null;}})};
   }
   stage='READY';await input.audit(stage);if(input.publication){if(!input.identity)throw Error();publication=issuePublicationAuthority(input.identity,input.publication);installPublicationAuthority(publication);}let closed=false;
-  return Object.freeze({configuration:c,staff,guest,service,access,recovery,avatar,refundWorker,notifications,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
+  return Object.freeze({configuration:c,staff,guest,service,staffOrders,access,recovery,avatar,refundWorker,notifications,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
    async runWorker(workerInput:ProductionWorkerInput){if(closed||!commercialIdentity)throw new ProductionStartupError('PAYMENT');return runProductionWorker(commercialIdentity,workerInput,required('operations'),notifications,refundWorker);},
    public:guest?{r:base!,guestPool:required('guest'),readPool:required('content_read'),contexts:guest.contexts}:null,
    // F1 (TD correction): DB must never report READY without at least one actually-open pool —

@@ -1,5 +1,6 @@
 /** R64 production-copy visual proof. Local fixture app, unchanged real API/PG, fake payment only. */
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {fillGuestProfile} from './guest-profile';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -31,7 +32,7 @@ try{
  for(const permission of ['PRICE_EDIT','QUOTE_VIEW'])await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true) ON CONFLICT DO NOTHING',[root,permission]);
  await new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  for(const locale of ['ja','en'] as const){const ja=locale==='ja',t=(j:string,e:string)=>ja?j:e;
-  const ctx=await browser.newContext({baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
+  const ctx=await newQuietContext(browser,{baseURL:app.origin,viewport:{width:390,height:844}});ctx.setDefaultTimeout(30000);
   // Fixture-boundary aliases only: the service's mandatory SYNTHETIC contact guard is unchanged.
   // Only this exact fictional name/address is accepted. No real contact is forwarded or stored.
   await ctx.route('**/*',async route=>{const req=route.request(),url=new URL(req.url());if(url.origin!==app.origin){external++;await route.abort();return;}
@@ -50,7 +51,7 @@ try{
   await person.getByLabel(t('身長（cm）','Height (cm)'),{exact:true}).fill('171');await expect(warning).toBeVisible();
   await fillGuestProfile(p,locale);await p.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();await p.getByRole('radio',{name:ja?/おすすめ/:/Recommended/}).check();await p.getByLabel(t('全員の内容を確認しました','I have checked everyone’s selections')).check();await p.getByLabel(t('事前に支払って5%OFFを利用する','Use the 5% advance payment discount')).check();await capture(p,locale+'-book-candidate',!ja);
   await p.getByRole('button',{name:t('全員分の最終確認へ','Review the whole group'),exact:true}).click();await expect(p.getByRole('region',{name:t('全員分の確認','Group review')})).toBeVisible();
-  await p.getByLabel(t('お名前','Name'),{exact:true}).fill('Aki Sato');await p.getByLabel(t('メール','Email'),{exact:true}).fill('aki@example.invalid');await p.getByRole('checkbox',{name:ja?/利用開始48時間前/:/I accept the cancellation policy/}).check();
+  await p.getByLabel(t('お名前','Name'),{exact:true}).fill('Aki Sato');await p.getByLabel(t('メール','Email'),{exact:true}).fill('aki@example.invalid');await p.getByRole('checkbox',{name:ja?/利用規約とキャンセル・返金条件を確認し/:/I have read and agree to the Rental Terms/}).check();
   // R66: a mistyped confirmation copy blocks checkout client-side (no request); a trimmed/case-different copy matches;
   // the confirmation value never enters the checkout payload (contact shape unchanged).
   const checkouts:Record<string,unknown>[]=[];p.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/guest/checkout')checkouts.push(r.postDataJSON());});
@@ -60,7 +61,9 @@ try{
   const summary=p.getByRole('region',{name:t('お支払い前の確認','Before you pay')});for(const text of [ja?'2035-02-05':'2035-02-06','Mountain Station',t('利用者','Person')+' 1',t('お支払い合計（税込）','Total (tax included)')])await expect(summary).toContainText(text);
   await capture(p,locale+'-book-review-payment');
   await p.getByRole('button',{name:t('支払いへ進む','Continue to payment'),exact:true}).click();await expect(p.getByRole('heading',{name:t('予約が確定しました','Booking confirmed'),exact:true})).toBeVisible();
-  assert.equal(checkouts.length,1);assert.deepEqual(Object.keys(checkouts[0]!.contact as object).sort(),['displayName','email','termsAccepted']);assert.equal((checkouts[0]!.contact as {email:string}).email,'aki@example.invalid');assert.ok(!JSON.stringify(checkouts[0]).includes('AKI@'),'confirmation copy is never sent');
+  assert.equal(checkouts.length,1);assert.deepEqual(Object.keys(checkouts[0]!.contact as object).sort(),['displayName','email','terms','termsAccepted']);
+  // Terms V2 pre-purchase consent: the exact bundle shown (version + content hash) in the page language, nothing else.
+  {const t=(checkouts[0]!.contact as {terms:Record<string,string>}).terms;assert.deepEqual(Object.keys(t).sort(),['locale','sha256','version']);assert.match(t.sha256!,/^[0-9a-f]{64}$/);assert.match(t.version!,/^ZAO_RENTAL_TERMS_V2/);}assert.equal((checkouts[0]!.contact as {email:string}).email,'aki@example.invalid');assert.ok(!JSON.stringify(checkouts[0]).includes('AKI@'),'confirmation copy is never sent');
   const result=p.locator('.guest-result');for(const text of [t('予約番号','Booking reference'),t('受取','Pickup'),t('返却','Return'),'Mountain Station',t('登録メールアドレスへ予約確認メールを送信します。数分かかる場合があります。','We will send a booking confirmation email to your registered address. It may take a few minutes.')])await expect(result).toContainText(text);
   await expect(result).not.toContainText(ja?'送信しました':'has been sent');await capture(p,locale+'-book-success');
   const draft=await (await ctx.request.get('/api/guest/draft')).json();assert.equal(draft.booking.state,'CONFIRMED_DEV');assert.equal(draft.booking.payments[0].state,'COMPLETED');

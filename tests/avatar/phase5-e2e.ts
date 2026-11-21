@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {fillGuestProfile} from '../public/guest-profile';
 import {decodeReference} from './reference-browser';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
@@ -26,7 +27,7 @@ try{
  for(const permission of ['PRICE_EDIT','BOOKING_VIEW','HOLD_VIEW','QUOTE_VIEW'])await db.pool.query('INSERT INTO staff_permission_overrides VALUES($1,$2,true)',[subject,permission]);
  await new QuoteService(app.roles.pricingPool,(await loadStaff(db.pool,subject))!).initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
  await check('PG','fresh canonical0001–0032 with dedicated Avatar role',async()=>{assert.equal((await db.pool.query("SELECT count(*)::int n FROM foundation_migrations WHERE id<='0032'")).rows[0].n,32);assert.ok(app!.avatar);});
- browser=await chromium.launch();const c=await browser.newContext({baseURL:origin,viewport:{width:390,height:844}}),anon=await browser.newContext({baseURL:origin}),other=await browser.newContext({baseURL:origin}),staff=await browser.newContext({baseURL:origin});
+ browser=await chromium.launch();const c=await newQuietContext(browser,{baseURL:origin,viewport:{width:390,height:844}}),anon=await newQuietContext(browser,{baseURL:origin}),other=await newQuietContext(browser,{baseURL:origin}),staff=await newQuietContext(browser,{baseURL:origin});
  let failArtwork=false;
  // Keep interception ownership stable while injecting the bundled reference-image failure.
  // Adding/removing a page route can race the context route for requests in flight.
@@ -95,7 +96,7 @@ try{
  await check('BROWSER','normal local staff login for permission comparison',async()=>{
   await staff.request.get('/api/auth/get-session');
   await staffPage.goto('/staff/login');await staffPage.getByLabel('メールアドレス',{exact:true}).fill('avatar-phase5@example.invalid');await staffPage.getByLabel('パスワード',{exact:true}).fill(password);
-  const signed=staffPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/sign-in/email');await staffPage.getByRole('button',{name:'ログイン',exact:true}).click();const response=await signed;console.log('LOCAL_STAFF_SIGNIN_HTTP '+response.status());assert.equal(response.status(),200);await staffPage.waitForURL(origin+'/staff/ledger');
+  const signed=staffPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/sign-in/email');await staffPage.getByRole('button',{name:'ログイン',exact:true}).click();const response=await signed;console.log('LOCAL_STAFF_SIGNIN_HTTP '+response.status());assert.equal(response.status(),200);await staffPage.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});
  });
  const staffImage='/avatar-media/'+body.id+'/'+body.derivativeSha256,staffPreview='/preview/avatar?preview='+seed.previewId+'&member='+seed.memberKey;
  await check('PG','full staff permissions retain preview and derivative access',async()=>{assert.equal((await staff.request.get(staffImage)).status(),200);assert.ok((await (await staff.request.get(staffPreview)).text()).includes(body.derivativeSha256));});

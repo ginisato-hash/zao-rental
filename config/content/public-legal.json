@@ -1,14 +1,14 @@
 {
  "schemaVersion": 1,
- "note": "Public legal/policy documents. A document is published ONLY with state OWNER_APPROVED (both JA and EN), a non-empty approvedBy/approvedAt and non-empty sections. Current text: approved by the Owner (佐藤慎太郎) on 2026-10-09T22:53:05Z, Issue #47 comment 6090629658, approving the exact version posted in comment 6090581287 (updated_at 2026-10-09T22:49:00Z, body sha256 668d895c917ac6b07a3743a26ac36ef1d826f05cb1b6d45198e89e964f24e2d6); every title/heading/paragraph here was verified to occur verbatim in that post. This approval covers only this text; any new fee, disclaimer, refund condition or data use needs a new approval. Business address source: https://www.yuge-zao.com/ (company address, not a store pickup location).",
+ "note": "Public legal/policy documents. A document is published ONLY with state OWNER_APPROVED (both JA and EN), a non-empty approvedBy/approvedAt and non-empty sections. Current text: approved by the Owner (佐藤慎太郎) on 2026-10-09T22:53:05Z, Issue #47 comment 6090629658, approving the exact version posted in comment 6090581287 (updated_at 2026-10-09T22:49:00Z, body sha256 668d895c917ac6b07a3743a26ac36ef1d826f05cb1b6d45198e89e964f24e2d6); every title/heading/paragraph here was verified to occur verbatim in that post. This approval covers only this text; any new fee, disclaimer, refund condition or data use needs a new approval. Business address source: https://www.yuge-zao.com/ (company address, not a store pickup location). 2026-11-19: terms and cancellation documents replaced by the rental terms bundle ZAO_RENTAL_TERMS_V2, the TD-adopted draft under the Owner's comprehensive instruction (Issue #47 comment 6984890289, created 2026-11-18T16:35:58Z). It is NOT a separate verbatim Owner sign-off and NOT a lawyer review; the 48-hour refund arithmetic stays ZAO_CANCELLATION_V1. privacy and commercial-disclosure keep their 2026-10-09 approval.",
  "documents": [
   {
    "doc": "terms",
    "locale": "ja",
    "title": "利用規約",
    "state": "OWNER_APPROVED",
-   "approvedBy": "佐藤慎太郎",
-   "approvedAt": "2026-10-09T22:53:05Z",
+   "approvedBy": "TD採用案（Owner包括指示 2026-11-19 / Issue #47 comment 6984890289）",
+   "approvedAt": "2026-11-18T16:35:58Z",
    "sections": [
     {
      "heading": "適用",
@@ -36,9 +36,47 @@
      ]
     },
     {
-     "heading": "キャンセル",
+     "heading": "用具の確認と安全",
      "paragraphs": [
-      "キャンセルと返金は「キャンセル・返金規定」に従います。"
+      "貸出時に用具の状態を確認してください。使用中に故障、異常、調整の不具合に気付いた場合は、直ちに使用を中止し、店舗へ連絡してください。",
+      "スキー・スノーボードには、転倒、衝突、天候や雪面の変化などの危険が伴います。用具を適切に調整しても、すべての事故や負傷を防げるわけではありません。本規約は、当店が法令上負う責任を免除または制限するものではありません。"
+     ]
+    },
+    {
+     "heading": "破損・故障・紛失・盗難",
+     "paragraphs": [
+      "通常の摩耗、経年劣化、製品の不具合など、お客様に責任のない故障について、修理費や補償金は請求しません。",
+      "お客様の不適切な使用・管理など、お客様に責任のある原因で用具の破損、紛失または盗難が生じた場合は、原因と損害の状況を確認したうえで、次の範囲で費用をご負担いただきます。",
+      "修理できる場合：合理的かつ必要な修理実費。ただし、対象モデルの小売価格の50%を上限とします。請求前に、修理費と上限額の根拠を説明します。",
+      "修理できない場合・紛失・盗難の場合：使用年数、状態などを考慮した損害発生時点の用具の時価と、当店に実際に生じた損害額の、いずれか低い額を上限とします。",
+      "管理区域外の深雪・樹林等での使用により生じた損傷についても、上記の基準に従って取り扱います。同じ損害について、修理費と補償金を重複して請求することはありません。",
+      "請求に先立ち、原因、用具の状態、算定根拠、見積書等を提示して金額を説明します。追加のカード決済は、金額を確認いただき、同意を得たうえで行います。盗難の疑いがある場合は、速やかに警察へ届け出て、店舗にも連絡してください。"
+     ]
+    },
+    {
+     "heading": "貸出中の管理",
+     "paragraphs": [
+      "貸出中の用具は、お客様の責任で適切に管理してください。第三者への転貸・譲渡はできません。盗難、紛失、取り違えを防ぐため、用具の放置を避けてください。"
+     ]
+    },
+    {
+     "heading": "キャンセルと返金",
+     "paragraphs": [
+      "予約した利用開始日時まで48時間以上ある時点でキャンセルを受け付けた場合は、お支払額を全額返金します。ちょうど48時間前のキャンセルも対象です。利用開始日時まで48時間未満となってからのキャンセルは、自動返金の対象外です。個別の事情については店舗へお問い合わせください。",
+      "返金の対象となるかどうかは、キャンセルを受け付けた時刻で判定します。その後の処理に時間がかかっても、判定は変わりません。返金は原則としてお支払いに使用したカードへ行い、明細への反映時期はカード会社によって異なります。"
+     ]
+    },
+    {
+     "heading": "天候・リフト運休・未使用時間",
+     "paragraphs": [
+      "利用開始前のキャンセルには、上記の「キャンセルと返金」を適用します。利用開始後、当店が契約どおり用具を提供できる状態にある場合は、天候、リフト運休、利用時間の短縮、未使用時間または早期返却を理由とする返金はありません。",
+      "当店が契約どおり用具を提供できない場合や、当店側の責任による不具合等については、この返金除外を適用せず、法令と契約内容に従って対応します。本規約は、法令に基づくお客様の解除・返金その他の権利を制限しません。"
+     ]
+    },
+    {
+     "heading": "適用する規約",
+     "paragraphs": [
+      "予約に適用する規約は、お客様が購入時に確認・同意した版です。改定後の規約を、改定前に成立した予約へ遡って適用することはありません。"
      ]
     },
     {
@@ -54,8 +92,8 @@
    "locale": "en",
    "title": "Terms of use",
    "state": "OWNER_APPROVED",
-   "approvedBy": "佐藤慎太郎",
-   "approvedAt": "2026-10-09T22:53:05Z",
+   "approvedBy": "TD採用案（Owner包括指示 2026-11-19 / Issue #47 comment 6984890289）",
+   "approvedAt": "2026-11-18T16:35:58Z",
    "sections": [
     {
      "heading": "Scope",
@@ -83,9 +121,49 @@
      ]
     },
     {
-     "heading": "Cancellation",
+     "heading": "Equipment checks and safety",
      "paragraphs": [
-      "Cancellations and refunds follow the Cancellation and refund policy."
+      "Please check the condition of your equipment when collecting it. If you notice a fault, damage, or a problem with its adjustment during use, stop using it immediately and contact the station.",
+      "Skiing and snowboarding involve risks, including falls, collisions, and changes in weather and snow conditions. Even properly adjusted equipment cannot prevent every accident or injury. These terms do not exclude or limit any responsibility we have under applicable law."
+     ]
+    },
+    {
+     "heading": "Damage, faults, loss and theft",
+     "paragraphs": [
+      "We do not charge for normal wear, deterioration with age, product defects, or other equipment faults for which you are not responsible.",
+      "If equipment is damaged, lost, or stolen for a reason for which you are responsible, including improper use or care, we will review the cause and circumstances before determining any charge. The following limits apply:",
+      "Repairable damage: The reasonable and necessary actual cost of repair, capped at 50% of the model's retail price. We will explain the repair cost and the basis of the cap before requesting payment.",
+      "Irreparable damage, loss or theft: The charge will not exceed the lower of the equipment's fair value at the time of the incident, taking its age and condition into account, and our actual loss.",
+      "Damage arising from use outside controlled ski areas, including deep snow and wooded areas, is assessed under the same rules. We will not charge both a repair cost and compensation for the same loss.",
+      "Before requesting payment, we will explain the cause, the equipment's condition, and how the amount was calculated, with an estimate or other supporting information. Any additional card payment will be made only after you have reviewed and agreed to the amount. If theft is suspected, report it to the police promptly and contact the station."
+     ]
+    },
+    {
+     "heading": "Care of equipment",
+     "paragraphs": [
+      "Please take reasonable care of the equipment throughout the rental period. Do not lend or transfer it to another person. Avoid leaving it unattended to help prevent theft, loss, or mix-ups."
+     ]
+    },
+    {
+     "heading": "Cancellation and refunds",
+     "paragraphs": [
+      "You will receive a full refund if your cancellation is received at least 48 hours before your scheduled rental start. A cancellation received exactly 48 hours before the start is eligible.",
+      "Cancellations received less than 48 hours before the scheduled rental start are not eligible for an automatic refund. Please contact the station about individual circumstances.",
+      "Eligibility is determined by the time your cancellation is received. Subsequent processing delays do not change that decision. Refunds are normally made to the card used for payment. The time it takes for a refund to appear depends on your card issuer."
+     ]
+    },
+    {
+     "heading": "Weather, lift closures and unused rental time",
+     "paragraphs": [
+      "Cancellations made before the rental starts are subject to the \"Cancellation and refunds\" section above.",
+      "Once the rental period has started, no refund is provided for weather, lift closures, a shorter period of use, unused rental time, or early return, provided that we have made the contracted equipment available as agreed.",
+      "This exclusion does not apply when we cannot provide the equipment as agreed or when a problem is our responsibility. Such cases are handled in accordance with the contract and applicable law. These terms do not restrict any cancellation, refund, or other rights you have under applicable law."
+     ]
+    },
+    {
+     "heading": "Applicable version",
+     "paragraphs": [
+      "Your booking is governed by the version of the terms you reviewed and accepted at purchase. Revised terms will not be applied retrospectively to bookings completed before the revision."
      ]
     },
     {
@@ -321,22 +399,20 @@
    "locale": "ja",
    "title": "キャンセル・返金規定",
    "state": "OWNER_APPROVED",
-   "approvedBy": "佐藤慎太郎",
-   "approvedAt": "2026-10-09T22:53:05Z",
+   "approvedBy": "TD採用案（Owner包括指示 2026-11-19 / Issue #47 comment 6984890289）",
+   "approvedAt": "2026-11-18T16:35:58Z",
    "sections": [
     {
      "heading": "オンラインでのキャンセル",
      "paragraphs": [
-      "予約はご予約確認ページからキャンセルできます。",
-      "利用開始の48時間前まで（48時間ちょうどを含む）にキャンセルされた場合、お支払いいただいた金額の全額を、お支払いに使用したカードへ自動で返金します。",
-      "利用開始の48時間前を過ぎたキャンセルには、オンラインでの返金はありません。返金できない理由はキャンセル時の画面に表示します。",
-      "返金の可否はキャンセルを受け付けた時点で判定します。返金処理の実行が遅れても、受付時に返金対象だったキャンセルが対象外になることはありません。"
+      "予約はご予約確認ページからキャンセルできます。"
      ]
     },
     {
-     "heading": "返金の時期",
+     "heading": "キャンセルと返金",
      "paragraphs": [
-      "返金の手続きは当社で自動的に行います。カード明細への反映時期はご利用のカード会社によって異なります。"
+      "予約した利用開始日時まで48時間以上ある時点でキャンセルを受け付けた場合は、お支払額を全額返金します。ちょうど48時間前のキャンセルも対象です。利用開始日時まで48時間未満となってからのキャンセルは、自動返金の対象外です。個別の事情については店舗へお問い合わせください。",
+      "返金の対象となるかどうかは、キャンセルを受け付けた時刻で判定します。その後の処理に時間がかかっても、判定は変わりません。返金は原則としてお支払いに使用したカードへ行い、明細への反映時期はカード会社によって異なります。"
      ]
     },
     {
@@ -358,22 +434,21 @@
    "locale": "en",
    "title": "Cancellation and refund policy",
    "state": "OWNER_APPROVED",
-   "approvedBy": "佐藤慎太郎",
-   "approvedAt": "2026-10-09T22:53:05Z",
+   "approvedBy": "TD採用案（Owner包括指示 2026-11-19 / Issue #47 comment 6984890289）",
+   "approvedAt": "2026-11-18T16:35:58Z",
    "sections": [
     {
      "heading": "Cancelling online",
      "paragraphs": [
-      "You can cancel a booking from your booking page.",
-      "If you cancel at least 48 hours before the rental starts (exactly 48 hours included), the full amount paid is refunded automatically to the card used for payment.",
-      "Online cancellations later than 48 hours before the start are not refunded. The reason is shown on the cancellation screen.",
-      "Eligibility is decided when the cancellation is accepted. A delay in processing never makes a cancellation that was eligible when accepted ineligible."
+      "You can cancel a booking from your booking page."
      ]
     },
     {
-     "heading": "When the refund arrives",
+     "heading": "Cancellation and refunds",
      "paragraphs": [
-      "We start the refund automatically. When it appears on your statement depends on your card issuer."
+      "You will receive a full refund if your cancellation is received at least 48 hours before your scheduled rental start. A cancellation received exactly 48 hours before the start is eligible.",
+      "Cancellations received less than 48 hours before the scheduled rental start are not eligible for an automatic refund. Please contact the station about individual circumstances.",
+      "Eligibility is determined by the time your cancellation is received. Subsequent processing delays do not change that decision. Refunds are normally made to the card used for payment. The time it takes for a refund to appear depends on your card issuer."
      ]
     },
     {
@@ -390,5 +465,6 @@
     }
    ]
   }
- ]
+ ],
+ "termsBundle": "ZAO_RENTAL_TERMS_V2"
 }

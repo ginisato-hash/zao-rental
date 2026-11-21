@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {newQuietContext} from '../flow/dev-hmr';
 import {randomBytes,randomUUID} from 'node:crypto';
 import QRCode from 'qrcode';
 import {requestFor} from '../inventory/fixture';
@@ -33,8 +34,8 @@ try{
  app=await startFlowApp();await seedRecommendation(app.db.pool);await bootstrapDevelopmentAdmin(app.db.pool,{email:'custody-ui-root@example.invalid',displayName:'SYNTHETIC Root',password});const {origin}=app;
  async function clock(time:string){await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${time}'::timestamptz$$`);}await clock('2035-01-01T01:00:00Z');
  for(let n=0;n<100;n++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(n===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
- const context=await browser.newContext({baseURL:origin,viewport:{width:1280,height:960}});context.setDefaultTimeout(15000);await context.addInitScript('window.__name = (fn) => fn');page=await context.newPage();const p=page;
- async function login(email:string){await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(origin+'/staff/ledger');}
+ const context=await newQuietContext(browser,{baseURL:origin,viewport:{width:1280,height:960}});context.setDefaultTimeout(15000);await context.addInitScript('window.__name = (fn) => fn');page=await context.newPage();const p=page;
+ async function login(email:string){await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});}
  await login('custody-ui-root@example.invalid');const perms={BOOKING_VIEW:true,BOOKING_CREATE:true,RENTAL_CHECKOUT:true,RENTAL_RETURN:true,INVENTORY_VIEW:true,INVENTORY_EDIT:true,HOLD_VIEW:true,HOLD_EDIT:true,QUOTE_VIEW:true,QUOTE_CREATE:true,PRICE_EDIT:true,TRANSFER_VIEW:true,TRANSFER_PLAN:true,TRANSFER_DISPATCH:true,TRANSFER_RECEIVE:true};
  const created=await context.request.post('/api/staff-users',{headers:{origin},data:{email:'custody-ui-actor@example.invalid',password,displayName:'SYNTHETIC Custody Staff',active:true,role:'ADMIN',scope:'ALL',storeIds:[],permissions:perms}});if(created.status()!==201)console.error(JSON.stringify(await safeHttpResponseDiagnostic('STAFF_CREATE',created)));assert.equal(created.status(),201);
  // After the original STAFF_CREATE POST and 201 assertion, verify the separate FIXTURE_PROBE path.
@@ -46,8 +47,8 @@ try{
    for(let n=0;n<50&&!seen.includes(want);n++)await new Promise(r=>setTimeout(r,100));
    assert.ok(seen.includes(want),'request-error record reached the test log');assert.ok(!seen.join('\n').includes('SYNTHETIC_PRIVATE'),'no private probe text forwarded');}
   finally{console.error=original;}}
- const root=await browser.newContext({baseURL:origin});const rootLogin=await root.request.post('/api/auth/sign-in/email',{headers:{origin},data:{email:'custody-ui-root@example.invalid',password}});assert.equal(rootLogin.status(),200);
- await p.goto('/staff/logout');await p.getByRole('button',{name:'ログアウトする',exact:true}).click();await p.waitForURL(origin+'/staff/login');await login('custody-ui-actor@example.invalid');
+ const root=await newQuietContext(browser,{baseURL:origin});const rootLogin=await root.request.post('/api/auth/sign-in/email',{headers:{origin},data:{email:'custody-ui-root@example.invalid',password}});assert.equal(rootLogin.status(),200);
+ await p.goto('/staff/logout');await p.getByRole('button',{name:'サインアウトする',exact:true}).click();await p.waitForURL(origin+'/staff/login');await login('custody-ui-actor@example.invalid');
  const subject=(await app.db.pool.query("SELECT id FROM staff_users WHERE email='custody-ui-actor@example.invalid'")).rows[0].id,sessionId=(await app.db.pool.query('SELECT id FROM auth_session WHERE "userId"=$1 ORDER BY "createdAt" DESC LIMIT 1',[subject])).rows[0].id,identity={subject,sessionId},principal=(await loadStaff(app.db.pool,subject))!;
  const ledger=new LedgerService(app.roles.ledgerPool,ledgerPrincipal(principal),(c,stores,global)=>verifyLedgerWrite(c,app!.roles.authPool,identity,stores,global),(resource,id,version)=>reconcileLedgerProtection(app!.roles.transferPool,app!.roles.authPool,identity,resource,id,version));const fixtures=await registerWear(ledger,new WearService(app.flow.flowPool,app.roles.authPool,identity));
  await p.goto('/staff/quotes');await p.getByText('料金の初期設定',{exact:true}).click();await p.getByLabel('料金の対象開始日').fill('2035-01-01');await p.getByLabel('料金の対象終了日').fill('2035-12-31');await p.getByRole('button',{name:'開発用の初期料金を設定'}).click();await expect(p.getByRole('region',{name:'料金版',exact:true})).toContainText('利用可能');
@@ -92,7 +93,7 @@ try{
   await mkdir('.local/screenshots',{recursive:true});await p.screenshot({path:'.local/screenshots/custody-desktop.png',fullPage:true});await p.setViewportSize({width:390,height:844});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await p.screenshot({path:'.local/screenshots/custody-mobile-width.png',fullPage:true});
  });
  await check('normal API refuses unauthenticated/CSRF/actor flags; revocation closes the current screen and blocks saved session',async()=>{
-  const anon=await browser.newContext({baseURL:origin});try{assert.equal((await anon.request.get('/api/custody/booking/'+bookingId)).status(),401);}finally{await anon.close();}
+  const anon=await newQuietContext(browser,{baseURL:origin});try{assert.equal((await anon.request.get('/api/custody/booking/'+bookingId)).status(),401);}finally{await anon.close();}
   assert.equal((await context.request.post('/api/custody/batch',{data:{requestKey:randomUUID(),input:{store:'ONSEN_BASE'}}})).status(),403);assert.equal((await context.request.post('/api/custody/batch',{headers:{origin},data:{requestKey:randomUUID(),input:{store:'ONSEN_BASE'},actor:subject}})).status(),422);
   const users=await (await root.request.get('/api/staff-users')).json();const u=(Array.isArray(users)?users:users.items).find((u:{id:string})=>u.id===subject);const updated=await root.request.patch('/api/staff-users/'+subject,{headers:{origin},data:{displayName:u.displayName,active:false,role:u.role,scope:u.scope,storeIds:u.storeIds,permissions:u.permissions,expectedRevision:u.revision}});assert.equal(updated.status(),200);
   await p.getByRole('button',{name:'保存済み返却作業を読込'}).click();await expect(p.getByRole('heading',{name:'セッションを確認してください'})).toBeVisible();assert.equal((await context.request.get('/api/custody/booking/'+bookingId)).status(),401);

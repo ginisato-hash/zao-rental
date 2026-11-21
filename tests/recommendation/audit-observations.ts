@@ -19,7 +19,7 @@ try{
  async function clock(value:string){await app!.db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${new Date(value).toISOString()}'::timestamptz$$`);}
  await clock('2035-07-01T10:00:00+09:00');
  for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
- async function login(email:string){const c=await browser.newContext({baseURL:origin});c.setDefaultTimeout(10000);const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(origin+'/staff/ledger');return {c,p};}
+ async function login(email:string){const c=await browser.newContext({baseURL:origin});c.setDefaultTimeout(10000);const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return {c,p};}
  const root=await login('audit-open-bootstrap@example.invalid');
  const common:AccountSettings={displayName:'合成設定対象',active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{INVENTORY_VIEW:true,INVENTORY_EDIT:true,HOLD_VIEW:true,HOLD_EDIT:true}};
  async function create(email:string,settings:AccountSettings){const r=await root.c.request.post('/api/staff-users',{headers:{origin},data:{...settings,email,password}});assert.equal(r.status(),201);return (await r.json()).id as string;}
@@ -27,12 +27,12 @@ try{
  await create('audit-open-admin@example.invalid',{...common,displayName:'合成第2管理者',role:'ADMIN',scope:'ALL',storeIds:[],permissions:{...common.permissions,STAFF_MANAGE:true,TRANSFER_VIEW:true,TRANSFER_PLAN:true,TRANSFER_DISPATCH:true,TRANSFER_RECEIVE:true}});
  const other=await login('audit-open-admin@example.invalid');
  // A: hold the original actual form open while the other administrator disables/revokes.
- await root.p.goto('/staff/users');await root.p.getByRole('button',{name:'スタッフを編集：合成設定対象'}).click();
+ await root.p.goto('/staff/users');await root.p.getByRole('button',{name:'スタッフを編集：合成設定対象'}).click();await root.p.locator('details.staff-perm-details').evaluate(d=>{(d as HTMLDetailsElement).open=true;});
  const form=root.p.getByRole('form',{name:'スタッフ更新'});await expect(form.getByLabel('有効',{exact:true})).toBeChecked();
  const disabled={...common,active:false,permissions:{...common.permissions,INVENTORY_EDIT:false}};
  assert.equal((await other.c.request.patch('/api/staff-users/'+subject,{headers:{origin},data:disabled})).status(),200);
  const before=(await app.db.pool.query('SELECT active,revision FROM staff_members WHERE id=$1',[subject])).rows[0];assert.equal(before.active,false);
- await form.getByRole('button',{name:'スタッフ設定を保存'}).click();await expect(form).toHaveCount(0);
+ await (async()=>{const c=form.getByLabel('強い権限の付与を確認しました');if(await c.count())await c.check();})();await form.getByRole('button',{name:'スタッフ設定を保存'}).click();await expect(form).toHaveCount(0);
  const after=(await app.db.pool.query('SELECT active,revision FROM staff_members WHERE id=$1',[subject])).rows[0];const restored=(await app.db.pool.query("SELECT allowed FROM staff_permission_overrides WHERE staff_id=$1 AND permission='INVENTORY_EDIT'",[subject])).rows[0].allowed;
  assert.equal(after.active,true);assert.equal(restored,true);observe('A',{mode:'ordinary UI + API + real PostgreSQL',beforeActive:before.active,afterActive:after.active,editRestored:restored,revisionIncreased:after.revision>before.revision});
  // B: observe this run's actual lock wait before committing permission revocation, then release it.

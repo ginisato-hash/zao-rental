@@ -22,7 +22,7 @@ try{
  await seedLedgerSample(owner);
  const adminId=await bootstrapDevelopmentAdmin(owner,{email:emails.admin,displayName:'合成ADMIN',password});
  async function context(){const ctx=await browser.newContext({baseURL:origin,viewport:{width:1280,height:900}});ctx.setDefaultTimeout(10000);ctx.setDefaultNavigationTimeout(15000);return ctx;}
- async function login(ctx:BrowserContext,email:string,secret=password){const page=await ctx.newPage();await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(secret);await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(`${origin}/staff/ledger`);return page;}
+ async function login(ctx:BrowserContext,email:string,secret=password){const page=await ctx.newPage();await page.goto('/staff/login');await page.getByLabel('メールアドレス',{exact:true}).fill(email);await page.getByLabel('パスワード',{exact:true}).fill(secret);await page.getByRole('button',{name:'ログイン',exact:true}).click();await page.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return page;}
  const admin=await context();let adminPage:Page;let editorId:string,readerId:string,assetId:string;
  const settings={displayName:'合成STAFF',active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{INVENTORY_EDIT:true}};
  await check('no public signup, social login, fixture login or ambient identity bypass; anonymous API is 401',async()=>{
@@ -32,7 +32,7 @@ try{
  });
  await check('ADMIN logs in normally and creates a store-scoped STAFF through the actual management UI/API',async()=>{
   adminPage=await login(admin,emails.admin);await adminPage.goto('/staff/users');await adminPage.getByRole('button',{name:'スタッフを作成',exact:true}).click();const form=adminPage.getByRole('form',{name:'スタッフ作成'});
-  await form.getByLabel('表示名',{exact:true}).fill(settings.displayName);await form.getByLabel('メールアドレス',{exact:true}).fill('SYNTHETIC-EDITOR@example.invalid');await form.getByLabel('初期パスワード（15〜128文字）').fill(password);await form.getByLabel('Mountain Station',{exact:true}).check();await form.getByLabel('台帳の登録・更新',{exact:true}).selectOption('allow');await form.getByRole('button',{name:'スタッフ設定を保存'}).click();await expect(adminPage.getByRole('heading',{name:settings.displayName,exact:true})).toBeVisible();
+  await form.getByLabel('表示名',{exact:true}).fill(settings.displayName);await form.getByLabel('メールアドレス',{exact:true}).fill('SYNTHETIC-EDITOR@example.invalid');await form.getByLabel('初期パスワード（6〜128文字）').fill(password);await form.getByLabel('初期パスワード（確認）').fill(password);await form.locator('details.staff-perm-details').evaluate(d=>{(d as HTMLDetailsElement).open=true;});await form.getByLabel('Mountain Station',{exact:true}).check();await form.getByLabel('台帳の登録・更新',{exact:true}).selectOption('allow');await (async()=>{const c=form.getByLabel('強い権限の付与を確認しました');if(await c.count())await c.check();})();await form.getByRole('button',{name:'スタッフ設定を保存'}).click();await expect(adminPage.getByRole('heading',{name:settings.displayName,exact:true})).toBeVisible();
   editorId=(await owner.query('SELECT id FROM staff_users WHERE email=$1',[emails.editor])).rows[0].id;
   const user=(await owner.query('SELECT password_hash FROM staff_users WHERE id=$1',[editorId])).rows[0];assert.ok(user.password_hash.startsWith('$argon2id$v=19$m=65536,t=3,p=1$'));assert.ok(user.password_hash!==password,'plaintext must never be stored');assert.ok(await verifyStaffPassword({hash:user.password_hash,password}));
   assert.equal((await admin.request.post('/api/staff-users',{headers:{origin},data:{...settings,email:emails.editor.toUpperCase(),password}})).status(),409);
@@ -46,7 +46,7 @@ try{
  });
  const editor=await context();let page:Page;
  await check('individual email/password login establishes a real DB session with HttpOnly SameSite cookie and no token response body',async()=>{
-  page=await login(editor,emails.editor);await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/session')).status(),200);
+  page=await login(editor,emails.editor);await page.goto('/staff/ledger');await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/session')).status(),200);
   const ttl=(await owner.query('SELECT extract(epoch from ("expiresAt"-"createdAt")) AS seconds FROM auth_session WHERE "userId"=$1',[editorId])).rows[0].seconds;assert.ok(Number(ttl)<=28801&&Number(ttl)>=28790);
   const c=(await editor.cookies(origin)).find(c=>c.name.endsWith('session_token'));assert.ok(c?.httpOnly);assert.equal(c.sameSite,'Lax');assert.equal(c.secure,false);
   assert.equal((await owner.query('SELECT count(*)::int AS n FROM auth_session WHERE "userId"=$1',[editorId])).rows[0].n,1);
@@ -79,8 +79,8 @@ try{
  });
  await check('logout revokes old session; re-login reads the same stored Asset and stale session stamp is refused',async()=>{
   const oldStamp=(await (await editor.request.get('/api/session')).json()).stamp;
-  await page.getByRole('button',{name:'ログアウト',exact:true}).click();await page.waitForURL(`${origin}/staff/login`);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
-  await page.close();page=await login(editor,emails.editor);await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/ledger/assets',{headers:{'x-zao-session':oldStamp}})).status(),409);assert.equal((await (await editor.request.get(`/api/ledger/assets/${assetId}`)).json()).notes,'E05 再読込確認');
+  await page.goto('/staff/logout');await page.getByRole('button',{name:'サインアウトする',exact:true}).click();await page.waitForURL(`${origin}/staff/login`);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
+  await page.close();page=await login(editor,emails.editor);await page.goto('/staff/ledger');await expect(page.getByRole('heading',{name:'道具の台帳'})).toBeVisible();assert.equal((await editor.request.get('/api/ledger/assets',{headers:{'x-zao-session':oldStamp}})).status(),409);assert.equal((await (await editor.request.get(`/api/ledger/assets/${assetId}`)).json()).notes,'E05 再読込確認');
  });
  await check('permission and store removals are enforced by normal APIs, while old displayed data is unmounted',async()=>{
   assert.equal((await admin.request.patch(`/api/staff-users/${editorId}`,{headers:{origin},data:{...settings,expectedRevision:(await owner.query('SELECT revision FROM staff_members WHERE id=$1',[editorId])).rows[0].revision,role:'MANAGER',permissions:{INVENTORY_EDIT:false}}})).status(),200);
@@ -128,7 +128,7 @@ try{
  });
  await check('expired session and missing store scope cannot continue; another user sees only its permitted store',async()=>{
   await owner.query(`UPDATE auth_session SET "expiresAt"=now()-interval '1 second' WHERE "userId"=$1`,[editorId]);assert.equal((await editor.request.get('/api/ledger/assets')).status(),401);
-  const reader=await context();const rp=await login(reader,emails.reader);await expect(rp.getByRole('heading',{name:'道具の台帳'})).toBeVisible();await expect(rp.getByRole('button',{name:'＋ 登録',exact:true})).toHaveCount(0);
+  const reader=await context();const rp=await login(reader,emails.reader);await rp.goto('/staff/ledger');await expect(rp.getByRole('heading',{name:'道具の台帳'})).toBeVisible();await expect(rp.getByRole('button',{name:'＋ 登録',exact:true})).toHaveCount(0);
   const rows=(await (await reader.request.get('/api/ledger/assets')).json()).items;assert.ok(rows.length>0);assert.ok(rows.every((r:{storeId:string})=>r.storeId==='ONSEN_BASE'));assert.ok(rows.every((r:{notes:string})=>r.notes!=='E05 再読込確認'));
   await owner.query('DELETE FROM staff_store_access WHERE staff_id=$1',[readerId]);assert.equal((await reader.request.get('/api/ledger/assets')).status(),403);await reader.close();
  });

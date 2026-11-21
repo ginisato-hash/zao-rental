@@ -1,4 +1,11 @@
+import {cookies} from 'next/headers';
 import {StaffLogin} from '../../../components/StaffLogin';
+import {logo} from '../../../components/brand/media';
+import '../../../components/staff-login.css';
 import {getRuntime} from '../../../lib/staff-runtime';
+import {STAFF_LOCALE_COOKIE,staffLocaleFrom} from '../../../components/staff-i18n';
 export const dynamic='force-dynamic';
-export default function Page(){return <main className="staff-account"><p>SALOMON RENTAL STATION ZAO · STAFF</p><h1>スタッフログイン</h1><StaffLogin configured={Boolean(getRuntime()?.auth)}/><p>台帳の利用には、別途承認されたスタッフ登録が必要です。</p><a href="/staff/ledger">台帳へ</a></main>;}
+export default async function Page(){const locale=staffLocaleFrom((await cookies()).get(STAFF_LOCALE_COOKIE)?.value);
+ return <main className="staff-account staff-login-page">
+{/* eslint-disable-next-line @next/next/no-img-element -- fixed-size official logo raster, as in PublicChrome */}
+<img className="staff-login-logo" src={logo.src} width={logo.width} height={logo.height} alt="SALOMON RENTAL STATION ZAO"/><StaffLogin configured={Boolean(getRuntime()?.auth)} initialLocale={locale}/></main>;}

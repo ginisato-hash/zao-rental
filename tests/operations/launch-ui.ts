@@ -17,7 +17,7 @@ try{
  await writeAccount(roles.authPool,admin,undefined,{email:'m2a-plain@example.invalid',password,displayName:'SYNTHETIC Plain',active:true,role:'VIEWER',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{INVENTORY_VIEW:true,BOOKING_VIEW:true}});
  for(let i=0;i<150;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(i===149)throw Error('LOCAL_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  async function context(){const c=await browser.newContext({baseURL:origin,viewport:{width:1440,height:1000}});c.setDefaultTimeout(15000);await c.route('**/*',route=>{const url=route.request().url();if(url.startsWith(origin+'/')||url.startsWith('data:'))return route.continue();external++;return route.abort();});return c;}
- async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL('**/staff/ledger');return p;}
+ async function login(c:BrowserContext,email:string){const p=await c.newPage();await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>u.pathname.startsWith('/staff')&&!u.pathname.startsWith('/staff/login'),{timeout:60000});return p;}
  const owner=await context(),plain=await context(),anonymous=await context();
  const page=await login(owner,'m2a-operator@example.invalid'),plainPage=await login(plain,'m2a-plain@example.invalid');
 
@@ -60,7 +60,7 @@ try{
   assert.equal(breaks,'avoid');
   await page.emulateMedia({media:'print'});
   assert.equal(await page.locator('.asset-label').first().evaluate(el=>getComputedStyle(el).visibility),'visible');
-  assert.equal(await page.locator('footer.ledger-footer').evaluate(el=>getComputedStyle(el).visibility),'hidden');
+  assert.equal(await page.locator('header.ledger-header h1').evaluate(el=>getComputedStyle(el).visibility),'hidden');
   await page.emulateMedia({media:'screen'});
  });
 
@@ -78,7 +78,8 @@ try{
   assert.equal(await page.locator('input[type="password"]').count(),0);
   assert.equal(await page.locator('form').count(),0);
   for(const forbidden of ['本番接続','デプロイ','有効化','決済実行','秘密'])await expect(page.getByRole('button',{name:new RegExp(forbidden)})).toHaveCount(0);
-  assert.equal((await page.getByRole('button').allInnerTexts()).filter(t=>t.trim()&&t.trim()!=='読み込む'&&!t.includes('ログアウト')).length,0);
+  // Shared shell chrome (language switch, menu, notifications) is outside main; the launch page content itself is checked.
+  assert.equal((await page.getByRole('main').getByRole('button').allInnerTexts()).filter(t=>t.trim()&&t.trim()!=='読み込む'&&!t.includes('ログアウト')).length,0);
  });
 
  await check('the launch gate is operable at 390, 768 and 1440 with no external request',async()=>{

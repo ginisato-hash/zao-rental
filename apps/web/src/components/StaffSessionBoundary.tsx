@@ -1,9 +1,23 @@
  'use client';
-import {useEffect,useState,type ReactNode} from 'react';
+import {useContext,useEffect,useState,type ReactNode} from 'react';
+import {StaffLocaleContext} from './staff-locale';
 export function invalidateStaffView(){window.dispatchEvent(new Event('zao-auth-ended'));}
+/** BELL-RACE-01: a 401/403/409 answer to a request made with `stamp` ends the view only if `stamp` is still the browser's
+ * current session (its access really ended) or there is no session at all. If another valid session has replaced it
+ * (sign-in as someone else while the request was pending), the answer belongs to the old session: the view for the new
+ * stamp is not ended here, and StaffSessionBoundary keeps verifying whichever stamp is shown. A failed check ends it. */
+export async function endViewIfSessionIs(stamp:string){
+ try{const r=await fetch('/api/session',{cache:'no-store'});const body=await r.json() as {stamp?:string};
+  if(r.ok&&body.stamp&&body.stamp!==stamp)return;}catch{/* cannot tell: fail closed */}
+ invalidateStaffView();
+}
 export function StaffSessionBoundary({stamp,children}:{stamp:string;children:ReactNode}){
- const [state,setState]=useState<'checking'|'ready'|'ended'>('checking');
+ // DOC-01: 'ready' is bound to the stamp the server verified. When the stamp changes, the previous ready never shows the
+ // children: they stay hidden until this stamp itself is confirmed.
+ const [verified,setVerified]=useState<{stamp:string;state:'checking'|'ready'|'ended'}>({stamp,state:'checking'});
+ const en=useContext(StaffLocaleContext)?.locale==='en';
  useEffect(()=>{
+  const setState=(next:'checking'|'ready'|'ended')=>setVerified({stamp,state:next});
   let alive=true,closed=false,generation=0;const channel=new BroadcastChannel('zao-rental-session');
   const end=()=>{closed=true;generation++;setState('ended');};
   async function check(hide=false){if(closed||!alive)return;const ticket=++generation;if(hide)setState('checking');
@@ -18,6 +32,8 @@ export function StaffSessionBoundary({stamp,children}:{stamp:string;children:Rea
   const timer=setInterval(()=>void check(),15000);void check();channel.postMessage('session-opened');
   return()=>{alive=false;clearInterval(timer);channel.close();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('pagehide',hide);window.removeEventListener('pageshow',show);window.removeEventListener('zao-auth-ended',end);};
  },[stamp]);
- if(state==='ended')return <main><h1>セッションを確認してください</h1><p>ログアウト、期限切れ、または権限の変更により画面を閉じました。</p><a href="/staff/login">ログイン画面へ</a> · <a href="/staff/logout">ログアウトを確認</a></main>;
- return state==='ready'?children:<main><p role="status">セッションを確認中…</p></main>;
+
+ const state=verified.stamp===stamp?verified.state:'checking';
+ if(state==='ended')return <main><h1>{en?'Check your session':'セッションを確認してください'}</h1><p>{en?'This screen was closed because you signed out, the session expired or your permissions changed.':'ログアウト、期限切れ、または権限の変更により画面を閉じました。'}</p><a href="/staff/login">{en?'Go to sign-in':'ログイン画面へ'}</a> · <a href="/staff/logout">{en?'Confirm sign-out':'ログアウトを確認'}</a></main>;
+ return state==='ready'?children:<main><p role="status">{en?'Checking your session…':'セッションを確認中…'}</p></main>;
 }

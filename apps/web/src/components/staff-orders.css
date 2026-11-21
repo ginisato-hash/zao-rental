@@ -1,0 +1,61 @@
+/* Dashboard and Orders — Booqable structure, Apple look (tokens from staff-shell.css). */
+.ox-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.ox-head h1{margin:0!important;margin-right:auto!important}
+.ox-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.ox-range select,.ox-date,.ox-search input,.ox-filters input[type=date]{min-height:36px;border-radius:8px;border:1px solid var(--sx-line);padding:0 10px;font:inherit;background:var(--sx-bg);color:var(--sx-text)}
+.ox-search input{width:min(360px,60vw)}
+.ox-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.ox-panel{overflow:hidden}
+.ox-panel-h{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:68px;box-sizing:border-box;padding:12px 20px;border-bottom:1px solid var(--sx-line)}
+.ox-panel-h h2{margin:0!important;font-size:19px!important}
+.ox-count{color:var(--sx-text2);font-weight:400}
+.ox-panel-f{display:flex;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--sx-line);font-size:14px}
+.ox-panel-f a{color:var(--sx-blue);text-decoration:none}
+.ox-panel-f a.ox-late{color:var(--sx-warn)}
+.ox-panel .sx-empty,.ox-panel .sx-status{padding:0 20px}
+.ox-rows{list-style:none;margin:0;padding:0}
+.ox-rows li a{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--sx-line);text-decoration:none}
+.ox-rows li:last-child a{border-bottom:0}
+.ox-rows li a:hover{background:var(--sx-bg2)}
+.ox-time{font:600 15px/1.2 var(--sx-font);font-variant-numeric:tabular-nums;display:grid}
+.ox-time small,.ox-who small,.ox-ref small{font-weight:400;font-size:12px;color:var(--sx-text2)}
+.ox-who,.ox-ref{display:grid;gap:2px;min-width:0}
+.ox-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ox-ref{text-align:right}
+.ox-status{font-weight:600}
+.ox-status--blue{color:var(--sx-blue)}.ox-status--green{color:#248a3d}.ox-status--orange{color:var(--sx-warn)}.ox-status--grey{color:var(--sx-text2)}.ox-status--red{color:var(--sx-red)}
+.ox-pane{display:none!important}
+.ox-tabs{margin-bottom:16px;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.ox-tabs::-webkit-scrollbar{display:none}
+/* Segments never wrap or squeeze: on a narrow screen the row scrolls inside itself, the page never scrolls sideways. */
+.ox-tabs button{white-space:nowrap;flex:0 0 auto}
+.ox-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start}
+.ox-filters{display:grid;gap:16px;font-size:14px}
+.ox-filters fieldset{border:0;margin:0;padding:0;display:grid;gap:6px}
+.ox-filters legend{font-weight:600;font-size:12px;color:var(--sx-text2);margin-bottom:6px}
+.ox-filters .sx-check input{width:16px;height:16px;margin:1px 0 0}
+.ox-table-wrap{overflow-x:auto}
+.ox-table tbody tr{cursor:pointer}
+.ox-table tbody tr:hover{background:var(--sx-bg2)}
+.ox-table a{color:var(--sx-blue);text-decoration:none;font-weight:600}
+.ox-num{text-align:right;font-variant-numeric:tabular-nums}
+.ox-pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:12px}
+.sx-visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:899px){
+ .ox-grid{grid-template-columns:minmax(0,1fr)}
+ .ox-pane{display:inline-flex!important;margin-bottom:12px}
+ .ox-hide-m{display:none}
+ .ox-layout{grid-template-columns:minmax(0,1fr)}
+ .ox-filters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+ .ox-search{order:3;width:100%}.ox-search input{width:100%;box-sizing:border-box}
+ .ox-rows li a{grid-template-columns:56px minmax(0,1fr) auto;padding:12px 16px}
+}
+@media print{
+ .sx-side,.sx-top,.ox-noprint,.ox-pane{display:none!important}
+ .sx{display:block}.ox-grid{grid-template-columns:1fr}
+ .ox-grid>section:nth-child(2){display:none}
+}
+.od-dl{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:0;padding:16px 20px}.od-dl dt{color:var(--sx-text2);font-size:13px}.od-dl dd{margin:0}
+.sx-table th.ox-num{text-align:right}
+
+.ox-related{display:flex;flex-wrap:wrap;gap:4px 16px;margin:-8px 0 14px;font-size:14px}

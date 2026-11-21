@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import type {Pool} from 'pg';
 import {FlowError,flowId,flowHash} from '../../../contracts/src/rental-flow';
 import type {BookingRecovery} from '../guest/booking-recovery';
+import {StaffNotificationWorker} from './staff-worker';
 import {renderBookingNotification,safeDeliveryResult,type BookingNotificationDelivery,type DeliveryResult,type NotificationEvent,type NotificationLocale} from './contracts';
 type Claim={id:string;claimId:string;dedupeKey:string};
 type Material={eventType:NotificationEvent;locale:NotificationLocale;bookingId:string;recipient:string;conditions:{pickupStore:string;returnStore:string;period:{startDate:string;endDate:string}};priceSnapshot:{totalJpy:number};priceSha256:string;paymentStatus:string;cancellation?:{refundStatus:string;refundAmountJpy:number;maximumRefundJpy:number};recovery:Parameters<BookingRecovery['notificationProof']>[1]|null};
@@ -36,11 +37,18 @@ export class BookingNotificationWorker{
   // No missing-result lookup or operator action can silently authorize another send.
   if(result.state==='ACCEPTED')await this.pool.query('SELECT notification_reconciled($1,$2)',[id,result.providerMessageId]);return {state:result.state==='ACCEPTED'?'SENT':'UNKNOWN'};
  }
+ private staffReady?:boolean;
+ private async staffQueueReady(){if(this.staffReady===undefined){try{this.staffReady=(await this.pool.query("SELECT to_regprocedure('staff_notification_due(integer)') IS NOT NULL AND has_function_privilege(current_user,'staff_notification_due(integer)','EXECUTE') AND has_function_privilege(current_user,'staff_events_sync()','EXECUTE') ok")).rows[0].ok===true;}catch{this.staffReady=false;}}return this.staffReady;}
  async runBatch(normal?:{since:string;limit:number;deadline:Date}){
   if(normal&&(!Number.isFinite(Date.parse(normal.since))||!Number.isInteger(normal.limit)||normal.limit<0||normal.limit>20||!Number.isFinite(normal.deadline.getTime())))throw new FlowError('NOTIFICATION_CONFIGURATION_INVALID',503);
   if(!normal)await this.synchronize();if(!this.adapter)return {state:'UNCONNECTED',processed:0};
   const rows=(await this.pool.query(normal?'SELECT id,action FROM notification_due_normal($1,$2)':'SELECT id,action FROM notification_due()',normal?[normal.since,normal.limit]:[])).rows;let processed=0;
   for(const row of rows){if(normal&&Date.now()>=normal.deadline.getTime())break;if(row.action==='LOOKUP')await this.reconcile(row.id);else await this.dispatch(row.id);processed++;}
-  return {state:'PROCESSED',processed};
+  // Staff new-booking emails (0060) share the transport and the tick, only once the role can run the staff queue.
+  // One shared budget per tick: customer deliveries first, the staff queue gets what remains, and nothing new starts after
+  // the tick deadline (no extra sync/claim, no retry loop, no scheduler).
+  const deadline=normal?.deadline??new Date(Date.now()+30000),remaining=Math.max(0,(normal?.limit??20)-processed);
+  let staff=0;if(remaining>0&&Date.now()<deadline.getTime()&&await this.staffQueueReady())staff=(await new StaffNotificationWorker(this.pool,this.origin,this.adapter,this.timeoutMs).runBatch(remaining,deadline)).processed;
+  return {state:'PROCESSED',processed,staff};
  }
 }

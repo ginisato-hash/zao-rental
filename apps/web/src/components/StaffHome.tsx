@@ -1,4 +1,5 @@
 'use client';
+import {useStaffLocale} from './staff-locale';
 import {TomorrowPreparation} from './TomorrowPreparation';
 import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
@@ -36,22 +37,38 @@ const SLOT_LABEL:Record<string,string>={DAY:'1日',AM:'午前',PM:'午後',MULTI
 const FAMILY_LABEL:Record<string,string>={SKI:'スキー',SNOWBOARD:'スノーボード',SKI_BOOT:'スキーブーツ',SNOWBOARD_BOOT:'スノーボードブーツ',POLE:'ポール',WEAR_JACKET:'ウェア（上）',WEAR_PANTS:'ウェア（下）'};
 const AGE_LABEL:Record<string,string>={ADULT:'大人',KIDS:'子供'};
 const SEVERITY_LABEL:Record<string,string>={INFO:'情報',WARN:'注意',ERROR:'重大'};
-const stateLabel=(s:string)=>STATE_LABEL[s]??'状態を確認中';
-const slotLabel=(s:string)=>SLOT_LABEL[s]??'—';
-const storeName=(s:string|null)=>s?STORE_LABEL[s]??'店舗':'—';
 // A raw error code is never shown; the retry control is the section's own 更新 / もう一度読み込む.
-const loadErrorText=(what:string,raw:string)=>/^[A-Z][A-Z0-9_]*$/.test(raw)||/fetch|network|load failed/i.test(raw)?what+'を読み込めませんでした。通信状況を確認し、もう一度読み込んでください。':raw;
-function actionLabel(action:string){return ACTION_LABEL[action]??'詳細確認';}
-function taskActionLabel(action:string){return TASK_ACTION_LABEL[action]??'詳細確認';}
 // 新着予約: payment-side states a person must look at; CONFIRMED is the normal, settled case.
 const ATTENTION_STATES=new Set(['PAYMENT_PENDING','PAYMENT_REVIEW']);
 const RECENT_LIMIT=20;
-const jstTime=(iso:string|null)=>{const d=iso?new Date(iso):null;return d&&Number.isFinite(d.getTime())?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(d):'—';};
-function money(raw:string|number|null){const n=Number(raw);return Number.isFinite(n)?new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n):'—';}
+
+const STATE_LABEL_EN:Record<string,string>={DRAFT:'Not confirmed (before payment)',PAYMENT_PENDING:'Waiting for payment check',PAYMENT_REVIEW:'Payment needs review',CONFIRMED:'Confirmed',COMPLETED:'Completed',CANCELLED:'Cancelled',CONFIRMED_DEV:'Confirmed',COMPLETED_DEV:'Completed'};
+const ACTION_LABEL_EN:Record<string,string>={CHECK_PAYMENT_OR_EXCEPTION:'Needs checking',PREPARE_EQUIPMENT:'Prepare',CHECKOUT:'Hand out',OUT_WAIT_RETURN:'Out',RECEIVE_RETURN:'Receive return',INSPECTION_PENDING:'Awaiting inspection',WEAR_CARE_IN_PROGRESS:'Wear care in progress',COMPLETE:'Done',NEEDS_DETAIL_REVIEW:'Check details',NO_ACTION:'No action'};
+const TASK_ACTION_LABEL_EN:Record<string,string>={INSPECT:'Inspect',NO_ACTION:'No action',CARE_IN_PROGRESS:'Wear care in progress',NEEDS_DETAIL_REVIEW:'Check details'};
+const SLOT_LABEL_EN:Record<string,string>={DAY:'1 day',AM:'Morning',PM:'Afternoon',MULTIDAY:'Multiple days'};
+const FAMILY_LABEL_EN:Record<string,string>={SKI:'Ski',SNOWBOARD:'Snowboard',SKI_BOOT:'Ski boots',SNOWBOARD_BOOT:'Snowboard boots',POLE:'Poles',WEAR_JACKET:'Wear (top)',WEAR_PANTS:'Wear (bottom)'};
+const AGE_LABEL_EN:Record<string,string>={ADULT:'Adult',KIDS:'Kids'};
+const SEVERITY_LABEL_EN:Record<string,string>={INFO:'Info',WARN:'Warning',ERROR:'Critical'};
+/** All presentational helpers for one language; screens call labels(en) once per render. */
+function labelsFor(en:boolean){return {
+ stateLabel:(s:string)=>(en?STATE_LABEL_EN:STATE_LABEL)[s]??(en?'Checking status':'状態を確認中'),
+ slotLabel:(s:string)=>(en?SLOT_LABEL_EN:SLOT_LABEL)[s]??'—',
+ familyLabel:(s:string)=>(en?FAMILY_LABEL_EN:FAMILY_LABEL)[s],
+ ageLabel:(s:string)=>(en?AGE_LABEL_EN:AGE_LABEL)[s],
+ severityLabel:(s:string)=>(en?SEVERITY_LABEL_EN:SEVERITY_LABEL)[s],
+ storeName:(s:string|null)=>s?STORE_LABEL[s]??(en?'Station':'店舗'):'—',
+ loadErrorText:(what:string,raw:string)=>/^[A-Z][A-Z0-9_]*$/.test(raw)||/fetch|network|load failed/i.test(raw)||/[\u3040-\u30ff]/.test(raw)?(en?`Could not load ${what}. Check the connection and load it again.`:what+'を読み込めませんでした。通信状況を確認し、もう一度読み込んでください。'):raw,
+ actionLabel:(a:string)=>(en?ACTION_LABEL_EN:ACTION_LABEL)[a]??(en?'Check details':'詳細確認'),
+ taskActionLabel:(a:string)=>(en?TASK_ACTION_LABEL_EN:TASK_ACTION_LABEL)[a]??(en?'Check details':'詳細確認'),
+ jstTime:(iso:string|null)=>{const d=iso?new Date(iso):null;return d&&Number.isFinite(d.getTime())?new Intl.DateTimeFormat(en?'en-GB':'ja-JP',{timeZone:'Asia/Tokyo',month:en?'short':'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(d):'—';},
+ money:(raw:string|number|null)=>{const n=Number(raw);return Number.isFinite(n)?new Intl.NumberFormat(en?'en-US':'ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n):'—';},
+};}
 type Props={stamp:string;stores:StoreId[];canBookingView:boolean;canCheckout:boolean;canReturn:boolean;canOperationsView:boolean;canInventoryView:boolean;canTransferView:boolean;canQuoteView:boolean;canHoldView:boolean;canManageStaff:boolean};
 export function StaffHome(p:Props){return <StaffSessionBoundary stamp={p.stamp}><Home {...p}/></StaffSessionBoundary>;}
-function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsView,canInventoryView,canTransferView,canQuoteView,canHoldView,canManageStaff}:Props){
+function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsView}:Props){
  const router=useRouter();
+ const {locale}=useStaffLocale(),en=locale==='en',t=(j:string,e:string)=>en?e:j;
+ const {stateLabel,slotLabel,familyLabel,ageLabel,severityLabel,storeName,loadErrorText,actionLabel,taskActionLabel,jstTime,money}=labelsFor(en);
  // /staff/rentals and the custody HTTP handler both require BOOKING_VIEW before checkout/return
  // authorization is even considered, so Staff Home must offer these surfaces only when the
  // destination route's full, composed permission set is met — never RENTAL_CHECKOUT/RENTAL_RETURN
@@ -127,64 +144,64 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
     <div className="staff-card-head"><strong>{row.displayName}</strong><span className="staff-chip">{stateLabel(row.bookingState)}</span></div>
     <p>{row.period.startDate} → {row.period.endDate} · {slotLabel(row.period.slot)}</p>
     <p>{storeName(row.pickupStore)} → {storeName(row.returnStore)}{row.totalJpy!==undefined?' · '+money(row.totalJpy):''}</p>
-    {row.pickup?.equipmentPrepared&&!row.pickup.equipmentCheckedOut&&<p className="staff-chip">準備完了</p>}
-    <p className="staff-card-action"><span>次にすること</span><strong>{label}</strong></p>
-    {row.exception?.attention&&<p className="staff-card-attention">要注意{row.exception.topSeverity?'（'+(SEVERITY_LABEL[row.exception.topSeverity]??'確認')+'）':''}</p>}
-    {canOpen&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(row.bookingId)}>{label}へ進む</button>}
+    {row.pickup?.equipmentPrepared&&!row.pickup.equipmentCheckedOut&&<p className="staff-chip">{t('準備完了','Prepared')}</p>}
+    <p className="staff-card-action"><span>{t('次にすること','Next step')}</span><strong>{label}</strong></p>
+    {row.exception?.attention&&<p className="staff-card-attention">{t('要注意','Attention')}{row.exception.topSeverity?t('（',' (')+(severityLabel(row.exception.topSeverity)??t('確認','check'))+t('）',')'):''}</p>}
+    {canOpen&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(row.bookingId)}>{label}{t('へ進む',' — continue')}</button>}
    </article>;
   }
   const label=taskActionLabel(row.taskAction);
   return <article className="staff-card" key={row.key}>
-   <div className="staff-card-head"><strong>{FAMILY_LABEL[row.family]??'用品'}{row.size?' '+row.size+(row.age?' / '+(AGE_LABEL[row.age]??''):''):''}</strong><span className="staff-chip staff-chip--muted">在庫タスク</span></div>
+   <div className="staff-card-head"><strong>{familyLabel(row.family)??t('用品','Items')}{row.size?' '+row.size+(row.age?' / '+(ageLabel(row.age)??''):''):''}</strong><span className="staff-chip staff-chip--muted">{t('在庫タスク','Stock tasks')}</span></div>
    <p>{storeName(row.sourceStore)} → {storeName(row.actualStore)}</p>
-   <p className="staff-card-action"><span>次にすること</span><strong>{label}</strong></p>
+   <p className="staff-card-action"><span>{t('次にすること','Next step')}</span><strong>{label}</strong></p>
   </article>;
  }
- const manifestError=manifestMessage?loadErrorText('本日の業務',manifestMessage):'';
+ const manifestError=manifestMessage?loadErrorText(t('本日の業務','Today’s work'),manifestMessage):'';
  const manifestKind=manifestError?'error':manifestRows===null||manifestBusy?'loading':manifestRows.length?'ready':'empty';
- const manifestStatus=manifestError||(manifestRows===null?'本日の業務を読み込んでいます…':manifestBusy?'最新の状態を読み込んでいます…':'');
- return <main className="holds staff-home"><header className="staff-home-header"><div><p className="staff-secondary">SALOMON RENTAL STATION ZAO · STAFF</p><h1>スタッフホーム</h1></div><nav><a href="/staff/logout">ログアウト</a></nav></header>
- {canBookingView&&<section aria-label="店舗・営業日" className="staff-context">
-  {showManifest&&<label>対象店舗<select aria-label="対象店舗" value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{storeName(s)}</option>)}</select></label>}
-  <p className="staff-context-date"><span>営業日</span><strong>{manifestDate?manifestDate+'（JST）':'確認しています…'}</strong></p>
+ const manifestStatus=manifestError||(manifestRows===null?t('本日の業務を読み込んでいます…','Loading today’s work…'):manifestBusy?t('最新の状態を読み込んでいます…','Loading the latest state…'):'');
+ return <main className="holds staff-home"><header className="staff-home-header"><div><h1>{t('当日作業・準備','Today’s work and preparation')}</h1></div></header>
+ {canBookingView&&<section aria-label={t('店舗・営業日','Station and business date')} className="staff-context">
+  {showManifest&&<label>{t('対象店舗','Station')}<select aria-label={t('対象店舗','Station')} value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{storeName(s)}</option>)}</select></label>}
+  <p className="staff-context-date"><span>{t('営業日','Business date')}</span><strong>{manifestDate?manifestDate+t('（JST）','(JST)'):t('確認しています…','Checking…')}</strong></p>
  </section>}
  {effectivePickup&&<BookingSearchInput onBooking={openBooking}/>}
- {showManifest&&<section aria-label="本日の業務" aria-busy={manifestBusy} className="staff-manifest"><div className="staff-section-head"><h2>本日の業務</h2><button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>更新</button></div>
-  <p className="staff-secondary">{storeName(activeStore)}{manifestDate?' · '+manifestDate:''} の貸出・返却・検品タスクです。実際の操作は貸出・返却の画面で行います。</p>
-  <div className={'staff-state staff-state--'+manifestKind}><p role="status">{manifestStatus}</p>{manifestKind==='error'&&<button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>もう一度読み込む</button>}</div>
-  {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:!manifestError&&!manifestBusy&&<p className="staff-empty">現在対応が必要な項目はありません。</p>)}
-  {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>さらに読み込む</button>}
-  <Link href="/staff/rentals">貸出・返却の画面を開く</Link>
+ {showManifest&&<section aria-label={t('本日の業務','Today’s work')} aria-busy={manifestBusy} className="staff-manifest"><div className="staff-section-head"><h2>{t('本日の業務','Today’s work')}</h2><button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>{t('更新','Refresh')}</button></div>
+  <p className="staff-secondary">{storeName(activeStore)}{manifestDate?' · '+manifestDate:''}</p>
+  <div className={'staff-state staff-state--'+manifestKind}><p role="status">{manifestStatus}</p>{manifestKind==='error'&&<button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>{t('もう一度読み込む','Load again')}</button>}</div>
+  {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:!manifestError&&!manifestBusy&&<p className="staff-empty">{t('現在対応が必要な項目はありません。','Nothing needs attention right now.')}</p>)}
+  {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>{t('さらに読み込む','Load more')}</button>}
+  <Link href="/staff/rentals">{t('貸出・返却の画面を開く','Open pickups and returns')}</Link>
  </section>}
- {canBookingView&&<section aria-label="新着予約" className="staff-recent"><div className="staff-section-head"><h2>新着予約</h2><button aria-label="新着予約を更新" disabled={bookingsReq.busy} onClick={()=>void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings)}>更新</button></div>
-  <p className="staff-secondary">受け付けた予約の新しい順（最大{RECENT_LIMIT}件、利用日に関係なく表示）。決済前の下書きは含みません。自動更新はしないため、「更新」で最新にしてください。</p>
-  <p role="status">{bookingsReq.message?loadErrorText('新着予約',bookingsReq.message):bookings===null?'新着予約を読み込んでいます…':''}</p>
+ {canBookingView&&<section aria-label={t('新着予約','New bookings')} className="staff-recent"><div className="staff-section-head"><h2>{t('新着予約','New bookings')}</h2><button aria-label={t('新着予約を更新','Refresh new bookings')} disabled={bookingsReq.busy} onClick={()=>void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings)}>{t('更新','Refresh')}</button></div>
+  
+  <p role="status">{bookingsReq.message?loadErrorText(t('新着予約','New bookings'),bookingsReq.message):bookings===null?t('新着予約を読み込んでいます…','Loading new bookings…'):''}</p>
   {bookings&&(recent.length?<div className="staff-card-grid">{recent.map(b=>{const attention=ATTENTION_STATES.has(b.state);return <article className={'staff-card'+(attention?' staff-card--attention':'')} key={b.id}>
-   <div className="staff-card-head"><strong>{b.display_name??'（氏名未取得）'}</strong><span className={'staff-chip'+(b.state==='CANCELLED'?' staff-chip--muted':'')}>{stateLabel(b.state)}</span></div>
-   <p className="staff-recent-ref">予約番号 {shortRef(b.id)}</p>
-   <p>{b.period?b.period.startDate+' → '+b.period.endDate+' · '+slotLabel(b.period.slot):'利用日 —'}</p>
+   <div className="staff-card-head"><strong>{b.display_name??t('（氏名未取得）','(name not recorded)')}</strong><span className={'staff-chip'+(b.state==='CANCELLED'?' staff-chip--muted':'')}>{stateLabel(b.state)}</span></div>
+   <p className="staff-recent-ref">{t('予約番号 ','Order ')}{shortRef(b.id,locale)}</p>
+   <p>{b.period?b.period.startDate+' → '+b.period.endDate+' · '+slotLabel(b.period.slot):t('利用日 —','Dates —')}</p>
    <p>{storeName(b.pickup_store)} → {storeName(b.return_store)} · {money(b.total_jpy)}</p>
-   <p className="staff-secondary">受付 {jstTime(b.created_at)}{b.confirmed_at?' · 確定 '+jstTime(b.confirmed_at):''}</p>
-   {attention&&<p className="staff-card-attention">要対応：決済の確認が必要です{canOperationsView?'（運用例外の画面で確認）':''}</p>}
-   {attention&&canOperationsView&&<Link href="/admin/ops">運用例外の画面を開く</Link>}
-   {effectivePickup&&<button className={attention?'':'staff-card-primary'} disabled={opening} onClick={()=>openBooking(b.id)}>予約の状態を確認</button>}
-  </article>;})}</div>:<p className="staff-empty">新しい予約はまだありません。</p>)}
-  <Link href="/admin/notifications">予約確認メールの送信状況を見る</Link>
+   <p className="staff-secondary">{t('受付 ','Received ')}{jstTime(b.created_at)}{b.confirmed_at?t(' · 確定 ',' · confirmed ')+jstTime(b.confirmed_at):''}</p>
+   {attention&&<p className="staff-card-attention">{t('要対応：決済の確認が必要です','Action needed: the payment must be checked')}{canOperationsView?t('（運用例外の画面で確認）','(check on the operations exceptions screen)'):''}</p>}
+   {attention&&canOperationsView&&<Link href="/admin/ops">{t('運用例外の画面を開く','Open operations exceptions')}</Link>}
+   {effectivePickup&&<button className={attention?'':'staff-card-primary'} disabled={opening} onClick={()=>openBooking(b.id)}>{t('予約の状態を確認','Check the booking status')}</button>}
+  </article>;})}</div>:<p className="staff-empty">{t('新しい予約はまだありません。','No new bookings yet.')}</p>)}
+  <Link href="/admin/notifications">{t('予約確認メールの送信状況を見る','See confirmation email delivery')}</Link>
  </section>}
  {effectivePickup&&<TomorrowPreparation stamp={stamp} store={activeStore} onOpen={openBooking}/>}
- {canBookingView&&<section aria-label="本日の予約"><div className="staff-section-head"><h2>本日の予約</h2>
+ {canBookingView&&<section aria-label={t('本日の予約','Today’s bookings')}><div className="staff-section-head"><h2>{t('本日の予約','Today’s bookings')}</h2>
   {/* UX-5E: the Refresh button and status line must never be gated behind manifestDate itself
       -- a BOOKING_VIEW-only principal has no "本日の業務" section and therefore no other retry
       control anywhere on the page, so if the very first Manifest date read fails (401/403 is
       handled separately by StaffSessionBoundary; this covers 409/503/network failure), this
       button is the only way to recover without a full page reload. */}
-  <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>更新</button></div>
-  <p role="status">{bookingsReq.message?loadErrorText('本日の予約',bookingsReq.message):manifestError||(manifestDate?'':'業務日付を確認しています…')}</p>
-  {manifestDate&&<><p className="staff-secondary">本日が利用期間に含まれる予約（{manifestDate} JST）。完全な入出庫予定表ではありません。</p>
-   {bookings&&(todays.length?<div className="staff-card-grid">{todays.map(b=><article className="staff-card" key={b.id}><div className="staff-card-head"><strong>{b.display_name??'（氏名未取得）'}</strong><span className="staff-chip">{stateLabel(b.state)}</span></div><p>{b.period!.startDate} → {b.period!.endDate} · {slotLabel(b.period!.slot)}</p><p>{storeName(b.pickup_store)} → {storeName(b.return_store)} · {money(b.total_jpy)}</p>{effectivePickup&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(b.id)}>貸出・受付で状態を確認</button>}</article>)}</div>:<p className="staff-empty">本日が利用期間に含まれる予約はありません。</p>)}
+  <button disabled={bookingsReq.busy||manifestBusy} onClick={refreshToday}>{t('更新','Refresh')}</button></div>
+  <p role="status">{bookingsReq.message?loadErrorText(t('本日の予約','Today’s bookings'),bookingsReq.message):manifestError||(manifestDate?'':t('業務日付を確認しています…','Checking the business date…'))}</p>
+  {manifestDate&&<><p className="staff-secondary">{manifestDate} JST</p>
+   {bookings&&(todays.length?<div className="staff-card-grid">{todays.map(b=><article className="staff-card" key={b.id}><div className="staff-card-head"><strong>{b.display_name??t('（氏名未取得）','(name not recorded)')}</strong><span className="staff-chip">{stateLabel(b.state)}</span></div><p>{b.period!.startDate} → {b.period!.endDate} · {slotLabel(b.period!.slot)}</p><p>{storeName(b.pickup_store)} → {storeName(b.return_store)} · {money(b.total_jpy)}</p>{effectivePickup&&<button className="staff-card-primary" disabled={opening} onClick={()=>openBooking(b.id)}>{t('貸出・受付で状態を確認','Check it at pickup / front desk')}</button>}</article>)}</div>:<p className="staff-empty">{t('本日が利用期間に含まれる予約はありません。','No bookings include today in their period.')}</p>)}
   </>}
  </section>}
- {canOperationsView&&<section aria-label="運用の注意事項"><h2>運用の注意事項</h2><p>本日の業務カードの「要注意」表示、または以下から詳細を確認してください。</p><Link href="/admin/ops">運用例外の画面を開く</Link></section>}
- <details className="staff-secondary-links"><summary>その他の管理機能</summary><nav>{canInventoryView&&<a href="/staff/ledger">道具の台帳</a>}{canInventoryView&&<a href="/admin/inventory">棚卸・CSV投入</a>}{canBookingView&&<a href="/staff/amendments">変更・返金依頼</a>}{canTransferView&&<a href="/staff/transfers">店舗間移動</a>}{canQuoteView&&<a href="/staff/quotes">見積</a>}{canHoldView&&<a href="/staff/holds">期間在庫・仮押さえ</a>}{canHoldView&&canQuoteView&&<a href="/staff/recommendations">サイズ推薦</a>}{canInventoryView&&<a href="/staff/wear">ウェアの数量貸出・返却</a>}<a href="/staff/password">パスワード変更</a>{canManageStaff&&<a href="/staff/users">スタッフ管理</a>}</nav></details>
+ {canOperationsView&&<section aria-label={t('運用の注意事項','Operations notices')}><h2>{t('運用の注意事項','Operations notices')}</h2><Link href="/admin/ops">{t('運用例外の画面を開く','Open operations exceptions')}</Link></section>}
+ 
  </main>;
 }

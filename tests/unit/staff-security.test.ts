@@ -1,7 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
-import {canonicalEmail,hashStaffPassword,verifyStaffPassword,validPassword} from '../../packages/auth/src/password';
+import {canonicalEmail,hashStaffPassword,verifyStaffPassword,validPassword,passwordPolicy} from '../../packages/auth/src/password';
+import {readFileSync} from 'node:fs';
 import {parseAccount} from '../../packages/auth/src/accounts';
 import {canManage,type StaffPrincipal} from '../../packages/auth/src/staff-auth';
 import {parseRuntime} from '../../packages/auth/src/config';
@@ -10,7 +11,7 @@ test('Argon2id has independent salts and verifies only the supplied password',as
  assert.ok(a!==b);assert.ok(a.startsWith('$argon2id$v=19$m=65536,t=3,p=1$'));assert.ok(await verifyStaffPassword({hash:a,password}));assert.equal(await verifyStaffPassword({hash:a,password:password+'x'}),false);assert.equal(await verifyStaffPassword({hash:'invalid',password}),false);
 });
 test('canonical email is case/outer-space stable; password policy adds no composition rules',()=>{
- assert.equal(canonicalEmail(' Synthetic-Staff@Example.Invalid '),'synthetic-staff@example.invalid');assert.throws(()=>canonicalEmail('invalid'));assert.equal(validPassword('long pass phrase without symbols'),true);assert.equal(validPassword('short'),false);assert.equal(validPassword('x'.repeat(129)),false);
+ assert.equal(canonicalEmail(' Synthetic-Staff@Example.Invalid '),'synthetic-staff@example.invalid');assert.throws(()=>canonicalEmail('invalid'));assert.equal(validPassword('long pass phrase without symbols'),true);assert.equal(validPassword('short'),false);assert.equal(validPassword('sixsix'),true,'Owner 2026-11-21: 6 characters are enough');{const schema=JSON.parse(readFileSync('packages/auth/src/staff-input.schema.json','utf8'));assert.deepEqual([schema.create.properties.password.minLength,schema.create.properties.password.maxLength],[passwordPolicy.min,passwordPolicy.max],'the staff-create schema enforces the same password rule');}assert.equal(validPassword('x'.repeat(128)),true);assert.equal(validPassword('x'.repeat(129)),false);
 });
 test('role, permission and ALL scope are independently required for staff management',()=>{
  const principal:StaffPrincipal={subject:'synthetic',role:'ADMIN',scope:'ALL',permissions:['STAFF_MANAGE'],storeIds:['MOUNTAIN_BASE','ONSEN_BASE'],revision:1};

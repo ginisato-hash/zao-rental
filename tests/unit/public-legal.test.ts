@@ -12,7 +12,11 @@ test('the committed legal content is the Owner-approved version (8 documents, JA
   const raw = JSON.parse(readFileSync(new URL('../../config/content/public-legal.json', import.meta.url), 'utf8')) as {note: string; documents: {doc: string; locale: string; state: string; approvedBy: string; approvedAt: string; sections: unknown[]}[]};
   assert.deepEqual(raw.documents.map(d => d.doc + ':' + d.locale).sort(), LEGAL_DOCS.flatMap(d => [d + ':en', d + ':ja']).sort(), 'every document exists in JA and EN');
   for (const d of raw.documents) {
-    assert.equal(d.state, 'OWNER_APPROVED'); assert.equal(d.approvedBy, '佐藤慎太郎'); assert.equal(d.approvedAt, '2026-10-09T22:53:05Z');
+    assert.equal(d.state, 'OWNER_APPROVED');
+    if (d.doc === 'terms' || d.doc === 'cancellation') {
+      // ZAO_RENTAL_TERMS_V2: TD-adopted draft under the Owner's comprehensive instruction, recorded as such (not a verbatim sign-off).
+      assert.equal(d.approvedBy, 'TD採用案（Owner包括指示 2026-11-19 / Issue #47 comment 6984890289）'); assert.equal(d.approvedAt, '2026-11-18T16:35:58Z');
+    } else { assert.equal(d.approvedBy, '佐藤慎太郎'); assert.equal(d.approvedAt, '2026-10-09T22:53:05Z'); }
     assert.ok(d.sections.length > 0);
   }
   assert.match(raw.note, /6090629658/); assert.match(raw.note, /668d895c917ac6b07a3743a26ac36ef1d826f05cb1b6d45198e89e964f24e2d6/);

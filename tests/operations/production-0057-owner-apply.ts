@@ -2,6 +2,8 @@
 // A Neon-shaped neondb at canonical 0001–0056 (production foundation plan: rental_stage_guard() owned by neondb_custody_executor,
 // owner and role admin outside the custody roles) must accept canonical 0057 applied as neondb_owner, with no role bridge,
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
+import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
+import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
@@ -22,7 +24,7 @@ try{
  await db.pool.query(`CREATE DATABASE ${DB} OWNER ${OWNER}`);
  const owner=connect(OWNER,ownerPassword),observer=connect(db.identity.user,superPassword);
  const full=await productionFoundationPlan(DB),entries=full.bootstrap.entries;
- assert.equal(entries.length,58);assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
+ assert.equal(entries.length,61);assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
  stage='registry56 production topology';
  await runFoundationPlan(owner,{...full,bootstrap:{...full.bootstrap,entries:entries.slice(0,56)}});
  const q=async(sql:string,params:unknown[]=[])=>(await observer.query(sql,params)).rows;
@@ -87,7 +89,7 @@ try{
   await c2.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[57]!.id,entries[57]!.checksum]);
   await c2.query('COMMIT');
  }catch(e){await c2.query('ROLLBACK').catch(()=>{});throw e;}finally{c2.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,58).map(e=>({id:e.id,checksum:e.checksum})));
  assert.deepEqual(await guard(),before58);
  const roles58After=await roles();assert.deepEqual({roles:roles58After.roles,members:roles58After.members},{roles:roles58.roles,members:roles58.members});
  const owners58=roles58After.owners.filter((o:{k:string})=>!roles58.owners.some((p:{k:string})=>p.k===o.k));
@@ -96,4 +98,41 @@ try{
  for(const r of readers)assert.equal((await q(`SELECT has_table_privilege($1,'public.provisional_model_bindings'::regclass,'SELECT') ok`,[r.rolname]))[0].ok,true,r.rolname);
  assert.equal((await q("SELECT provisional_size_key('SNOWBOARD','145') k"))[0].k,'145 cm');
  console.log('PASS canonical 0058 applies as neondb_owner after 0057: registry 57 -> 58, guard/roles/memberships unchanged, new objects owner-owned, bucket readers can read bindings');
+ stage='Issue #47 0059+0060 applied as neondb_owner';
+ // 0059 (rental terms acceptance) and 0060 (staff inbox/email) are additive and owner-applicable: one transaction each,
+ // no role/membership/ownership/LOGIN change, guard unchanged, new objects owner-owned, then EXECUTE-only grants.
+ const before60=await guard(),roles60=await roles();
+ // Through the fixed Production operator path (scripts/production-staff-delta.ts): grants before migrate are refused,
+ // migrate is one all-or-nothing transaction with read-back, and a second migrate is refused (never re-applied).
+ const delta=await owner.connect();
+ try{
+  await assert.rejects(applyProductionStaffDeltaGrants(delta,DB,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'grants need the exact 0061 registry');
+  await assert.rejects(applyProductionStaffDeltaMigration(delta,DB,'someone_else'),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'wrong owner identity');
+  // DELTA-01: the live service may record a new booking's rows between COMMIT and the read-back; that is a normal install.
+  let natural:string|null=null;
+  const installed=await applyProductionStaffDeltaMigration(delta,DB,OWNER,{afterCommit:async()=>{natural=(await owner.query("INSERT INTO customer_profiles(display_name,email,created_by) VALUES('SYNTHETIC natural','synthetic-natural@example.invalid','synthetic-service') RETURNING id")).rows[0].id;}});
+  assert.ok(natural,'a row was written after COMMIT (immutable, so it stays: counted below)');
+  assert.equal(installed.status,'PRODUCTION_STAFF_DELTA_INSTALLED');assert.deepEqual(installed.applied.map(a=>a.id),['0059','0060','0061']);
+  await assert.rejects(applyProductionStaffDeltaMigration(delta,DB,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/,'no replay');
+  // The post-commit read-back still refuses a real defect: a disabled required trigger (inside a rolled-back transaction).
+  await delta.query('BEGIN');try{await delta.query('ALTER TABLE rental_terms_reconsents DISABLE TRIGGER rental_terms_reconsent_guard');await assert.rejects(committedProof(delta,OWNER),/PRODUCTION_STAFF_DELTA_RECONCILIATION_REQUIRED/);}finally{await delta.query('ROLLBACK');}
+  await committedProof(delta,OWNER);
+ }finally{delta.release();}
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await guard(),before60);
+ const roles60After=await roles();assert.deepEqual({roles:roles60After.roles,members:roles60After.members},{roles:roles60.roles,members:roles60.members});
+ const owners60=roles60After.owners.filter((o:{k:string})=>!roles60.owners.some((p:{k:string})=>p.k===o.k));
+ assert.ok(owners60.length>0&&owners60.every((o:{o:string})=>o.o===OWNER),'every new 0059/0060/0061 object is owner-owned');
+ assert.equal((await q('SELECT count(*)::int n FROM rental_terms_bundles'))[0].n,1);
+ for(const t of ['rental_terms_acceptances','staff_booking_events','staff_notification_recipients','staff_notification_outbox','customer_profiles','customer_booking_links','customer_link_requests','staff_order_drafts','rental_terms_reconsents'])assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,t==='customer_profiles'?1:0,t+' starts empty: nothing is backfilled or emailed');
+ const ops=DB+'_operations';assert.equal((await q("SELECT has_function_privilege($1,'staff_inbox_list(text[],boolean,timestamptz,uuid,integer)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0060 grant step');
+ const grantsClient=await owner.connect();try{const g=await applyProductionStaffDeltaGrants(grantsClient,DB,OWNER);assert.equal(g.status,'PRODUCTION_STAFF_DELTA_GRANTS_INSTALLED');await staffDeltaGrantProof(grantsClient,ops);}finally{grantsClient.release();}
+ for(const fn of STAFF_NOTIFICATION_FUNCTIONS)assert.equal((await q("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[ops,fn]))[0].ok,true,fn);
+ for(const t of ['staff_booking_events','staff_notification_outbox','staff_notification_recipients'])assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') OR has_table_privilege($1,$2,'INSERT') ok",[ops,t]))[0].ok,false,'function-only access to '+t);
+ for(const t of CUSTOMER_TABLES){assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') ok",[ops,t]))[0].ok,true,t);for(const priv of ['INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,false,t+' '+priv);}
+ assert.equal((await q("SELECT has_function_privilege($1,'customer_link_legacy(uuid,uuid,text)','EXECUTE') ok",[ops]))[0].ok,true);
+ // Payment start reads the governing terms; re-consent is insert-only (no UPDATE/DELETE on either table).
+ for(const [t,allowed] of [['rental_terms_acceptances',['SELECT']],['rental_terms_reconsents',['SELECT','INSERT']]] as const)for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,(allowed as readonly string[]).includes(priv),t+' '+priv);
+ assert.equal((await q("SELECT has_function_privilege('public','customer_link_legacy(uuid,uuid,text)','EXECUTE') ok"))[0].ok,false,'no PUBLIC execute');
+ console.log('PASS canonical 0059+0060+0061 apply as neondb_owner after 0058: registry 58 -> 61, guard/roles/memberships unchanged, new objects owner-owned, empty new tables, EXECUTE-only grants');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

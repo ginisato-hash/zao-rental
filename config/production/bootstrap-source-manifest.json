@@ -460,6 +460,27 @@
    "sha256": "fbd3a655c25e13fd21dc3e222946065b9622deb007a5075824639779d6e3acea",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0059",
+   "file": "0059_rental_terms_acceptance.sql",
+   "sha256": "4b94c84336c1082a7ce6825a51ffed1dc0d4188c3a3ff03f331ed931bd042d3d",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0060",
+   "file": "0060_staff_booking_notifications.sql",
+   "sha256": "69b62d44d911f774e8ff349894af366fbc07a387e4f94edb9a77f3c15318eece",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0061",
+   "file": "0061_customer_identity.sql",
+   "sha256": "10f8ef4571a0c0bcaf583086b683c73fcd4ee45e2b6030707ab25faddcad803e",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

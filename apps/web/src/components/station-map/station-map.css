@@ -55,3 +55,13 @@ html[lang=ja] .stmap .lm{font:700 12px/14px var(--b)}
 @keyframes stmap-ring{0%{transform:scale(.7);opacity:1}100%{transform:scale(1.5);opacity:0}}
 @media (max-width:767px){.stmap .st-wrap{grid-template-columns:1fr}.stmap .tabs{position:sticky;top:var(--top);z-index:5;background:var(--snow);padding:4px 0}.stmap .mv{height:min(118vw,600px);min-height:420px}.stmap .tabs::before{content:"";position:absolute;left:calc(var(--g) * -1);right:calc(var(--g) * -1);bottom:100%;height:var(--top);background:var(--snow)}.stmap .legend{display:none}.stmap .card{padding-top:20px}}
 @media (prefers-reduced-motion:reduce){.stmap *,.stmap *::before,.stmap *::after{transition-duration:0s!important;animation:none!important}}
+/* Camera controls (Owner 2026-11-19): visible +/−/show-all, drag and pinch without trapping page scroll. */
+.stmap .mv{cursor:grab;outline-offset:-3px}
+.stmap .mv:focus-visible{outline:3px solid #0071e3}
+.stmap.drag .mv{cursor:grabbing}
+.stmap.drag .cv,.stmap.drag .pin,.stmap.drag .mv .sc b{transition:none}
+.stmap .zm{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:2px;z-index:3}
+.stmap .zm button{min-width:44px;min-height:44px;padding:0 10px;background:var(--snow);color:var(--ink);border:2px solid var(--ink);font:700 18px/1 var(--d);cursor:pointer}
+.stmap .zm .zm-all{font-size:13px;text-transform:uppercase}
+.stmap .zm button:disabled{color:#8a8a8a;border-color:#b0b0b0;cursor:default}
+.stmap .zm button:focus-visible{outline:3px solid #0071e3;outline-offset:2px}

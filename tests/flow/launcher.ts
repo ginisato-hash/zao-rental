@@ -22,11 +22,16 @@ async function fixtureRoutes(directory='tests/flow-app/src/app',prefix=''):Promi
 /** Waits until one route actually answers. `next dev` compiles lazily, so a live health
  * endpoint says nothing about the page route a caller is about to open: without this the
  * browser's navigation timeout silently stands in for server readiness, and fails under load. */
-async function waitForRoute(origin:string,path:string,timeoutMs=120000){
- const deadline=Date.now()+timeoutMs;
+/** READINESS-UI-01 (TD #7048582876 / #7053195635): a route is ready only when it answers exactly the status it gives when it
+ * works (pages and /api/health: 200; an API that needs a guest/booking cookie: its 401), with redirects not followed. A 3xx,
+ * 404, 403 or any other answer is not ready. Measured on the synthetic app: /api/health, /ja/book, /ja/reservation 200;
+ * /api/guest/context|draft|options and /api/booking-access 401 without a cookie. */
+export type ReadyPath=string|{path:string;status:number};
+async function waitForRoute(origin:string,ready:ReadyPath,timeoutMs=120000){
+ const path=typeof ready==='string'?ready:ready.path,expected=typeof ready==='string'?200:ready.status,deadline=Date.now()+timeoutMs;let last=0;
  for(;;){
-  try{if((await fetch(origin+path,{redirect:'manual'})).status<500)return;}catch{}
-  if(Date.now()>deadline)throw new Error('TEST_ROUTE_NOT_READY '+path);
+  try{last=(await fetch(origin+path,{redirect:'manual'})).status;if(last===expected)return;}catch{last=0;}
+  if(Date.now()>deadline)throw new Error('TEST_ROUTE_NOT_READY '+path+' '+last+'!='+expected);
   await new Promise(r=>setTimeout(r,100));
  }
 }
@@ -111,7 +116,7 @@ export async function startFlowApp(options:{productionCopy?:boolean;paymentFault
     if(options.warmRoutes)await warmPageRoutes(origin);
    }catch(e){await stop();throw e;}
   }
-  return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(readyPaths:string[]=[]){
+  return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(readyPaths:ReadyPath[]=[]){
    if(stopping||restarting)throw new Error('TEST_RESTART_NOT_ALLOWED');restarting=true;
    try{const old=current.pid;await current.stop();await waitForPortFree(db.identity.webPort);current=launch();
     // Readiness is proved here rather than left to whoever navigates next.

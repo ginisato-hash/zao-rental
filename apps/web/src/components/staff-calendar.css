@@ -1,0 +1,33 @@
+/* Booqable Calendar in the shared Apple staff language. Horizontal scrolling stays inside the grid; the page never scrolls sideways. */
+.cx-nav{display:flex;gap:4px}
+.cx-legend{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;margin:0 0 12px;padding:0;font-size:13px;color:var(--sx-text2)}
+.cx-legend li{display:flex;align-items:center;gap:6px}
+.cx-swatch{display:inline-block;width:18px;height:10px;border-radius:5px}
+.cx-wrap{overflow-x:auto;max-width:100%;padding:0}
+.cx-grid{display:grid;width:max-content;font-size:13px}
+.cx-row{display:grid;grid-column:1 / -1;grid-template-columns:subgrid;border-bottom:1px solid var(--sx-line);position:relative}
+.cx-row:last-child{border-bottom:0}
+.cx-cell{box-sizing:border-box;padding:4px 6px}
+.cx-head .cx-cell{position:sticky;top:0;background:var(--sx-bg);z-index:2}
+.cx-item{line-height:1.25;position:sticky;left:0;background:var(--sx-bg);z-index:3;display:flex;flex-direction:column;justify-content:center;gap:2px;border-right:1px solid var(--sx-line);min-width:0}
+.cx-item b,.cx-item small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cx-item small{color:var(--sx-text2)}
+.cx-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.2;text-align:center}
+.cx-day small{color:var(--sx-text2);font-size:11px}
+.cx-bg{border-left:1px solid var(--sx-line);z-index:0}
+.cx-weekend{background:var(--sx-bg2)}
+.cx-today{background:color-mix(in srgb,var(--sx-blue) 7%,transparent)}
+.cx-head .cx-today b{color:var(--sx-blue)}
+.cx-bar{z-index:1;min-width:0;align-self:center;margin:0 2px;height:22px;line-height:22px;border-radius:6px;padding:0 8px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;color:#fff}
+.sx-content .cx-grid a.cx-bar.cx-bar{color:#fff;text-decoration:none}.sx-content .cx-grid a.cx-bar.cx-bar--HOLD{color:var(--sx-blue)}.sx-content .cx-grid a.cx-bar.cx-bar--BLOCK,.sx-content .cx-grid a.cx-bar.cx-bar--TRANSFER{color:var(--sx-text)}
+a.cx-bar:hover,a.cx-bar:focus-visible{filter:brightness(1.08);outline:2px solid var(--sx-blue);outline-offset:1px}
+.cx-bar--BOOKING{background:var(--sx-blue)}
+.cx-bar--HOLD{background:transparent;color:var(--sx-blue);box-shadow:inset 0 0 0 1.5px var(--sx-blue)}
+.cx-bar--OUT{background:#248a3d}
+.cx-bar--OVERDUE{background:var(--sx-red)}
+.cx-bar--RETURNED{background:var(--sx-text2)}
+.cx-bar--CARE{background:var(--sx-warn)}
+.cx-bar--BLOCK{background:repeating-linear-gradient(135deg,var(--sx-text2) 0 6px,var(--sx-bg2) 6px 12px);color:var(--sx-text)}
+.cx-bar--TRANSFER{background:var(--sx-bg2);color:var(--sx-text);box-shadow:inset 0 0 0 1px var(--sx-line)}
+.cx-swatch.cx-bar--HOLD{box-shadow:inset 0 0 0 1.5px var(--sx-blue)}
+@media print{.cx-wrap{overflow:visible}.cx-item,.cx-head .cx-cell{position:static}}

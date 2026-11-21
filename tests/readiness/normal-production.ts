@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {currentRentalTerms} from '../../packages/core/src/content/rental-terms';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {Pool} from 'pg';
 import {Readable} from 'node:stream';
@@ -78,7 +79,7 @@ try{
    }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
   }
   assert.ok((await service.get()).id);const h=new HoldService(x.roles.holdPool,actor),q=new QuoteService(x.roles.pricingPool,actor),b=new BookingService(x.flow.flowPool,x.guestRole.guestPool,actor,x.fake,simulation),conditions=skiSet('2035-02-05'),held=await h.command('create',randomUUID(),conditions),quote=(await q.create(randomUUID(),{conditions,holdId:held.holdId,couponCode:null,wantAdvance:false})).quote;
-  const booking=await b.create(randomUUID(),quote.id,{displayName:'SYNTHETIC M15',email:'synthetic-m15@example.invalid',termsAccepted:true});bookingId=booking.id;await b.startPayment(booking.id,randomUUID());
+  const booking=await b.create(randomUUID(),quote.id,{displayName:'SYNTHETIC M15',email:'synthetic-m15@example.invalid',termsAccepted:true,terms:{...currentRentalTerms(),locale:'ja'}});bookingId=booking.id;await b.startPayment(booking.id,randomUUID());
   await x.db.pool.query('UPDATE guest_drafts SET booking_id=$2 WHERE context_id=$1',[actor.contextId,booking.id]);
   const v=await service.get();assert.equal(v.booking?.state,'CONFIRMED_DEV');assert.equal(v.booking.payments[0]!.state,'COMPLETED');const issued=await r.access!.issue(actor,booking.id,randomUUID());token=issued.token;assert.equal((await r.access!.read(token)).id,booking.id);assert.equal(x.fake.calls.length,1);
  });

@@ -7,6 +7,7 @@ export const DEVELOPMENT_CONTEXT_SECONDS=86400;
 export type GuestDraft={id:string;context_id:string;revision:number;input:unknown;preview_key:string|null;preview_id:string|null;selection:unknown;selection_key:string|null;booking_key:string;booking_id:string|null};
 const hash=(token:string)=>createHash('sha256').update(token).digest('hex');
 export class GuestContexts{
+ readonly draftTable='guest_drafts' as const;
  constructor(readonly pool:Pool){}
  async create(security?:{contextSeconds:number;absoluteSeconds:number;policyVersion:string}){const c=await this.pool.connect();try{await c.query('BEGIN');const now=(await c.query<{now:Date}>('SELECT inventory_clock() now')).rows[0]!.now,id=randomUUID(),subject='guest_'+id,token=randomBytes(32).toString('base64url'),expiresAt=new Date(now.getTime()+(security?.contextSeconds??DEVELOPMENT_CONTEXT_SECONDS)*1000);
   await c.query("INSERT INTO booking_actors VALUES($1,'GUEST')",[subject]);await c.query('INSERT INTO guest_contexts(id,actor_id,token_sha256,created_at,expires_at) VALUES($1,$2,$3,$4,$5)',[id,subject,hash(token),now,expiresAt]);await c.query('INSERT INTO guest_drafts(id,context_id,booking_key) VALUES($1,$2,$3)',[randomUUID(),id,randomUUID()]);if(security)await c.query('INSERT INTO guest_lifecycle(context_id,policy_version,absolute_at) VALUES($1,$2,$3)',[id,security.policyVersion,new Date(now.getTime()+security.absoluteSeconds*1000)]);await c.query('COMMIT');return {token,expiresAt};

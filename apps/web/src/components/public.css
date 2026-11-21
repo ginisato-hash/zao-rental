@@ -304,3 +304,4 @@ html[lang=ja] .st-model-p{font-family:var(--b)}
 .public-shell .st-intro{max-width:64ch;margin:0 var(--g) 48px;font-size:14px;line-height:1.9;color:#555}
 .public-shell .st-home>.st-intro{margin-top:36px}
 @media(max-width:767px){.public-shell .st-intro{margin-bottom:32px;font-size:13px}}
+.st-num .st-tax,.st-rx-p .st-tax{font:600 max(13px,.16em)/1 var(--b,inherit);letter-spacing:0;margin-left:.3em;vertical-align:baseline;white-space:nowrap}

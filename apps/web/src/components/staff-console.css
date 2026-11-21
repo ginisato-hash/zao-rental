@@ -1,0 +1,163 @@
+/* Staff console unification (Issue #47 Owner 2026-11-20: every staff page in the new philosophy, one consistent UI).
+   Booqable information structure is kept by each screen; this layer gives every staff/admin screen rendered inside the
+   StaffShell content area the same Apple-style visual language as the new Dashboard/Orders/Customers/Inventory screens:
+   one quiet page title, short secondary copy, white cards with a hairline and 14px radius, 36px controls, pill buttons
+   with a single blue primary action, hairline tables, no poster typography and no 2px black rules.
+   Scope: `.sx .sx-content` only, so the public site (LP poster language, guest.css) is unchanged. The new screens
+   (`main.ox`) already use these tokens and are excluded where a rule would double their own styling. */
+
+/* ── Page frame and title ─────────────────────────────────────────────────────────────── */
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-account){max-width:1180px;margin:0;padding:0;overflow-wrap:anywhere}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-account,main:not(.ox):not(.guest-main))>h1,
+.sx .sx-content .holds>header h1,.sx .sx-content .staff-home-header h1,.sx .sx-content .staff-page-head h1{font:600 32px/1.125 var(--sx-font);letter-spacing:-.02em;margin:0 0 8px;text-transform:none}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,main:not(.ox):not(.guest-main))>h1+p{color:var(--sx-text2);font:400 15px/1.5 var(--sx-font);max-width:72ch;margin:0 0 20px}
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main))>p:first-child{font:600 12px/1.3 var(--sx-font);color:var(--sx-text2);letter-spacing:0;margin:0 0 6px;text-transform:none}
+.sx .sx-content .staff-home-header{margin:0 0 20px;padding:0;border:0;background:none;align-items:flex-end}
+.sx .sx-content .staff-page-head{align-items:center;margin:0 0 20px}
+.sx .sx-content :is(h2,h3){text-transform:none}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) h2{font:600 19px/1.25 var(--sx-font);letter-spacing:-.01em;margin:0 0 12px}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) h3{font:600 15px/1.3 var(--sx-font);margin:16px 0 8px}
+
+/* ── Sections become cards; nested sections are plain groups ─────────────────────────── */
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main))>section:not(.sx-card),
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main))>form>section:not(.sx-card){margin:16px 0;padding:20px 24px;border:1px solid var(--sx-line);border-radius:14px;background:var(--sx-bg)}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) section section{margin:16px 0 0;padding:16px 0 0;border:0;border-top:1px solid var(--sx-line);border-radius:0;background:none}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) section>h2:first-child{margin-top:0}
+
+/* ── Forms ─────────────────────────────────────────────────────────────────────────────── */
+.sx .sx-content :is(.holds,.operations,.staff-management-form,main:not(.ox):not(.guest-main)) fieldset{margin:0 0 20px;padding:0;border:0;min-width:0}
+.sx .sx-content :is(.holds,.operations,.staff-management-form,main:not(.ox):not(.guest-main)) legend{float:none;width:auto;padding:0;margin:0 0 12px;font:600 15px/1.3 var(--sx-font);color:var(--sx-text)}
+.sx .sx-content :is(.holds,.operations,.staff-management-form,.staff-login,main:not(.ox):not(.guest-main)) label{font:500 13px/1.4 var(--sx-font);color:var(--sx-text);gap:6px}
+.sx .sx-content :is(.holds,.operations,.staff-management-form,.staff-login,main:not(.ox):not(.guest-main)) label:has(>:is(input[type=checkbox],input[type=radio])){font-weight:400;font-size:14px;min-height:32px}
+.sx .sx-content .hold-grid{gap:12px 16px}
+.sx .sx-content :is(.holds,.operations,.staff-management-form,.staff-login,main:not(.ox):not(.guest-main)) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){min-height:36px;padding:0 10px;border:1px solid var(--sx-line);border-radius:8px;background:var(--sx-bg);color:var(--sx-text);font:400 15px/1.3 var(--sx-font);box-sizing:border-box}
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main)) textarea{padding:8px 10px;min-height:88px}
+.sx .sx-content .holds select[multiple]{min-height:112px;padding:4px}
+.sx .sx-content :is(.holds,.operations,.staff-management-form,.staff-login) :is(input,select,textarea):focus-visible{outline:3px solid rgba(0,125,250,.6);outline-offset:1px}
+
+/* ── Buttons: quiet pills; one blue primary (submit / .staff-card-primary); destructive outlined red ─────────── */
+/* The default pill is deliberately strong (it must beat the legacy multi-class button rules); every state that differs
+   from it (primary, danger, selected) repeats the same chain plus its own condition, so it is stronger still. */
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-login,main:not(.ox):not(.guest-main)) button:not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn){min-height:36px;padding:0 18px;margin:0;border:0;border-radius:980px;background:var(--sx-bg2);color:var(--sx-text);font:400 14px/1.2 var(--sx-font);width:auto}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-login,main:not(.ox):not(.guest-main)) button:not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn):not(:disabled):hover{background:color-mix(in srgb,var(--sx-bg2) 86%,var(--sx-text) 14%)}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-login,main:not(.ox):not(.guest-main)) :is(button[type=submit],button.staff-card-primary):not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn):not(:disabled){background:var(--sx-blue);color:#fff}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-login,main:not(.ox):not(.guest-main)) :is(button[type=submit],button.staff-card-primary):not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn):not(:disabled):hover{background:var(--sx-blue-h)}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) button.st-danger:not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn):not(:disabled){background:transparent;color:var(--sx-red);box-shadow:inset 0 0 0 1px var(--sx-red)}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) button.st-danger:not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn):not(:disabled):hover{background:var(--sx-red);color:#fff}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-login,main:not(.ox):not(.guest-main)) button:disabled{opacity:.42;cursor:default}
+.sx .sx-content .hold-actions{gap:8px;margin:16px 0 0}
+.sx .sx-content .holds button{margin:0}
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main))>:is(button,div>button){margin:4px 8px 4px 0}
+
+/* ── Status, details, lists ────────────────────────────────────────────────────────────── */
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,main:not(.ox):not(.guest-main)) [role=status]{font:500 14px/1.5 var(--sx-font);color:var(--sx-text)}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,main:not(.ox):not(.guest-main)) [role=alert]:not(.sx-alert){font:500 14px/1.5 var(--sx-font);color:var(--sx-warn)}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) details>summary{cursor:pointer;color:var(--sx-blue);font:400 14px/1.4 var(--sx-font)}
+.sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main)) hr{border:0;border-top:1px solid var(--sx-line);margin:20px 0}
+.sx .sx-content .st-rows{border-top:1px solid var(--sx-line)}
+
+/* ── Tables ────────────────────────────────────────────────────────────────────────────── */
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main):not(.ledger-shell)) table:not(.sx-table){width:100%;border-collapse:collapse;font-size:14px}
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main):not(.ledger-shell)) table:not(.sx-table) th{padding:10px 12px;border:0;border-bottom:1px solid var(--sx-line);font:600 12px/1.3 var(--sx-font);color:var(--sx-text2);text-transform:none;letter-spacing:0;text-align:left;white-space:nowrap}
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main):not(.ledger-shell)) table:not(.sx-table) td{padding:12px;border:0;border-bottom:1px solid var(--sx-line);vertical-align:top}
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main):not(.ledger-shell)) table:not(.sx-table) tr:last-child td{border-bottom:0}
+.sx .sx-content :is(.holds,.operations,main:not(.ox):not(.guest-main)) .table-scroll{overflow:auto;border:1px solid var(--sx-line);border-radius:14px}
+
+/* ── Cards (Today, recommendations, staff list) ───────────────────────────────────────── */
+.sx .sx-content :is(.staff-card,.candidate-grid>div,.staff-cards li){background:var(--sx-bg);border:1px solid var(--sx-line);border-radius:14px;padding:16px 18px}
+.sx .sx-content .staff-card-grid,.sx .sx-content .staff-cards{gap:12px}
+.sx .sx-content .staff-card .staff-card-primary{min-height:40px;border:0;border-radius:980px;font:500 15px/1.2 var(--sx-font);align-self:flex-start;padding:0 20px}
+.sx .sx-content .staff-chip{border:0;border-radius:6px;background:var(--sx-bg2);color:var(--sx-text);font:600 12px/1 var(--sx-font);padding:5px 8px}
+.sx .sx-content .staff-card-attention{box-shadow:inset 3px 0 0 var(--sx-warn)}
+.sx .sx-content .integrated-price{border-top:1px solid var(--sx-line)}
+.sx .sx-content :is(.staff-home-header nav a,.staff-home details.staff-secondary-links nav a){min-height:36px;padding:0 16px;border:0;border-radius:980px;background:var(--sx-bg2);color:var(--sx-text);font:400 14px/1 var(--sx-font)}
+.sx .sx-content .staff-home details.staff-secondary-links{border-top:1px solid var(--sx-line)}
+
+/* ── Staff administration and own password (Owner requirement) ───────────────────────── */
+.sx .sx-content .staff-management-form{max-width:44rem;margin:16px 0;padding:20px 24px;border:1px solid var(--sx-line);border-radius:14px;background:var(--sx-bg)}
+.sx .sx-content .staff-login{max-width:32rem}
+.sx .sx-content .staff-login form{gap:16px}
+
+/* ── Staff new order: the shared booking form, in the staff language (public site unchanged) ────────────── */
+.sx .sx-content .guest-main fieldset,.sx .sx-content .guest-main :is(.guest-person,.guest-review,.guest-facts div,.guest-review-people article,.guest-contact,.guest-secondary,.guest-footer-actions,.guest-person-toggle){border-top:1px solid var(--sx-line)}
+.sx .sx-content .guest-main :is(input:not([type=checkbox]):not([type=radio]),select){min-height:40px;border:1px solid var(--sx-line);border-radius:8px}
+.sx .sx-content .guest-main :is(.guest-choice,.guest-compare article,.guest-pay-summary,.guest-attention,.guest-seg-o span,.guest-toggle){border:1px solid var(--sx-line);border-radius:12px}
+.sx .sx-content .guest-main .guest-candidates label.guest-candidate{border:1px solid var(--sx-line);border-radius:14px}
+.sx .sx-content .guest-main .guest-price{border-top:1px solid var(--sx-line);border-bottom:1px solid var(--sx-line)}
+.sx .sx-content .guest-main button:not(.sx-link){border:0;border-radius:980px;min-height:40px;background:var(--sx-bg2);color:var(--sx-text);font:500 15px/1.2 var(--sx-font)}
+.sx .sx-content .guest-main :is(.guest-primary,button[type=submit]):not(:disabled){background:var(--sx-blue);color:#fff}
+
+@media (max-width:899px){
+ .sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,main:not(.ox):not(.guest-main))>h1,.sx .sx-content .holds>header h1,.sx .sx-content .staff-home-header h1,.sx .sx-content .staff-page-head h1,.sx .sx-content .ledger-header h1{font-size:28px}
+}
+@media (max-width:640px){
+ .sx .sx-content :is(.holds,.operations,.staff-home,main:not(.ox):not(.guest-main))>section:not(.sx-card){padding:16px}
+ .sx .sx-content .staff-management-form{padding:16px}
+ .sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,main:not(.ox):not(.guest-main))>h1{font-size:28px}
+}
+
+/* ── Today (StaffHome): the booking/QR search was a black panel; it is a normal card now, so its text must follow. ── */
+.sx .sx-content .staff-home section.staff-search{color:var(--sx-text)}
+.sx .sx-content .staff-home .staff-search :is(p,[role=status],label){color:var(--sx-text)}
+.sx .sx-content .staff-home .staff-search p{color:var(--sx-text2)}
+.sx .sx-content .staff-home .staff-search h2{font:600 19px/1.25 var(--sx-font)}
+.sx .sx-content .staff-home .staff-search video:not([hidden]){border:1px solid var(--sx-line);border-radius:12px}
+.sx .sx-content .staff-context-date strong{font:600 20px/1.2 var(--sx-font)}
+.sx .sx-content .staff-context-date span{font:500 12px/1.2 var(--sx-font);color:var(--sx-text2)}
+.sx .sx-content .staff-empty{border:1px dashed var(--sx-line);border-radius:14px;color:var(--sx-text2)}
+
+/* ── Ledger (/staff/ledger, /admin/assets): its own table/card layout is kept; only the visual language changes. ─────── */
+.sx .sx-content .ledger-shell{color:var(--sx-text);padding:0}
+.sx .sx-content .ledger-header h1{font:600 32px/1.125 var(--sx-font);letter-spacing:-.02em;text-transform:none}
+.sx .sx-content .ledger-status{border-width:1px;border-radius:6px}
+.sx .sx-content .ledger-shell table{border-color:var(--sx-line)}
+.sx .sx-content .ledger-shell .ledger-tabs button:not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn)[aria-current]{background:var(--sx-bg);color:var(--sx-text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12),inset 0 0 0 1px var(--sx-line)}
+.sx .sx-content .ledger-shell .ledger-tabs{border-bottom-color:var(--sx-line)}
+
+/* ── Filled primary: white text keeps >= 4.5:1 in light and dark (#0071e3); text links keep --sx-blue. The shell's generic
+   content-button rule would otherwise turn a <button class="sx-btn sx-btn--primary"> grey. ───────────────────────── */
+.sx{--sx-fill:#0071e3;--sx-fill-h:#0062c4}
+.sx .sx-btn.sx-btn--primary:not(:disabled):not(.sx-link):not(.sx-iconbtn):not([role=tab]),
+.sx .sx-content button.sx-btn.sx-btn--primary:not(:disabled):not(.sx-link):not(.sx-iconbtn):not([role=tab]){background:var(--sx-fill);color:#fff}
+.sx .sx-btn.sx-btn--primary:not(:disabled):not(.sx-link):not(.sx-iconbtn):not([role=tab]):hover,
+.sx .sx-content button.sx-btn.sx-btn--primary:not(:disabled):not(.sx-link):not(.sx-iconbtn):not([role=tab]):hover{background:var(--sx-fill-h)}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-login,main:not(.ox):not(.guest-main)) :is(button[type=submit],button.staff-card-primary):not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn):not(:disabled){background:var(--sx-fill)}
+.sx .sx-content :is(.holds,.operations,.staff-home,.staff-management,.staff-login,main:not(.ox):not(.guest-main)) :is(button[type=submit],button.staff-card-primary):not(.sx-link):not(.sx-iconbtn):not([role=tab]):not(.sx-btn):not(:disabled):hover{background:var(--sx-fill-h)}
+
+/* ── New screens (main.ox): the phone title size of the shell ─────────────────────────────────────────────────────── */
+@media (max-width:899px){.sx .sx-content main.ox h1,.sx .sx-content .ox .ox-head h1{font-size:28px}}
+
+/* ── Remaining legacy rules: thin light separators instead of 2px ink ─────────────────────────────────────────────── */
+.sx .sx-content .holds :is(section,fieldset){border-top-width:1px;border-top-color:var(--sx-line)}
+.sx .sx-content .ledger-shell .ledger-pill{border:1px solid var(--sx-line);border-radius:980px;font:600 12px/1 var(--sx-font);padding:6px 10px;color:var(--sx-text)}
+.sx .sx-content .ledger-shell .ledger-notice{border-left:3px solid var(--sx-blue);background:var(--sx-bg2);border-radius:8px;color:var(--sx-text)}
+
+/* ── Staff New order: the shared booking form in the staff language (scoped here; the public site keeps its own) ───── */
+.sx .sx-content .guest-main>h1.guest-h1{font:600 32px/1.125 var(--sx-font);letter-spacing:-.02em;margin:0 0 8px}
+@media (max-width:899px){.sx .sx-content .guest-main>h1.guest-h1{font-size:28px}}
+.sx .sx-content .guest-main .guest-steps li{border-top:1px solid var(--sx-line);padding-top:8px;color:var(--sx-text2);font:500 13px/1.4 var(--sx-font)}
+.sx .sx-content .guest-main .guest-steps li:is(.guest-step--done,[aria-current]){border-top-color:var(--sx-text);color:var(--sx-text)}
+.sx .sx-content .guest-main :is(.guest-step-number,.guest-step-w,.guest-step-j){font-family:var(--sx-font);color:inherit;letter-spacing:0}
+.sx .sx-content .guest-main .guest-step-w{font:600 17px/1.2 var(--sx-font);border-bottom:2px solid transparent}
+.sx .sx-content .guest-main .guest-steps li[aria-current] .guest-step-w{border-bottom-color:var(--sx-blue)}
+.sx .sx-content .guest-main :is(p[role=alert],.guest-alert){border-left:3px solid var(--sx-red);background:var(--sx-bg2);color:var(--sx-text);font-weight:500;border-radius:8px}
+@media (max-width:899px){.sx .sx-content .ledger-shell .ledger-header h1{font-size:28px}}
+
+/* ── Ledger, continued: no poster eyebrow above the title (the logo is right above it), system type, light hairlines
+   instead of the old ink rules, the detail panel as an ordinary card. Layout and the phone card rows are unchanged. ── */
+.sx .sx-content .ledger-shell,.sx .sx-content .ledger-shell :is(h2,h3,p,td,th,dt,dd,button,label,.ledger-kicker,.ledger-pill){font-family:var(--sx-font)}
+.sx .sx-content .ledger-shell .ledger-header .ledger-kicker{display:none}
+.sx .sx-content .ledger-shell .ledger-detail .ledger-kicker{font:500 12px/1.3 var(--sx-font);color:var(--sx-text2);letter-spacing:0;text-transform:none}
+.sx .sx-content .ledger-shell .ledger-detail h2{font:600 19px/1.35 var(--sx-font);margin:8px 0 12px}
+.sx .sx-content .ledger-shell *:not(button):not(input):not(select):not(textarea){border-color:var(--sx-line)}
+.sx .sx-content .ledger-shell .ledger-detail{border-width:1px!important;border-radius:14px;background:var(--sx-bg)}
+
+/* ── Staff Q&A ─────────────────────────────────────────────────────────────────────────── */
+.sx .sx-content .staff-qa-toc ul{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:0 0 20px}
+.sx .sx-content .staff-qa-toc a{display:inline-flex;align-items:center;min-height:32px;padding:0 14px;border-radius:980px;background:var(--sx-bg2);color:var(--sx-text);text-decoration:none;font:400 14px/1 var(--sx-font)}
+.sx .sx-content .staff-qa-section{padding:8px 24px 12px;margin:0 0 16px;scroll-margin-top:72px}
+.sx .sx-content .staff-qa-section h2{font:600 19px/1.25 var(--sx-font);margin:16px 0 8px}
+.sx .sx-content .staff-qa-section details{border-top:1px solid var(--sx-line)}
+.sx .sx-content .staff-qa-section summary{cursor:pointer;padding:14px 0;font:500 15px/1.4 var(--sx-font);color:var(--sx-text);list-style-position:outside}
+.sx .sx-content .staff-qa-section details p{margin:0 0 14px;color:var(--sx-text2);font:400 14px/1.6 var(--sx-font);max-width:72ch}
+.sx .sx-content .ledger-shell .ledger-detail:empty{display:none}

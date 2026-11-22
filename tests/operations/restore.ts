@@ -188,11 +188,12 @@ try{
    try{
     for(const [r,o] of [[p1,'n_distinct=5'],[p2,'n_distinct=5'],[keep,'n_distinct=-1']] as const)await x.db.pool.query(`ALTER TABLE public.${r.t} ALTER COLUMN "${r.c}" SET (${o})`);
     await x.db.pool.query("BEGIN;SELECT set_config('zao.actor','synthetic-restore',true);SELECT store_sales_stop_set(ARRAY['MOUNTAIN_BASE'],'2035-12-30','2035-12-30',true,$$"+tricky.replace(/\$/g,'')+"$$);COMMIT");
-    const neonDump=join(dir,'neon.dump'),neonCipher=join(dir,'neon.dump.age');
-    const d=await runTool(join(tools.binDir,'pg_dump'),['-Fc','--no-owner','--no-acl','-f',neonDump],pgEnv);assert.equal(d.code,0,'pg_dump failed: '+d.stderr);
-    const archive=await readFile(neonDump),from=Buffer.from('n_distinct=5'),to=Buffer.from('pg_attver=12');let n=0;
+    const sourceDump=join(dir,'neon-source.dump'),neonDump=join(dir,'neon.dump'),neonCipher=join(dir,'neon.dump.age');
+    const d=await runTool(join(tools.binDir,'pg_dump'),['-Fc','--no-owner','--no-acl','-f',sourceDump],pgEnv);assert.equal(d.code,0,'pg_dump failed: '+d.stderr);
+    const archive=await readFile(sourceDump),from=Buffer.from('n_distinct=5'),to=Buffer.from('pg_attver=12');let n=0;
     for(let i=archive.indexOf(from);i>=0;i=archive.indexOf(from,i+from.length)){to.copy(archive,i);n++;}
-    assert.equal(n,2,'exactly the two TOC column options were rewritten');await writeFile(neonDump,archive);
+    // Written to a new file: under the CI Docker wrapper pg_dump runs as root, so its output is not writable by this process.
+    assert.equal(n,2,'exactly the two TOC column options were rewritten');await rm(sourceDump);await writeFile(neonDump,archive,{mode:0o600});
     // The previous restore path (pg_restore straight into the database) fails on it, which is the Production failure reproduced.
     const plainTarget=await newTarget();
     const directRun=await runTool(pgRestorePath,['--no-owner','--no-acl','--exit-on-error','--single-transaction','--host','127.0.0.1','--port',String(x.db.identity.dbPort),'--username',x.db.identity.user,'--dbname',plainTarget.database,neonDump],{PGPASSWORD:password,PGSSLMODE:'disable'});

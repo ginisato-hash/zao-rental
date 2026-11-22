@@ -17,8 +17,9 @@ export function run(command: string, args: string[], env: Record<string, string>
   });
 }
 const isMajor18 = (out: string, tool: string) => new RegExp(`^${tool} \\(PostgreSQL\\) 18\\.\\d+`).test(out.trim());
+// The restore renders with pg_restore and applies with psql from the same directory (Neon pg_attver filter), so all three must be 18.
 async function bothAre18(binDir: string): Promise<boolean> {
-  for (const tool of ['pg_dump', 'pg_restore']) {
+  for (const tool of ['pg_dump', 'pg_restore', 'psql']) {
     const r = await run(join(binDir, tool), ['--version']);
     if (r.code !== 0 || !isMajor18(r.stdout, tool)) return false;
   }
@@ -40,7 +41,7 @@ export async function resolvePg18Tools(workDir: string): Promise<{tools: Pg18Too
   if ((await run('docker', ['--version'])).code !== 0) return {tools: null, reason: 'no PostgreSQL 18 client tools (explicit, .local build or PATH) and Docker is unavailable'};
   const image = await pinnedPg18Image(), binDir = join(workDir, 'docker-bin');
   await mkdir(binDir, {recursive: true});
-  for (const tool of ['pg_dump', 'pg_restore']) {
+  for (const tool of ['pg_dump', 'pg_restore', 'psql']) {
     // Bare `-e KEY` forwards a value from this process's environment, so no secret appears in docker's argv.
     const script = `#!/bin/sh\nexec docker run --rm --network host -e PGPASSWORD -e PGSSLMODE -e PGAPPNAME -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -v "${workDir}:${workDir}" -w "${workDir}" --entrypoint ${tool} ${image} "$@"\n`;
     await writeFile(join(binDir, tool), script, {mode: 0o755}); await chmod(join(binDir, tool), 0o755);

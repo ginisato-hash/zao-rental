@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {createReadStream, createWriteStream} from 'node:fs';
 import {lstat, mkdtemp, readFile, realpath, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {isAbsolute, join, relative} from 'node:path';
+import {dirname, isAbsolute, join, relative} from 'node:path';
 import {Readable, Transform} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
 import {Decrypter, identityToRecipient} from 'age-encryption';
@@ -129,12 +129,108 @@ export async function assertPgRestoreVersion(pgRestorePath: string): Promise<str
   return version;
 }
 
-/** Single-transaction restore into the disposable target. No Production connection string exists in this module. */
-export async function runPgRestore(a: {pgRestorePath: string; dumpPath: string; target: RestoreTarget}): Promise<void> {
+/** Neon stamps an internal per-column attribute version (`pg_attver=<n>`) on columns created after its compute upgrade, and pg_dump writes it
+ * back as `ALTER TABLE ONLY … ALTER COLUMN … SET (pg_attver=<n>);` within the table's definition. Community PostgreSQL rejects that option
+ * ("unrecognized parameter"), so a Neon dump of any table created since cannot be restored as is (observed on the 0059–0061 tables).
+ *
+ * This is a byte-level streaming filter over the SQL that pg_restore renders: it splits on LF only (CR and every other byte are kept), never
+ * holds the dump or a list of its rows, and passes COPY data through as it arrives without buffering a data row. Outside COPY data it removes
+ * exactly the `pg_attver=<digits>` item from such an `ALTER TABLE ONLY … ALTER COLUMN … SET (…);` statement (the whole statement when it
+ * was the only item) and fails closed on anything else: `pg_attver` in any other shape (a string, a comment, another statement, a
+ * non-numeric value), a psql meta-command other than pg_dump's own `\restrict`/`\unrestrict`, an SQL line over the length bound, or COPY
+ * data that never ends. It does not touch the Production database. */
+const COPY_START = /^COPY .+ FROM stdin;$/;
+const ATTVER_STATEMENT = /^(ALTER TABLE ONLY .+ ALTER COLUMN .+ SET \()(.+)(\);)$/;
+const ATTVER_ITEM = /^pg_attver=\d{1,12}$/;
+const PG_DUMP_META = /^\\(restrict|unrestrict) [A-Za-z0-9]{1,128}$/;
+export const MAX_SQL_LINE_BYTES = 16 * 1024 * 1024;
+const LF = 0x0a, BACKSLASH = 0x5c, DOT = 0x2e;
+export function neonAttributeVersionFilter(): {stream: Transform; removed: () => number} {
+  let removed = 0, inCopy = false, pending: Buffer[] = [], pendingBytes = 0;
+  // COPY data: only the start of the current line matters (the `\.` terminator); the bytes themselves are forwarded immediately.
+  let copyLineBytes = 0, copyHead0 = -1, copyHead1 = -1;
+  const sqlLine = (line: Buffer): Buffer | null => {
+    if (line.length && line[0] === BACKSLASH) {
+      if (!PG_DUMP_META.test(line.toString('latin1'))) throw new Error('RESTORE_DUMP_UNSUPPORTED_META_COMMAND');
+      return line;
+    }
+    if (line.length > 5 && line.subarray(0, 5).toString('latin1') === 'COPY ' && COPY_START.test(line.toString('utf8'))) { inCopy = true; copyLineBytes = 0; return line; }
+    if (line.indexOf('pg_attver') < 0) return line;
+    const text = line.toString('utf8');
+    if (!Buffer.from(text, 'utf8').equals(line)) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
+    const m = ATTVER_STATEMENT.exec(text);
+    if (!m) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
+    const items = m[2]!.split(', ');
+    const kept = items.filter(o => !ATTVER_ITEM.test(o));
+    if (kept.length === items.length || kept.some(o => o.includes('pg_attver'))) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
+    removed += items.length - kept.length;
+    return kept.length ? Buffer.from(m[1] + kept.join(', ') + m[3], 'utf8') : null;
+  };
+  const stream = new Transform({
+    transform(chunk: Buffer, _encoding, done) {
+      try {
+        let pos = 0;
+        while (pos < chunk.length) {
+          if (inCopy) {
+            const nl = chunk.indexOf(LF, pos), end = nl < 0 ? chunk.length : nl;
+            for (let i = pos; i < end && copyLineBytes + (i - pos) < 2; i++) { if (copyLineBytes + (i - pos) === 0) copyHead0 = chunk[i]!; else copyHead1 = chunk[i]!; }
+            copyLineBytes += end - pos;
+            if (nl < 0) { this.push(chunk.subarray(pos)); pos = chunk.length; continue; }
+            this.push(chunk.subarray(pos, nl + 1));
+            if (copyLineBytes === 2 && copyHead0 === BACKSLASH && copyHead1 === DOT) inCopy = false;
+            copyLineBytes = 0; copyHead0 = copyHead1 = -1; pos = nl + 1;
+            continue;
+          }
+          const nl = chunk.indexOf(LF, pos);
+          if (nl < 0) {
+            pending.push(chunk.subarray(pos)); pendingBytes += chunk.length - pos; pos = chunk.length;
+            if (pendingBytes > MAX_SQL_LINE_BYTES) throw new Error('RESTORE_DUMP_LINE_TOO_LONG');
+            continue;
+          }
+          const line = pending.length ? Buffer.concat([...pending, chunk.subarray(pos, nl)]) : chunk.subarray(pos, nl);
+          pending = []; pendingBytes = 0; pos = nl + 1;
+          if (line.length > MAX_SQL_LINE_BYTES) throw new Error('RESTORE_DUMP_LINE_TOO_LONG');
+          const out = sqlLine(line);
+          if (out) this.push(Buffer.concat([out, Buffer.from([LF])]));
+        }
+        done();
+      } catch (error) { done(error as Error); }
+    },
+    flush(done) {
+      try {
+        if (inCopy) throw new Error('RESTORE_DUMP_TRUNCATED');
+        if (pending.length) { const out = sqlLine(Buffer.concat(pending)); pending = []; if (out) this.push(out); }
+        done();
+      } catch (error) { done(error as Error); }
+    },
+  });
+  return {stream, removed: () => removed};
+}
+
+/** Restore into the disposable target in ONE transaction: pg_restore renders the archive to SQL (no connection), the Neon-only column option is
+ * removed by the streaming filter above, then psql from the same PostgreSQL 18 client directory applies it with ON_ERROR_STOP in a single
+ * transaction. Ownership and ACLs are skipped as before. psql reports errors as severity + SQLSTATE only (VERBOSITY=sqlstate, no context), so
+ * no statement text or data value reaches the error message; query results go to /dev/null. Both rendered files live next to the dump inside
+ * the drill's private work folder and are deleted in every outcome. The caller's ciphertext and plaintext hash checks are unchanged. */
+export async function runPgRestore(a: {pgRestorePath: string; dumpPath: string; target: RestoreTarget}): Promise<{removedNeonOptions: number}> {
   const t = a.target;
-  const args = ['--no-owner', '--no-acl', '--exit-on-error', '--single-transaction', '--no-password',
-    '--host', t.host, '--port', String(t.port), '--username', t.user, '--dbname', t.database, a.dumpPath];
-  await run(a.pgRestorePath, args, sanitizedEnv({PGPASSWORD: t.password, PGSSLMODE: 'disable', PGAPPNAME: 'zao-rental-restore-drill'}), [t.password]);
+  const psql = join(dirname(a.pgRestorePath), 'psql');
+  const psqlVersion = (await run(psql, ['--version'], sanitizedEnv({}), [])).stdout.trim();
+  if (!/^psql \(PostgreSQL\) 18\.\d+/.test(psqlVersion)) throw new Error('RESTORE_TOOL_VERSION_REJECTED');
+  const rendered = a.dumpPath + '.sql', filtered = a.dumpPath + '.restore.sql';
+  try {
+    await run(a.pgRestorePath, ['--no-owner', '--no-acl', '--exit-on-error', '--file', rendered, a.dumpPath], sanitizedEnv({}), []);
+    const filter = neonAttributeVersionFilter();
+    await pipeline(createReadStream(rendered), filter.stream, createWriteStream(filtered, {flags: 'wx', mode: 0o600}));
+    await rm(rendered, {force: true});
+    await run(psql, ['--no-psqlrc', '--quiet', '--no-password', '--single-transaction', '--set', 'ON_ERROR_STOP=1', '--set', 'VERBOSITY=sqlstate',
+      '--set', 'SHOW_CONTEXT=never', '--output', '/dev/null', '--host', t.host, '--port', String(t.port), '--username', t.user, '--dbname', t.database,
+      '--file', filtered], sanitizedEnv({PGPASSWORD: t.password, PGSSLMODE: 'disable', PGAPPNAME: 'zao-rental-restore-drill'}), [t.password]);
+    return {removedNeonOptions: filter.removed()};
+  } finally {
+    await rm(rendered, {force: true});
+    await rm(filtered, {force: true});
+  }
 }
 
 /** Registry equals the source migration set byte-for-byte, relationships hold, contract-critical rows are fingerprinted (counts + digests only). */
@@ -269,7 +365,7 @@ export async function main(argv: string[]): Promise<void> {
       credentials: {accessKeyId: input.r2!.accessKeyId, secretAccessKey: input.r2!.secretAccessKey}}));
   const adapters: DrillAdapters = {
     fetchCiphertext,
-    restore: (dumpPath, target) => runPgRestore({pgRestorePath: input.pgRestorePath, dumpPath, target}),
+    restore: async (dumpPath, target) => { await runPgRestore({pgRestorePath: input.pgRestorePath, dumpPath, target}); },
     openTarget: t => new Pool({host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, max: 4}),
     toolVersion: () => assertPgRestoreVersion(input.pgRestorePath),
     now: () => new Date(),

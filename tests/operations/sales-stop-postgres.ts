@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {flowFixture} from '../flow/fixture';
-import {skiSet} from '../inventory/fixture';
+import {flowFixture,simulation} from '../flow/fixture';
+import {skiSet,variants} from '../inventory/fixture';
+import {QuoteService} from '../../packages/core/src/pricing/quote-service';
+import {BookingService} from '../../packages/core/src/payment/booking-service';
 import {provisionGuestRole} from '../../scripts/guest-roles';
 import {provisionOperationsRole} from '../../scripts/operations-roles';
 import {writeAccount} from '../../packages/auth/src/accounts';
@@ -182,6 +184,37 @@ try{
    await admin.set(randomUUID(),{stores:['MOUNTAIN_BASE'],from:'2035-01-20',to:'2035-01-20',stop:true,reason:'SYNTHETIC closure again'});
   }finally{c.release();}
   assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_holds WHERE owner_id=$1',[guest.subject])).rows[0].n,0);
+ });
+
+ await check('an unpaid guest DRAFT made before a stop cannot start paying after it: refused in the database, no provider call, nothing committed; a payment started before the stop still completes; staff and other days are unaffected (PR74-ROLLBACK-01)',async()=>{
+  // Ample synthetic stock for 2035-02-10 so the public capacity ceiling does not refuse the guest holds (as in booking-access.ts).
+  const t=await x.db.pool.connect();try{await t.query('BEGIN');
+   await t.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','SYNTHETIC sales stop payment fixture top-up',true)",[x.actor]);
+   for(const [family,variant] of [['SKI',variants.ski],['SKI_BOOT',variants.boot]] as const)for(let n=0;n<20;n++)await t.query(`INSERT INTO ledger_assets(id,variant_id,family,initial_store_id,store_id,status,bsl_status,bsl_mm,bsl_evidence,notes,source_kind,source_document,source_locator) VALUES($1,$2,$3,'MOUNTAIN_BASE','MOUNTAIN_BASE','AVAILABLE',$4,NULL,'','','SYNTHETIC','tests/operations/sales-stop-postgres.ts',$5)`,[randomUUID(),variant,family,family==='SKI_BOOT'?'UNVERIFIED':'NOT_APPLICABLE','stop-'+family+'-'+n]);
+   await t.query('UPDATE ledger_poles SET quantity=greatest(quantity,20) WHERE variant_id=$1',[variants.pole]);await t.query('COMMIT');}catch(e){await t.query('ROLLBACK');throw e;}finally{t.release();}
+  const day='2035-02-10',holds=new HoldService(x.roles.holdPool,guest,()=>x.now()),quotes=new QuoteService(x.roles.pricingPool,guest,()=>x.now()),bookings=new BookingService(x.flow.flowPool,guestRole!.guestPool,guest,x.fake,simulation);
+  const draft=async(n:number)=>{const conditions=skiSet(day),h=await holds.command('create',randomUUID(),conditions),quote=(await quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:null,wantAdvance:false})).quote;
+   return {hold:h.holdId as string,booking:(await bookings.create(randomUUID(),quote.id,{displayName:'SYNTHETIC Stop Guest '+n,email:'synthetic-stop-guest-'+n+'@example.invalid',termsAccepted:true})).id as string};};
+  const unpaid=await draft(1),started=await draft(2);
+  // A payment started BEFORE the stop whose response was lost (UNKNOWN): its follow-up must keep working after the stop.
+  x.fake.failAfterSave=true;await bookings.startPayment(started.booking,randomUUID()).catch(()=>{/* response lost on purpose */});x.fake.failAfterSave=false;
+  assert.equal((await x.db.pool.query('SELECT payment_state s FROM inventory_holds WHERE id=$1',[started.hold])).rows[0].s,'UNKNOWN');
+  await admin.set(randomUUID(),{stores:['MOUNTAIN_BASE'],from:day,to:day,stop:true,reason:'SYNTHETIC closure after drafts'});
+  const calls=x.fake.calls.length,state=async(id:string)=>(await x.db.pool.query("SELECT b.state,h.payment_state,(SELECT count(*)::int FROM rental_payment_attempts a WHERE a.booking_id=b.id) attempts FROM rental_bookings b JOIN inventory_holds h ON h.id=b.hold_id WHERE b.id=$1",[id])).rows[0];
+  await assert.rejects(bookings.startPayment(unpaid.booking,randomUUID()),code('SALES_STOPPED'),'first payment start after the stop');
+  assert.equal(x.fake.calls.length,calls,'gateway.create was never reached');
+  assert.deepEqual(await state(unpaid.booking),{state:'DRAFT',payment_state:'NONE',attempts:0},'no attempt, booking or hold change was committed');
+  // An application build that predates 0062 writes the same rows: the database refuses the hold transition itself.
+  const c=await x.db.pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true)",[guest.subject]);
+   await assert.rejects(c.query("UPDATE inventory_holds SET payment_state='PENDING',version=version+1 WHERE id=$1",[unpaid.hold]),(e:{code?:string})=>e.code==='P0062');}finally{await c.query('ROLLBACK');c.release();}
+  // The payment started before the stop is reconciled to completion (UNKNOWN -> SUCCESS is not a new start).
+  await bookings.reconcile(started.booking);assert.equal((await state(started.booking)).payment_state,'SUCCESS');
+  // Staff-owned bookings on the stopped day still start paying (the staff screen warns instead).
+  const staffDraft=await x.draft(day,undefined,reserve);await x.service.startPayment(staffDraft.booking.id,randomUUID());
+  // Released: the same unpaid guest DRAFT may now start paying, exactly once at the gateway.
+  await admin.set(randomUUID(),{stores:['MOUNTAIN_BASE'],from:day,to:day,stop:false,reason:'SYNTHETIC reopen'});
+  const before=x.fake.calls.length;await bookings.startPayment(unpaid.booking,randomUUID());assert.equal(x.fake.calls.length,before+1);
+  assert.equal((await state(unpaid.booking)).attempts,1);
  });
 
  await check('501 open bookings on one stopped day: the screen reports the total and every one is reachable page by page (PR74-UI-02)',async()=>{

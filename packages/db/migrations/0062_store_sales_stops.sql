@@ -10,9 +10,11 @@
 --   stopped days; it is the only object PUBLIC may execute.
 -- * Defence in depth that does not depend on the application version (PR74-ROLLBACK-01): a BEFORE trigger on inventory_holds
 --   refuses a GUEST-owned ACTIVE hold whose period or stations touch a stopped day (SQLSTATE P0062). It fires on INSERT and on an
---   UPDATE that changes the period or stations (or reactivates the hold), so an application build that predates 0062 cannot
---   take a public booking on a stopped day either. STAFF-owned holds are never refused (staff continue after the warning), and
---   updates that keep the same period and stations (payment state, expiry, allocation) are not affected.
+--   UPDATE that changes the period or stations (or reactivates the hold), and on the first start of a payment for it
+--   (payment_state NONE/FAILURE -> PENDING: an unpaid DRAFT made before the stop cannot start paying after it; PR74-ROLLBACK-01),
+--   so an application build that predates 0062 cannot take a public booking on a stopped day either. STAFF-owned holds are never
+--   refused (staff continue after the warning). Other updates that keep the same period and stations (expiry, allocation, and the
+--   follow-up of a payment already started before the stop: PENDING/UNKNOWN -> SUCCESS/FAILURE/UNKNOWN) are not affected.
 CREATE TABLE store_sales_stops(
  store_id text NOT NULL REFERENCES ledger_stores(id),
  day date NOT NULL,
@@ -88,7 +90,8 @@ DECLARE first_day date; last_day date;
 BEGIN
  IF NEW.state<>'ACTIVE' THEN RETURN NEW; END IF;
  IF TG_OP='UPDATE' AND OLD.state='ACTIVE' AND NEW.pickup_store=OLD.pickup_store AND NEW.return_store=OLD.return_store
-  AND NEW.conditions->'period' IS NOT DISTINCT FROM OLD.conditions->'period' AND NEW.occupancy_start=OLD.occupancy_start AND NEW.occupancy_end=OLD.occupancy_end THEN
+  AND NEW.conditions->'period' IS NOT DISTINCT FROM OLD.conditions->'period' AND NEW.occupancy_start=OLD.occupancy_start AND NEW.occupancy_end=OLD.occupancy_end
+  AND NOT (NEW.payment_state='PENDING' AND OLD.payment_state IN ('NONE','FAILURE')) THEN
   RETURN NEW;
  END IF;
  IF NOT EXISTS(SELECT 1 FROM booking_actors a WHERE a.id=NEW.owner_id AND a.kind='GUEST') THEN RETURN NEW; END IF;

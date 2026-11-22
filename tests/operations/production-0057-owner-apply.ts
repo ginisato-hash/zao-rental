@@ -170,6 +170,10 @@ try{
   assert.equal((await q('SELECT count(*)::int n FROM store_sales_stop_history'))[0].n,hist);
   await g62.query('ALTER TABLE inventory_holds DISABLE TRIGGER store_sales_stop_hold_guard');
   await assert.rejects(verifyProductionSalesStop(g62,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'a disabled guest-hold guard fails verify');
+  // REPLICA-only fires only under session_replication_role=replica, never in ordinary sessions: also refused (PR74-VERIFY-01).
+  await g62.query('ALTER TABLE inventory_holds ENABLE REPLICA TRIGGER store_sales_stop_hold_guard');
+  await assert.rejects(verifyProductionSalesStop(g62,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'a replica-only guest-hold guard fails verify');
+  await assert.rejects(salesStopCommittedProof(g62,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/);
   await g62.query('ALTER TABLE inventory_holds ENABLE TRIGGER store_sales_stop_hold_guard');await verifyProductionSalesStop(g62,DB,OWNER);
  }finally{g62.release();}
  for(const t of ['store_sales_stops','store_sales_stop_history'])for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,priv==='SELECT',t+' '+priv);

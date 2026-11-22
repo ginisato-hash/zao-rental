@@ -31,11 +31,12 @@ async function begin(c:PoolClient,readOnly=false){
  await c.query(readOnly?'BEGIN READ ONLY':'BEGIN');
  await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='15000ms';SET LOCAL idle_in_transaction_session_timeout='20000ms';SET LOCAL search_path=public,pg_catalog");
 }
-/** Structure that normal service traffic cannot change: ownership, the three guard triggers (incl. the guest-hold guard that
+/** Structure that normal service traffic cannot change: ownership, the three guard triggers firing in ordinary sessions
+ * (tgenabled O or A; R fires only under session_replication_role=replica and D never — both refused, PR74-VERIFY-01) (incl. the guest-hold guard that
  * keeps a pre-0062 application build from booking a stopped day), all three functions present and owner-owned. */
 export async function salesStopCommittedProof(c:Pick<PoolClient,'query'>,owner:string){
  for(const t of SALES_STOP_TABLES){const r=(await c.query('SELECT pg_get_userbyid(c.relowner)=$1 owner_ok FROM pg_class c WHERE c.oid=to_regclass($2)',[owner,'public.'+t])).rows[0];if(!r||r.owner_ok!==true)throw Error(refused);}
- for(const [table,trigger] of REQUIRED_TRIGGERS)if((await c.query("SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass($1) AND tgname=$2 AND tgenabled<>'D' AND NOT tgisinternal",['public.'+table,trigger])).rowCount!==1)throw Error(refused);
+ for(const [table,trigger] of REQUIRED_TRIGGERS)if((await c.query("SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass($1) AND tgname=$2 AND tgenabled IN ('O','A') AND NOT tgisinternal",['public.'+table,trigger])).rowCount!==1)throw Error(refused);
  for(const fn of [SALES_STOP_SET_FUNCTION,SALES_STOP_READ_FUNCTION,SALES_STOP_HOLD_GUARD_FUNCTION]){const r=(await c.query("SELECT p.prosecdef sd,pg_get_userbyid(p.proowner)=$2 owner_ok FROM pg_proc p WHERE p.oid=to_regprocedure($1)",[fn,owner])).rows[0];if(!r||r.sd!==true||r.owner_ok!==true)throw Error(refused);}
 }
 

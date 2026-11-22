@@ -12,7 +12,8 @@ const refused='PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED';
 export const SALES_STOP_TABLES=['store_sales_stops','store_sales_stop_history'] as const;
 export const SALES_STOP_SET_FUNCTION='store_sales_stop_set(text[],date,date,boolean,text)';
 export const SALES_STOP_READ_FUNCTION='store_sales_stopped_days(text[],date,date)';
-const REQUIRED_TRIGGERS=[['store_sales_stops','store_sales_stops_no_update'],['store_sales_stop_history','store_sales_stop_history_append_only']] as const;
+const REQUIRED_TRIGGERS=[['store_sales_stops','store_sales_stops_no_update'],['store_sales_stop_history','store_sales_stop_history_append_only'],['inventory_holds','store_sales_stop_hold_guard']] as const;
+export const SALES_STOP_HOLD_GUARD_FUNCTION='store_sales_stop_hold_guard()';
 
 type Entry={id:string;checksum:string;sql:string};
 async function plan(database:string){const p=await bootstrapPlan(database);const e=p.entries as Entry[];
@@ -30,11 +31,12 @@ async function begin(c:PoolClient,readOnly=false){
  await c.query(readOnly?'BEGIN READ ONLY':'BEGIN');
  await c.query("SET LOCAL lock_timeout='1500ms';SET LOCAL statement_timeout='15000ms';SET LOCAL idle_in_transaction_session_timeout='20000ms';SET LOCAL search_path=public,pg_catalog");
 }
-/** Structure that normal service traffic cannot change: ownership, the two guard triggers, both functions present. */
+/** Structure that normal service traffic cannot change: ownership, the three guard triggers (incl. the guest-hold guard that
+ * keeps a pre-0062 application build from booking a stopped day), all three functions present and owner-owned. */
 export async function salesStopCommittedProof(c:Pick<PoolClient,'query'>,owner:string){
  for(const t of SALES_STOP_TABLES){const r=(await c.query('SELECT pg_get_userbyid(c.relowner)=$1 owner_ok FROM pg_class c WHERE c.oid=to_regclass($2)',[owner,'public.'+t])).rows[0];if(!r||r.owner_ok!==true)throw Error(refused);}
  for(const [table,trigger] of REQUIRED_TRIGGERS)if((await c.query("SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass($1) AND tgname=$2 AND tgenabled<>'D' AND NOT tgisinternal",['public.'+table,trigger])).rowCount!==1)throw Error(refused);
- for(const fn of [SALES_STOP_SET_FUNCTION,SALES_STOP_READ_FUNCTION]){const r=(await c.query("SELECT p.prosecdef sd,pg_get_userbyid(p.proowner)=$2 owner_ok FROM pg_proc p WHERE p.oid=to_regprocedure($1)",[fn,owner])).rows[0];if(!r||r.sd!==true||r.owner_ok!==true)throw Error(refused);}
+ for(const fn of [SALES_STOP_SET_FUNCTION,SALES_STOP_READ_FUNCTION,SALES_STOP_HOLD_GUARD_FUNCTION]){const r=(await c.query("SELECT p.prosecdef sd,pg_get_userbyid(p.proowner)=$2 owner_ok FROM pg_proc p WHERE p.oid=to_regprocedure($1)",[fn,owner])).rows[0];if(!r||r.sd!==true||r.owner_ok!==true)throw Error(refused);}
 }
 
 /** `afterCommit` exists only so a test can let the live service write between COMMIT and the read-back. */
@@ -75,6 +77,7 @@ export async function salesStopGrantProof(c:Pick<PoolClient,'query'>,operationsR
  if(!await has("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[operationsRole,SALES_STOP_SET_FUNCTION]))throw Error(refused);
  for(const t of SALES_STOP_TABLES)for(const p of ['SELECT','INSERT','UPDATE','DELETE','TRUNCATE'])if(await has('SELECT has_table_privilege($1,$2,$3) ok',[operationsRole,t,p])!==(p==='SELECT'))throw Error(refused);
  if(await has("SELECT has_function_privilege('public',$1,'EXECUTE') ok",[SALES_STOP_SET_FUNCTION]))throw Error(refused);
+ if(await has("SELECT has_function_privilege('public',$1,'EXECUTE') ok",[SALES_STOP_HOLD_GUARD_FUNCTION]))throw Error(refused);
  if(!await has("SELECT has_function_privilege('public',$1,'EXECUTE') ok",[SALES_STOP_READ_FUNCTION]))throw Error(refused);
 }
 
@@ -96,4 +99,19 @@ export async function applyProductionSalesStopGrants(c:PoolClient,database:strin
   if(committing)throw Error('PRODUCTION_SALES_STOP_GRANTS_COMMIT_UNKNOWN_READBACK_REQUIRED');
   throw error;
  }
+}
+
+/** Read-only check of the installed 0062 delta (no write, BEGIN READ ONLY): exact 0001-0062 registry, owner-owned objects, the three
+ * guard triggers enabled (incl. the guest-hold guard that keeps any application build, also a rollback build, from booking a stopped
+ * day), the exact grants, and how many stopped station-days lie from today (JST) on. Used to read back after an uncertain COMMIT and
+ * before/after a deployment rollback (RELEASE_RUNBOOK §4). Counts only; no reason, actor or booking row leaves the database. */
+export async function verifyProductionSalesStop(c:PoolClient,database:string,owner:string){
+ const entries=await plan(database);
+ try{
+  await begin(c,true);
+  await identity(c,database,owner);await registry(c,entries,62);await salesStopCommittedProof(c,owner);await salesStopGrantProof(c,database+'_operations');
+  const r=(await c.query("SELECT count(*)::int n,min(day)::text first,max(day)::text last FROM public.store_sales_stops WHERE day>=(clock_timestamp() AT TIME ZONE 'Asia/Tokyo')::date")).rows[0];
+  await c.query('ROLLBACK');
+  return {status:'PRODUCTION_SALES_STOP_VERIFIED',registry:62,guestHoldGuard:'ENABLED',stoppedStationDaysFromToday:Number(r.n),firstStoppedDay:r.first as string|null,lastStoppedDay:r.last as string|null,writes:0};
+ }catch(error){await c.query('ROLLBACK').catch(()=>{});throw error;}
 }

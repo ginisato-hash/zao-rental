@@ -98,6 +98,7 @@
     "production:restore-evidence-finalize-pre-0062": "node --import tsx scripts/production-restore-evidence-pre0062.ts",
     "production:install-sales-stop-migration": "node --import tsx scripts/production-install-sales-stop.ts migrate",
     "production:install-sales-stop-grants": "node --import tsx scripts/production-install-sales-stop.ts grants",
+    "production:verify-sales-stop": "node --import tsx scripts/production-install-sales-stop.ts verify",
     "production:worker-bind-cron-secret": "node --import tsx scripts/production-worker-credential.ts bind-cron-secret",
     "production:worker-dormant-proof": "node --import tsx scripts/production-worker-dormant-proof.ts",
     "production:worker-roles-provision": "node --import tsx scripts/production-worker-credential.ts provision",

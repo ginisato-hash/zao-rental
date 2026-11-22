@@ -4,7 +4,7 @@
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
 import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
 import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
-import {applyProductionSalesStopMigration,applyProductionSalesStopGrants,salesStopGrantProof,salesStopCommittedProof} from '../../scripts/production-sales-stop-delta';
+import {applyProductionSalesStopMigration,applyProductionSalesStopGrants,salesStopGrantProof,salesStopCommittedProof,verifyProductionSalesStop} from '../../scripts/production-sales-stop-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
@@ -149,6 +149,8 @@ try{
   assert.equal(installed.status,'PRODUCTION_SALES_STOP_INSTALLED');assert.deepEqual(installed.applied.map(a=>a.id),['0062']);
   await assert.rejects(applyProductionSalesStopMigration(ss,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'no replay');
   await ss.query('BEGIN');try{await ss.query('ALTER TABLE store_sales_stop_history DISABLE TRIGGER store_sales_stop_history_append_only');await assert.rejects(salesStopCommittedProof(ss,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/);}finally{await ss.query('ROLLBACK');}
+  // The guest-hold guard is what keeps a pre-0062 build from booking a stopped day (PR74-ROLLBACK-01): without it the proof refuses.
+  await ss.query('BEGIN');try{await ss.query('ALTER TABLE inventory_holds DISABLE TRIGGER store_sales_stop_hold_guard');await assert.rejects(salesStopCommittedProof(ss,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/);}finally{await ss.query('ROLLBACK');}
   await salesStopCommittedProof(ss,OWNER);
  }finally{ss.release();}
  assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
@@ -158,7 +160,18 @@ try{
  assert.ok(owners62.length>0&&owners62.every((o:{o:string})=>o.o===OWNER),'every new 0062 object is owner-owned');
  assert.deepEqual((await q("SELECT store_id,to_char(day,'YYYY-MM-DD') d FROM store_sales_stops")),[{store_id:'MOUNTAIN_BASE',d:'2030-01-02'}],'the row written after COMMIT stays');
  assert.equal((await q("SELECT has_function_privilege($1,'store_sales_stop_set(text[],date,date,boolean,text)','EXECUTE') ok",[ops]))[0].ok,false,'no grant before the 0062 grant step');
- const g62=await owner.connect();try{const g=await applyProductionSalesStopGrants(g62,DB,OWNER);assert.equal(g.status,'PRODUCTION_SALES_STOP_GRANTS_INSTALLED');await salesStopGrantProof(g62,ops);}finally{g62.release();}
+ const g62=await owner.connect();try{
+  await assert.rejects(verifyProductionSalesStop(g62,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'verify needs the grants too');
+  const g=await applyProductionSalesStopGrants(g62,DB,OWNER);assert.equal(g.status,'PRODUCTION_SALES_STOP_GRANTS_INSTALLED');await salesStopGrantProof(g62,ops);
+  // Read-only verify (also the rollback check): counts only, no write, the guest-hold guard reported enabled.
+  const hist=(await q('SELECT count(*)::int n FROM store_sales_stop_history'))[0].n;
+  const v=await verifyProductionSalesStop(g62,DB,OWNER);
+  assert.deepEqual(v,{status:'PRODUCTION_SALES_STOP_VERIFIED',registry:62,guestHoldGuard:'ENABLED',stoppedStationDaysFromToday:1,firstStoppedDay:'2030-01-02',lastStoppedDay:'2030-01-02',writes:0});
+  assert.equal((await q('SELECT count(*)::int n FROM store_sales_stop_history'))[0].n,hist);
+  await g62.query('ALTER TABLE inventory_holds DISABLE TRIGGER store_sales_stop_hold_guard');
+  await assert.rejects(verifyProductionSalesStop(g62,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'a disabled guest-hold guard fails verify');
+  await g62.query('ALTER TABLE inventory_holds ENABLE TRIGGER store_sales_stop_hold_guard');await verifyProductionSalesStop(g62,DB,OWNER);
+ }finally{g62.release();}
  for(const t of ['store_sales_stops','store_sales_stop_history'])for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,priv]))[0].ok,priv==='SELECT',t+' '+priv);
  assert.equal((await q("SELECT has_function_privilege('public','store_sales_stop_set(text[],date,date,boolean,text)','EXECUTE') ok"))[0].ok,false,'no PUBLIC set');
  for(const r of ['neondb_hold','neondb_guest','neondb_recommendation','neondb_transfer'])if((await q('SELECT 1 FROM pg_roles WHERE rolname=$1',[r])).length)assert.equal((await q("SELECT has_function_privilege($1,'store_sales_stopped_days(text[],date,date)','EXECUTE') ok",[r]))[0].ok,true,r+' reads stopped days');

@@ -11,7 +11,10 @@ export const SALES_STOP_STORES=['MOUNTAIN_BASE','ONSEN_BASE'] as const;
 export const SALES_STOP_MAX_DAYS=366;
 export type SalesStop={store:string;day:string;reason:string;createdBy:string;createdAt:string};
 export type SalesStopHistory={store:string;day:string;action:'STOP'|'RELEASE';reason:string;actor:string;occurredAt:string};
-export type SalesStopView={from:string;to:string;stores:string[];stops:SalesStop[];affected:(OrderRow&{stoppedDays:string[]})[];history:SalesStopHistory[];canEdit:boolean};
+/** `affected` is null when the viewer may not see bookings (no BOOKING_VIEW): the screen says so instead of "none". Otherwise it is
+ * one page of the affected bookings; `affectedTotal` counts all of them so nothing is silently cut off (PR74-AUTH-01, PR74-UI-02). */
+export type SalesStopView={from:string;to:string;stores:string[];stops:SalesStop[];bookingView:boolean;affected:(OrderRow&{stoppedDays:string[]})[]|null;
+ affectedTotal:number|null;affectedPage:number;affectedPageSize:number;history:SalesStopHistory[];canEdit:boolean};
 const jstToday=(now:Date)=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo'}).format(now);
 const addDays=(date:string,n:number)=>{const t=new Date(date+'T00:00:00Z');t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10);};
 const span=(from:string,to:string)=>Math.round((Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000);
@@ -22,30 +25,40 @@ function stores(v:unknown,allowed:readonly string[]){
 }
 // Bookings that still matter to a customer: not drafts, cancellations or finished rentals.
 const OPEN_SQL="s.status NOT IN ('DRAFT','CANCELED','COMPLETED','RETURNED','NO_PICKUP')";
-const AFFECTED_MAX=500;
+export const AFFECTED_PAGE_SIZE=100;
+const MAX_PAGE=10000;
+function page(v:unknown){if(v===undefined)return 1;if(typeof v!=='string'||!/^[1-9][0-9]{0,4}$/.test(v)||Number(v)>MAX_PAGE)throw new FlowError('INVALID_INPUT',422);return Number(v);}
 
 export class SalesStopService{
  constructor(private ctx:OperationsContext){}
  /** Stops, affected open bookings and recent history for the stations the viewer may see (default: today + 120 days). */
- async view(query:{from?:string|undefined;to?:string|undefined}={}):Promise<SalesStopView>{
+ async view(query:{from?:string|undefined;to?:string|undefined;page?:string|undefined}={}):Promise<SalesStopView>{
+  const pageNo=page(query.page);
   const principal=await this.ctx.authorize('INVENTORY_VIEW');const visible=(principal.storeIds as string[]).filter(s=>(SALES_STOP_STORES as readonly string[]).includes(s)).sort();
-  return this.ctx.snapshot('INVENTORY_VIEW',visible,async(c,p)=>{
+  const view=await this.ctx.snapshot('INVENTORY_VIEW',visible,async(c,p)=>{
    const now=(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now,today=jstToday(now);
    const from=query.from?day(query.from):today,to=query.to?day(query.to):addDays(from,120);
    if(to<from||span(from,to)>SALES_STOP_MAX_DAYS)throw new FlowError('INVALID_INPUT',422);
    const stops=(await c.query<SalesStop>(`SELECT store_id store,to_char(day,'YYYY-MM-DD') "day",reason,created_by "createdBy",created_at "createdAt" FROM store_sales_stops
     WHERE store_id=ANY($1::text[]) AND day BETWEEN $2::date AND $3::date ORDER BY day,store_id`,[visible,from,to])).rows;
-   const affected=(await c.query<{row:OrderRow;stopped:string[]}>(`${ORDER_BASE_SQL}
-    SELECT ${ORDER_ROW_SQL} AS row,ARRAY(SELECT DISTINCT to_char(x.day,'YYYY-MM-DD') FROM store_sales_stops x WHERE (x.store_id=s.pickup_store OR x.store_id=s.return_store) AND x.store_id=ANY($1::text[])
-      AND x.day BETWEEN greatest(s.start_date,$3::date) AND least(s.end_date,$4::date) ORDER BY 1) AS stopped
-    FROM s WHERE ${OPEN_SQL} AND s.start_date<=$4::date AND s.end_date>=$3::date
-     AND EXISTS(SELECT 1 FROM store_sales_stops x WHERE (x.store_id=s.pickup_store OR x.store_id=s.return_store) AND x.store_id=ANY($1::text[])
-      AND x.day BETWEEN greatest(s.start_date,$3::date) AND least(s.end_date,$4::date))
-    ORDER BY s.start_date,s.created_at,s.id LIMIT ${AFFECTED_MAX}`,[visible,today,from,to])).rows.map(r=>({...r.row,stoppedDays:r.stopped}));
+   // Bookings (customer name, email, status, amount) are disclosed only under BOOKING_VIEW, as on the Orders screen.
+   const bookingView=p.permissions.includes('BOOKING_VIEW');let affected:SalesStopView['affected']=null,affectedTotal:number|null=null;
+   if(bookingView){
+    const hit=`(x.store_id=s.pickup_store OR x.store_id=s.return_store) AND x.store_id=ANY($1::text[]) AND x.day BETWEEN greatest(s.start_date,$3::date) AND least(s.end_date,$4::date)`;
+    const where=`${OPEN_SQL} AND s.start_date<=$4::date AND s.end_date>=$3::date AND EXISTS(SELECT 1 FROM store_sales_stops x WHERE ${hit})`;
+    affectedTotal=Number((await c.query<{n:number}>(`${ORDER_BASE_SQL} SELECT count(*)::int n FROM s WHERE ${where}`,[visible,today,from,to])).rows[0]!.n);
+    affected=(await c.query<{row:OrderRow;stopped:string[]}>(`${ORDER_BASE_SQL}
+     SELECT ${ORDER_ROW_SQL} AS row,ARRAY(SELECT DISTINCT to_char(x.day,'YYYY-MM-DD') FROM store_sales_stops x WHERE ${hit} ORDER BY 1) AS stopped
+     FROM s WHERE ${where} ORDER BY s.start_date,s.created_at,s.id LIMIT ${AFFECTED_PAGE_SIZE} OFFSET $5`,[visible,today,from,to,(pageNo-1)*AFFECTED_PAGE_SIZE])).rows.map(r=>({...r.row,stoppedDays:r.stopped}));
+   }
    const history=(await c.query<SalesStopHistory>(`SELECT store_id store,to_char(day,'YYYY-MM-DD') "day",action,reason,actor,occurred_at "occurredAt" FROM store_sales_stop_history
     WHERE store_id=ANY($1::text[]) ORDER BY id DESC LIMIT 50`,[visible])).rows;
-   return {from,to,stores:visible,stops,affected,history,canEdit:p.permissions.includes('INVENTORY_EDIT')};
+   return {from,to,stores:visible,stops,bookingView,affected,affectedTotal,affectedPage:pageNo,affectedPageSize:AFFECTED_PAGE_SIZE,history,canEdit:p.permissions.includes('INVENTORY_EDIT')};
   });
+  // snapshot() re-checked INVENTORY_VIEW and the stations after the read; bookings additionally need BOOKING_VIEW to still hold
+  // now, so a permission removed while the read ran refuses the response instead of returning customer data.
+  if(view.bookingView)await this.ctx.confirmScope('BOOKING_VIEW',visible);
+  return view;
  }
  /** Stop (stop=true) or release every day from..to at the chosen stations at once. Idempotent per request key. */
  async set(requestKey:string,input:unknown){

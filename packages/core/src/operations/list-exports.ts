@@ -21,10 +21,11 @@ const ORDER_COLUMNS:CsvColumn<OrderRow&{shortage?:string}>[]=[
  {key:'pickupDate',ja:'受取日',en:'Pickup date',value:r=>r.startDate},{key:'pickupStore',ja:'受取店舗',en:'Pickup station',value:r=>r.pickupStore},
  {key:'returnDate',ja:'返却日',en:'Return date',value:r=>r.endDate},{key:'returnStore',ja:'返却店舗',en:'Return station',value:r=>r.returnStore},
  {key:'totalJpy',ja:'金額（税込・円）',en:'Total (JPY, tax incl.)',value:r=>r.totalJpy},{key:'payment',ja:'支払状況',en:'Payment',value:r=>r.paymentStatus},
- // Appended (not inserted) so existing spreadsheets keep their column positions.
- {key:'bookedAt',ja:'受付日時（JST）',en:'Booked at (JST)',value:r=>bookedAtJst(r.createdAt)},
 ];
 const SHORTAGE_COLUMN:CsvColumn<OrderRow&{shortage?:string}>={key:'shortage',ja:'不足判定',en:'Shortage',value:r=>r.shortage};
+// Appended after every existing column (also after 不足判定 on the shortage tab) so existing spreadsheets keep their column
+// positions (PR74-CSV-01).
+const BOOKED_AT_COLUMN:CsvColumn<OrderRow&{shortage?:string}>={key:'bookedAt',ja:'受付日時（JST）',en:'Booked at (JST)',value:r=>bookedAtJst(r.createdAt)};
 const CUSTOMER_COLUMNS:CsvColumn<Customer>[]=[
  {key:'name',ja:'お名前',en:'Name',value:r=>r.name},{key:'email',ja:'メールアドレス',en:'Email',value:r=>r.email},
  {key:'bookings',ja:'予約数',en:'Bookings',value:r=>r.bookings},{key:'lastStart',ja:'最終利用日',en:'Last rental',value:r=>r.lastStart},
@@ -43,7 +44,7 @@ export async function listCsv(ctx:OperationsContext,path:string,q:URLSearchParam
  const g=(k:string)=>q.get(k)??undefined;
  if(path==='/orders'){
   const r=await new OrdersService(ctx).list({stores:(g('stores')??'').split(','),tab:g('tab'),status:g('status'),payment:g('payment'),from:g('from'),to:g('to'),direction:g('direction'),late:g('late'),search:g('search')},{all:true});
-  return {name:`orders-${r.today}`,body:toCsv(r.tab==='shortage'?[...ORDER_COLUMNS,SHORTAGE_COLUMN]:ORDER_COLUMNS,r.rows,lang)};
+  return {name:`orders-${r.today}`,body:toCsv(r.tab==='shortage'?[...ORDER_COLUMNS,SHORTAGE_COLUMN,BOOKED_AT_COLUMN]:[...ORDER_COLUMNS,BOOKED_AT_COLUMN],r.rows,lang)};
  }
  if(path==='/customers'){const r=await new CustomersService(ctx).list({search:g('search')},{all:true});return {name:'customers',body:toCsv(CUSTOMER_COLUMNS,r.rows as Customer[],lang)};}
  if(path==='/products'){const r=await new InventoryRead(ctx).list({store:g('store')??'',family:g('family'),search:g('search')});exportBound(r.rows.length);

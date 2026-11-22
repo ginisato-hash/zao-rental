@@ -15,7 +15,7 @@ import './staff-sales-stops.css';
 type Stop={store:string;day:string;reason:string;createdBy:string;createdAt:string};
 type Affected={id:string;ref:string;customer:string|null;status:string;pickupStore:string;returnStore:string;startDate:string;endDate:string;stoppedDays:string[]};
 type History={store:string;day:string;action:'STOP'|'RELEASE';reason:string;actor:string;occurredAt:string};
-type View={from:string;to:string;stores:string[];stops:Stop[];affected:Affected[];history:History[];canEdit:boolean};
+type View={from:string;to:string;stores:string[];stops:Stop[];bookingView:boolean;affected:Affected[]|null;affectedTotal:number|null;affectedPage:number;affectedPageSize:number;history:History[];canEdit:boolean};
 const STORES=['MOUNTAIN_BASE','ONSEN_BASE'] as const;
 const L={
  intro:['臨時休業などで、日にち単位で予約の受付を止めます。期間と店舗を選んで一括で設定・解除できます。','Stop taking bookings for whole days, for example for a temporary closure. Choose a period and stations to stop or release every day at once.'],
@@ -29,7 +29,9 @@ const L={
  viewOnly:['閲覧のみ（変更には在庫編集の権限が必要です）','View only (changing needs inventory edit permission)'],
  listTitle:['売り止め中の日','Stopped days'],showFrom:['表示期間','Showing'],none:['この期間に売り止めの日はありません。','No stopped days in this period.'],
  affectedTitle:['売り止め日にかかっている既存の予約','Existing bookings on stopped days'],affectedHelp:['自動では変更・取消されません。必要に応じてお客様へご連絡ください。','These are not changed or cancelled automatically. Contact the customers if needed.'],
- affectedNone:['売り止め日にかかっている予約はありません。','No bookings fall on stopped days.'],order:['予約','Order'],customer:['顧客','Customer'],status:['状態','Status'],period:['期間','Period'],days:['売り止め日','Stopped days'],
+ affectedNone:['売り止め日にかかっている予約はありません。','No bookings fall on stopped days.'],
+ noBookingView:['予約の表示には予約閲覧の権限が必要です（売り止めの設定・履歴は表示できます）。','Seeing bookings needs the booking view permission (sales stops and history are still shown).'],
+ total:['全','Total '],items:['件','bookings'],showing:['件目を表示','shown'],prev:['前へ','Previous'],next:['次へ','Next'],order:['予約','Order'],customer:['顧客','Customer'],status:['状態','Status'],period:['期間','Period'],days:['売り止め日','Stopped days'],
  historyTitle:['変更履歴','History'],STOP:['売り止め','Stopped'],RELEASE:['解除','Released'],at:['日時','At'],
  loadFailed:['読み込めませんでした。','Could not load.'],retry:['再読み込み','Retry'],apply:['表示','Show'],
 } as const;
@@ -41,20 +43,22 @@ export function StaffSalesStops({locale:serverLocale,stamp}:{locale:StaffLocale;
  const today=jst(new Date());
  // The default list period (today + 120 days) is decided by the server's business clock, not the browser's.
  const [range,setRange]=useState<{from:string;to:string}>({from:'',to:''}),[draftRange,setDraftRange]=useState({from:'',to:''});
- const [data,setData]=useState<View|null>(null),[loadFailed,setLoadFailed]=useState(false),[reload,setReload]=useState(0),gen=useRef(0);
- const [from,setFrom]=useState(today),[to,setTo]=useState(today),[stores,setStores]=useState<string[]>([...STORES]),[reason,setReason]=useState('');
+ const [data,setData]=useState<View|null>(null),[loadFailed,setLoadFailed]=useState(false),[reload,setReload]=useState(0),[affPage,setAffPage]=useState(1),gen=useRef(0);
+ // Station choice starts from the stations this account may change (PR74-UI-01), never a hidden station it cannot.
+ const [from,setFrom]=useState(today),[to,setTo]=useState(today),[stores,setStores]=useState<string[]|null>(null),[reason,setReason]=useState('');
  const [busy,setBusy]=useState(false),[msg,setMsg]=useState<{kind:'ok'|'err';text:string}|null>(null),pending=useRef<{key:string;body:string}|null>(null);
  useEffect(()=>{const ticket=++gen.current;queueMicrotask(async()=>{
-  try{const q=new URLSearchParams({...(range.from?{from:range.from}:{}),...(range.to?{to:range.to}:{})});const r=await fetch('/api/operations/sales-stops?'+q,{cache:'no-store',headers:{'x-zao-session':stamp}});
+  try{const q=new URLSearchParams({...(range.from?{from:range.from}:{}),...(range.to?{to:range.to}:{}),...(affPage>1?{page:String(affPage)}:{})});const r=await fetch('/api/operations/sales-stops?'+q,{cache:'no-store',headers:{'x-zao-session':stamp}});
    if(r.status===401){invalidateStaffView();return;}if(!r.ok)throw Error();const v=await r.json() as View;if(ticket===gen.current){setData(v);setLoadFailed(false);}}
   catch{if(ticket===gen.current)setLoadFailed(true);}
- });},[range,stamp,reload]);
+ });},[range,stamp,reload,affPage]);
+ const allowed=STORES.filter(s=>data?.stores.includes(s)),chosen=(stores??allowed).filter(s=>(allowed as string[]).includes(s));
  const label=(s:string)=>STORE_LABEL[s]??s;
  const submit=async(stop:boolean)=>{
-  setMsg(null);if(!from||!to||to<from||!stores.length||!reason.trim()){setMsg({kind:'err',text:tx('invalid')});return;}
-  const what=`${fmtDate(locale,from)}〜${fmtDate(locale,to)}（${stores.map(label).join('・')}）`;
+  setMsg(null);if(!from||!to||to<from||!chosen.length||!reason.trim()){setMsg({kind:'err',text:tx('invalid')});return;}
+  const what=`${fmtDate(locale,from)}〜${fmtDate(locale,to)}（${chosen.map(label).join('・')}）`;
   if(!window.confirm(what+(en?' ':'')+tx(stop?'confirmStop':'confirmRelease')))return;
-  const body=JSON.stringify({stores,from,to,stop,reason:reason.trim()});
+  const body=JSON.stringify({stores:chosen,from,to,stop,reason:reason.trim()});
   // The same request key is reused only to retry exactly the same change after a lost response.
   if(!pending.current||pending.current.body!==body)pending.current={key:crypto.randomUUID(),body};
   setBusy(true);
@@ -75,7 +79,7 @@ export function StaffSalesStops({locale:serverLocale,stamp}:{locale:StaffLocale;
    <div className="ss-form">
     <label>{tx('from')}<input type="date" value={from} min={today} onChange={e=>{setFrom(e.target.value);if(!to||to<e.target.value)setTo(e.target.value);}}/></label>
     <label>{tx('to')}<input type="date" value={to} min={from||today} onChange={e=>setTo(e.target.value)}/></label>
-    <fieldset><legend>{tx('stations')}</legend>{STORES.filter(s=>data.stores.includes(s)).map(s=><label key={s} className="ss-check"><input type="checkbox" checked={stores.includes(s)} onChange={e=>setStores(v=>e.target.checked?[...v,s].sort():v.filter(x=>x!==s))}/>{label(s)}</label>)}</fieldset>
+    <fieldset><legend>{tx('stations')}</legend>{allowed.map(s=><label key={s} className="ss-check"><input type="checkbox" checked={chosen.includes(s)} onChange={e=>setStores(e.target.checked?[...chosen,s].sort():chosen.filter(x=>x!==s))}/>{label(s)}</label>)}</fieldset>
     <label className="ss-reason">{tx('reason')}<input type="text" maxLength={160} value={reason} placeholder={tx('reasonPh')} onChange={e=>setReason(e.target.value)}/></label>
    </div>
    <div className="ss-actions"><button type="button" className="sx-btn sx-btn--primary" disabled={busy} onClick={()=>submit(true)}>{tx('stop')}</button>
@@ -83,7 +87,7 @@ export function StaffSalesStops({locale:serverLocale,stamp}:{locale:StaffLocale;
    {msg&&<p className={msg.kind==='ok'?'sx-status':'sx-alert'} role={msg.kind==='ok'?'status':'alert'}>{msg.text}</p>}
   </section>}
   <section className="sx-card" aria-labelledby="ss-list"><h2 id="ss-list">{tx('listTitle')}</h2>
-   <form className="ss-form ss-range" onSubmit={e=>{e.preventDefault();setRange(draftRange);}}>
+   <form className="ss-form ss-range" onSubmit={e=>{e.preventDefault();setAffPage(1);setRange(draftRange);}}>
     <label>{tx('from')}<input type="date" value={draftRange.from} onChange={e=>setDraftRange(r=>({...r,from:e.target.value}))}/></label>
     <label>{tx('to')}<input type="date" value={draftRange.to} min={draftRange.from} onChange={e=>setDraftRange(r=>({...r,to:e.target.value}))}/></label>
     <button type="submit" className="sx-btn">{tx('apply')}</button>
@@ -97,12 +101,19 @@ export function StaffSalesStops({locale:serverLocale,stamp}:{locale:StaffLocale;
   </section>
   <section className="sx-card" aria-labelledby="ss-affected"><h2 id="ss-affected">{tx('affectedTitle')}</h2>
    <p className="sx-help">{tx('affectedHelp')}</p>
-   {data&&!data.affected.length&&<p className="sx-empty">{tx('affectedNone')}</p>}
-   {data&&data.affected.length>0&&<div className="ox-table-wrap"><table className="sx-table ox-table"><thead><tr><th>{tx('order')}</th><th>{tx('customer')}</th><th>{tx('status')}</th><th>{tx('period')}</th><th>{tx('days')}</th></tr></thead>
+   {data&&data.affected===null&&<p className="sx-status">{tx('noBookingView')}</p>}
+   {data&&data.affected&&!data.affected.length&&<p className="sx-empty">{tx('affectedNone')}</p>}
+   {data&&data.affected&&data.affected.length>0&&<>
+    <p className="sx-help" role="status">{tx('total')}{data.affectedTotal}{en?' ':''}{tx('items')}（{(data.affectedPage-1)*data.affectedPageSize+1}〜{(data.affectedPage-1)*data.affectedPageSize+data.affected.length}{en?' ':''}{tx('showing')}）</p>
+    <div className="ox-table-wrap"><table className="sx-table ox-table"><thead><tr><th>{tx('order')}</th><th>{tx('customer')}</th><th>{tx('status')}</th><th>{tx('period')}</th><th>{tx('days')}</th></tr></thead>
     <tbody>{data.affected.map(a=><tr key={a.id}><td><Link href={'/staff/orders/'+a.id}>#{a.ref}</Link></td><td>{a.customer??'—'}</td>
      <td><span className={'ox-status ox-status--'+statusTone(a.status)}>{statusLabel(locale,a.status)}</span></td>
      <td>{fmtDate(locale,a.startDate)}（{label(a.pickupStore)}）〜{fmtDate(locale,a.endDate)}（{label(a.returnStore)}）</td>
-     <td>{a.stoppedDays.map(d=>fmtDate(locale,d)).join('、')}</td></tr>)}</tbody></table></div>}
+     <td>{a.stoppedDays.map(d=>fmtDate(locale,d)).join('、')}</td></tr>)}</tbody></table></div>
+    {(data.affectedTotal??0)>data.affectedPageSize&&<div className="ss-actions">
+     <button type="button" className="sx-btn" disabled={data.affectedPage<=1} onClick={()=>setAffPage(p=>Math.max(1,p-1))}>{tx('prev')}</button>
+     <button type="button" className="sx-btn" disabled={data.affectedPage*data.affectedPageSize>=(data.affectedTotal??0)} onClick={()=>setAffPage(p=>p+1)}>{tx('next')}</button></div>}
+   </>}
   </section>
   {data&&data.history.length>0&&<section className="sx-card" aria-labelledby="ss-history"><h2 id="ss-history">{tx('historyTitle')}</h2>
    <div className="ox-table-wrap"><table className="sx-table ox-table"><thead><tr><th>{tx('at')}</th><th>{tx('period')}</th><th>{tx('stations')}</th><th>{tx('status')}</th><th>{tx('reason')}</th></tr></thead>

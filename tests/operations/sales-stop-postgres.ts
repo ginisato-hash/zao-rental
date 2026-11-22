@@ -11,6 +11,9 @@ import {OperationsContext} from '../../packages/core/src/operations/context';
 import {SalesStopService} from '../../packages/core/src/operations/sales-stop-service';
 import {OrdersService} from '../../packages/core/src/operations/orders-service';
 import {listCsv} from '../../packages/core/src/operations/list-exports';
+import {AFFECTED_PAGE_SIZE} from '../../packages/core/src/operations/sales-stop-service';
+import {operationsHandler} from '../../apps/web/src/lib/operations-http';
+import {resolveStaff} from '../../packages/auth/src/staff-auth';
 
 // Day-level sales stop (0062, Owner request 2026-11-22). Synthetic local PostgreSQL only; no provider, payment or network.
 // Proves: staff stop/release a period at one or both stations at once (idempotent, audited, permission- and station-scoped);
@@ -72,8 +75,8 @@ try{
   const v=await admin.view({from:'2035-01-15',to:'2035-01-31'});
   assert.equal(v.canEdit,true);assert.deepEqual(v.stores,['MOUNTAIN_BASE','ONSEN_BASE']);
   assert.ok(v.stops.some(s=>s.day==='2035-01-20'&&s.reason==='SYNTHETIC temporary closure'));
-  const ids=v.affected.map(a=>a.id);assert.ok(ids.includes(touched.booking.id));assert.ok(!ids.includes(untouched.booking.id));
-  assert.deepEqual(v.affected.find(a=>a.id===touched.booking.id)!.stoppedDays,['2035-01-20']);
+  const ids=v.affected!.map(a=>a.id);assert.ok(ids.includes(touched.booking.id));assert.ok(!ids.includes(untouched.booking.id));
+  assert.deepEqual(v.affected!.find(a=>a.id===touched.booking.id)!.stoppedDays,['2035-01-20']);
   assert.ok(v.history.length>=5);
  });
 
@@ -113,13 +116,94 @@ try{
   await assert.rejects(ops!.operationsPool.query("SELECT store_sales_stop_set(ARRAY['MOUNTAIN_BASE'],'2035-03-01','2035-03-01',true,'x')"),/STORE_SALES_STOP_ACTOR_REQUIRED/,'no actor, no write');
  });
 
- await check('orders list and CSV carry the booking time (JST)',async()=>{
+ await check('orders list and both order CSVs keep every existing column position and append the booking time (JST) last (PR74-CSV-01)',async()=>{
   const ctx=new OperationsContext(ops!.operationsPool,x.roles.authPool,x.signed.identity);
   const list=await new OrdersService(ctx).list({stores:['MOUNTAIN_BASE','ONSEN_BASE'],tab:'all'});
   const row=(list as {rows:{id:string;createdAt:string}[]}).rows.find(r=>r.id===touched.booking.id)!;assert.ok(row&&!Number.isNaN(Date.parse(row.createdAt)));
-  const csv=await listCsv(ctx,'/orders',new URLSearchParams([['stores','MOUNTAIN_BASE'],['stores','ONSEN_BASE'],['tab','all'],['format','csv']]),'ja');
-  const [head,...lines]=csv.body.replace(/^﻿/,'').trim().split(/\r?\n/);assert.ok(head!.split(',').includes('受付日時（JST）'),head);
-  assert.ok(lines.some(l=>/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(l)));
+  // The headers on main before this change, in order; the new column may only follow them.
+  const base=['予約番号','お客様','状態','遅れ','受取日','受取店舗','返却日','返却店舗','金額（税込・円）','支払状況'];
+  for(const [tab,before] of [['all',base],['shortage',[...base,'不足判定']]] as const){
+   const csv=await listCsv(ctx,'/orders',new URLSearchParams([['stores','MOUNTAIN_BASE'],['stores','ONSEN_BASE'],['tab',tab],['format','csv']]),'ja');
+   const [head,...lines]=csv.body.replace(/^\uFEFF/,'').trim().split(/\r?\n/);
+   assert.deepEqual(head!.split(','),[...before,'受付日時（JST）'],tab);
+   for(const l of lines)assert.match(l,/,\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,tab+' row ends with the JST booking time');
+   if(tab==='all'){const exact=lines.find(l=>l.startsWith(touched.booking.id.slice(0,8).toUpperCase()+','))!;
+    const jst=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(row.createdAt));
+    assert.ok(exact.endsWith(','+jst),exact+' vs '+jst);}
+  }
+ });
+
+ await check('bookings on the stop screen need BOOKING_VIEW: explicit false gets none (and is told so), allowed gets them, a permission removed during the read refuses the response (PR74-AUTH-01)',async()=>{
+  await admin.set(randomUUID(),{stores:['MOUNTAIN_BASE'],from:'2035-01-20',to:'2035-01-20',stop:true,reason:'SYNTHETIC closure again'});
+  const make=async(email:string,booking:boolean)=>{await writeAccount(x.roles.authPool,x.bp,undefined,{email,password:x.password,displayName:'SYNTHETIC '+email.split('@')[0],active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions:{INVENTORY_VIEW:true,BOOKING_VIEW:booking}});return x.login(email);};
+  const denied=await make('sales-stop-nobooking@example.invalid',false),allowed=await make('sales-stop-booking@example.invalid',true);
+  const v=await new SalesStopService(new OperationsContext(ops!.operationsPool,x.roles.authPool,denied.identity)).view({from:'2035-01-15',to:'2035-01-31'});
+  assert.equal(v.bookingView,false);assert.equal(v.affected,null);assert.equal(v.affectedTotal,null);assert.ok(v.stops.some(st=>st.day==='2035-01-20'),'stops are still shown');
+  const w=await new SalesStopService(new OperationsContext(ops!.operationsPool,x.roles.authPool,allowed.identity)).view({from:'2035-01-15',to:'2035-01-31'});
+  assert.equal(w.bookingView,true);assert.ok(w.affected!.some(a=>a.id===touched.booking.id));
+  // Real HTTP route: the denied account's JSON carries no booking or customer field at all.
+  const handler=operationsHandler(h=>resolveStaff(x.auth,x.roles.authPool,h),id=>new OperationsContext(ops!.operationsPool,x.roles.authPool,id),x.origin);
+  const get=(cookie:string)=>handler(new Request(x.origin+'/api/operations/sales-stops?from=2035-01-15&to=2035-01-31',{headers:{cookie}}));
+  const r1=await get(denied.cookie);assert.equal(r1.status,200);const t1=await r1.text();
+  assert.equal(JSON.parse(t1).affected,null);for(const leak of [touched.booking.id,'@example.invalid','customer','email'])assert.ok(!t1.includes(leak),'no '+leak+' in '+t1.slice(0,300));
+  const r2=await get(allowed.cookie);assert.equal(r2.status,200);assert.ok((await r2.text()).includes(touched.booking.id));
+  // BOOKING_VIEW removed after the snapshot read but before the response is released: refused, not returned.
+  const id=(await x.db.pool.query('SELECT id FROM auth_user WHERE email=$1',['sales-stop-booking@example.invalid'])).rows[0].id as string;
+  const ctx=new OperationsContext(ops!.operationsPool,x.roles.authPool,allowed.identity),read=ctx.snapshot.bind(ctx);
+  ctx.snapshot=(async(...args:Parameters<typeof read>)=>{const out=await read(...args);
+   const revision=(await x.db.pool.query('SELECT revision FROM staff_members WHERE id=$1',[id])).rows[0].revision as number;
+   await writeAccount(x.roles.authPool,x.bp,id,{expectedRevision:revision,active:true,role:'STAFF',scope:'ASSIGNED',displayName:'SYNTHETIC narrowed',storeIds:['MOUNTAIN_BASE'],permissions:{INVENTORY_VIEW:true,BOOKING_VIEW:false}});
+   return out;}) as typeof ctx.snapshot;
+  await assert.rejects(new SalesStopService(ctx).view({from:'2035-01-15',to:'2035-01-31'}),(e:{code?:string})=>['FORBIDDEN','AUTHORIZATION_CHANGED'].includes(e.code??''));
+ });
+
+ await check('the database refuses a guest hold on a stopped day whatever the application build does; staff holds and same-period updates are not refused (PR74-ROLLBACK-01)',async()=>{
+  // A build that predates 0062 never asks for stopped days and writes the hold row directly, exactly as below. Each attempt runs
+  // in its own rolled-back transaction on the owner connection, so nothing is kept.
+  const c=await x.db.pool.connect();
+  const attempt=async(owner:string,day:string,pickup='MOUNTAIN_BASE',ret='MOUNTAIN_BASE',after?:(id:string)=>Promise<void>)=>{
+   await c.query('BEGIN');try{const reservation=randomUUID(),id=randomUUID();await c.query("SELECT set_config('zao.actor',$1,true)",[owner]);
+    await c.query('INSERT INTO inventory_reservations VALUES($1,$2)',[reservation,owner]);
+    await c.query(`INSERT INTO inventory_holds(id,reservation_id,owner_id,pickup_store,return_store,conditions,starts_at,due_at,occupancy_start,occupancy_end,expires_at,state)
+     VALUES($1,$2,$3,$4,$5,$6,$7::date+time '08:30',$7::date+time '17:00',$7::date,$7::date,$7::date+interval '1 day','ACTIVE')`,
+     [id,reservation,owner,pickup,ret,{period:{startDate:day,endDate:day}},day]);
+    await after?.(id);
+   }finally{await c.query('ROLLBACK');}
+  };
+  try{
+   await assert.rejects(attempt(guest.subject,'2035-01-20'),(e:{code?:string})=>e.code==='P0062','guest hold on the stopped day');
+   await assert.rejects(attempt(guest.subject,'2035-01-19','ONSEN_BASE','MOUNTAIN_BASE',async id=>{
+    await c.query("UPDATE inventory_holds SET conditions=jsonb_set(conditions,'{period,endDate}','\"2035-01-20\"') WHERE id=$1",[id]);}),(e:{code?:string})=>e.code==='P0062','a guest hold moved onto the stopped day');
+   await attempt(guest.subject,'2035-01-19','MOUNTAIN_BASE','MOUNTAIN_BASE',async id=>{await c.query("UPDATE inventory_holds SET payment_state='PENDING' WHERE id=$1",[id]);});
+   await attempt(x.actor,'2035-01-20');// staff-owned: allowed (the staff screen warns instead)
+   // After the stop is released, the same guest hold is accepted.
+   await admin.set(randomUUID(),{stores:['MOUNTAIN_BASE'],from:'2035-01-20',to:'2035-01-20',stop:false,reason:'SYNTHETIC reopen'});
+   await attempt(guest.subject,'2035-01-20');
+   await admin.set(randomUUID(),{stores:['MOUNTAIN_BASE'],from:'2035-01-20',to:'2035-01-20',stop:true,reason:'SYNTHETIC closure again'});
+  }finally{c.release();}
+  assert.equal((await x.db.pool.query('SELECT count(*)::int n FROM inventory_holds WHERE owner_id=$1',[guest.subject])).rows[0].n,0);
+ });
+
+ await check('501 open bookings on one stopped day: the screen reports the total and every one is reachable page by page (PR74-UI-02)',async()=>{
+  // Synthetic only: clone the touched booking 501 times on the owner connection with constraint triggers off for this
+  // transaction (the clones point at no hold, so the current period comes from the booking itself).
+  const c=await x.db.pool.connect();try{await c.query('BEGIN');await c.query("SET LOCAL session_replication_role=replica");
+   await c.query(`INSERT INTO rental_bookings SELECT (jsonb_populate_record(NULL::rental_bookings,to_jsonb(r)||jsonb_build_object('id',gen_random_uuid(),'request_key',gen_random_uuid(),
+    'hold_id',gen_random_uuid(),'quote_id',gen_random_uuid(),'created_at',r.created_at+make_interval(secs=>g)))).* FROM rental_bookings r,generate_series(1,501) g WHERE r.id=$1`,[touched.booking.id]);
+   await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  const first=await admin.view({from:'2035-01-20',to:'2035-01-20'});
+  assert.ok(first.affectedTotal!>=502,String(first.affectedTotal));assert.equal(first.affected!.length,AFFECTED_PAGE_SIZE);
+  const seen=new Set<string>();const pages=Math.ceil(first.affectedTotal!/AFFECTED_PAGE_SIZE);
+  for(let n=1;n<=pages;n++){const v=n===1?first:await admin.view({from:'2035-01-20',to:'2035-01-20',page:String(n)});assert.equal(v.affectedPage,n);assert.deepEqual(v.stores,['MOUNTAIN_BASE','ONSEN_BASE']);
+   for(const a of v.affected!){assert.ok(!seen.has(a.id),'no row twice');seen.add(a.id);assert.deepEqual(a.stoppedDays,['2035-01-20']);}}
+  assert.equal(seen.size,first.affectedTotal,'every affected booking reached, the last one included');
+  assert.equal((await admin.view({from:'2035-01-20',to:'2035-01-20',page:String(pages+1)})).affected!.length,0);
+  for(const bad of ['0','-1','1.5','x','10001'])await assert.rejects(admin.view({from:'2035-01-20',to:'2035-01-20',page:bad}),code('INVALID_INPUT'),bad);
+  // An Onsen-only staff member pages the same range and never sees a Mountain booking.
+  const email='sales-stop-onsen@example.invalid';
+  await writeAccount(x.roles.authPool,x.bp,undefined,{email,password:x.password,displayName:'SYNTHETIC Onsen',active:true,role:'STAFF',scope:'ASSIGNED',storeIds:['ONSEN_BASE'],permissions:{INVENTORY_VIEW:true,BOOKING_VIEW:true}});
+  const onsen=await new SalesStopService(new OperationsContext(ops!.operationsPool,x.roles.authPool,(await x.login(email)).identity)).view({from:'2035-01-20',to:'2035-01-20',page:'3'});
+  assert.deepEqual(onsen.stores,['ONSEN_BASE']);assert.equal(onsen.affectedTotal,0);assert.deepEqual(onsen.affected,[]);
  });
  console.log(`Sales stop real PostgreSQL ${count} passed; synthetic data only, no provider or payment.`);
 }catch(e){failed=true;console.error('SALES_STOP_PG_FAILED '+stage+' '+String((e as {code?:string}).code??(e as Error).message));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').slice(0,6).join('\n'));}

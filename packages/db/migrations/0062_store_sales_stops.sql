@@ -8,6 +8,11 @@
 --   history; neither table accepts UPDATE, and the history accepts no DELETE.
 -- * store_sales_stopped_days() exposes only station + day (no reason, no actor) so the public booking page can show the
 --   stopped days; it is the only object PUBLIC may execute.
+-- * Defence in depth that does not depend on the application version (PR74-ROLLBACK-01): a BEFORE trigger on inventory_holds
+--   refuses a GUEST-owned ACTIVE hold whose period or stations touch a stopped day (SQLSTATE P0062). It fires on INSERT and on an
+--   UPDATE that changes the period or stations (or reactivates the hold), so an application build that predates 0062 cannot
+--   take a public booking on a stopped day either. STAFF-owned holds are never refused (staff continue after the warning), and
+--   updates that keep the same period and stations (payment state, expiry, allocation) are not affected.
 CREATE TABLE store_sales_stops(
  store_id text NOT NULL REFERENCES ledger_stores(id),
  day date NOT NULL,
@@ -77,3 +82,23 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp A
 $$;
 REVOKE ALL ON FUNCTION store_sales_stopped_days(text[],date,date) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION store_sales_stopped_days(text[],date,date) TO PUBLIC;
+-- Guest holds on stopped days are refused by the database as well as by the application (see header).
+CREATE FUNCTION store_sales_stop_hold_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+DECLARE first_day date; last_day date;
+BEGIN
+ IF NEW.state<>'ACTIVE' THEN RETURN NEW; END IF;
+ IF TG_OP='UPDATE' AND OLD.state='ACTIVE' AND NEW.pickup_store=OLD.pickup_store AND NEW.return_store=OLD.return_store
+  AND NEW.conditions->'period' IS NOT DISTINCT FROM OLD.conditions->'period' AND NEW.occupancy_start=OLD.occupancy_start AND NEW.occupancy_end=OLD.occupancy_end THEN
+  RETURN NEW;
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM booking_actors a WHERE a.id=NEW.owner_id AND a.kind='GUEST') THEN RETURN NEW; END IF;
+ -- The rental period, exactly as the application judges it (HoldService / assertNotSalesStopped).
+ first_day:=coalesce((NEW.conditions->'period'->>'startDate')::date,NEW.occupancy_start);
+ last_day:=coalesce((NEW.conditions->'period'->>'endDate')::date,NEW.occupancy_end);
+ IF EXISTS(SELECT 1 FROM store_sales_stops x WHERE x.store_id IN (NEW.pickup_store,NEW.return_store) AND x.day BETWEEN first_day AND last_day) THEN
+  RAISE EXCEPTION 'STORE_SALES_STOPPED' USING ERRCODE='P0062';
+ END IF;
+ RETURN NEW;
+END$$;
+REVOKE ALL ON FUNCTION store_sales_stop_hold_guard() FROM PUBLIC;
+CREATE TRIGGER store_sales_stop_hold_guard BEFORE INSERT OR UPDATE ON inventory_holds FOR EACH ROW EXECUTE FUNCTION store_sales_stop_hold_guard();

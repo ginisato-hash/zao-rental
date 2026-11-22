@@ -46,6 +46,8 @@ export class HoldService {
   // Coded auth/permission failures and unrelated errors must retain their separate fail-closed result.
   const uncodedTimeout=e instanceof Error&&code===undefined&&/\b(?:timeout|timed out)\b/i.test(e.message);
   if(['55P03','57014','40P01','40001'].includes(code??'')||uncodedTimeout)throw new HoldError('INDETERMINATE',503);
+  // 0062 database guard: a guest hold on a stopped day (a stop set between the application check and the write).
+  if(code==='P0062')throw new HoldError('SALES_STOPPED',409);
   if(['23505','23514','23503'].includes(code??''))throw new HoldError('CONFLICT',409);
   throw new HoldError('HOLD_OPERATION_FAILED',500);
  }

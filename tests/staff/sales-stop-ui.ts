@@ -51,6 +51,32 @@ try{
   await page.screenshot({path:shots+'/stop-screen-ja-1440.png',fullPage:true});
  });
 
+ await check('a MANAGER assigned only to Mountain sees only Mountain, stops and releases it from the screen; without BOOKING_VIEW the bookings section says so (PR74-UI-01, PR74-AUTH-01)',async()=>{
+  const login=async(email:string,permissions:Record<string,boolean>,role:'MANAGER'|'STAFF')=>{
+   await writeAccount(staffApp!.roles.authPool,rootPrincipal,undefined,{active:true,role,password,email,displayName:'SYNTHETIC '+role,scope:'ASSIGNED',storeIds:['MOUNTAIN_BASE'],permissions});
+   const ctx=await browser.newContext({baseURL:origin,viewport:{width:1440,height:900}}),p=await ctx.newPage();
+   await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);
+   await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>!u.pathname.startsWith('/staff/login'),{timeout:60000});return {ctx,p};
+  };
+  const {ctx,p}=await login('stop-manager@example.invalid',{INVENTORY_VIEW:true,INVENTORY_EDIT:true,BOOKING_VIEW:true},'MANAGER');
+  await p.goto('/staff/sales-stops');await expect(p.getByRole('button',{name:'売り止めにする',exact:true})).toBeVisible({timeout:30000});
+  await expect(p.getByRole('checkbox',{name:'Mountain Station'})).toBeChecked();await expect(p.getByRole('checkbox',{name:'Onsen Station'})).toHaveCount(0);
+  await p.getByLabel('開始日').first().fill('2035-07-01');await p.getByLabel('終了日').first().fill('2035-07-01');await p.getByLabel('理由（スタッフのみ表示）').fill('SYNTHETIC manager closure');
+  for(const [button,stop] of [['売り止めにする',true],['売り止めを解除',false]] as const){
+   const dialogs:string[]=[];p.once('dialog',d=>{dialogs.push(d.message());void d.accept();});
+   const res=p.waitForResponse(r=>new URL(r.url()).pathname==='/api/operations/sales-stops'&&r.request().method()==='POST');
+   await p.getByRole('button',{name:button,exact:true}).click();const answer=await res;assert.equal(answer.status(),200,await answer.text());
+   assert.deepEqual(JSON.parse(answer.request().postData()!).input.stores,['MOUNTAIN_BASE'],'only the assigned station is sent');
+   assert.match(dialogs[0]??'',/Mountain Station/);assert.doesNotMatch(dialogs[0]??'',/Onsen/);
+   await expect(p.getByRole('status').filter({hasText:'1件の日を変更しました。'})).toBeVisible();
+   assert.equal(Number((await db.pool.query("SELECT count(*)::int n FROM store_sales_stops WHERE day='2035-07-01'")).rows[0].n),stop?1:0);
+  }
+  await ctx.close();
+  const viewer=await login('stop-nobooking@example.invalid',{INVENTORY_VIEW:true,BOOKING_VIEW:false},'STAFF');
+  await viewer.p.goto('/staff/sales-stops');await expect(viewer.p.getByText('予約の表示には予約閲覧の権限が必要です',{exact:false})).toBeVisible({timeout:30000});
+  await expect(viewer.p.getByText('売り止め日にかかっている予約はありません。')).toHaveCount(0);await viewer.ctx.close();
+ });
+
  await check('English and 390 px: same screen, no horizontal scroll',async()=>{
   const small=await browser.newContext({baseURL:origin,viewport:{width:390,height:844},storageState:await context.storageState()});const p=await small.newPage();
   await small.addCookies([{name:'zao_staff_locale',value:'en',url:origin}]);

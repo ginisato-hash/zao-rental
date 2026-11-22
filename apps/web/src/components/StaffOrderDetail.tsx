@@ -9,7 +9,7 @@ import {statusLabel,statusTone,paymentLabel,fmtDate,fmtYen,pickupTime,returnTime
 import './staff-orders.css';
 
 type Order={id:string;ref:string;customer:string|null;email:string|null;state:string;status:string;paymentStatus:string|null;pickupStore:string;returnStore:string;startDate:string;endDate:string;slot:string;
- originalStartDate:string;originalEndDate:string;amended:boolean;people:number;totalJpy:number|null;lateOut:boolean;lateBack:boolean;outItems:number};
+ originalStartDate:string;originalEndDate:string;amended:boolean;people:number;totalJpy:number|null;createdAt:string;lateOut:boolean;lateBack:boolean;outItems:number};
 type Member={key:string;sport?:string;product?:string;items:{family:string}[]};
 type Detail={order:Order;current:{period:{startDate:string;endDate:string;slot:string};members:Member[]};original:{period:{startDate:string;endDate:string}};
  loans:{requirementKey:string;family:string;state:string;checkedOutAt:string;receivedStore:string|null;receivedAt:string|null;inspectedAt:string|null}[];
@@ -59,7 +59,8 @@ export function StaffOrderDetail({locale:serverLocale,stamp,id,can}:{locale:Staf
     <section className="ox-panel sx-card" aria-labelledby="od-schedule"><header className="ox-panel-h"><h2 id="od-schedule">{tx('schedule')}</h2></header>
      <dl className="od-dl"><dt>{tx('pickup')}</dt><dd>{fmtDate(locale,o.startDate)} {pickupTime(o.slot)} · {STORE_LABEL[o.pickupStore]??'—'}</dd>
       <dt>{tx('ret')}</dt><dd>{fmtDate(locale,o.endDate)} {returnTime(o.slot)} · {STORE_LABEL[o.returnStore]??'—'}</dd>
-      {o.amended&&<><dt>{tx('amended')}</dt><dd>{fmtDate(locale,o.originalStartDate)} – {fmtDate(locale,o.originalEndDate)}</dd></>}</dl></section>
+      {o.amended&&<><dt>{tx('amended')}</dt><dd>{fmtDate(locale,o.originalStartDate)} – {fmtDate(locale,o.originalEndDate)}</dd></>}
+      <dt>{locale==='en'?'Booked at':'受付日時'}</dt><dd>{when(o.createdAt,locale)}</dd></dl></section>
     <section className="ox-panel sx-card" aria-labelledby="od-pay"><header className="ox-panel-h"><h2 id="od-pay">{tx('payment')}</h2></header>
      <dl className="od-dl"><dt>{tx('total')}</dt><dd>{fmtYen(locale,o.totalJpy)}</dd>
       {data.payments.map((p,n)=><Fragment key={n}><dt>{paymentLabel(locale,p.state)}</dt><dd>{fmtYen(locale,p.amountJpy)} · {when(p.createdAt,locale)}</dd></Fragment>)}</dl></section>

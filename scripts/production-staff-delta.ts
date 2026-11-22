@@ -17,7 +17,8 @@ const NEW_TABLES=['rental_terms_bundles','rental_terms_acceptances','staff_booki
 
 type Entry={id:string;checksum:string;sql:string};
 async function plan(database:string){const p=await bootstrapPlan(database);const e=p.entries as Entry[];
- if(e.length!==61||e[58]?.id!=='0059'||e[59]?.id!=='0060'||e[60]?.id!=='0061')throw Error(refused);return e;}
+ // The plan may carry later migrations (0062+); this delta is always exactly 0059-0061 on a 0001-0058 database.
+ if(e.length<61||e[58]?.id!=='0059'||e[59]?.id!=='0060'||e[60]?.id!=='0061')throw Error(refused);return e.slice(0,61);}
 async function identity(c:PoolClient,database:string,owner:string){
  const id=(await c.query('SELECT current_database() db,current_user role,session_user login,pg_get_userbyid(datdba) owner FROM pg_database WHERE datname=current_database()')).rows[0];
  if(!id||id.db!==database||id.role!==owner||id.login!==owner||id.owner!==owner)throw Error(refused);

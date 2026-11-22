@@ -138,31 +138,103 @@ export async function assertPgRestoreVersion(pgRestorePath: string): Promise<str
  * exactly the `pg_attver=<digits>` item from such an `ALTER TABLE ONLY … ALTER COLUMN … SET (…);` statement (the whole statement when it
  * was the only item) and fails closed on anything else: `pg_attver` in any other shape (a string, a comment, another statement, a
  * non-numeric value), a psql meta-command other than pg_dump's own `\restrict`/`\unrestrict`, an SQL line over the length bound, or COPY
- * data that never ends. It does not touch the Production database. */
+ * data that never ends. It does not touch the Production database.
+ *
+ * The SQL lexical context is tracked across lines (single-quoted and E'' strings, quoted identifiers, dollar quotes, nested block comments,
+ * line comments, statement boundaries), so a line that merely LOOKS like the column-option statement is never edited: removal requires the
+ * line to start a new top-level statement outside any string/comment, to end that one statement with its own top-level `;`, and every removed
+ * item to be top-level code. A look-alike inside a function body, multi-line string or comment fails closed. A psql meta-command or COPY start
+ * is recognised only at top level, and the SQL must end at top level. */
 const COPY_START = /^COPY .+ FROM stdin;$/;
 const ATTVER_STATEMENT = /^(ALTER TABLE ONLY .+ ALTER COLUMN .+ SET \()(.+)(\);)$/;
 const ATTVER_ITEM = /^pg_attver=\d{1,12}$/;
 const PG_DUMP_META = /^\\(restrict|unrestrict) [A-Za-z0-9]{1,128}$/;
 export const MAX_SQL_LINE_BYTES = 16 * 1024 * 1024;
 const LF = 0x0a, BACKSLASH = 0x5c, DOT = 0x2e;
+const SQUOTE = 0x27, DQUOTE = 0x22, DOLLAR = 0x24, SLASH = 0x2f, STAR = 0x2a, DASH = 0x2d, SEMI = 0x3b;
+const Lex = {Code: 0, Str: 1, EStr: 2, Ident: 3, Dollar: 4, Block: 5} as const;
+type LexMode = typeof Lex[keyof typeof Lex];
+interface LexState { mode: LexMode; tag: Buffer | null; depth: number; boundary: boolean }
+const isIdentChar = (b: number | undefined) => b !== undefined && (b >= 0x80 || (b >= 0x30 && b <= 0x39) || (b >= 0x41 && b <= 0x5a) || (b >= 0x61 && b <= 0x7a) || b === 0x5f || b === DOLLAR);
+const isTagStart = (b: number | undefined) => b !== undefined && (b >= 0x80 || (b >= 0x41 && b <= 0x5a) || (b >= 0x61 && b <= 0x7a) || b === 0x5f);
+const isBlank = (b: number) => b === 0x20 || b === 0x09 || b === 0x0d || b === 0x0c;
+/** Advances `st` over one SQL line (no LF). When `code` is given, code[i] = 1 marks each byte that is top-level code (outside strings,
+ * identifiers, dollar quotes and comments), and the return value counts top-level `;`. Delimiters are ASCII, so UTF-8 multibyte text is safe. */
+function lexSqlLine(line: Buffer, st: LexState, code?: Uint8Array): number {
+  let i = 0, semis = 0; const n = line.length;
+  while (i < n) {
+    const b = line[i]!;
+    switch (st.mode) {
+      case Lex.Code:
+        if (b === DASH && line[i + 1] === DASH) return semis; // line comment: rest of the line
+        if (b === SLASH && line[i + 1] === STAR) { st.mode = Lex.Block; st.depth = 1; i += 2; continue; }
+        if (code) code[i] = 1;
+        if (b === SQUOTE) { st.mode = (i > 0 && (line[i - 1] === 0x45 || line[i - 1] === 0x65) && !isIdentChar(line[i - 2])) ? Lex.EStr : Lex.Str; st.boundary = false; i++; continue; }
+        if (b === DQUOTE) { st.mode = Lex.Ident; st.boundary = false; i++; continue; }
+        if (b === DOLLAR && !isIdentChar(line[i - 1])) {
+          let j = i + 1;
+          if (isTagStart(line[j])) { j++; while (j < n && isIdentChar(line[j]) && line[j] !== DOLLAR) j++; }
+          if (line[j] === DOLLAR) { st.tag = Buffer.from(line.subarray(i, j + 1)); st.mode = Lex.Dollar; st.boundary = false; i = j + 1; continue; }
+        }
+        if (b === SEMI) { st.boundary = true; semis++; } else if (!isBlank(b)) st.boundary = false;
+        i++; continue;
+      case Lex.Str:
+        if (b === SQUOTE) { if (line[i + 1] === SQUOTE) { i += 2; continue; } st.mode = Lex.Code; if (code) code[i] = 1; }
+        i++; continue;
+      case Lex.EStr:
+        if (b === BACKSLASH) { i += 2; continue; }
+        if (b === SQUOTE) { if (line[i + 1] === SQUOTE) { i += 2; continue; } st.mode = Lex.Code; if (code) code[i] = 1; }
+        i++; continue;
+      case Lex.Ident:
+        if (b === DQUOTE) { if (line[i + 1] === DQUOTE) { i += 2; continue; } st.mode = Lex.Code; if (code) code[i] = 1; }
+        i++; continue;
+      case Lex.Dollar:
+        if (b === DOLLAR && line.subarray(i, i + st.tag!.length).equals(st.tag!)) { st.mode = Lex.Code; i += st.tag!.length; st.tag = null; continue; }
+        i++; continue;
+      case Lex.Block:
+        if (b === SLASH && line[i + 1] === STAR) { st.depth++; i += 2; continue; }
+        if (b === STAR && line[i + 1] === SLASH) { st.depth--; i += 2; if (st.depth === 0) st.mode = Lex.Code; continue; }
+        i++; continue;
+    }
+  }
+  return semis;
+}
 export function neonAttributeVersionFilter(): {stream: Transform; removed: () => number} {
   let removed = 0, inCopy = false, pending: Buffer[] = [], pendingBytes = 0;
+  const lex: LexState = {mode: Lex.Code, tag: null, depth: 0, boundary: true};
   // COPY data: only the start of the current line matters (the `\.` terminator); the bytes themselves are forwarded immediately.
   let copyLineBytes = 0, copyHead0 = -1, copyHead1 = -1;
   const sqlLine = (line: Buffer): Buffer | null => {
-    if (line.length && line[0] === BACKSLASH) {
+    const topLevel = lex.mode === Lex.Code, atStatementStart = topLevel && lex.boundary;
+    if (topLevel && line.length && line[0] === BACKSLASH) {
       if (!PG_DUMP_META.test(line.toString('latin1'))) throw new Error('RESTORE_DUMP_UNSUPPORTED_META_COMMAND');
       return line;
     }
-    if (line.length > 5 && line.subarray(0, 5).toString('latin1') === 'COPY ' && COPY_START.test(line.toString('utf8'))) { inCopy = true; copyLineBytes = 0; return line; }
-    if (line.indexOf('pg_attver') < 0) return line;
+    if (atStatementStart && line.length > 5 && line.subarray(0, 5).toString('latin1') === 'COPY ' && COPY_START.test(line.toString('utf8'))) {
+      lexSqlLine(line, lex); inCopy = true; copyLineBytes = 0; return line;
+    }
+    if (atStatementStart && line.toString('latin1') === 'SET standard_conforming_strings = off;') throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
+    if (line.indexOf('pg_attver') < 0) { lexSqlLine(line, lex); return line; }
     const text = line.toString('utf8');
     if (!Buffer.from(text, 'utf8').equals(line)) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
     const m = ATTVER_STATEMENT.exec(text);
-    if (!m) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
+    // A look-alike inside a string, dollar-quoted body or comment, or one that does not start a new statement, is never edited.
+    if (!m || !atStatementStart) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
+    const code = new Uint8Array(line.length), after: LexState = {...lex};
+    const semis = lexSqlLine(line, after, code);
+    // Exactly one statement, ended by its own top-level `;` as the last byte, with the option list delimiters in top-level code.
+    const open = Buffer.byteLength(m[1]!, 'utf8') - 1;
+    if (after.mode !== Lex.Code || !after.boundary || semis !== 1 || code[line.length - 1] !== 1 || code[line.length - 2] !== 1 || code[open] !== 1)
+      throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
     const items = m[2]!.split(', ');
-    const kept = items.filter(o => !ATTVER_ITEM.test(o));
+    const kept: string[] = [];
+    let offset = open + 1;
+    for (const item of items) {
+      if (ATTVER_ITEM.test(item)) { if (code[offset] !== 1) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION'); } else kept.push(item);
+      offset += Buffer.byteLength(item, 'utf8') + 2;
+    }
     if (kept.length === items.length || kept.some(o => o.includes('pg_attver'))) throw new Error('RESTORE_DUMP_UNSUPPORTED_OPTION');
+    Object.assign(lex, after);
     removed += items.length - kept.length;
     return kept.length ? Buffer.from(m[1] + kept.join(', ') + m[3], 'utf8') : null;
   };
@@ -200,6 +272,7 @@ export function neonAttributeVersionFilter(): {stream: Transform; removed: () =>
       try {
         if (inCopy) throw new Error('RESTORE_DUMP_TRUNCATED');
         if (pending.length) { const out = sqlLine(Buffer.concat(pending)); pending = []; if (out) this.push(out); }
+        if (inCopy || lex.mode !== Lex.Code) throw new Error('RESTORE_DUMP_TRUNCATED');
         done();
       } catch (error) { done(error as Error); }
     },

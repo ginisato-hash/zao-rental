@@ -226,6 +226,44 @@ try {
     await rejects(() => filterBytes([Buffer.from('COPY public.t (a) FROM stdin;\n1\n2\n')]), 'RESTORE_DUMP_TRUNCATED');
   });
 
+  await check('streaming filter tracks SQL context: a pg_attver look-alike inside a function body, string or comment is never edited (fails closed), at any chunk boundary', async () => {
+    const attver = 'ALTER TABLE ONLY public.t ALTER COLUMN x SET (pg_attver=12);';
+    const lookAlikes = [
+      // PR75-RESTORE-CONTEXT-01 reproduction: the line is the content of a multi-line string inside a dollar-quoted function body.
+      ['CREATE FUNCTION public.probe() RETURNS text LANGUAGE sql AS $function$', " SELECT '", attver, "';", '$function$;'],
+      ['/* a block comment', attver, '*/'],
+      ['/* nested /* comment */ still inside', attver, '*/'],
+      ['CREATE FUNCTION public.p() RETURNS void LANGUAGE plpgsql AS $_$', attver, '$_$;'],
+      ["SELECT 'one string", attver, "';"],
+      ["SELECT E'escaped \\' quote", attver, "';"],
+      ['SELECT 1 AS "multi', attver, '";'],
+      ['SELECT 1', attver], // not the start of a new statement
+    ];
+    for (const lines of lookAlikes) {
+      const input = Buffer.from(['SELECT 0;', ...lines, 'SELECT 2;', ''].join('\n'), 'utf8');
+      for (const size of [1, 3, 7, input.length]) { const chunks: Buffer[] = []; for (let i = 0; i < input.length; i += size) chunks.push(input.subarray(i, i + size));
+        await rejects(() => filterBytes(chunks), 'RESTORE_DUMP_UNSUPPORTED_OPTION'); }
+    }
+    for (const bad of ["ALTER TABLE ONLY public.t ALTER COLUMN a SET (x='a, pg_attver=1, b');", // the item is inside a string literal
+      'ALTER TABLE ONLY public.a ALTER COLUMN b SET (n_distinct=1); ALTER TABLE ONLY public.c ALTER COLUMN d SET (pg_attver=1);', // two statements
+      'ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=1); -- trailing comment', 'SET standard_conforming_strings = off;'])
+      await rejects(() => filterBytes([Buffer.from('SELECT 0;\n' + bad + '\nSELECT 2;\n')]), 'RESTORE_DUMP_UNSUPPORTED_OPTION');
+    // SQL that ends inside an open string, dollar quote or comment is not a complete dump.
+    for (const open of ["SELECT 'never closed\n", 'SELECT $q$ body\n', '/* open comment\n'])
+      await rejects(() => filterBytes([Buffer.from('SELECT 0;\n' + open)]), 'RESTORE_DUMP_TRUNCATED');
+    // Contexts that open and close across lines (and chunk boundaries) return to top level, after which a real option is still removed.
+    const body = [
+      "-- it's a comment with a quote", '/* block /* nested */ comment', "spanning ' lines */",
+      'CREATE FUNCTION public.f() RETURNS text LANGUAGE plpgsql AS $function$', 'BEGIN', "  RETURN 'a;b ''q'' $x$ \\restrict', E'\\'';",
+      '\\not a meta-command inside the body', 'COPY public.t (a) FROM stdin;', 'END', '$function$;',
+      'CREATE TABLE public."we""ird;" (x text, "y $1" integer);', 'SELECT $1, a$b$c FROM t;',
+      'ALTER TABLE ONLY public."we""ird;" ALTER COLUMN x SET (pg_attver=12);',
+      'ALTER TABLE ONLY public."we""ird;" ALTER COLUMN "y $1" SET (n_distinct=5, pg_attver=3);',
+      'COPY public."we""ird;" (x, "y $1") FROM stdin;', "it's\t1", '\\.', 'SELECT 1;', ''].join('\n');
+    const expected = body.replace('ALTER TABLE ONLY public."we""ird;" ALTER COLUMN x SET (pg_attver=12);\n', '').replace('SET (n_distinct=5, pg_attver=3)', 'SET (n_distinct=5)');
+    for (const r of await everySplit(Buffer.from(body, 'utf8'))) { assert.equal(r.removed, 2); assert.ok(r.out.equals(Buffer.from(expected, 'utf8')), r.out.toString('utf8')); }
+  });
+
   failedStage = 'r2 adapter';
   await check('R2 adapter issues GetObject only, on the one pinned bucket, and streams to a new file', async () => {
     const sent: unknown[] = [];

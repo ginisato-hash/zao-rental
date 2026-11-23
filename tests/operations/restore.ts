@@ -178,6 +178,43 @@ try{
     assert.equal(Number((await restoredPool.query('SELECT count(*)::int n FROM provisional_capacity_receipts')).rows[0].n),Number((await x.db.pool.query('SELECT count(*)::int n FROM provisional_capacity_receipts')).rows[0].n));
    }finally{await restoredPool.end();}
    assert.deepEqual(await readdir(work),[]);
+   // 5. A Neon-shaped archive (PR74 restore incident): Neon writes its internal per-column `pg_attver=<n>` option back into the table
+   // definitions of the 0059-0061 tables, which community PostgreSQL rejects. Reproduce it byte-exactly: give two such columns the
+   // ordinary option n_distinct=5, dump, then rewrite that 12-byte TOC text to `pg_attver=12` (same length, so the archive stays valid).
+   // A third column keeps n_distinct=-1, and a stop row carries CR LF, `pg_attver=1`, `\.` and multibyte text in its data.
+   const cols=(await x.db.pool.query(`SELECT c.relname t,a.attname c FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid WHERE c.relname IN ('customer_profiles','staff_order_drafts') AND c.relnamespace='public'::regnamespace AND a.attnum>0 AND NOT a.attisdropped ORDER BY c.relname,a.attnum`)).rows as {t:string;c:string}[];
+   const [p1,p2,keep]=[cols.find(r=>r.t==='customer_profiles')!,cols.find(r=>r.t==='staff_order_drafts')!,cols.filter(r=>r.t==='staff_order_drafts')[1]!];
+   const tricky='SYNTHETIC\r\npg_attver=1 \\. 蔵王';
+   try{
+    for(const [r,o] of [[p1,'n_distinct=5'],[p2,'n_distinct=5'],[keep,'n_distinct=-1']] as const)await x.db.pool.query(`ALTER TABLE public.${r.t} ALTER COLUMN "${r.c}" SET (${o})`);
+    await x.db.pool.query("BEGIN;SELECT set_config('zao.actor','synthetic-restore',true);SELECT store_sales_stop_set(ARRAY['MOUNTAIN_BASE'],'2035-12-30','2035-12-30',true,$$"+tricky.replace(/\$/g,'')+"$$);COMMIT");
+    const sourceDump=join(dir,'neon-source.dump'),neonDump=join(dir,'neon.dump'),neonCipher=join(dir,'neon.dump.age');
+    const d=await runTool(join(tools.binDir,'pg_dump'),['-Fc','--no-owner','--no-acl','-f',sourceDump],pgEnv);assert.equal(d.code,0,'pg_dump failed: '+d.stderr);
+    const archive=await readFile(sourceDump),from=Buffer.from('n_distinct=5'),to=Buffer.from('pg_attver=12');let n=0;
+    for(let i=archive.indexOf(from);i>=0;i=archive.indexOf(from,i+from.length)){to.copy(archive,i);n++;}
+    // Written to a new file: under the CI Docker wrapper pg_dump runs as root, so its output is not writable by this process.
+    assert.equal(n,2,'exactly the two TOC column options were rewritten');await rm(sourceDump);await writeFile(neonDump,archive,{mode:0o600});
+    // The previous restore path (pg_restore straight into the database) fails on it, which is the Production failure reproduced.
+    const plainTarget=await newTarget();
+    const directRun=await runTool(pgRestorePath,['--no-owner','--no-acl','--exit-on-error','--single-transaction','--host','127.0.0.1','--port',String(x.db.identity.dbPort),'--username',x.db.identity.user,'--dbname',plainTarget.database,neonDump],{PGPASSWORD:password,PGSSLMODE:'disable'});
+    assert.notEqual(directRun.code,0);assert.match(directRun.stderr,/pg_attver/);
+    // The drill restores it: ciphertext and plaintext hashes are still checked against the ORIGINAL archive bytes, only the option is removed.
+    const neonEnc=await encryptFileToFileStreaming(neonDump,neonCipher,recipient);await rm(neonDump);
+    const neonTarget=await newTarget(),neonResult=await runRestoreDrill(adapters(neonCipher),input(neonTarget,{expected:{sha256:neonEnc.sha256}}));
+    assert.equal(neonResult.status,'DRILL_PASS');assert.equal(neonResult.plaintextSha256,neonEnc.sha256);
+    assert.deepEqual(neonResult.verification.critical,await criticalFingerprint(x.db.pool));
+    const neonPool=new Pool({host:'127.0.0.1',port:neonTarget.port,user:neonTarget.user,password,database:neonTarget.database,max:2});
+    try{
+     for(const table of RESTORE_REQUIRED){const sql=`SELECT to_jsonb(t) v FROM ${table} t ORDER BY to_jsonb(t)::text`;assert.deepEqual((await neonPool.query(sql)).rows,(await x.db.pool.query(sql)).rows,table);}
+     assert.equal((await neonPool.query("SELECT reason FROM store_sales_stops WHERE day='2035-12-30'")).rows[0].reason,tricky.replace(/\$/g,''),'CR LF, pg_attver=1, \\. and multibyte data are restored byte for byte');
+     const opts=async(r:{t:string;c:string})=>(await neonPool.query('SELECT attoptions o FROM pg_attribute WHERE attrelid=$1::regclass AND attname=$2',['public.'+r.t,r.c])).rows[0].o;
+     assert.equal(await opts(p1),null);assert.equal(await opts(p2),null);assert.deepEqual(await opts(keep),['n_distinct=-1'],'other column options are kept');
+    }finally{await neonPool.end();}
+    assert.deepEqual(await readdir(work),[]);
+   }finally{
+    for(const r of [p1,p2,keep])await x.db.pool.query(`ALTER TABLE public.${r.t} ALTER COLUMN "${r.c}" RESET (n_distinct)`);
+    await x.db.pool.query("BEGIN;SELECT set_config('zao.actor','synthetic-restore',true);SELECT store_sales_stop_set(ARRAY['MOUNTAIN_BASE'],'2035-12-30','2035-12-30',false,'SYNTHETIC cleanup');COMMIT");
+   }
    realToolLeg='PASS via '+tools.label;
   }finally{await rm(dir,{recursive:true,force:true});}
  });

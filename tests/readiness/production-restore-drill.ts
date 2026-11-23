@@ -3,7 +3,8 @@ import {randomBytes, createHash} from 'node:crypto';
 import {chmod, copyFile, lstat, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {Readable} from 'node:stream';
+import {Readable, Writable} from 'node:stream';
+import {pipeline} from 'node:stream/promises';
 import {GetObjectCommand, type S3Client} from '@aws-sdk/client-s3';
 import {Pool} from 'pg';
 import * as age from 'age-encryption';
@@ -11,7 +12,7 @@ import {migrate, migrationPlan} from '../../packages/db/src/index';
 import {EXPECTED_PRODUCTION_BUCKET, encryptFileToFileStreaming, fingerprintHost} from '../../scripts/production-backup';
 import {
   DISPOSABLE_DATABASE_PATTERN, assertCustodyConfirmed, assertDisposableTarget, assertEmptyTarget, assertPgRestoreVersion, decryptBackupToFile,
-  loadAgeIdentity, localCiphertextAdapter, r2FetchAdapter, runPgRestore, runRestoreDrill, selectCiphertextSource, verifyRestoredDatabase,
+  loadAgeIdentity, localCiphertextAdapter, r2FetchAdapter, runPgRestore, runRestoreDrill, selectCiphertextSource, neonAttributeVersionFilter, MAX_SQL_LINE_BYTES, verifyRestoredDatabase,
   type CustodyConfirmation, type DrillAdapters, type RestoreTarget,
 } from '../../scripts/production-restore-drill';
 import {expectedPre0054RegistrySha256, validateDrillResult} from '../../scripts/production-restore-evidence';
@@ -123,8 +124,13 @@ try {
   failedStage = 'pg_restore tool';
   await check('pg_restore must be an absolute executable of major 18 and runs with a sanitized environment and no password argument', async () => {
     const tool = join(root, 'tool'); await mkdir(tool);
-    const script = (version: string, exit: number, stderr: string) => `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "pg_restore (PostgreSQL) ${version}"; exit 0; fi\nd=$(dirname "$0")\nprintf '%s\\n' "$@" > "$d/args.txt"\nenv | sort > "$d/env.txt"\n${stderr ? `echo "${stderr}" >&2\n` : ''}exit ${exit}\n`;
+    // pg_restore renders the archive to the --file it is given (no connection); psql (same directory) applies it in one transaction.
+    const SQL = 'SET x = 1;\nCREATE TABLE public.t (a text);\nALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=104009728);\nCOPY public.t (a) FROM stdin;\nALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=1);\n\\.\n';
+    const script = (version: string, exit: number, stderr: string) => `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "pg_restore (PostgreSQL) ${version}"; exit 0; fi\nd=$(dirname "$0")\nprintf '%s\\n' "$@" > "$d/args.txt"\nenv | sort > "$d/env.txt"\nwhile [ $# -gt 1 ]; do if [ "$1" = "--file" ]; then cp "${join(root, 'tool', 'rendered.fixture')}" "$2"; fi; shift; done\n${stderr ? `echo "${stderr}" >&2\n` : ''}exit ${exit}\n`;
+    const psqlScript = (version: string, exit: number, stderr: string) => `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "psql (PostgreSQL) ${version}"; exit 0; fi\nd=$(dirname "$0")\nprintf '%s\\n' "$@" > "$d/psql-args.txt"\nenv | sort > "$d/psql-env.txt"\nwhile [ $# -gt 1 ]; do if [ "$1" = "--file" ]; then cp "$2" "$d/applied.sql"; fi; shift; done\n${stderr ? `echo "${stderr}" >&2\n` : ''}exit ${exit}\n`;
+    await writeFile(join(tool, 'rendered.fixture'), SQL);
     const ok = join(tool, 'pg_restore'); await writeFile(ok, script('18.6', 0, ''), {mode: 0o755});
+    await writeFile(join(tool, 'psql'), psqlScript('18.6', 0, ''), {mode: 0o755});
     assert.match(await assertPgRestoreVersion(ok), /^pg_restore \(PostgreSQL\) 18\.6$/);
     const old = join(tool, 'pg_restore17'); await writeFile(old, script('17.5', 0, ''), {mode: 0o755});
     await rejects(() => assertPgRestoreVersion(old), 'RESTORE_TOOL_VERSION_REJECTED');
@@ -132,19 +138,130 @@ try {
     const noexec = join(tool, 'pg_restore_noexec'); await writeFile(noexec, script('18.6', 0, ''), {mode: 0o644});
     await rejects(() => assertPgRestoreVersion(noexec), 'RESTORE_TOOL_PATH_INVALID');
     const target = loopback('zr_abcdef012345');
+    const work = join(root, 'restore-work'); await mkdir(work, {mode: 0o700});
+    const dump = join(work, 'backup.dump'); await writeFile(dump, 'archive');
     process.env.AWS_SECRET_ACCESS_KEY = 'AMBIENT_SECRET_SHOULD_NOT_LEAK'; process.env.PGPASSWORD = 'AMBIENT_PGPASSWORD_SHOULD_NOT_LEAK';
-    await runPgRestore({pgRestorePath: ok, dumpPath: '/dump/file', target});
+    assert.deepEqual(await runPgRestore({pgRestorePath: ok, dumpPath: dump, target}), {removedNeonOptions: 1});
     delete process.env.AWS_SECRET_ACCESS_KEY; delete process.env.PGPASSWORD;
     const args = (await readFile(join(tool, 'args.txt'), 'utf8')).trim().split('\n'), env = await readFile(join(tool, 'env.txt'), 'utf8');
-    for (const flag of ['--no-owner', '--no-acl', '--exit-on-error', '--single-transaction', '--no-password']) assert.ok(args.includes(flag), flag);
-    assert.equal(args[args.indexOf('--dbname') + 1], target.database); assert.equal(args.at(-1), '/dump/file');
-    assert.ok(!args.join(' ').includes(target.password), 'password never on the command line');
-    assert.ok(env.includes('PGPASSWORD=' + target.password) && env.includes('PGSSLMODE=disable'));
-    assert.ok(!env.includes('AMBIENT_'), 'ambient secrets are not inherited');
-    const failing = join(tool, 'pg_restore_fail'); await writeFile(failing, script('18.6', 3, 'connection failed password=' + target.password), {mode: 0o755});
-    await assert.rejects(() => runPgRestore({pgRestorePath: failing, dumpPath: '/dump/file', target}), (e: Error) => {
+    for (const flag of ['--no-owner', '--no-acl', '--exit-on-error']) assert.ok(args.includes(flag), flag);
+    assert.ok(!args.includes('--dbname') && !args.includes('--host'), 'pg_restore only renders; it never connects');
+    assert.equal(args.at(-1), dump);
+    assert.ok(!env.includes('PGPASSWORD') && !env.includes('AMBIENT_'), 'the rendering step has no password and no ambient secret');
+    const pargs = (await readFile(join(tool, 'psql-args.txt'), 'utf8')).trim().split('\n'), penv = await readFile(join(tool, 'psql-env.txt'), 'utf8');
+    for (const flag of ['--no-psqlrc', '--single-transaction', '--no-password']) assert.ok(pargs.includes(flag), flag);
+    for (const v of ['ON_ERROR_STOP=1', 'VERBOSITY=sqlstate', 'SHOW_CONTEXT=never']) assert.ok(pargs.some((x, i) => x === v && pargs[i - 1] === '--set'), v);
+    assert.equal(pargs[pargs.indexOf('--output') + 1], '/dev/null', 'query results are discarded, never collected');
+    assert.equal(pargs[pargs.indexOf('--dbname') + 1], target.database);
+    assert.ok(!pargs.join(' ').includes(target.password), 'password never on the command line');
+    assert.ok(penv.includes('PGPASSWORD=' + target.password) && penv.includes('PGSSLMODE=disable'));
+    assert.ok(!penv.includes('AMBIENT_'), 'ambient secrets are not inherited');
+    const applied = await readFile(join(tool, 'applied.sql'), 'utf8');
+    assert.ok(!applied.includes('ALTER COLUMN a SET (pg_attver=104009728)'), 'the Neon-only option is removed from the DDL');
+    assert.ok(applied.includes('ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=1);\n\\.'), 'COPY data is passed through unchanged');
+    assert.deepEqual(await readdir(work), ['backup.dump'], 'rendered SQL never outlives the restore');
+    const failing = join(tool, 'psql_fail_dir'); await mkdir(failing);
+    await writeFile(join(failing, 'pg_restore'), script('18.6', 0, ''), {mode: 0o755});
+    await writeFile(join(failing, 'psql'), psqlScript('18.6', 3, 'connection failed password=' + target.password), {mode: 0o755});
+    await assert.rejects(() => runPgRestore({pgRestorePath: join(failing, 'pg_restore'), dumpPath: dump, target}), (e: Error) => {
       assert.ok(e.message.startsWith('RESTORE_PG_RESTORE_FAILED')); assert.ok(!e.message.includes(target.password), 'failure output is redacted'); return true;
     });
+    assert.deepEqual(await readdir(work), ['backup.dump'], 'rendered SQL is removed after a failure too');
+    const oldPsql = join(tool, 'old_psql_dir'); await mkdir(oldPsql);
+    await writeFile(join(oldPsql, 'pg_restore'), script('18.6', 0, ''), {mode: 0o755});
+    await writeFile(join(oldPsql, 'psql'), psqlScript('17.5', 0, ''), {mode: 0o755});
+    await rejects(() => runPgRestore({pgRestorePath: join(oldPsql, 'pg_restore'), dumpPath: dump, target}), 'RESTORE_TOOL_VERSION_REJECTED');
+    assert.deepEqual(await readdir(work), ['backup.dump'], 'a rejected psql leaves nothing behind');
+    const badRender = join(tool, 'render_fail_dir'); await mkdir(badRender);
+    await writeFile(join(badRender, 'pg_restore'), script('18.6', 1, 'pg_restore: error: unsupported version'), {mode: 0o755});
+    await writeFile(join(badRender, 'psql'), psqlScript('18.6', 0, ''), {mode: 0o755});
+    await rejects(() => runPgRestore({pgRestorePath: join(badRender, 'pg_restore'), dumpPath: dump, target}), 'RESTORE_PG_RESTORE_FAILED');
+    assert.deepEqual(await readdir(work), ['backup.dump'], 'a failed rendering leaves nothing behind');
+  });
+
+  // Runs the streaming filter over the given chunks exactly as the restore does (pipeline into a sink); returns the bytes and the count.
+  async function filterBytes(chunks: Buffer[]): Promise<{out: Buffer; removed: number}> {
+    const f = neonAttributeVersionFilter(), parts: Buffer[] = [];
+    await pipeline(Readable.from(chunks), f.stream, new Writable({write(c: Buffer, _e, done) { parts.push(c); done(); }}));
+    return {out: Buffer.concat(parts), removed: f.removed()};
+  }
+  const everySplit = async (input: Buffer) => { const results = [];
+    for (const size of [1, 2, 3, 7, 64, input.length]) { const chunks: Buffer[] = []; for (let i = 0; i < input.length; i += size) chunks.push(input.subarray(i, i + size)); results.push(await filterBytes(chunks)); }
+    return results; };
+
+  await check('streaming filter: removes only the Neon pg_attver column option, byte-for-byte elsewhere (CR, multibyte, COPY data), at any chunk boundary', async () => {
+    const body = [
+      'SET client_encoding = \'UTF8\';', '\\restrict AbC123', 'CREATE FUNCTION public.f() RETURNS text LANGUAGE sql AS $$SELECT \'蔵王\'\r', '$$;',
+      'CREATE TABLE public."t x" (a text, "b c" integer);',
+      'ALTER TABLE ONLY public."t x" ALTER COLUMN a SET (pg_attver=104009728);',
+      'ALTER TABLE ONLY public."t x" ALTER COLUMN "b c" SET (n_distinct=5, pg_attver=7);',
+      'ALTER TABLE ONLY public."t x" ALTER COLUMN a SET (n_distinct=-1);',
+      'COPY public."t x" (a, "b c") FROM stdin;', 'pg_attver=1\t1', 'ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=1);\t2', '\\\\.\t3', 'x\\.\t4', '\\.',
+      'SELECT 1;', '\\unrestrict AbC123', ''].join('\n');
+    const expected = body.replace('ALTER TABLE ONLY public."t x" ALTER COLUMN a SET (pg_attver=104009728);\n', '').replace('SET (n_distinct=5, pg_attver=7)', 'SET (n_distinct=5)');
+    for (const r of await everySplit(Buffer.from(body, 'utf8'))) { assert.equal(r.removed, 2); assert.ok(r.out.equals(Buffer.from(expected, 'utf8')), r.out.toString('utf8')); }
+    // No pg_attver anywhere (an older dump): the output is the input, byte for byte, also without a final LF.
+    const plain = Buffer.from('CREATE TABLE public.t (a text);\r\nCOPY public.t (a) FROM stdin;\nα\\.\n\\.\nSELECT 1;', 'utf8');
+    for (const r of await everySplit(plain)) { assert.equal(r.removed, 0); assert.ok(r.out.equals(plain)); }
+  });
+
+  await check('streaming filter: COPY data is forwarded as it arrives (no data row is buffered) and its size is not bounded', async () => {
+    const f = neonAttributeVersionFilter(), seen: number[] = [];
+    f.stream.on('data', (c: Buffer) => seen.push(c.length));
+    const write = (b: Buffer) => new Promise<void>(r => f.stream.write(b, () => r()));
+    await write(Buffer.from('COPY public.t (a) FROM stdin;\n'));
+    const row = Buffer.alloc(MAX_SQL_LINE_BYTES + 1024 * 1024, 0x61);
+    for (let i = 0; i < row.length; i += 1 << 20) { const before = seen.reduce((a, b) => a + b, 0); await write(row.subarray(i, i + (1 << 20))); assert.ok(seen.reduce((a, b) => a + b, 0) > before, 'each chunk of the unfinished row is emitted at once'); }
+    await write(Buffer.from('\n\\.\n'));f.stream.end();await new Promise(r => f.stream.on('end', r));
+    assert.equal(seen.reduce((a, b) => a + b, 0), 'COPY public.t (a) FROM stdin;\n'.length + row.length + 4);
+  });
+
+  await check('streaming filter fails closed on any other pg_attver shape, a foreign psql meta-command, an over-long SQL line or unterminated COPY data', async () => {
+    for (const bad of ["SELECT 'pg_attver=1';", '-- pg_attver=1', 'ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=x);', 'ALTER TABLE public.t SET (pg_attver=1);',
+      'ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=1) ;', 'ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=1);\r', 'ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver_x=1);'])
+      await rejects(() => filterBytes([Buffer.from('SELECT 0;\n' + bad + '\nSELECT 2;\n')]), 'RESTORE_DUMP_UNSUPPORTED_OPTION');
+    for (const meta of ['\\! rm -rf /tmp/x', '\\connect other', '\\restrict', '\\copy t from x'])
+      await rejects(() => filterBytes([Buffer.from('SELECT 0;\n' + meta + '\n')]), 'RESTORE_DUMP_UNSUPPORTED_META_COMMAND');
+    await rejects(() => filterBytes([Buffer.alloc(MAX_SQL_LINE_BYTES + 1, 0x61)]), 'RESTORE_DUMP_LINE_TOO_LONG');
+    await rejects(() => filterBytes([Buffer.from('COPY public.t (a) FROM stdin;\n1\n2\n')]), 'RESTORE_DUMP_TRUNCATED');
+  });
+
+  await check('streaming filter tracks SQL context: a pg_attver look-alike inside a function body, string or comment is never edited (fails closed), at any chunk boundary', async () => {
+    const attver = 'ALTER TABLE ONLY public.t ALTER COLUMN x SET (pg_attver=12);';
+    const lookAlikes = [
+      // PR75-RESTORE-CONTEXT-01 reproduction: the line is the content of a multi-line string inside a dollar-quoted function body.
+      ['CREATE FUNCTION public.probe() RETURNS text LANGUAGE sql AS $function$', " SELECT '", attver, "';", '$function$;'],
+      ['/* a block comment', attver, '*/'],
+      ['/* nested /* comment */ still inside', attver, '*/'],
+      ['CREATE FUNCTION public.p() RETURNS void LANGUAGE plpgsql AS $_$', attver, '$_$;'],
+      ["SELECT 'one string", attver, "';"],
+      ["SELECT E'escaped \\' quote", attver, "';"],
+      ['SELECT 1 AS "multi', attver, '";'],
+      ['SELECT 1', attver], // not the start of a new statement
+    ];
+    for (const lines of lookAlikes) {
+      const input = Buffer.from(['SELECT 0;', ...lines, 'SELECT 2;', ''].join('\n'), 'utf8');
+      for (const size of [1, 3, 7, input.length]) { const chunks: Buffer[] = []; for (let i = 0; i < input.length; i += size) chunks.push(input.subarray(i, i + size));
+        await rejects(() => filterBytes(chunks), 'RESTORE_DUMP_UNSUPPORTED_OPTION'); }
+    }
+    for (const bad of ["ALTER TABLE ONLY public.t ALTER COLUMN a SET (x='a, pg_attver=1, b');", // the item is inside a string literal
+      'ALTER TABLE ONLY public.a ALTER COLUMN b SET (n_distinct=1); ALTER TABLE ONLY public.c ALTER COLUMN d SET (pg_attver=1);', // two statements
+      'ALTER TABLE ONLY public.t ALTER COLUMN a SET (pg_attver=1); -- trailing comment', 'SET standard_conforming_strings = off;'])
+      await rejects(() => filterBytes([Buffer.from('SELECT 0;\n' + bad + '\nSELECT 2;\n')]), 'RESTORE_DUMP_UNSUPPORTED_OPTION');
+    // SQL that ends inside an open string, dollar quote or comment is not a complete dump.
+    for (const open of ["SELECT 'never closed\n", 'SELECT $q$ body\n', '/* open comment\n'])
+      await rejects(() => filterBytes([Buffer.from('SELECT 0;\n' + open)]), 'RESTORE_DUMP_TRUNCATED');
+    // Contexts that open and close across lines (and chunk boundaries) return to top level, after which a real option is still removed.
+    const body = [
+      "-- it's a comment with a quote", '/* block /* nested */ comment', "spanning ' lines */",
+      'CREATE FUNCTION public.f() RETURNS text LANGUAGE plpgsql AS $function$', 'BEGIN', "  RETURN 'a;b ''q'' $x$ \\restrict', E'\\'';",
+      '\\not a meta-command inside the body', 'COPY public.t (a) FROM stdin;', 'END', '$function$;',
+      'CREATE TABLE public."we""ird;" (x text, "y $1" integer);', 'SELECT $1, a$b$c FROM t;',
+      'ALTER TABLE ONLY public."we""ird;" ALTER COLUMN x SET (pg_attver=12);',
+      'ALTER TABLE ONLY public."we""ird;" ALTER COLUMN "y $1" SET (n_distinct=5, pg_attver=3);',
+      'COPY public."we""ird;" (x, "y $1") FROM stdin;', "it's\t1", '\\.', 'SELECT 1;', ''].join('\n');
+    const expected = body.replace('ALTER TABLE ONLY public."we""ird;" ALTER COLUMN x SET (pg_attver=12);\n', '').replace('SET (n_distinct=5, pg_attver=3)', 'SET (n_distinct=5)');
+    for (const r of await everySplit(Buffer.from(body, 'utf8'))) { assert.equal(r.removed, 2); assert.ok(r.out.equals(Buffer.from(expected, 'utf8')), r.out.toString('utf8')); }
   });
 
   failedStage = 'r2 adapter';

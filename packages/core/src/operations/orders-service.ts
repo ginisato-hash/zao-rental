@@ -152,7 +152,7 @@ export class OrdersService{
    // Display names for the booked items: every variant id the booking names (equipment and wear) with its model and size. Read-only, ids only
    // from this booking's own conditions, bounded; an id that no longer resolves is simply absent and the screen falls back to the family name.
    const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-   const variantIds=[...new Set((row.cond.members as {items?:{variantIds?:unknown}[]}[]).flatMap(m=>(m.items??[]).flatMap(i=>Array.isArray(i.variantIds)?i.variantIds:[])).filter((x):x is string=>typeof x==='string'&&UUID.test(x)))].slice(0,500);
+   const variantIds=[...new Set((row.cond.members as {items?:{variantIds?:unknown;modelPromise?:{variantId?:unknown}}[]}[]).flatMap(m=>(m.items??[]).flatMap(i=>[...(Array.isArray(i.variantIds)?i.variantIds:[]),i.modelPromise?.variantId])).filter((x):x is string=>typeof x==='string'&&UUID.test(x)))].slice(0,500);
    const variants=variantIds.length?(await c.query(`SELECT v.id,v.family,v.age,v.tier,v.size,m.name model FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[]) ORDER BY v.family,v.size,v.id`,[variantIds])).rows:[];
    return {order:row.v as OrderRow,current:{period:row.cond.period,members:row.cond.members},original:{period:row.original.period},loans,wear,variants,payments,terms:contract.terms,cancellationPolicy:contract.cancellationPolicy};
   });

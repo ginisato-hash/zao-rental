@@ -11,7 +11,8 @@ import './staff-orders.css';
 
 type Order={id:string;ref:string;customer:string|null;email:string|null;state:string;status:string;paymentStatus:string|null;pickupStore:string;returnStore:string;startDate:string;endDate:string;slot:string;
  originalStartDate:string;originalEndDate:string;amended:boolean;people:number;totalJpy:number|null;createdAt:string;lateOut:boolean;lateBack:boolean;outItems:number};
-type Member={key:string;sport?:string;product?:string;age?:string;tier?:string;items:{family:string;variantIds?:string[]}[]};
+type Item={family:string;variantIds?:string[];modelPromise?:{modelId?:string;season?:string;variantId?:string}};
+type Member={key:string;sport?:string;wearSport?:string;product?:string;age?:string;tier?:string;items:Item[]};
 type Variant={id:string;family:string;age:string;tier:string;size:string;model:string};
 type Detail={order:Order;current:{period:{startDate:string;endDate:string;slot:string};members:Member[]};original:{period:{startDate:string;endDate:string}};
  loans:{requirementKey:string;family:string;state:string;checkedOutAt:string;receivedStore:string|null;receivedAt:string|null;inspectedAt:string|null}[];
@@ -27,13 +28,20 @@ const L={
  late:['遅れ','Late'],
 } as const;
 const FAMILY:Record<string,[string,string]>={SKI:['スキー','Ski'],SKI_BOOT:['スキーブーツ','Ski boots'],SNOWBOARD:['スノーボード','Snowboard'],SNOWBOARD_BOOT:['スノーボードブーツ','Snowboard boots'],POLE:['ポール','Poles'],WEAR_JACKET:['ジャケット','Jacket'],WEAR_PANTS:['パンツ','Pants']};
-/** Model and size of the booked item. A booking can name one variant (an exact size) or a group of acceptable ones (the size range is listed); an id that no longer resolves shows nothing. */
-function itemDetail(ids:string[]|undefined,variants:Variant[]|undefined):string{
- const found=(ids??[]).map(id=>variants?.find(v=>v.id===id)).filter((v):v is Variant=>!!v);
- if(!found.length)return '';
- const models=[...new Set(found.map(v=>v.model))],sizes=[...new Set(found.map(v=>v.size))];
- const shown=sizes.length>4?sizes.slice(0,4).join(' / ')+` +${sizes.length-4}`:sizes.join(' / ');
- return [models.length===1?models[0]:'',shown].filter(Boolean).join(' · ');
+/** What the booking's conditions say about an item, never what was physically handed out. Wear names one exact size. Gear names the acceptable
+ * variants: with a model promise the promised model is stated and the sizes are options; without one everything is listed as options (grouped per
+ * model so a size is never attached to the wrong model). An id that no longer resolves shows nothing. */
+function itemDetail(item:Item,variants:Variant[]|undefined,l:StaffLocale):string[]{
+ const en=l==='en',found=(item.variantIds??[]).map(id=>variants?.find(v=>v.id===id)).filter((v):v is Variant=>!!v);
+ const sizeList=(vs:Variant[])=>{const sizes=[...new Set(vs.map(v=>v.size))];return sizes.length>4?sizes.slice(0,4).join(' / ')+` +${sizes.length-4}`:sizes.join(' / ');};
+ if(item.family.startsWith('WEAR_'))return found.length?[`${en?'Booked size':'予約サイズ'}: ${[...new Set(found.map(v=>v.model))].join(' / ')} · ${sizeList(found)}`]:[];
+ if(item.modelPromise){
+  const promised=item.modelPromise.variantId?variants?.find(v=>v.id===item.modelPromise!.variantId):undefined,own=promised?found.filter(v=>v.model===promised.model):found;
+  return [`${en?'Promised model':'確約モデル'}: ${promised?promised.model:'—'}`,...(own.length?[`${en?'Size options':'候補サイズ'}: ${sizeList(own)}`]:[])];
+ }
+ if(!found.length)return [];
+ const groups=[...new Set(found.map(v=>v.model))].map(m=>`${m} ${sizeList(found.filter(v=>v.model===m))}`);
+ return [`${en?'Options':'候補'}: ${groups.join(' ／ ')}`];
 }
 const when=(iso:string,l:StaffLocale)=>new Intl.DateTimeFormat(l==='en'?'en-GB':'ja-JP',{timeZone:'Asia/Tokyo',dateStyle:'medium',timeStyle:'short'}).format(new Date(iso))+' JST';
 
@@ -77,10 +85,10 @@ export function StaffOrderDetail({locale:serverLocale,stamp,id,can}:{locale:Staf
    </div>
    <section className="ox-panel sx-card" style={{marginTop:20}} aria-labelledby="od-items"><header className="ox-panel-h"><h2 id="od-items">{tx('items')}</h2></header>
     <table className="sx-table"><tbody>{data.current.members.flatMap(m=>{
-      const person=`${tx('person')} ${m.key.replace(/\D/g,'')||m.key}`,tags=[m.product,m.age,m.tier].filter((x):x is string=>!!x).map(x=>staffLabel(x,locale)).join(' · ');
+      const person=`${tx('person')} ${m.key.replace(/\D/g,'')||m.key}`,tags=[m.product,m.product==='WEAR_SET'?m.wearSport:undefined,m.age,m.tier].filter((x):x is string=>!!x).map(x=>staffLabel(x,locale)).join(' · ');
       return m.items.map((i,n)=>{const key=m.key+':'+i.family,isWear=i.family.startsWith('WEAR_'),loan=isWear?undefined:data.loans.find(l=>l.requirementKey===key),wl=isWear?data.wear.find(w=>w.requirementKey===key):undefined;
-       const status=isWear?(wl?(wl.quantity-wl.returned>0?`${tx('out')} ${wl.quantity-wl.returned}/${wl.quantity}`:`${tx('received')} ${wl.returned}/${wl.quantity}`):'—'):!loan?tx('notYet'):loan.state==='OUT'?`${tx('out')} · ${when(loan.checkedOutAt,locale)}`:`${tx('received')}${loan.receivedStore?' · '+(STORE_LABEL[loan.receivedStore]??''):''}${loan.inspectedAt?' · '+tx('inspected'):''}`;
-       return <tr key={key}><td>{n===0?<>{person}{tags&&<div className="sx-help">{tags}</div>}</>:null}</td><td>{fam(i.family)}<div className="sx-help">{itemDetail(i.variantIds,data.variants)}</div></td><td>{status}</td></tr>;});})}
+       const status=isWear?(wl?(wl.quantity-wl.returned>0?`${tx('out')} ${wl.quantity-wl.returned}/${wl.quantity}`:`${tx('received')} ${wl.returned}/${wl.quantity}`):tx('notYet')):!loan?tx('notYet'):loan.state==='OUT'?`${tx('out')} · ${when(loan.checkedOutAt,locale)}`:`${tx('received')}${loan.receivedStore?' · '+(STORE_LABEL[loan.receivedStore]??''):''}${loan.inspectedAt?' · '+tx('inspected'):''}`;
+       return <tr key={key}><td>{n===0?<>{person}{tags&&<div className="sx-help">{tags}</div>}</>:null}</td><td>{fam(i.family)}{itemDetail(i,data.variants,locale).map((t,k)=><div key={k} className="sx-help">{t}</div>)}</td><td>{status}</td></tr>;});})}
      {data.wear.filter(w=>!data.current.members.some(m=>m.items.some(i=>m.key+':'+i.family===w.requirementKey))).map(w=><tr key={w.requirementKey}><td colSpan={2}>{tx('wear')}</td><td>{w.quantity-w.returned>0?`${tx('out')} ${w.quantity-w.returned}/${w.quantity}`:`${tx('received')} ${w.returned}/${w.quantity}`}</td></tr>)}</tbody></table></section>
    <section className="ox-panel sx-card" style={{marginTop:20}} aria-labelledby="od-terms"><header className="ox-panel-h"><h2 id="od-terms">{tx('contract')}</h2></header>
     <dl className="od-dl">{data.terms?<><dt>{data.terms.version}</dt><dd>{data.terms.locale.toUpperCase()} · {when(data.terms.acceptedAt,locale)}</dd></>:<dd className="sx-help">{tx('termsNone')}</dd>}

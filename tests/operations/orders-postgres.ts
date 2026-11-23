@@ -115,6 +115,14 @@ try{
   const d=await viewer.detail(out.booking.id);assert.equal(d.order.id,out.booking.id);assert.equal(d.order.status,'INSPECTION_PENDING');
   assert.ok(d.loans.length>0&&d.loans.every(l=>l.state==='RECEIVED'));assert.equal(d.cancellationPolicy?.policyVersion,'ZAO_CANCELLATION_V1');
   assert.equal(d.terms,null,'fixture bookings predate a V2 acceptance');
+  // The booked items are shown with their model and size: every variant id the booking names resolves, through the view-only role, to its
+  // own variant row (family, size, model name), and nothing else is returned (no id outside this booking's conditions).
+  const named=new Set((d.current.members as {items:{variantIds?:string[]}[]}[]).flatMap(m=>m.items.flatMap(i=>i.variantIds??[])));
+  assert.ok(named.size>0,'the fixture booking names at least one variant');
+  assert.deepEqual(new Set(d.variants.map(v=>v.id)),named,'detail resolves exactly the variants the booking names');
+  for(const v of d.variants){assert.ok(v.size.length>0&&v.model.length>0&&['SKI','SNOWBOARD','SKI_BOOT','SNOWBOARD_BOOT','POLE'].includes(v.family)||v.family.startsWith('WEAR_'),'each variant carries model and size');
+   const direct=(await x.db.pool.query('SELECT v.size,m.name model FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=$1',[v.id])).rows[0] as {size:string;model:string};
+   assert.equal(v.size,direct.size);assert.equal(v.model,direct.model);}
   if(store!=='ONSEN_BASE')await assert.rejects(onsen.detail(out.booking.id),{code:'NOT_FOUND'},'another station gets not-found, not a hint that it exists');
   await assert.rejects(viewer.detail('not-a-uuid'),{code:'INVALID_INPUT'});await assert.rejects(viewer.detail(randomUUID()),{code:'NOT_FOUND'});
  });

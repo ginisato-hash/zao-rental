@@ -83,6 +83,13 @@ try{
   const back=await page.getByRole('link',{name:/返却遅れ/}).getAttribute('href');assert.match(back!,/late=back/);assert.match(back!,/direction=back/);
   await page.unroute(/\/api\/operations\/dashboard\?.*range=tomorrow/);
  });
+ await check('order detail: the booked item shows its model and size, not only its family',async()=>{
+  const v=(await db.pool.query('SELECT v.size,m.name model FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=$1',[variants.ski])).rows[0] as {size:string;model:string};
+  await page.goto('/staff/orders/'+confirmedId);await page.getByRole('heading',{name:'#'+confirmedId.slice(0,8).toUpperCase()}).waitFor();
+  const items=page.getByRole('region',{name:'用品'}).or(page.locator('section[aria-labelledby="od-items"]'));
+  const skiRow=items.locator('tr').filter({hasText:'スキー'}).first();await skiRow.waitFor();
+  const text=await skiRow.innerText();assert.ok(text.includes(v.size),'the row shows the booked size: '+text);assert.ok(text.includes(v.model),'the row shows the model name: '+text);
+ });
  await check('order detail: a failing target hides the previous order and its actions',async()=>{
   await page.goto('/staff/orders/'+confirmedId);await page.getByRole('heading',{name:'#'+confirmedId.slice(0,8).toUpperCase()}).waitFor();
   await page.route('**/api/operations/orders/'+pendingId,r=>r.fulfill({status:404,body:'{}',contentType:'application/json'}));

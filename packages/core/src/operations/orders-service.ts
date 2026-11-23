@@ -149,7 +149,12 @@ export class OrdersService{
    const wear=(await c.query(`SELECT w.member_key "memberKey",w.requirement_key "requirementKey",w.quantity,w.returned,w.checked_out_at "checkedOutAt" FROM wear_loans w WHERE w.booking_id=$1 ORDER BY w.requirement_key`,[id])).rows;
    const payments=(await c.query(`SELECT a.state,a.amount_jpy "amountJpy",a.created_at "createdAt" FROM rental_payment_attempts a WHERE a.booking_id=$1 ORDER BY a.created_at`,[id])).rows;
    const contract=(await c.query('SELECT staff_order_contract($1) v',[id])).rows[0].v as {terms:{version:string;locale:string;acceptedAt:string}|null;cancellationPolicy:{policyVersion:string;freeCancellationUntil:string}|null};
-   return {order:row.v as OrderRow,current:{period:row.cond.period,members:row.cond.members},original:{period:row.original.period},loans,wear,payments,terms:contract.terms,cancellationPolicy:contract.cancellationPolicy};
+   // Display names for the booked items: every variant id the booking names (equipment and wear) with its model and size. Read-only, ids only
+   // from this booking's own conditions, bounded; an id that no longer resolves is simply absent and the screen falls back to the family name.
+   const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+   const variantIds=[...new Set((row.cond.members as {items?:{variantIds?:unknown}[]}[]).flatMap(m=>(m.items??[]).flatMap(i=>Array.isArray(i.variantIds)?i.variantIds:[])).filter((x):x is string=>typeof x==='string'&&UUID.test(x)))].slice(0,500);
+   const variants=variantIds.length?(await c.query(`SELECT v.id,v.family,v.age,v.tier,v.size,m.name model FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.id=ANY($1::uuid[]) ORDER BY v.family,v.size,v.id`,[variantIds])).rows:[];
+   return {order:row.v as OrderRow,current:{period:row.cond.period,members:row.cond.members},original:{period:row.original.period},loans,wear,variants,payments,terms:contract.terms,cancellationPolicy:contract.cancellationPolicy};
   });
   await this.ctx.confirmScope('BOOKING_VIEW',disclosed);return detail;
  }

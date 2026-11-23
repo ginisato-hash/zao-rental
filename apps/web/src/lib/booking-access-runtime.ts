@@ -10,7 +10,7 @@ import {publicRuntime} from './public-runtime';
 let pool:Pool|undefined;
 /** Production uses the one verified server composition; local launcher stays isolated. */
 export function bookingAccessRuntime(){
- if(productionRequested()){const r=getProductionRuntime();return r?.public&&r.guest&&r.access?{p:r.public,access:r.access,recovery:r.recovery??undefined,guard:(request:Request)=>r.guest!.security.service.guard(r.guest!.security.peer(request))}:null;}
+ if(productionRequested()){const r=getProductionRuntime();return r?.public&&r.guest&&r.access?{p:r.public,access:r.access,recovery:r.recovery??undefined,guard:(request:Request,options?:{entry?:boolean})=>r.guest!.security.service.guard(r.guest!.security.peer(request),options)}:null;}
  if(process.env.NODE_ENV==='production')return null;
  const p=publicRuntime(),raw=process.env.ZAO_BOOKING_ACCESS_RUNTIME;
  if(!p||!raw)return null;
@@ -19,5 +19,5 @@ export function bookingAccessRuntime(){
  if(!pool){pool=new Pool({...c,max:4});pool.on('error',()=>{});}
  const keys=deriveBookingAccessKeys(p.r.config.authSecret);
  const security=new GuestSecurity(p.guestPool,p.contexts,{version:'notification-local-v1',contextSeconds:3600,absoluteSeconds:86400,recoverySeconds:43200,replaySeconds:600,retentionSeconds:86400,windowSeconds:60,peerRequests:60,globalRequests:300},p.r.config.authSecret);
- return {p,guard:async()=>security.guard(guestPeerKey('127.0.0.1',p.r.config.authSecret)),access:new BookingAccess(pool,keys.accessKey,'development-v1'),recovery:new BookingRecovery(pool,keys.recoveryKey,'development-recovery-v1',undefined,5000,true)};
+ return {p,guard:async(_request:Request,options?:{entry?:boolean})=>security.guard(guestPeerKey('127.0.0.1',p.r.config.authSecret),options),access:new BookingAccess(pool,keys.accessKey,'development-v1'),recovery:new BookingRecovery(pool,keys.recoveryKey,'development-recovery-v1',undefined,5000,true)};
 }

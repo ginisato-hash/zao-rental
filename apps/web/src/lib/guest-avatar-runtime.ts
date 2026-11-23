@@ -14,6 +14,6 @@ export async function guestAvatarBoundary(request:Request):Promise<GuestAvatarBo
  if(process.env.NODE_ENV==='production')return null;
  const p=publicRuntime(),visuals=avatarRuntime();if(!p||!visuals)return null;
  const security=avatarGuestSecurity(p.guestPool,p.contexts,p.r.config.authSecret);
- return {guard:req=>{assertLocalAvatarOrigin(req,p.r.config.origin);return security.guard(guestPeerKey('127.0.0.1',p.r.config.authSecret));},load:(headers,scope)=>loadGuestAvatar(p.contexts,p.r.recommendationPool,visuals,headers,scope),
+ return {guard:req=>{assertLocalAvatarOrigin(req,p.r.config.origin);return security.guard(guestPeerKey('127.0.0.1',p.r.config.authSecret),{entry:true});},load:(headers,scope)=>loadGuestAvatar(p.contexts,p.r.recommendationPool,visuals,headers,scope),
   reader:id=>({findForDelivery:(visualId,hash,now)=>visuals.findForDelivery(visualId,hash,now),readBytes:hash=>visuals.readBytes(id,hash)})};
 }

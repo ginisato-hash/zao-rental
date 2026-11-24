@@ -96,6 +96,10 @@ try{
    await page.route('**/api/operations/orders/'+confirmedId,async route=>{const r=await route.fetch(),j=await r.json() as {current:{members:{key:string;items:Record<string,unknown>[]}[]};wear:unknown[]};
     const first=j.current.members[0]!;if(promise)first.items[0]!.modelPromise={modelId:'00000000-0000-4000-8000-000000000000',season:'2030',variantId:variants.ski};
     for(const [k,sport] of [['m2','SKI'],['m3','SNOWBOARD']] as const)j.current.members.push({key:k,product:'WEAR_SET',wearSport:sport,age:'ADULT',tier:'STANDARD',items:[{family:'WEAR_JACKET',variantIds:[]},{family:'WEAR_PANTS',variantIds:[]}]} as never);
+    // Synthetic candidate groups (response injection): same size on two models, one model on two sizes, two models on different sizes.
+    const sv=(id:string,model:string,size:string)=>({id,family:'SKI',age:'ADULT',tier:'REGULAR',size,model}),u=(n:number)=>'00000000-0000-4000-8000-0000000000'+String(n).padStart(2,'0');
+    (j as unknown as {variants:unknown[]}).variants.push(sv(u(11),'SYN-A-X','155'),sv(u(12),'SYN-A-Y','155'),sv(u(13),'SYN-B-X','155'),sv(u(14),'SYN-B-X','160'),sv(u(15),'SYN-C-X','155'),sv(u(16),'SYN-C-Y','165'));
+    for(const [k,ids] of [['m4',[11,12]],['m5',[13,14]],['m6',[15,16]]] as const)j.current.members.push({key:k,product:'SINGLE',age:'ADULT',tier:'REGULAR',items:[{family:'SKI',variantIds:ids.map(u)}]} as never);
     j.wear=[];await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(j)});});};
   const open=async()=>{await page.goto('/staff/orders/'+confirmedId);await page.getByRole('heading',{name:'#'+confirmedId.slice(0,8).toUpperCase()}).waitFor();
    const items=page.locator('section[aria-labelledby="od-items"]');await items.locator('tr').first().waitFor();return items;};
@@ -106,12 +110,16 @@ try{
     await mutate(false);let items=await open();let text=await items.innerText();
     assert.ok(text.includes(t('候補','Options')),`${width} ${locale}: options are labelled as options: ${text}`);assert.ok(text.includes(v.size)&&text.includes(v.model),`${width} ${locale}: size and model shown`);
     assert.ok(!text.includes(t('確約モデル','Promised model')),`${width} ${locale}: no promise is claimed without a modelPromise`);
+    assert.ok(text.includes('SYN-A-X 155')&&text.includes('SYN-A-Y 155'),`${width} ${locale}: same size on two models keeps each model with its size: ${text}`);
+    assert.ok(text.includes('SYN-B-X 155 / 160'),`${width} ${locale}: one model on two sizes lists both sizes under that model: ${text}`);
+    assert.ok(text.includes('SYN-C-X 155')&&text.includes('SYN-C-Y 165')&&!text.includes('SYN-C-X 165')&&!text.includes('SYN-C-X 155 / 165'),`${width} ${locale}: two models on different sizes never swap sizes: ${text}`);
     const rows=items.locator('tr'),count=await rows.count(),all=await rows.allInnerTexts();
     assert.ok(all.some(r=>r.includes(t('スキー','Ski'))&&r.includes(t('ジャケット','Jacket'))),`${width} ${locale}: SKI wear set row: ${all.join(' | ')}`);
     assert.ok(all.some(r=>r.includes(t('スノーボード','Snowboard'))&&r.includes(t('ジャケット','Jacket'))),`${width} ${locale}: SNOWBOARD wear set row`);
     assert.ok(all.filter(r=>r.includes(t('ジャケット','Jacket'))).every(r=>r.includes(t('未貸出','Not handed out'))),`${width} ${locale}: unhanded wear reads not handed out`);assert.ok(count>=5);
     await mutate(true);items=await open();text=await items.innerText();
     assert.ok(text.includes(t('確約モデル','Promised model'))&&text.includes(v.model),`${width} ${locale}: a model promise is stated: ${text}`);
+    assert.ok(text.includes(t('予約サイズ','Booked size'))&&!text.includes(t('候補サイズ','Size options')),`${width} ${locale}: a promised variant is the booked size, not an option: ${text}`);
    }}
   await page.setViewportSize({width:1280,height:720});await page.context().addCookies([{name:'zao_staff_locale',value:'ja',url:new URL(page.url()).origin}]);await page.unroute('**/api/operations/orders/'+confirmedId);
  });

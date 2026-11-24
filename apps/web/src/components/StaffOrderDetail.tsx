@@ -29,7 +29,7 @@ const L={
 } as const;
 const FAMILY:Record<string,[string,string]>={SKI:['スキー','Ski'],SKI_BOOT:['スキーブーツ','Ski boots'],SNOWBOARD:['スノーボード','Snowboard'],SNOWBOARD_BOOT:['スノーボードブーツ','Snowboard boots'],POLE:['ポール','Poles'],WEAR_JACKET:['ジャケット','Jacket'],WEAR_PANTS:['パンツ','Pants']};
 /** What the booking's conditions say about an item, never what was physically handed out. Wear names one exact size. Gear names the acceptable
- * variants: with a model promise the promised model is stated and the sizes are options; without one everything is listed as options (grouped per
+ * variants: with a model promise (the contract allows exactly that one variant, so it is the booked size) the promised model and its size are stated; without one everything is listed as options (grouped per
  * model so a size is never attached to the wrong model). An id that no longer resolves shows nothing. */
 function itemDetail(item:Item,variants:Variant[]|undefined,l:StaffLocale):string[]{
  const en=l==='en',found=(item.variantIds??[]).map(id=>variants?.find(v=>v.id===id)).filter((v):v is Variant=>!!v);
@@ -37,7 +37,7 @@ function itemDetail(item:Item,variants:Variant[]|undefined,l:StaffLocale):string
  if(item.family.startsWith('WEAR_'))return found.length?[`${en?'Booked size':'予約サイズ'}: ${[...new Set(found.map(v=>v.model))].join(' / ')} · ${sizeList(found)}`]:[];
  if(item.modelPromise){
   const promised=item.modelPromise.variantId?variants?.find(v=>v.id===item.modelPromise!.variantId):undefined,own=promised?found.filter(v=>v.model===promised.model):found;
-  return [`${en?'Promised model':'確約モデル'}: ${promised?promised.model:'—'}`,...(own.length?[`${en?'Size options':'候補サイズ'}: ${sizeList(own)}`]:[])];
+  return [`${en?'Promised model':'確約モデル'}: ${promised?promised.model:'—'}`,...(own.length?[`${en?'Booked size':'予約サイズ'}: ${sizeList(own)}`]:[])];
  }
  if(!found.length)return [];
  const groups=[...new Set(found.map(v=>v.model))].map(m=>`${m} ${sizeList(found.filter(v=>v.model===m))}`);

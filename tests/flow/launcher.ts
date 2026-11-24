@@ -113,7 +113,11 @@ export async function startFlowApp(options:{productionCopy?:boolean;paymentFault
     // otherwise spend its whole timeout waiting for webpack. Suites that navigate straight
     // into a page opt in; warming is not automatic because the requests are real requests and
     // would consume guest budget in suites that measure it.
-    if(options.warmRoutes)await warmPageRoutes(origin);
+    if(options.warmRoutes){await warmPageRoutes(origin);
+     // fixtureRoutes skips dynamic segments, so the locale-prefixed guest page is never compiled by the pass above and a suite's opening
+     // page.goto('/ja/book') paid the whole webpack compile inside its 15 s navigation timeout (CI #45212694020 attempt 2, readiness-ui).
+     // Wait until it answers 200 (READINESS-UI-01) instead of letting the browser timeout stand in for server readiness.
+     if(options.publicP0)await waitForRoute(origin,'/ja/book');}
    }catch(e){await stop();throw e;}
   }
   return {origin,db,roles,flow,custody,guest,content,avatar,recoveryFixture,get exit(){return current.exit;},get webPid(){return current.pid;},stop,async restartWeb(readyPaths:ReadyPath[]=[]){

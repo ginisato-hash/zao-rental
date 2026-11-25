@@ -10,11 +10,15 @@ import './staff-shell.css';
 import './staff-console.css';
 
 export type ShellAccess={bookingView:boolean;bookingCreate:boolean;inventoryView:boolean;operationsView:boolean;manageStaff:boolean;transferView:boolean;quoteView:boolean;holdView:boolean;priceEdit:boolean;resend:boolean};
+/** Must equal the /staff/scan page gate: booking viewers scan booking QR, inventory viewers scan item QR. */
+export const canScan=(a:Pick<ShellAccess,'bookingView'|'inventoryView'>)=>a.bookingView||a.inventoryView;
 type Item={key:StaffKey;href:string|((a:ShellAccess)=>string);match:RegExp;show:(a:ShellAccess)=>boolean};
 // Booqable sidebar order. Only destinations that exist as working screens are listed; nothing is a placeholder.
 const TOP:Item[]=[
  {key:'dashboard',href:a=>a.bookingView?'/staff':'/staff/today',match:/^\/staff(\/today)?\/?$/,show:()=>true},
  {key:'calendar',href:'/staff/calendar',match:/^\/staff\/calendar/,show:a=>a.bookingView},
+ // QR reading is a primary action, not a footer link: same permission as the /staff/scan page itself (see canScan).
+ {key:'scanQr',href:'/staff/scan',match:/^\/staff\/scan/,show:a=>canScan(a)},
 ];
 const WORK:Item[]=[
  // Orders group: the order list for booking viewers; quote-only or hold-only staff land on the screen they can use.
@@ -33,7 +37,6 @@ const MORE:Item[]=[
  {key:'salesStops',href:'/staff/sales-stops',match:/^\/staff\/sales-stops/,show:a=>a.inventoryView},
 ];
 const BOTTOM:Item[]=[
- {key:'scan',href:'/staff/scan',match:/^\/staff\/scan/,show:a=>a.bookingView||a.inventoryView},
  {key:'help',href:'/staff/help',match:/^\/staff\/help/,show:()=>true},
  {key:'settings',href:'/staff/settings',match:/^\/(staff\/(settings|users|password|content)|admin\/(ops|notifications|prices|launch))/,show:()=>true},
 ];
@@ -70,6 +73,9 @@ export function StaffShell({locale:serverLocale,stamp,stores,access,name,childre
 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size official logo raster, as in PublicChrome */}
 <img className="sx-logo" src={logo.src} width={logo.width} height={logo.height} alt=""/></Link>
     <div className="sx-top-r">
+     {canScan(access)&&<Link className="sx-scanbtn" href="/staff/scan" aria-current={/^\/staff\/scan/.test(path)?'page':undefined} aria-label={t('scanQrLong')}>
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg>
+      <span>{t('scanQr')}</span></Link>}
      <div className="sx-seg" role="group" aria-label={t('language')}>
       <button type="button" aria-pressed={locale==='ja'} onClick={()=>setLocale('ja')} lang="ja">日本語</button>
       <button type="button" aria-pressed={locale==='en'} onClick={()=>setLocale('en')} lang="en">English</button>

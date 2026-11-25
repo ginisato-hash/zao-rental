@@ -58,6 +58,7 @@ export function StaffOrders({locale:serverLocale,stamp,stores,canCreate,more}:{l
   <div className="ox-head"><h1>{st(locale,'orders')}</h1>
    <form role="search" className="ox-search" onSubmit={e=>{e.preventDefault();set({search:search.trim()});}}><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={tx('search')} aria-label={tx('search')}/></form>
    {data&&<CsvButton csv={csv} url={'/api/operations/orders?'+csvQuery} filename={`orders-${data.today}.csv`}/>}
+   <Link className="sx-btn" href="/staff/scan">{st(locale,'scanBooking')}</Link>
    {canCreate&&<Link className="sx-btn sx-btn--primary" href="/staff/orders/new">{st(locale,'newOrder')}</Link>}</div>
   {more&&(more.quotes||more.holds||more.recommendations||more.amendments)&&<nav className="ox-related" aria-label={tx('related')}>{more.quotes&&<Link href="/staff/quotes">{tx('quotes')}</Link>}{more.holds&&<Link href="/staff/holds">{tx('holds')}</Link>}{more.recommendations&&<Link href="/staff/recommendations">{tx('recommendations')}</Link>}{more.amendments&&<Link href="/staff/amendments">{tx('amendments')}</Link>}</nav>}
   <div className="sx-seg ox-tabs" role="tablist" aria-label={st(locale,'orders')}>{(['all','upcoming','late','shortage'] as const).map(t=><button key={t} type="button" role="tab" aria-selected={tab===t} onClick={()=>set({tab:t==='all'?'':t,late:''})}>{tx(t)}{data&&data.counts[t]!==null&&data.counts[t]!==undefined?` ${data.counts[t]}`:''}</button>)}</div>

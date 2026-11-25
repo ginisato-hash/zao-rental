@@ -10,6 +10,7 @@ import './staff-orders.css';
 
 const L={
  order:['予約','Order'],item:['用品','Item'],help:['読み取る対象を選んでください。','Choose what you are scanning.'],
+ isOrder:['これは予約のQRまたは予約IDです。「予約」タブで読み取ってください。','This is a booking QR or ID. Scan it on the Booking tab.'],
  notFound:['この用品は見つからないか、閲覧できる店舗にありません。','This item was not found or is not at a station you can see.'],failed:['照合できませんでした。','Could not look it up.'],
 } as const;
 
@@ -28,21 +29,24 @@ export function StaffScan({locale:serverLocale,stamp,canOrders,canItems}:{locale
  const switchMode=(m:'order'|'item')=>{generation.current++;setMsg('');setMode(m);};
  function openOrder(id:string){generation.current++;router.push('/staff/orders/'+encodeURIComponent(id));}
  async function onAsset(id:string){
-  const own=++generation.current,current=()=>alive.current&&generation.current===own;
+  const own=++generation.current,current=()=>alive.current&&generation.current===own;setMsg('');
   const r=await fetch('/api/operations/assets/'+encodeURIComponent(id),{cache:'no-store',headers:{'x-zao-session':stamp}});
   if(!current())return;
-  if(r.status===401){invalidateStaffView();return;}if(r.status===404||r.status===403){setMsg('notFound');return;}if(!r.ok){setMsg('failed');throw Error();}
+  if(r.status===401){invalidateStaffView();return;}if(r.status===404||r.status===403){
+   // A booking id scanned on the Item tab is told apart from an unknown/foreign item (read-only check, never navigates).
+   if(canOrders){const o=await fetch('/api/operations/orders/'+encodeURIComponent(id),{cache:'no-store',headers:{'x-zao-session':stamp}}).catch(()=>null);if(!current())return;if(o&&o.ok){setMsg('isOrder');return;}}
+   setMsg('notFound');return;}if(!r.ok){setMsg('failed');throw Error();}
   const v=await r.json() as {modelId:string;store:string};if(!current())return;
   router.push('/staff/inventory/'+encodeURIComponent(v.modelId)+'?'+new URLSearchParams({store:v.store}).toString());
  }
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
-  <h1>{st(locale,'scan')}</h1>
+  <h1>{st(locale,'scanQr')}</h1>
   <div className="sx-seg ox-tabs" role="tablist">{canOrders&&<button type="button" role="tab" aria-selected={mode==='order'} onClick={()=>switchMode('order')}>{tx('order')}</button>}
    {canItems&&<button type="button" role="tab" aria-selected={mode==='item'} onClick={()=>switchMode('item')}>{tx('item')}</button>}</div>
   <div className="sx-card" style={{padding:'16px 20px'}}>
-   {mode==='order'&&canOrders&&<BookingSearchInput onBooking={openOrder}/>}
-   {mode==='item'&&canItems&&<AssetQrInput onAsset={onAsset}/>}
+   {mode==='order'&&canOrders&&<BookingSearchInput onBooking={openOrder} stamp={stamp}/>}
+   {mode==='item'&&canItems&&<AssetQrInput onAsset={onAsset} stopAfterRead/>}
   </div>
-  {msg&&<p role="alert">{tx(msg as 'notFound'|'failed')}</p>}
+  {msg&&<p role="alert">{tx(msg as 'notFound'|'failed'|'isOrder')}</p>}
  </main></StaffSessionBoundary>;
 }

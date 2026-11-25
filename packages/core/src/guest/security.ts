@@ -7,6 +7,21 @@ import {guestSecurityPolicy,recoverySecret,type GuestSecurityPolicy} from '../..
 import {GuestContexts} from './context';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 const milliseconds=(n:number)=>n*1000;
+/** Coupon-code guessing control for the public guest API (staff and admin keep their detailed codes).
+ * Budget: 10 FAILED coupon applications per trusted peer per 10-minute window, then 429 until the window rolls over.
+ * - Only failures spend it. A successful application gives its reservation back, so a customer who applies a valid code,
+ *   removes it and applies it again is never throttled, and 10 typos in 10 minutes is far above honest use.
+ * - A shared venue network (one peer, many guests) still has headroom for several people mistyping once or twice.
+ * - Guessing is bounded to 10 tries per 10 minutes per peer (1,440/day): infeasible for random codes. Short guessable words
+ *   remain a content risk, so coupon codes should be long and random; the peer/global request budget stays as the outer cap.
+ * - The budget is reserved BEFORE the lookup and refunded on success, so parallel requests cannot all pass the check at once. */
+export const COUPON_FAILURE_WINDOW_SECONDS=600;
+export const COUPON_FAILURES_PER_WINDOW=10;
+/** Every coupon outcome that tells a guest whether a given code exists (or what state it is in). Guests get ONE answer. */
+const COUPON_CODE_REVEALING=new Set(['COUPON_NOT_FOUND','COUPON_NOT_APPLICABLE','COUPON_INACTIVE','COUPON_EXPIRED','COUPON_LIMIT_REACHED','DISCOUNTS_NOT_COMBINABLE','PROMOTION_POLICY_UNRESOLVED','WEAR_COUPON_COMBINATION_UNAPPROVED','DISCOUNT_WINDOW_CLOSED']);
+const guestCouponRejection=()=>new HoldError('COUPON_NOT_APPLICABLE',422);
+/** Maps any code-revealing coupon failure to the identical guest response (same code, same status); other errors pass through. */
+export async function guestCouponUniform<T>(fn:()=>Promise<T>):Promise<T>{try{return await fn();}catch(e){if(COUPON_CODE_REVEALING.has((e as {code?:string}|null)?.code??''))throw guestCouponRejection();throw e;}}
 /** Peer identity comes from a configured trusted ingress/socket adapter, NEVER arbitrary request headers. */
 export function guestPeerKey(verifiedAddress:string,serverKey:string){if(!verifiedAddress||verifiedAddress.length>200||serverKey.length<32)throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);return createHmac('sha256',serverKey).update('guest-peer-v1\0').update(verifiedAddress).digest('hex');}
 export class GuestSecurity{
@@ -20,6 +35,13 @@ export class GuestSecurity{
   // Stable order, one global budget bounds distinct peer buckets even during anonymous abuse.
   for(const [key,limit] of [['global',this.policy.globalRequests],[peer,this.policy.peerRequests]] as const){const bucket=this.policy.version+':'+key+':'+window;const row=(await c.query('INSERT INTO guest_rate_buckets VALUES($1,1,$2) ON CONFLICT(bucket) DO UPDATE SET count=guest_rate_buckets.count+1 WHERE guest_rate_buckets.count<$3 RETURNING count',[bucket,end,limit])).rows[0];if(!row)throw new HoldError('GUEST_RATE_LIMITED',429);}
  });}
+ /** Reserve one coupon-failure slot for this peer (429 COUPON_ATTEMPTS_EXCEEDED when the window is spent). */
+ private async reserveCouponAttempt(peer:string){return this.transaction(async c=>{const now=(await c.query<{now:Date}>('SELECT inventory_clock() now')).rows[0]!.now,window=Math.floor(now.getTime()/milliseconds(COUPON_FAILURE_WINDOW_SECONDS)),end=new Date((window+1)*milliseconds(COUPON_FAILURE_WINDOW_SECONDS)),bucket=this.policy.version+':coupon:'+peer+':'+window;
+  const row=(await c.query('INSERT INTO guest_rate_buckets VALUES($1,1,$2) ON CONFLICT(bucket) DO UPDATE SET count=guest_rate_buckets.count+1 WHERE guest_rate_buckets.count<$3 RETURNING count',[bucket,end,COUPON_FAILURES_PER_WINDOW])).rows[0];if(!row)throw new HoldError('COUPON_ATTEMPTS_EXCEEDED',429);return bucket;});}
+ private async releaseCouponAttempt(bucket:string){try{await this.pool.query('WITH gone AS(DELETE FROM guest_rate_buckets WHERE bucket=$1 AND count<=1 RETURNING 1) UPDATE guest_rate_buckets SET count=count-1 WHERE bucket=$1 AND count>1',[bucket]);}catch{/* fail closed: an unreturned slot only makes the limit stricter */}}
+ /** Runs a guest coupon application under the failure budget and the uniform guest answer. */
+ async couponAttempt<T>(peer:string|undefined,fn:()=>Promise<T>):Promise<T>{if(!peer||!/^[a-f0-9]{64}$/.test(peer))throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);const bucket=await this.reserveCouponAttempt(peer);
+  try{const out=await guestCouponUniform(fn);await this.releaseCouponAttempt(bucket);return out;}catch(e){if(!(e instanceof HoldError&&e.code==='COUPON_NOT_APPLICABLE'&&e.status===422))await this.releaseCouponAttempt(bucket);throw e;}}
  async metadata(actor:GuestActor){await this.contexts.read(actor);const r=(await this.pool.query('SELECT revision,recovery_until,absolute_at FROM guest_lifecycle WHERE context_id=$1',[actor.contextId])).rows[0];if(!r)throw new HoldError('GUEST_SECURITY_CONTEXT_REQUIRED',409);return {revision:r.revision,recoveryUntil:r.recovery_until,absoluteAt:r.absolute_at};}
  async enroll(actor:GuestActor,revision:unknown){if(!Number.isSafeInteger(revision))throw new HoldError('INVALID_RECOVERY_INPUT',422);const code=randomBytes(32).toString('base64url');return this.contexts.change(actor,async(c)=>{
   await this.checkPolicy(c);const r=(await c.query('SELECT *,inventory_clock() now FROM guest_lifecycle WHERE context_id=$1 FOR UPDATE',[actor.contextId])).rows[0];if(!r||r.revision!==revision)throw new HoldError('STALE_RECOVERY_SETTINGS',409);if(r.policy_version!==this.policy.version)throw new HoldError('GUEST_POLICY_CHANGED',409);

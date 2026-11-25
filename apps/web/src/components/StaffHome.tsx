@@ -65,7 +65,7 @@ function labelsFor(en:boolean){return {
 };}
 type Props={stamp:string;stores:StoreId[];canBookingView:boolean;canCheckout:boolean;canReturn:boolean;canOperationsView:boolean;canInventoryView:boolean;canTransferView:boolean;canQuoteView:boolean;canHoldView:boolean;canManageStaff:boolean};
 export function StaffHome(p:Props){return <StaffSessionBoundary stamp={p.stamp}><Home {...p}/></StaffSessionBoundary>;}
-function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsView}:Props){
+function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsView,canInventoryView}:Props){
  const router=useRouter();
  const {locale}=useStaffLocale(),en=locale==='en',t=(j:string,e:string)=>en?e:j;
  const {stateLabel,slotLabel,familyLabel,ageLabel,severityLabel,storeName,loadErrorText,actionLabel,taskActionLabel,jstTime,money}=labelsFor(en);
@@ -160,7 +160,7 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
  const manifestError=manifestMessage?loadErrorText(t('本日の業務','Today’s work'),manifestMessage):'';
  const manifestKind=manifestError?'error':manifestRows===null||manifestBusy?'loading':manifestRows.length?'ready':'empty';
  const manifestStatus=manifestError||(manifestRows===null?t('本日の業務を読み込んでいます…','Loading today’s work…'):manifestBusy?t('最新の状態を読み込んでいます…','Loading the latest state…'):'');
- return <main className="holds staff-home"><header className="staff-home-header"><div><h1>{t('当日作業・準備','Today’s work and preparation')}</h1></div></header>
+ return <main className="holds staff-home"><header className="staff-home-header"><div><h1>{t('当日作業・準備','Today’s work and preparation')}</h1></div>{(canBookingView||canInventoryView)&&<Link className="sx-btn staff-scan-link" href="/staff/scan">{t('予約QR・用品QRを読み取る','Scan booking or item QR')}</Link>}</header>
  {canBookingView&&<section aria-label={t('店舗・営業日','Station and business date')} className="staff-context">
   {showManifest&&<label>{t('対象店舗','Station')}<select aria-label={t('対象店舗','Station')} value={activeStore} onChange={e=>setActiveStore(e.target.value as StoreId)}>{stores.map(s=><option key={s} value={s}>{storeName(s)}</option>)}</select></label>}
   <p className="staff-context-date"><span>{t('営業日','Business date')}</span><strong>{manifestDate?manifestDate+t('（JST）','(JST)'):t('確認しています…','Checking…')}</strong></p>

@@ -57,10 +57,10 @@ export class RecommendationService {
   });return this.get(pid);
  }
  async advisory(previewId:string,value:unknown){const p=await this.owned(this.pool,previewId);const x=exact(value,['directions','wantAdvance','couponCode','acceptedModelPolicy']);
-  if(x.acceptedModelPolicy!==true||typeof x.wantAdvance!=='boolean'||x.couponCode!==null||!x.directions||typeof x.directions!=='object'||Array.isArray(x.directions))throw new RecommendationError('INVALID_SELECTION');
+  if(x.acceptedModelPolicy!==true||typeof x.wantAdvance!=='boolean'||x.couponCode!==null&&typeof x.couponCode!=='string'||!x.directions||typeof x.directions!=='object'||Array.isArray(x.directions))throw new RecommendationError('INVALID_SELECTION');
   const directions=x.directions as Record<string,Direction>;if(Object.keys(directions).sort().join()!==p.input.members.map(m=>m.key).sort().join())throw new RecommendationError('INVALID_SELECTION');
   const members=p.input.members.map(m=>{const d=directions[m.key]!;if(!DIRECTIONS.includes(d))throw new RecommendationError('INVALID_SELECTION');const c=p.offered.find(o=>o.key===m.key)?.candidates[d];if(!c)throw new RecommendationError('CANDIDATE_NOT_OFFERED');return c.member;});
-  return this.quotes.preview({conditions:{...(p.input.contractVersion?{contractVersion:p.input.contractVersion}:{}),reservationId:p.reservation_id,pickupStore:p.input.pickupStore,returnStore:p.input.returnStore,period:p.input.period,members},holdId:null,couponCode:null,wantAdvance:x.wantAdvance});
+  return this.quotes.preview({conditions:{...(p.input.contractVersion?{contractVersion:p.input.contractVersion}:{}),reservationId:p.reservation_id,pickupStore:p.input.pickupStore,returnStore:p.input.returnStore,period:p.input.period,members},holdId:null,couponCode:x.couponCode===null?null:code(x.couponCode),wantAdvance:x.wantAdvance});
  }
  // `bufferOverride` (release-code-closure, staff-only, explicit per-booking): identical contract to
  // HoldService.command()'s own bufferOverride — never authority by itself, re-verified by

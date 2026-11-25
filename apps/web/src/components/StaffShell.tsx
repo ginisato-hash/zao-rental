@@ -28,6 +28,8 @@ const MORE:Item[]=[
  // Bulk operations = the real stocktake / CSV import screen (not a renamed exceptions console).
  {key:'bulk',href:'/admin/inventory',match:/^\/admin\/inventory/,show:a=>a.inventoryView},
  // Day-level sales stop (temporary closure): everyone who sees inventory can see the stopped days; INVENTORY_EDIT changes them.
+ // Coupons: administrators (PRICE_EDIT) create and switch them; the screen itself is read-only for QUOTE_VIEW holders who reach it directly.
+ {key:'coupons',href:'/staff/coupons',match:/^\/staff\/coupons/,show:a=>a.priceEdit},
  {key:'salesStops',href:'/staff/sales-stops',match:/^\/staff\/sales-stops/,show:a=>a.inventoryView},
 ];
 const BOTTOM:Item[]=[

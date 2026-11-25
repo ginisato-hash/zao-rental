@@ -488,6 +488,13 @@
    "sha256": "a37f4e6a215c1f79e97f14bc437bdee88a58bdc903793bfde01287c728fa2f0c",
    "runtimeGuards": 0,
    "guard": null
+  },
+  {
+   "id": "0063",
+   "file": "0063_coupon_admin.sql",
+   "sha256": "e9354e9d9439d3800d6e7b117b2990aa42f4470abbf7a3023f451c6e06df0f57",
+   "runtimeGuards": 0,
+   "guard": null
   }
  ]
 }

@@ -4,6 +4,7 @@
 // membership, ownership, LOGIN or password change, and with rental_stage_guard() byte-for-byte unchanged.
 import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
 import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
+import {applyProductionCouponAdminMigration,applyProductionCouponAdminGrants,couponAdminGrantProof,couponAdminCommittedProof,verifyProductionCouponAdmin} from '../../scripts/production-coupon-admin-delta';
 import {applyProductionSalesStopMigration,applyProductionSalesStopGrants,salesStopGrantProof,salesStopCommittedProof,verifyProductionSalesStop} from '../../scripts/production-sales-stop-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
@@ -25,7 +26,7 @@ try{
  await db.pool.query(`CREATE DATABASE ${DB} OWNER ${OWNER}`);
  const owner=connect(OWNER,ownerPassword),observer=connect(db.identity.user,superPassword);
  const full=await productionFoundationPlan(DB),entries=full.bootstrap.entries;
- assert.equal(entries.length,62);assert.equal(entries[61]!.id,'0062');assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
+ assert.equal(entries.length,63);assert.equal(entries[62]!.id,'0063');assert.equal(entries[61]!.id,'0062');assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
  stage='registry56 production topology';
  await runFoundationPlan(owner,{...full,bootstrap:{...full.bootstrap,entries:entries.slice(0,56)}});
  const q=async(sql:string,params:unknown[]=[])=>(await observer.query(sql,params)).rows;
@@ -153,7 +154,7 @@ try{
   await ss.query('BEGIN');try{await ss.query('ALTER TABLE inventory_holds DISABLE TRIGGER store_sales_stop_hold_guard');await assert.rejects(salesStopCommittedProof(ss,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/);}finally{await ss.query('ROLLBACK');}
   await salesStopCommittedProof(ss,OWNER);
  }finally{ss.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,62).map(e=>({id:e.id,checksum:e.checksum})));
  assert.deepEqual(await guard(),before62);
  const roles62After=await roles();assert.deepEqual({roles:roles62After.roles,members:roles62After.members},{roles:roles62.roles,members:roles62.members});
  const owners62=roles62After.owners.filter((o:{k:string})=>!roles62.owners.some((p:{k:string})=>p.k===o.k));
@@ -180,4 +181,40 @@ try{
  assert.equal((await q("SELECT has_function_privilege('public','store_sales_stop_set(text[],date,date,boolean,text)','EXECUTE') ok"))[0].ok,false,'no PUBLIC set');
  for(const r of ['neondb_hold','neondb_guest','neondb_recommendation','neondb_transfer'])if((await q('SELECT 1 FROM pg_roles WHERE rolname=$1',[r])).length)assert.equal((await q("SELECT has_function_privilege($1,'store_sales_stopped_days(text[],date,date)','EXECUTE') ok",[r]))[0].ok,true,r+' reads stopped days');
  console.log('PASS canonical 0062 applies as neondb_owner after 0061: registry 61 -> 62, guard/roles/memberships unchanged, new objects owner-owned, operations SELECT + set EXECUTE only, PUBLIC reads stopped days only');
+  stage='0063 coupon admin applied as neondb_owner';
+ // 0063 (coupon administration) through its fixed operator path: grants before migrate refused, one transaction with read-back, no replay,
+ // no role/membership change, new objects owner-owned, empty event log; then pricing SELECT/INSERT + both functions, operations functions only.
+ const before63=await guard(),roles63=await roles(),pricingRole=DB+'_pricing';
+ const ca=await owner.connect();
+ try{
+  await assert.rejects(applyProductionCouponAdminGrants(ca,DB,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'grants need the exact 0063 registry');
+  await assert.rejects(applyProductionCouponAdminMigration(ca,DB,'someone_else'),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'wrong owner identity');
+  await assert.rejects(applyProductionSalesStopMigration(ca,DB,OWNER),/PRODUCTION_SALES_STOP_RECONCILIATION_REQUIRED/,'the 0062 delta never re-applies on 0062');
+  const installed=await applyProductionCouponAdminMigration(ca,DB,OWNER);
+  assert.equal(installed.status,'PRODUCTION_COUPON_ADMIN_INSTALLED');assert.deepEqual(installed.applied.map(a=>a.id),['0063']);
+  await assert.rejects(applyProductionCouponAdminMigration(ca,DB,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'no replay');
+  await ca.query('BEGIN');try{await ca.query('ALTER TABLE coupon_status_events DISABLE TRIGGER coupon_status_immutable');await assert.rejects(couponAdminCommittedProof(ca,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/);}finally{await ca.query('ROLLBACK');}
+  await couponAdminCommittedProof(ca,OWNER);
+ }finally{ca.release();}
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await guard(),before63);
+ const roles63After=await roles();assert.deepEqual({roles:roles63After.roles,members:roles63After.members},{roles:roles63.roles,members:roles63.members});
+ const owners63=roles63After.owners.filter((o:{k:string})=>!roles63.owners.some((p:{k:string})=>p.k===o.k));
+ assert.ok(owners63.length>0&&owners63.every((o:{o:string})=>o.o===OWNER),'every new 0063 object is owner-owned');
+ assert.equal((await q('SELECT count(*)::int n FROM coupon_status_events'))[0].n,0,'the event log starts empty');
+ for(const r of [pricingRole,ops])assert.equal((await q("SELECT has_function_privilege($1,'coupon_is_active(uuid)','EXECUTE') ok",[r]))[0].ok,false,'no grant before the 0063 grant step');
+ const g63=await owner.connect();try{
+  await assert.rejects(verifyProductionCouponAdmin(g63,DB,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'verify needs the grants too');
+  const g=await applyProductionCouponAdminGrants(g63,DB,OWNER);assert.equal(g.status,'PRODUCTION_COUPON_ADMIN_GRANTS_INSTALLED');await couponAdminGrantProof(g63,pricingRole,ops);
+  const v=await verifyProductionCouponAdmin(g63,DB,OWNER);
+  assert.deepEqual(v,{status:'PRODUCTION_COUPON_ADMIN_VERIFIED',registry:63,eventLog:'APPEND_ONLY',statusEvents:0,disabledCoupons:0,coupons:0,writes:0});
+  await g63.query('ALTER TABLE coupon_status_events DISABLE TRIGGER coupon_status_immutable');
+  await assert.rejects(verifyProductionCouponAdmin(g63,DB,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'a disabled immutability trigger fails verify');
+  await g63.query('ALTER TABLE coupon_status_events ENABLE REPLICA TRIGGER coupon_status_immutable');
+  await assert.rejects(verifyProductionCouponAdmin(g63,DB,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'a replica-only trigger fails verify');
+  await g63.query('ALTER TABLE coupon_status_events ENABLE TRIGGER coupon_status_immutable');await verifyProductionCouponAdmin(g63,DB,OWNER);
+ }finally{g63.release();}
+ for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[pricingRole,'coupon_status_events',priv]))[0].ok,priv==='SELECT'||priv==='INSERT','pricing '+priv);
+ for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,'coupon_status_events',priv]))[0].ok,false,'operations '+priv);
+ console.log('PASS canonical 0063 applies as neondb_owner after 0062: registry 62 -> 63, guard/roles/memberships unchanged, new objects owner-owned, pricing SELECT/INSERT + functions, operations functions only, PUBLIC nothing');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

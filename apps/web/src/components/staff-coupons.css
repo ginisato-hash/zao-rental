@@ -1,0 +1,17 @@
+/* Coupon screen: same card/table language as Orders and Sales stops; the form is one column at narrow widths. */
+.ox .cp-card{padding:16px 18px;margin-bottom:16px}
+.ox .cp-card h2{font-size:17px;margin:0 0 12px}
+.cp-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px 16px;align-items:end}
+.cp-form label,.cp-form fieldset legend{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.cp-form input[type=text],.cp-form input[type=number],.cp-form input[type=datetime-local],.cp-form select{font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--sx-line);border-radius:10px;background:var(--sx-bg);color:inherit;min-height:40px;width:100%;box-sizing:border-box}
+.cp-form fieldset{border:0;padding:0;margin:0;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 16px}
+.cp-form fieldset legend{width:100%;padding:0;margin-bottom:4px}
+.cp-form .cp-check{flex-direction:row;align-items:center;gap:6px;font-weight:400;font-size:14px}
+.cp-form .cp-check input{width:auto;min-height:0}
+.cp-hint{font-size:12px;font-weight:400;opacity:.7}
+.cp-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.cp-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--sx-line)}
+.cp-badge--on{font-weight:600}
+.cp-cell-list{max-width:260px;font-size:12px;line-height:1.5}
+.cp-howto{margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.6}
+@media (max-width:600px){.cp-form{grid-template-columns:1fr}}

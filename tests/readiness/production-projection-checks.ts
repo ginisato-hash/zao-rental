@@ -261,6 +261,30 @@ export async function productionProjectionChecks(owner:Pool,projector:Pool,hold:
    assert.deepEqual(after.events[0].new_state,{booking:'CANCELLED',attempt:'FAILED',hold:'RELEASED',holdPayment:after.hold.payment_state});
    assert.equal((await project(f)).duplicate,true);assert.deepEqual(await business(f),after);assert.deepEqual(calls.map(c=>c.method),['GET']);
   });
+  await check('0063: a booking made with a coupon terminalizes after expiry like any other (0053 no longer refuses q.coupon_id; only a quote/snapshot coupon mismatch refuses)',async()=>{
+   // The fixture is at 0063 here, but the production role plan deliberately holds no 0063 grants (the installer adds them);
+   // give the pricing role exactly what `production:install-coupon-admin-grants` gives it.
+   const pricingUser=pricing.options.user!;
+   await owner.query(`GRANT SELECT,INSERT ON coupon_status_events TO ${pricingUser}; GRANT EXECUTE ON FUNCTION coupon_is_active(uuid),coupon_booking_count(uuid) TO ${pricingUser}`);
+   {
+   const couponId=randomUUID(),terms={code:'SYNTH-TERMINAL',validFrom:'2034-12-01T00:00:00.000Z',validUntil:'2036-01-01T00:00:00.000Z',storeBasis:'PICKUP_STORE',stores:['MOUNTAIN_BASE','ONSEN_BASE'],products:['WEAR_SET_ADULT','WEAR_SET_KIDS'],kind:'FIXED_JPY',value:100,minimumJpy:0,minimumBasis:'ELIGIBLE_SUBTOTAL',maximumDiscountJpy:100,advanceCombination:'ALLOW',maxActiveReservations:null};
+   // The fixture actor cannot edit prices, so the coupon version is inserted by the owner (as the migration owner would), with an audit actor.
+   {const k=await owner.connect();try{await k.query('BEGIN');await k.query("SELECT set_config('zao.actor',$1,true)",[actor!]);await k.query('INSERT INTO coupon_versions(id,code,terms) VALUES($1,$2,$3)',[couponId,terms.code,JSON.stringify(terms)]);await k.query('COMMIT');}catch(e){await k.query('ROLLBACK');throw e;}finally{k.release();}}
+   const l=await responseLossBookingFixture({db:{pool:owner},actor:actor!,holds,quotes,now:()=>now},'2035-04-04',{contractVersion:'INTEGRATED_V1_2',reservationId:randomUUID(),pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-04-04',endDate:'2035-04-04',slot:'DAY'},members:[{key:'w',product:'WEAR_SET',age:'ADULT',tier:'STANDARD',wearSport:'SKI',items:[{family:'WEAR_JACKET',variantIds:[variants[0]!]},{family:'WEAR_PANTS',variantIds:[variants[1]!]}]}]} as HoldConditions,'SYNTH-TERMINAL');
+   assert.equal((await owner.query('SELECT coupon_id FROM price_quotes WHERE id=$1',[l.quoteId])).rows[0].coupon_id,couponId);assert.equal((l.snapshot as {couponVersionId?:string}).couponVersionId,couponId);
+   const truth=await reconcileLost(l,[],'FAILED'),f={...l,...truth};await clock(new Date(now.getTime()+700000));
+   const result=await project(f);assert.equal(result.decision,'APPLY_FAILED');assert.equal(result.bookingState,'CANCELLED');assert.equal(result.attemptState,'FAILED');
+   assert.equal((await business(f)).hold.state,'RELEASED');
+   // A quote whose coupon differs from its priced snapshot is still refused.
+   const m=await responseLossBookingFixture({db:{pool:owner},actor:actor!,holds,quotes,now:()=>now},'2035-04-05',{contractVersion:'INTEGRATED_V1_2',reservationId:randomUUID(),pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:{startDate:'2035-04-05',endDate:'2035-04-05',slot:'DAY'},members:[{key:'w',product:'WEAR_SET',age:'ADULT',tier:'STANDARD',wearSport:'SKI',items:[{family:'WEAR_JACKET',variantIds:[variants[0]!]},{family:'WEAR_PANTS',variantIds:[variants[1]!]}]}]} as HoldConditions,'SYNTH-TERMINAL'),mt=await reconcileLost(m,[],'FAILED'),mf={...m,...mt};await clock(new Date(now.getTime()+1400000));
+   const c=await owner.connect();try{
+    await c.query('BEGIN');await c.query("SELECT set_config('zao.actor',$1,true),set_config('zao.reason','PAYMENT_PROJECTION_LOCAL',true)",[actor!]);
+    await c.query('ALTER TABLE price_quotes DISABLE TRIGGER USER');await c.query("UPDATE price_quotes SET coupon_id=NULL WHERE id=$1",[m.quoteId]);await c.query('ALTER TABLE price_quotes ENABLE TRIGGER USER');
+    await c.query('SET LOCAL ROLE '+projector.options.user);
+    await assert.rejects(c.query(terminalSql,terminalArgs(mf)),error=>String((error as {code:string}).code)==='23514');
+   }finally{await c.query('ROLLBACK');c.release();}
+   }
+  });
   await check('0053 SQL independently rejects wrong identity/source, active HOLD, collected money, bound provider and non-Production',async()=>{
    const l=await lostFixture('2035-04-03'),truth=await reconcileLost(l,[],'FAILED'),f={...l,...truth};await clock(new Date(now.getTime()+700000));
    const unchanged=await business(f);

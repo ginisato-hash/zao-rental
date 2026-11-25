@@ -273,3 +273,9 @@ html[lang=ja] .guest-seg-o b{font:700 15px/1.1 var(--b)}
 .guest-map-link{grid-column:1/-1;margin:0}
 .guest-map-link a{font:700 14px/1.4 var(--d);letter-spacing:.04em;color:var(--ink);text-underline-offset:3px}
 .guest-terms-key{margin:14px 0 0;padding:0 0 0 1.2em;line-height:1.55;font-size:15px}.guest-terms-key li{margin:4px 0}
+.guest-coupon{margin:14px 0}
+.guest-coupon>label{display:block;font:700 14px/1.4 var(--b);margin-bottom:6px}
+.guest-coupon-row{display:flex;gap:8px;align-items:stretch}
+.guest-coupon-row input{flex:1 1 auto;min-width:0;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.guest-coupon-row button{flex:0 0 auto;white-space:nowrap}
+.guest-coupon-applied strong{font-variant-numeric:tabular-nums}

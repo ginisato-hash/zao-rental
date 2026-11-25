@@ -10,6 +10,7 @@ import {bootstrapDevelopmentAdmin} from '../../scripts/bootstrap-staff';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {QuoteService} from '../../packages/core/src/pricing/quote-service';
 import {PRICE_PRODUCTS} from '../../packages/contracts/src/pricing';
+// Guests get ONE uniform coupon refusal (no existence/state leak); staff keep detailed messages (tests/staff/coupon-order-ui.ts).
 // Customer booking form coupon UI against real PostgreSQL. Synthetic coupons only (created through QuoteService); payment is the
 // development stub (no provider, no real charge, no email). Fixed price: SKI_SET_ADULT_REGULAR/DAY_1 = 7,500 JPY.
 const browser=await chromium.launch();let app:Awaited<ReturnType<typeof startFlowApp>>|undefined,failed=false,stage='setup',count=0;
@@ -42,12 +43,12 @@ try{
   const {context,page}=await mk(390,'ja-JP');await toSizes(page,'ja');
   // Step 2: an unknown code is rejected before any selection exists; no amount appears.
   await expect(coupon(page)).toBeVisible();await coupon(page).getByLabel(/クーポンコード/).fill('NOSUCHCODE');await coupon(page).getByRole('button',{name:'適用',exact:true}).click();
-  await expect(page.getByTestId('coupon-error')).toContainText('見つかりません');await expect(price(page)).toHaveCount(0);
+  await expect(page.getByTestId('coupon-error')).toContainText('使えません');await expect(price(page)).toHaveCount(0);
   await coupon(page).getByLabel(/クーポンコード/).fill('');await page.getByRole('button',{name:'全員分の最終確認へ'}).click();
   await expect(price(page)).toContainText('7,500');await expect(price(page)).not.toContainText('クーポン割引');
   const before=await price(page).innerText();
   // Step 3: wrong codes keep the previous valid amount.
-  for(const [code,message] of [['uipast',/有効ではありません|ご利用いただけません/],['UIONSEN',/ご利用いただけません|有効ではありません/],['no-such',/見つかりません/]] as const){
+  for(const [code,message] of [['uipast',/使えません/],['UIONSEN',/使えません/],['no-such',/使えません/]] as const){
    await coupon(page).getByLabel(/クーポンコード/).fill(code);await coupon(page).getByRole('button',{name:'適用',exact:true}).click();
    await expect(page.getByTestId('coupon-error')).toContainText(message);assert.equal(await price(page).innerText(),before,'amount unchanged after '+code);
   }
@@ -68,13 +69,13 @@ try{
  await check('Coupon is refused together with the advance discount (DENY) and the message says so; amount unchanged',async()=>{
   const {context,page}=await mk(390,'ja-JP');await toSizes(page,'ja');
   await page.getByRole('checkbox',{name:/事前に支払って5%OFF/}).check();await coupon(page).getByLabel(/クーポンコード/).fill('UINOADV');await coupon(page).getByRole('button',{name:'適用',exact:true}).click();
-  await expect(page.getByTestId('coupon-error')).toContainText('併用できません');await expect(price(page)).toHaveCount(0);await context.close();
+  await expect(page.getByTestId('coupon-error')).toContainText('使えません');await expect(price(page)).toHaveCount(0);await context.close();
  });
 
  await check('EN desktop: apply, breakdown in English, error copy in English, remove',async()=>{
   const {context,page}=await mk(1280,'en-US');await toSizes(page,'en');
   await coupon(page).getByLabel(/Coupon code/).fill('nosuch');await coupon(page).getByRole('button',{name:'Apply',exact:true}).click();
-  await expect(page.getByTestId('coupon-error')).toContainText('not found');
+  await expect(page.getByTestId('coupon-error')).toContainText('cannot be used');
   await coupon(page).getByLabel(/Coupon code/).fill('UIGOOD10');await coupon(page).getByRole('button',{name:'Apply',exact:true}).click();
   await expect(page.getByTestId('coupon-applied')).toContainText('Coupon applied');await expect(price(page)).toContainText('Coupon discount');await expect(price(page).locator('dd').last()).toContainText('6,750');
   await noOverflow(page);await coupon(page).getByRole('button',{name:'Remove',exact:true}).click();await expect(price(page)).not.toContainText('Coupon discount');await expect(price(page).locator('dd').last()).toContainText('7,500');await context.close();

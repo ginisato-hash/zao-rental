@@ -126,3 +126,14 @@
 
 @media (max-width:899px){.sx-top-brand{display:inline-flex;align-items:center;margin-right:auto}}
 @media print{.sx-logo{filter:none}}
+
+/* Always-visible QR scan entry in the top bar (desktop and phone); the label stays visible, 44px touch target. */
+.sx-scanbtn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:980px;background:var(--sx-blue);color:#fff;text-decoration:none;font:600 14px/1 var(--sx-font);white-space:nowrap}
+.sx-scanbtn:hover{background:var(--sx-blue-h)}
+.sx-scanbtn[aria-current=page]{box-shadow:0 0 0 2px var(--sx-bg),0 0 0 4px var(--sx-blue)}
+.sx-scanbtn:focus-visible{outline:3px solid rgba(0,125,250,.6);outline-offset:2px}
+@media (max-width:899px){.sx-top-r{gap:8px}.sx-scanbtn{padding:0 12px}}
+@media (max-width:420px){.sx-top-brand{display:none!important}.sx-top .sx-seg button{white-space:nowrap}.sx-top-r{gap:6px}.sx-scanbtn{padding:0 10px;gap:4px;font-size:13px}.sx-top .sx-seg button{padding:0 8px}.sx-top{gap:6px}}
+.ox-scanlink{display:inline-flex;align-items:center}
+@media print{.sx-scanbtn{display:none!important}}
+.sx .sx-top a.sx-scanbtn{color:#fff;text-decoration:none}

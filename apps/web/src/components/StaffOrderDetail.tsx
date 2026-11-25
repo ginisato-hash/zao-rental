@@ -2,7 +2,7 @@
 import {useStaffLocaleOr} from './staff-locale';
 import {Fragment,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
-import {type StaffLocale} from './staff-i18n';
+import {st,type StaffLocale} from './staff-i18n';
 import {StaffSessionBoundary,invalidateStaffView} from './StaffSessionBoundary';
 import {STORE_LABEL} from './guest-format';
 import {staffLabel} from './staff-labels';
@@ -68,6 +68,7 @@ export function StaffOrderDetail({locale:serverLocale,stamp,id,can}:{locale:Staf
   {o&&data&&<>
    <div className="ox-head"><h1>#{o.ref}</h1><span className={'ox-status ox-status--'+statusTone(o.status)}>{statusLabel(locale,o.status)}{(o.lateOut||o.lateBack)&&` · ${tx('late')}`}</span>
     <span style={{marginLeft:'auto'}}/>
+    <Link className="sx-btn" href="/staff/scan">{st(locale,'scanAny')}</Link>
     {can.checkout&&<Link className="sx-btn sx-btn--primary" href={`/staff/rentals?booking=${encodeURIComponent(o.id)}`}>{tx('prepare')}</Link>}
     {can.ret&&<Link className="sx-btn" href={`/staff/rentals?booking=${encodeURIComponent(o.id)}#return`}>{tx('doReturn')}</Link>}
     {can.amend&&<Link className="sx-btn" href={`/staff/amendments?booking=${encodeURIComponent(o.id)}`}>{tx('change')}</Link>}

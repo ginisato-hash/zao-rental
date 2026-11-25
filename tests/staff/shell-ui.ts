@@ -56,7 +56,7 @@ try{
  await check('the shell lists only working destinations in Booqable order with settings at the bottom',async()=>{
   await page.goto('/staff');const nav=page.getByRole('complementary');
   const labels=(await nav.getByRole('link').allInnerTexts()).map(s=>s.trim()).filter(Boolean);
-  const order=['ダッシュボード','カレンダー','予約','顧客','在庫','書類','レポート','一括操作','スキャン','設定','サインアウト'].filter(l=>labels.includes(l));
+  const order=['ダッシュボード','カレンダー','予約','顧客','在庫','書類','レポート','一括操作','設定','サインアウト'].filter(l=>labels.includes(l));
   assert.deepEqual(labels.filter(l=>order.includes(l)),order);assert.ok(labels.includes('設定'));
   for(const working of ['カレンダー','書類','レポート'])assert.ok(labels.includes(working),working+' is a working page');
   assert.equal(await page.locator('html').getAttribute('lang'),'ja');
@@ -160,7 +160,7 @@ try{
   // Hold every React Server Component refresh for 8 s; the page body must already be in the new language.
   await page.goto('/staff/orders');await page.getByRole('button',{name:'日本語'}).click();await page.waitForFunction(()=>document.documentElement.lang==='ja');
   const held=async(route:import('@playwright/test').Route)=>{if(route.request().headers()['rsc']){await new Promise(r=>setTimeout(r,8000));}await route.continue().catch(()=>{});};
-  for(const [path,ja,en] of [['/staff/orders','予約','Orders'],['/staff/calendar','カレンダー','Calendar'],['/staff/customers','顧客','Customers'],['/staff/scan','スキャン','Scan']] as const){
+  for(const [path,ja,en] of [['/staff/orders','予約','Orders'],['/staff/calendar','カレンダー','Calendar'],['/staff/customers','顧客','Customers'],['/staff/scan','QR読取','Scan QR']] as const){
    await page.goto(path);await page.getByRole('main').getByRole('heading',{name:ja,exact:true}).waitFor();
    await page.route('**/*',held);const t0=Date.now();
    await page.getByRole('button',{name:'English'}).click();await page.getByRole('main').getByRole('heading',{name:en,exact:true}).waitFor({timeout:3000});

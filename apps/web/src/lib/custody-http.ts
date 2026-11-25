@@ -5,6 +5,7 @@ import type {FlowIdentity} from '../../../../packages/core/src/payment/booking-s
 import {FlowError,flowId,flowObject} from '../../../../packages/contracts/src/rental-flow';
 import {LedgerError} from '../../../../packages/contracts/src/ledger';
 import {readJson} from './ledger-http';
+import {logUnexpected} from './safe-diagnostic';
 const privateHeaders={'Cache-Control':'private, no-store','Vary':'Cookie','Referrer-Policy':'no-referrer'};
 export function custodyHandler(state:(h:Headers)=>Promise<StaffState>,service:(id:FlowIdentity)=>CustodyService,origin:string,composition:'UNCONNECTED'|'ISOLATED_TEST'|'LOCAL_OPERATIONS'='UNCONNECTED'){return async(request:Request)=>{try{
  const s=await state(request.headers);if(s.status!=='authorized')throw new FlowError('UNAUTHENTICATED',401);if(!s.principal.permissions.includes('BOOKING_VIEW'))throw new FlowError('FORBIDDEN',403);
@@ -22,4 +23,4 @@ export function custodyHandler(state:(h:Headers)=>Promise<StaffState>,service:(i
  let result:unknown;
  switch(path){case '/complete-no-pickup':result=await svc.completeNoPickup(body.requestKey,body.input);break;case '/prepare':result=await svc.prepare(body.requestKey,body.input);break;case '/checkout':result=await svc.checkout(body.requestKey,body.input);break;case '/batch':{const v=flowObject(body.input,['store']);if(typeof v.store!=='string')throw new FlowError('INVALID_STORE',422);result=await svc.createBatch(body.requestKey,v.store);break;}case '/scan':result=await svc.scan(body.requestKey,body.input);break;case '/confirm':result=await svc.confirm(body.requestKey,body.input);break;case '/inspection':result=await svc.inspection(body.requestKey,body.input);break;default:throw new FlowError('NOT_FOUND',404);}
  return Response.json(result,{headers:privateHeaders});
- }catch(e){const err=e instanceof FlowError||e instanceof LedgerError?e:new FlowError('CUSTODY_OPERATION_FAILED',500);return Response.json({error:err.code},{status:err.status,headers:privateHeaders});}};}
+ }catch(e){if(!(e instanceof FlowError||e instanceof LedgerError))logUnexpected('custody',e);const err=e instanceof FlowError||e instanceof LedgerError?e:new FlowError('CUSTODY_OPERATION_FAILED',500);return Response.json({error:err.code},{status:err.status,headers:privateHeaders});}};}

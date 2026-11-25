@@ -58,7 +58,7 @@ export function StaffDashboard({locale:serverLocale,stamp,stores}:{locale:StaffL
     {data&&<Link href={orders({direction:kind,from:data.from,to:data.to})}>{tx('viewAll')}</Link>}</footer>
   </section>;};
  return <StaffSessionBoundary stamp={stamp}><main className="ox">
-  <div className="ox-head"><h1>{st(locale,'dashboard')}</h1><Link className="sx-btn ox-noprint" href="/staff/today">{tx('prep')}</Link></div>
+  <div className="ox-head"><h1>{st(locale,'dashboard')}</h1><Link className="sx-btn ox-noprint" href="/staff/scan">{st(locale,'scanAny')}</Link><Link className="sx-btn ox-noprint" href="/staff/today">{tx('prep')}</Link></div>
   <div className="ox-controls ox-noprint">
    {stores.length>1&&<div className="sx-seg" role="group" aria-label={tx('station')}>{stores.map(s=><button key={s} type="button" aria-pressed={s===store} onClick={()=>set({store:s})}>{STORE_LABEL[s]??'—'}</button>)}</div>}
    <label className="ox-range"><span className="sx-visually-hidden">{tx('period')}</span>

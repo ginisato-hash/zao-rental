@@ -10,10 +10,10 @@ type CommercialFixture=Pick<Awaited<ReturnType<typeof flowFixture>>,'actor'|'hol
 export const syntheticMerchant='SYNTHETIC-PRODUCTION-MERCHANT';
 export async function pendingCommercialBookingFixture(x:CommercialFixture,day:string,supplied?:HoldConditions){return createBooking(x,day,supplied,false);}
 /** `lost` models a checkout whose provider response never reached the app: the attempt is UNKNOWN with no provider_id. */
-async function createBooking(x:CommercialFixture,day:string,supplied:HoldConditions|undefined,lost:boolean){
+async function createBooking(x:CommercialFixture,day:string,supplied:HoldConditions|undefined,lost:boolean,couponCode:string|null=null){
  const conditions=supplied??skiSet(day),hold=await x.holds.command('create',randomUUID(),conditions,undefined,undefined,supplied?undefined:{reason:'SYNTHETIC commercial transport proof'});
  if(hold.result!=='CREATED')throw Error('FIXTURE_STOCK_REQUIRED');
- const ordinary=(await x.quotes.create(randomUUID(),{conditions,holdId:hold.holdId,couponCode:null,wantAdvance:false})).quote;
+ const ordinary=(await x.quotes.create(randomUUID(),{conditions,holdId:hold.holdId,couponCode,wantAdvance:false})).quote;
  const book=(await x.db.pool.query<CommercialPriceBook>('SELECT * FROM price_books WHERE id=$1',[ordinary.snapshot.priceBookId])).rows[0]!;
  const snapshot={...ordinary.snapshot,totalJpy:Number(ordinary.snapshot.totalJpy),chargeReady:true,commercialApproval:deriveApprovedCommercialPriceFacts(book)},quoteId=randomUUID(),bookingId=conditions.reservationId,attemptId=randomUUID(),key=randomUUID(),merchantId=syntheticMerchant,locationId=conditions.pickupStore==='ONSEN_BASE'?'SYNTHETIC-PRODUCTION-ONSEN':'SYNTHETIC-PRODUCTION-LOCATION';
  await x.db.pool.query("SELECT set_config('zao.actor',$1,false)",[x.actor]);
@@ -40,6 +40,6 @@ export async function commercialBookingFixture(x:CommercialFixture,day='2035-02-
  return {conditions,holdId,quoteId,bookingId,attemptId,ref,observation,snapshot};
 }
 /** Response-loss booking: UNKNOWN attempt without provider_id, no webhook, job or truth yet. */
-export async function responseLossBookingFixture(x:CommercialFixture,day:string,supplied:HoldConditions){
- return createBooking(x,day,supplied,true);
+export async function responseLossBookingFixture(x:CommercialFixture,day:string,supplied:HoldConditions|undefined,couponCode:string|null=null){
+ return createBooking(x,day,supplied,true,couponCode);
 }

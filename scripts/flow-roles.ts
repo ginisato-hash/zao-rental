@@ -29,5 +29,7 @@ export async function provisionFlowRole(owner:Pool,identity:{namespace:string;da
   if((await owner.query('SELECT to_regclass($1) IS NOT NULL AS present',['public.'+table])).rows[0].present)await owner.query(`GRANT SELECT ON ${table} TO ${user}`);
  }
  if((await owner.query("SELECT to_regprocedure('booking_cancel(uuid,uuid,jsonb)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION booking_cancellation_preview(uuid),booking_cancellation_status(uuid),booking_cancellation_payment_observed(uuid),booking_cancel(uuid,uuid,jsonb),cancellation_refund_row(uuid),cancellation_refund_claim(uuid),cancellation_refund_observe(uuid,jsonb) TO ${user}`);
+ // 0063 coupon administration: booking asks whether a coupon is still enabled and how many bookings used it; no table access.
+ if((await owner.query("SELECT to_regprocedure('coupon_is_active(uuid)') v")).rows[0].v)await owner.query(`GRANT EXECUTE ON FUNCTION coupon_is_active(uuid),coupon_booking_count(uuid) TO ${user}`);
  const flowDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};const flowPool=new Pool({...flowDb,max:4,connectionTimeoutMillis:2000});const close=trackPoolLifecycle(flowPool);return {flowDb,flowPool,close};
 }

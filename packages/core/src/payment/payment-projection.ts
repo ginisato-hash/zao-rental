@@ -50,7 +50,7 @@ function projectionPriceIntact(s:ProjectionState,o:PaymentObservation){
  try{
   parseConditions(b.conditions);parseConditions(h.conditions);
   if(b.conditions.reservationId!==b.id||flowHash(b.conditions)!==flowHash(h.conditions)||h.dueAt!==normalizePeriod(h.conditions.period).dueAt)throw new Error();
-  if(!q||q.id!==b.quoteId||q.holdId!==h.id||q.actor!==b.ownerId||flowHash(q.conditions)!==flowHash(b.conditions)||q.couponId!==null)throw new Error();
+  if(!q||q.id!==b.quoteId||q.holdId!==h.id||q.actor!==b.ownerId||flowHash(q.conditions)!==flowHash(b.conditions)||(q.snapshot.couponVersionId??null)!==q.couponId)throw new Error();
   if(!hash(b.priceHash)||flowHash(b.priceSnapshot)!==b.priceHash||q.snapshotHash!==b.priceHash||flowHash(q.snapshot)!==q.snapshotHash||flowHash(q.snapshot.conditions)!==flowHash(b.conditions))throw new Error();
   if(b.priceSnapshot.chargeReady!==(b.mode==='SQUARE_PRODUCTION')||b.mode==='SQUARE_PRODUCTION'&&q.commercialPriceValid!==true||b.priceSnapshot.currency!=='JPY'||b.priceSnapshot.totalJpy!==a.expected.amountJpy)throw new Error();
   const discount=b.priceSnapshot.advanceDiscountJpy;if(!Number.isSafeInteger(discount)||Number(discount)<0||Number(discount)>a.expected.amountJpy)throw new Error();

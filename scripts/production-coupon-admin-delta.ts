@@ -72,16 +72,20 @@ export async function applyProductionCouponAdminMigration(c:PoolClient,database:
  }
 }
 
+const SELECTION_TABLES='recommendation_previews,recommendation_selections';
 export function productionCouponAdminGrants(database:string,pricingRole:string,operationsRole:string):string[]{
  if(!/^[a-z][a-z0-9_]{0,40}$/.test(database)||pricingRole!==database+'_pricing'||operationsRole!==database+'_operations')throw Error('PRODUCTION_COUPON_ADMIN_GRANTS_REFUSED');
  const fns=COUPON_ADMIN_FUNCTIONS.join(',');
- return [`GRANT SELECT,INSERT ON ${COUPON_ADMIN_TABLE} TO ${pricingRole}`,`GRANT EXECUTE ON FUNCTION ${fns} TO ${pricingRole}`,`GRANT EXECUTE ON FUNCTION ${fns} TO ${operationsRole}`];
+ return [`GRANT SELECT,INSERT ON ${COUPON_ADMIN_TABLE} TO ${pricingRole}`,`GRANT EXECUTE ON FUNCTION ${fns} TO ${pricingRole}`,`GRANT EXECUTE ON FUNCTION ${fns} TO ${operationsRole}`,
+  // Custody/preparation read (booking detail) joins these two; the role plan grants them (R64/R65) but the Production role predates that grant: custody GET returned 42501.
+  `GRANT SELECT ON ${SELECTION_TABLES} TO ${operationsRole}`];
 }
 /** Exact expected privileges (the same set as the production role plan): pricing reads/appends events and executes both functions;
  * operations executes both functions only; nobody updates, deletes or truncates the events; PUBLIC executes nothing. */
 export async function couponAdminGrantProof(c:Pick<PoolClient,'query'>,pricingRole:string,operationsRole:string){
  const has=async(sql:string,args:unknown[])=>(await c.query(sql,args)).rows[0]?.ok===true;
  for(const role of [pricingRole,operationsRole])for(const fn of COUPON_ADMIN_FUNCTIONS)if(!await has("SELECT has_function_privilege($1,$2,'EXECUTE') ok",[role,fn]))throw Error(refused);
+ for(const t of SELECTION_TABLES.split(','))if(!await has("SELECT has_table_privilege($1,$2,'SELECT') ok",[operationsRole,t]))throw Error(refused);
  for(const fn of COUPON_ADMIN_FUNCTIONS)if(await has("SELECT has_function_privilege('public',$1,'EXECUTE') ok",[fn]))throw Error(refused);
  for(const p of ['SELECT','INSERT','UPDATE','DELETE','TRUNCATE']){
   if(await has('SELECT has_table_privilege($1,$2,$3) ok',[pricingRole,COUPON_ADMIN_TABLE,p])!==(p==='SELECT'||p==='INSERT'))throw Error(refused);

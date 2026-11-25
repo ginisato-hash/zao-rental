@@ -492,7 +492,7 @@
   {
    "id": "0063",
    "file": "0063_coupon_admin.sql",
-   "sha256": "130aa62d1702feae53284949595ab319c6adb7527d8ca1e538fa781a2c94d98d",
+   "sha256": "e9354e9d9439d3800d6e7b117b2990aa42f4470abbf7a3023f451c6e06df0f57",
    "runtimeGuards": 0,
    "guard": null
   }

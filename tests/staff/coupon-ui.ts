@@ -39,7 +39,7 @@ try{
  await check('the sidebar links to Coupons; the form starts empty; an incomplete form is refused without a request',async()=>{
   await page.goto('/staff');await page.getByRole('link',{name:'クーポン',exact:true}).click();await page.waitForURL('**/staff/coupons');
   await expect(page.getByRole('heading',{name:'クーポン',level:1})).toBeVisible();await expect(page.getByText('クーポンはまだありません。')).toBeVisible({timeout:30000});
-  await expect(page.getByText('条件を変えたいときは、新しいコードで作り直し')).toBeVisible();
+  await expect(page.getByText('条件を変えたいときは、一覧の「複製して作り直す」')).toBeVisible();await expect(page.getByText('通算の利用回数の上限ではありません')).toBeVisible();await expect(page.getByText('お支払い額が0円になる組み合わせは予約では使えません')).toBeVisible();
   assert.equal(await page.getByLabel('コード（英数字とハイフン、32文字まで）').inputValue(),'');assert.equal(await page.getByLabel('割引率（%、小数2桁まで）').inputValue(),'');
   assert.equal(await page.getByLabel('割引の種類').inputValue(),'');
   let posted=false;page.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/coupons')posted=true;});
@@ -67,6 +67,25 @@ try{
   await page.getByRole('button',{name:'クーポンを作成',exact:true}).click();const answer=await save;assert.equal(answer.status(),409,await answer.text());
   await expect(page.getByRole('alert').filter({hasText:'このコードはすでに使われています'})).toBeVisible();
   await expect(page.locator('tr',{hasText:CODE})).toHaveCount(1);
+ });
+ await check('Duplicate as new copies the terms without the code, creates the replacement and disables the original in one step',async()=>{
+  await page.locator('tr',{hasText:CODE}).getByRole('button',{name:'複製して作り直す'}).click();
+  await expect(page.getByRole('status').filter({hasText:'の条件をコピーしました'})).toBeVisible();
+  assert.equal(await page.getByLabel('コード（英数字とハイフン、32文字まで）').inputValue(),'','the code is never copied');
+  assert.equal(await page.getByLabel('割引の種類').inputValue(),'PERCENT_BPS');assert.equal(await page.getByLabel('割引率（%、小数2桁まで）').inputValue(),'12.5');
+  assert.equal(await page.getByLabel('割引上限額（円）').inputValue(),'3000');assert.equal(await page.getByLabel('同時に確保できる予約数の上限').inputValue(),'50');
+  assert.equal(await page.getByLabel('有効開始（日本時間）').inputValue(),'2035-01-01T00:00');
+  await expect(page.getByRole('checkbox',{name:'作成後に元のコードを無効にする'})).toBeChecked();
+  await page.getByLabel('コード（英数字とハイフン、32文字まで）').fill('SYNTH-CPN-2');await page.getByLabel('割引率（%、小数2桁まで）').fill('15');
+  page.once('dialog',d=>void d.accept());
+  const posts:string[]=[];const onReq=(r:import('@playwright/test').Request)=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/coupons')posts.push(JSON.parse(r.postData()!).input.operation);};page.on('request',onReq);
+  await page.getByRole('button',{name:'クーポンを作成',exact:true}).click();
+  await expect(page.getByRole('status').filter({hasText:'クーポンを作成しました。'})).toBeVisible();page.off('request',onReq);
+  assert.deepEqual(posts,['create','setActive']);
+  await expect(page.locator('tr',{hasText:'SYNTH-CPN-2'})).toContainText('15%');await expect(page.locator('tr',{hasText:'SYNTH-CPN-2'})).toContainText('有効');
+  await expect(page.locator('tr',{hasText:CODE})).toContainText('無効');
+  // Put the original back to its active state so the following steps (disable/enable) keep their starting point.
+  page.once('dialog',d=>void d.accept());await page.locator('tr',{hasText:CODE}).getByRole('button',{name:'有効にする'}).click();await expect(page.getByRole('status').filter({hasText:'状態を変更しました。'})).toBeVisible();
  });
 
  await check('disable then enable asks for confirmation and updates the state',async()=>{

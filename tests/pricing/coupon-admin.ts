@@ -73,7 +73,7 @@ try{
   await make({code:'SYNTH-PCT',kind:'PERCENT_BPS',value:1000,maximumDiscountJpy:100000});let s=await q('SYNTH-PCT');assert.deepEqual([s.subtotalJpy,s.couponDiscountJpy,s.totalJpy],[7500,750,6750]);
   await make({code:'SYNTH-CAP',kind:'PERCENT_BPS',value:5000,maximumDiscountJpy:1000});s=await q('SYNTH-CAP');assert.deepEqual([s.couponDiscountJpy,s.totalJpy],[1000,6500]);
   await make({code:'SYNTH-ROUND-A',kind:'PERCENT_BPS',value:3333,maximumDiscountJpy:100000});assert.equal((await q('SYNTH-ROUND-A')).couponDiscountJpy,2500);await make({code:'SYNTH-ROUND-B',kind:'PERCENT_BPS',value:3334,maximumDiscountJpy:100000});assert.equal((await q('SYNTH-ROUND-B')).couponDiscountJpy,2501);
-  await make({code:'SYNTH-OVER',value:100000,maximumDiscountJpy:100000});s=await q('SYNTH-OVER',true);assert.deepEqual([s.couponDiscountJpy,s.advanceDiscountJpy,s.totalJpy,s.zeroTotalPath],[7500,0,0,'MANUAL_NO_PAYMENT_CONFIRMATION_REQUIRED']);
+  await make({code:'SYNTH-OVER',value:100000,maximumDiscountJpy:100000});await assert.rejects(q('SYNTH-OVER',true),{code:'COUPON_TOTAL_ZERO',status:422});/* COUPON-ZERO-01: an over-discount that would zero the total is refused, not quoted */
   await make({code:'SYNTH-FIXED',value:300,maximumDiscountJpy:300});s=await q('SYNTH-FIXED');assert.equal(s.totalJpy,7200);
  });
  await check('advance discount combination ALLOW / DENY / UNSET',async()=>{
@@ -94,6 +94,21 @@ try{
   const row=((await x.quotes.listCoupons()) as {coupons:{id:string;usage:{activeReservations:number}}[]}).coupons.find(c=>c.id===id)!;assert.equal(row.usage.activeReservations,1);
   await x.quotes.setCouponActive(id,{active:false});await assert.rejects(x.quotes.reserveCoupon(second.id,randomUUID()),{code:'COUPON_INACTIVE'});await x.quotes.setCouponActive(id,{active:true});
   await x.clock('2035-01-01T10:11:30+09:00');assert.equal((await x.quotes.create(randomUUID(),input('SYNTH-CAP1'))).quote.snapshot.couponDiscountJpy,700);await x.clock('2035-01-01T10:00:00+09:00');
+ });
+ await check('COUPON-ZERO-01: a coupon that leaves nothing to pay is refused at preview and at quote creation with a clear code, creates nothing, and can be removed',async()=>{
+  await make({code:'ZERO-FIXED',kind:'FIXED_JPY',value:7500,maximumDiscountJpy:7500,advanceCombination:'ALLOW'});
+  await make({code:'ZERO-PCT',kind:'PERCENT_BPS',value:10000,maximumDiscountJpy:7500,advanceCombination:'ALLOW'});
+  await make({code:'ONE-YEN',kind:'FIXED_JPY',value:7499,maximumDiscountJpy:7499,advanceCombination:'ALLOW'});
+  const before=await counts();
+  for(const code of ['ZERO-FIXED','ZERO-PCT'])for(const advance of [false,true]){
+   await assert.rejects(x.quotes.preview(input(code,advance)),{code:'COUPON_TOTAL_ZERO',status:422});
+   await assert.rejects(x.quotes.create(randomUUID(),input(code,advance)),{code:'COUPON_TOTAL_ZERO',status:422});
+  }
+  assert.deepEqual(await counts(),before,'no quote and no reservation was created');
+  // Removing the coupon re-quotes normally; a coupon that leaves 1 yen is accepted (with and without the advance discount).
+  assert.equal((await x.quotes.preview(input(null))).totalJpy,7500);
+  for(const advance of [false,true]){const p=await x.quotes.preview(input('ONE-YEN',advance)) as {totalJpy:number;couponDiscountJpy:number};assert.equal(p.totalJpy,1);assert.equal(p.couponDiscountJpy,7499);}
+  assert.equal((await x.quotes.create(randomUUID(),input('ONE-YEN',true))).quote.snapshot.totalJpy,1);
  });
  console.log(`COUPON admin real PostgreSQL: ${passed} passed; no skipped; synthetic data only.`);
 }catch(e){console.error('COUPON_ADMIN_FAILED '+stage+' '+((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').slice(0,6).join('\n'));failed=true;}finally{await x.close();console.log('Owned coupon admin PostgreSQL stopped.');}

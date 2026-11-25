@@ -19,8 +19,11 @@ const L={
  intro:['お客様が予約時に入力するクーポンコードを作成・管理します。','Create and manage the coupon codes customers enter when booking.'],
  how1:['作成したクーポンの条件（割引・期間・対象店舗・対象商品・上限）は後から変更できません。','The terms of a coupon (discount, period, stations, products, limits) cannot be changed after creation.'],
  how2:['できる操作は「有効／無効」の切り替えです。無効にすると新しい予約では使えません（すでに確定した予約は変わりません）。','The only change is switching it on or off. A disabled coupon cannot be used on new bookings; confirmed bookings are not changed.'],
- how3:['条件を変えたいときは、新しいコードで作り直し、古いクーポンを無効にしてください。','To change terms, create a new coupon with a new code and disable the old one.'],
+ how3:['条件を変えたいときは、一覧の「複製して作り直す」で条件をコピーし、新しいコードで作成します。元のコードは同時に無効にできます（過去の予約・金額の記録は変わりません）。','To change terms, press “Duplicate as new” in the list to copy them, then create a new coupon with a new code. The original code can be disabled at the same time (past bookings and price records are unchanged).'],
  how4:['割引の値・期間・上限などは初期値がありません。すべて入力が必要です。','There are no default values. Discount, period and limits must all be entered.'],
+ how5:['同時予約上限は「取消などで枠が戻る、有効な予約の数」です。通算の利用回数の上限ではありません。支払い手続きを始めた予約は、結果が確定するまで枠を保持します。','The reserved-bookings limit is the number of live bookings: a slot returns when a booking is cancelled, but it is not a lifetime usage cap. A booking whose payment has started keeps its slot until the outcome is final.'],
+ how6:['割引後のお支払い額が0円になる組み合わせは予約では使えません（適用時にエラーになります）。','A combination that leaves 0 yen to pay cannot be used on a booking (it is refused when applied).'],
+ dup:['複製して作り直す','Duplicate as new'],dupNote:['の条件をコピーしました。新しいコードを入力し、必要なら期間などを直して作成してください。','terms copied. Enter a new code and adjust the period or limits if needed, then create.'],dupDisable:['作成後に元のコードを無効にする','Disable the original code after creating'],dupDisableFailed:['新しいクーポンは作成しましたが、元のコードの無効化に失敗しました。一覧から無効にしてください。','The new coupon was created, but disabling the original failed. Disable it from the list.'],
  viewOnly:['閲覧のみ（作成・切り替えには管理者権限が必要です）','View only (creating and switching need administrator permission)'],
  newTitle:['クーポンを作成','Create a coupon'],code:['コード（英数字とハイフン、32文字まで）','Code (letters, digits, hyphen; up to 32)'],codeHint:['大文字に統一されます','Stored in upper case'],
  from:['有効開始（日本時間）','Valid from (JST)'],until:['有効終了（日本時間・この時刻まで）','Valid until (JST, exclusive)'],
@@ -54,6 +57,7 @@ const EMPTY={code:'',from:'',until:'',stores:[] as string[],products:[] as strin
 export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffLocale;stamp:string;products:CouponProductOption[]}){
  const locale=useStaffLocaleOr(serverLocale),en=locale==='en',tx=(k:keyof typeof L)=>L[k][en?1:0];
  const [data,setData]=useState<View|null>(null),[loadFailed,setLoadFailed]=useState(false),[reload,setReload]=useState(0),gen=useRef(0);
+ const [replaces,setReplaces]=useState<{id:string;code:string}|null>(null),[disableOld,setDisableOld]=useState(true);
  const [f,setF]=useState(EMPTY),[busy,setBusy]=useState(false),[msg,setMsg]=useState<{kind:'ok'|'err';text:string}|null>(null),pending=useRef<{key:string;body:string}|null>(null);
  useEffect(()=>{const ticket=++gen.current;queueMicrotask(async()=>{
   try{const r=await fetch('/api/coupons',{cache:'no-store',headers:{'x-zao-session':stamp}});if(r.status===401){invalidateStaffView();return;}if(!r.ok)throw Error();const v=await r.json() as View;if(ticket===gen.current){setData(v);setLoadFailed(false);}}
@@ -87,8 +91,14 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
   setBusy(true);
   try{const input={operation:'create',terms};const a=await post(input,JSON.stringify(input));if(!a)return;
    if(!a.ok){setMsg({kind:'err',text:errText(a.status,a.code)});return;}
-   setMsg({kind:'ok',text:tx('created')});setF(EMPTY);setReload(n=>n+1);
+   if(replaces&&disableOld){const off={operation:'setActive',couponId:replaces.id,active:false,reason:null};const b=await post(off,JSON.stringify(off));if(!b||!b.ok){setMsg({kind:'err',text:tx('dupDisableFailed')});setF(EMPTY);setReplaces(null);setReload(n=>n+1);return;}}
+   setMsg({kind:'ok',text:tx('created')});setF(EMPTY);setReplaces(null);setReload(n=>n+1);
   }catch{setMsg({kind:'err',text:tx('failed')});}finally{setBusy(false);}
+ };
+ const duplicate=(c:Coupon)=>{
+  const t=c.terms;setMsg(null);setReplaces({id:c.id,code:c.code});setDisableOld(true);
+  setF({code:'',from:jst(t.validFrom).replace(' ','T'),until:jst(t.validUntil).replace(' ','T'),stores:[...t.stores],products:[...t.products],kind:t.kind,value:t.kind==='PERCENT_BPS'?String(t.value/100):String(t.value),minimum:String(t.minimumJpy),minBasis:t.minimumBasis,maxDiscount:String(t.maximumDiscountJpy),advance:t.advanceCombination,limit:t.maxActiveReservations===null?'':String(t.maxActiveReservations),noLimit:t.maxActiveReservations===null});
+  setTimeout(()=>document.getElementById('cp-new')?.scrollIntoView({block:'start'}),0);
  };
  const switchActive=async(c:Coupon)=>{
   setMsg(null);const active=!c.active;
@@ -106,9 +116,10 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
   <div className="ox-head"><h1>{st(locale,'coupons')}</h1></div>
   <p className="sx-help">{tx('intro')}</p>
   <section className="sx-card cp-card" aria-labelledby="cp-howto"><h2 id="cp-howto">{en?'How it works':'使い方'}</h2>
-   <ul className="cp-howto"><li>{tx('how1')}</li><li>{tx('how2')}</li><li>{tx('how3')}</li><li>{tx('how4')}</li></ul></section>
+   <ul className="cp-howto"><li>{tx('how1')}</li><li>{tx('how2')}</li><li>{tx('how3')}</li><li>{tx('how4')}</li><li>{tx('how5')}</li><li>{tx('how6')}</li></ul></section>
   {data&&!data.canEdit&&<p className="sx-status">{tx('viewOnly')}</p>}
   {data?.canEdit&&<section className="sx-card cp-card" aria-labelledby="cp-new"><h2 id="cp-new">{tx('newTitle')}</h2>
+   {replaces&&<p className="sx-status" role="status">{replaces.code} {tx('dupNote')}</p>}
    <form className="cp-form" noValidate onSubmit={e=>{e.preventDefault();void submit();}}>
     <label>{tx('code')}<input type="text" maxLength={32} autoComplete="off" value={f.code} onChange={e=>set('code',e.target.value)}/><span className="cp-hint">{tx('codeHint')}</span></label>
     <label>{tx('from')}<input type="datetime-local" value={f.from} onChange={e=>set('from',e.target.value)}/></label>
@@ -125,6 +136,7 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
     <label>{tx('advance')}<select value={f.advance} onChange={e=>set('advance',e.target.value)}><option value="">{tx('kindPh')}</option><option value="ALLOW">{tx('allow')}</option><option value="DENY">{tx('deny')}</option><option value="UNSET">{tx('unset')}</option></select></label>
     <label>{tx('limit')}<input type="text" inputMode="numeric" disabled={f.noLimit} value={f.noLimit?'':f.limit} onChange={e=>set('limit',e.target.value)}/>
      <span className="cp-check"><input type="checkbox" checked={f.noLimit} onChange={e=>set('noLimit',e.target.checked)}/>{tx('noLimit')}</span></label>
+    {replaces&&<label className="cp-check" style={{gridColumn:'1/-1'}}><input type="checkbox" checked={disableOld} onChange={e=>setDisableOld(e.target.checked)}/>{tx('dupDisable')}</label>}
     <div className="cp-actions" style={{gridColumn:'1/-1'}}><button type="submit" className="sx-btn sx-btn--primary" disabled={busy}>{tx('create')}</button></div>
    </form>
   </section>}
@@ -139,7 +151,7 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
      <td className="cp-cell-list">{c.terms.stores.map(label).join('・')}<br/>{c.terms.products.length===products.length?`${tx('items')}: ${tx('all')}`:c.terms.products.map(pname).join(', ')}</td>
      <td className="cp-cell-list">{tx('minLabel')} {jpy(c.terms.minimumJpy)}<br/>{tx('maxLabel')} {jpy(c.terms.maximumDiscountJpy)}<br/>{tx('maxRes')}: {c.terms.maxActiveReservations??tx('unlimited')}<br/>{tx('combo')}: {comboLabel(c.terms.advanceCombination)}</td>
      <td>{c.usage.bookings}{en?' ':''}{tx('bookings')}<br/>{c.usage.activeReservations}{en?' ':''}{tx('holding')}</td>
-     <td><span className={'cp-badge'+(c.active?' cp-badge--on':'')}>{tx(c.active?'on':'off')}</span>{data.canEdit&&<><br/><button type="button" className="sx-btn" disabled={busy} onClick={()=>void switchActive(c)}>{tx(c.active?'disable':'enable')}</button></>}</td>
+     <td><span className={'cp-badge'+(c.active?' cp-badge--on':'')}>{tx(c.active?'on':'off')}</span>{data.canEdit&&<><br/><button type="button" className="sx-btn" disabled={busy} onClick={()=>void switchActive(c)}>{tx(c.active?'disable':'enable')}</button> <button type="button" className="sx-btn" disabled={busy} onClick={()=>duplicate(c)}>{tx('dup')}</button></>}</td>
      <td>{date(c.createdAt)}</td></tr>)}</tbody></table></div>}
   </section>
  </main></StaffSessionBoundary>;

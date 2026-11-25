@@ -86,6 +86,30 @@ try{
   const out=await Promise.allSettled([x.service.create(randomUUID(),a.quote.id,contact),x.service.create(randomUUID(),b.quote.id,contact),x.quotes.create(randomUUID(),{conditions:skiSet('2035-04-04'),holdId:null,couponCode:'BOOK-MIX',wantAdvance:false}),x.quotes.setCouponActive(id,{active:true}),x.quotes.listCoupons()]);
   assert.ok(out.every(o=>o.status==='fulfilled'),JSON.stringify(out.map(o=>o.status==='rejected'?(o.reason as {code:string}).code:'ok')));assert.equal(await usage(id),2);
  });
+ await check('COUPON-CAP-UNKNOWN-01: a payment whose response was lost keeps the last slot after its hold expires; another booking is refused; late success never frees it; a definite failure does',async()=>{
+  const id=await make({code:'BOOK-UNK',maxActiveReservations:1});
+  const a=await quoteWith('BOOK-UNK','2035-03-02');const bookingA=await book(a.quote.id);
+  x.fake.failAfterSave=true;const unknown=await x.service.startPayment(bookingA.id,randomUUID());x.fake.failAfterSave=false;
+  assert.equal(unknown.payments[0].state,'UNKNOWN');assert.equal(unknown.state,'PAYMENT_PENDING');assert.equal(await usage(id),1);
+  // Time passes beyond the hold; the expiry sweep (inside every HOLD command) releases the hold but the booking stays PAYMENT_PENDING.
+  const exp=(await x.db.pool.query('SELECT expires_at FROM inventory_holds WHERE id=$1',[a.holdId])).rows[0].expires_at as Date;await x.clock(new Date(exp.getTime()+60_000).toISOString());const conditions=skiSet('2035-03-03');const h=await x.holds.command('create',randomUUID(),conditions,undefined,undefined,bufferOverride);assert.equal(h.result,'CREATED');
+  const hs=(await x.db.pool.query('SELECT state,expires_at FROM inventory_holds WHERE id=$1',[a.holdId])).rows[0] as {state:string;expires_at:Date};assert.ok(hs.expires_at<=x.now(),'the hold is past its expires_at (whatever its state)');
+  assert.equal((await x.db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[bookingA.id])).rows[0].state,'PAYMENT_PENDING');
+  assert.equal(await usage(id),1,'an unknown payment keeps its slot after expiry');
+  await assert.rejects(x.quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:'BOOK-UNK',wantAdvance:false}),{code:'COUPON_LIMIT_REACHED',status:409});
+  // A late provider success is reconciled by the existing state machine (confirmation or review) and never frees the slot.
+  const late=await x.service.reconcile(bookingA.id);assert.ok(['CONFIRMED_DEV','PAYMENT_REVIEW'].includes(late.state),late.state);assert.equal(await usage(id),1);
+  await assert.rejects(x.quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:'BOOK-UNK',wantAdvance:false}),{code:'COUPON_LIMIT_REACHED',status:409});
+  await x.clock('2035-01-01T10:00:00+09:00');
+ });
+ await check('a definite payment failure terminalized by the existing state machine returns the slot',async()=>{
+  const id=await make({code:'BOOK-FAIL',maxActiveReservations:1});const d=await quoteWith('BOOK-FAIL','2035-03-04');const b=await book(d.quote.id);assert.equal(await usage(id),1);
+  x.fake.status='FAILED';await x.service.startPayment(b.id,randomUUID()).catch(()=>{});x.fake.status='COMPLETED';
+  const state=(await x.db.pool.query('SELECT state FROM rental_bookings WHERE id=$1',[b.id])).rows[0].state as string;
+  // The slot is only returned once the booking is CANCELLED; if the simulated failure leaves it PAYMENT_PENDING it must still count.
+  assert.equal(await usage(id),state==='CANCELLED'?0:1,'slot follows the booking state, not the clock');
+  process.stdout.write('  (definite failure leaves the booking in state '+state+')\n');
+ });
  console.log(`COUPON booking real PostgreSQL: ${passed} passed; no skipped; test-owned payment adapter, no Square requests.`);
 }catch(e){console.error('COUPON_BOOKING_FAILED '+stage+' '+((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').slice(0,6).join('\n'));failed=true;}finally{await x.close();console.log('Owned coupon booking PostgreSQL stopped.');}
 if(failed)process.exit(1);

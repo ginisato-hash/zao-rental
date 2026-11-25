@@ -95,6 +95,15 @@ try{
   try{await owner.query("UPDATE inventory_holds SET expires_at=inventory_clock()-interval '1 minute' WHERE id=$1 AND state='ACTIVE'",[d.holdId]);}finally{await owner.query("ALTER TABLE inventory_holds ENABLE TRIGGER USER");}
   assert.equal((await owner.query('SELECT state FROM inventory_holds WHERE id=$1',[d.holdId])).rows[0].state,'ACTIVE','not swept yet');
   assert.equal(await n(cid2),1,'DRAFT with an ACTIVE hold past expires_at is not counted');
+  // COUPON-CAP-UNKNOWN-01: once payment has started, time alone never frees a slot (money may have moved or may still arrive).
+  const setState=async(id:string,state:string)=>{await owner.query("ALTER TABLE rental_bookings DISABLE TRIGGER USER");try{await owner.query('UPDATE rental_bookings SET state=$2 WHERE id=$1',[id,state]);}finally{await owner.query("ALTER TABLE rental_bookings ENABLE TRIGGER USER");}};
+  await setState(d.bookingId,'PAYMENT_PENDING');
+  assert.equal(await n(cid2),2,'PAYMENT_PENDING with a hold past expires_at (response lost / UNKNOWN) still counts');
+  await owner.query("ALTER TABLE inventory_holds DISABLE TRIGGER USER");
+  try{await owner.query("UPDATE inventory_holds SET state='EXPIRED' WHERE id=$1",[d.holdId]);}finally{await owner.query("ALTER TABLE inventory_holds ENABLE TRIGGER USER");}
+  assert.equal(await n(cid2),2,'PAYMENT_PENDING with an EXPIRED hold still counts');
+  await setState(d.bookingId,'PAYMENT_REVIEW');assert.equal(await n(cid2),2,'PAYMENT_REVIEW counts whatever the hold says');
+  await setState(d.bookingId,'CANCELLED');assert.equal(await n(cid2),1,'only a definitive cancellation (the existing terminalization) returns the slot');
   assert.equal(plain.bookingId.length>0&&c.bookingId.length>0,true);
  });
  console.log('PASS coupon-admin-migration '+count+' checks');

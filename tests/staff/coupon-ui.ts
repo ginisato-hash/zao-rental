@@ -113,7 +113,7 @@ try{
   const small=await browser.newContext({baseURL:origin,viewport:{width:390,height:844},storageState:await context.storageState()});const p=await small.newPage();
   await small.addCookies([{name:'zao_staff_locale',value:'en',url:origin}]);
   await p.goto('/staff/coupons');await expect(p.getByRole('heading',{name:'Coupons',level:1})).toBeVisible();
-  await expect(p.getByRole('button',{name:'Create coupon',exact:true})).toBeVisible();await expect(p.getByText('To change terms, create a new coupon')).toBeVisible();
+  await expect(p.getByRole('button',{name:'Create coupon',exact:true})).toBeVisible();await expect(p.getByText('To change terms, press “Duplicate as new”')).toBeVisible();
   await expect(p.locator('tr',{hasText:CODE})).toContainText('Active');
   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1),false);
   await p.screenshot({path:shots+'/coupons-en-390.png',fullPage:true});await small.close();

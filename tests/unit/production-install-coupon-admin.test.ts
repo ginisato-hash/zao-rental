@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {productionCouponAdminGrants} from '../../scripts/production-coupon-admin-delta';
 import {main,type InstallSeams} from '../../scripts/production-install-coupon-admin';
 
 // 0063 coupon admin delta (migration + operations grants) operator: the same admission gates as the staff delta installer.
@@ -34,4 +35,10 @@ test('coupon admin package scripts are the three fixed commands and the installe
  const source=readFileSync('scripts/production-install-coupon-admin.ts','utf8');
  assert.ok(!/console\.(log|error)\([^)]*(uri|password|connection)/i.test(source));
  assert.ok(/applyProductionCouponAdminMigration\(session\.client,'neondb','neondb_owner'\)/.test(source)&&/applyProductionCouponAdminGrants\(session\.client,'neondb','neondb_owner'\)/.test(source));
+});
+
+test('coupon admin grants also repair the operations role read of the recommendation tables (custody GET 42501)',()=>{
+ const sql=productionCouponAdminGrants('neondb','neondb_pricing','neondb_operations');
+ assert.ok(sql.includes('GRANT SELECT ON recommendation_previews,recommendation_selections TO neondb_operations'));
+ assert.ok(sql.every(s=>!/\b(UPDATE|DELETE|TRUNCATE|ALL)\b/.test(s)));
 });

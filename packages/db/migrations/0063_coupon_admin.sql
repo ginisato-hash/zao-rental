@@ -8,10 +8,13 @@
 -- * coupon_is_active(uuid) reads the newest event. SECURITY DEFINER so that the booking role can ask without table access.
 -- * coupon_booking_count(uuid) counts bookings whose price quote used the coupon, excluding bookings that can no longer hold it:
 --   rental_bookings.state is one of DRAFT, PAYMENT_PENDING, PAYMENT_REVIEW, CONFIRMED_DEV, COMPLETED_DEV, CONFIRMED, COMPLETED, CANCELLED
---   (booking_state_valid, 0045). CANCELLED is the only terminal-negative booking state. Expiry and failed payment do not change the
---   booking row (0049/0053 release the hold; the booking stays DRAFT/PAYMENT_PENDING), so an unpaid booking (DRAFT, PAYMENT_PENDING)
---   whose hold is EXPIRED or RELEASED, or whose hold has passed expires_at even if it has not been swept yet, is also excluded. Confirmed/completed bookings count even though their hold is released
---   (0017), and PAYMENT_REVIEW counts whatever the hold says because money may have moved. Only a number leaves the database.
+--   (booking_state_valid, 0045). CANCELLED is the only terminal-negative booking state: a payment that definitively failed or expired is
+--   terminalized to CANCELLED by the existing state machine (0053 and the function replaced below), which is what returns the slot.
+--   Time alone never frees a slot once payment has started: PAYMENT_PENDING (payment submitted, UNKNOWN or response lost), PAYMENT_REVIEW and
+--   paid bookings always count, whatever the hold says, because money may have moved or may still arrive (COUPON-CAP-UNKNOWN-01).
+--   The only time-based release is a DRAFT booking, which is created before any payment attempt, once its hold is EXPIRED or RELEASED or has
+--   passed expires_at even if the sweep has not run yet. Confirmed/completed bookings count even though their hold is released
+--   (0017). Only a number leaves the database.
 CREATE TABLE coupon_status_events(
  id uuid PRIMARY KEY,
  coupon_id uuid NOT NULL REFERENCES coupon_versions(id),
@@ -38,7 +41,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp A
   JOIN price_quotes q ON q.id=b.quote_id
   LEFT JOIN inventory_holds h ON h.id=b.hold_id
  WHERE q.coupon_id=p_coupon AND b.state<>'CANCELLED'
-  AND NOT (b.state IN ('DRAFT','PAYMENT_PENDING') AND (h.state IN ('EXPIRED','RELEASED') OR h.expires_at<=public.inventory_clock()))
+  AND NOT (b.state='DRAFT' AND (h.state IN ('EXPIRED','RELEASED') OR h.expires_at<=public.inventory_clock()))
 $$;
 REVOKE ALL ON FUNCTION coupon_booking_count(uuid) FROM PUBLIC;
 

@@ -44,3 +44,9 @@ type CouponView = {
 ## 4. エラーコード一覧（クーポン関連）
 
 `COUPON_CODE_EXISTS`(409) / `COUPON_NOT_FOUND`(見積経路422・setCouponActive 404) / `COUPON_INACTIVE`(409) / `COUPON_NOT_APPLICABLE`(422) / `COUPON_LIMIT_REACHED`(409) / `INVALID_COUPON`(422) / `PROMOTION_POLICY_UNRESOLVED`(422) / `DISCOUNTS_NOT_COMBINABLE`(422) / `WEAR_COUPON_COMBINATION_UNAPPROVED`(既存の status) / `IDEMPOTENCY_MISMATCH`(409) / `FORBIDDEN`(403) / `INVALID_INPUT`。
+
+## 2026-11-26 Owner changes (PR #80)
+- 事前支払い5%OFFのチェックでクーポンを拒否しない。併用可（ALLOW）は両方適用、併用不可（DENY/UNSET）はクーポン割引のみを適用し5%は適用しない（画面に注記）。`DISCOUNTS_NOT_COMBINABLE` / `PROMOTION_POLICY_UNRESOLVED` はクーポン経路では発生しない。
+- ウェアセット割引（20%）とクーポンは無条件で併用する。クーポンはウェア割引後の金額に対して計算する。`WEAR_COUPON_COMBINATION_UNAPPROVED` は発生しない。
+- 削除: `POST /api/coupons {operation:'delete',couponId}`（PRICE_EDIT/ADMIN/ALL）。予約・有効な仮押さえが0件のクーポンのみ。追記専用イベント（reason=`COUPON_DELETED_BY_STAFF`）で恒久的に無効化し一覧から隠す。コードは再利用不可、再有効化不可。使用実績ありは `COUPON_IN_USE` 409。DB変更なし。
+- ゲストの拒否理由は画面では1文に統一のまま、内部理由コードのみサーバーログ（`guest_coupon_rejected`）に出す（入力コード・個人情報なし）。

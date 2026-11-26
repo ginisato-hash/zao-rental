@@ -22,7 +22,7 @@ export const RESTORE_REQUIRED=[
  'public.booking_cancellation_policies','public.booking_cancellations','public.booking_cancellation_refunds',
  'public.rental_terms_bundles','public.rental_terms_acceptances',
  'public.staff_booking_events','public.staff_event_deferred','public.customer_profiles','public.customer_booking_links','public.customer_link_requests','public.staff_order_drafts','public.rental_terms_reconsents','public.staff_notification_recipients','public.staff_notification_outbox',
- 'public.store_sales_stops','public.store_sales_stop_history','public.coupon_status_events',
+ 'public.store_sales_stops','public.store_sales_stop_history','public.coupon_status_events','public.group_orders','public.group_events','public.group_members','public.group_order_parts','public.group_quotes','public.group_consents','public.group_adjustments','public.group_change_requests','public.group_payments','public.group_requests','public.group_entrance','public.group_entrance_history','public.group_notification_outbox',
  'square_webhook.inbox','payment_reconciliation.streams','payment_reconciliation.jobs','payment_reconciliation.events','payment_reconciliation.audit','payment_reconciliation.provider_stops',
 ] as const;
 /** Deliberately not restored. Each entry names why the row cannot or must not come back. */

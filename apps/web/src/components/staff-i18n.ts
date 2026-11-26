@@ -29,7 +29,7 @@ const D={
  staffUsers:['スタッフと権限','Staff and permissions'],prices:['料金','Prices'],content:['公開コンテンツ','Public content'],customerMail:['顧客メール配送','Customer email delivery'],opsConsole:['運用状況（例外）','Operations status'],launch:['公開準備状況','Launch readiness'],stations:['店舗','Stations'],
  search:['予約を検索','Search orders'],
  salesStops:['売り止め（臨時休業）','Sales stops (closures)'],
- coupons:['クーポン','Coupons'],
+ coupons:['クーポン','Coupons'],groups:['団体予約','Group orders'],
 } as const;
 export type StaffKey=keyof typeof D;
 export const st=(l:StaffLocale,k:StaffKey)=>D[k][l==='en'?1:0];

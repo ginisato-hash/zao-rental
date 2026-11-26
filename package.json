@@ -59,6 +59,8 @@
     "test:group-admin-ui": "node --import tsx tests/group/admin-ui.ts --built",
     "test:group-custody": "node --import tsx tests/group/custody.ts",
     "test:group-custody-ui": "node --import tsx tests/group/custody-ui.ts",
+    "test:group-customer-api": "node --import tsx tests/group/customer-api.ts",
+    "test:group-customer-ui": "node --import tsx tests/group/customer-ui.ts",
     "test:wear": "node --import tsx tests/wear/real-postgres.ts && node --import tsx tests/wear/group-capacity.ts",
     "test:wear-ui": "node --import tsx tests/wear/normal-ui.ts",
     "test:wear-mixed": "node --import tsx tests/wear/mixed.ts",

@@ -78,8 +78,8 @@ try{
  });
  await check('advance discount combination ALLOW / DENY / UNSET',async()=>{
   await make({code:'SYNTH-ADV-A',advanceCombination:'ALLOW'});const a=(await x.quotes.create(randomUUID(),input('SYNTH-ADV-A',true))).quote.snapshot as {couponDiscountJpy:number;advanceDiscountJpy:number;totalJpy:number};assert.deepEqual([a.couponDiscountJpy,a.advanceDiscountJpy,a.totalJpy],[700,340,6460]);
-  await make({code:'SYNTH-ADV-D',advanceCombination:'DENY'});await assert.rejects(x.quotes.create(randomUUID(),input('SYNTH-ADV-D',true)),{code:'DISCOUNTS_NOT_COMBINABLE',status:422});assert.equal((await x.quotes.create(randomUUID(),input('SYNTH-ADV-D',false))).quote.snapshot.totalJpy,6800);
-  await make({code:'SYNTH-ADV-U',advanceCombination:'UNSET'});await assert.rejects(x.quotes.create(randomUUID(),input('SYNTH-ADV-U',true)),{code:'PROMOTION_POLICY_UNRESOLVED',status:422});await assert.rejects(x.quotes.preview(input('SYNTH-ADV-D',true)),{code:'DISCOUNTS_NOT_COMBINABLE'});
+  await make({code:'SYNTH-ADV-D',advanceCombination:'DENY'});assert.equal((await x.quotes.create(randomUUID(),input('SYNTH-ADV-D',true))).quote.snapshot.advanceDiscountJpy,0);assert.equal((await x.quotes.create(randomUUID(),input('SYNTH-ADV-D',false))).quote.snapshot.totalJpy,6800);
+  await make({code:'SYNTH-ADV-U',advanceCombination:'UNSET'});assert.equal((await x.quotes.create(randomUUID(),input('SYNTH-ADV-U',true))).quote.snapshot.advanceDiscountJpy,0);assert.equal((await x.quotes.preview(input('SYNTH-ADV-D',true))).advanceDiscountJpy,0);
  });
  await check('preview with a coupon equals create, is read-only, accepts only holdId null and never trusts client amounts',async()=>{
   await make({code:'SYNTH-PREV',kind:'PERCENT_BPS',value:1000,maximumDiscountJpy:100000});const before=await counts();
@@ -109,6 +109,15 @@ try{
   assert.equal((await x.quotes.preview(input(null))).totalJpy,7500);
   for(const advance of [false,true]){const p=await x.quotes.preview(input('ONE-YEN',advance)) as {totalJpy:number;couponDiscountJpy:number};assert.equal(p.totalJpy,1);assert.equal(p.couponDiscountJpy,7499);}
   assert.equal((await x.quotes.create(randomUUID(),input('ONE-YEN',true))).quote.snapshot.totalJpy,1);
+ });
+ await check('delete hides an unused coupon for good: it stays reserved, cannot be re-enabled or applied, and a repeat is a no-op',async()=>{
+  const id=await make({code:'SYNTH-DEL'});const before=await events(id);
+  const v=await x.quotes.deleteCoupon(id) as {active:boolean};assert.equal(v.active,false);assert.equal(await events(id),before+1);
+  const listed=(await x.quotes.listCoupons() as {coupons:{id:string}[]}).coupons;assert.ok(!listed.some(c=>c.id===id));
+  await x.quotes.deleteCoupon(id);assert.equal(await events(id),before+1);
+  await assert.rejects(x.quotes.setCouponActive(id,{active:true}),{code:'COUPON_NOT_FOUND'});await assert.rejects(x.quotes.setCouponActive(id,{active:false,reason:'COUPON_DELETED_BY_STAFF'}),{code:'INVALID_INPUT'});
+  await assert.rejects(x.quotes.preview(input('SYNTH-DEL')),{code:'COUPON_INACTIVE'});await assert.rejects(x.quotes.createCoupon(randomUUID(),{...base,code:'SYNTH-DEL'}),{code:'COUPON_CODE_EXISTS'});
+  const nonAdmin=as(await staff('STAFF','del-staff@example.test'));await assert.rejects(nonAdmin.deleteCoupon(await make({code:'SYNTH-DEL2'})),{status:403});
  });
  console.log(`COUPON admin real PostgreSQL: ${passed} passed; no skipped; synthetic data only.`);
 }catch(e){console.error('COUPON_ADMIN_FAILED '+stage+' '+((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').slice(0,6).join('\n'));failed=true;}finally{await x.close();console.log('Owned coupon admin PostgreSQL stopped.');}

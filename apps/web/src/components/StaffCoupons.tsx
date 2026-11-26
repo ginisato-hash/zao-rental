@@ -32,7 +32,7 @@ const L={
  valuePercent:['割引率（%、小数2桁まで）','Rate (%, up to 2 decimals)'],valueFixed:['割引額（円）','Amount (JPY)'],
  minimum:['最低利用額（円）','Minimum amount (JPY)'],minBasis:['最低利用額の基準','Minimum applies to'],cart:['カート全体の小計','Cart subtotal'],eligible:['対象商品の小計','Eligible products subtotal'],
  maxDiscount:['割引上限額（円）','Maximum discount (JPY)'],advance:['前日までの事前支払割引との併用','Combination with the advance-payment discount'],
- allow:['併用できる','Allowed'],deny:['併用できない','Not allowed'],unset:['未定（併用する予約では使えません）','Undecided (unusable on such bookings)'],
+ allow:['併用できる（5%OFFも上乗せ）','Allowed (the 5% also applies)'],deny:['併用しない（クーポン割引のみ適用）','Not combined (only the coupon applies)'],unset:['未定（併用しない扱い：クーポン割引のみ適用）','Undecided (treated as not combined: only the coupon applies)'],
  limit:['同時に確保できる予約数の上限','Limit on simultaneously reserved bookings'],noLimit:['上限なし','No limit'],
  create:['クーポンを作成','Create coupon'],confirmCreate:['このクーポンを作成します。作成後は条件を変更できません。よろしいですか？','This coupon will be created. Its terms cannot be changed afterwards. Continue?'],
  created:['クーポンを作成しました。','Coupon created.'],
@@ -41,6 +41,7 @@ const L={
  forbidden:['この操作の権限がありません。','You do not have permission for this.'],failed:['保存できませんでした。もう一度お試しください。','Could not save. Please try again.'],
  listTitle:['クーポン一覧','Coupons'],none:['クーポンはまだありません。','No coupons yet.'],loadFailed:['読み込めませんでした。','Could not load.'],retry:['再読み込み','Retry'],
  cCode:['コード','Code'],cDiscount:['割引','Discount'],cPeriod:['有効期間','Period'],cScope:['対象','Scope'],cLimit:['上限','Limits'],cUsage:['利用状況','Usage'],cState:['状態','State'],cCreated:['作成日','Created'],
+ del:['削除','Delete'],delNote:['使用実績のないクーポンだけ削除できます','Only coupons with no usage can be deleted'],confirmDel:['を削除します。一覧から消え、同じコードは再利用できません。元に戻せません。よろしいですか？','will be deleted. It disappears from the list, the code cannot be reused, and this cannot be undone. Continue?'],deleted:['削除しました。','Deleted.'],inUse:['予約で使われているため削除できません。無効にしてください。','It is used by a booking and cannot be deleted. Disable it instead.'],
  on:['有効','Active'],off:['無効','Disabled'],enable:['有効にする','Enable'],disable:['無効にする','Disable'],
  confirmOff:['を無効にします。新しい予約では使えなくなります。よろしいですか？','will be disabled and cannot be used on new bookings. Continue?'],confirmOn:['を有効にします。よろしいですか？','will be enabled. Continue?'],
  switched:['状態を変更しました。','State changed.'],
@@ -66,7 +67,7 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
  const label=(s:string)=>STORE_LABEL[s]??s,pname=(k:string)=>{const p=products.find(x=>x.key===k);return p?(en?p.en:p.ja):k;};
  const set=<K extends keyof typeof EMPTY>(k:K,v:(typeof EMPTY)[K])=>setF(o=>({...o,[k]:v}));
  const toggle=(k:'stores'|'products',v:string,on:boolean)=>setF(o=>({...o,[k]:on?[...o[k],v]:o[k].filter(x=>x!==v)}));
- const errText=(status:number,code?:string)=>code==='COUPON_CODE_EXISTS'?tx('exists'):status===403?tx('forbidden'):status===422||status===400||code==='INVALID_COUPON'||code==='INVALID_INPUT'?tx('invalid'):tx('failed');
+ const errText=(status:number,code?:string)=>code==='COUPON_IN_USE'?tx('inUse'):code==='COUPON_CODE_EXISTS'?tx('exists'):status===403?tx('forbidden'):status===422||status===400||code==='INVALID_COUPON'||code==='INVALID_INPUT'?tx('invalid'):tx('failed');
  const build=():Terms|null=>{
   const validFrom=toIso(f.from),validUntil=toIso(f.until);if(!validFrom||!validUntil||validFrom>=validUntil)return null;
   if(!/^[A-Za-z0-9-]{1,32}$/.test(f.code.trim())||!f.stores.length||!f.products.length||!f.minBasis||!f.advance)return null;
@@ -107,6 +108,13 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
   try{const input={operation:'setActive',couponId:c.id,active,reason:null};const a=await post(input,JSON.stringify(input));if(!a)return;
    if(!a.ok){setMsg({kind:'err',text:errText(a.status,a.code)});return;}
    setMsg({kind:'ok',text:tx('switched')});setReload(n=>n+1);
+  }catch{setMsg({kind:'err',text:tx('failed')});}finally{setBusy(false);}
+ };
+ const remove=async(c:Coupon)=>{
+  setMsg(null);if(!window.confirm(`${c.code} ${tx('confirmDel')}`))return;setBusy(true);
+  try{const input={operation:'delete',couponId:c.id};const a=await post(input,JSON.stringify(input));if(!a)return;
+   if(!a.ok){setMsg({kind:'err',text:errText(a.status,a.code)});return;}
+   setMsg({kind:'ok',text:tx('deleted')});setReload(n=>n+1);
   }catch{setMsg({kind:'err',text:tx('failed')});}finally{setBusy(false);}
  };
  const discount=(t:Terms)=>t.kind==='PERCENT_BPS'?`${t.value/100}%`:jpy(t.value);
@@ -151,7 +159,7 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
      <td className="cp-cell-list">{c.terms.stores.map(label).join('・')}<br/>{c.terms.products.length===products.length?`${tx('items')}: ${tx('all')}`:c.terms.products.map(pname).join(', ')}</td>
      <td className="cp-cell-list">{tx('minLabel')} {jpy(c.terms.minimumJpy)}<br/>{tx('maxLabel')} {jpy(c.terms.maximumDiscountJpy)}<br/>{tx('maxRes')}: {c.terms.maxActiveReservations??tx('unlimited')}<br/>{tx('combo')}: {comboLabel(c.terms.advanceCombination)}</td>
      <td>{c.usage.bookings}{en?' ':''}{tx('bookings')}<br/>{c.usage.activeReservations}{en?' ':''}{tx('holding')}</td>
-     <td><span className={'cp-badge'+(c.active?' cp-badge--on':'')}>{tx(c.active?'on':'off')}</span>{data.canEdit&&<><br/><button type="button" className="sx-btn" disabled={busy} onClick={()=>void switchActive(c)}>{tx(c.active?'disable':'enable')}</button> <button type="button" className="sx-btn" disabled={busy} onClick={()=>duplicate(c)}>{tx('dup')}</button></>}</td>
+     <td><span className={'cp-badge'+(c.active?' cp-badge--on':'')}>{tx(c.active?'on':'off')}</span>{data.canEdit&&<><br/><button type="button" className="sx-btn" disabled={busy} onClick={()=>void switchActive(c)}>{tx(c.active?'disable':'enable')}</button> <button type="button" className="sx-btn" disabled={busy} onClick={()=>duplicate(c)}>{tx('dup')}</button> <button type="button" className="sx-btn" data-testid="coupon-delete" disabled={busy||c.usage.bookings>0||c.usage.activeReservations>0} title={tx('delNote')} onClick={()=>void remove(c)}>{tx('del')}</button></>}</td>
      <td>{date(c.createdAt)}</td></tr>)}</tbody></table></div>}
   </section>
  </main></StaffSessionBoundary>;

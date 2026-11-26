@@ -9,6 +9,7 @@ export interface CouponAdminService{
  listCoupons():Promise<unknown>;
  createCoupon(couponId:string,input:unknown):Promise<unknown>;
  setCouponActive(couponId:string,input:{active:boolean;reason?:string},requestKey?:string):Promise<unknown>;
+ deleteCoupon(couponId:string,requestKey?:string):Promise<unknown>;
 }
 const headers={'Cache-Control':'private, no-store','Vary':'Cookie'};
 const REASON_MAX=160;
@@ -29,5 +30,6 @@ export function couponHandler(state:(h:Headers)=>Promise<StaffState>,service:(p:
  if(op==='setActive'){const v=exact(input,['operation','couponId','active','reason']);id(v.couponId);if(typeof v.active!=='boolean')throw new PricingError('INVALID_INPUT');
   const reason=v.reason===null||v.reason===undefined?undefined:v.reason;if(reason!==undefined&&(typeof reason!=='string'||reason.length>REASON_MAX))throw new PricingError('INVALID_INPUT');
   return Response.json(await svc.setCouponActive(v.couponId as string,{active:v.active,...(reason?{reason:reason.trim()}:{})},body.requestKey as string),{headers});}
+ if(op==='delete'){const v=exact(input,['operation','couponId']);id(v.couponId);return Response.json(await svc.deleteCoupon(v.couponId as string,body.requestKey as string),{headers});}
  throw new PricingError('INVALID_INPUT');
  }catch(e){const err=e instanceof HoldError?e:new PricingError('COUPON_OPERATION_FAILED',500);return Response.json({error:err.code},{status:err.status,headers});}};}

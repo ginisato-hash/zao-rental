@@ -48,9 +48,9 @@ try{
  const goodId=await make({code:'HARD-GOOD'});const offId=await make({code:'HARD-OFF'});await x.quotes.setCouponActive(offId,{active:false});
  await make({code:'HARD-PAST',validFrom:'2034-11-01T00:00:00.000Z',validUntil:'2034-12-01T00:00:00.000Z'});await make({code:'HARD-ONSEN',stores:['ONSEN_BASE']});await make({code:'HARD-NOADV',advanceCombination:'DENY'});
  await make({code:'HARD-FULL',maxActiveReservations:1});await paidBooking('HARD-FULL','2035-02-02');
- await check('guests get ONE identical answer (same code, same status, same body) for unknown, disabled, expired, wrong-store, not-combinable and full coupons',async()=>{
+ await check('guests get ONE identical answer (same code, same status, same body) for unknown, disabled, expired, wrong-store and full coupons',async()=>{
   peerName='UNIFORM';const results=[];
-  for(const [code,over] of [['NO-SUCH-CODE',{}],['HARD-OFF',{}],['hard-past',{}],['HARD-ONSEN',{}],['HARD-NOADV',{wantAdvance:true}],['HARD-FULL',{}]] as const){const r=await answer(await choose(code,over));results.push({code,...r});}
+  for(const [code,over] of [['NO-SUCH-CODE',{}],['HARD-OFF',{}],['hard-past',{}],['HARD-ONSEN',{}],['HARD-FULL',{}]] as const){const r=await answer(await choose(code,over));results.push({code,...r});}
   for(const r of results){assert.equal(r.status,422,r.code);assert.deepEqual(r.body,{error:'COUPON_NOT_APPLICABLE'},r.code);assert.equal(r.retryAfter,null);}
   assert.equal(new Set(results.map(r=>JSON.stringify([r.status,r.body]))).size,1,'indistinguishable');
   assert.equal(draft.selection_key,null,'nothing saved for a refused code');
@@ -85,7 +85,7 @@ try{
  await check('staff and operations keep the detailed coupon codes (the guest mapping lives only in the guest HTTP layer)',async()=>{
   const staff=new GuestBookingService(store,{kind:'GUEST' as const,subject:x.actor,contextId:draft.context_id,tokenHash:'0'.repeat(64)},rec,null,async()=>({revision:'t',models:[],sizes:[]}));
   const pick=(couponCode:string,wantAdvance=false)=>{draft={...draft,selection:null,selection_key:null};return staff.choose({draftId:draft.id,expectedRevision:draft.revision,directions:{'ski-a':'RECOMMENDED','board-b':'RECOMMENDED'},wantAdvance,couponCode,acceptedModelPolicy:true});};
-  await assert.rejects(pick('NO-SUCH'),{code:'COUPON_NOT_FOUND'});await assert.rejects(pick('HARD-OFF'),{code:'COUPON_INACTIVE',status:409});await assert.rejects(pick('HARD-ONSEN'),{code:'COUPON_NOT_APPLICABLE'});await assert.rejects(pick('HARD-NOADV',true),{code:'DISCOUNTS_NOT_COMBINABLE'});await assert.rejects(pick('HARD-FULL'),{code:'COUPON_LIMIT_REACHED',status:409});
+  await assert.rejects(pick('NO-SUCH'),{code:'COUPON_NOT_FOUND'});await assert.rejects(pick('HARD-OFF'),{code:'COUPON_INACTIVE',status:409});await assert.rejects(pick('HARD-ONSEN'),{code:'COUPON_NOT_APPLICABLE'});assert.ok(await pick('HARD-NOADV',true));await assert.rejects(pick('HARD-FULL'),{code:'COUPON_LIMIT_REACHED',status:409});
   await assert.rejects(x.quotes.preview({conditions:skiSet('2035-03-01'),holdId:null,couponCode:'NO-SUCH',wantAdvance:false}),{code:'COUPON_NOT_FOUND'});
  });
  // ---- 2. cancellation / refund / amendment --------------------------------------------------------------------------------

@@ -66,10 +66,10 @@ try{
   held={context,page};
  });
 
- await check('Coupon is refused together with the advance discount (DENY) and the message says so; amount unchanged',async()=>{
+ await check('A coupon that cannot combine with the advance discount is still applied alone (no rejection) and says so',async()=>{
   const {context,page}=await mk(390,'ja-JP');await toSizes(page,'ja');
   await page.getByRole('checkbox',{name:/事前に支払って5%OFF/}).check();await coupon(page).getByLabel(/クーポンコード/).fill('UINOADV');await coupon(page).getByRole('button',{name:'適用',exact:true}).click();
-  await expect(page.getByTestId('coupon-error')).toContainText('使えません');await expect(price(page)).toHaveCount(0);await context.close();
+  await expect(page.getByTestId('coupon-applied')).toBeVisible();await expect(page.getByTestId('coupon-error')).toHaveCount(0);await expect(page.getByTestId('coupon-advance-folded')).toBeVisible();await context.close();
  });
 
  await check('EN desktop: apply, breakdown in English, error copy in English, remove',async()=>{
@@ -89,13 +89,18 @@ try{
   await context.close();
  });
 
- await check('JA: Apply is pressable before a length is chosen or the box is ticked; it asks for a length, then applies without the check box',async()=>{
-  const {context,page}=await mk(390,'ja-JP');await toSizes(page,'ja',false);
-  const apply=coupon(page).getByRole('button',{name:'適用',exact:true});
-  await coupon(page).getByLabel(/クーポンコード/).fill('UIGOOD10');await expect(apply).toBeEnabled();
-  await apply.click();await expect(page.getByText('長さを1つ選んでください。').first()).toBeVisible();await expect(page.getByTestId('coupon-applied')).toHaveCount(0);
-  await page.getByRole('radio',{name:'おすすめ'}).first().check();await apply.click();
-  await expect(page.getByTestId('coupon-applied')).toBeVisible();
+ for(const locale of ['ja','en'] as const)await check(locale.toUpperCase()+': Apply is pressable before a length is chosen or the box is ticked, but never sends a selection (and never skips the confirmation) until both are done; Enter behaves the same',async()=>{
+  const t=(j:string,e:string)=>locale==='ja'?j:e;const {context,page}=await mk(390,locale==='ja'?'ja-JP':'en-GB');await toSizes(page,locale,false);
+  const selections:string[]=[];page.on('request',r=>{if(new URL(r.url()).pathname==='/api/guest/selection')selections.push(r.method());});
+  const apply=coupon(page).getByRole('button',{name:t('適用','Apply'),exact:true}),field=coupon(page).getByLabel(locale==='ja'?/クーポンコード/:/Coupon code/);
+  await field.fill('UIGOOD10');await expect(apply).toBeEnabled();
+  await apply.click();await expect(page.getByText(t('長さを1つ選んでください。','Choose one length.')).first()).toBeVisible();await expect(page.getByText(t('内容を確認したらチェックを入れてください。','Tick this box once you have checked the details.')).first()).toBeVisible();
+  await field.press('Enter');
+  await page.getByRole('radio',{name:t('おすすめ','Recommended')}).first().check();await apply.click();await field.press('Enter');
+  await expect(page.getByText(t('内容を確認したらチェックを入れてください。','Tick this box once you have checked the details.')).first()).toBeVisible();
+  assert.deepEqual(selections,[],'no selection request before the confirmation box is ticked');await expect(page.getByTestId('coupon-applied')).toHaveCount(0);
+  await page.getByRole('checkbox',{name:t('全員の内容を確認しました','I have checked everyone’s selections')}).check();await apply.click();
+  await expect(page.getByTestId('coupon-applied')).toBeVisible();assert.equal(selections.length,1);
   await context.close();
  });
  console.log('Coupon guest UI '+count+' cases passed; synthetic coupons, development payment stub only.');

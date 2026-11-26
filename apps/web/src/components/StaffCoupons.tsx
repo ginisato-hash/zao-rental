@@ -126,6 +126,7 @@ export function StaffCoupons({locale:serverLocale,stamp,products}:{locale:StaffL
   <section className="sx-card cp-card" aria-labelledby="cp-howto"><h2 id="cp-howto">{en?'How it works':'使い方'}</h2>
    <ul className="cp-howto"><li>{tx('how1')}</li><li>{tx('how2')}</li><li>{tx('how3')}</li><li>{tx('how4')}</li><li>{tx('how5')}</li><li>{tx('how6')}</li></ul></section>
   {data&&!data.canEdit&&<p className="sx-status">{tx('viewOnly')}</p>}
+  {!data&&!loadFailed&&<section className="sx-card sx-reserve sx-reserve--coupon" aria-hidden="true"/>}
   {data?.canEdit&&<section className="sx-card cp-card" aria-labelledby="cp-new"><h2 id="cp-new">{tx('newTitle')}</h2>
    {replaces&&<p className="sx-status" role="status">{replaces.code} {tx('dupNote')}</p>}
    <form className="cp-form" noValidate onSubmit={e=>{e.preventDefault();void submit();}}>

@@ -1,4 +1,3 @@
-import {Suspense} from 'react';
 import {redirect} from 'next/navigation';
 import {StaffDashboard} from '../../components/StaffDashboard';
 import {staffShellProps} from '../../lib/staff-shell-props';
@@ -10,5 +9,5 @@ export default async function Page(){
  // UX-01: sign-in lands here (Booqable: the Dashboard is the first screen). Without booking access the staff member goes
  // straight to the first screen they can use instead of a dead end.
  if(!shell.access.bookingView)redirect(shell.access.inventoryView?'/staff/inventory':'/staff/today');
- return <Suspense><StaffDashboard locale={locale} stamp={shell.stamp} stores={shell.stores}/></Suspense>;
+ return <StaffDashboard locale={locale} stamp={shell.stamp} stores={shell.stores}/>;
 }

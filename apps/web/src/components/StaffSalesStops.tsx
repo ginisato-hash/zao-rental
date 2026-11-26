@@ -75,6 +75,8 @@ export function StaffSalesStops({locale:serverLocale,stamp}:{locale:StaffLocale;
   <p className="sx-help">{tx('intro')}</p>
   <p className="sx-help">{tx('rule')}</p>
   {data&&!data.canEdit&&<p className="sx-status">{tx('viewOnly')}</p>}
+  {/* CLS: hold the edit card's place until the first answer says whether this account has one (aria-hidden, no content). */}
+  {!data&&!loadFailed&&<section className="sx-card sx-reserve sx-reserve--stops" aria-hidden="true"/>}
   {data?.canEdit&&<section className="sx-card" aria-labelledby="ss-set"><h2 id="ss-set">{tx('setTitle')}</h2>
    <div className="ss-form">
     <label>{tx('from')}<input type="date" value={from} min={today} onChange={e=>{setFrom(e.target.value);if(!to||to<e.target.value)setTo(e.target.value);}}/></label>

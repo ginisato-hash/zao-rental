@@ -124,12 +124,15 @@ try{
   // Arbitrary URL QR: unsupported, never opened and never fetched.
   const m1=mark();await show(p,'https://evil.example/open?id='+mountainItem);await p.getByText('対応していないコードです。用品の個体IDのQRを読み取ってください。').waitFor();await p.waitForTimeout(800);
   assert.equal(reqs.slice(m1).some(r=>r.url.includes('evil.example')),false,'the URL is never requested');assert.equal(new URL(p.url()).pathname,'/staff/scan');
+  // javascript:, data: and look-alike strings: explained as unsupported, no navigation, no request at all.
+  for(const bad of ['javascript:alert(1)','data:text/html,<script>1</script>','//evil.example/'+mountainItem,mountainItem+'.evil.example','file:///etc/passwd']){const mb=mark();await show(p,bad);await p.getByText('対応していないコードです。用品の個体IDのQRを読み取ってください。').waitFor();await p.waitForTimeout(500);
+   assert.equal(new URL(p.url()).pathname,'/staff/scan');assert.deepEqual(apiSince(mb).filter(r=>!/\/api\/operations\/(me|inbox)/.test(r.url)),[],'no lookup for '+bad.slice(0,20));assert.equal(reqs.slice(mb).some(r=>r.url.includes('evil.example')||r.url.startsWith('file:')),false);}
   // Bare booking UUID: told apart from an item.
   await show(p,A);await p.getByRole('alert').filter({hasText:'これは予約のQRまたは予約IDです'}).waitFor();
   // Nonexistent item.
   assert.equal(await cam<number>(p,'live()'),0,'an id-shaped code ends the read');await resCamera(p,'カメラを開く');await show(p,randomUUID());await p.getByRole('alert').filter({hasText:'見つからない'}).waitFor();assert.equal(new URL(p.url()).pathname,'/staff/scan');
   // The real item: product page at its current station.
-  await resCamera(p,'カメラを開く');await show(p,mountainItem);await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId&&u.searchParams.get('store')==='MOUNTAIN_BASE',{timeout:30000});
+  await resCamera(p,'カメラを開く');await show(p,mountainItem);{const card=p.getByRole('region',{name:'特定した用品'});await card.getByText(mountainItem).waitFor();const txt=await card.innerText();assert.ok(txt.includes(storeName(true,'MOUNTAIN_BASE'))&&txt.includes('貸出なし')&&txt.includes('利用可能'),'identity card shows id, station, status and loan');assert.equal(new URL(p.url()).pathname,'/staff/scan','identification alone does not navigate');await card.getByRole('button',{name:'モデルページを開く'}).waitFor();}await p.getByRole('region',{name:/特定した用品|Identified item/}).getByRole('button',{name:/モデルページを開く|Open model page/}).click();await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId&&u.searchParams.get('store')==='MOUNTAIN_BASE',{timeout:30000});
   await p.getByText(storeName(true,'MOUNTAIN_BASE')).first().waitFor();await show(p,null);assert.equal(await cam<number>(p,'live()'),0);
   await p.screenshot({path:`${shots}/c-item-ja-1440.png`});
   // Item QR on the booking tab: explained.
@@ -144,7 +147,7 @@ try{
   const s=await login('qre2e-staff@example.invalid');const p=s.p;await p.goto('/staff/scan');await p.getByRole('tab',{name:'用品'}).click();
   await resCamera(p,'カメラを開く');await show(p,foreignItem);await p.getByRole('alert').filter({hasText:'見つからない'}).waitFor();assert.equal(new URL(p.url()).pathname,'/staff/scan');
   assert.equal(await cam<number>(p,'live()'),0,'a refused item still stops the camera (stopAfterRead)');
-  await resCamera(p,'カメラを開く');await show(p,mountainItem);await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId&&u.searchParams.get('store')==='MOUNTAIN_BASE',{timeout:30000});await show(p,null);
+  await resCamera(p,'カメラを開く');await show(p,mountainItem);await p.getByRole('region',{name:/特定した用品|Identified item/}).getByRole('button',{name:/モデルページを開く|Open model page/}).click();await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId&&u.searchParams.get('store')==='MOUNTAIN_BASE',{timeout:30000});await show(p,null);
  });
 
  await check('QR-d: pickups and returns screen: a reservation QR payload finds the booking and item; the camera adds a return candidate once; nothing is confirmed by reading',async()=>{
@@ -194,14 +197,14 @@ try{
   await show(p,'zao-rental:reservation:'+A);await p.waitForURL(u=>u.pathname==='/staff/orders/'+A);await show(p,null);
   // The item tab's own camera denial text.
   await p.goto('/staff/scan');await p.getByRole('tab',{name:'用品'}).click();await p.evaluate("window.__cam.mode='deny'");await resCamera(p,'カメラを開く');await p.getByText('カメラの許可がありません。設定を確認するか個体IDを手入力してください。').waitFor();
-  await p.evaluate("window.__cam.mode='ok'");await p.getByLabel('用品の個体ID').fill(mountainItem);await p.getByRole('button',{name:'入力したIDを照合へ送る'}).click();await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId);
+  await p.evaluate("window.__cam.mode='ok'");await p.getByLabel('用品の個体ID').fill(mountainItem);await p.getByRole('button',{name:'入力したIDを照合へ送る'}).click();await p.getByRole('region',{name:/特定した用品|Identified item/}).getByRole('button',{name:/モデルページを開く|Open model page/}).click();await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId);
  });
 
  await check('QR-f: permissions: viewer (booking only) and inventory-only staff get just their tab; no permission has no button and a permission notice',async()=>{
   const v=await login('qre2e-viewer@example.invalid');await v.p.goto('/staff/scan');assert.equal(await v.p.getByRole('tab',{name:'用品'}).count(),0);
   await resCamera(v.p,'カメラで読み取る');await show(v.p,'zao-rental:reservation:'+A);await v.p.waitForURL(u=>u.pathname==='/staff/orders/'+A);await show(v.p,null);
   const i=await login('qre2e-inv@example.invalid');await i.p.goto('/staff/scan');assert.equal(await i.p.getByRole('tab',{name:'予約'}).count(),0);
-  await resCamera(i.p,'カメラを開く');await show(i.p,mountainItem);await i.p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId,{timeout:30000});await show(i.p,null);
+  await resCamera(i.p,'カメラを開く');await show(i.p,mountainItem);await i.p.getByRole('region',{name:/特定した用品|Identified item/}).getByRole('button',{name:/モデルページを開く|Open model page/}).click();await i.p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId,{timeout:30000});await show(i.p,null);
   const n=await login('qre2e-none@example.invalid');await n.p.goto('/staff');await n.p.locator('header.sx-top').waitFor();assert.equal(await n.p.locator('a[href="/staff/scan"]').count(),0);
   await n.p.goto('/staff/scan');await n.p.getByRole('heading',{name:'閲覧権限が必要です'}).waitFor();assert.equal(await n.p.getByRole('button',{name:'カメラで読み取る'}).count(),0);
   // Admin and staff see the QR button in the top bar on a main screen.
@@ -217,7 +220,7 @@ try{
    await p.goto('/staff/scan');await p.getByLabel('Booking number or booking QR').fill('#'+refBC);await p.getByRole('button',{name:'Open this booking'}).click();
    await p.locator('ul[aria-label="Candidate bookings"]').waitFor();await p.getByRole('button',{name:'Choose this booking'}).first().waitFor();await noOverflow(p);await p.screenshot({path:`${shots}/f-candidates-en-${w}.png`});
    await p.goto('/staff/scan');await p.getByRole('tab',{name:'Item'}).click();await p.getByRole('button',{name:'Open camera'}).click();await show(p,'zao-rental:reservation:'+A);
-   await p.getByText('This is a booking QR. Scan it on the Booking tab.').waitFor();await show(p,mountainItem);await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId,{timeout:30000});await show(p,null);await noOverflow(p);
+   await p.getByText('This is a booking QR. Scan it on the Booking tab.').waitFor();await show(p,mountainItem);await p.getByRole('region',{name:/特定した用品|Identified item/}).getByRole('button',{name:/モデルページを開く|Open model page/}).click();await p.waitForURL(u=>u.pathname==='/staff/inventory/'+modelId,{timeout:30000});await show(p,null);await noOverflow(p);
    await p.goto('/staff/scan');await p.getByRole('button',{name:'Scan with camera'}).click();await p.evaluate("window.__cam.mode='deny'");await p.getByRole('button',{name:'Stop camera'}).click();
    await p.getByRole('button',{name:'Scan with camera'}).click();await p.getByText('Camera permission was denied. You can type the booking number.').waitFor();await noOverflow(p);
   }

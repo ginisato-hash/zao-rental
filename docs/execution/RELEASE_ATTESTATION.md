@@ -14,15 +14,16 @@ and release id, but the Owner GO itself (a chat decision) cannot be verified mec
 
 Procedure (clean checkout equal to origin/main):
 
+    # 0. record the deployment the formal alias points to NOW (the predecessor): PREV=dpl_...
     # 1. env update + stage (no domain)
     vercel deploy --prod --skip-domain --yes -e RELEASE_BUILD_SHA=<main sha>
-    npm run production:attest-release -- stage <dpl_id>   # exit 0 only on PASS; alias must STILL be on the old deployment
+    npm run production:attest-release -- stage <dpl_id> <PREV>   # exit 0 only on PASS; alias must STILL be exactly PREV
     # 2. two verification windows, then promote only after the stage PASS
     vercel promote <dpl_id> --yes
-    npm run production:attest-release -- post <dpl_id>    # alias must now be the candidate
+    npm run production:attest-release -- post <dpl_id> <PREV>    # alias must now be the candidate
 
-Record the alias deployment id shown at stage time (the previous deployment) before promoting; after promote the alias must be the candidate and must differ from that recorded id.
+The predecessor id is an argument of BOTH modes: stage requires the alias to equal it, post requires the alias to be the candidate and the candidate to differ from it (PREVIOUS_ALIAS_INVALID otherwise).
 Never promote after a stage FAIL. Reason codes: SOURCE_NOT_ACCEPTED_MAIN, WORKTREE_DIRTY, PROJECT_LINK_MISMATCH, RELEASE_ID_MISMATCH, APPROVAL_MISMATCH,
 DEPLOYMENT_WRONG_PROJECT, DEPLOYMENT_NOT_PRODUCTION, DEPLOYMENT_NOT_READY, RELEASE_ID_NOT_BEFORE_DEPLOYMENT, APPROVAL_NOT_BEFORE_DEPLOYMENT,
-STAGE_ALIAS_ALREADY_MOVED_OR_UNKNOWN (stage), ALIAS_NOT_THIS_DEPLOYMENT (post), RUNTIME_SHA_MISMATCH, BUILD_DIGEST_MISMATCH, DEPLOYMENT_EVIDENCE_MISSING.
+STAGE_ALIAS_NOT_RECORDED_PREVIOUS (stage), PREVIOUS_ALIAS_INVALID, ALIAS_NOT_THIS_DEPLOYMENT (post), RUNTIME_SHA_MISMATCH, BUILD_DIGEST_MISMATCH, DEPLOYMENT_EVIDENCE_MISSING.
 Releases before this procedure (PR #78-#82) have no runtime digest and stay UNVERIFIED for that part; nothing is reconstructed.

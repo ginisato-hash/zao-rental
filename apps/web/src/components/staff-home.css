@@ -70,3 +70,7 @@
 .staff-recent-ref{font:700 15px/1.2 var(--d);font-variant-numeric:tabular-nums}
 .staff-recent .staff-card > a{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
 .staff-recent > a{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+
+/* CLS: a section that is still waiting for its first answer keeps roughly the height of its first card row, so the sections below do not jump. */
+.staff-home [data-pending]{min-height:230px}
+.staff-home .staff-manifest[data-pending]:not(.tomorrow-preparation){min-height:360px}

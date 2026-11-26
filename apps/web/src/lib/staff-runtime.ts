@@ -16,8 +16,9 @@ function createRuntime(){
  // Never log raw Pool/driver errors; they may contain connection settings.
  authPool.on('error',()=>{});ledgerPool.on('error',()=>{});loginPool.on('error',()=>{});
  const operationsPool=config.operationsDb?new Pool({...config.operationsDb,max:4,connectionTimeoutMillis:2000}):null;operationsPool?.on('error',()=>{});
+ const groupPool=config.groupDb?new Pool({...config.groupDb,max:4,connectionTimeoutMillis:2000}):null;groupPool?.on('error',()=>{});
  const auth=createStaffAuth(authPool,{origin:config.origin,secret:config.authSecret});
- return {config,operationsPool,recommendationPool,pricingPool,transferPool,holdPool,authPool,ledgerPool,loginPool,auth};
+ return {config,operationsPool,groupPool,recommendationPool,pricingPool,transferPool,holdPool,authPool,ledgerPool,loginPool,auth};
 }
 export function getRuntime(){if(productionRequested())return getProductionRuntime()?.staff??null;if(instance===undefined)instance=createRuntime();return instance;}
 export async function staffState(headers:Headers):Promise<StaffState>{

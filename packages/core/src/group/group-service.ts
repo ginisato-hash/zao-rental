@@ -485,11 +485,73 @@ export class GroupOrderService {
    await this.authStaff(c,staff,'GROUP_VIEW',filter.store?[filter.store]:[]);
    const p=(await loadStaff(c,staff.subject))!;
    const now=this.clock?this.clock():(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;
-   const rows=(await c.query<GroupRow&{total_jpy:string|null;open_requests:string}>(`SELECT g.*,(SELECT total_jpy FROM group_quotes q WHERE q.group_id=g.id ORDER BY version DESC LIMIT 1) total_jpy,(SELECT count(*) FROM group_change_requests r WHERE r.group_id=g.id AND r.status='OPEN') open_requests FROM group_orders g WHERE g.pickup_store=ANY($1::text[]) AND g.return_store=ANY($1::text[]) AND ($2::text[] IS NULL OR g.status=ANY($2)) ORDER BY g.created_at,g.id LIMIT 500`,[filter.store?[filter.store]:p.storeIds,filter.status??null])).rows;
+   const rows=(await c.query<GroupRow&{total_jpy:string|null;open_requests:string;received_jpy:string}>(`SELECT g.*,(SELECT total_jpy FROM group_quotes q WHERE q.group_id=g.id ORDER BY version DESC LIMIT 1) total_jpy,(SELECT count(*) FROM group_change_requests r WHERE r.group_id=g.id AND r.status='OPEN') open_requests,(SELECT coalesce(sum(CASE kind WHEN 'RECEIPT' THEN amount_jpy ELSE -amount_jpy END),0) FROM group_payments p WHERE p.group_id=g.id) received_jpy FROM group_orders g WHERE g.pickup_store=ANY($1::text[]) AND g.return_store=ANY($1::text[]) AND ($2::text[] IS NULL OR g.status=ANY($2)) ORDER BY g.created_at,g.id LIMIT 500`,[filter.store?[filter.store]:p.storeIds,filter.status??null])).rows;
    const jst=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo'}).format(now);
    await c.query('COMMIT');
    return rows.map(g=>({id:g.id,groupNumber:g.group_number,status:g.status,label:g.group_label,memberCount:g.member_count,period:g.period,pickupStore:g.pickup_store,returnStore:g.return_store,createdAt:g.created_at,heldAt:g.held_at,daysHeld:g.held_at&&GROUP_HELD.includes(g.status)?Math.floor((now.getTime()-g.held_at.getTime())/86400000):null,
-    startDatePassedDays:GROUP_HELD.includes(g.status)?Math.max(0,Math.round((Date.parse(jst)-Date.parse(g.period.startDate))/86400000)):0,openRequests:n(g.open_requests),totalJpy:g.total_jpy===null?null:n(g.total_jpy),occupiesInventory:GROUP_HELD.includes(g.status)}));
+    startDatePassedDays:GROUP_HELD.includes(g.status)?Math.max(0,Math.round((Date.parse(jst)-Date.parse(g.period.startDate))/86400000)):0,openRequests:n(g.open_requests),totalJpy:g.total_jpy===null?null:n(g.total_jpy),confirmedTotalJpy:g.confirmed_total_jpy===null?null:n(g.confirmed_total_jpy),settlement:g.status==='CONFIRMED'?settlementOf(n(g.confirmed_total_jpy),[{kind:'RECEIPT',amountJpy:n(g.received_jpy)}]).status:null,occupiesInventory:GROUP_HELD.includes(g.status)}));
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});return this.normalize(e);}finally{c.release();}
+ }
+
+ // ------------------------------------------------------------------ administrator screen read models (thin, read-only)
+ /** One read-only snapshot for the staff detail screen: the ordinary `detail` plus what only an administrator needs (payments,
+  * open change requests, discount sets with before/after, notification delivery state, per-member price lines). ADMIN + GROUP_VIEW + store scope. */
+ async staffDetail(staff:StaffActor,groupId:string){
+  const c=await this.pool.connect();
+  try{await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+   const g=(await c.query<GroupRow>('SELECT * FROM group_orders WHERE id=$1',[uuid(groupId)])).rows[0];if(!g)throw new GroupError('NOT_FOUND',404);
+   await this.authStaff(c,staff,'GROUP_VIEW',[g.pickup_store,g.return_store]);
+   const now=this.clock?this.clock():(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;
+   const base=await this.detail(c,g,now,true);
+   const payments=(await c.query('SELECT id,kind,amount_jpy::bigint AS "amountJpy",method,received_at AS "receivedAt",reverses_id AS "reversesId",reason,note,recorded_by AS "recordedBy",recorded_at AS "recordedAt" FROM group_payments WHERE group_id=$1 ORDER BY recorded_at,id',[g.id])).rows.map(r=>({...r,amountJpy:n(r.amountJpy)}));
+   const changeRequests=(await c.query('SELECT id,kind,body,status,created_revision AS "createdRevision",created_at AS "createdAt" FROM group_change_requests WHERE group_id=$1 ORDER BY created_at,id',[g.id])).rows;
+   const adjustmentRows=(await c.query('SELECT set_no AS "setNo",target,member_id AS "memberId",method,value,reason,actor,before_jpy::bigint AS "beforeJpy",after_jpy::bigint AS "afterJpy",occurred_at AS "occurredAt" FROM group_adjustments WHERE group_id=$1 AND set_no=(SELECT max(set_no) FROM group_adjustments WHERE group_id=$1) ORDER BY occurred_at,id',[g.id])).rows.map(r=>({...r,beforeJpy:n(r.beforeJpy),afterJpy:n(r.afterJpy)}));
+   const notifications=(await c.query('SELECT event_type AS "eventType",status,attempt_count AS "attemptCount",last_safe_failure_code AS "failureCode",created_at AS "createdAt",sent_at AS "sentAt" FROM group_notification_outbox WHERE group_id=$1 ORDER BY created_at,id',[g.id])).rows;
+   const est=(await c.query<QuoteRow>("SELECT * FROM group_quotes WHERE group_id=$1 AND kind='ESTIMATE' ORDER BY version DESC LIMIT 1",[g.id])).rows[0];
+   const consent=est?(await c.query<{max_total_jpy:string}>('SELECT max_total_jpy FROM group_consents WHERE quote_id=$1',[est.id])).rows[0]:undefined;
+   let pricing:null|{baseJpy:number;subtotalJpy:number;bundleDiscountJpy:number;memberDiscountJpy:number;groupDiscountJpy:number;totalJpy:number;members:{memberId:string;ordinal:number;baseJpy:number;memberDiscountJpy:number;groupDiscountJpy:number;finalJpy:number}[]}=null,pricingError:string|null=null;
+   if(est&&['REVIEW_HELD','CHANGES_REQUESTED'].includes(g.status)){
+    try{const {calc}=await this.groupBases(c,g,now);const q=await calc(await this.currentAdjustments(c,g.id));
+     pricing={baseJpy:q.totals.baseJpy,subtotalJpy:q.subtotal,bundleDiscountJpy:q.bundle,memberDiscountJpy:q.member,groupDiscountJpy:q.group,totalJpy:q.total,members:q.totals.members.map(m=>({memberId:m.memberId,ordinal:m.ordinal,baseJpy:m.baseJpy,memberDiscountJpy:m.memberDiscountJpy,groupDiscountJpy:m.groupDiscountJpy,finalJpy:m.finalJpy}))};}
+    catch(e){pricingError=e instanceof GroupError?e.code:'PRICING_FAILED';}
+   }
+   const confirmedLines=g.confirmed_quote_id?(await c.query<{lines:{memberId:string;ordinal:number;baseJpy:number;memberDiscountJpy:number;groupDiscountJpy:number;finalJpy:number}[]}>('SELECT lines FROM group_quotes WHERE id=$1',[g.confirmed_quote_id])).rows[0]?.lines??null:null;
+   await c.query('COMMIT');
+   return {...base,payments,changeRequests,adjustmentRows,notifications,pricing,pricingError,confirmedLines,consent:consent?{maxTotalJpy:n(consent.max_total_jpy)}:null,estimateVersion:est?.version??null,
+    parts:base.parts};
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});return this.normalize(e);}finally{c.release();}
+ }
+ /** Read-only preview of a discount set (nothing is written). The same calculation `setAdjustments` and `confirm` use. */
+ async previewAdjustments(staff:StaffActor,groupId:string,adjustments:Adjustment[]){
+  if(!Array.isArray(adjustments)||adjustments.length>MAX_MEMBERS+1)throw new GroupError('ADJUSTMENT_INVALID');
+  const c=await this.pool.connect();
+  try{await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+   const g=(await c.query<GroupRow>('SELECT * FROM group_orders WHERE id=$1',[uuid(groupId)])).rows[0];if(!g)throw new GroupError('NOT_FOUND',404);
+   await this.authStaff(c,staff,'GROUP_DISCOUNT',[g.pickup_store,g.return_store]);this.expectStatus(g,'REVIEW_HELD','CHANGES_REQUESTED');
+   const now=this.clock?this.clock():(await c.query<{now:Date}>('SELECT inventory_clock() AS now')).rows[0]!.now;
+   const {calc}=await this.groupBases(c,g,now);const q=await calc(adjustments);await c.query('COMMIT');
+   return {revision:g.revision,baseJpy:q.totals.baseJpy,subtotalJpy:q.subtotal,bundleDiscountJpy:q.bundle,memberDiscountJpy:q.member,groupDiscountJpy:q.group,totalJpy:q.total,
+    members:q.totals.members.map(m=>({memberId:m.memberId,ordinal:m.ordinal,baseJpy:m.baseJpy,memberDiscountJpy:m.memberDiscountJpy,groupDiscountJpy:m.groupDiscountJpy,finalJpy:m.finalJpy})),audit:q.totals.audit};
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});return this.normalize(e);}finally{c.release();}
+ }
+ /** Size/variant choices for the per-member edit (ledger variants of the families/age/tier used by this group). */
+ async variantOptions(staff:StaffActor,groupId:string){
+  const c=await this.pool.connect();
+  try{await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+   const g=(await c.query<GroupRow>('SELECT * FROM group_orders WHERE id=$1',[uuid(groupId)])).rows[0];if(!g)throw new GroupError('NOT_FOUND',404);
+   await this.authStaff(c,staff,'GROUP_VIEW',[g.pickup_store,g.return_store]);
+   const rows=(await c.query<{id:string;family:string;age:string;tier:string;size:string;model:string}>(`SELECT v.id,v.family,v.age,v.tier,v.size,m.name AS model FROM ledger_variants v JOIN ledger_models m ON m.id=v.model_id WHERE v.family=ANY(SELECT DISTINCT i->>'family' FROM group_members gm,jsonb_array_elements(gm.selection->'items') i WHERE gm.group_id=$1) ORDER BY v.family,v.age,v.tier,v.size_key,m.name LIMIT 2000`,[g.id])).rows;
+   await c.query('COMMIT');return rows;
+  }catch(e){await c.query('ROLLBACK').catch(()=>{});return this.normalize(e);}finally{c.release();}
+ }
+ /** Entrance status for the administrator (the plain URL token is only ever returned by rotateEntrance, once). */
+ async entranceStatus(staff:StaffActor){
+  const c=await this.pool.connect();
+  try{await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+   await this.authStaff(c,staff,'GROUP_ENTRANCE_MANAGE',STORES);
+   const e=(await c.query<{enabled:boolean;generation:number;updated_at:Date}>('SELECT enabled,generation,updated_at FROM group_entrance WHERE id=1')).rows[0];
+   const history=(await c.query('SELECT generation,action,reason,occurred_at AS "occurredAt" FROM group_entrance_history ORDER BY occurred_at DESC,generation DESC LIMIT 10')).rows;
+   await c.query('COMMIT');return {configured:Boolean(e),enabled:e?.enabled??false,generation:e?.generation??0,updatedAt:e?.updated_at??null,history};
   }catch(e){await c.query('ROLLBACK').catch(()=>{});return this.normalize(e);}finally{c.release();}
  }
 }

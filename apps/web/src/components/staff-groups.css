@@ -1,0 +1,52 @@
+/* Group orders (administrator): same card/table language as Orders and Coupons; two columns on desktop, one on narrow screens. */
+.gx .gx-card{padding:16px 18px;margin-bottom:16px}
+.gx .gx-card h2{font-size:17px;margin:0 0 12px}
+.gx .gx-card h3{font-size:14px;margin:14px 0 6px}
+.gx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.gx-sub{margin:-8px 0 12px;color:var(--sx-text2)}
+.gx-filters{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;margin-bottom:12px}
+.gx-filters label,.gx-field{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.gx-grow{flex:1 1 220px}
+.gx select,.gx input:not([type=checkbox]),.gx textarea{font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--sx-line);border-radius:10px;background:var(--sx-bg);color:inherit;min-height:40px;max-width:100%;box-sizing:border-box}
+.gx textarea{width:100%;min-height:72px}
+.gx-table td,.gx-table th{vertical-align:top}
+.gx-table td small{color:var(--sx-text2)}
+.gx-name{max-width:220px;overflow-wrap:anywhere}
+.gx-small{font-size:13px;line-height:1.5;min-width:140px}
+.gx-num{white-space:nowrap}
+.gx-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--sx-line);font-weight:600;white-space:nowrap}
+.gx-badge--REVIEW_HELD,.gx-badge--CHANGES_REQUESTED{border-color:var(--sx-blue);color:var(--sx-blue)}
+.gx-badge--CONFIRMED{border-color:#248a3d;color:#248a3d}
+.gx-badge--RELEASED,.gx-badge--CANCELLED{color:var(--sx-text2)}
+.gx-badge--warn{border-color:var(--sx-warn);color:var(--sx-warn);white-space:normal}
+.gx-badge--soon{border-color:var(--sx-blue);color:var(--sx-blue)}
+.gx-warn{margin:8px 0;padding:10px 12px;border:1px solid var(--sx-warn);border-radius:10px;color:var(--sx-warn);font-size:14px}
+.gx-msg{margin:8px 0;padding:10px 12px;border-radius:10px;border:1px solid var(--sx-line)}
+.gx-layout{display:grid;grid-template-columns:minmax(0,3fr) minmax(300px,2fr);gap:20px;align-items:start}
+.gx-left,.gx-right{min-width:0}
+.gx-dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;margin:0;font-size:14px}
+.gx-dl dt{color:var(--sx-text2)}.gx-dl dd{margin:0;overflow-wrap:anywhere}
+.gx-money dd{text-align:right;font-variant-numeric:tabular-nums}
+.gx-break{word-break:break-all}
+.gx-list{margin:0;padding-left:18px;font-size:14px;line-height:1.6}
+.gx-pays{list-style:none;padding-left:0}.gx-pays li{padding:8px 0;border-bottom:1px solid var(--sx-line)}
+.gx-body{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--sx-text2)}
+.gx-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.gx-form{display:grid;gap:10px}
+.gx-check{margin:8px 0}
+.gx-fit{border:0;margin:8px 0;padding:0}.gx-fit legend{font-size:13px;font-weight:600;margin-bottom:4px}
+.gx-confirmbox{border:1px solid var(--sx-line);border-radius:12px;padding:12px 14px;margin-top:8px;background:var(--sx-bg2)}
+.gx-danger{border:1px solid var(--sx-red);color:var(--sx-red);background:transparent}
+.gx-danger:disabled{opacity:.42}
+.gx-edit{border:1px solid var(--sx-line);border-radius:10px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:10px 18px}
+.gx-edit legend{font-size:13px;font-weight:600;padding:0 4px}
+.gx-edit label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.gx-editrow td{background:var(--sx-bg2)}
+.gx-disc td input,.gx-disc td select{width:100%;min-width:90px}
+.gx-grouprow td{border-top:2px solid var(--sx-line)}
+.gx-preview{margin-top:12px}
+.gx-entrance summary{cursor:pointer;font-weight:600}
+.gx-url{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:10px}.gx-url .gx-field{flex:1 1 260px}
+.gx-pay small{color:var(--sx-text2)}
+@media (max-width:900px){.gx-layout{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){.gx-dl{grid-template-columns:minmax(0,1fr)}.gx-dl dt{margin-top:6px}.gx-money dd{text-align:left}}

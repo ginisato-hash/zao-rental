@@ -110,9 +110,11 @@ try{
    assert.ok((await db.pool.query('SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace s ON s.oid=p.pronamespace WHERE s.nspname||\'.\'||p.proname=$1 OR (s.nspname=\'public\' AND p.proname=$1)',[name])).rows[0].n>0,name);
   // A migration may widen the permission vocabulary but must never grant a permission — with exactly one Owner-decided exception:
   // 0056 (Issue #47 comment 6090166024) gives STAFF/MANAGER/ADMIN booking view + refund by role default. Nothing else is granted.
+  // 0064 (Issue #47 comment 7197143646 B3: ADMIN only) gives the ADMIN role exactly the 7 GROUP_* permissions (asserted below).
+  if(NEW.startsWith('0064_'))assert.deepEqual((await db.pool.query("SELECT role,permission FROM staff_role_permissions WHERE permission LIKE 'GROUP\\_%' ORDER BY 2")).rows.map(r=>r.role),Array(7).fill('ADMIN'));
   const ownerDecided=[['ADMIN','BOOKING_VIEW'],['ADMIN','REFUND_OVERRIDE'],['MANAGER','BOOKING_VIEW'],['MANAGER','REFUND_OVERRIDE'],['STAFF','BOOKING_VIEW'],['STAFF','REFUND_OVERRIDE']];
   assert.deepEqual((await db.pool.query("SELECT role,permission FROM staff_role_permissions WHERE permission IN ('BOOKING_VIEW','REFUND_OVERRIDE') ORDER BY 1,2")).rows.map(r=>[r.role,r.permission]),ownerDecided);
-  assert.equal((await db.pool.query('SELECT count(*)::int n FROM staff_role_permissions')).rows[0].n,grantedBefore+(NEW.startsWith('0056_')?ownerDecided.length:0));
+  assert.equal((await db.pool.query('SELECT count(*)::int n FROM staff_role_permissions')).rows[0].n,grantedBefore+(NEW.startsWith('0056_')?ownerDecided.length:0)+(NEW.startsWith('0064_')?7:0));
   assert.equal((await db.pool.query("SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'ops[_]%' AND has_function_privilege('public',p.oid,'EXECUTE')")).rows[0].n,0);
  });
 

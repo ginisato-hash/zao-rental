@@ -13,7 +13,7 @@ type HoldRow={id:string;reservation_id:string;owner_id:string;pickup_store:strin
 type Unit={id:string;variant_id:string;family:string;age:string;tier:string;store_id:string;quantity:number;status:string;transfer_piece_id?:string;physical_pole_id?:string};
 type Claim={transfer_piece_id:string|null;hold_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;day:string;start:string;end:string;pickup_store:string;return_store:string;buffer_override:boolean};
 type Witness={transferPiece:string|null;holdId:string;key:string;asset:string|null;pole:string|null;slots:Record<string,number>};
-export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,excludeKeys?:ReadonlySet<string>,wearFeasible?:boolean,bufferOverride=false):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
+export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,excludeKeys?:ReadonlySet<string>,wearFeasible?:boolean,bufferOverride=false,maxRequirements=240):Promise<{result:Feasibility;witness:Witness[];replanned:string[]}>{
   if(new Date(normalizePeriod(conditions.period).dueAt)<=now)throw new HoldError('PERIOD_ENDED');
   // Bounded metadata scan, not a LIMIT that silently discards existing promises.
   const nodes=(await c.query<ScopeNode>(`SELECT id,occupancy_start::text AS start,CASE WHEN pickup_store<>return_store THEN '9999-12-31' ELSE occupancy_end::text END AS end,
@@ -41,7 +41,7 @@ export async function planAllocation(c:Conn,conditions:HoldConditions,now:Date,i
    // physical retry genuinely solves only for what remains, and the excluded requirement's own
    // period is satisfied exclusively from the separate provisional pool, never double-claimed.
    .filter(r=>!excludeKeys?.has(r.key));
-  if(requirements.length>240)return {result:'INDETERMINATE',witness:[],replanned:[]};
+  if(requirements.length>maxRequirements)return {result:'INDETERMINATE',witness:[],replanned:[]};
   const checkedRequirements=[...requirements,...conditions.members.flatMap(m=>m.items.filter(i=>isWear(i.family)).map(item=>({...item,member:m})))];
   for(const r of checkedRequirements.filter(r=>isPole(r.family)&&!r.variantIds.length)){
    if(!isAccessoryPole(r.member,r.family))throw new HoldError('INVALID_CONDITIONS');
@@ -175,9 +175,9 @@ const NONE:MixedResult['provisional']=[],NO_KEYS:ReadonlySet<string>=new Set();
  * re-inclusion order can matter when several eligible items genuinely compete for the same scarce
  * unit (see RESULT.md) — but whenever provisional is not needed at all, the first full physical
  * attempt already succeeds, so the common case is unaffected. */
-export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,bufferOverride=false):Promise<MixedResult>{
+export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:Date,ignore:string|null=null,pin?:{requirementKey:string;assetId:string}|ReadonlyMap<string,string>,bufferOverride=false,maxRequirements=240):Promise<MixedResult>{
  const wear=await wearCapacityDetailed(c,conditions,now,ignore,undefined,bufferOverride);
- const primary=await planAllocation(c,conditions,now,ignore,pin,undefined,wear.feasible?undefined:false,bufferOverride);
+ const primary=await planAllocation(c,conditions,now,ignore,pin,undefined,wear.feasible?undefined:false,bufferOverride,maxRequirements);
  if(primary.result!=='INSUFFICIENT')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS};
  // R67: a Premium model promise is eligible only through its explicit model binding
  // (promiseVariantId); its boots/poles use the common Regular fit pool. SKI_SET accessory poles keep
@@ -191,13 +191,13 @@ export async function planMixedAllocation(c:Conn,conditions:HoldConditions,now:D
  const withSize=eligible.map(e=>({...e,bookingSize:variantRows.find(v=>v.id===e.variantId)?.size})).filter((e):e is typeof e&{bookingSize:string}=>!!e.bookingSize);
  if(withSize.length!==eligible.length)return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS}; // an eligible item whose variant can't be resolved is not silently dropped from the demand — no fallback, original INSUFFICIENT stands
  const excludeKeys=new Set(eligiblePhysical.map(e=>'candidate/'+e.memberKey));
- let retry=await planAllocation(c,conditions,now,ignore,pin,excludeKeys,true,bufferOverride);
+ let retry=await planAllocation(c,conditions,now,ignore,pin,excludeKeys,true,bufferOverride,maxRequirements);
  if(retry.result!=='FEASIBLE')return {...primary,provisional:NONE,wearExcludeKeys:NO_KEYS}; // even the physical items provisional could ever cover aren't enough — some other requirement is short
  // Greedy re-inclusion: prefer physical for every eligible item the remaining physical stock can
  // actually still cover, one at a time, so "physical preferred" holds per item, not just overall.
  for(const e of eligiblePhysical){
   const candidateExclude=new Set(excludeKeys);candidateExclude.delete('candidate/'+e.memberKey);
-  const attempt=await planAllocation(c,conditions,now,ignore,pin,candidateExclude,true,bufferOverride);
+  const attempt=await planAllocation(c,conditions,now,ignore,pin,candidateExclude,true,bufferOverride,maxRequirements);
   if(attempt.result==='FEASIBLE'){excludeKeys.delete('candidate/'+e.memberKey);retry=attempt;}
  }
  const stillProvisionalPhysical=eligiblePhysical.filter(e=>excludeKeys.has('candidate/'+e.memberKey));

@@ -61,7 +61,7 @@ try{
   const response=await handler(new Request(origin+'/api/auth/sign-in/email',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:input.email,password:input.password})}));assert.equal(response.status,200);
   const cookie=response.headers.getSetCookie().map(x=>x.split(';')[0]).join('; '),state=await resolveStaff(auth,roles.authPool,new Headers({cookie}));assert.equal(state.status,'authorized');
   if(state.status!=='authorized')throw Error('SYNTHETIC_LOGIN_FAILED');
-  assert.equal(state.principal.role,'ADMIN');assert.equal(state.principal.scope,'ALL');assert.deepEqual(state.principal.permissions,['BOOKING_VIEW','INVENTORY_EDIT','INVENTORY_VIEW','PRICE_EDIT','QUOTE_VIEW','REFUND_OVERRIDE','STAFF_MANAGE']);
+  assert.equal(state.principal.role,'ADMIN');assert.equal(state.principal.scope,'ALL');assert.deepEqual(state.principal.permissions,['BOOKING_VIEW','GROUP_APPROVE','GROUP_CANCEL','GROUP_DISCOUNT','GROUP_ENTRANCE_MANAGE','GROUP_PAYMENT_RECORD','GROUP_RELEASE','GROUP_VIEW','INVENTORY_EDIT','INVENTORY_VIEW','PRICE_EDIT','QUOTE_VIEW','REFUND_OVERRIDE','STAFF_MANAGE']);
   const sessions=(await db.pool.query('SELECT id,"userId" FROM auth_session')).rows;assert.equal(sessions.length,1);assert.equal(sessions[0].userId,state.principal.subject);
   const ctx=new OperationsContext(roles.ledgerPool,roles.authPool,{subject:state.principal.subject,sessionId:sessions[0].id});
   for(const permission of ['INVENTORY_EDIT','PRICE_EDIT','QUOTE_VIEW'] as const)assert.equal((await ctx.authorize(permission)).subject,state.principal.subject);

@@ -6,10 +6,14 @@ export type InboxPool={connect():Promise<InboxConnection>};
 /** ACK waits for explicit COMMIT. No client-side retry after an uncertain commit. */
 async function inboxTransaction<T>(pool:InboxPool|Pool,run:(c:InboxConnection)=>Promise<T>):Promise<T>{
  const c=await pool.connect().catch(()=>{throw new Error('WEBHOOK_INBOX_UNAVAILABLE');});let broken=false;
+ // pg-pool detaches its own error listener while a client is checked out, so a server-side disconnect during the transaction
+ // (compute restart, idle kill, network reset) would otherwise emit an unhandled 'error' and crash the whole receiver process.
+ // The failure still surfaces through the rejected query (sanitized below); the event itself carries nothing we need.
+ const swallow=()=>{};const emitter=c as {on?:(e:string,l:()=>void)=>unknown;off?:(e:string,l:()=>void)=>unknown};emitter.on?.('error',swallow);
  try{await c.query('BEGIN');await c.query("SET LOCAL synchronous_commit=on; SET LOCAL lock_timeout='2000ms'; SET LOCAL statement_timeout='2500ms'; SET LOCAL idle_in_transaction_session_timeout='5000ms'");
   const result=await run(c);await c.query('COMMIT');return result;
  }catch{broken=true;await c.query('ROLLBACK').catch(()=>{});throw new Error('WEBHOOK_INBOX_UNAVAILABLE');}
- finally{c.release(broken);}
+ finally{c.release(broken);emitter.off?.('error',swallow);}
 }
 function receipt(v:unknown):Receipt{if(v!=='INSERTED'&&v!=='DUPLICATE'&&v!=='HASH_CONFLICT')throw new Error('INVALID_INBOX_RECEIPT');return v;}
 export class PgSquareWebhookInbox implements SquareWebhookInbox,SquareWebhookReconciliation {

@@ -1,0 +1,780 @@
+{
+ "meta": {
+  "tag": "before",
+  "runsPerProfile": 20,
+  "server": "next dev --webpack (tests/flow-app), isolated PostgreSQL, loopback",
+  "chromium": "153.0.8010.12",
+  "node": "v24.15.0",
+  "commit": "0779053",
+  "throttling": "CDP CPU throttle per profile; no network throttle",
+  "timestamp": "2026-11-26T14:59:20.632Z"
+ },
+ "results": {
+  "ja-390-cpu4": {
+   "iterations": 20,
+   "failures": [],
+   "steps": {
+    "0-load (navigation to usable form)": {
+     "render": {
+      "n": 20,
+      "p50": 2110.6,
+      "p95": 7432.9,
+      "max": 24560.6
+     },
+     "api": {
+      "n": 20,
+      "p50": 234.6,
+      "p95": 3246.8,
+      "max": 7205
+     },
+     "fetchCountMax": 5,
+     "serialChainMax": 2,
+     "duplicates": [
+      "GET /api/guest/draft x2",
+      "GET /api/guest/options x2"
+     ],
+     "longTaskMsP95": 1237,
+     "perApi": {
+      "POST /api/guest/context": {
+       "n": 20,
+       "p50": 85.5,
+       "p95": 640.2,
+       "max": 1169.1
+      },
+      "GET /api/guest/draft": {
+       "n": 40,
+       "p50": 110.4,
+       "p95": 1097.1,
+       "max": 2851.5
+      },
+      "GET /api/guest/options": {
+       "n": 40,
+       "p50": 135.6,
+       "p95": 2598.3,
+       "max": 6038.1
+      }
+     }
+    },
+    "1-dates-to-equipment (CONTINUE, client only)": {
+     "render": {
+      "n": 20,
+      "p50": 155.9,
+      "p95": 191.1,
+      "max": 244.1
+     },
+     "api": {
+      "n": 0,
+      "p50": null,
+      "p95": null,
+      "max": null
+     },
+     "fetchCountMax": 0,
+     "serialChainMax": 0,
+     "duplicates": [],
+     "longTaskMsP95": 115.2,
+     "perApi": {}
+    },
+    "2-equipment-to-sizes (save draft + preview)": {
+     "render": {
+      "n": 20,
+      "p50": 691.5,
+      "p95": 5947.4,
+      "max": 6488.3
+     },
+     "api": {
+      "n": 20,
+      "p50": 531.5,
+      "p95": 5634.7,
+      "max": 6134.3
+     },
+     "fetchCountMax": 2,
+     "serialChainMax": 2,
+     "duplicates": [],
+     "longTaskMsP95": 336.3,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 63.5,
+       "p95": 506.3,
+       "max": 721.6
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 473.1,
+       "p95": 4939.3,
+       "max": 5917.3
+      }
+     }
+    },
+    "3-sizes-to-review (select)": {
+     "render": {
+      "n": 20,
+      "p50": 195.6,
+      "p95": 1550.8,
+      "max": 2662.3
+     },
+     "api": {
+      "n": 20,
+      "p50": 64,
+      "p95": 1359,
+      "max": 2459.3
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 206.4,
+     "perApi": {
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 64,
+       "p95": 1359,
+       "max": 2459.3
+      }
+     }
+    },
+    "4-coupon-apply (review step)": {
+     "render": {
+      "n": 20,
+      "p50": 599.4,
+      "p95": 3806.9,
+      "max": 4089.9
+     },
+     "api": {
+      "n": 20,
+      "p50": 524.5,
+      "p95": 3668,
+      "max": 3913.8
+     },
+     "fetchCountMax": 3,
+     "serialChainMax": 3,
+     "duplicates": [],
+     "longTaskMsP95": 119.7,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 59.8,
+       "p95": 138.2,
+       "max": 532.6
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 402.1,
+       "p95": 2651.4,
+       "max": 3307.8
+      },
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 37.2,
+       "p95": 291.1,
+       "max": 766.8
+      }
+     }
+    },
+    "5-pay-dev-stub (checkout)": {
+     "render": {
+      "n": 20,
+      "p50": 424.9,
+      "p95": 2157.7,
+      "max": 3405.9
+     },
+     "api": {
+      "n": 20,
+      "p50": 307.1,
+      "p95": 2003.3,
+      "max": 3253.4
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 195.7,
+     "perApi": {
+      "POST /api/guest/checkout": {
+       "n": 20,
+       "p50": 307.1,
+       "p95": 2003.3,
+       "max": 3253.4
+      }
+     }
+    }
+   }
+  },
+  "en-390-cpu4": {
+   "iterations": 20,
+   "failures": [],
+   "steps": {
+    "0-load (navigation to usable form)": {
+     "render": {
+      "n": 20,
+      "p50": 1725.3,
+      "p95": 2354.3,
+      "max": 2365
+     },
+     "api": {
+      "n": 20,
+      "p50": 132.8,
+      "p95": 379.3,
+      "max": 439.4
+     },
+     "fetchCountMax": 5,
+     "serialChainMax": 2,
+     "duplicates": [
+      "GET /api/guest/draft x2",
+      "GET /api/guest/options x2"
+     ],
+     "longTaskMsP95": 937.6,
+     "perApi": {
+      "POST /api/guest/context": {
+       "n": 20,
+       "p50": 57.8,
+       "p95": 145.7,
+       "max": 324
+      },
+      "GET /api/guest/draft": {
+       "n": 40,
+       "p50": 37.8,
+       "p95": 214.7,
+       "max": 234.8
+      },
+      "GET /api/guest/options": {
+       "n": 40,
+       "p50": 57.1,
+       "p95": 250.6,
+       "max": 303.6
+      }
+     }
+    },
+    "1-dates-to-equipment (CONTINUE, client only)": {
+     "render": {
+      "n": 20,
+      "p50": 116.7,
+      "p95": 152,
+      "max": 189.5
+     },
+     "api": {
+      "n": 0,
+      "p50": null,
+      "p95": null,
+      "max": null
+     },
+     "fetchCountMax": 0,
+     "serialChainMax": 0,
+     "duplicates": [],
+     "longTaskMsP95": 54.6,
+     "perApi": {}
+    },
+    "2-equipment-to-sizes (save draft + preview)": {
+     "render": {
+      "n": 20,
+      "p50": 511.3,
+      "p95": 1022.6,
+      "max": 1895.9
+     },
+     "api": {
+      "n": 20,
+      "p50": 390.5,
+      "p95": 915.2,
+      "max": 1756.4
+     },
+     "fetchCountMax": 2,
+     "serialChainMax": 2,
+     "duplicates": [],
+     "longTaskMsP95": 145.2,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 56.4,
+       "p95": 107.9,
+       "max": 160.1
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 337.1,
+       "p95": 760.7,
+       "max": 1691.3
+      }
+     }
+    },
+    "3-sizes-to-review (select)": {
+     "render": {
+      "n": 20,
+      "p50": 133.3,
+      "p95": 554.3,
+      "max": 663.5
+     },
+     "api": {
+      "n": 20,
+      "p50": 44.5,
+      "p95": 466.7,
+      "max": 563.2
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 57,
+     "perApi": {
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 44.5,
+       "p95": 466.7,
+       "max": 563.2
+      }
+     }
+    },
+    "4-coupon-apply (review step)": {
+     "render": {
+      "n": 20,
+      "p50": 318.5,
+      "p95": 659.9,
+      "max": 1520.1
+     },
+     "api": {
+      "n": 20,
+      "p50": 239.9,
+      "p95": 568,
+      "max": 1382.8
+     },
+     "fetchCountMax": 3,
+     "serialChainMax": 3,
+     "duplicates": [],
+     "longTaskMsP95": 60.3,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 50.4,
+       "p95": 66.6,
+       "max": 85.2
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 168.8,
+       "p95": 450.1,
+       "max": 1162
+      },
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 24.7,
+       "p95": 59.6,
+       "max": 174.4
+      }
+     }
+    },
+    "5-pay-dev-stub (checkout)": {
+     "render": {
+      "n": 20,
+      "p50": 244.1,
+      "p95": 505.2,
+      "max": 1394.6
+     },
+     "api": {
+      "n": 20,
+      "p50": 168.1,
+      "p95": 430.7,
+      "max": 1295
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 63.2,
+     "perApi": {
+      "POST /api/guest/checkout": {
+       "n": 20,
+       "p50": 168.1,
+       "p95": 430.7,
+       "max": 1295
+      }
+     }
+    }
+   }
+  },
+  "ja-1280-cpu1": {
+   "iterations": 20,
+   "failures": [],
+   "steps": {
+    "0-load (navigation to usable form)": {
+     "render": {
+      "n": 20,
+      "p50": 676.9,
+      "p95": 1053.2,
+      "max": 1641.9
+     },
+     "api": {
+      "n": 20,
+      "p50": 52.1,
+      "p95": 160.9,
+      "max": 213.1
+     },
+     "fetchCountMax": 5,
+     "serialChainMax": 2,
+     "duplicates": [
+      "GET /api/guest/draft x2",
+      "GET /api/guest/options x2"
+     ],
+     "longTaskMsP95": 188.9,
+     "perApi": {
+      "POST /api/guest/context": {
+       "n": 20,
+       "p50": 19.1,
+       "p95": 44.7,
+       "max": 115.4
+      },
+      "GET /api/guest/draft": {
+       "n": 40,
+       "p50": 21.6,
+       "p95": 50,
+       "max": 88.8
+      },
+      "GET /api/guest/options": {
+       "n": 40,
+       "p50": 30.6,
+       "p95": 98,
+       "max": 117.3
+      }
+     }
+    },
+    "1-dates-to-equipment (CONTINUE, client only)": {
+     "render": {
+      "n": 20,
+      "p50": 49,
+      "p95": 59.3,
+      "max": 59.7
+     },
+     "api": {
+      "n": 0,
+      "p50": null,
+      "p95": null,
+      "max": null
+     },
+     "fetchCountMax": 0,
+     "serialChainMax": 0,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {}
+    },
+    "2-equipment-to-sizes (save draft + preview)": {
+     "render": {
+      "n": 20,
+      "p50": 304,
+      "p95": 551.5,
+      "max": 1151.4
+     },
+     "api": {
+      "n": 20,
+      "p50": 254.3,
+      "p95": 498.4,
+      "max": 1106.7
+     },
+     "fetchCountMax": 2,
+     "serialChainMax": 2,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 26.8,
+       "p95": 139.3,
+       "max": 145.3
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 225.2,
+       "p95": 421.3,
+       "max": 1089.1
+      }
+     }
+    },
+    "3-sizes-to-review (select)": {
+     "render": {
+      "n": 20,
+      "p50": 58.5,
+      "p95": 103.1,
+      "max": 338.7
+     },
+     "api": {
+      "n": 20,
+      "p50": 19.3,
+      "p95": 56,
+      "max": 284.9
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 19.3,
+       "p95": 56,
+       "max": 284.9
+      }
+     }
+    },
+    "4-coupon-apply (review step)": {
+     "render": {
+      "n": 20,
+      "p50": 279.2,
+      "p95": 467.5,
+      "max": 518.1
+     },
+     "api": {
+      "n": 20,
+      "p50": 233.9,
+      "p95": 414.6,
+      "max": 470.3
+     },
+     "fetchCountMax": 3,
+     "serialChainMax": 3,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 14.9,
+       "p95": 28.2,
+       "max": 120.1
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 195.3,
+       "p95": 311.8,
+       "max": 326
+      },
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 20.2,
+       "p95": 50.6,
+       "max": 70.7
+      }
+     }
+    },
+    "5-pay-dev-stub (checkout)": {
+     "render": {
+      "n": 20,
+      "p50": 185.3,
+      "p95": 358.8,
+      "max": 574.8
+     },
+     "api": {
+      "n": 20,
+      "p50": 142.3,
+      "p95": 306.2,
+      "max": 530.3
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/checkout": {
+       "n": 20,
+       "p50": 142.3,
+       "p95": 306.2,
+       "max": 530.3
+      }
+     }
+    }
+   }
+  },
+  "en-1280-cpu1": {
+   "iterations": 20,
+   "failures": [],
+   "steps": {
+    "0-load (navigation to usable form)": {
+     "render": {
+      "n": 20,
+      "p50": 580.6,
+      "p95": 943,
+      "max": 1509.9
+     },
+     "api": {
+      "n": 20,
+      "p50": 33,
+      "p95": 88.3,
+      "max": 239.8
+     },
+     "fetchCountMax": 5,
+     "serialChainMax": 2,
+     "duplicates": [
+      "GET /api/guest/draft x2",
+      "GET /api/guest/options x2"
+     ],
+     "longTaskMsP95": 183.3,
+     "perApi": {
+      "POST /api/guest/context": {
+       "n": 20,
+       "p50": 13.1,
+       "p95": 51.9,
+       "max": 206.5
+      },
+      "GET /api/guest/draft": {
+       "n": 40,
+       "p50": 13.3,
+       "p95": 28.5,
+       "max": 29.3
+      },
+      "GET /api/guest/options": {
+       "n": 40,
+       "p50": 18.4,
+       "p95": 35.4,
+       "max": 36.6
+      }
+     }
+    },
+    "1-dates-to-equipment (CONTINUE, client only)": {
+     "render": {
+      "n": 20,
+      "p50": 52.8,
+      "p95": 55.9,
+      "max": 59.1
+     },
+     "api": {
+      "n": 0,
+      "p50": null,
+      "p95": null,
+      "max": null
+     },
+     "fetchCountMax": 0,
+     "serialChainMax": 0,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {}
+    },
+    "2-equipment-to-sizes (save draft + preview)": {
+     "render": {
+      "n": 20,
+      "p50": 277.8,
+      "p95": 439.5,
+      "max": 880.4
+     },
+     "api": {
+      "n": 20,
+      "p50": 232.6,
+      "p95": 396.2,
+      "max": 828.2
+     },
+     "fetchCountMax": 2,
+     "serialChainMax": 2,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 18.3,
+       "p95": 34,
+       "max": 39.3
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 215.8,
+       "p95": 364.8,
+       "max": 813
+      }
+     }
+    },
+    "3-sizes-to-review (select)": {
+     "render": {
+      "n": 20,
+      "p50": 57.5,
+      "p95": 105.8,
+      "max": 123.9
+     },
+     "api": {
+      "n": 20,
+      "p50": 16.5,
+      "p95": 60.1,
+      "max": 72.9
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 16.5,
+       "p95": 60.1,
+       "max": 72.9
+      }
+     }
+    },
+    "4-coupon-apply (review step)": {
+     "render": {
+      "n": 20,
+      "p50": 275.1,
+      "p95": 367.5,
+      "max": 367.9
+     },
+     "api": {
+      "n": 20,
+      "p50": 227.1,
+      "p95": 312.8,
+      "max": 317
+     },
+     "fetchCountMax": 3,
+     "serialChainMax": 3,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 20,
+       "p50": 10.6,
+       "p95": 22.6,
+       "max": 44.4
+      },
+      "POST /api/guest/preview": {
+       "n": 20,
+       "p50": 197.1,
+       "p95": 282.7,
+       "max": 283
+      },
+      "POST /api/guest/selection": {
+       "n": 20,
+       "p50": 16.1,
+       "p95": 26.8,
+       "max": 35.7
+      }
+     }
+    },
+    "5-pay-dev-stub (checkout)": {
+     "render": {
+      "n": 20,
+      "p50": 167.6,
+      "p95": 234.8,
+      "max": 253
+     },
+     "api": {
+      "n": 20,
+      "p50": 117.4,
+      "p95": 189.1,
+      "max": 211.1
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/checkout": {
+       "n": 20,
+       "p50": 117.4,
+       "p95": 189.1,
+       "max": 211.1
+      }
+     }
+    }
+   }
+  }
+ },
+ "serverApi": {
+  "/api/guest/draft": {
+   "n": 55,
+   "p50": 31.7,
+   "p95": 64.6,
+   "max": 74.4
+  },
+  "/api/guest/options": {
+   "n": 55,
+   "p50": 22,
+   "p95": 43.3,
+   "max": 211
+  }
+ }
+}

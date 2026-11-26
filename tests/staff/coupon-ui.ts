@@ -120,6 +120,13 @@ try{
  });
  assert.deepEqual(errors,[],'no page errors');
  await context.close();
+ await check('delete asks for confirmation, removes an unused coupon from the list and keeps the code reserved',async()=>{
+  const {ctx,p}=await login('cpn-admin@example.invalid');await p.goto('/staff/coupons');await expect(p.locator('tr',{hasText:CODE})).toBeVisible();
+  const dialogs:string[]=[];p.once('dialog',d=>{dialogs.push(d.message());void d.accept();});
+  const res=p.waitForResponse(r=>new URL(r.url()).pathname==='/api/coupons'&&r.request().method()==='POST');
+  await p.locator('tr',{hasText:CODE}).getByTestId('coupon-delete').click();const answer=await res;assert.equal(answer.status(),200,await answer.text());
+  assert.match(dialogs[0]??'',/削除します/);await expect(p.locator('tr',{hasText:CODE})).toHaveCount(0);await ctx.close();
+ });
  console.log(JSON.stringify({status:'PASS',checks:count,screenshots:shots}));
 }catch(e){failed=true;console.error(JSON.stringify({status:'FAIL',stage}));console.error((e as Error).message?.slice(0,1200));}
 finally{await browser.close();await app?.stop();}

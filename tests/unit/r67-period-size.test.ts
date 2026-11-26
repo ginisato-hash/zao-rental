@@ -50,3 +50,9 @@ test('R67 canonical sizes and the +1.0 cm boot tie-break',()=>{
  const t=25.0,small=bootRange('24.5')!,large=bootRange('25.5')!,shell=bootRange('25/25.5')!;
  assert.ok(compareBootFit(large,small,t)<0,'equal distance: never the smaller boot');assert.ok(compareBootFit(shell,large,t)<0,'a shell containing the target wins');
 });
+test('Owner decision: the wear set discount and a coupon always combine; the coupon applies after the wear discount and never drives the total below zero',()=>{
+ const terms=(over:Record<string,unknown>)=>({code:'WEARC',validFrom:'2030-01-01T00:00:00.000Z',validUntil:'2040-01-01T00:00:00.000Z',storeBasis:'PICKUP_STORE' as const,stores:['MOUNTAIN_BASE','ONSEN_BASE'],products:['SKI_SET_ADULT_REGULAR','WEAR_SET_ADULT'],kind:'PERCENT_BPS' as const,value:1000,minimumJpy:0,minimumBasis:'CART_SUBTOTAL' as const,maximumDiscountJpy:9999999,advanceCombination:'DENY' as const,maxActiveReservations:null,...over}) as never;
+ const x=input(period('2035-02-05','2035-02-06','13:00','17:00'),true);x.couponCode='WEARC';
+ const q=calculate(INITIAL_TABLE,x,now,terms({}));assert.equal(q.bundleDiscountJpy,1600);assert.equal(q.couponDiscountJpy,1950);assert.equal(q.totalJpy,13100+8000-1600-1950);
+ const full=calculate(INITIAL_TABLE,x,now,terms({value:10000}));assert.equal(full.totalJpy,0);
+});

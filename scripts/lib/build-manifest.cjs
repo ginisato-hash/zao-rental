@@ -5,7 +5,7 @@ const {join}=require('node:path');
 /** Source-manifest digest of exactly the files the application is built from. It is computed INSIDE the build (next.config.ts, from the files
  *  that were uploaded and compiled) and recomputed by the operator from the clean main checkout; a deployment built from other sources cannot report
  *  the operator's digest, whatever environment value was given at deploy time. CommonJS and dependency-free on purpose: next.config.ts is compiled to CJS and requires it. */
-const MANIFEST_ROOTS=['apps/web/src','apps/web/public','apps/web/next.config.ts','apps/web/tsconfig.json','packages','config','package.json','package-lock.json','vercel.json','tsconfig.json'];
+const MANIFEST_ROOTS=['apps/web/src','apps/web/public','apps/web/next.config.ts','apps/web/tsconfig.json','packages','config','package.json','package-lock.json','vercel.json','tsconfig.json','scripts/lib/build-manifest.cjs'];
 const SKIP=new Set(['node_modules','.next','.git','.vercel','.local','.DS_Store']);
 function walkManifestFiles(root){
  const out=[];

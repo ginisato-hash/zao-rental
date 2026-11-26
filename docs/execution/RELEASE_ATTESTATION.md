@@ -8,6 +8,7 @@ both writes), the formal alias, and the build digest the running deployment repo
 Artifact identity: `next.config.ts` computes a sha256 manifest over the source files being compiled (`scripts/lib/build-manifest.cjs`: apps/web/src, public,
 config, packages, lockfile, package.json, vercel.json ...) INSIDE the build and inlines it; `/api/release` returns it as `buildDigest`. The operator recomputes
 the same digest from the clean checkout. A deployment built from other sources cannot report the operator's digest, whatever was passed at deploy time.
+The manifest includes its own calculator (`scripts/lib/build-manifest.cjs`) and `next.config.ts`. Inputs outside the listed roots (ignored/generated files, installed dependencies beyond the lockfile) are NOT covered: stated limit.
 Limit, stated plainly: this proves the compiled source set, not Vercel's runtime bytes; the approval JSON is checked against a pinned approver, state, origin
 and release id, but the Owner GO itself (a chat decision) cannot be verified mechanically.
 
@@ -20,6 +21,7 @@ Procedure (clean checkout equal to origin/main):
     vercel promote <dpl_id> --yes
     npm run production:attest-release -- post <dpl_id>    # alias must now be the candidate
 
+Record the alias deployment id shown at stage time (the previous deployment) before promoting; after promote the alias must be the candidate and must differ from that recorded id.
 Never promote after a stage FAIL. Reason codes: SOURCE_NOT_ACCEPTED_MAIN, WORKTREE_DIRTY, PROJECT_LINK_MISMATCH, RELEASE_ID_MISMATCH, APPROVAL_MISMATCH,
 DEPLOYMENT_WRONG_PROJECT, DEPLOYMENT_NOT_PRODUCTION, DEPLOYMENT_NOT_READY, RELEASE_ID_NOT_BEFORE_DEPLOYMENT, APPROVAL_NOT_BEFORE_DEPLOYMENT,
 STAGE_ALIAS_ALREADY_MOVED_OR_UNKNOWN (stage), ALIAS_NOT_THIS_DEPLOYMENT (post), RUNTIME_SHA_MISMATCH, BUILD_DIGEST_MISMATCH, DEPLOYMENT_EVIDENCE_MISSING.

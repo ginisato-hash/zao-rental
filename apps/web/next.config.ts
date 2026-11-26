@@ -1,12 +1,12 @@
 import type { NextConfig } from 'next';
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
+import {createRequire} from 'node:module';
 
 // Digest of the sources this build compiles (see scripts/lib/build-manifest.cjs); inlined so /api/release can report it. Not an operator-supplied value.
 const buildRoot=existsSync(join(process.cwd(),'apps/web/next.config.ts'))?process.cwd():join(process.cwd(),'..','..');
-// Resolved from the build root at run time (not a static relative import: Next compiles this file to a temporary module).
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const {buildDigestFromTree}=require(join(buildRoot,'scripts/lib/build-manifest.cjs')) as {buildDigestFromTree:(root:string)=>string};
+// Resolved from the build root at run time. createRequire works whether this file is loaded as ESM (tests, tsx) or compiled to CJS by Next, and needs no import.meta.
+const {buildDigestFromTree}=createRequire(join(buildRoot,'package.json'))('./scripts/lib/build-manifest.cjs') as {buildDigestFromTree:(root:string)=>string};
 const config: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages:['@node-rs/argon2'],

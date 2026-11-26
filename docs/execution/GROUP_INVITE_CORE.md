@@ -38,6 +38,7 @@ REVIEW_HELD --confirm(ADMIN)--> CONFIRMED(現地精算・未精算) --cancelConf
 権限: `GROUP_VIEW, GROUP_ENTRANCE_MANAGE, GROUP_APPROVE, GROUP_DISCOUNT, GROUP_RELEASE, GROUP_CANCEL, GROUP_PAYMENT_RECORD`（ADMIN roleのみ）。
 
 ## 4. 既存consumerの棚卸し（確約済み未払い）
+実装済みの接続点と各consumerの扱いは `GROUP_NOTIFICATIONS.md` §3 を参照。
 団体は `rental_bookings` を作らないため、booking起点の consumer（Square決済・照合・返金・custody・booking通知・顧客ID・キャンセル/返金・booking一覧・売上/入金集計）は団体を一切見ない（fail-closed）。在庫起点の consumer（capacity/availability/provisional/wear/transfer/売止/カレンダーの在庫占有）は `allocation_stage<>'PROVISIONAL'` の既存述語で団体の保護を見る。
 - 「支払不明」・売上入金: bookingもattemptも無いため発生しない。
 - 親の二重計上: 親1行が確定額(`confirmed_total_jpy`)を持つ。partは金額を持たない。

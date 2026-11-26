@@ -20,7 +20,9 @@ class Browserish{
   const cookie=[...this.jar].map(([k,v])=>k+'='+v).join('; ');if(cookie)headers.cookie=cookie;
   const r=await fetch(origin+path,{method:o.method??'GET',headers,...(o.method==='POST'?{body:o.raw??JSON.stringify(o.body??{})}:{}),redirect:'manual'});
   for(const c of r.headers.getSetCookie()){const [kv]=c.split(';');const i=kv!.indexOf('=');const k=kv!.slice(0,i),v=kv!.slice(i+1);if(v==='')this.jar.delete(k);else this.jar.set(k,v);}
-  const text=await r.text();let json:Record<string,any>={};try{json=JSON.parse(text);}catch{/* not json */}
+  const text=await r.text();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let json:Record<string,any>={};try{json=JSON.parse(text);}catch{/* not json */}
   return {status:r.status,json,text,headers:r.headers};
  }
 }
@@ -130,7 +132,7 @@ try{
   const hundred=Array.from({length:100},(_,i)=>i%3===2?boardRow('G'+i):skiRow('G'+i,{heightCm:165+(i%10),footCm:25.5}));
   const b1=new Browserish(),s1=await start(b1,'SYNTHETIC hundred');const g1=(await b1.req('/api/group/g/'+s1.id)).json;
   const adv=await timed('advise 100 members',async()=>(await b1.req(`/api/group/g/${s1.id}/advise`,{method:'POST',body:{rows:hundred}})).json);assert.equal(adv.ok,true);assert.equal(adv.joint,'FEASIBLE',JSON.stringify(adv.summary));
-  const saved=await timed('save 100 members',()=>b1.req(`/api/group/g/${s1.id}/members`,{method:'POST',body:{expectedRevision:g1.group.revision,rows:hundred,directions:hundred.map(()=>'RECOMMENDED')}}));assert.equal(saved.status,200,saved.text);
+  const saved=await timed('save 100 members',()=>b1.req(`/api/group/g/${s1.id}/members`,{method:'POST',body:{expectedRevision:g1.group.revision,rows:hundred,directions:adv.advice.map((x:{defaultDirection:string})=>x.defaultDirection)}}));assert.equal(saved.status,200,saved.text);
   const quoted=await timed('quote 100 members',()=>b1.req(`/api/group/g/${s1.id}/quote`,{method:'POST',body:{expectedRevision:saved.json.revision}}));assert.equal(quoted.status,200,quoted.text);
   const e=quoted.json.estimate;await b1.req(`/api/group/g/${s1.id}/consent`,{method:'POST',body:{quoteId:e.id,digest:e.digest,explanationConfirmed:true,fitAcknowledged:false}});
   const sub=await timed('submit 100 members',()=>b1.req(`/api/group/g/${s1.id}/submit`,{method:'POST',body:{requestKey:randomUUID(),expectedRevision:quoted.json.group.revision,quoteId:e.id}}));assert.equal(sub.status,200,sub.text);assert.equal(sub.json.members,100);
@@ -140,7 +142,7 @@ try{
   const adv2=await timed('advise 100 members, joint shortage localised',async()=>(await b2.req(`/api/group/g/${s2.id}/advise`,{method:'POST',body:{rows:sixty}})).json);
   assert.equal(adv2.ok,true);assert.notEqual(adv2.joint,'FEASIBLE');assert.ok(adv2.summary.short>0&&adv2.summary.short<100,JSON.stringify(adv2.summary));assert.ok(adv2.advice.some((x:{state:string;reason:string})=>x.state==='SHORT'&&x.reason==='JOINT_INSUFFICIENT'));
   // saving is still allowed (it holds nothing); submit is the atomic step and must refuse
-  const sv=await b2.req(`/api/group/g/${s2.id}/members`,{method:'POST',body:{expectedRevision:g2.group.revision,rows:sixty,directions:sixty.map(()=>'RECOMMENDED')}});assert.equal(sv.status,200,sv.text);
+  const sv=await b2.req(`/api/group/g/${s2.id}/members`,{method:'POST',body:{expectedRevision:g2.group.revision,rows:sixty,directions:adv2.advice.map((x:{defaultDirection:string})=>x.defaultDirection)}});assert.equal(sv.status,200,sv.text);
   const qt=await b2.req(`/api/group/g/${s2.id}/quote`,{method:'POST',body:{expectedRevision:sv.json.revision}});const e2=qt.json.estimate;
   await b2.req(`/api/group/g/${s2.id}/consent`,{method:'POST',body:{quoteId:e2.id,digest:e2.digest,explanationConfirmed:true,fitAcknowledged:false}});
   const key=randomUUID(),fail=await b2.req(`/api/group/g/${s2.id}/submit`,{method:'POST',body:{requestKey:key,expectedRevision:qt.json.group.revision,quoteId:e2.id}});

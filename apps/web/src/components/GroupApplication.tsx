@@ -104,6 +104,8 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
   if(saved&&(v.data as unknown as View).group.status==='DRAFT'&&!(v.data as unknown as View).rows.length){try{const list=JSON.parse(saved) as GroupCsvMemberValues[];if(Array.isArray(list))setRows(list.slice(0,GROUP_CSV_MAX_ROWS).map(r=>tidy({...blank(),...r})));}catch{}}
   setPhase('work');
  })();return ()=>{live=false;};},[call,groupId,applyView]);
+ // A resume link opened in a tab that already shows this page only changes the fragment: reload so the key is exchanged for the session.
+ useEffect(()=>{const onHash=()=>{if(new URLSearchParams(location.hash.replace(/^#/,'')).get('k'))location.reload();};window.addEventListener('hashchange',onHash);return ()=>window.removeEventListener('hashchange',onHash);},[]);
  useEffect(()=>{heading.current?.focus();},[step,phase]);
  // unsaved rows survive a reload in this tab only (sessionStorage); cleared on submit
  useEffect(()=>{if(phase==='work'&&gid.current&&view&&['DRAFT','QUOTED'].includes(view.group.status))store('zao-group-rows:v1:'+gid.current,rows.length?JSON.stringify(rows.map(values)):'');},[rows,phase,view]);
@@ -243,7 +245,7 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
       {fld('groupLabel',t.form.group,{maxLength:120,autoComplete:'organization'})}{fld('contactName',t.form.rep,{maxLength:120,autoComplete:'name'})}
       {fld('contactEmail',t.form.email,{type:'email',maxLength:254,autoComplete:'email'})}{fld('contactPhone',t.form.phone,{type:'tel',maxLength:40,autoComplete:'tel'})}
       <div className="guest-field"><label htmlFor="group-f-locale"><span className="guest-label-text">{t.form.lang}</span><select id="group-f-locale" value={f.locale} onChange={e=>setF({...f,locale:e.target.value})}><option value="ja">{t.form.ja}</option><option value="en">{t.form.en}</option></select></label></div>
-      <div className="guest-field"><label htmlFor="group-f-store"><span className="guest-label-text">{t.form.store}</span><select id="group-f-store" value={f.store} onChange={e=>setF({...f,store:e.target.value})}>{['MOUNTAIN_BASE','ONSEN_BASE'].map(s=><option key={s} value={s}>{storeName(ja,s)}</option>)}</select></label></div>
+      <div className="guest-field"><label htmlFor="group-f-store"><span className="guest-label-text">{t.form.base}</span><select id="group-f-store" value={f.store} onChange={e=>setF({...f,store:e.target.value})}>{['MOUNTAIN_BASE','ONSEN_BASE'].map(s=><option key={s} value={s}>{storeName(ja,s)}</option>)}</select></label></div>
       {fld('startDate',t.form.start,{type:'date'})}{fld('endDate',t.form.end,{type:'date'})}
       <div className="guest-field"><label htmlFor="group-f-startAt"><span className="guest-label-text">{t.form.startAt}</span><select id="group-f-startAt" value={f.startAt} onChange={e=>setF({...f,startAt:e.target.value})}><option value="08:30">08:30</option><option value="13:00">13:00</option></select></label></div>
       <div className="guest-field"><label htmlFor="group-f-returnBy"><span className="guest-label-text">{t.form.returnBy}</span><select id="group-f-returnBy" value={f.returnBy} onChange={e=>setF({...f,returnBy:e.target.value})}><option value="12:00">12:00</option><option value="17:00">17:00</option></select></label></div>
@@ -258,7 +260,7 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
  const v=view!;
  const resume=resumeKey&&<section className="group-resume" aria-label={t.resume.title}><h2>{t.resume.title}</h2><p>{t.resume.body}</p><input readOnly aria-label={t.resume.title} value={typeof location!=='undefined'?location.origin+'/'+locale+'/group/'+token+'/'+v.group.id+'#k='+resumeKey:''} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy()}>{copied?t.resume.copied:t.resume.copy}</button></section>;
  const colLabel=(k:string)=>k;void colLabel;
- const summary=<dl className="guest-facts guest-facts--compact"><div><dt>{t.done.number}</dt><dd>{v.group.groupNumber}</dd></div><div><dt>{t.done.period}</dt><dd>{v.group.period.startDate}{v.group.period.endDate!==v.group.period.startDate?' – '+v.group.period.endDate:''}</dd></div><div><dt>{t.done.store}</dt><dd>{storeName(ja,v.group.pickupStore)}</dd></div></dl>;
+ const summary=<dl className="guest-facts guest-facts--compact"><div><dt>{t.done.number}</dt><dd>{v.group.groupNumber}</dd></div><div><dt>{t.done.period}</dt><dd>{v.group.period.startDate}{v.group.period.endDate!==v.group.period.startDate?' – '+v.group.period.endDate:''}</dd></div><div><dt>{t.done.base}</dt><dd>{storeName(ja,v.group.pickupStore)}</dd></div></dl>;
 
  return <>{head}{stepper}{errorBox}{resume}{summary}
   {step===2&&<section aria-labelledby="group-rows-h">
@@ -296,8 +298,8 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
      <div className="guest-field"><label htmlFor="bulk-value"><span className="guest-label-text">{t.rows.bulkValue}</span><select id="bulk-value" value={bulk.value} onChange={e=>setBulk({...bulk,value:e.target.value})}>
       {bulk.field==='tier'&&<><option value="REGULAR">{t.rows.tiers.REGULAR}</option></>}
       {bulk.field==='wearAddon'&&<><option value="YES">YES</option><option value="NO">NO</option></>}
-      {bulk.field==='jacketSize'&&<><option value="">{t.rows.fields.choose}</option>{csv!.jacketSizes.map(s=><option key={s} value={s}>{s}</option>)}</>}
-      {bulk.field==='pantsSize'&&<><option value="">{t.rows.fields.choose}</option>{csv!.pantsSizes.map(s=><option key={s} value={s}>{s}</option>)}</>}
+      {bulk.field==='jacketSize'&&<><option value="">{t.rows.fields.choose}</option>{csv!.jacketSizes.map(sz=><option key={sz} value={sz}>{sz}</option>)}</>}
+      {bulk.field==='pantsSize'&&<><option value="">{t.rows.fields.choose}</option>{csv!.pantsSizes.map(sz=><option key={sz} value={sz}>{sz}</option>)}</>}
      </select></label></div>
     </div>
     <button type="button" onClick={applyBulk}>{t.rows.bulkApply}</button>
@@ -329,6 +331,7 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
         {c.fit&&c.fit.kind!=='NORMAL'&&<span className="guest-flag guest-flag--edge">{fitBadge(c.fit.kind,ja)}</span>}</label>:null;})}
       </div>
       {(chosen?.fit&&chosen.fit.kind!=='NORMAL'||a.state==='EDGE')&&<p className="guest-fit-notice">{fitNotice(ja)}</p>}
+      {a.reason==='JOINT_ALTERNATIVE'&&<p className="guest-hint">{t.advice.altNote}</p>}
      </fieldset>:<div>
       {a.state==='MANUAL_FIT_REQUIRED'&&<p className="guest-fit-notice guest-fit-notice--manual">{fitManualNotice(ja)}</p>}
       {a.state!=='MANUAL_FIT_REQUIRED'&&<p role="alert" className="group-alert">{t.rows.status[a.state]}</p>}

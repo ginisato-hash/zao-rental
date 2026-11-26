@@ -5,7 +5,8 @@ import {GroupError,MAX_MEMBERS,memberKey,type GroupMemberInput} from '../../../c
 import {GROUP_CSV_MAX_LABEL_CHARS,buildGroupCsvTemplates,catalogSizesFromVariants,groupCsvRowToProfileDraft,parseGroupCsv,serializeGroupCsvRows,type CsvLang,type GroupCsvCatalog,type GroupCsvMemberValues,type GroupCsvRow} from '../../../contracts/src/group-csv';
 import {DIRECTIONS,RECOMMENDATION_RULE,buildMembers,memberItems,parseRecommendation,rankCandidates,sizing,type Candidate,type Direction,type Profile,type Variant} from '../../../contracts/src/recommendation';
 import type {FitMeta} from '../../../contracts/src/size-edge';
-import {planMixedAllocation} from '../inventory/allocation';
+import {planAllocation,planMixedAllocation} from '../inventory/allocation';
+import {wearCapacityDetailed} from '../inventory/wear-capacity';
 import {heldIntake} from '../inventory/intake-context';
 import {assertNotSalesStopped} from '../inventory/sales-stop';
 import {guestCatalog,guestVariants} from '../content/public-catalog';
@@ -162,6 +163,14 @@ export class GroupCustomerService {
   const all:HoldConditions={...base,reservationId:randomUUID(),members:members.map(m=>({...m.member,key:memberKey(m.ordinal)}))};
   return (await planMixedAllocation(c,all,now,null,undefined,false,GROUP_PLAN_LIMIT)).result;
  }
+ /** Physical-stock-only cover (the planner's first, cheap stage). Used only to LOCALISE which rows fall short once the authoritative mixed plan
+  * (physical + provisional) has said the whole group does not fit: an infeasible mixed plan re-plans per eligible item (seconds at 100 members),
+  * so probing every row with it is not affordable. Consequence (documented): a row that only provisional capacity could cover may be reported short. */
+ private async coverPhysical(c:PoolClient,now:Date,base:Omit<HoldConditions,'members'|'reservationId'>,members:{ordinal:number;member:HoldMember}[]):Promise<Feasibility>{
+  const all:HoldConditions={...base,reservationId:randomUUID(),members:members.map(m=>({...m.member,key:memberKey(m.ordinal)}))};
+  const wear=await wearCapacityDetailed(c,all,now,null,undefined,false);
+  return (await planAllocation(c,all,now,null,undefined,undefined,wear.feasible?undefined:false,false,GROUP_PLAN_LIMIT)).result;
+ }
  private async load(owner:OwnerActor,groupId:string){
   const v=await this.svc.get(owner,groupId);const g=v.group;
   if(!['DRAFT','QUOTED'].includes(g.status))throw new GroupError('INVALID_STATE',409,{status:g.status});
@@ -180,14 +189,17 @@ export class GroupCustomerService {
    // Joint check of the default choices: the same one-problem planning submit() uses. If it fails, find which rows cannot be added.
    const ready=advice.filter(a=>a.defaultDirection).map(a=>({ordinal:a.index+1,member:chosen[a.index]![a.defaultDirection!]!.member}));
    const joint:Feasibility=ready.length?await this.cover(c,now,base,ready):'FEASIBLE';const short:number[]=[];
-   if(joint!=='FEASIBLE'&&ready.length>1){
+   if(joint!=='FEASIBLE'){
     // Feasibility only shrinks as members are added, so the longest feasible prefix is found by bisection; the rest are then tried one by one.
-    let lo=0,hi=ready.length;while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(await this.cover(c,now,base,ready.slice(0,mid))==='FEASIBLE')lo=mid;else hi=mid-1;}
+    let lo=0,hi=ready.length;while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(await this.coverPhysical(c,now,base,ready.slice(0,mid))==='FEASIBLE')lo=mid;else hi=mid-1;}
     const accepted=ready.slice(0,lo);
-    for(const m of ready.slice(lo)){const r=await this.cover(c,now,base,[...accepted,m]);if(r==='FEASIBLE')accepted.push(m);else short.push(m.ordinal-1);}
-   }else if(joint!=='FEASIBLE')short.push(...ready.map(m=>m.ordinal-1));
-   for(const i of short){advice[i]={...advice[i]!,state:'SHORT',reason:'JOINT_INSUFFICIENT'};}
-   return {ok:true as const,revision:group.revision,rows,advice,joint:joint==='FEASIBLE'||short.length===0?'FEASIBLE' as const:joint,ruleVersion:RECOMMENDATION_RULE,summary:{members:rows.length,ready:advice.filter(a=>a.state==='READY').length,edge:advice.filter(a=>a.state==='EDGE').length,short:advice.filter(a=>a.state==='SHORT').length,manual:advice.filter(a=>a.state==='MANUAL_FIT_REQUIRED').length,invalid:advice.filter(a=>a.state==='INVALID'||a.state==='UNAVAILABLE').length}};
+    for(const m of ready.slice(lo)){const r=await this.coverPhysical(c,now,base,[...accepted,m]);if(r==='FEASIBLE')accepted.push(m);else short.push(m.ordinal-1);}
+    // A row that cannot be covered at its default size may still be covered by the next shorter/longer size (each already individually feasible).
+    for(const i of [...short]){for(const d of ['SHORTER','LONGER'] as const){const alt=chosen[i]![d];if(!alt)continue;const m={ordinal:i+1,member:alt.member};
+     if(await this.coverPhysical(c,now,base,[...accepted,m])==='FEASIBLE'){accepted.push(m);advice[i]={...advice[i]!,defaultDirection:d,reason:'JOINT_ALTERNATIVE'};short.splice(short.indexOf(i),1);break;}}}
+    for(const i of short)advice[i]={...advice[i]!,state:'SHORT',reason:'JOINT_INSUFFICIENT'};
+   }
+   return {ok:true as const,revision:group.revision,rows,advice,joint:short.length===0?'FEASIBLE' as const:joint,ruleVersion:RECOMMENDATION_RULE,summary:{members:rows.length,ready:advice.filter(a=>a.state==='READY').length,edge:advice.filter(a=>a.state==='EDGE').length,short:advice.filter(a=>a.state==='SHORT').length,manual:advice.filter(a=>a.state==='MANUAL_FIT_REQUIRED').length,invalid:advice.filter(a=>a.state==='INVALID'||a.state==='UNAVAILABLE').length}};
   });
  }
  /** Step 3 -> 4: persists rows with server-derived selections (never client variant ids). Every row must resolve; nothing unverified is saved. */

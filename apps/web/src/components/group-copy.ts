@@ -12,7 +12,7 @@ const JA={
  newApplication:'新しく申し込む',
  resume:{title:'この申請の再開リンク',body:'このブラウザ以外で続きを開くときの鍵です。入口のリンクとは別のものです。他の人に共有しないでください。この画面を閉じると、再表示はできません。',copy:'リンクをコピー',copied:'コピーしました'},
  form:{
-  group:'団体名',rep:'代表者名',email:'メールアドレス',phone:'連絡先電話番号（任意）',lang:'ご案内の言語',ja:'日本語',en:'English',store:'貸出・返却店舗',
+  group:'団体名',rep:'代表者名',email:'メールアドレス',phone:'連絡先電話番号（任意）',lang:'ご案内の言語',ja:'日本語',en:'English',base:'貸出・返却店舗',
   start:'利用開始日',end:'利用終了日',startAt:'貸出開始時刻',returnBy:'返却時刻',people:'おおよその人数',peopleNote:'1〜100名。実際の人数は次のステップの一覧で決まります。',
   go:'申請を始める',going:'作成しています…',note:'この時点では在庫は押さえません。',
   stores:{MOUNTAIN_BASE:'山のベース',ONSEN_BASE:'温泉のベース'},
@@ -40,7 +40,7 @@ const JA={
   summary:(s:{members:number;ready:number;edge:number;short:number;manual:number;invalid:number})=>`${s.members}名中：確認済み ${s.ready}・取扱範囲外 ${s.edge}・在庫不足 ${s.short}・店舗確認 ${s.manual}・要修正 ${s.invalid}`,
   direction:{RECOMMENDED:'おすすめ',SHORTER:'短め',LONGER:'長め'},cm:'cm',
   fixRow:'一覧で修正する',blocked:'全員のサイズが確認できるまで次に進めません。',stale:'一覧が変更されました。もう一度照合してください。',
-  jointShort:'全員分をまとめると在庫が足りない行があります。',
+  jointShort:'全員分をまとめると在庫が足りない行があります。',altNote:'全員分の在庫の都合で、おすすめではなく隣のサイズを初期選択にしています。変更もできます。',
   next:'この内容で見積を作る',saving:'保存しています…',
  },
  quote:{
@@ -54,7 +54,7 @@ const JA={
   stale:'内容が変更されています。見積を作り直してください。',requote:'見積を作り直す',
  },
  done:{
-  heading:'受付状況',number:'団体予約番号',period:'ご利用日程',people:'人数',total:'暫定合計（税込）',store:'店舗',settle:'支払方法',settleValue:'現地精算（未精算）',
+  heading:'受付状況',number:'団体予約番号',period:'ご利用日程',people:'人数',total:'暫定合計（税込）',base:'店舗',settle:'支払方法',settleValue:'現地精算（未精算）',
   status:{REVIEW_HELD:'確認待ち・仮押さえ中です。まだ予約確定ではありません。',CHANGES_REQUESTED:'店舗から確認の連絡があります。仮押さえは続いています。',CONFIRMED:'予約が確定しました。お支払いは当日店舗でお願いします。',RELEASED:'仮押さえは解除されました。',CANCELLED:'この予約は取り消されました。',DRAFT:'下書きです。まだ申し込まれていません。',QUOTED:'見積の確認待ちです。'},
   heldNote:'店舗の確認が済むまで用品は仮押さえされています。確約後に最終の見積をお知らせします。',finalQuote:'最終見積（税込）',
   request:'変更・辞退のご依頼',requestIntro:'変更や辞退は店舗への依頼として記録します。この画面の操作だけで自動的に変更・解除されることはありません。',kindChange:'内容の変更を依頼する',kindDecline:'辞退を依頼する',body:'依頼の内容',send:'店舗へ依頼する',sent:'依頼を記録しました。店舗からの連絡をお待ちください。',
@@ -83,7 +83,7 @@ const EN:GroupCopy={
  newApplication:'Start a new request',
  resume:{title:'Resume link for this request',body:'This is the key for continuing in another browser. It is different from the entrance link. Do not share it. It cannot be shown again after you leave this screen.',copy:'Copy link',copied:'Copied'},
  form:{
-  group:'Group name',rep:'Representative name',email:'Email address',phone:'Phone number (optional)',lang:'Language for notices',ja:'日本語',en:'English',store:'Pick-up and return store',
+  group:'Group name',rep:'Representative name',email:'Email address',phone:'Phone number (optional)',lang:'Language for notices',ja:'日本語',en:'English',base:'Pick-up and return store',
   start:'Start date',end:'End date',startAt:'Pick-up time',returnBy:'Return time',people:'Approximate number of guests',peopleNote:'1 to 100. The exact list is set in the next step.',
   go:'Start the request',going:'Creating…',note:'No equipment is held at this point.',
   stores:{MOUNTAIN_BASE:'Mountain base',ONSEN_BASE:'Onsen base'},
@@ -111,7 +111,7 @@ const EN:GroupCopy={
   summary:(s:{members:number;ready:number;edge:number;short:number;manual:number;invalid:number})=>`${s.members} guests: ok ${s.ready}, outside range ${s.edge}, out of stock ${s.short}, store check ${s.manual}, needs fixing ${s.invalid}`,
   direction:{RECOMMENDED:'Recommended',SHORTER:'Shorter',LONGER:'Longer'},cm:'cm',
   fixRow:'Fix in the list',blocked:'You can continue once every guest has a confirmed size.',stale:'The list changed. Please check again.',
-  jointShort:'Some rows cannot be covered when the whole group is combined.',
+  jointShort:'Some rows cannot be covered when the whole group is combined.',altNote:'To cover everyone, the neighbouring size is preselected instead of the recommended one. You can change it.',
   next:'Create the quote',saving:'Saving…',
  },
  quote:{
@@ -125,7 +125,7 @@ const EN:GroupCopy={
   stale:'The details changed. Please create the quote again.',requote:'Create the quote again',
  },
  done:{
-  heading:'Status',number:'Group booking number',period:'Dates',people:'Guests',total:'Provisional total (tax incl.)',store:'Store',settle:'Payment',settleValue:'Pay on site (unpaid)',
+  heading:'Status',number:'Group booking number',period:'Dates',people:'Guests',total:'Provisional total (tax incl.)',base:'Store',settle:'Payment',settleValue:'Pay on site (unpaid)',
   status:{REVIEW_HELD:'Held and waiting for the store to review. This is not a confirmed booking yet.',CHANGES_REQUESTED:'The store will contact you. Your hold continues.',CONFIRMED:'Your booking is confirmed. Please pay at the store on the day.',RELEASED:'The hold has been released.',CANCELLED:'This booking has been cancelled.',DRAFT:'Draft. Not requested yet.',QUOTED:'Waiting for your quote review.'},
   heldNote:'Equipment stays held until the store reviews it. The final quote is sent after confirmation.',finalQuote:'Final quote (tax incl.)',
   request:'Change or decline request',requestIntro:'Changes and declines are recorded as requests to the store. Nothing is changed or released automatically by this screen.',kindChange:'Request a change',kindDecline:'Request to decline',body:'Details',send:'Send request to the store',sent:'Your request was recorded. Please wait for the store to contact you.',

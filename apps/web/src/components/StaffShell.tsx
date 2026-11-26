@@ -9,7 +9,7 @@ import {logo} from './brand/media';
 import './staff-shell.css';
 import './staff-console.css';
 
-export type ShellAccess={bookingView:boolean;bookingCreate:boolean;inventoryView:boolean;operationsView:boolean;manageStaff:boolean;transferView:boolean;quoteView:boolean;holdView:boolean;priceEdit:boolean;resend:boolean};
+export type ShellAccess={bookingView:boolean;bookingCreate:boolean;inventoryView:boolean;operationsView:boolean;manageStaff:boolean;transferView:boolean;quoteView:boolean;holdView:boolean;priceEdit:boolean;resend:boolean;groupView?:boolean};
 /** Must equal the /staff/scan page gate: booking viewers scan booking QR, inventory viewers scan item QR. */
 export const canScan=(a:Pick<ShellAccess,'bookingView'|'inventoryView'>)=>a.bookingView||a.inventoryView;
 type Item={key:StaffKey;href:string|((a:ShellAccess)=>string);match:RegExp;show:(a:ShellAccess)=>boolean};
@@ -26,6 +26,8 @@ const WORK:Item[]=[
  {key:'customers',href:'/staff/customers',match:/^\/staff\/customers/,show:a=>a.bookingView},
  {key:'inventory',href:a=>a.inventoryView?'/staff/inventory':'/staff/transfers',match:/^\/(staff\/(inventory|ledger|wear|transfers)|admin\/assets)/,show:a=>a.inventoryView||a.transferView},
  {key:'documents',href:'/staff/documents',match:/^\/staff\/documents/,show:a=>a.bookingView},
+ // Group orders: ADMIN with GROUP_VIEW only (the server re-authorizes every read and write; this is only the menu).
+ {key:'groups',href:'/staff/groups',match:/^\/staff\/groups/,show:a=>Boolean(a.groupView)},
 ];
 const MORE:Item[]=[
  {key:'reports',href:'/staff/reports',match:/^\/staff\/reports/,show:a=>a.bookingView},

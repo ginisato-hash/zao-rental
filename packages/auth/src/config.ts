@@ -1,6 +1,6 @@
 // Only the owned development launcher supplies these in-memory settings. No ambient DB URL.
 export type Connection = {host:'127.0.0.1';port:number;database:string;user:string;password:string};
-export type DevelopmentRuntime = {origin:string; namespace:string; authSecret:string; authDb:Connection; ledgerDb:Connection; holdDb:Connection;transferDb:Connection;pricingDb:Connection;recommendationDb:Connection;operationsDb?:Connection};
+export type DevelopmentRuntime = {origin:string; namespace:string; authSecret:string; authDb:Connection; ledgerDb:Connection; holdDb:Connection;transferDb:Connection;pricingDb:Connection;recommendationDb:Connection;operationsDb?:Connection;groupDb?:Connection};
 export function parseRuntime(raw:string|undefined):DevelopmentRuntime|null {
  if(!raw)return null;
  try {
@@ -10,6 +10,7 @@ export function parseRuntime(raw:string|undefined):DevelopmentRuntime|null {
   if(c.authDb.port!==c.ledgerDb.port||c.authDb.port!==c.holdDb.port||c.authDb.port!==c.transferDb.port||c.authDb.port!==c.pricingDb.port||c.authDb.port!==c.recommendationDb.port)throw 0;
 
   if(c.operationsDb){const db=c.operationsDb;if(db.host!=='127.0.0.1'||db.database!==c.namespace||db.user!==`${c.namespace}_operations`||!db.password||db.port!==c.authDb.port)throw 0;}
+  if(c.groupDb){const db=c.groupDb;if(db.host!=='127.0.0.1'||db.database!==c.namespace||db.user!==`${c.namespace}_group`||!db.password||db.port!==c.authDb.port)throw 0;}
   return c;
  }catch{throw new Error('INVALID_DEVELOPMENT_RUNTIME');}
 }

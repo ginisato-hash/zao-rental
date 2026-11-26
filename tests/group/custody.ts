@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {groupFixture,skiMember,PERIOD} from './fixture';
+import {groupFixture,skiMember} from './fixture';
 import {CustodyService} from '../../packages/core/src/rental/custody-service';
 import {provisionCustodyRole} from '../../scripts/custody-roles';
 import {syntheticPreparation} from '../custody/preparation-fixture';
@@ -51,6 +51,7 @@ async function rawLoan(partId:string,over:Record<string,unknown>={}){
  const row={id:randomUUID(),cycle_id:partId,booking_id:null,group_part_id:partId,hold_id:h.id,requirement_key:cl.requirement_key,asset_id:cl.asset_id,pole_id:null,pole_slot:null,family:cl.family,variant_id:cl.variant_id,unit:'PAIR',quantity:1,pickup_store:h.pickup_store,checked_out_at:new Date(),checked_out_by:x.signed.identity.subject,due_at:h.due_at,state:'OUT',...over};
  const cols=Object.keys(row);return custodySql(`INSERT INTO rental_loan_items(${cols.join(',')}) VALUES(${cols.map((_,i)=>'$'+(i+1)).join(',')})`,Object.values(row));
 }
+type Cand={state:string;group_part_id:string|null;group_number:string|null;booking_id:string|null};
 let token='',G:Awaited<ReturnType<typeof build>>,HELD:Awaited<ReturnType<typeof build>>,MANUAL:Awaited<ReturnType<typeof build>>,PREP:Awaited<ReturnType<typeof build>>,CANC:Awaited<ReturnType<typeof build>>,REL:Awaited<ReturnType<typeof build>>;
 try{
  token=await x.entrance();
@@ -90,7 +91,7 @@ try{
   // SQL door: a direct loan on a not-yet-confirmed part is refused by the database as well
   const e=await rawLoan(hp.id);assert.ok(e&&/CUSTODY_CHECKOUT_INVALID/.test(e.message),String(e?.message));
   // and a stage change by the custody role on an unconfirmed group part is refused
-  const e2=await custodySql("UPDATE inventory_holds SET allocation_stage='PREPARATION_FIXED',version=version+1 WHERE id=$1",[(await holdOf(hp.id)).id]);assert.ok(e2&&/CUSTODY_STAGE_INVALID/.test(e2.message),String(e2?.message));
+  const e2=await custodySql("UPDATE inventory_holds SET allocation_stage='PREPARATION_FIXED',version=version+1 WHERE id=$1",[(await holdOf(hp.id)).id]);assert.ok(e2&&/GROUP_HOLD_PROTECTED|CUSTODY_STAGE_INVALID/.test(e2.message),String(e2?.message));
   assert.equal((await holdOf(hp.id)).allocation_stage,'GROUP_RESERVED');
  });
 
@@ -209,7 +210,7 @@ try{
 
  await check('cross-store return keeps the store boundary: the item is located where it was received and stays blocked until inspected there',async()=>{
   const p=await part(MANUAL.groupId);const ls=(await q("SELECT id,asset_id,pole_id,version FROM rental_loan_items WHERE group_part_id=$1 AND asset_id IS NOT NULL AND family='SKI' ORDER BY requirement_key LIMIT 1",[p.id])).rows[0];
-  let b=await svc.createBatch(randomUUID(),'ONSEN_BASE');b=await svc.scan(randomUUID(),{batchId:b.id,expectedVersion:b.version,assetId:ls.asset_id,poleLoanId:null});b=await svc.confirm(randomUUID(),{batchId:b.id,expectedVersion:b.version});
+  let b=await svc.createBatch(randomUUID(),'ONSEN_BASE');b=await svc.scan(randomUUID(),{batchId:b.id,expectedVersion:b.version,assetId:ls.asset_id,poleLoanId:null});await svc.confirm(randomUUID(),{batchId:b.id,expectedVersion:b.version});
   assert.equal((await q('SELECT store_id FROM ledger_assets WHERE id=$1',[ls.asset_id])).rows[0].store_id,'ONSEN_BASE');
   assert.equal((await q("SELECT count(*)::int n FROM rental_loan_items WHERE group_part_id=$1 AND state='OUT'",[p.id])).rows[0].n,5,'only the scanned item left custody');
   assert.equal((await q("SELECT count(*)::int n FROM rental_inventory_blocks WHERE id=$1 AND reason='INSPECTION_PENDING'",[ls.id])).rows[0].n,1);
@@ -221,14 +222,14 @@ try{
   assert.equal(outBefore,Number((await q("SELECT count(*)::int n FROM rental_loan_items WHERE pole_id IS NOT NULL AND state='OUT'")).rows[0].n),'every lent group pole pair is counted as out, not lost');
   let b=await svc.createBatch(randomUUID(),'MOUNTAIN_BASE');
   for(const l of loans){b=await svc.scan(randomUUID(),{batchId:b.id,expectedVersion:b.version,assetId:l.asset_id,poleLoanId:l.asset_id?null:l.id});}
-  assert.equal(b.candidates.length,6);assert.ok(b.candidates.every(c=>c.group_part_id===p.id&&/^G-\d{6}$/.test(c.group_number!)&&c.booking_id===null),'candidates are labelled with the group number');
-  const done=await svc.confirm(randomUUID(),{batchId:b.id,expectedVersion:b.version});assert.equal(done.candidates.filter(c=>c.state==='RECEIVED').length,6);
+  assert.equal(b.candidates.length,6);assert.ok(b.candidates.every((c:Cand)=>c.group_part_id===p.id&&/^G-\d{6}$/.test(c.group_number!)&&c.booking_id===null),'candidates are labelled with the group number');
+  const done=await svc.confirm(randomUUID(),{batchId:b.id,expectedVersion:b.version});assert.equal(done.candidates.filter((c:Cand)=>c.state==='RECEIVED').length,6);
   assert.equal((await q("SELECT count(*)::int n FROM rental_loan_items WHERE group_part_id=$1 AND state='RECEIVED'",[p.id])).rows[0].n,6);
   assert.equal(await outPairs(),outBefore-2,'the two returned pole pairs leave the out count');
   assert.equal((await q("SELECT coalesce(sum(quantity),0)::int n FROM ledger_poles")).rows[0].n,polesBefore,'PAIR conservation: pole pairs are only moved to the inspection pool, never created or lost');
   assert.equal((await q('SELECT count(*)::int n FROM rental_inventory_blocks x JOIN rental_loan_items l ON l.id=x.id WHERE l.group_part_id=$1 AND x.reason=$2',[p.id,'INSPECTION_PENDING'])).rows[0].n,6,'returned but uninspected group items block reuse');
   const allocatorSees=(await q(`SELECT count(*)::int n FROM rental_inventory_blocks x JOIN rental_loan_items l ON l.id=x.id LEFT JOIN rental_bookings b ON b.id=l.booking_id WHERE coalesce(b.hold_id,l.hold_id) IS NOT NULL AND l.group_part_id=$1`,[p.id])).rows[0].n;assert.equal(allocatorSees,6,'allocator custody query resolves the hold of a group loan');
-  const again=await svc.confirm(randomUUID(),{batchId:b.id,expectedVersion:done.version});assert.equal(again.candidates.filter(c=>c.state==='RECEIVED').length,6);
+  const again=await svc.confirm(randomUUID(),{batchId:b.id,expectedVersion:done.version});assert.equal(again.candidates.filter((c:Cand)=>c.state==='RECEIVED').length,6);
   assert.equal((await q('SELECT count(*)::int n FROM rental_receipts r JOIN rental_loan_items l ON l.id=r.loan_item_id WHERE l.group_part_id=$1',[p.id])).rows[0].n,6,'a replayed confirmation receives nothing twice');
   const ret=await svc.returns('MOUNTAIN_BASE');assert.equal(ret.received.filter(r=>r.group_part_id===p.id&&/^G-\d{6}$/.test(String(r.group_number))).length,6);
   for(const l of loans.filter(l=>l.asset_id)){const r=(await q('SELECT l.id,l.version FROM rental_loan_items l WHERE l.id=$1',[l.id])).rows[0];

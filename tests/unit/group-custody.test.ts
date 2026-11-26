@@ -31,10 +31,14 @@ test('the ordinary booking validator and its payment gate are untouched: it only
  assert.doesNotMatch(sql,/CREATE OR REPLACE FUNCTION rental_validate_loan\(\)/,'0064 does not redefine the ordinary validator');
 });
 
-test('stage guard: the group branch demands the confirmed group and NONE payment; the ordinary branch text is the 0049 one',()=>{
+test('stage edges: one statement of the group rule (confirmed by GROUP_ADMIN_APPROVED, payment NONE) used by both the group hold guard and the custody stage guard; the ordinary branch text is the 0049 one',()=>{
+ const ok=fn('group_custody_stage_ok(o inventory_holds,n inventory_holds)');
+ assert.match(ok,/go\.confirmation_basis IS DISTINCT FROM 'GROUP_ADMIN_APPROVED'/);
+ assert.match(ok,/o\.payment_state<>'NONE'/);
+ assert.doesNotMatch(ok,/'SUCCESS'/);
+ assert.match(fn('group_custody_hold_update(o inventory_holds,n inventory_holds)'),/group_custody_stage_ok\(o,n\)/);
  const g=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION rental_stage_guard'),sql.indexOf('END$$;',sql.indexOf('CREATE OR REPLACE FUNCTION rental_stage_guard')));
- assert.match(g,/go\.confirmation_basis IS DISTINCT FROM 'GROUP_ADMIN_APPROVED'/);
- assert.match(g,/OLD\.payment_state<>'NONE'/);
+ assert.match(g,/IF group_custody_stage_ok\(OLD,NEW\) THEN RETURN NEW;END IF;/);
  const ordinaryTail="IF NOT FOUND OR NOT booking_is_confirmed(b.mode,b.state) OR OLD.payment_state<>'SUCCESS' OR OLD.transfer_attention IS NOT NULL THEN RAISE EXCEPTION 'CUSTODY_STAGE_INVALID'";
  assert.ok(g.includes(ordinaryTail),'ordinary booking branch still requires payment_state SUCCESS');
 });

@@ -38,12 +38,24 @@ CREATE FUNCTION group_op_allowed() RETURNS boolean LANGUAGE sql STABLE AS $$
 $$;
 -- Custody (checkout preparation / checkout) may move a CONFIRMED group part's hold GROUP_RESERVED -> PREPARATION_FIXED -> RENTAL_FIXED
 -- and may flag transfer_attention on any group hold (rental_apply_receipt does this to other promises that share a returned item).
--- Nothing else about a group hold changes through this door; rental_stage_guard validates the stage edges against the group/preparation/loans.
+-- group_custody_stage_ok is the single statement of when a stage edge is legal for a group part; it is checked here (every role that may
+-- touch custody) and again by rental_stage_guard (the dedicated custody role). Nothing else about a group hold changes through this door.
+CREATE FUNCTION group_custody_stage_ok(o inventory_holds,n inventory_holds) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+DECLARE gp record;go record;-- records: this function is created before the group tables
+BEGIN
+ SELECT * INTO gp FROM group_order_parts WHERE hold_id=o.id;IF NOT FOUND THEN RETURN false;END IF;
+ SELECT * INTO go FROM group_orders WHERE id=gp.group_id;
+ -- Confirmed by the administrator (GROUP_ADMIN_APPROVED), never by a provider payment: payment_state stays NONE.
+ IF NOT gp.active OR go.status<>'CONFIRMED' OR go.confirmation_basis IS DISTINCT FROM 'GROUP_ADMIN_APPROVED' OR o.payment_state<>'NONE' OR o.state<>'ACTIVE' OR o.transfer_attention IS NOT NULL THEN RETURN false;END IF;
+ IF o.allocation_stage='GROUP_RESERVED' AND n.allocation_stage='PREPARATION_FIXED' THEN RETURN EXISTS(SELECT 1 FROM group_part_preparations WHERE id=gp.id AND prepared_at IS NOT NULL);END IF;
+ IF o.allocation_stage='PREPARATION_FIXED' AND n.allocation_stage='RENTAL_FIXED' THEN RETURN (SELECT count(*) FROM rental_loan_items WHERE group_part_id=gp.id AND state='OUT')=(SELECT count(*) FROM jsonb_array_elements(o.conditions->'members') m CROSS JOIN LATERAL jsonb_array_elements(m->'items') i WHERE i->>'family' NOT IN ('WEAR_JACKET','WEAR_PANTS'));END IF;
+ RETURN false;
+END$$;
 CREATE FUNCTION group_custody_hold_update(o inventory_holds,n inventory_holds) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$BEGIN
- RETURN session_user=current_database()||'_custody'
+ RETURN session_user IN (current_database()||'_custody',current_database()||'_operations')
   AND (to_jsonb(n)-ARRAY['allocation_stage','version','transfer_attention'])=(to_jsonb(o)-ARRAY['allocation_stage','version','transfer_attention'])
-  AND (n.allocation_stage=o.allocation_stage OR (o.allocation_stage,n.allocation_stage) IN (('GROUP_RESERVED','PREPARATION_FIXED'),('PREPARATION_FIXED','RENTAL_FIXED')))
-  AND EXISTS(SELECT 1 FROM group_order_parts p WHERE p.hold_id=o.id);
+  AND EXISTS(SELECT 1 FROM group_order_parts p WHERE p.hold_id=o.id)
+  AND (n.allocation_stage=o.allocation_stage OR group_custody_stage_ok(o,n));
 END$$;
 CREATE FUNCTION group_hold_guard() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN
  IF TG_OP='INSERT' THEN
@@ -499,16 +511,13 @@ BEGIN
  DELETE FROM rental_internal.effects WHERE tx=txid_current() AND pid=pg_backend_pid() AND receipt_id=r.id;
 END$$;
 
-CREATE OR REPLACE FUNCTION rental_stage_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE b rental_bookings;gp group_order_parts;go group_orders;BEGIN
+CREATE OR REPLACE FUNCTION rental_stage_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE b rental_bookings;gp group_order_parts;BEGIN
  IF session_user<>current_database()||'_custody' OR NEW.allocation_stage=OLD.allocation_stage THEN RETURN NEW;END IF;
  PERFORM rental_internal.assert_actor('RENTAL_CHECKOUT',OLD.pickup_store,current_setting('zao.actor',true));
  SELECT * INTO gp FROM group_order_parts WHERE hold_id=OLD.id;
  IF FOUND THEN
   -- Group promise: confirmed by the administrator (GROUP_ADMIN_APPROVED), never by a provider payment; payment_state stays NONE.
-  SELECT * INTO STRICT go FROM group_orders WHERE id=gp.group_id;
-  IF NOT gp.active OR go.status<>'CONFIRMED' OR go.confirmation_basis IS DISTINCT FROM 'GROUP_ADMIN_APPROVED' OR OLD.payment_state<>'NONE' OR OLD.state<>'ACTIVE' OR OLD.transfer_attention IS NOT NULL THEN RAISE EXCEPTION 'CUSTODY_STAGE_INVALID' USING ERRCODE='23514';END IF;
-  IF OLD.allocation_stage='GROUP_RESERVED' AND NEW.allocation_stage='PREPARATION_FIXED' AND EXISTS(SELECT 1 FROM group_part_preparations WHERE id=gp.id AND prepared_at IS NOT NULL) THEN RETURN NEW;END IF;
-  IF OLD.allocation_stage='PREPARATION_FIXED' AND NEW.allocation_stage='RENTAL_FIXED' AND (SELECT count(*) FROM rental_loan_items WHERE group_part_id=gp.id AND state='OUT')=(SELECT count(*) FROM jsonb_array_elements(OLD.conditions->'members') m CROSS JOIN LATERAL jsonb_array_elements(m->'items') i WHERE i->>'family' NOT IN ('WEAR_JACKET','WEAR_PANTS')) THEN RETURN NEW;END IF;
+  IF group_custody_stage_ok(OLD,NEW) THEN RETURN NEW;END IF;
   RAISE EXCEPTION 'CUSTODY_STAGE_INVALID' USING ERRCODE='23514';
  END IF;
  SELECT * INTO b FROM rental_bookings WHERE hold_id=OLD.id;

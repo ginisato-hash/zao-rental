@@ -31,7 +31,7 @@ DROP TRIGGER IF EXISTS group_claim_guard ON wear_claims;
 DROP TRIGGER IF EXISTS group_booking_guard ON rental_bookings;
 DROP TABLE IF EXISTS group_notification_outbox,group_requests,group_payments,group_change_requests,group_adjustments,group_consents,group_quotes,group_order_parts,group_members,group_events,group_orders,group_entrance_history,group_entrance CASCADE;
 DROP SEQUENCE IF EXISTS group_number_seq;
-DROP FUNCTION IF EXISTS group_custody_hold_update(inventory_holds,inventory_holds);
+DROP FUNCTION IF EXISTS group_custody_hold_update(inventory_holds,inventory_holds),group_custody_stage_ok(inventory_holds,inventory_holds);
 DROP FUNCTION IF EXISTS group_register_actor(uuid),group_event_outbox(),group_order_event(),group_consistency(),group_order_guard(),group_payment_guard(),group_change_request_guard(),group_adjustment_guard(),group_part_guard(),group_member_guard(),group_entrance_guard(),group_append_only(),group_staff_can(text,text,text[]),group_booking_guard(),group_claim_guard(),group_hold_guard(),group_op_allowed();
 ALTER TABLE inventory_holds DROP CONSTRAINT IF EXISTS inventory_hold_expiry_required,DROP CONSTRAINT IF EXISTS inventory_hold_group_no_expiry;
 ALTER TABLE inventory_holds ALTER COLUMN expires_at SET NOT NULL;

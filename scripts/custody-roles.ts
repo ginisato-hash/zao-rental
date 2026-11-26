@@ -22,5 +22,11 @@ export async function provisionCustodyRole(owner:Pool,identity:{namespace:string
  await owner.query(`GRANT UPDATE(version) ON rental_return_batches TO ${user}`);
  await owner.query(`GRANT UPDATE(state,outcome) ON rental_return_candidates TO ${user}`);
  await owner.query(`GRANT UPDATE(allocation_stage,version) ON inventory_holds TO ${user}`);
+ // Group custody (migration 0064): read the confirmed group/parts/members/receipts, write only the part's own preparation record.
+ if((await owner.query("SELECT to_regclass('public.group_part_preparations') IS NOT NULL AS present")).rows[0].present){
+  await owner.query(`GRANT SELECT ON group_orders,group_order_parts,group_members,group_payments TO ${user}`);
+  await owner.query(`GRANT SELECT,INSERT ON group_part_preparations TO ${user}`);
+  await owner.query(`GRANT UPDATE(prepared_at,prepared_by,fit_evidence,version) ON group_part_preparations TO ${user}`);
+ }
  const custodyDb:Connection={host:'127.0.0.1',port:identity.dbPort,database:identity.database,user,password};const custodyPool=new Pool({...custodyDb,max:4,connectionTimeoutMillis:2000});return {custodyDb,custodyPool,close:trackPoolLifecycle(custodyPool)};
 }

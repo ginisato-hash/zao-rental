@@ -4,7 +4,7 @@ import {halfUpBps} from './pricing';
 
 /** Group order foundation (Issue #47 B3-B6, corrected by comment 7197417902).
  * One parent group = at most MAX_PARTS ordinary parts of at most PART_SIZE (the existing per-hold limit) members.
- * There is deliberately no expiry, extension or EXPIRED anywhere in this module: a review hold ends only by an
+ * There is deliberately no hold deadline, extension or time-driven terminal state anywhere in this module: a review hold ends only by an
  * explicit administrator release (or formal cancellation after confirmation). Settlement is on site only. */
 export const MAX_MEMBERS=100;
 export const PART_SIZE=20;

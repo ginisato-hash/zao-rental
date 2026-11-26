@@ -2,7 +2,7 @@
 -- 0001-0063 are unchanged. Nothing here changes a normal booking: a normal hold stays PROVISIONAL with a mandatory expires_at.
 --
 -- Owner decisions encoded here (7197417902):
---  * ONE permanent, reusable entrance (hash only). No per-group invite, approval, expiry, use limit or one-time exchange.
+--  * ONE permanent, reusable entrance (hash only). No per-group invite, approval, expiry, use limit or single-use consumption.
 --    The entrance is only the capability to START a new application; each application gets its own opaque group id and
 --    owner secret hash (group_orders.owner_secret_sha256). The entrance shares no access to any existing group.
 --  * Review holds have NO expiry. They are a distinct, explicit protection kind: inventory_holds.allocation_stage =

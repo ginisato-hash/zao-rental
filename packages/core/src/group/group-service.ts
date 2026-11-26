@@ -20,6 +20,8 @@ export type GroupRow={id:string;group_number:string;status:GroupStatus;revision:
 type MemberRow={id:string;ordinal:number;label:string;profile:Record<string,unknown>;selection:GroupMemberInput['selection'];fit:Record<string,unknown>};
 type PartRow={id:string;part_no:number;generation:number;hold_id:string;reservation_id:string;member_count:number;claim_count:number;active:boolean};
 type QuoteRow={id:string;version:number;kind:'ESTIMATE'|'CONFIRMED';group_revision:number;price_book_id:string;activation_id:string;lines:unknown;adjustments:Adjustment[];subtotal_jpy:string;bundle_discount_jpy:string;member_discount_jpy:string;group_discount_jpy:string;total_jpy:string;items_digest:string;digest:string;no_charge_confirmed:boolean};
+/** The ordinary allocator bounds one plan at 240 requirements (sized for a 20-member hold). A 100-member joint plan has up to 100x5; the bound stays a resource guard, raised only for the group's joint plan (measured in tests/group/core.ts). */
+const GROUP_MAX_REQUIREMENTS=520;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const STORES=['MOUNTAIN_BASE','ONSEN_BASE'];
 const uuid=(v:unknown):string=>{if(typeof v!=='string'||!UUID.test(v))throw new GroupError('INVALID_ID');return v;};
@@ -35,6 +37,7 @@ export class GroupOrderService {
   const code=(e as {code?:string}|null)?.code,msg=(e as Error|null)?.message??'';
   if(['55P03','57014','40P01','40001'].includes(code??''))throw new GroupError('INDETERMINATE',503);
   if(code==='42501')throw new GroupError('FORBIDDEN',403);
+  if(code==='23505'&&/reverses_id/.test(msg))throw new GroupError('GROUP_REVERSAL_INVALID',409);
   if(code==='P0062')throw new GroupError('SALES_STOPPED',409);
   if(['23514','23505','23503'].includes(code??''))throw new GroupError(/^GROUP_[A-Z_]+/.exec(msg)?.[0]??'CONFLICT',409);
   throw e;
@@ -208,10 +211,10 @@ export class GroupOrderService {
  /** The representative confirms the explanation/terms for exactly this quote and fixes the ceiling the administrator may confirm within. */
  async consent(actor:OwnerActor,groupId:string,input:{quoteId:string;digest:string;termsVersion:string;termsSha256:string;explanationConfirmed:boolean}){
   return this.run({inventory:false,actor:'group:'+actor.groupId},async c=>{
-   const g=await this.lock(c,groupId);await this.authorize(c,actor,g,null);this.expectStatus(g,'QUOTED');
+   const g=await this.lock(c,groupId);await this.authorize(c,actor,g,null);this.expectStatus(g,'QUOTED','REVIEW_HELD','CHANGES_REQUESTED');
    if(input.explanationConfirmed!==true||!/^[a-f0-9]{64}$/.test(input.termsSha256??'')||typeof input.termsVersion!=='string')throw new GroupError('CONSENT_INVALID');
-   const q=(await c.query<QuoteRow>("SELECT * FROM group_quotes WHERE id=$1 AND group_id=$2 AND kind='ESTIMATE'",[uuid(input.quoteId),g.id])).rows[0];
-   if(!q||q.digest!==input.digest||q.group_revision!==g.revision)throw new GroupError('QUOTE_STALE',409);
+   const q=(await c.query<QuoteRow>("SELECT * FROM group_quotes WHERE id=$1 AND group_id=$2 AND kind='ESTIMATE' AND version=(SELECT max(version) FROM group_quotes WHERE group_id=$2 AND kind='ESTIMATE')",[uuid(input.quoteId),g.id])).rows[0];
+   if(!q||q.digest!==input.digest)throw new GroupError('QUOTE_STALE',409);
    await c.query('INSERT INTO group_consents(id,group_id,quote_id,quote_digest,items_digest,max_total_jpy,terms_version,terms_sha256,explanation_confirmed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,true) ON CONFLICT(quote_id) DO NOTHING',[randomUUID(),g.id,q.id,q.digest,q.items_digest,q.total_jpy,input.termsVersion,input.termsSha256]);
    return {quoteId:q.id,maxTotalJpy:n(q.total_jpy)};
   });
@@ -226,7 +229,7 @@ export class GroupOrderService {
   const partConds=chunks.map(ch=>parseConditions(memberConditions(this.baseConditions(g,randomUUID()),ch)));
   for(const pc of partConds){await heldIntake(c,pc,now,null);await assertNotSalesStopped(c,pc);}
   const all:HoldConditions={...partConds[0]!,reservationId:randomUUID(),members:partConds.flatMap(p=>p.members)};
-  const plan=await planMixedAllocation(c,all,now,null,undefined,false);
+  const plan=await planMixedAllocation(c,all,now,null,undefined,false,GROUP_MAX_REQUIREMENTS);
   if(plan.result!=='FEASIBLE')throw new GroupError('INSUFFICIENT_STOCK',409,{result:plan.result,members:members.length});
   const before=(await c.query('SELECT hold_id,requirement_key,asset_id,pole_id,pole_slot,day FROM inventory_claims WHERE hold_id=ANY($1::uuid[]) AND active ORDER BY id',[plan.replanned])).rows;
   if(plan.replanned.length)await c.query('UPDATE inventory_claims SET active=false WHERE hold_id=ANY($1::uuid[]) AND active',[plan.replanned]);

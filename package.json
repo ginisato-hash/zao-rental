@@ -37,6 +37,8 @@
     "test:pricing": "node --import tsx tests/pricing/real-postgres.ts && node --import tsx tests/pricing/commercial-postgres.ts && node --import tsx tests/pricing/season-boundaries.ts",
     "test:quotes-ui": "node --import tsx tests/pricing/normal-ui.ts",
     "test:recommendation": "node --import tsx tests/recommendation/real-postgres.ts",
+    "test:size-edge": "node --import tsx tests/recommendation/size-edge.ts",
+    "test:size-edge-ui": "node --import tsx tests/recommendation/size-edge-ui.ts",
     "test:recommendations-ui": "node --import tsx tests/recommendation/normal-ui.ts",
     "test:recommendation-audit": "node --import tsx tests/recommendation/audit-followup-ui.ts",
     "test:recommendation-continuation": "node --import tsx tests/recommendation/continuation-ui.ts",

@@ -5,11 +5,12 @@ import {canonical,HoldError,type HoldConditions} from '../../../contracts/src/ho
 import {holdScope,type CandidateContext} from '../../../contracts/src/hold-intake';
 import {exact,id,code} from '../../../contracts/src/pricing';
 import {parseRecommendation,buildMembers,memberItems,sizing,rankCandidates,RECOMMENDATION_RULE,MODEL_POLICY,DIRECTIONS,RecommendationError,type RecommendationInput,type MemberRecommendation,type Direction,type Variant} from '../../../contracts/src/recommendation';
+import {SUPPORTED_RECOMMENDATION_RULES,normalFit,type FitMeta} from '../../../contracts/src/size-edge';
 import {HoldService} from '../inventory/hold-service';
 import {QuoteService} from '../pricing/quote-service';
 type Conn=Pick<PoolClient,'query'>;
 type Preview={id:string;owner_id:string;request_key:string;fingerprint:string;rule_version:string;model_policy:string;input:RecommendationInput;offered:MemberRecommendation[];reservation_id:string;replacement_hold_id:string|null;replacement_version:number|null;created_at:Date};
-type Selection={preview_id:string;owner_id:string;request_key:string;fingerprint:string;selection:{directions:Record<string,Direction>;wantAdvance:boolean;couponCode:string|null;acceptedModelPolicy:true;bufferOverride?:{reason:string}};conditions:HoldConditions;hold_key:string;quote_key:string;hold_id:string|null;quote_id:string|null;stage:'INTENT'|'HOLD_FAILED'|'HOLD_SAVED'|'COMPLETE';outcome:string|null};
+type Selection={preview_id:string;owner_id:string;request_key:string;fingerprint:string;selection:{directions:Record<string,Direction>;wantAdvance:boolean;couponCode:string|null;acceptedModelPolicy:true;bufferOverride?:{reason:string};/** Server-generated from the bound preview (V2 previews only); never read from the request. */fit?:Record<string,{direction:Direction;fit:FitMeta}>};conditions:HoldConditions;hold_key:string;quote_key:string;hold_id:string|null;quote_id:string|null;stage:'INTENT'|'HOLD_FAILED'|'HOLD_SAVED'|'COMPLETE';outcome:string|null};
 const hash=(x:unknown)=>createHash('sha256').update(canonical(x)).digest('hex');
 export class RecommendationService {
  constructor(private pool:Pool,private principal:BookingActor,private holds:HoldService,private quotes:QuoteService,private variantFilter?:(variants:Variant[])=>Promise<Variant[]>){}
@@ -29,8 +30,8 @@ export class RecommendationService {
  // idempotency fingerprint so an override preview never collides with (or is silently served by)
  // a cached ordinary-public preview of the same nominal input.
  async preview(requestKey:string,input:unknown,replaceHoldId:string|null,bufferOverride=false){
-  id(requestKey);if(replaceHoldId!==null)id(replaceHoldId);const parsed=parseRecommendation(input),fingerprint=hash({input:parsed,replaceHoldId,rule:RECOMMENDATION_RULE,model:MODEL_POLICY,bufferOverride});await this.auth(this.pool,false,[parsed.pickupStore,parsed.returnStore]);
-  const prior=(await this.pool.query<Preview>('SELECT * FROM recommendation_previews WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,requestKey])).rows[0];if(prior){if(prior.fingerprint!==fingerprint)throw new RecommendationError('IDEMPOTENCY_MISMATCH',409);return this.get(prior.id);}
+  id(requestKey);if(replaceHoldId!==null)id(replaceHoldId);const parsed=parseRecommendation(input),fingerprintFor=(rule:string)=>hash({input:parsed,replaceHoldId,rule,model:MODEL_POLICY,bufferOverride}),fingerprint=fingerprintFor(RECOMMENDATION_RULE);await this.auth(this.pool,false,[parsed.pickupStore,parsed.returnStore]);
+  const prior=(await this.pool.query<Preview>('SELECT * FROM recommendation_previews WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,requestKey])).rows[0];if(prior){if(prior.fingerprint!==fingerprintFor(prior.rule_version))throw new RecommendationError('IDEMPOTENCY_MISMATCH',409);return this.get(prior.id);}
   const replacement=replaceHoldId?await this.holds.get(replaceHoldId):null;
   if(replacement&&(replacement.state!=='ACTIVE'||replacement.allocationStage!=='PROVISIONAL'||!['NONE','FAILURE'].includes(replacement.paymentState)))throw new RecommendationError('HOLD_NOT_CHANGEABLE',409);
   const reservationId=replacement?.reservationId??randomUUID(),variants=await this.variants(),offered:MemberRecommendation[]=[];
@@ -41,18 +42,26 @@ export class RecommendationService {
    const items=memberItems(member),bootOnly=!!items&&!items.includes(member.sport as never)&&items.some(f=>f.endsWith('_BOOT')),poleOnly=!!items&&items.length===1&&items[0]==='POLE';
    // A set/board candidate carries the best-fitting boot; when that boot bucket has no capacity, the
    // next-ranked boot (still within +/-1.0 cm of the target) is tried before giving up (max 3).
-   for(let choice=0;;choice++){
-    for(const candidate of built.candidates){if(++candidateChecks>120)throw new RecommendationError('INDETERMINATE_CANDIDATE_LIMIT',503);const c:HoldConditions={...(parsed.contractVersion?{contractVersion:parsed.contractVersion}:{}),reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:[candidate.member]};const a=await this.holds.availability(c,replaceHoldId??undefined,context,bufferOverride);checks.push({lengthCm:candidate.lengthCm,result:a.result});if(a.result==='FEASIBLE')feasible.push(candidate);}
+   let edge=false;
+   const run=async()=>{for(let choice=0;;choice++){
+    for(const candidate of built.candidates){if(++candidateChecks>120)throw new RecommendationError('INDETERMINATE_CANDIDATE_LIMIT',503);const c:HoldConditions={...(parsed.contractVersion?{contractVersion:parsed.contractVersion}:{}),reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:[candidate.member]};const a=await this.holds.availability(c,replaceHoldId??undefined,context,bufferOverride);checks.push({lengthCm:candidate.lengthCm,result:a.result});if(a.result==='FEASIBLE'){feasible.push(candidate);if(edge&&feasible.length>=3)break;}}
     if(feasible.length||bootOnly||choice+1>=Math.min(3,built.bootChoices??0))break;
-    built=buildMembers(member,variants,parsed.contractVersion,choice+1);
-   }
-   const candidates=rankCandidates(feasible,poleOnly?feasible[0]?.lengthCm??0:bootOnly?size.bootCm:size.targetCm,bootOnly);let price:Record<string,unknown>|null=null,priceError:string|null=null;
+    built=buildMembers(member,variants,parsed.contractVersion,choice+1,edge);
+   }};
+   await run();
+   // EDGE_V2: only when the normal route produced no candidate *because the catalog has nothing in the normal window*
+   // (never for stock shortage, indeterminate checks, transfer plans or sales stops). Real numeric catalog sizes only.
+   if(!feasible.length&&!built.candidates.length&&(built.reason==='NO_CATALOG_LENGTH'||built.reason==='BOOT_SIZE_NOT_FOUND')){edge=true;built=buildMembers(member,variants,parsed.contractVersion,0,true);if(built.candidates.length)await run();}
+   let candidates=rankCandidates(feasible,poleOnly?feasible[0]?.lengthCm??0:bootOnly?size.bootCm:size.targetCm,bootOnly,edge?Infinity:15),manualFit:MemberRecommendation['manualFit']|undefined;
+   // MANUAL_FIT_REQUIRED sizes are shown for information only: never selectable, so no hold, quote or payment can follow online.
+   if(edge){const top=candidates.RECOMMENDED;if(top?.fit?.kind==='MANUAL_FIT_REQUIRED')manualFit={fit:top.fit,lengthCm:top.lengthCm,...(top.sizeLabel?{sizeLabel:top.sizeLabel}:{})};candidates=Object.fromEntries(DIRECTIONS.map(d=>[d,candidates[d]?.fit?.kind==='MANUAL_FIT_REQUIRED'?null:candidates[d]])) as typeof candidates;}
+   let price:Record<string,unknown>|null=null,priceError:string|null=null;
    if(candidates.RECOMMENDED){try{price=await this.quotes.preview({conditions:{...(parsed.contractVersion?{contractVersion:parsed.contractVersion}:{}),reservationId,pickupStore:parsed.pickupStore,returnStore:parsed.returnStore,period:parsed.period,members:[candidates.RECOMMENDED.member]},holdId:null,couponCode:null,wantAdvance:false},context&&replaceHoldId?{...context,holdId:replaceHoldId}:undefined);}catch(e){if(!(e instanceof HoldError)||e.status===403)throw e;priceError=e.code;}}
-   const reason=built.reason??(feasible.length?checks.some(x=>x.result==='INDETERMINATE')?'INDETERMINATE_SOME_CANDIDATES':null:checks.some(x=>x.result==='INDETERMINATE')?'INDETERMINATE':checks.some(x=>x.result==='TRANSFER_PLAN_REQUIRED')?'TRANSFER_PLAN_REQUIRED':'INSUFFICIENT');
-   offered.push({key:member.key,...size,initialLengthCm:candidates.RECOMMENDED?.lengthCm??null,candidates,checks,reason,price,priceError});
+   const reason=manualFit&&!candidates.RECOMMENDED?'MANUAL_FIT_REQUIRED':built.reason??(feasible.length?checks.some(x=>x.result==='INDETERMINATE')?'INDETERMINATE_SOME_CANDIDATES':null:checks.some(x=>x.result==='INDETERMINATE')?'INDETERMINATE':checks.some(x=>x.result==='TRANSFER_PLAN_REQUIRED')?'TRANSFER_PLAN_REQUIRED':'INSUFFICIENT');
+   offered.push({key:member.key,...size,initialLengthCm:candidates.RECOMMENDED?.lengthCm??null,candidates,checks,reason,price,priceError,fit:{ruleVersion:RECOMMENDATION_RULE,kind:candidates.RECOMMENDED?.fit?.kind??(manualFit?'MANUAL_FIT_REQUIRED':'NORMAL')},...(manualFit?{manualFit}:{})});
   }
   const pid=await this.tx('preview:'+this.principal.subject+':'+requestKey,false,c=>this.auth(c,false,[parsed.pickupStore,parsed.returnStore]),async c=>{
-   const old=(await c.query<Preview>('SELECT * FROM recommendation_previews WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,requestKey])).rows[0];if(old){if(old.fingerprint!==fingerprint)throw new RecommendationError('IDEMPOTENCY_MISMATCH',409);return old.id;}
+   const old=(await c.query<Preview>('SELECT * FROM recommendation_previews WHERE owner_id=$1 AND request_key=$2',[this.principal.subject,requestKey])).rows[0];if(old){if(old.fingerprint!==fingerprintFor(old.rule_version))throw new RecommendationError('IDEMPOTENCY_MISMATCH',409);return old.id;}
    const pid=randomUUID();await c.query('INSERT INTO recommendation_previews(id,owner_id,request_key,fingerprint,rule_version,model_policy,input,offered,reservation_id,replacement_hold_id,replacement_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',[pid,this.principal.subject,requestKey,fingerprint,RECOMMENDATION_RULE,MODEL_POLICY,JSON.stringify(parsed),JSON.stringify(offered),reservationId,replaceHoldId,replacement?.version??null]);return pid;
   });return this.get(pid);
  }
@@ -71,12 +80,14 @@ export class RecommendationService {
  // resume() call — after a retry or interruption — still knows to request it.
  async select(previewId:string,requestKey:string,value:unknown,bufferOverride?:{reason:string}){id(requestKey);const p=await this.owned(this.pool,previewId,true);const x=exact(value,['directions','wantAdvance','couponCode','acceptedModelPolicy']);if(x.acceptedModelPolicy!==true||typeof x.wantAdvance!=='boolean'||!x.directions||typeof x.directions!=='object'||Array.isArray(x.directions))throw new RecommendationError('INVALID_SELECTION');const directions=x.directions as Record<string,Direction>;
   if(Object.keys(directions).sort().join()!==p.input.members.map(m=>m.key).sort().join()||Object.values(directions).some(v=>!DIRECTIONS.includes(v)))throw new RecommendationError('INVALID_SELECTION');
-  if(p.rule_version!==RECOMMENDATION_RULE||p.model_policy!==MODEL_POLICY)throw new RecommendationError('RULE_VERSION_UNSUPPORTED',409);
+  if(!(SUPPORTED_RECOMMENDATION_RULES as readonly string[]).includes(p.rule_version)||p.model_policy!==MODEL_POLICY)throw new RecommendationError('RULE_VERSION_UNSUPPORTED',409);
   const members=p.input.members.map(m=>{const choice=p.offered.find(o=>o.key===m.key)?.candidates[directions[m.key]!];if(!choice)throw new RecommendationError('CANDIDATE_NOT_OFFERED');return choice.member;});
-  const selection={directions,wantAdvance:x.wantAdvance,couponCode:x.couponCode===null?null:code(x.couponCode),acceptedModelPolicy:true as const,...(bufferOverride?{bufferOverride}:{})},fingerprint=hash(selection),conditions:HoldConditions={...(p.input.contractVersion?{contractVersion:p.input.contractVersion}:{}),reservationId:p.reservation_id,pickupStore:p.input.pickupStore,returnStore:p.input.returnStore,period:p.input.period,members};
+  const selection={directions,wantAdvance:x.wantAdvance,couponCode:x.couponCode===null?null:code(x.couponCode),acceptedModelPolicy:true as const,...(bufferOverride?{bufferOverride}:{})},fingerprint=hash(selection),
+  // Fit evidence is derived from the immutable preview the selection is bound to (V2 only; V1 data is never back-filled).
+  fit=p.rule_version===RECOMMENDATION_RULE?Object.fromEntries(p.input.members.map(m=>[m.key,{direction:directions[m.key]!,fit:p.offered.find(o=>o.key===m.key)!.candidates[directions[m.key]!]!.fit??normalFit(p.rule_version)}])):null,conditions:HoldConditions={...(p.input.contractVersion?{contractVersion:p.input.contractVersion}:{}),reservationId:p.reservation_id,pickupStore:p.input.pickupStore,returnStore:p.input.returnStore,period:p.input.period,members};
   // Durable intent commits BEFORE either domain command. Retries use the same saved keys after any interruption.
   await this.tx(previewId,true,c=>this.owned(c,previewId,true),async c=>{const old=(await c.query<Selection>('SELECT * FROM recommendation_selections WHERE preview_id=$1 OR (owner_id=$2 AND request_key=$3)',[previewId,this.principal.subject,requestKey])).rows[0];if(old){if(old.preview_id!==previewId||old.request_key!==requestKey||old.fingerprint!==fingerprint)throw new RecommendationError('SELECTION_ALREADY_FIXED',409);return;}
-   await c.query('INSERT INTO recommendation_selections(preview_id,owner_id,request_key,fingerprint,selection,conditions,hold_key,quote_key,hold_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[previewId,this.principal.subject,requestKey,fingerprint,JSON.stringify(selection),JSON.stringify(conditions),randomUUID(),randomUUID(),p.replacement_hold_id]);
+   await c.query('INSERT INTO recommendation_selections(preview_id,owner_id,request_key,fingerprint,selection,conditions,hold_key,quote_key,hold_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[previewId,this.principal.subject,requestKey,fingerprint,JSON.stringify(fit?{...selection,fit}:selection),JSON.stringify(conditions),randomUUID(),randomUUID(),p.replacement_hold_id]);
   });return this.resume(previewId);
  }
  async resume(previewId:string){await this.tx(previewId,true,c=>this.owned(c,previewId,true),async c=>{

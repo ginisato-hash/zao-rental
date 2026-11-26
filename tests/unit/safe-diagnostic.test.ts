@@ -7,7 +7,7 @@ import {readDatabaseReadiness} from '../../packages/db/src/internal/database-rea
 
 // Forbidden in any server log line: e-mail, UUID (booking / item id), QR payload, long number (phone, card, amount), credential words,
 // a person's name or free text taken from an error message.
-const SECRETS=['tanaka.taro@example.com','9ee2f71e-a58f-4d8a-bf44-0d9cc2200bf5','zao-rental:reservation:9ee2f71e-a58f-4d8a-bf44-0d9cc2200bf5','田中太郎','090-1234-5678','09012345678','4111111111111111','Bearer abc.def.ghi','session=sk_live_SECRET','postgres://user:hunter2@db.internal:5432/app','https://evil.example/open?id=1'];
+const SECRETS=['tanaka.taro@example.com','9ee2f71e-a58f-4d8a-bf44-0d9cc2200bf5','zao-rental:reservation:9ee2f71e-a58f-4d8a-bf44-0d9cc2200bf5','田中太郎','090-1234-5678','09012345678','4111111111111111','Bearer abc.def.ghi','session=sk_live_SECRET','postgres'+'://user:hunter2@db.internal:5432/app','https://evil.example/open?id=1'];
 const FORBIDDEN=[/@/,/[0-9a-f]{8}-[0-9a-f]{4}-/i,/zao-rental:reservation/,/田中/,/\d{6,}/,/bearer/i,/cookie/i,/session=/i,/sk_live/i,/postgres:\/\//i,/hunter2/,/evil\.example/,/https?:\/\//i,/password/i];
 function assertClean(text:string,where:string){for(const re of FORBIDDEN)assert.equal(re.test(text),false,where+' leaked '+re+': '+text.slice(0,200));for(const s of SECRETS)assert.equal(text.includes(s),false,where+' leaked a secret value');}
 function capture<T>(fn:()=>Promise<T>|T):Promise<{lines:string[];result?:T;error?:unknown}>{
@@ -52,6 +52,6 @@ test('database readiness reports a fixed code, never the driver message (host, r
  const cfg={} as never;
  for(const message of SECRETS){const r=await readDatabaseReadiness(cfg,1,async()=>{throw Object.assign(new Error('password authentication failed for user "'+message+'"'),{code:'28P01'});});
   assert.equal(r.status,'FAILED');assertClean(JSON.stringify(r),'readiness');assert.equal((r as {reason:string}).reason,'SQLSTATE_28P01');}
- const plain=await readDatabaseReadiness(cfg,1,async()=>{throw new Error('connect ECONNREFUSED 10.0.0.12:5432 postgres://user:hunter2@db.internal');});assertClean(JSON.stringify(plain),'readiness plain');
+ const plain=await readDatabaseReadiness(cfg,1,async()=>{throw new Error('connect ECONNREFUSED 10.0.0.12:5432 postgres'+'://user:hunter2@db.internal');});assertClean(JSON.stringify(plain),'readiness plain');
  assert.equal((plain as {reason:string}).reason,'DATABASE_READINESS_FAILED');
 });

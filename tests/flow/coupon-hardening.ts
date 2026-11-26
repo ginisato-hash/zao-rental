@@ -99,6 +99,28 @@ try{
   assert.equal(Number((await x.db.pool.query('SELECT maximum_refund_jpy FROM booking_cancellations WHERE booking_id=$1',[b.id])).rows[0].maximum_refund_jpy),6800);
   const usage=((await x.quotes.listCoupons()) as {coupons:{id:string;usage:{bookings:number}}[]}).coupons.find(c=>c.id===id)!.usage.bookings;assert.equal(usage,0);
  });
+ await check('TD H1: a cancelled coupon booking (usage count back to 0) still blocks deletion; disabling stays possible and the code stays reserved',async()=>{
+  const id=await make({code:'HARD-H1-CANCEL',maxActiveReservations:1});const {b}=await paidBooking('HARD-H1-CANCEL','2035-04-02');
+  const p=await x.service.cancellationPreview(b.id);await x.service.cancel(b.id,randomUUID(),p.previewHash);assert.equal((await x.service.get(b.id)).state,'CANCELLED');
+  const view=((await x.quotes.listCoupons()) as {coupons:{id:string;usage:{bookings:number;activeReservations:number}}[]}).coupons.find(c=>c.id===id)!;
+  assert.deepEqual(view.usage,{bookings:0,activeReservations:0},'capacity count excludes the cancelled booking: the old delete check would have passed');
+  await assert.rejects(x.quotes.deleteCoupon(id),{code:'COUPON_IN_USE',status:409});
+  await x.quotes.setCouponActive(id,{active:false});await assert.rejects(x.quotes.deleteCoupon(id),{code:'COUPON_IN_USE'});
+  const listed=((await x.quotes.listCoupons()) as {coupons:{id:string;active:boolean}[]}).coupons.find(c=>c.id===id);assert.ok(listed&&listed.active===false,'still listed, disabled, never deleted');
+  await assert.rejects(x.quotes.createCoupon(randomUUID(),{...base,code:'HARD-H1-CANCEL'}),{code:'COUPON_CODE_EXISTS'});
+ });
+ await check('TD H1: concurrent quote creation and deletion never both succeed (a deleted coupon is never used, a used coupon is never deleted)',async()=>{
+  for(let i=0;i<4;i++){
+   const code='HARD-H1-RACE'+i,id=await make({code});const conditions=skiSet('2035-04-1'+(2+i));const h=await x.holds.command('create',randomUUID(),conditions,undefined,undefined,bufferOverride);assert.equal(h.result,'CREATED');
+   const [q,d]=await Promise.allSettled([x.quotes.create(randomUUID(),{conditions,holdId:h.holdId,couponCode:code,wantAdvance:false}),x.quotes.deleteCoupon(id)]);
+   const quoted=q.status==='fulfilled',deleted=d.status==='fulfilled';
+   assert.ok(quoted!==deleted,`exactly one of quote/delete wins (iteration ${i}): quoted=${quoted} deleted=${deleted}`);
+   if(!quoted)assert.ok(['COUPON_INACTIVE','COUPON_NOT_FOUND'].includes((q as PromiseRejectedResult).reason?.code),'the losing quote is refused with a coupon code');
+   else assert.equal((d as PromiseRejectedResult).reason?.code,'COUPON_IN_USE');
+   const n=Number((await x.db.pool.query('SELECT count(*) n FROM price_quotes WHERE coupon_id=$1',[id])).rows[0].n),deletedNow=((await x.quotes.listCoupons()) as {coupons:{id:string}[]}).coupons.every(c=>c.id!==id);
+   assert.ok(!(n>0&&deletedNow),'no quote exists for a deleted coupon');
+  }
+ });
  await check('advance discount + coupon: the refund basis is the combined paid amount',async()=>{
   await make({code:'HARD-ADV'});const {b}=await paidBooking('HARD-ADV','2035-02-11',true);assert.equal(await payAmount(b.id),6460);
   const p=await x.service.cancellationPreview(b.id);assert.equal(p.refundAmountJpy,6460);

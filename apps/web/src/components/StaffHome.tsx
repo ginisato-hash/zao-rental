@@ -166,14 +166,14 @@ function Home({stamp,stores,canBookingView,canCheckout,canReturn,canOperationsVi
   <p className="staff-context-date"><span>{t('営業日','Business date')}</span><strong>{manifestDate?manifestDate+t('（JST）','(JST)'):t('確認しています…','Checking…')}</strong></p>
  </section>}
  {effectivePickup&&<BookingSearchInput onBooking={openBooking}/>}
- {showManifest&&<section aria-label={t('本日の業務','Today’s work')} aria-busy={manifestBusy} className="staff-manifest"><div className="staff-section-head"><h2>{t('本日の業務','Today’s work')}</h2><button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>{t('更新','Refresh')}</button></div>
+ {showManifest&&<section aria-label={t('本日の業務','Today’s work')} aria-busy={manifestBusy} data-pending={manifestRows===null&&!manifestError?'':undefined} className="staff-manifest"><div className="staff-section-head"><h2>{t('本日の業務','Today’s work')}</h2><button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>{t('更新','Refresh')}</button></div>
   <p className="staff-secondary">{storeName(activeStore)}{manifestDate?' · '+manifestDate:''}</p>
   <div className={'staff-state staff-state--'+manifestKind}><p role="status">{manifestStatus}</p>{manifestKind==='error'&&<button disabled={manifestBusy} onClick={()=>loadManifest(activeStore,null,false)}>{t('もう一度読み込む','Load again')}</button>}</div>
   {manifestRows&&(manifestRows.length?<div className="staff-card-grid">{manifestRows.map(manifestCard)}</div>:!manifestError&&!manifestBusy&&<p className="staff-empty">{t('現在対応が必要な項目はありません。','Nothing needs attention right now.')}</p>)}
   {manifestHasMore&&<button className="staff-more" aria-busy={manifestBusy} disabled={manifestBusy} onClick={()=>loadManifest(activeStore,manifestCursor,true)}>{t('さらに読み込む','Load more')}</button>}
   <Link href="/staff/rentals">{t('貸出・返却の画面を開く','Open pickups and returns')}</Link>
  </section>}
- {canBookingView&&<section aria-label={t('新着予約','New bookings')} className="staff-recent"><div className="staff-section-head"><h2>{t('新着予約','New bookings')}</h2><button aria-label={t('新着予約を更新','Refresh new bookings')} disabled={bookingsReq.busy} onClick={()=>void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings)}>{t('更新','Refresh')}</button></div>
+ {canBookingView&&<section aria-label={t('新着予約','New bookings')} data-pending={bookings===null&&!bookingsReq.message?'':undefined} className="staff-recent"><div className="staff-section-head"><h2>{t('新着予約','New bookings')}</h2><button aria-label={t('新着予約を更新','Refresh new bookings')} disabled={bookingsReq.busy} onClick={()=>void bookingsReq.load<BookingRow[]>('/api/bookings',setBookings)}>{t('更新','Refresh')}</button></div>
   
   <p role="status">{bookingsReq.message?loadErrorText(t('新着予約','New bookings'),bookingsReq.message):bookings===null?t('新着予約を読み込んでいます…','Loading new bookings…'):''}</p>
   {bookings&&(recent.length?<div className="staff-card-grid">{recent.map(b=>{const attention=ATTENTION_STATES.has(b.state);return <article className={'staff-card'+(attention?' staff-card--attention':'')} key={b.id}>

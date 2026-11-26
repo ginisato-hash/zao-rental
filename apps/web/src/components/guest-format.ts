@@ -13,3 +13,12 @@ const LETTER_SIZE=['XXS','XS','S','M','L','XL'];
 export const wearSizeRank=(label:string)=>{const v=label.trim().toUpperCase(),i=LETTER_SIZE.indexOf(v);if(i>=0)return i;const x=/^(?:(\d)XL|(X{2,})L)$/.exec(v);if(x)return LETTER_SIZE.length-1+(x[1]?Number(x[1])-1:x[2]!.length-1);const n=/^(\d+(?:\.\d+)?)\s*(?:CM)?$/.exec(v);return n?1000+Number(n[1]):Number.POSITIVE_INFINITY;};
 export const byWearSize=<T extends {label:string}>(list:readonly T[])=>list.map((v,i)=>({v,i,r:wearSizeRank(v.label)})).sort((a,b)=>a.r-b.r||a.i-b.i).map(x=>x.v);
 export const jstDateTime=(ja:boolean,iso:string)=>{const d=new Date(iso);if(Number.isNaN(d.getTime()))return '—';return new Intl.DateTimeFormat(ja?'ja-JP':'en-JP',{timeZone:'Asia/Tokyo',dateStyle:'medium',timeStyle:'short'}).format(d)+' JST';};
+/** The "coupon cannot be combined with the 5% advance discount" note. It is shown only when the guest asked for the 5%, a coupon is
+ * applied and the SERVER says the advance discount was deliberately not estimated for that coupon (DENY/UNSET). It is never shown when
+ * the 5% was dropped for another reason: the previous-day 15:00 cutoff already passed (nothing to do with the coupon) or a combinable
+ * coupon left too little for 5% to round to a yen (advance estimated, 0 yen). `nowMs` is the browser clock; the server is authoritative. */
+export const couponAdvanceFolded=(advanceChecked:boolean,couponApplied:boolean,estimate:{advanceDiscountJpy?:number;advance?:{status?:string;cutoff?:string}}|null|undefined,nowMs:number)=>{
+ if(!advanceChecked||!couponApplied||!estimate||estimate.advanceDiscountJpy)return false;
+ const a=estimate.advance;if(!a||a.status!=='NOT_ESTIMATED')return false;
+ const cutoff=a.cutoff?Date.parse(a.cutoff):Number.NaN;return Number.isFinite(cutoff)&&nowMs<=cutoff;
+};

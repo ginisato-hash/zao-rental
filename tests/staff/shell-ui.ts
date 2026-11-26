@@ -142,6 +142,7 @@ try{
   await page.waitForURL(u=>u.pathname==='/staff/orders/'+confirmedId);
   const asset=(await db.pool.query('SELECT a.id,v.model_id FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.variant_id=$1 LIMIT 1',[variants.ski])).rows[0];
   await page.goto('/staff/scan');await page.getByRole('tab',{name:'用品'}).click();await page.getByLabel('用品の個体ID').fill(asset.id);await page.getByRole('button',{name:'入力したIDを照合へ送る'}).click();
+  await page.getByRole('region',{name:'特定した用品'}).getByText(asset.id).waitFor();await page.getByRole('button',{name:'モデルページを開く'}).click();
   await page.waitForURL(u=>u.pathname==='/staff/inventory/'+asset.model_id);
   await page.goto('/staff/scan');await page.getByRole('tab',{name:'用品'}).click();await page.getByLabel('用品の個体ID').fill('00000000-0000-4000-8000-000000000000');await page.getByRole('button',{name:'入力したIDを照合へ送る'}).click();
   await page.getByRole('alert').filter({hasText:'見つからない'}).waitFor();

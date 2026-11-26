@@ -19,7 +19,9 @@ export async function readDatabaseReadiness(
     const row = (await pool.query('SELECT count(*)::int n FROM foundation_migrations')).rows[0] as { n: number };
     return { status: 'CONNECTED', migrationsApplied: row.n, migrationsExpected, schemaComplete: row.n === migrationsExpected };
   } catch (e) {
-    return { status: 'FAILED', reason: e instanceof Error ? e.message : 'UNKNOWN' };
+    // Never the driver message (it can carry host, role or credential text): only a fixed code, else a fixed enum.
+    const code = (e as { code?: unknown } | null)?.code, text = e instanceof Error ? e.message : '';
+    return { status: 'FAILED', reason: /^[A-Z][A-Z0-9]*_[A-Z0-9_]{1,78}$/.test(text) ? text : typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code) ? 'SQLSTATE_' + code : 'DATABASE_READINESS_FAILED' };
   } finally {
     await pool?.end().catch(() => {});
   }

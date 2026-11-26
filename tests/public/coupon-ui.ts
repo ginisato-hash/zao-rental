@@ -35,7 +35,7 @@ try{
  const root=await bootstrapDevelopmentAdmin(app.db.pool,{email:'coupon-ui-root@example.invalid',displayName:'SYNTHETIC Root',password:randomBytes(24).toString('base64url')});
  for(const permission of ['PRICE_EDIT','QUOTE_VIEW','QUOTE_CREATE'])await app.db.pool.query('INSERT INTO staff_permission_overrides(staff_id,permission,allowed) VALUES($1,$2,true)',[root,permission]);
  const quotes=new QuoteService(app.roles.pricingPool,(await loadStaff(app.db.pool,root))!);await quotes.initializePrivate(randomUUID(),'2035-01-01','2035-12-31');
- for(const c of [terms('UIGOOD10'),terms('UIPAST',{validFrom:'2030-01-01T00:00:00+09:00',validUntil:'2031-01-01T00:00:00+09:00'}),terms('UIONSEN',{stores:['ONSEN_BASE']}),terms('UINOADV',{advanceCombination:'DENY'})])await quotes.createCoupon(randomUUID(),c);
+ for(const c of [terms('UIGOOD10'),terms('UIPAST',{validFrom:'2030-01-01T00:00:00+09:00',validUntil:'2031-01-01T00:00:00+09:00'}),terms('UIONSEN',{stores:['ONSEN_BASE']}),terms('UINOADV',{advanceCombination:'DENY'}),terms('UIALLOW10',{advanceCombination:'ALLOW'}),terms('UIFIX700',{kind:'FIXED_JPY',value:700,maximumDiscountJpy:700,advanceCombination:'ALLOW'}),terms('UICAP500',{value:5000,maximumDiscountJpy:500,advanceCombination:'DENY'}),terms('UIUNSET10',{advanceCombination:'UNSET'}),terms('UIMIN9000',{minimumJpy:9000,advanceCombination:'ALLOW'})])await quotes.createCoupon(randomUUID(),c);
  for(let n=0;n<100;n++){try{if((await fetch(app.origin+'/api/health')).ok)break;}catch{}if(n===99)throw new Error('APP_START_TIMEOUT');await new Promise(r=>setTimeout(r,100));}
  const mk=async(width:number,locale:string):Promise<{context:BrowserContext;page:Page}>=>{const context=await newQuietContext(browser,{baseURL:app!.origin,viewport:{width,height:844},hasTouch:width<500,locale});context.setDefaultTimeout(15000);return {context,page:await context.newPage()};};
 
@@ -72,6 +72,29 @@ try{
   await expect(page.getByTestId('coupon-applied')).toBeVisible();await expect(page.getByTestId('coupon-error')).toHaveCount(0);await expect(page.getByTestId('coupon-advance-folded')).toBeVisible();await context.close();
  });
 
+ // Price matrix on the real screen: server total == the amount shown == the amount a hand formula gives, and the note
+ // "cannot be combined with the 5% advance discount" appears exactly when the server folded the 5% into the coupon.
+ // 7,500 base. Advance 5% is HALF_UP on the post-coupon amount (6,750 -> 338, 6,800 -> 340); no tax is added.
+ for(const [code,advance,total,advanceLine,folded] of [
+  ['UIALLOW10',true,6412,true,false],['UIALLOW10',false,6750,false,false],['UIFIX700',true,6460,true,false],['UICAP500',true,7000,false,true],['UICAP500',false,7000,false,false],
+  ['UIUNSET10',true,6750,false,true],['UINOADV',true,6750,false,true],['UINOADV',false,6750,false,false]] as const)
+  await check('price matrix (JA): '+code+(advance?' with':' without')+' the 5% check shows '+total+' yen, the same as the server draft; advance line '+(advanceLine?'shown':'absent')+'; combine note '+(folded?'shown':'absent'),async()=>{
+   const {context,page}=await mk(390,'ja-JP');await toSizes(page,'ja');
+   const box=page.getByRole('checkbox',{name:/事前に支払って5%OFF/});if(advance)await box.check();
+   await coupon(page).getByLabel(/クーポンコード/).fill(code);await coupon(page).getByRole('button',{name:'適用',exact:true}).click();await expect(page.getByTestId('coupon-applied')).toBeVisible();
+   if(await price(page).count()===0)await page.getByRole('button',{name:'全員分の最終確認へ'}).click();
+   await expect(price(page).locator('dd').last()).toContainText(total.toLocaleString('en-US'));
+   const server=await page.evaluate(async()=>{const d=await (await fetch('/api/guest/draft',{cache:'no-store'})).json();return d.estimate as {totalJpy:number;advanceDiscountJpy:number;subtotalJpy:number;couponDiscountJpy:number};});
+   assert.equal(server.totalJpy,total,'server draft estimate');assert.equal(server.subtotalJpy-server.couponDiscountJpy-server.advanceDiscountJpy,total,'lines add up');
+   if(advanceLine)await expect(price(page)).toContainText('事前決済割引');else await expect(price(page)).not.toContainText('事前決済割引');
+   if(folded)await expect(page.getByTestId('coupon-advance-folded')).toBeVisible();else await expect(page.getByTestId('coupon-advance-folded')).toHaveCount(0);
+   await expect(page.locator('.guest-pay-summary')).toContainText(total.toLocaleString('en-US'));
+   await context.close();
+  });
+ await check('price matrix (JA): a coupon whose minimum is not met is refused with the uniform message and no amount changes',async()=>{
+  const {context,page}=await mk(390,'ja-JP');await toSizes(page,'ja');await coupon(page).getByLabel(/クーポンコード/).fill('UIMIN9000');await coupon(page).getByRole('button',{name:'適用',exact:true}).click();
+  await expect(page.getByTestId('coupon-error')).toContainText('使えません');await expect(page.getByTestId('coupon-applied')).toHaveCount(0);await context.close();
+ });
  await check('EN desktop: apply, breakdown in English, error copy in English, remove',async()=>{
   const {context,page}=await mk(1280,'en-US');await toSizes(page,'en');
   await coupon(page).getByLabel(/Coupon code/).fill('nosuch');await coupon(page).getByRole('button',{name:'Apply',exact:true}).click();

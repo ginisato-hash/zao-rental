@@ -1,0 +1,300 @@
+{
+ "meta": {
+  "tag": "trend",
+  "runsPerProfile": 40,
+  "server": "next dev --webpack (tests/flow-app), isolated PostgreSQL, loopback",
+  "chromium": "153.0.8010.12",
+  "node": "v24.15.0",
+  "commit": "0779053",
+  "throttling": "CDP CPU throttle per profile; no network throttle",
+  "timestamp": "2026-11-26T15:06:54.007Z"
+ },
+ "results": {
+  "ja-1280-cpu1": {
+   "iterations": 40,
+   "failures": [],
+   "steps": {
+    "0-load (navigation to usable form)": {
+     "render": {
+      "n": 40,
+      "p50": 539.8,
+      "p95": 892.3,
+      "max": 1081.6
+     },
+     "api": {
+      "n": 40,
+      "p50": 25.8,
+      "p95": 43.9,
+      "max": 51.2
+     },
+     "fetchCountMax": 5,
+     "serialChainMax": 2,
+     "duplicates": [
+      "GET /api/guest/draft x2",
+      "GET /api/guest/options x2"
+     ],
+     "longTaskMsP95": 167.5,
+     "perApi": {
+      "POST /api/guest/context": {
+       "n": 40,
+       "p50": 9.8,
+       "p95": 16,
+       "max": 25.1
+      },
+      "GET /api/guest/draft": {
+       "n": 80,
+       "p50": 10.4,
+       "p95": 20.6,
+       "max": 27.9
+      },
+      "GET /api/guest/options": {
+       "n": 80,
+       "p50": 14.1,
+       "p95": 31.2,
+       "max": 39
+      }
+     }
+    },
+    "1-dates-to-equipment (CONTINUE, client only)": {
+     "render": {
+      "n": 40,
+      "p50": 54.8,
+      "p95": 56.8,
+      "max": 60.1
+     },
+     "api": {
+      "n": 0,
+      "p50": null,
+      "p95": null,
+      "max": null
+     },
+     "fetchCountMax": 0,
+     "serialChainMax": 0,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {}
+    },
+    "2-equipment-to-sizes (save draft + preview)": {
+     "render": {
+      "n": 40,
+      "p50": 176.8,
+      "p95": 247.3,
+      "max": 325.3
+     },
+     "api": {
+      "n": 40,
+      "p50": 133.2,
+      "p95": 200.5,
+      "max": 286.1
+     },
+     "fetchCountMax": 2,
+     "serialChainMax": 2,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 40,
+       "p50": 11,
+       "p95": 21.2,
+       "max": 87.4
+      },
+      "POST /api/guest/preview": {
+       "n": 40,
+       "p50": 119.5,
+       "p95": 184.5,
+       "max": 248.8
+      }
+     },
+     "previewSeriesMs": [
+      120,
+      102,
+      84,
+      89,
+      99,
+      103,
+      82,
+      119,
+      97,
+      140,
+      88,
+      89,
+      90,
+      94,
+      122,
+      109,
+      249,
+      103,
+      101,
+      93,
+      106,
+      123,
+      114,
+      147,
+      119,
+      180,
+      137,
+      156,
+      150,
+      154,
+      138,
+      145,
+      131,
+      140,
+      111,
+      199,
+      152,
+      142,
+      154,
+      184
+     ]
+    },
+    "3-sizes-to-review (select)": {
+     "render": {
+      "n": 40,
+      "p50": 58,
+      "p95": 72.7,
+      "max": 105.4
+     },
+     "api": {
+      "n": 40,
+      "p50": 14.7,
+      "p95": 27.1,
+      "max": 62.2
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/selection": {
+       "n": 40,
+       "p50": 14.7,
+       "p95": 27.1,
+       "max": 62.2
+      }
+     }
+    },
+    "4-coupon-apply (review step)": {
+     "render": {
+      "n": 40,
+      "p50": 170.4,
+      "p95": 253.8,
+      "max": 332.2
+     },
+     "api": {
+      "n": 40,
+      "p50": 127.7,
+      "p95": 211.8,
+      "max": 283.3
+     },
+     "fetchCountMax": 3,
+     "serialChainMax": 3,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/draft": {
+       "n": 40,
+       "p50": 10.4,
+       "p95": 19,
+       "max": 161.2
+      },
+      "POST /api/guest/preview": {
+       "n": 40,
+       "p50": 107.8,
+       "p95": 172.3,
+       "max": 174.4
+      },
+      "POST /api/guest/selection": {
+       "n": 40,
+       "p50": 10.6,
+       "p95": 22.8,
+       "max": 46
+      }
+     },
+     "previewSeriesMs": [
+      110,
+      79,
+      80,
+      80,
+      84,
+      79,
+      93,
+      103,
+      116,
+      173,
+      87,
+      89,
+      87,
+      85,
+      91,
+      90,
+      111,
+      107,
+      124,
+      92,
+      98,
+      100,
+      99,
+      142,
+      115,
+      172,
+      103,
+      108,
+      174,
+      116,
+      111,
+      133,
+      110,
+      116,
+      108,
+      130,
+      110,
+      108,
+      113,
+      121
+     ]
+    },
+    "5-pay-dev-stub (checkout)": {
+     "render": {
+      "n": 40,
+      "p50": 135.5,
+      "p95": 219.3,
+      "max": 417.4
+     },
+     "api": {
+      "n": 40,
+      "p50": 83.2,
+      "p95": 178.9,
+      "max": 365.4
+     },
+     "fetchCountMax": 1,
+     "serialChainMax": 1,
+     "duplicates": [],
+     "longTaskMsP95": 0,
+     "perApi": {
+      "POST /api/guest/checkout": {
+       "n": 40,
+       "p50": 83.2,
+       "p95": 178.9,
+       "max": 365.4
+      }
+     }
+    }
+   }
+  }
+ },
+ "serverApi": {
+  "/api/guest/draft": {
+   "n": 55,
+   "p50": 20.5,
+   "p95": 31.5,
+   "max": 37.8
+  },
+  "/api/guest/options": {
+   "n": 55,
+   "p50": 4.5,
+   "p95": 5.1,
+   "max": 14.3
+  }
+ }
+}

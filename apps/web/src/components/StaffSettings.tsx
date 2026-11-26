@@ -27,7 +27,7 @@ export function StaffSettings({locale:serverLocale,stamp,access}:{locale:StaffLo
  }
  return <StaffSessionBoundary stamp={stamp}><main>
   <h1>{t('settings')}</h1>
-  <section className="sx-card" style={{padding:'20px 24px'}} aria-labelledby="sx-email">
+  <section className={'sx-card'+(!pref&&!failed?' sx-reserve sx-reserve--email':'')} style={{padding:'20px 24px'}} aria-labelledby="sx-email">
    <h2 id="sx-email" style={{marginTop:0}}>{t('emailTitle')}</h2>
    {failed&&<p className="sx-alert" role="alert">{t('saveFailed')}</p>}
    {pref&&draft&&<div className="sx-form">

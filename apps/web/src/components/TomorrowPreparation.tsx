@@ -23,7 +23,7 @@ export function TomorrowPreparation({stamp,store,onOpen}:{stamp:string;store:str
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[store,stamp]);
  const current=data?.store===store?data:null;
- return <section className="staff-manifest tomorrow-preparation" aria-label={t('明日の準備','Tomorrow’s preparation')} lang={en?'en':'ja'}><div className="staff-section-head"><h2>{t('明日の準備','Tomorrow’s preparation')}</h2><button disabled={busy} onClick={()=>{setBusy(true);setError(false);void load();}}>{t('更新','Refresh')}</button></div>
+ return <section className="staff-manifest tomorrow-preparation" data-pending={!current&&!error?'':undefined} aria-label={t('明日の準備','Tomorrow’s preparation')} lang={en?'en':'ja'}><div className="staff-section-head"><h2>{t('明日の準備','Tomorrow’s preparation')}</h2><button disabled={busy} onClick={()=>{setBusy(true);setError(false);void load();}}>{t('更新','Refresh')}</button></div>
   <p>{storeDisplayName(store)} · {current?.date??'…'} JST</p>
   {error&&<p role="alert">{t('読み込めませんでした。更新してください。','Could not load. Please refresh.')}</p>}
   {(busy||!current&&!error)&&<p role="status">{t('読み込んでいます…','Loading…')}</p>}

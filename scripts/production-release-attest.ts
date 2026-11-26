@@ -1,9 +1,9 @@
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {buildDigestFromTree} from './lib/build-manifest.cjs';
-/** Read-only release attestation (Issue #47 P0-B). Two modes, never mixed:
+/** Read-only release attestation (Issue #47 P0-B). Usage: `<stage|post> <candidate dpl_id> <previous alias dpl_id>` (the previous id is read from the alias BEFORE deploying and recorded by the operator). Two modes, never mixed:
  *   stage  (before promote): candidate deployment READY/production/pinned project, env values bound to the accepted main, build digest equal to the clean checkout,
- *                            and the formal alias STILL on another deployment (a stage that already owns the alias is not a stage).
+ *                            and the formal alias STILL on exactly the recorded previous deployment (a stage that already owns the alias, or an alias on some other id, is not a stage).
  *   post   (after promote):  the same, and the formal alias MUST be the candidate.
  *  The project/team are independently PINNED below (public identifiers); the local .vercel link and the deployment must equal the pin, never each other.
  *  Values are compared in memory only; the report carries fixed reason codes, ids and times. Missing evidence is FAIL. It edits and publishes nothing. */
@@ -19,9 +19,10 @@ export type ReleaseFacts={
  approvalValue:string|null;approvalUpdatedAt:number|null;approvalOrigin:string;pinnedApprover:string;
  deployment:{id:string;projectId:string|null;target:string|null;readyState:string|null;createdAt:number|null}|null;
  runtimeReleaseSha:string|null;runtimeBuildDigest:string|null;localBuildDigest:string|null;aliasDeploymentId:string|null;
+ previousAliasId:string;
 };
 export type Attestation={mode:Mode;status:'PASS'|'FAIL';reasons:string[];releaseSha:string;deploymentId:string|null};
-const SHA=/^[a-f0-9]{40}$/,DIGEST=/^[a-f0-9]{64}$/;
+const SHA=/^[a-f0-9]{40}$/,DIGEST=/^[a-f0-9]{64}$/,DPL=/^dpl_[A-Za-z0-9]{20,40}$/;
 export function evaluateRelease(f:ReleaseFacts):Attestation{
  const r:string[]=[];const need=(ok:boolean,code:string)=>{if(!ok)r.push(code);};
  need(SHA.test(f.expectedSha),'EXPECTED_SHA_INVALID');
@@ -40,8 +41,11 @@ export function evaluateRelease(f:ReleaseFacts):Attestation{
   need(d.createdAt!==null,'DEPLOYMENT_TIME_MISSING');
   need(d.createdAt!==null&&f.releaseIdUpdatedAt!==null&&f.releaseIdUpdatedAt<=d.createdAt,'RELEASE_ID_NOT_BEFORE_DEPLOYMENT');
   need(d.createdAt!==null&&f.approvalUpdatedAt!==null&&f.approvalUpdatedAt<=d.createdAt,'APPROVAL_NOT_BEFORE_DEPLOYMENT');
+  // previousAliasId is the deployment the formal alias pointed to BEFORE this release, recorded by the operator and passed to both modes so stage and post are tied to
+  // the same candidate and the same predecessor. A candidate can never be its own predecessor.
+  need(DPL.test(f.previousAliasId)&&f.previousAliasId!==d.id,'PREVIOUS_ALIAS_INVALID');
   if(f.mode==='post')need(f.aliasDeploymentId===d.id,'ALIAS_NOT_THIS_DEPLOYMENT');
-  else need(f.aliasDeploymentId!==null&&f.aliasDeploymentId!==d.id,'STAGE_ALIAS_ALREADY_MOVED_OR_UNKNOWN');
+  else need(f.aliasDeploymentId!==null&&f.aliasDeploymentId===f.previousAliasId,'STAGE_ALIAS_NOT_RECORDED_PREVIOUS');
  }
  need(f.runtimeReleaseSha!==null&&f.runtimeReleaseSha===f.expectedSha,'RUNTIME_SHA_MISMATCH');
  need(f.runtimeBuildDigest!==null&&DIGEST.test(f.runtimeBuildDigest)&&f.runtimeBuildDigest===f.localBuildDigest,'BUILD_DIGEST_MISMATCH');
@@ -49,7 +53,7 @@ export function evaluateRelease(f:ReleaseFacts):Attestation{
 }
 export type Exec={run:(cmd:string,args:string[],cwd:string)=>string;readText:(path:string)=>string;digest:(root:string)=>string};
 export const realExec:Exec={run:(cmd,args,cwd)=>execFileSync(cmd,args,{cwd,encoding:'utf8',stdio:['ignore','pipe','ignore'],maxBuffer:8_000_000}),readText:p=>readFileSync(p,'utf8'),digest:buildDigestFromTree};
-export function collect(cwd:string,deploymentId:string,mode:Mode,x:Exec=realExec):ReleaseFacts{
+export function collect(cwd:string,deploymentId:string,mode:Mode,previousAliasId:string,x:Exec=realExec):ReleaseFacts{
  const api=<T>(path:string):T|null=>{try{return JSON.parse(x.run('npx',['vercel','api',path,'--raw'],cwd)) as T;}catch{return null;}};
  const link=JSON.parse(x.readText(cwd+'/.vercel/project.json')) as {projectId?:string;orgId?:string};
  const head=x.run('git',['rev-parse','HEAD'],cwd).trim();
@@ -68,12 +72,12 @@ export function collect(cwd:string,deploymentId:string,mode:Mode,x:Exec=realExec
  return {mode,expectedSha:originMain,head,originMain,dirtyEntries:dirty,localProjectId:link.projectId??null,localTeamId:link.orgId??null,pinnedProjectId:PINNED_PROJECT_ID,pinnedTeamId:PINNED_TEAM_ID,
   releaseIdValue:rel.value,releaseIdUpdatedAt:rel.updatedAt,approvalValue:apr.value,approvalUpdatedAt:apr.updatedAt,approvalOrigin:PRODUCTION_ORIGIN,pinnedApprover:PINNED_APPROVER,
   deployment:dep&&dep.id?{id:dep.id,projectId:dep.projectId??null,target:dep.target??null,readyState:dep.readyState??null,createdAt:dep.createdAt??null}:null,
-  runtimeReleaseSha:rs,runtimeBuildDigest:rd,localBuildDigest:x.digest(cwd),aliasDeploymentId:a?.deploymentId??null};
+  runtimeReleaseSha:rs,runtimeBuildDigest:rd,localBuildDigest:x.digest(cwd),aliasDeploymentId:a?.deploymentId??null,previousAliasId};
 }
 export function main(argv:string[],cwd=process.cwd(),x:Exec=realExec){
- const [mode,id]=argv;
- if(argv.length!==2||(mode!=='stage'&&mode!=='post')||!/^dpl_[A-Za-z0-9]{20,40}$/.test(id!))throw new Error('RELEASE_ATTEST_ARGUMENTS_REJECTED');
- const result=evaluateRelease(collect(cwd,id!,mode,x));
+ const [mode,id,previous]=argv;
+ if(argv.length!==3||(mode!=='stage'&&mode!=='post')||!DPL.test(id!)||!DPL.test(previous!))throw new Error('RELEASE_ATTEST_ARGUMENTS_REJECTED');
+ const result=evaluateRelease(collect(cwd,id!,mode,previous!,x));
  console.log(JSON.stringify({...result,checkedAt:new Date().toISOString()}));
  if(result.status!=='PASS')process.exitCode=1;
  return result;

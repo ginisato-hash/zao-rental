@@ -5,6 +5,11 @@ import {CustodyService} from '../../packages/core/src/rental/custody-service';
 import {provisionCustodyRole} from '../../scripts/custody-roles';
 import {syntheticPreparation} from '../custody/preparation-fixture';
 import {skiSet} from '../inventory/fixture';
+import {provisionOperationsRole} from '../../scripts/operations-roles';
+import {OperationsContext} from '../../packages/core/src/operations/context';
+import {CalendarService} from '../../packages/core/src/operations/calendar-service';
+import {custodyHandler} from '../../apps/web/src/lib/custody-http';
+import {loadStaff} from '../../packages/auth/src/staff-auth';
 import {writeAccount} from '../../packages/auth/src/accounts';
 import type {GroupMemberInput} from '../../packages/contracts/src/group-order';
 
@@ -52,6 +57,7 @@ async function rawLoan(partId:string,over:Record<string,unknown>={}){
  const cols=Object.keys(row);return custodySql(`INSERT INTO rental_loan_items(${cols.join(',')}) VALUES(${cols.map((_,i)=>'$'+(i+1)).join(',')})`,Object.values(row));
 }
 type Cand={state:string;group_part_id:string|null;group_number:string|null;booking_id:string|null};
+let HTTPG:Awaited<ReturnType<typeof build>>;
 let token='',G:Awaited<ReturnType<typeof build>>,HELD:Awaited<ReturnType<typeof build>>,MANUAL:Awaited<ReturnType<typeof build>>,PREP:Awaited<ReturnType<typeof build>>,CANC:Awaited<ReturnType<typeof build>>,REL:Awaited<ReturnType<typeof build>>;
 try{
  token=await x.entrance();
@@ -62,6 +68,7 @@ try{
  PREP=await build(token,[member('p1')],{confirm:true,label:'SYNTHETIC prepared then cancelled'});
  CANC=await build(token,[member('c1')],{confirm:true,label:'SYNTHETIC cancelled before preparation'});
  REL=await build(token,[member('r1')],{label:'SYNTHETIC released'});
+ HTTPG=await build(token,[member('w1')],{confirm:true,label:'SYNTHETIC through the HTTP layer'});
  await x.svc.release(x.admin,REL.groupId,{requestKey:randomUUID(),expectedRevision:REL.revision,reason:'SYNTHETIC release before custody'});
  let before=await traces();
  await x.clock(DAY1);
@@ -216,6 +223,46 @@ try{
   assert.equal((await q("SELECT count(*)::int n FROM rental_inventory_blocks WHERE id=$1 AND reason='INSPECTION_PENDING'",[ls.id])).rows[0].n,1);
   const e=await svc.inspection(randomUUID(),{loanItemId:ls.id,expectedVersion:2,store:'MOUNTAIN_BASE',evidence:'SYNTHETIC wrong store'}).catch(e=>e);assert.ok(e instanceof Error,'inspection at a store that did not receive it is refused');
  });
+ await check('calendar: planned, lent and held group parts appear on their items under the parent group number (booking-less), with the confirmed one as BOOKING and the waiting one as HOLD',async()=>{
+  const ops=await provisionOperationsRole(x.db.pool,x.db.identity);
+  try{
+   const cal=new CalendarService(new OperationsContext(ops.operationsPool,x.roles.authPool,x.signed.identity));
+   const first=await cal.view({store:'MOUNTAIN_BASE',from:'2035-02-10',days:7,pageSize:100}),all=[...first.items];
+   for(let page=2;page<=Math.ceil(first.total/100);page++)all.push(...(await cal.view({store:'MOUNTAIN_BASE',from:'2035-02-10',days:7,pageSize:100,page})).items);
+   const bars=all.flatMap(i=>i.bars.map(b=>({...b,item:i.id})));
+   const num=async(id:string)=>(await q('SELECT group_number FROM group_orders WHERE id=$1',[id])).rows[0].group_number as string;
+   const gNum=await num(G.groupId),hNum=await num(HELD.groupId),mNum=await num(MANUAL.groupId);
+   const lent=bars.filter(b=>b.groupNumber===gNum);assert.ok(lent.length>=4&&lent.every(b=>b.kind==='OUT'&&b.bookingId===null&&b.customer==='SYNTHETIC lend and return'),'every lent gear item shows OUT under the group number: '+JSON.stringify(lent.map(b=>b.kind)));
+   assert.ok(bars.some(b=>b.groupNumber===hNum&&b.kind==='HOLD'),'a group waiting for approval is a planned HOLD bar');
+   assert.ok(bars.some(b=>b.groupNumber===mNum&&b.kind==='OUT'),'a lent confirmed group is OUT');
+   assert.equal(bars.filter(b=>b.bookingId).length,0,'no booking bar exists: only groups were created in this database for these dates');
+  }finally{await ops.close();}
+ });
+
+ await check('HTTP layer: group routes share the custody authorization, origin and idempotency rules; no contact data leaves; prepare/checkout work end to end',async()=>{
+  const origin='http://127.0.0.1:34567',principal=(await loadStaff(x.db.pool,x.signed.identity.subject))!;
+  const state=async()=>({status:'authorized' as const,principal,stamp:JSON.stringify([x.signed.identity.sessionId,'x'])});
+  const handler=custodyHandler(state as never,id=>new CustodyService(role.custodyPool,x.roles.authPool,id),origin,'ISOLATED_TEST');
+  const get=async(path:string)=>handler(new Request(origin+'/api/custody'+path));
+  const post=async(path:string,body:unknown,headers:Record<string,string>={origin})=>handler(new Request(origin+'/api/custody'+path,{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(body)}));
+  const num=(await q('SELECT group_number FROM group_orders WHERE id=$1',[HTTPG.groupId])).rows[0].group_number as string;
+  const ov=await get('/group-number/'+num);assert.equal(ov.status,200);const ovj=await ov.json() as {groupId:string;parts:{partId:string}[]};assert.equal(ovj.groupId,HTTPG.groupId);
+  assert.equal(ov.headers.get('cache-control'),'private, no-store');assert.equal(JSON.stringify(ovj).includes('example.invalid'),false);
+  assert.equal((await get('/group/'+HTTPG.groupId)).status,200);assert.equal((await get('/group-number/G-9999999')).status,404);assert.equal((await get('/group-number/not-a-number')).status,404);
+  const partId=ovj.parts[0]!.partId,view=await (await get('/group-part/'+partId)).json() as Awaited<ReturnType<typeof svc.groupCheckoutView>>;
+  const input={partId,expectedGroupRevision:view.groupRevision,expectedHoldVersion:view.holdVersion,selections:view.items.map(i=>({requirementKey:i.requirement_key,assetId:i.asset_id,poleId:i.pole_id})),fitEvidence:syntheticPreparation(view),manualFit:[]};
+  const key=randomUUID();
+  assert.equal((await post('/group-prepare',{requestKey:key,input},{origin:'https://evil.example'})).status,403,'foreign origin refused');
+  const ok=await post('/group-prepare',{requestKey:key,input});assert.equal(ok.status,200);const prepared=await ok.json() as {preparation:{version:number};preparationValid:boolean};assert.equal(prepared.preparationValid,true);
+  assert.equal((await post('/group-prepare',{requestKey:key,input:{...input,manualFit:[{memberKey:'p001',confirmed:true,note:'x'}]}})).status,409,'same key, different payload');
+  const out=await post('/group-checkout',{requestKey:randomUUID(),input:{partId,expectedPreparationVersion:prepared.preparation.version}});assert.equal(out.status,200);assert.equal(((await out.json()) as {loans:unknown[]}).loans.length,3);
+  assert.equal((await post('/group-checkout',{requestKey:randomUUID(),input:{partId,expectedPreparationVersion:1}})).status,409,'a second checkout of the same part is refused');
+  // a session without the custody permission is refused before anything is read
+  const none={...principal,permissions:principal.permissions.filter(p=>p!=='BOOKING_VIEW')};
+  const denied=custodyHandler((async()=>({status:'authorized' as const,principal:none,stamp:JSON.stringify([x.signed.identity.sessionId,'x'])})) as never,id=>new CustodyService(role.custodyPool,x.roles.authPool,id),origin,'ISOLATED_TEST');
+  assert.equal((await denied(new Request(origin+'/api/custody/group/'+HTTPG.groupId))).status,403);
+ });
+
  await check('return: scan -> confirm at the lending store; each item is received once under the group number; pairs are conserved; uninspected items block the allocator',async()=>{
   const p=await part(G.groupId),polesBefore=(await q("SELECT coalesce(sum(quantity),0)::int n FROM ledger_poles")).rows[0].n;
   const outPairs=async()=>Number((await q("SELECT coalesce(sum(out_pairs),0)::int n FROM rental_pole_custody")).rows[0].n),outBefore=await outPairs();

@@ -2,13 +2,27 @@
 import {useContext,useEffect,useState,type ReactNode} from 'react';
 import {StaffLocaleContext} from './staff-locale';
 export function invalidateStaffView(){window.dispatchEvent(new Event('zao-auth-ended'));}
+/** One /api/session probe for callers that start within SESSION_PROBE_JOIN_MS of each other (several boundaries/checks mount together on one screen).
+ *  This only collapses concurrent duplicates: there is no cache and no TTL, a later check always asks the server again, and the answer is never reused
+ *  after it has arrived. The server still authorises every request; this changes how many identical probes a single screen sends. */
+export const SESSION_PROBE_JOIN_MS=100;
+type SessionAnswer={ok:boolean;body:{stamp?:string}};
+let inflight:{startedAt:number;promise:Promise<SessionAnswer>}|null=null;
+export function probeSession(now:()=>number=Date.now):Promise<SessionAnswer>{
+ const t=now();
+ if(inflight&&t-inflight.startedAt<SESSION_PROBE_JOIN_MS)return inflight.promise;
+ const promise=fetch('/api/session',{cache:'no-store'}).then(async r=>({ok:r.ok,body:await r.json() as {stamp?:string}}));
+ const mine={startedAt:t,promise};inflight=mine;
+ const clear=()=>{if(inflight===mine)inflight=null;};promise.then(clear,clear);
+ return promise;
+}
 /** BELL-RACE-01: a 401/403/409 answer to a request made with `stamp` ends the view only if `stamp` is still the browser's
  * current session (its access really ended) or there is no session at all. If another valid session has replaced it
  * (sign-in as someone else while the request was pending), the answer belongs to the old session: the view for the new
  * stamp is not ended here, and StaffSessionBoundary keeps verifying whichever stamp is shown. A failed check ends it. */
 export async function endViewIfSessionIs(stamp:string){
- try{const r=await fetch('/api/session',{cache:'no-store'});const body=await r.json() as {stamp?:string};
-  if(r.ok&&body.stamp&&body.stamp!==stamp)return;}catch{/* cannot tell: fail closed */}
+ try{const {ok,body}=await probeSession();
+  if(ok&&body.stamp&&body.stamp!==stamp)return;}catch{/* cannot tell: fail closed */}
  invalidateStaffView();
 }
 export function StaffSessionBoundary({stamp,children}:{stamp:string;children:ReactNode}){
@@ -21,7 +35,7 @@ export function StaffSessionBoundary({stamp,children}:{stamp:string;children:Rea
   let alive=true,closed=false,generation=0;const channel=new BroadcastChannel('zao-rental-session');
   const end=()=>{closed=true;generation++;setState('ended');};
   async function check(hide=false){if(closed||!alive)return;const ticket=++generation;if(hide)setState('checking');
-   try{const r=await fetch('/api/session',{cache:'no-store'});const body=await r.json();if(!alive||closed||ticket!==generation)return;if(!r.ok||body.stamp!==stamp)end();else setState('ready');}catch{if(alive&&!closed&&ticket===generation)end();}
+   try{const {ok,body}=await probeSession();if(!alive||closed||ticket!==generation)return;if(!ok||body.stamp!==stamp)end();else setState('ready');}catch{if(alive&&!closed&&ticket===generation)end();}
   }
   const visibility=()=>{if(document.visibilityState==='hidden'){generation++;setState('checking');}else void check(true);};
   // Initial pageshow can arrive after hydration: recheck without remounting the form.

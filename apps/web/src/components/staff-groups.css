@@ -48,5 +48,12 @@
 .gx-entrance summary{cursor:pointer;font-weight:600}
 .gx-url{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:10px}.gx-url .gx-field{flex:1 1 260px}
 .gx-pay small{color:var(--sx-text2)}
+/* Wide tables scroll inside their own wrapper (never the page); filters shrink to the card at narrow widths. */
+.gx-ltable{min-width:1040px}.gx-mtable{min-width:760px}.gx-disc{min-width:560px}
+.gx-filters label{min-width:0;flex:1 1 180px}.gx-filters select,.gx-filters input{width:100%}
+.gx-ltable td:nth-child(1),.gx-ltable td:nth-child(4),.gx-ltable td:nth-child(6){white-space:nowrap}
+.gx-mtable th{white-space:nowrap}
+.gx-mtable td:nth-child(5),.gx-mtable td:nth-child(6),.gx-mtable td:nth-child(8){white-space:nowrap}
+.gx-mtable td .sx-btn{white-space:nowrap;padding:0 12px}
 @media (max-width:900px){.gx-layout{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){.gx-dl{grid-template-columns:minmax(0,1fr)}.gx-dl dt{margin-top:6px}.gx-money dd{text-align:left}}

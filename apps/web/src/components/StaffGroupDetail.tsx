@@ -143,7 +143,7 @@ export function StaffGroupDetail({locale:serverLocale,stamp,id,can}:{locale:Staf
    <div className="gx-left">
     <section className="sx-card gx-card" aria-labelledby="gx-members"><h2 id="gx-members">{tx('members')} <small>({g.memberCount})</small></h2>
      {variantsFailed&&<p className="sx-alert" role="alert">{tx('variantsFailed')}</p>}
-     <div className="ox-table-wrap"><table className="sx-table gx-table"><thead><tr><th>{tx('mNo')}</th><th>{tx('mName')}</th><th>{tx('mProfile')}</th><th>{tx('mItems')}</th><th>{tx('mFit')}</th><th>{tx('mStock')}</th><th>{tx('mPrice')}</th>{can.approve&&held&&<th><span className="gx-sr">{tx('mEdit')}</span></th>}</tr></thead>
+     <div className="ox-table-wrap"><table className="sx-table gx-table gx-mtable"><thead><tr><th>{tx('mNo')}</th><th>{tx('mName')}</th><th>{tx('mProfile')}</th><th>{tx('mItems')}</th><th>{tx('mFit')}</th><th>{tx('mStock')}</th><th>{tx('mPrice')}</th>{can.approve&&held&&<th><span className="gx-sr">{tx('mEdit')}</span></th>}</tr></thead>
       <tbody>{d.members.map(m=>{const l=lineOf.get(m.id),ft=fitText(m.fit),staged=edits[m.id]??{};
        const opts=(it:Item)=>{const cur=variants.get(it.variantIds[0]??'');return cur?[...variants.values()].filter(v=>v.family===it.family&&v.age===cur.age&&v.tier===cur.tier):[];};
        return [<tr key={m.id} data-member={m.ordinal}>

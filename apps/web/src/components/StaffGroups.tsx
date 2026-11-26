@@ -50,7 +50,7 @@ export function StaffGroups({locale:serverLocale,stamp,stores,canEntrance}:{loca
    {failed&&<p className="sx-alert" role="alert">{failed==='GROUP_NOT_CONNECTED'||failed==='FORBIDDEN'?groupError(failed,locale):tx('loadFailed')} <button type="button" className="sx-link" onClick={()=>setReload(n=>n+1)}>{tx('retry')}</button></p>}
    {!rows&&!failed&&<p className="sx-status" role="status">{tx('loading')}</p>}
    {rows&&!view.length&&<p className="sx-empty">{tx('none')}</p>}
-   {rows&&view.length>0&&<div className="ox-table-wrap"><table className="sx-table gx-table"><thead><tr>
+   {rows&&view.length>0&&<div className="ox-table-wrap"><table className="sx-table gx-table gx-ltable"><thead><tr>
     <th>{tx('cNumber')}</th><th>{tx('cName')}</th><th>{tx('cStatus')}</th><th>{tx('cReceived')}</th><th>{tx('cDays')}</th><th>{tx('cUse')}</th><th>{tx('cPeople')}</th><th>{tx('cAmount')}</th><th>{tx('cSettle')}</th><th>{tx('cRequests')}</th><th>{tx('cStock')}</th><th>{tx('cStore')}</th></tr></thead>
     <tbody>{view.map(r=>{
      const soon=r.occupiesInventory&&r.startDatePassedDays===0&&dayDiff(r.period.startDate,today)<=7&&dayDiff(r.period.startDate,today)>=0;

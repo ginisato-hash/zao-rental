@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- HTTP JSON bodies are inspected loosely in this test */
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {groupFixture,skiMember} from './fixture';

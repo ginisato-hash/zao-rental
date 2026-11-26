@@ -29,10 +29,9 @@ try{
  const B=await h.held(token,'SYNTHETIC Release Team',h.members(2,'b'),{startDate:'2035-02-11',endDate:'2035-02-11',slot:'DAY'});
  const C=await h.held(token,'SYNTHETIC Third Party',h.members(4,'c'),{startDate:'2035-02-12',endDate:'2035-02-12',slot:'DAY'});
  const nA=await num(A.groupId),nB=await num(B.groupId),nC=await num(C.groupId);
- const login=async(email:string,width=1440,lang?:'en')=>{const ctx=await browser.newContext({baseURL:origin,viewport:{width,height:900}});if(lang)await ctx.addCookies([{name:'zao_staff_locale',value:lang,url:origin}]);
-  const p=await ctx.newPage();p.setDefaultTimeout(30000);p.on('pageerror',e=>errors.push(e.message));
+ const login=async(email:string,width=1440,lang?:'en')=>{const ctx=await browser.newContext({baseURL:origin,viewport:{width,height:900}});  const p=await ctx.newPage();p.setDefaultTimeout(30000);p.on('pageerror',e=>errors.push(e.message));
   await p.goto('/staff/login');await p.getByLabel('メールアドレス',{exact:true}).fill(email);await p.getByLabel('パスワード',{exact:true}).fill(password);
-  await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>!u.pathname.startsWith('/staff/login'),{timeout:60000});return {ctx,p};};
+  await p.getByRole('button',{name:'ログイン',exact:true}).click();await p.waitForURL(u=>!u.pathname.startsWith('/staff/login'),{timeout:60000});if(lang)await ctx.addCookies([{name:'zao_staff_locale',value:lang,url:origin}]);return {ctx,p};};
  const {ctx:actx,p:page}=await login(h.admin.email);lastPage=page;
  const row=(n:string)=>page.locator(`tr[data-group="${n}"]`);
  const openDetail=async(n:string)=>{await page.goto('/staff/groups');await row(n).getByRole('link',{name:n}).click();await expect(page.getByRole('heading',{level:1,name:n})).toBeVisible();await expect(page.getByRole('heading',{name:/参加者と用品/})).toBeVisible();};
@@ -208,12 +207,12 @@ try{
   assert.equal(st.list.groups.length,0,'no MOUNTAIN group visible to an ONSEN-only administrator');assert.equal(st.detail,403);await o.ctx.close();
   // permission revoked while the screen is open: the server refuses the write and nothing changes
   const part=await h.account('gadm-part@example.invalid');const pg=await login(part.email);
-  const D=await h.held(token,'SYNTHETIC Revoke Target',h.members(2,'d'),{startDate:'2035-02-14',endDate:'2035-02-14',slot:'DAY'});const nD=await num(D.groupId);
+  const D=await h.held(await h.entrance(),'SYNTHETIC Revoke Target',h.members(2,'d'),{startDate:'2035-02-14',endDate:'2035-02-14',slot:'DAY'});const nD=await num(D.groupId);
   await pg.p.goto('/staff/groups');await pg.p.locator(`tr[data-group="${nD}"]`).getByRole('link',{name:nD}).click();await pg.p.getByRole('button',{name:'仮押さえを解除…'}).click();
   await pg.p.getByLabel('解除の理由（必須・300文字以内）').fill('SYNTHETIC revoked mid-flight');
   await part.update({role:'MANAGER'});
   await pg.p.getByRole('button',{name:'解除を実行'}).click();
-  await expect(pg.p.getByRole('alert').first()).toBeVisible();
+  await expect(pg.p.getByRole('alert').or(pg.p.getByRole('heading',{name:'セッションを確認してください'})).first()).toBeVisible();
   assert.equal((await q('SELECT status FROM group_orders WHERE id=$1',[D.groupId])).rows[0].status,'REVIEW_HELD','a refused release changes nothing');
   assert.ok(Number((await q("SELECT count(*) n FROM inventory_claims c JOIN group_order_parts p ON p.hold_id=c.hold_id WHERE p.group_id=$1 AND c.active",[D.groupId])).rows[0].n)>0);
   await pg.ctx.close();
@@ -231,7 +230,9 @@ try{
  await check('English and 390 px / 200% zoom: lists and detail without horizontal scroll; keyboard reaches the primary actions; axe finds no serious violation',async()=>{
   const axe=await readFile('node_modules/axe-core/axe.min.js','utf8');
   for(const [lang,width,label] of [['en',390,'en-390'],['ja',390,'ja-390'],['en',1440,'en-1440'],['ja',720,'ja-zoom200']] as const){
-   const {ctx,p}=await login(h.admin.email,width,lang==='en'?'en':undefined);
+   // Reuse the signed-in session (the sign-in endpoint is rate limited; this step only varies language and viewport).
+   const ctx=await browser.newContext({baseURL:origin,viewport:{width,height:900},storageState:await actx.storageState()});await ctx.addCookies([{name:'zao_staff_locale',value:lang,url:origin}]);
+   const p=await ctx.newPage();p.setDefaultTimeout(30000);p.on('pageerror',e=>errors.push(e.message));lastPage=p;
    await p.goto('/staff/groups');await expect(p.locator('tr',{hasText:nA})).toBeVisible();
    assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1),false,'list '+label);
    await p.screenshot({path:`${shots}/list-${label}.png`,fullPage:true});

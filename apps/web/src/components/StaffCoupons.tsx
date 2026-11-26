@@ -41,7 +41,7 @@ const L={
  forbidden:['この操作の権限がありません。','You do not have permission for this.'],failed:['保存できませんでした。もう一度お試しください。','Could not save. Please try again.'],
  listTitle:['クーポン一覧','Coupons'],none:['クーポンはまだありません。','No coupons yet.'],loadFailed:['読み込めませんでした。','Could not load.'],retry:['再読み込み','Retry'],
  cCode:['コード','Code'],cDiscount:['割引','Discount'],cPeriod:['有効期間','Period'],cScope:['対象','Scope'],cLimit:['上限','Limits'],cUsage:['利用状況','Usage'],cState:['状態','State'],cCreated:['作成日','Created'],
- del:['削除','Delete'],delNote:['使用実績のないクーポンだけ削除できます','Only coupons with no usage can be deleted'],confirmDel:['を削除します。一覧から消え、同じコードは再利用できません。元に戻せません。よろしいですか？','will be deleted. It disappears from the list, the code cannot be reused, and this cannot be undone. Continue?'],deleted:['削除しました。','Deleted.'],inUse:['予約で使われているため削除できません。無効にしてください。','It is used by a booking and cannot be deleted. Disable it instead.'],
+ del:['削除','Delete'],delNote:['一度でも見積・予約に使われたクーポン（取消済みを含む）は削除できません。無効化してください','A coupon ever used in a quote or booking (even cancelled) cannot be deleted; disable it instead'],confirmDel:['を削除します。一覧から消え、同じコードは再利用できません。元に戻せません。よろしいですか？','will be deleted. It disappears from the list, the code cannot be reused, and this cannot be undone. Continue?'],deleted:['削除しました。','Deleted.'],inUse:['見積・予約に使われた履歴があるため削除できません。無効にしてください。','It has been used in a quote or booking, so it cannot be deleted. Disable it instead.'],
  on:['有効','Active'],off:['無効','Disabled'],enable:['有効にする','Enable'],disable:['無効にする','Disable'],
  confirmOff:['を無効にします。新しい予約では使えなくなります。よろしいですか？','will be disabled and cannot be used on new bookings. Continue?'],confirmOn:['を有効にします。よろしいですか？','will be enabled. Continue?'],
  switched:['状態を変更しました。','State changed.'],

@@ -90,10 +90,15 @@ export class InventoryRead{
   if(typeof id!=='string'||!UUID.test(id))throw new FlowError('INVALID_INPUT',422);
   try{
    return await this.ctx.light('INVENTORY_VIEW',[],async c=>{
-    const r=(await c.query('SELECT v.model_id "modelId",a.store_id store,a.family FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id WHERE a.id=$1',[id])).rows[0];
+    const r=(await c.query(`SELECT v.model_id "modelId",m.code "modelCode",m.name "modelName",v.size,a.store_id store,a.family,a.status,a.bsl_status "bslStatus",
+      l.state "loanState",l.pickup_store "loanStore",left(l.booking_id::text,8) "loanRef"
+      FROM ledger_assets a JOIN ledger_variants v ON v.id=a.variant_id JOIN ledger_models m ON m.id=v.model_id
+      LEFT JOIN LATERAL (SELECT li.state,li.pickup_store,li.booking_id FROM rental_loan_items li WHERE li.asset_id=a.id AND li.state='OUT' LIMIT 1) l ON true WHERE a.id=$1`,[id])).rows[0];
     if(!r)throw new FlowError('NOT_FOUND',404);
     await c.query("SELECT ops_assert_actor('INVENTORY_VIEW',ARRAY[$1]::text[],current_setting('zao.actor',true))",[r.store]);
-    return {assetId:id,modelId:r.modelId as string,store:r.store as string,family:r.family as string};
+    // Identity card: the one ledger item, its model/size/status/station and whether it is on loan (short booking number only; no customer data).
+    return {assetId:id,modelId:r.modelId as string,modelCode:r.modelCode as string,modelName:r.modelName as string,size:r.size as string,store:r.store as string,family:r.family as string,status:r.status as string,bslStatus:r.bslStatus as string,
+     loan:r.loanState?{state:r.loanState as string,pickupStore:r.loanStore as string,bookingRef:String(r.loanRef).toUpperCase()}:null};
    });
   }catch(e){if(e instanceof FlowError&&e.code==='FORBIDDEN')throw new FlowError('NOT_FOUND',404);throw e;}
  }

@@ -69,6 +69,7 @@
     "test:coupon-guest-ui": "node --import tsx tests/public/coupon-ui.ts",
     "test:public-map-ui": "node --import tsx tests/public/map-ui.ts --built",
     "test:staff-order": "node --experimental-test-module-mocks --import tsx tests/operations/staff-order-postgres.ts",
+    "test:asset-identity": "node --import tsx tests/operations/asset-identity-postgres.ts",
     "test:qr-lookup": "node --import tsx tests/operations/booking-ref-lookup-postgres.ts",
     "test:sales-stop": "node --import tsx tests/operations/sales-stop-postgres.ts",
     "test:sales-stop-ui": "node --import tsx tests/staff/sales-stop-ui.ts",

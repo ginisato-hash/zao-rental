@@ -143,7 +143,7 @@ export function StaffGroupDetail({locale:serverLocale,stamp,id,can}:{locale:Staf
    <div className="gx-left">
     <section className="sx-card gx-card" aria-labelledby="gx-members"><h2 id="gx-members">{tx('members')} <small>({g.memberCount})</small></h2>
      {variantsFailed&&<p className="sx-alert" role="alert">{tx('variantsFailed')}</p>}
-     <div className="ox-table-wrap"><table className="sx-table gx-table gx-mtable"><thead><tr><th>{tx('mNo')}</th><th>{tx('mName')}</th><th>{tx('mProfile')}</th><th>{tx('mItems')}</th><th>{tx('mFit')}</th><th>{tx('mStock')}</th><th>{tx('mPrice')}</th>{can.approve&&held&&<th><span className="gx-sr">{tx('mEdit')}</span></th>}</tr></thead>
+     <div className="ox-table-wrap" tabIndex={0} role="region" aria-label={tx('members')}><table className="sx-table gx-table gx-mtable"><thead><tr><th>{tx('mNo')}</th><th>{tx('mName')}</th><th>{tx('mProfile')}</th><th>{tx('mItems')}</th><th>{tx('mFit')}</th><th>{tx('mStock')}</th><th>{tx('mPrice')}</th>{can.approve&&held&&<th><span className="gx-sr">{tx('mEdit')}</span></th>}</tr></thead>
       <tbody>{d.members.map(m=>{const l=lineOf.get(m.id),ft=fitText(m.fit),staged=edits[m.id]??{};
        const opts=(it:Item)=>{const cur=variants.get(it.variantIds[0]??'');return cur?[...variants.values()].filter(v=>v.family===it.family&&v.age===cur.age&&v.tier===cur.tier):[];};
        return [<tr key={m.id} data-member={m.ordinal}>
@@ -165,7 +165,7 @@ export function StaffGroupDetail({locale:serverLocale,stamp,id,can}:{locale:Staf
     </section>
 
     {can.discount&&held&&<section className="sx-card gx-card" aria-labelledby="gx-disc"><h2 id="gx-disc">{tx('disc')}</h2><p className="sx-help">{tx('discHelp')}</p>
-     <div className="ox-table-wrap"><table className="sx-table gx-table gx-disc"><thead><tr><th>{tx('dMemberRow')}</th><th>{tx('dMethod')}</th><th>{tx('dValue')}</th><th>{tx('dReason')}</th></tr></thead><tbody>
+     <div className="ox-table-wrap" tabIndex={0} role="region" aria-label={tx('disc')}><table className="sx-table gx-table gx-disc"><thead><tr><th>{tx('dMemberRow')}</th><th>{tx('dMethod')}</th><th>{tx('dValue')}</th><th>{tx('dReason')}</th></tr></thead><tbody>
       {d.members.map(m=>{const r=dm[m.id]??EMPTY;return <tr key={m.id}><td>{m.ordinal} {m.label}</td>
        <td><select aria-label={`${tx('dMethod')} ${m.ordinal}`} value={r.method} onChange={e=>setRow(m.id,{method:e.target.value as Row['method']})}><option value="">{tx('dNone')}</option><option value="FIXED_JPY">{tx('dFixed')}</option><option value="PERCENT_BPS">{tx('dPercent')}</option></select></td>
        <td><input aria-label={`${tx('dValue')} ${m.ordinal}`} inputMode="decimal" disabled={!r.method} value={r.value} onChange={e=>setRow(m.id,{value:e.target.value})}/></td>

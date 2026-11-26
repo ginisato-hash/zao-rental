@@ -2,7 +2,7 @@
 .gx .gx-card{padding:16px 18px;margin-bottom:16px}
 .gx .gx-card h2{font-size:17px;margin:0 0 12px}
 .gx .gx-card h3{font-size:14px;margin:14px 0 6px}
-.gx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.gx-sr{position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .gx-sub{margin:-8px 0 12px;color:var(--sx-text2)}
 .gx-filters{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;margin-bottom:12px}
 .gx-filters label,.gx-field{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
@@ -16,7 +16,7 @@
 .gx-num{white-space:nowrap}
 .gx-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--sx-line);font-weight:600;white-space:nowrap}
 .gx-badge--REVIEW_HELD,.gx-badge--CHANGES_REQUESTED{border-color:var(--sx-blue);color:var(--sx-blue)}
-.gx-badge--CONFIRMED{border-color:#248a3d;color:#248a3d}
+.gx-badge--CONFIRMED{border-color:#1d7a34;color:#1d7a34}
 .gx-badge--RELEASED,.gx-badge--CANCELLED{color:var(--sx-text2)}
 .gx-badge--warn{border-color:var(--sx-warn);color:var(--sx-warn);white-space:normal}
 .gx-badge--soon{border-color:var(--sx-blue);color:var(--sx-blue)}
@@ -57,3 +57,4 @@
 .gx-mtable td .sx-btn{white-space:nowrap;padding:0 12px}
 @media (max-width:900px){.gx-layout{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){.gx-dl{grid-template-columns:minmax(0,1fr)}.gx-dl dt{margin-top:6px}.gx-money dd{text-align:left}}
+.gx .ox-table-wrap{position:relative}

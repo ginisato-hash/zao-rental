@@ -13,7 +13,9 @@ let app:Awaited<ReturnType<typeof startDevelopmentApp>>|undefined,failed=false,s
 const browser=await chromium.launch(),password=randomBytes(24).toString('base64url'),shots='.local/evidence/group-admin-ui';
 const errors:string[]=[];
 let lastPage:Page|undefined;
-async function check(name:string,fn:()=>Promise<void>){stage=name;let timer:NodeJS.Timeout|undefined;
+// `--only=<text>` runs just the checks whose name contains the text (debugging aid; the full run is the acceptance evidence).
+const only=process.argv.find(a=>a.startsWith('--only='))?.slice(7);
+async function check(name:string,fn:()=>Promise<void>){if(only&&!name.includes(only))return;stage=name;let timer:NodeJS.Timeout|undefined;
  try{await Promise.race([fn(),new Promise<never>((_,rej)=>{timer=setTimeout(()=>rej(new Error('CHECK_TIMEOUT 240s')),240000);})]);}
  catch(e){await lastPage?.screenshot({path:shots+'/failure.png',fullPage:true}).catch(()=>{});throw e;}finally{clearTimeout(timer);}
  count++;console.log('PASS '+name);}

@@ -42,7 +42,7 @@ REVIEW_HELD --confirm(ADMIN)--> CONFIRMED(現地精算・未精算) --cancelConf
 団体は `rental_bookings` を作らないため、booking起点の consumer（Square決済・照合・返金・custody・booking通知・顧客ID・キャンセル/返金・booking一覧・売上/入金集計）は団体を一切見ない（fail-closed）。在庫起点の consumer（capacity/availability/provisional/wear/transfer/売止/カレンダーの在庫占有）は `allocation_stage<>'PROVISIONAL'` の既存述語で団体の保護を見る。
 - 「支払不明」・売上入金: bookingもattemptも無いため発生しない。
 - 親の二重計上: 親1行が確定額(`confirmed_total_jpy`)を持つ。partは金額を持たない。
-- 貸出(custody)は `payment_state=SUCCESS` と booking を要求するため、団体の貸出は次の波（団体専用の貸出準備・入金確認経路）で接続する。**この土台だけでは団体の貸出はできない。**
+- 貸出(custody)は `payment_state=SUCCESS` と booking を要求する（通常予約は不変）。団体の貸出は団体専用の経路（確約根拠 GROUP_ADMIN_APPROVED・未精算でも、既存の物理割当・適合確認を満たす場合のみ）で接続した: `GROUP_CUSTODY.md`。
 
 ## 5. 試験表
 | 区分 | 試験 | 結果 |

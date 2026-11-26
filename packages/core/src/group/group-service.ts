@@ -300,6 +300,8 @@ export class GroupOrderService {
    const g=await this.lock(c,groupId);await this.authStaff(c,staff,'GROUP_CANCEL',[g.pickup_store,g.return_store]);
    return this.idem(c,staff.subject,input.requestKey,{op:'cancel',group:g.id,rev:input.expectedRevision,reason},async()=>{
     this.expectRevision(g,input.expectedRevision);this.expectStatus(g,'CONFIRMED');
+    // Same rule as an ordinary booking: nothing that is out on loan can be cancelled away; it must be returned first (the database repeats this).
+    if((await c.query("SELECT 1 FROM rental_loan_items l JOIN group_order_parts p ON p.id=l.group_part_id WHERE p.group_id=$1 AND l.state='OUT' LIMIT 1",[g.id])).rowCount)throw new GroupError('GROUP_LOANS_OUT',409);
     const settlement=await this.settlement(c,g);const parts=await this.parts(c,g.id);await this.releaseHolds(c,parts);
     const next=await this.bump(c,g,{status:'CANCELLED',cancelled_at:now,cancelled_by:staff.subject},{event:'GROUP_CANCELLED',reason,receivedJpyNeedsManualRefund:settlement.receivedJpy,...(message?{message}:{})});
     return {revision:next.revision,status:'CANCELLED' as const,receivedJpyNeedsManualRefund:settlement.receivedJpy,refundJpy:0};

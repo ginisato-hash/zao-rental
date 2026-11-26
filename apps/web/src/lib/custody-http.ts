@@ -15,12 +15,14 @@ export function custodyHandler(state:(h:Headers)=>Promise<StaffState>,service:(i
  if(request.method==='GET'){
   if(path==='/returns'&&[...url.searchParams.keys()].join() ==='store')return Response.json(await svc.returns(url.searchParams.get('store')!),{headers:privateHeaders});
   if(url.search)throw new FlowError('INVALID_QUERY',422);
-  const m=/^\/(booking|batch)\/([a-f0-9-]{36})$/.exec(path);if(!m)throw new FlowError('NOT_FOUND',404);
-  return Response.json(m[1]==='booking'?await svc.checkoutView(m[2]!):await svc.getBatch(m[2]!),{headers:privateHeaders});
+  // Group custody (confirmed, on-site-settled groups): by group number, the parent overview, or one part with its members.
+  const gn=/^\/group-number\/(G-\d{6})$/.exec(path);if(gn)return Response.json(await svc.groupByNumber(gn[1]!),{headers:privateHeaders});
+  const m=/^\/(booking|batch|group|group-part)\/([a-f0-9-]{36})$/.exec(path);if(!m)throw new FlowError('NOT_FOUND',404);
+  return Response.json(m[1]==='booking'?await svc.checkoutView(m[2]!):m[1]==='group'?await svc.groupOverview(m[2]!):m[1]==='group-part'?await svc.groupCheckoutView(m[2]!):await svc.getBatch(m[2]!),{headers:privateHeaders});
  }
  if(request.method!=='POST')throw new FlowError('METHOD_NOT_ALLOWED',405);if(request.headers.get('origin')!==origin)throw new FlowError('ORIGIN_REJECTED',403);if(url.search)throw new FlowError('INVALID_QUERY',422);
  const body=flowObject(await readJson(request),['requestKey','input']);flowId(body.requestKey);
  let result:unknown;
- switch(path){case '/complete-no-pickup':result=await svc.completeNoPickup(body.requestKey,body.input);break;case '/prepare':result=await svc.prepare(body.requestKey,body.input);break;case '/checkout':result=await svc.checkout(body.requestKey,body.input);break;case '/batch':{const v=flowObject(body.input,['store']);if(typeof v.store!=='string')throw new FlowError('INVALID_STORE',422);result=await svc.createBatch(body.requestKey,v.store);break;}case '/scan':result=await svc.scan(body.requestKey,body.input);break;case '/confirm':result=await svc.confirm(body.requestKey,body.input);break;case '/inspection':result=await svc.inspection(body.requestKey,body.input);break;default:throw new FlowError('NOT_FOUND',404);}
+ switch(path){case '/complete-no-pickup':result=await svc.completeNoPickup(body.requestKey,body.input);break;case '/prepare':result=await svc.prepare(body.requestKey,body.input);break;case '/checkout':result=await svc.checkout(body.requestKey,body.input);break;case '/group-prepare':result=await svc.groupPrepare(body.requestKey,body.input);break;case '/group-checkout':result=await svc.groupCheckout(body.requestKey,body.input);break;case '/batch':{const v=flowObject(body.input,['store']);if(typeof v.store!=='string')throw new FlowError('INVALID_STORE',422);result=await svc.createBatch(body.requestKey,v.store);break;}case '/scan':result=await svc.scan(body.requestKey,body.input);break;case '/confirm':result=await svc.confirm(body.requestKey,body.input);break;case '/inspection':result=await svc.inspection(body.requestKey,body.input);break;default:throw new FlowError('NOT_FOUND',404);}
  return Response.json(result,{headers:privateHeaders});
  }catch(e){if(!(e instanceof FlowError||e instanceof LedgerError))logUnexpected('custody',e);const err=e instanceof FlowError||e instanceof LedgerError?e:new FlowError('CUSTODY_OPERATION_FAILED',500);return Response.json({error:err.code},{status:err.status,headers:privateHeaders});}};}

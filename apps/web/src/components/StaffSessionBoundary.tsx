@@ -28,10 +28,10 @@ export async function endViewIfSessionIs(stamp:string){
 export function StaffSessionBoundary({stamp,children}:{stamp:string;children:ReactNode}){
  // DOC-01: 'ready' is bound to the stamp the server verified. When the stamp changes, the previous ready never shows the
  // children: they stay hidden until this stamp itself is confirmed.
- const [verified,setVerified]=useState<{stamp:string;state:'checking'|'ready'|'ended'}>({stamp,state:'checking'});
+ const [verified,setVerified]=useState<{stamp:string;state:'checking'|'ready'|'ended';wasReady:boolean}>({stamp,state:'checking',wasReady:false});
  const en=useContext(StaffLocaleContext)?.locale==='en';
  useEffect(()=>{
-  const setState=(next:'checking'|'ready'|'ended')=>setVerified({stamp,state:next});
+  const setState=(next:'checking'|'ready'|'ended')=>setVerified(v=>({stamp,state:next,wasReady:next==='ready'||(next==='checking'&&v.stamp===stamp&&v.wasReady)}));
   let alive=true,closed=false,generation=0;const channel=new BroadcastChannel('zao-rental-session');
   const end=()=>{closed=true;generation++;setState('ended');};
   async function check(hide=false){if(closed||!alive)return;const ticket=++generation;if(hide)setState('checking');
@@ -49,5 +49,9 @@ export function StaffSessionBoundary({stamp,children}:{stamp:string;children:Rea
 
  const state=verified.stamp===stamp?verified.state:'checking';
  if(state==='ended')return <main><h1>{en?'Check your session':'セッションを確認してください'}</h1><p>{en?'This screen was closed because you signed out, the session expired or your permissions changed.':'ログアウト、期限切れ、または権限の変更により画面を閉じました。'}</p><a href="/staff/login">{en?'Go to sign-in':'ログイン画面へ'}</a> · <a href="/staff/logout">{en?'Confirm sign-out':'ログアウトを確認'}</a></main>;
- return state==='ready'?children:<main><p role="status">{en?'Checking your session…':'セッションを確認中…'}</p></main>;
+  // Re-verification (another tab opened, a pageshow, a visibility change) HIDES the screen but must not destroy it: the children stay mounted, so typed
+ // text and requests in flight survive a check that succeeds. Anything not yet confirmed for THIS stamp (first load, a new stamp) still renders only the
+ // placeholder and never the children, and a failed check unmounts them ('ended'), so the no-JS and stamp-change guarantees are unchanged.
+ const kept=verified.stamp===stamp&&verified.wasReady;
+ return <>{state!=='ready'&&<main><p role="status">{en?'Checking your session…':'セッションを確認中…'}</p></main>}{(state==='ready'||(state==='checking'&&kept))&&<div hidden={state!=='ready'} style={{display:state==='ready'?'contents':'none'}}>{children}</div>}</>;
 }

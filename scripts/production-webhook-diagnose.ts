@@ -16,6 +16,7 @@ export const QUERIES:Q[]=[
  {name:'completed_without_provider_event',sql:"SELECT count(*)::int AS n FROM rental_payment_attempts a WHERE a.state='COMPLETED' AND NOT EXISTS(SELECT 1 FROM rental_provider_events e WHERE e.attempt_id=a.id)"},
  {name:'provider_events_by_outcome',sql:"SELECT outcome,count(*)::int AS n,min(received_at)::date AS first_day,max(received_at)::date AS last_day FROM rental_provider_events GROUP BY 1 ORDER BY 1"},
  {name:'refund_requests_by_state',sql:"SELECT state,count(*)::int AS n,min(created_at)::date AS first_day,max(created_at)::date AS last_day FROM ops_refund_requests GROUP BY 1 ORDER BY 1"},
+ {name:'cancellation_refunds_by_state',sql:"SELECT state,count(*)::int AS n,min(created_at)::date AS first_day,max(created_at)::date AS last_day FROM booking_cancellation_refunds GROUP BY 1 ORDER BY 1"},
  {name:'receiver_role',sql:"SELECT r.rolname,r.rolcanlogin,has_function_privilege(r.oid,'square_webhook.receive(text,text,text,text,text,text)','EXECUTE') AS can_receive FROM pg_roles r WHERE r.rolname LIKE '%pay_receipt%'"},
 ];
 export async function main(){
@@ -23,9 +24,17 @@ export async function main(){
  if(!existsSync(NEON_BIN))throw new Error('PRODUCTION_INSTALL_NEON_CLI_MISSING');
  const session=await openOwnerSession(neonCliPort(NEON_BIN));
  try{
-  await session.client.query('BEGIN READ ONLY');const out:Record<string,unknown>={};
-  for(const q of QUERIES){try{out[q.name]=(await session.client.query(q.sql)).rows;}catch(e){out[q.name]={error:String((e as {code?:string}).code??'ERR')};}}
+  await session.client.query('BEGIN READ ONLY');const out:Record<string,unknown>={};let failed=0;
+  for(const q of QUERIES){
+   // A failed statement aborts a PostgreSQL transaction (later statements would all fail with 25P02): each query gets its own savepoint and a failure is reported explicitly.
+   await session.client.query('SAVEPOINT q');
+   try{out[q.name]=(await session.client.query(q.sql)).rows;await session.client.query('RELEASE SAVEPOINT q');}
+   catch(e){failed++;out[q.name]={error:String((e as {code?:string}).code??'ERR')};await session.client.query('ROLLBACK TO SAVEPOINT q');}
+  }
   await session.client.query('ROLLBACK');
+  // last_error values are the fixed CHECK enum of square_webhook.inbox (never free text), so the grouped output is safe.
+  if(failed)process.exitCode=1;
+  out.queriesFailed=failed;
   console.log(JSON.stringify({sourceSha:head,diagnostic:'WEBHOOK_PAYMENT_READ_ONLY',...out}));
  }finally{await session.close();}
 }

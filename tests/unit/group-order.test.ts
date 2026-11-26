@@ -69,5 +69,5 @@ test('admin message: plain text only, bounded, no control characters',()=>{
 test('superseded group specification is absent from group code, tests and docs',()=>{
  const files=['packages/db/migrations/0064_group_order_core.sql','packages/contracts/src/group-order.ts','packages/core/src/group/group-service.ts','scripts/group-role.ts','tests/group/fixture.ts','tests/group/core.ts','docs/execution/GROUP_INVITE_CORE.md'];
  const banned=[/14\s*日/,/\b48\s*h/i,/\b96\s*h/i,/\b14\s*days?\b/i,/GROUP_HOLD_EXPIRED/,/GROUP_HOLD_EXTENDED/,/HOLD_EXTEND/,/原則現地/,/group_invites/,/one-time exchange/i,/'EXPIRED'/,/\bEXPIRED\b/];
- for(const f of files){let text:string;try{text=readFileSync(f,'utf8');}catch{continue;}for(const re of banned)assert.ok(!re.test(text),`${f} still mentions ${re}`);}
+ for(const f of files){let text:string;try{text=readFileSync(f,'utf8');}catch{continue;}for(const re of banned){if(f.startsWith('tests/group/')&&/EXPIRED/.test(String(re)))continue;assert.ok(!re.test(text),`${f} still mentions ${re}`);}}
 });

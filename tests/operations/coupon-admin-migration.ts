@@ -25,8 +25,8 @@ try{
  const cid=randomUUID();
  await asActor(owner,q=>q('INSERT INTO coupon_versions(id,code,terms) VALUES($1,$2,$3)',[cid,'SYNTHETIC-A',JSON.stringify(terms('SYNTHETIC-A'))]));
 
- await check('0063 is the last registered migration and is applied exactly once',async()=>{
-  assert.equal(migrationPlan.at(-1)!.id,'0063');
+ await check('0063 stays registered in order and is applied exactly once',async()=>{
+  assert.deepEqual(migrationPlan.slice(-2).map(m=>m.id),['0063','0064']);
   assert.deepEqual((await owner.query("SELECT id FROM foundation_migrations WHERE id='0063'")).rows,[{id:'0063'}]);
  });
  await check('a coupon without events is active (every pre-0063 coupon keeps working)',async()=>{

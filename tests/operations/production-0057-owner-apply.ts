@@ -26,7 +26,7 @@ try{
  await db.pool.query(`CREATE DATABASE ${DB} OWNER ${OWNER}`);
  const owner=connect(OWNER,ownerPassword),observer=connect(db.identity.user,superPassword);
  const full=await productionFoundationPlan(DB),entries=full.bootstrap.entries;
- assert.equal(entries.length,63);assert.equal(entries[62]!.id,'0063');assert.equal(entries[61]!.id,'0062');assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
+ assert.equal(entries.length,64);assert.equal(entries[63]!.id,'0064');assert.equal(entries[62]!.id,'0063');assert.equal(entries[61]!.id,'0062');assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
  stage='registry56 production topology';
  await runFoundationPlan(owner,{...full,bootstrap:{...full.bootstrap,entries:entries.slice(0,56)}});
  const q=async(sql:string,params:unknown[]=[])=>(await observer.query(sql,params)).rows;
@@ -196,7 +196,7 @@ try{
   await ca.query('BEGIN');try{await ca.query('ALTER TABLE coupon_status_events DISABLE TRIGGER coupon_status_immutable');await assert.rejects(couponAdminCommittedProof(ca,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/);}finally{await ca.query('ROLLBACK');}
   await couponAdminCommittedProof(ca,OWNER);
  }finally{ca.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.map(e=>({id:e.id,checksum:e.checksum})));
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,63).map(e=>({id:e.id,checksum:e.checksum})));// 0064 (group order core) has no operator installer in this change; it is applied by the release procedure
  assert.deepEqual(await guard(),before63);
  const roles63After=await roles();assert.deepEqual({roles:roles63After.roles,members:roles63After.members},{roles:roles63.roles,members:roles63.members});
  const owners63=roles63After.owners.filter((o:{k:string})=>!roles63.owners.some((p:{k:string})=>p.k===o.k));

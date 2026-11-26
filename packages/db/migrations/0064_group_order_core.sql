@@ -360,9 +360,11 @@ BEGIN
 END$$;
 CREATE TRIGGER group_order_event AFTER INSERT OR UPDATE ON group_orders FOR EACH ROW EXECUTE FUNCTION group_order_event();
 
-CREATE FUNCTION group_event_outbox() RETURNS trigger LANGUAGE plpgsql AS $$DECLARE g group_orders;BEGIN
+CREATE FUNCTION group_event_outbox() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$DECLARE g group_orders;BEGIN
  IF NEW.event_type NOT IN ('GROUP_REVIEW_HELD','GROUP_CONFIRMED','GROUP_CHANGES_REQUESTED','GROUP_RELEASED','GROUP_CANCELLED') THEN RETURN NULL;END IF;
  SELECT * INTO g FROM group_orders WHERE id=NEW.group_id;
+ -- A newer state makes every not-yet-delivered older notice stale: it is suppressed, never delivered late (no "currently held" after a release).
+ UPDATE group_notification_outbox SET status='SUPPRESSED' WHERE group_id=NEW.group_id AND status IN ('PENDING','RETRYABLE_FAILURE') AND event_id<NEW.id;
  INSERT INTO group_notification_outbox(group_id,event_id,event_type,dedupe_key,locale,template_version,admin_message,next_attempt_at)
  VALUES(NEW.group_id,NEW.id,NEW.event_type,NEW.group_id||':'||NEW.event_type||':'||NEW.revision,g.locale,'GROUP_NOTIFICATION_V1',NEW.payload->>'message',clock_timestamp())
  ON CONFLICT(dedupe_key) DO NOTHING;

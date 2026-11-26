@@ -3,7 +3,6 @@ import {randomUUID} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 import {Pool} from 'pg';
 import {groupFixture,skiMember,PERIOD} from './fixture';
-import {HoldService} from '../../packages/core/src/inventory/hold-service';
 import {skiSet} from '../inventory/fixture';
 import {loadStaff} from '../../packages/auth/src/staff-auth';
 import type {Adjustment} from '../../packages/contracts/src/group-order';
@@ -105,7 +104,7 @@ try{
   await release(big.groupId,big.revision);
  });
 
- await check('time: 14d/48h/96h and beyond, ordinary expiry/planning run, group protection continues; only ordinary HOLD expires after 600s',async()=>{
+ await check('time: weeks past any former deadline, ordinary expiry/planning run, group protection continues; only ordinary HOLD expires after 600s',async()=>{
   const g=await x.held(token,5,'SYNTHETIC long hold');const plain=await normalHold('2035-02-20');assert.equal(plain.result,'CREATED');
   const before=await groupClaims();
   for(const t of ['2035-01-01T10:11:00+09:00','2035-01-03T10:00:00+09:00','2035-01-05T10:00:00+09:00','2035-01-16T10:00:00+09:00','2035-02-01T10:00:00+09:00']){
@@ -133,6 +132,7 @@ try{
   assert.equal(await groupClaims(),before-25*3);
   const states=(await q("SELECT h.state,(SELECT count(*) FROM inventory_claims c WHERE c.hold_id=h.id AND c.active) n FROM inventory_holds h JOIN group_order_parts p ON p.hold_id=h.id WHERE p.group_id=$1",[g.groupId])).rows;assert.ok(states.every(s=>s.state==='RELEASED'&&Number(s.n)===0));
   assert.equal((await outbox(g.groupId,'GROUP_RELEASED')).length,1);
+  assert.deepEqual((await q('SELECT event_type,status FROM group_notification_outbox WHERE group_id=$1 ORDER BY event_id',[g.groupId])).rows,[{event_type:'GROUP_REVIEW_HELD',status:'SUPPRESSED'},{event_type:'GROUP_RELEASED',status:'PENDING'}],'an undelivered older notice is suppressed, never delivered late');
   await rejects(release(g.groupId,r1.revision),'INVALID_STATE');assert.equal((await outbox(g.groupId,'GROUP_RELEASED')).length,1);
   await rejects(x.svc.release(x.admin,g.groupId,{...input,reason:'different payload same key'}),'IDEMPOTENCY_MISMATCH');
  });
@@ -203,7 +203,7 @@ try{
   const dec=await x.svc.requestFromCustomer(g.owner,g.groupId,{requestKey:randomUUID(),kind:'DECLINE',body:'SYNTHETIC decline wish'});assert.equal(dec.statusUnchanged,'REVIEW_HELD');assert.equal(await groupClaims(),claims);
   const cr=await x.svc.requestChanges(x.admin,g.groupId,{requestKey:randomUUID(),expectedRevision:g.revision,message:'SYNTHETIC please adjust sizes'});assert.equal(cr.status,'CHANGES_REQUESTED');assert.equal(await groupClaims(),claims,'change request keeps the hold');
   assert.equal((await outbox(g.groupId,'GROUP_CHANGES_REQUESTED')).length,1);
-  const members=Array.from({length:8},(_,i)=>({...skiMember('n'+i),memberId:i<5?g.memberIds[i]!:undefined}));
+  const members=Array.from({length:8},(_,i)=>({...skiMember('n'+i),...(i<5?{memberId:g.memberIds[i]!}:{})}));
   // failing target (injected at part 1 of the new generation): the old reservation must be intact afterwards
   await q("CREATE FUNCTION group_test_fail2() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.generation>1 THEN RAISE EXCEPTION 'INJECTED_FAILURE' USING ERRCODE='23514';END IF;RETURN NEW;END$$");
   await q('CREATE TRIGGER group_test_fail2 BEFORE INSERT ON group_order_parts FOR EACH ROW EXECUTE FUNCTION group_test_fail2()');

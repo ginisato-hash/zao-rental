@@ -17,13 +17,13 @@ const browser=await chromium.launch();let app:Awaited<ReturnType<typeof startFlo
 const check=async(name:string,fn:()=>Promise<void>)=>{stage=name;await fn();count++;console.log('PASS '+name);};
 const terms=(code:string,over:Record<string,unknown>={})=>({code,validFrom:'2034-12-01T00:00:00+09:00',validUntil:'2035-12-31T00:00:00+09:00',storeBasis:'PICKUP_STORE' as const,stores:['MOUNTAIN_BASE','ONSEN_BASE'],products:PRICE_PRODUCTS.map(p=>p.key),kind:'PERCENT_BPS' as const,value:1000,minimumJpy:0,minimumBasis:'CART_SUBTOTAL' as const,maximumDiscountJpy:100000,advanceCombination:'DENY' as const,maxActiveReservations:null,...over});
 /** Dates -> sizes -> final review (no coupon), returns on the step-2 page ready to continue. */
-async function toSizes(page:Page,locale:'ja'|'en'){
+async function toSizes(page:Page,locale:'ja'|'en',ready=true){
  const t=(j:string,e:string)=>locale==='ja'?j:e;await page.goto('/'+locale+'/book');
  await expect(page.getByLabel(t('利用開始日','Start date'),{exact:true})).toBeEnabled();
  await page.getByLabel(t('利用開始日','Start date'),{exact:true}).fill('2035-01-05');await page.getByLabel(t('利用終了日','End date'),{exact:true}).fill('2035-01-05');
  await page.getByRole('button',{name:'CONTINUE',exact:true}).click();await fillGuestProfile(page,locale);
  await page.getByRole('button',{name:t('候補と参考料金を確認','Review sizes and estimates'),exact:true}).click();
- await page.getByRole('radio',{name:t('おすすめ','Recommended')}).first().check();await page.getByRole('checkbox',{name:t('全員の内容を確認しました','I have checked everyone’s selections')}).check();
+ if(ready){await page.getByRole('radio',{name:t('おすすめ','Recommended')}).first().check();await page.getByRole('checkbox',{name:t('全員の内容を確認しました','I have checked everyone’s selections')}).check();}
 }
 let held:{context:BrowserContext;page:Page}|undefined;
 const coupon=(page:Page)=>page.getByTestId('coupon-box');
@@ -86,6 +86,16 @@ try{
   await expect(page.getByRole('heading',{name:'予約が確定しました',exact:true})).toBeVisible().catch(async e=>{throw new Error('NOT_CONFIRMED alert='+await page.locator('.guest-alert').allInnerTexts()+' msg='+e.message.slice(0,80));});await expect(page.locator('.guest-result-total')).toContainText('6,750');
   const row=(await app!.db.pool.query("SELECT (q.snapshot->>'totalJpy')::int total,(q.snapshot->>'couponDiscountJpy')::int disc,q.coupon_id FROM rental_bookings b JOIN price_quotes q ON q.id=b.quote_id ORDER BY b.created_at DESC LIMIT 1")).rows[0];
   assert.equal(row.total,6750);assert.equal(row.disc,750);assert.ok(row.coupon_id);
+  await context.close();
+ });
+
+ await check('JA: Apply is pressable before a length is chosen or the box is ticked; it asks for a length, then applies without the check box',async()=>{
+  const {context,page}=await mk(390,'ja-JP');await toSizes(page,'ja',false);
+  const apply=coupon(page).getByRole('button',{name:'適用',exact:true});
+  await coupon(page).getByLabel(/クーポンコード/).fill('UIGOOD10');await expect(apply).toBeEnabled();
+  await apply.click();await expect(page.getByText('長さを1つ選んでください。').first()).toBeVisible();await expect(page.getByTestId('coupon-applied')).toHaveCount(0);
+  await page.getByRole('radio',{name:'おすすめ'}).first().check();await apply.click();
+  await expect(page.getByTestId('coupon-applied')).toBeVisible();
   await context.close();
  });
  console.log('Coupon guest UI '+count+' cases passed; synthetic coupons, development payment stub only.');

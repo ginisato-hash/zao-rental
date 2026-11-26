@@ -21,7 +21,7 @@ export const COUPON_FAILURES_PER_WINDOW=10;
 const COUPON_CODE_REVEALING=new Set(['COUPON_NOT_FOUND','COUPON_NOT_APPLICABLE','COUPON_INACTIVE','COUPON_EXPIRED','COUPON_LIMIT_REACHED','DISCOUNTS_NOT_COMBINABLE','PROMOTION_POLICY_UNRESOLVED','WEAR_COUPON_COMBINATION_UNAPPROVED','DISCOUNT_WINDOW_CLOSED']);
 const guestCouponRejection=()=>new HoldError('COUPON_NOT_APPLICABLE',422);
 /** Maps any code-revealing coupon failure to the identical guest response (same code, same status); other errors pass through. */
-export async function guestCouponUniform<T>(fn:()=>Promise<T>):Promise<T>{try{return await fn();}catch(e){if(COUPON_CODE_REVEALING.has((e as {code?:string}|null)?.code??''))throw guestCouponRejection();throw e;}}
+export async function guestCouponUniform<T>(fn:()=>Promise<T>):Promise<T>{try{return await fn();}catch(e){const code=(e as {code?:string}|null)?.code??'';if(COUPON_CODE_REVEALING.has(code)){/* Operator-only: the guest still sees one uniform message; the fixed internal reason (never the typed code) goes to the server log. */console.info(JSON.stringify({event:'guest_coupon_rejected',reason:code}));throw guestCouponRejection();}throw e;}}
 /** Peer identity comes from a configured trusted ingress/socket adapter, NEVER arbitrary request headers. */
 export function guestPeerKey(verifiedAddress:string,serverKey:string){if(!verifiedAddress||verifiedAddress.length>200||serverKey.length<32)throw new HoldError('TRUSTED_INGRESS_REQUIRED',503);return createHmac('sha256',serverKey).update('guest-peer-v1\0').update(verifiedAddress).digest('hex');}
 export class GuestSecurity{

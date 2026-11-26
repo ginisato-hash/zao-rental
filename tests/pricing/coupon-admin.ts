@@ -119,6 +119,13 @@ try{
   await assert.rejects(x.quotes.preview(input('SYNTH-DEL')),{code:'COUPON_INACTIVE'});await assert.rejects(x.quotes.createCoupon(randomUUID(),{...base,code:'SYNTH-DEL'}),{code:'COUPON_CODE_EXISTS'});
   const nonAdmin=as(await staff('STAFF','del-staff@example.test'));await assert.rejects(nonAdmin.deleteCoupon(await make({code:'SYNTH-DEL2'})),{status:403});
  });
+ await check('delete refuses any recorded use, including cancelled/expired history, and stays refused after the coupon is disabled (TD H1)',async()=>{
+  const id=await make({code:'SYNTH-DEL-HIST'});
+  await x.quotes.create(randomUUID(),input('SYNTH-DEL-HIST'));
+  await assert.rejects(x.quotes.deleteCoupon(id),{code:'COUPON_IN_USE',status:409});
+  await x.quotes.setCouponActive(id,{active:false});await assert.rejects(x.quotes.deleteCoupon(id),{code:'COUPON_IN_USE'});
+  const listed=(await x.quotes.listCoupons() as {coupons:{id:string;active:boolean}[]}).coupons.find(c=>c.id===id);assert.ok(listed&&listed.active===false,'a used coupon stays listed (disabled, not deleted)');
+ });
  console.log(`COUPON admin real PostgreSQL: ${passed} passed; no skipped; synthetic data only.`);
 }catch(e){console.error('COUPON_ADMIN_FAILED '+stage+' '+((e as {code?:string}).code??(e as Error).name));if(e instanceof assert.AssertionError)console.error(JSON.stringify({actual:e.actual,expected:e.expected}));console.error((e as Error).stack?.split('\n').slice(0,6).join('\n'));failed=true;}finally{await x.close();console.log('Owned coupon admin PostgreSQL stopped.');}
 if(failed)process.exit(1);

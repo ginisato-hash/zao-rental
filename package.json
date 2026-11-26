@@ -34,6 +34,7 @@
     "test:coupon-admin": "node --import tsx tests/pricing/coupon-admin.ts",
     "test:coupon-booking": "node --import tsx tests/flow/coupon-booking.ts",
     "test:coupon-hardening": "node --import tsx tests/flow/coupon-hardening.ts",
+    "test:coupon-history": "node --import tsx tests/flow/coupon-history.ts",
     "test:pricing": "node --import tsx tests/pricing/real-postgres.ts && node --import tsx tests/pricing/commercial-postgres.ts && node --import tsx tests/pricing/season-boundaries.ts",
     "test:quotes-ui": "node --import tsx tests/pricing/normal-ui.ts",
     "test:recommendation": "node --import tsx tests/recommendation/real-postgres.ts",

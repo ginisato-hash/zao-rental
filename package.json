@@ -113,6 +113,7 @@
     "production:install-coupon-admin-migration": "node --import tsx scripts/production-install-coupon-admin.ts migrate",
     "production:install-coupon-admin-grants": "node --import tsx scripts/production-install-coupon-admin.ts grants",
     "production:verify-coupon-admin": "node --import tsx scripts/production-install-coupon-admin.ts verify",
+    "production:attest-release": "node --import tsx scripts/production-release-attest.ts",
     "production:worker-bind-cron-secret": "node --import tsx scripts/production-worker-credential.ts bind-cron-secret",
     "production:worker-dormant-proof": "node --import tsx scripts/production-worker-dormant-proof.ts",
     "production:worker-roles-provision": "node --import tsx scripts/production-worker-credential.ts provision",

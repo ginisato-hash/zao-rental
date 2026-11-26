@@ -1,21 +1,28 @@
 # Production release attestation (Issue #47 P0-B)
 
-Facts this procedure ties together for one release: accepted main commit, clean tree, linked Vercel project, the two Production env values
-(`PRODUCTION_RELEASE_ID`, `PRODUCTION_PUBLICATION_APPROVAL`), the deployment (project, target, READY, creation time), the formal alias and the
-build id the running deployment reports. Values are compared in memory only; the report has fixed reason codes, ids and times.
+Read-only checks that tie one release together: the freshly fetched accepted main commit, a clean tree, the PINNED Vercel team/project (constants in
+`scripts/production-release-attest.ts`; the local `.vercel` link and the deployment must each equal the pin, never each other), the two Production env
+values (`PRODUCTION_RELEASE_ID`, `PRODUCTION_PUBLICATION_APPROVAL`, compared in memory, never printed), the deployment (target, READY, creation time after
+both writes), the formal alias, and the build digest the running deployment reports.
 
-Deploy (from a clean checkout equal to origin/main; after the two `vercel env add ... --force` updates):
+Artifact identity: `next.config.ts` computes a sha256 manifest over the source files being compiled (`scripts/lib/build-manifest.cjs`: apps/web/src, public,
+config, packages, lockfile, package.json, vercel.json ...) INSIDE the build and inlines it; `/api/release` returns it as `buildDigest`. The operator recomputes
+the same digest from the clean checkout. A deployment built from other sources cannot report the operator's digest, whatever was passed at deploy time.
+The manifest includes its own calculator (`scripts/lib/build-manifest.cjs`) and `next.config.ts`. Inputs outside the listed roots (ignored/generated files, installed dependencies beyond the lockfile) are NOT covered: stated limit.
+Limit, stated plainly: this proves the compiled source set, not Vercel's runtime bytes; the approval JSON is checked against a pinned approver, state, origin
+and release id, but the Owner GO itself (a chat decision) cannot be verified mechanically.
 
+Procedure (clean checkout equal to origin/main):
+
+    # 1. env update + stage (no domain)
     vercel deploy --prod --skip-domain --yes -e RELEASE_BUILD_SHA=<main sha>
+    npm run production:attest-release -- stage <dpl_id>   # exit 0 only on PASS; alias must STILL be on the old deployment
+    # 2. two verification windows, then promote only after the stage PASS
+    vercel promote <dpl_id> --yes
+    npm run production:attest-release -- post <dpl_id>    # alias must now be the candidate
 
-`-e` is per deployment and immutable, so `/api/release` of that deployment reports the commit it was staged for. Then, before AND after promote:
-
-    npm run production:attest-release -- <dpl_id>      # exit 0 only on PASS; read-only
-
-Reason codes (any one = FAIL): SOURCE_NOT_ACCEPTED_MAIN, WORKTREE_DIRTY, PROJECT_LINK_MISMATCH, RELEASE_ID_MISMATCH, APPROVAL_MISMATCH,
+Record the alias deployment id shown at stage time (the previous deployment) before promoting; after promote the alias must be the candidate and must differ from that recorded id.
+Never promote after a stage FAIL. Reason codes: SOURCE_NOT_ACCEPTED_MAIN, WORKTREE_DIRTY, PROJECT_LINK_MISMATCH, RELEASE_ID_MISMATCH, APPROVAL_MISMATCH,
 DEPLOYMENT_WRONG_PROJECT, DEPLOYMENT_NOT_PRODUCTION, DEPLOYMENT_NOT_READY, RELEASE_ID_NOT_BEFORE_DEPLOYMENT, APPROVAL_NOT_BEFORE_DEPLOYMENT,
-ALIAS_NOT_THIS_DEPLOYMENT (expected before promote), RUNTIME_SHA_MISMATCH, DEPLOYMENT_EVIDENCE_MISSING.
-
-Limits stated plainly: the two env values are read from the project's current configuration (not a per-deployment snapshot); the attestation
-requires both to have been written before the deployment was created and never changed after it matters only through that ordering check.
-Releases before this procedure (PR #78-#81) have no runtime build id and stay UNVERIFIED for that part; nothing is reconstructed.
+STAGE_ALIAS_ALREADY_MOVED_OR_UNKNOWN (stage), ALIAS_NOT_THIS_DEPLOYMENT (post), RUNTIME_SHA_MISMATCH, BUILD_DIGEST_MISMATCH, DEPLOYMENT_EVIDENCE_MISSING.
+Releases before this procedure (PR #78-#82) have no runtime digest and stay UNVERIFIED for that part; nothing is reconstructed.

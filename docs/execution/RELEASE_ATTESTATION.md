@@ -6,9 +6,10 @@ values (`PRODUCTION_RELEASE_ID`, `PRODUCTION_PUBLICATION_APPROVAL`, compared in 
 both writes), the formal alias, and the build digest the running deployment reports.
 
 Artifact identity: `next.config.ts` computes a sha256 manifest over the source files being compiled (`scripts/lib/build-manifest.cjs`: apps/web/src, public,
-config, packages, lockfile, package.json, vercel.json ...) INSIDE the build and inlines it; `/api/release` returns it as `buildDigest`. The operator recomputes
+config, packages, lockfile, package.json ...; NOT vercel.json, see limits) INSIDE the build and inlines it; `/api/release` returns it as `buildDigest`. The operator recomputes
 the same digest from the clean checkout. A deployment built from other sources cannot report the operator's digest, whatever was passed at deploy time.
 The manifest includes its own calculator (`scripts/lib/build-manifest.cjs`) and `next.config.ts`. Inputs outside the listed roots (ignored/generated files, installed dependencies beyond the lockfile) are NOT covered: stated limit.
+vercel.json is excluded: Vercel rewrites it at upload, so its bytes differ between the checkout and the build (measured: all other 13 groups matched exactly). Build settings in it are therefore NOT covered.
 Limit, stated plainly: this proves the compiled source set, not Vercel's runtime bytes; the approval JSON is checked against a pinned approver, state, origin
 and release id, but the Owner GO itself (a chat decision) cannot be verified mechanically.
 

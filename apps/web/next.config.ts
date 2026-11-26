@@ -1,8 +1,17 @@
 import type { NextConfig } from 'next';
+import {existsSync} from 'node:fs';
+import {join} from 'node:path';
+import {createRequire} from 'node:module';
+
+// Digest of the sources this build compiles (see scripts/lib/build-manifest.cjs); inlined so /api/release can report it. Not an operator-supplied value.
+const buildRoot=existsSync(join(process.cwd(),'apps/web/next.config.ts'))?process.cwd():join(process.cwd(),'..','..');
+// Resolved from the build root at run time. createRequire works whether this file is loaded as ESM (tests, tsx) or compiled to CJS by Next, and needs no import.meta.
+const {buildDigestFromTree}=createRequire(join(buildRoot,'package.json'))('./scripts/lib/build-manifest.cjs') as {buildDigestFromTree:(root:string)=>string};
 const config: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages:['@node-rs/argon2'],
   logging: false,
+  env:{RELEASE_BUILD_DIGEST:buildDigestFromTree(buildRoot)},
   async headers() {
     // Page indexing is decided per request by proxy.ts from PublicationAuthority (noindex unless
     // installed, exact origin and allowlisted path). A static page-wide X-Robots-Tag here would

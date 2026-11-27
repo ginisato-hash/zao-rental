@@ -197,7 +197,9 @@
     "test:preparation-ui": "node --import tsx tests/preparation/customer-ui.ts && node --import tsx tests/preparation/staff-ui.ts",
     "production:cutover-bindings-check": "node --import tsx scripts/production-cutover-bindings-check.ts",
     "production:cutover-prewindow-check": "node --import tsx scripts/production-cutover-run.ts prewindow-check",
-    "production:cutover-live-binding": "node --import tsx scripts/production-cutover-live-binding.ts"
+    "production:cutover-live-binding": "node --import tsx scripts/production-cutover-live-binding.ts",
+    "production:cutover-backup-evidence": "node --import tsx scripts/production-cutover-backup-evidence-run.ts",
+    "production:cutover-install-target-grants": "node --import tsx scripts/production-cutover-run.ts install-target-grants"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

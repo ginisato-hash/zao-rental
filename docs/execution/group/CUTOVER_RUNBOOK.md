@@ -78,3 +78,27 @@
 - SQL の `CREATE DATABASE` で作った DB への Neon API の接続 URI（`live-binding` が窓の前に確認する。取得できなければ窓に入らず、その範囲で正規経路を直す）。
 - 実データ量での所要時間、Vercel の資格情報切替と公開の実機確認。
 - 候補の**配信側の束縛**（新 DB の資格情報でアプリが実際に接続できること）は、実行時ロールが LOGIN になる窓の中でしか証明できない。`live-binding` はそれの代わりではない。
+
+## 付録A. 窓前に追加した確認の範囲と、証明しないこと（TD #7223305214 / #7223508730）
+
+### A-1. 独立復旧点（`production:cutover-backup-evidence`、prewindow-check で毎回オンライン再検証）
+- **証明すること:** 定期バックアップ（GitHub Actions `production-backup.yml`）の直近の成功 run の `Run production backup` ステップが、**移行 0064 のコミット後に開始**し（= そのダンプは registry 64 を含む）、2 時間以内に完了し、暗号化オブジェクトの命名が、過去に復元ドリルが PASS した `restore-pass-pre-0064` と同一のパイプライン・同一形式であること。
+- **証明しないこと:** **この run のバックアップを実際に復元したことは証明しない。** 復元には Owner の age 鍵が要り、再要求しない。復元の裏付けは、過去の pre-0064 ドリル（同一パイプライン）だけである。証跡ファイルの `restoreTested:false` がそれを明示する。バックアップ job の成功時刻だけを「全件復元できる」証拠とは扱わない。
+- 保存ファイルだけでは信用しない。手書きのファイル、別の run ID、失敗した run、0064 のコミット時刻が読めない場合は ABSENT で、prewindow は READY にならない。同一クラスタに残したソースの保持（RETAINED_SOURCE_COPY）は独立復旧点に数えない。
+
+### A-2. 実接続の証明の範囲（prewindow の READY が意味すること）
+- `production:cutover-live-binding` は **新 DB への owner 接続（host・role・DB・TLS）だけ**を証明する（`scope: TARGET_OWNER_CONNECTION_ONLY`）。
+- 実行時ロール、receiver、worker、backup の資格情報での実接続は、ロールが NOLOGIN の間は確認できない（`runtimeCredentialsLiveBinding: NOT_VERIFIABLE_BEFORE_WINDOW(NOLOGIN)`）。候補 artifact の配信も窓前には確認できない。
+- これらは**窓の中**で、LOGIN 付与の直後に stage attestation → 候補への 2 回の確認 → promote → post attestation で証明する。prewindow の READY は「窓前に確認できる項目が全部成立した」だけを意味し、全サービスの実接続 PASS を意味しない。
+
+### A-3. 権限（ACL）の差分と `install-target-grants`
+- 新 DB の bootstrap（`production-app-roles` の現行計画）と実本番の権限には、3 種類の差がある。**合計 29 件（source のみ 25、target のみ 4）**。
+  1. **Neon 基盤の 14 件（説明のみ、適用しない）:** neon_superuser の database 権限 CONNECT/CREATE/TEMPORARY の 3、cloud_admin の public 既定権限（sequence の SELECT/UPDATE/USAGE の 3、relation の DELETE/INSERT/MAINTAIN/REFERENCES/SELECT/TRIGGER/TRUNCATE/UPDATE の 8）。Neon 自身が作る DB にだけ付く権限で、SQL の `CREATE DATABASE` では付かず、owner は付与できず、実行時の経路が使わない。説明は **正確な（種別・対象・grantee・権限・grant option）の固定リスト**で行い、「neon_superuser の全件」「既定権限の全件」「PUBLIC」を許す規則は置かない。業務表への neon_superuser の権限は説明されない。
+  2. **不足 11 件（付与する）:** operations に `notification_due_normal`・`ops_refund_claim`・`ops_refund_observe`・`ops_refund_row` の EXECUTE、pay_projection に `payment_projection.normal_candidates`、pay_truth に `payment_reconciliation.claim_normal`、pay_dispatch に `payment_reconciliation.dispatch_normal` の EXECUTE、`public.provisional_model_bindings` の SELECT を group/hold/operations/pay_projection の 4 ロールへ。実本番の hotfix/activation installer が入れた権限で、無いと worker・返金・通知が動かない。**対象・権限・ロールを固定した計画（`TARGET_GRANT_PLAN`）を target にだけ**付与する（grantor は owner、owner が所有しないオブジェクトは拒否）。source の権限全体のコピーはしない。
+  3. **target のみの 4 件（撤去する）:** `public.rental_preparations` の prepared_at/prepared_by/fit_evidence/version に対する operations の列 UPDATE。現行の bootstrap 計画（`production-app-roles.ts`）が付けるが、実本番の operations には一度も無かった。準備の書込み（`rental_preparations` の upsert）は `CustodyService` が custody ロールで行い（custody ロールは自分の列 UPDATE を持つ）、operations ロールの経路は読取のみで、実本番はこの権限なしで動いている。よって不要と判断し **target から REVOKE する**。`group_part_preparations`（0065 固有）の権限とは別で、変更しない。
+- コマンド `production:cutover-install-target-grants`：target だけに 1 つの owner トランザクションで上の 2 と 3 を適用し、**同じトランザクション内**で (a) 構造ダイジェストが不変、(b) ACL の差分が計画と**ちょうど**一致、を確認してから COMMIT する。ロール・メンバーシップ・資格情報は変更しない。再実行しても何も変わらない。その後、source/target の ACL 全体を再比較して unexpected が 0 であることも要求する。
+- **0065 の許容は object 名だけで決めない:** 0065 のオブジェクトに対する差も、(i) その DB のアプリロールか owner の通常権限であり、(ii) PUBLIC でなく、(iii) grant option でなく、(iv) 基盤ロールや他 DB のロールでない場合だけ説明される。それ以外は unexpected。
+- **prewindow-check と copy-and-switch の直前にも**同じ比較を行う。ACL に説明できない差があれば READY にならず、停止窓にも入らない。
+- **schemaState ダイジェスト:** 計画の適用後の値へ更新するのは、構造ダイジェストが不変で、ACL の差分が計画と完全一致した場合だけ（上記の検査を通った場合のみ state を更新する）。基準値の単純な再登録で食い違いを隠すことはしない。
+- **bootstrap 計画への反映:** `production-app-roles.ts` の 4 列 UPDATE の付与行と、11 件の欠落は、承認済みの bootstrap 計画（manifest/provenance）の中にある。計画そのものの改訂には manifest の再承認が要るため、この PR では**計画を変えず、installer で補正**している。次の新 DB でも同じ installer を `bootstrap-target` の後に実行すれば同じ結果になる（再発しない）。計画への恒久反映は別の承認つき変更として残る。
+- **H の報告（12 + 17）と TD の実測（14 + 15）の違い:** 総数は同じ 29 件（source のみ 25、target のみ 4。または 基盤 14 + 業務 15）。H の内訳は、基盤の差を「source のみ」と「target のみ」の方向で数えた区分と、基盤か業務かの分類を混ぜていた誤りで、正しいのは **基盤 14（すべて source のみ）+ 業務 15（不足 11 = source のみ、追加 4 = target のみ）** である。

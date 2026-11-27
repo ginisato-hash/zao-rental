@@ -18,8 +18,9 @@ import {BACKUP_CREDENTIAL_TARGET as T,neonCliPort,type NeonPort} from './product
 import {assertProductionTarget,bootstrapPlan,bootstrapProductionFoundation,dormantMigrationAdminPosture} from './production-bootstrap';
 import {productionRoleProvisioningPlan} from './production-role-provisioning';
 import {installGroupRoleOnFoundation65,groupRoleNames} from './production-group-delta';
-import {requirePre0065Recovery,requireRetainedSourceCopy,RETAINED_SOURCE_COPY_FILE,RETAINED_SOURCE_COPY_VERSION} from './production-recovery-evidence-pre0065';
-import {MIGRATION_0065_OBJECTS,NOT_COPIED,TARGET_ONLY_COLUMNS,compareAcl,inFlightWork,installDeltaGrantsOnFoundation65,listTables,proveTargetUntouched,readFenceState,readWrite,registry,runCutover,
+import {independentBackupOnline,githubBackupPort,type BackupPort} from './production-cutover-backup-evidence';
+import {requireRetainedSourceCopy,RETAINED_SOURCE_COPY_FILE,RETAINED_SOURCE_COPY_VERSION} from './production-recovery-evidence-pre0065';
+import {PLATFORM_EXPLAINED,PLATFORM_EXPLAINED_COUNT,MIGRATION_0065_LINE_OK,TARGET_GRANT_PLAN,installTargetGrants,MIGRATION_0065_OBJECTS,NOT_COPIED,TARGET_ONLY_COLUMNS,compareAcl,inFlightWork,installDeltaGrantsOnFoundation65,listTables,proveTargetUntouched,readFenceState,readWrite,registry,runCutover,
  schemaState,tableDigests,triggerStates,foreignKeyOrphans,unfenceSource,readActivationMarker,writeActivationMarker,grantRuntimeLogin,type CutoverFailure,type CutoverFault,type Fence} from './production-cutover';
 
 export const CUTOVER_RUN_VERSION='production-cutover-run/1';
@@ -27,21 +28,25 @@ export const CUTOVER_RUN_VERSION='production-cutover-run/1';
 export const PRODUCTION_SOURCE='neondb';
 export const PRODUCTION_TARGETS=Object.freeze(['neondb_v65','neondb_v65b'] as const);
 export const PRODUCTION_OWNER='neondb_owner';
-export const COMMANDS=['preflight','bootstrap-target','prewindow-check','copy-and-switch','verify-target','rollback','recover'] as const;
+export const COMMANDS=['preflight','bootstrap-target','install-target-grants','prewindow-check','copy-and-switch','verify-target','rollback','recover'] as const;
 export type Command=typeof COMMANDS[number];
 
 export type RunConfig={source:string;target:string;owner:string;allowedTargets:readonly string[];root:string;fenceWaitMs?:number;
  /** Production sets all of these true. `activate` (default true): the window itself grants the target runtime roles LOGIN right after the activation boundary is recorded (no human step inside the window);
   * false stops after writes are enabled with the roles still NOLOGIN (rehearsal tests). `requirePrewindow` (default true): copy-and-switch refuses without a fresh READY prewindow-check.
-  * `requireBindings` (default true): prewindow-check also needs the fresh bindings-metadata AND live-binding evidence. `requireIndependentBackup` (default false): an independent restore point/drill is reported either way. */
+  * `requireBindings` (default true): prewindow-check also needs the fresh bindings-metadata AND live-binding evidence. `requireIndependentBackup` (default TRUE): the prewindow-check is NOT ready unless an independent recovery point is confirmed ONLINE (a successful scheduled production backup run that postdates migration 0064; scripts/production-cutover-backup-evidence.ts). A stored file, a hand-written record or the retained source copy never satisfies it. Only rehearsal tests pass false. */
  activate?:boolean;requirePrewindow?:boolean;requireBindings?:boolean;requireIndependentBackup?:boolean;prewindowMaxAgeMs?:number};
 export type OwnerHandle={pool:Pool;close():Promise<void>};
 export type RunPorts={config:RunConfig;release():string;openOwner(database:string):Promise<OwnerHandle>;now():Date;
+ /** Read-only view of the scheduled production backup runs (GitHub). Absent => the independent recovery point is ABSENT. */
+ backup?:BackupPort;
  /** Which privilege differences between source and target are explained (default: only the objects migration 0065 introduces or re-grants). */
  aclAllowed?:(line:string)=>boolean;
  /** Failure injection for the rehearsal tests only; never set by the Production adapter. */
  fault?:CutoverFault};
 
+/** The one definition of an explained ACL difference: a 0065 object (ordinary privilege of an application role only: no PUBLIC, no grant option), one of the 14 exact Neon platform lines, or a rehearsal fixture line. */
+const aclExplained=(ports:RunPorts)=>(l:string)=>(MIGRATION_0065_OBJECTS.test(l)&&MIGRATION_0065_LINE_OK(l,ports.config.owner))||PLATFORM_EXPLAINED(l)||(ports.aclAllowed?.(l)??false);
 const sha=(v:string)=>createHash('sha256').update(v).digest('hex');
 const qi=(v:string)=>'"'+v.replace(/"/g,'""')+'"';
 export const fail:(code:string)=>never=code=>{throw new Error('PRODUCTION_CUTOVER_'+code);};
@@ -136,7 +141,7 @@ export async function preflight(ports:RunPorts){
   }
   return{status:ready.ownerCreatedb&&ready.ownerCreaterole&&ready.canSetManager?'CUTOVER_PREFLIGHT_OK':'CUTOVER_PREFLIGHT_BLOCKED',sourceSha:head,source:c.source,target:c.target,registry:64,...ready,
    ownerCanTerminateRuntimeSessions:facts.signal,targetExists:facts.targetExists,runtimeLoginRoles:sourceLoginRoles.length,runtimeSessions,inFlight:facts.work,
-   tables:d.tables,rows:d.rows,digestSha256Prefix:d.sha256.slice(0,16),recovery:'RETAINED_SOURCE_COPY',independentBackupEvidence:independentBackup(c.root,ports.now()),
+   tables:d.tables,rows:d.rows,digestSha256Prefix:d.sha256.slice(0,16),recovery:'RETAINED_SOURCE_COPY',independentBackupEvidence:(await independentBackupOnline(ports.backup,source,c.root,ports.now())).state,
    note:facts.signal?'termination of runtime sessions is permitted':'termination NOT permitted: the Owner must stop the application first; copy-and-switch refuses while runtime sessions remain'};
  });
 }
@@ -177,10 +182,6 @@ const dormantRoleOf=async(target:string)=>(await bootstrapPlan(target,{retainMig
 const targetReadOnlyNow=async(pool:Pool,db:string)=>(await readFenceState(pool,db,[])).dbSetting==='on';
 
 // ---------------------------------------------------------------- independent-backup report, evidence files and the prewindow check
-/** Reported as its own item; the retained source copy is never counted here. */
-function independentBackup(root:string,now:Date):'PRESENT'|'ABSENT'{
- try{requirePre0065Recovery(root,now);return 'PRESENT';}catch{return 'ABSENT';}
-}
 export const BINDINGS_EVIDENCE_FILE='bindings-check.json';
 export const LIVE_BINDING_EVIDENCE_FILE='live-bindings.json';
 export const BINDINGS_EVIDENCE_VERSION='cutover-bindings-evidence/1';
@@ -204,7 +205,6 @@ export async function prewindowCheck(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();const now=ports.now();
  const st=readState(c);if(!st||st.phase!=='TARGET_BOOTSTRAPPED')fail('PHASE_REFUSED_'+(st?.phase??'NONE'));
  let retained=true;try{requireRetainedSourceCopy(c.root,now);}catch{retained=false;}
- const independent=independentBackup(c.root,now);
  const bindingsMetadata=readEvidenceStatus(c,BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION,now);
  const liveBindings=readEvidenceStatus(c,LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,now);
  const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
@@ -215,6 +215,8 @@ export async function prewindowCheck(ports:RunPorts){
   const work=await readOnly(sourceH.pool,cl=>inFlightWork(cl));const {executorTransientRows:_t,...live}=work;void _t;
   const target=await targetStructure(targetH.pool,c);
   const marker=await readActivationMarker(targetH.pool,c.target);
+  const independentOnline=await independentBackupOnline(ports.backup,sourceH.pool,c.root,now);const independent=independentOnline.state;
+  const aclNow=await compareAcl(sourceH.pool,targetH.pool,c.source,c.target,aclExplained(ports),[c.owner]);
   const canTerminate=(await sourceH.pool.query("SELECT pg_has_role(current_user,'pg_signal_backend','MEMBER') m")).rows[0].m as boolean;
   const items={
    sourceLive:sourceNow.dbSetting!=='on'&&sourceNow.loginRoles.length>0,
@@ -224,21 +226,53 @@ export async function prewindowCheck(ports:RunPorts){
    independentBackupEvidence:independent,
    bindingsMetadata:bindingsMetadata===null?'NOT_CHECKED':bindingsMetadata==='CONSISTENT'?'CONSISTENT':'FINDINGS',
    liveBindings:liveBindings===null?'NOT_CHECKED':liveBindings==='PASS'?'PASS':'FAIL',
+   aclIdenticalExceptExplained:aclNow.unexpected.length===0,
    canTerminateRuntimeSessions:canTerminate};
   const blockers:string[]=[];
   if(!items.sourceLive)blockers.push('SOURCE_NOT_LIVE');
   if(!items.inFlightWorkZero)blockers.push('IN_FLIGHT_WORK');
   if(!items.targetReady)blockers.push('TARGET_NOT_READY');
   if(!items.retainedSourceCopy)blockers.push('RETAINED_SOURCE_COPY_MISSING');
+  if(!items.aclIdenticalExceptExplained)blockers.push('ACL_NOT_IDENTICAL');
   if(c.requireBindings!==false){
    if(items.bindingsMetadata!=='CONSISTENT')blockers.push('BINDINGS_METADATA_'+items.bindingsMetadata);
    if(items.liveBindings!=='PASS')blockers.push('LIVE_BINDINGS_'+items.liveBindings);
   }
-  if(c.requireIndependentBackup===true&&independent!=='PRESENT')blockers.push('INDEPENDENT_BACKUP_ABSENT');
+  if(c.requireIndependentBackup!==false&&independent!=='PRESENT')blockers.push('INDEPENDENT_BACKUP_ABSENT');
   const ready=blockers.length===0;
   writeState(c,{...st,at:now.toISOString(),prewindow:{at:now.toISOString(),ready,blockers}});
   return{status:ready?'CUTOVER_PREWINDOW_READY':'CUTOVER_PREWINDOW_NOT_READY',sourceSha:head,target:c.target,ready,blockers,...items,
+   aclPlatformExplained:aclNow.onlySource.concat(aclNow.onlyTarget).filter(PLATFORM_EXPLAINED).length,aclUnexpectedSample:aclNow.unexpected.slice(0,8),
+   independentBackupReasons:independentOnline.reasons,independentBackupRunId:independentOnline.runId??null,independentBackupRestoreTested:false,
+   /** Scope of each proof, stated so READY is never read as more than it is. */
+   liveBindingsScope:'TARGET_OWNER_CONNECTION_ONLY',
+   runtimeCredentialsLiveBinding:'NOT_VERIFIABLE_BEFORE_WINDOW(NOLOGIN)',
+   deliveryBinding:'PROVEN_IN_WINDOW_ONLY(stage attestation, two check windows on the candidate, promote, post attestation)',
    recoveryBasis:'RETAINED_SOURCE_COPY (same cluster; not an independent backup)'};
+ }finally{await sourceH.close();await targetH.close();}
+}
+
+// ---------------------------------------------------------------- install-target-grants (fixed, target-limited)
+/** After bootstrap-target and BEFORE the window, on the TARGET ONLY (the source is read for the final comparison, never written): grants the fixed plan of 11 privileges production gained
+ * outside migrations 0059-0063, revokes the four rental_preparations column UPDATE privileges the current role plan hands to operations although production never had them, and proves the
+ * structure digest is unchanged and the ACL delta is exactly the plan. Then the FULL source/target ACL comparison must leave nothing unexpected. Idempotent. Never re-bootstraps. */
+export async function installTargetGrantsCommand(ports:RunPorts){
+ const c=ports.config;assertConfig(c);const head=ports.release();
+ const st=readState(c);if(!st||st.phase!=='TARGET_BOOTSTRAPPED')fail('PHASE_REFUSED_'+(st?.phase??'NONE'));
+ if(st.activation==='STARTED')fail('ACTIVATION_BOUNDARY_PASSED');
+ const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
+ try{
+  return await exclusive(ports,[sourceH.pool,targetH.pool],async()=>{
+   await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
+   await assertRegistryIs(sourceH.pool,64);await assertRegistryIs(targetH.pool,65);
+   const r=await installTargetGrants(targetH.pool,c.target,c.owner);
+   const acl=await compareAcl(sourceH.pool,targetH.pool,c.source,c.target,aclExplained(ports),[c.owner]);
+   if(acl.unexpected.length>0)fail('ACL_UNEXPECTED_REMAIN');
+   writeState(c,{...st,at:ports.now().toISOString(),targetSchemaStateSha256:r.newSchemaStateSha256});
+   return{status:'CUTOVER_TARGET_GRANTS_INSTALLED',sourceSha:head,target:c.target,planGrants:TARGET_GRANT_PLAN.length,...r,
+    aclUnexpectedAfter:0,aclPlatformExplained:acl.onlySource.concat(acl.onlyTarget).filter(PLATFORM_EXPLAINED).length,platformListSize:PLATFORM_EXPLAINED_COUNT,
+    rolesMembershipsCredentialsChanged:0,sourceWritten:false};
+  });
  }finally{await sourceH.close();await targetH.close();}
 }
 
@@ -336,6 +370,8 @@ export async function copyAndSwitch(ports:RunPorts){
    if(!before.ok||before.runtimeLoginRoles.length||before.runtimeSessions)fail('TARGET_NOT_READY');
    if(!await targetReadOnlyNow(targetH.pool,c.target))fail('TARGET_NOT_READ_ONLY');
    if(await readActivationMarker(targetH.pool,c.target)!==null)fail('TARGET_ACTIVATION_MARKER_PRESENT');
+   // The latest source and target privileges are compared again immediately before anything is stopped (never fence with an unexplained privilege difference).
+   if(c.requirePrewindow!==false&&(await compareAcl(sourceH.pool,targetH.pool,c.source,c.target,aclExplained(ports),[c.owner])).unexpected.length>0)fail('ACL_NOT_IDENTICAL_AT_FENCE');
    const sourceNow=await readFenceState(sourceH.pool,c.source,runtimeRoleNames(c.source));
    // Everything that will be changed is recorded BEFORE the first change; `recordFence` refines it with the exact role list.
    let st:State={...st0,phase:'WINDOW_OPEN',at:ports.now().toISOString(),sourceLoginRoles:sourceNow.loginRoles,sourceDbSetting:sourceNow.dbSetting,writes:'NEVER',activation:'NONE'};
@@ -386,7 +422,8 @@ export async function verifyTarget(ports:RunPorts){
   const now=await schemaState(targetH.pool);
   const schemaUnchanged=st.targetSchemaStateSha256===undefined||now.sha256===st.targetSchemaStateSha256;
   // The privilege sets of source and target are compared in full; only objects migration 0065 itself introduces may differ.
-  const acl=await compareAcl(sourceH.pool,targetH.pool,c.source,c.target,l=>MIGRATION_0065_OBJECTS.test(l)||(ports.aclAllowed?.(l)??false),[c.owner]);
+  const acl=await compareAcl(sourceH.pool,targetH.pool,c.source,c.target,aclExplained(ports),[c.owner]);
+  const platformExplained=acl.onlySource.concat(acl.onlyTarget).filter(PLATFORM_EXPLAINED).length;
   let identical:boolean|null=null;
   // Source and target hold the same rows only while nobody can write to either: the application cannot log in to the target and the source is fenced.
   const sourceLogin=Number((await sourceH.pool.query('SELECT count(*)::int n FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin',[runtimeRoleNames(c.source)])).rows[0].n);
@@ -399,8 +436,8 @@ export async function verifyTarget(ports:RunPorts){
   // Two different passes, never confused: FULLY_VERIFIED needs full row identity; STRUCTURE_ONLY says nothing about the rows.
   const status=!structureOk||identical===false?'CUTOVER_TARGET_VERIFY_FAILED':identical===true?'CUTOVER_TARGET_FULLY_VERIFIED':'CUTOVER_TARGET_STRUCTURE_ONLY_PASS';
   return{status,fullMatch:identical===true,sourceSha:head,phase:st.phase,registry:65,...s,schemaUnchanged,
-   acl:{sourceLines:acl.sourceLines,targetLines:acl.targetLines,explainedDifferences:acl.onlySource.length+acl.onlyTarget.length-acl.unexpected.length,unexpectedDifferences:acl.unexpected.length,
-    unexpectedSample:acl.unexpected.slice(0,5).map(l=>l.split('|').slice(0,3).join('|'))},
+   acl:{sourceLines:acl.sourceLines,targetLines:acl.targetLines,explainedDifferences:acl.onlySource.length+acl.onlyTarget.length-acl.unexpected.length,platformExplained,migration0065Explained:acl.onlySource.concat(acl.onlyTarget).filter(l=>MIGRATION_0065_OBJECTS.test(l)).length,unexpectedDifferences:acl.unexpected.length,
+    unexpectedSample:acl.unexpected.slice(0,8)},
    rowsIdenticalToSource:identical,sourceRuntimeLoginRoles:sourceLogin,mode:identical===null?'STRUCTURAL_ONLY_TARGET_IN_USE':'FULL_PRE_SWITCH'};
  }finally{await sourceH.close();await targetH.close();}
 }
@@ -488,7 +525,7 @@ export async function recover(ports:RunPorts){
 }
 
 export async function runCommand(command:Command,ports:RunPorts){
- return command==='preflight'?preflight(ports):command==='bootstrap-target'?bootstrapTarget(ports):command==='prewindow-check'?prewindowCheck(ports):command==='copy-and-switch'?copyAndSwitch(ports):command==='verify-target'?verifyTarget(ports):command==='recover'?recover(ports):rollback(ports);
+ return command==='preflight'?preflight(ports):command==='bootstrap-target'?bootstrapTarget(ports):command==='install-target-grants'?installTargetGrantsCommand(ports):command==='prewindow-check'?prewindowCheck(ports):command==='copy-and-switch'?copyAndSwitch(ports):command==='verify-target'?verifyTarget(ports):command==='recover'?recover(ports):rollback(ports);
 }
 
 // ---------------------------------------------------------------- production adapters
@@ -514,7 +551,8 @@ export async function openProductionOwner(neon:NeonPort,database:string,createPo
  return{pool,close:async()=>{await pool.end().catch(()=>undefined);}};
 }
 export function productionPorts(root:string=process.cwd()):RunPorts{
- return{config:{source:PRODUCTION_SOURCE,target:PRODUCTION_TARGETS[0],owner:PRODUCTION_OWNER,allowedTargets:PRODUCTION_TARGETS,root,activate:true,requirePrewindow:true,requireBindings:true,requireIndependentBackup:false},
+ return{config:{source:PRODUCTION_SOURCE,target:PRODUCTION_TARGETS[0],owner:PRODUCTION_OWNER,allowedTargets:PRODUCTION_TARGETS,root,activate:true,requirePrewindow:true,requireBindings:true,requireIndependentBackup:true},
+  backup:githubBackupPort(),
   release:()=>assertAcceptedMainRelease(),now:()=>new Date(),
   openOwner:async database=>{
    if(!existsSync(NEON_BIN))return fail('NEON_CLI_MISSING');

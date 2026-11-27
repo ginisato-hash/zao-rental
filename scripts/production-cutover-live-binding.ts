@@ -26,6 +26,6 @@ const result=await verifyNewDatabaseConnection(target,{neon,
  }});
 const dir=join(process.cwd(),'.local/evidence/production-cutover');mkdirSync(dir,{recursive:true,mode:0o700});
 const file=join(dir,LIVE_BINDING_EVIDENCE_FILE);
-writeFileSync(file,JSON.stringify({version:LIVE_BINDING_EVIDENCE_VERSION,target,at:new Date().toISOString(),status:result.ok?'PASS':'FAIL',reasons:result.reasons,checks:result.checks}),{mode:0o600});chmodSync(file,0o600);
-console.log(JSON.stringify({status:result.ok?'LIVE_BINDING_PASS':'LIVE_BINDING_FAIL',target,reasons:result.reasons,checks:result.checks}));
+writeFileSync(file,JSON.stringify({version:LIVE_BINDING_EVIDENCE_VERSION,target,at:new Date().toISOString(),status:result.ok?'PASS':'FAIL',scope:'TARGET_OWNER_CONNECTION_ONLY',reasons:result.reasons,checks:result.checks}),{mode:0o600});chmodSync(file,0o600);
+console.log(JSON.stringify({status:result.ok?'LIVE_BINDING_PASS':'LIVE_BINDING_FAIL',target,scope:'TARGET_OWNER_CONNECTION_ONLY',notProven:['runtime role credentials (NOLOGIN until the window)','candidate artifact delivery','receiver/worker/backup connections'],reasons:result.reasons,checks:result.checks}));
 process.exit(result.ok?0:1);

@@ -11,12 +11,13 @@ import {groupFixture} from '../group/fixture';
 import {requestFor} from '../inventory/fixture';
 import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {productionFoundationPlan,runFoundationPlan} from '../../scripts/production-bootstrap';
-import {copyData,fenceSource,readFenceState,readWrite,sequenceStates,tableDigests,unfenceSource,readActivationMarker,MAX_TABLE_ROWS} from '../../scripts/production-cutover';
+import {aclLines,PLATFORM_EXPLAINED,TARGET_GRANT_PLAN,copyData,fenceSource,readFenceState,readWrite,sequenceStates,tableDigests,unfenceSource,readActivationMarker,MAX_TABLE_ROWS} from '../../scripts/production-cutover';
 import {groupRoleNames} from '../../scripts/production-group-delta';
 import {closeMigrationWindow,openMigrationWindow,runInMigrationWindow,windowState} from '../../scripts/production-migration-window';
 import {auditChain} from '../../scripts/production-cutover';
-import {bootstrapTarget,copyAndSwitch,preflight,prewindowCheck,recover,rollback,verifyTarget,BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION,LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,type RunConfig,type RunPorts} from '../../scripts/production-cutover-run';
+import {bootstrapTarget,installTargetGrantsCommand,copyAndSwitch,preflight,prewindowCheck,recover,rollback,verifyTarget,BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION,LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,type RunConfig,type RunPorts} from '../../scripts/production-cutover-run';
 import type {CutoverFault} from '../../scripts/production-cutover';
+import {collectBackupEvidence,writeBackupEvidence,OPERATIONAL_BACKUP_FILE,type BackupPort,type BackupRun} from '../../scripts/production-cutover-backup-evidence';
 
 const SRC='neondb',DST='neondb_next',OWNER='neondb_owner';
 const SOURCE_ONLY={'public.rental_loan_items':['group_part_id','hold_id']};
@@ -89,8 +90,10 @@ try{
  {const c=await srcOwner.connect();try{await c.query(`SET ROLE ${manager}`);await c.query(`ALTER ROLE ${operations} LOGIN PASSWORD '${ownerPassword}'`);await c.query(`ALTER ROLE ${pricing} LOGIN PASSWORD '${ownerPassword}'`);await c.query('RESET ROLE');}finally{c.release();}}
  const FIXTURE_ONLY_GRANTS=(l:string)=>l.includes('@db@_group')||/\|public\.(staff_order_drafts|rental_terms_|customer_|coupon_|store_sales_|staff_notification)|^function\|(coupon_|customer_|staff_|store_sales_)|^relation\|public\.rental_terms_acceptances\|neondb_owner/.test(l);
  let fault:CutoverFault|undefined;
+ let backupRuns:BackupRun[]=[];
+ const backupPort:BackupPort={runs:async()=>backupRuns,migrationCommittedAt:async()=>new Date(Date.now()-3*3600*1000)};
  const config=(over:Partial<RunConfig>={}):RunConfig=>({source:SRC,target:DST,owner:OWNER,allowedTargets:[DST],root,fenceWaitMs:800,activate:false,requirePrewindow:false,requireBindings:false,...over});
- const ports=(over:Partial<RunConfig>={}):RunPorts=>({config:config(over),release:()=>'a'.repeat(40),now:()=>new Date(),aclAllowed:FIXTURE_ONLY_GRANTS,...(fault?{fault}:{}),
+ const ports=(over:Partial<RunConfig>={}):RunPorts=>({config:config(over),release:()=>'a'.repeat(40),now:()=>new Date(),aclAllowed:FIXTURE_ONLY_GRANTS,backup:backupPort,...(fault?{fault}:{}),
   openOwner:async database=>{const pool=new Pool({host:'127.0.0.1',port,user:OWNER,password:ownerPassword,database,max:4});pool.on('error',()=>undefined);return{pool,close:async()=>{await pool.end().catch(()=>undefined);}};}});
  const statePath=join(root,'.local/evidence/production-cutover/state.json'),lockPath=join(root,'.local/evidence/production-cutover/lock');
  const state=()=>JSON.parse(readFileSync(statePath,'utf8')) as {phase:string;writes?:string;activation?:string;prewindow?:{ready:boolean;blockers:string[]};sourceLoginRoles:string[];sourceDbSetting?:string|null;sourceFence?:{wasLogin:string[];dbSetting:string|null};dormantAdminRole?:string;recoveryReason?:string};
@@ -290,6 +293,59 @@ try{
   await testOnlyReset();await sourceRestored('fail closed');
  });
 
+ await check('INSTALL-TARGET-GRANTS: the fixed 11-grant plan is installed on the target only, the four unneeded rental_preparations column privileges are revoked, the 14 Neon platform lines are explained EXACTLY, and every excess (PUBLIC, grant option, other platform privilege) stays unexpected',async()=>{
+  const sup=connect(x.db.identity.user,superPassword,SRC);
+  for(const role of ['neon_superuser','cloud_admin'])await superuser.query(`DO $$ BEGIN CREATE ROLE ${role} NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+  const roleNames=['operations','pay_projection','pay_truth','pay_dispatch','hold','group'];
+  for(const db of [SRC,DST])for(const r of roleNames)await superuser.query(`DO $$ BEGIN CREATE ROLE ${db}_${r} NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+  const tgt=dst();
+  const has=async(p:Pool,db:string,g:{kind:string;object:string;role:string})=>(await p.query(g.kind==='function'?`SELECT has_function_privilege('${db}_${g.role}','${g.object}','EXECUTE') h`:`SELECT has_table_privilege('${db}_${g.role}','${g.object}','SELECT') h`)).rows[0].h as boolean;
+  const colPriv=async(p:Pool,db:string)=>(await Promise.all(['prepared_at','prepared_by','fit_evidence','version'].map(async c=>(await p.query(`SELECT has_column_privilege('${db}_operations','public.rental_preparations','${c}','UPDATE') h`)).rows[0].h as boolean)));
+  // production: the 11 grants exist, the column UPDATE never did. The current plan gives a fresh target the opposite.
+  await srcOwner.query(`REVOKE UPDATE (prepared_at,prepared_by,fit_evidence,version) ON TABLE public.rental_preparations FROM ${SRC}_operations`);
+  for(const g of TARGET_GRANT_PLAN)await srcOwner.query(g.kind==='function'?`GRANT EXECUTE ON FUNCTION ${g.object} TO ${SRC}_${g.role}`:`GRANT SELECT ON TABLE ${g.object} TO ${SRC}_${g.role}`);
+  await readWrite(tgt,TARGET_GRANT_PLAN.map(g=>g.kind==='function'?`REVOKE EXECUTE ON FUNCTION ${g.object} FROM ${DST}_${g.role}`:`REVOKE SELECT ON TABLE ${g.object} FROM ${DST}_${g.role}`));
+  await readWrite(tgt,[`GRANT UPDATE (prepared_at,prepared_by,fit_evidence,version) ON TABLE public.rental_preparations TO ${DST}_operations`]);
+  assert.deepEqual(await colPriv(srcOwner,SRC),[false,false,false,false]);assert.deepEqual(await colPriv(tgt,DST),[true,true,true,true],'the current plan over-grants these four');
+  for(const g of TARGET_GRANT_PLAN)assert.equal(await has(tgt,DST,g),false);
+  // the Neon platform's own privileges on a platform-created database
+  await srcOwner.query(`GRANT CONNECT,CREATE,TEMPORARY ON DATABASE ${SRC} TO neon_superuser`);
+  await sup.query('ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO neon_superuser WITH GRANT OPTION');
+  await sup.query('ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABLES TO neon_superuser WITH GRANT OPTION');
+  const cfg={requirePrewindow:false,requireBindings:false,requireIndependentBackup:false};
+  assert.equal(state().phase,'TARGET_BOOTSTRAPPED');
+  const sourceBefore=await aclLines(srcOwner,SRC,[OWNER]);
+  let r=await prewindowCheck(ports(cfg)) as Rec;
+  assert.equal(r.aclIdenticalExceptExplained,false);assert.ok((r.blockers as string[]).includes('ACL_NOT_IDENTICAL'));
+  assert.ok(Number(r.aclPlatformExplained)>=13,'the platform lines are explained exactly and counted: '+r.aclPlatformExplained);
+  assert.equal(((await verifyTarget(ports(cfg))) as Rec).status,'CUTOVER_TARGET_VERIFY_FAILED');
+  // the installer: fixed plan, target only
+  const rep=await installTargetGrantsCommand(ports(cfg)) as Rec;
+  assert.equal(rep.status,'CUTOVER_TARGET_GRANTS_INSTALLED');assert.equal(rep.added,11);assert.equal(rep.removed,4);assert.equal(rep.structureUnchanged,true);assert.equal(rep.aclDeltaExact,true);assert.equal(rep.aclUnexpectedAfter,0);assert.equal(rep.sourceWritten,false);assert.equal(rep.rolesMembershipsCredentialsChanged,0);
+  for(const g of TARGET_GRANT_PLAN)assert.equal(await has(tgt,DST,g),true,g.object+' → '+g.role);
+  assert.deepEqual(await colPriv(tgt,DST),[false,false,false,false],'the four unneeded column privileges are gone, like the source');
+  assert.deepEqual(await aclLines(srcOwner,SRC,[OWNER]),sourceBefore,'the source ACL is never changed');
+  assert.equal((await tgt.query(`SELECT count(*)::int n FROM pg_database d,aclexplode(d.datacl) a WHERE d.datname=current_database() AND pg_get_userbyid(a.grantee)='neon_superuser'`)).rows[0].n,0,'platform privileges are never applied');
+  assert.equal((await tgt.query('SHOW default_transaction_read_only')).rows[0].default_transaction_read_only,'on');
+  // the 0065 privileges on group objects are kept (the installer touches nothing else)
+  assert.equal((await tgt.query(`SELECT has_table_privilege('${DST}_group','public.group_orders','SELECT') h`)).rows[0].h,true);
+  r=await prewindowCheck(ports(cfg)) as Rec;assert.equal(r.aclIdenticalExceptExplained,true);assert.ok(!(r.blockers as string[]).includes('ACL_NOT_IDENTICAL'));
+  assert.notEqual(((await verifyTarget(ports(cfg))) as Rec).status,'CUTOVER_TARGET_VERIFY_FAILED');
+  // idempotent
+  const again=await installTargetGrantsCommand(ports(cfg)) as Rec;assert.equal(again.added,0);assert.equal(again.removed,0);assert.equal(again.alreadyPresent,11);
+  // excess is never explained: PUBLIC on a 0065 object, a grant option on one, and an extra platform privilege
+  const unexpectedNow=async()=>(await prewindowCheck(ports(cfg)) as Rec).aclIdenticalExceptExplained;
+  await readWrite(tgt,['GRANT SELECT ON TABLE public.group_orders TO PUBLIC']);assert.equal(await unexpectedNow(),false,'PUBLIC on a 0065 object');
+  await readWrite(tgt,['REVOKE SELECT ON TABLE public.group_orders FROM PUBLIC']);assert.equal(await unexpectedNow(),true);
+  await readWrite(tgt,[`GRANT SELECT ON TABLE public.group_orders TO ${DST}_hold WITH GRANT OPTION`]);assert.equal(await unexpectedNow(),false,'a grant option on a 0065 object');
+  await readWrite(tgt,[`REVOKE SELECT ON TABLE public.group_orders FROM ${DST}_hold`]);assert.equal(await unexpectedNow(),true);
+  await srcOwner.query('GRANT SELECT ON TABLE public.rental_preparations TO neon_superuser');assert.equal(await unexpectedNow(),false,'neon_superuser on a business table is NOT a platform line');
+  await srcOwner.query('REVOKE SELECT ON TABLE public.rental_preparations FROM neon_superuser');assert.equal(await unexpectedNow(),true);
+  assert.equal(PLATFORM_EXPLAINED('default|cloud_admin:r:public|neon_superuser|SELECT|false'),false,'the grant option is pinned');
+  assert.equal(PLATFORM_EXPLAINED('function|x()|neon_superuser|EXECUTE|false'),false);
+  await testOnlyReset();   // drop the prewindow record these checks wrote
+ });
+
  await check('PREWINDOW + ACTIVATION IN THE WINDOW: nothing is fenced without a fresh READY prewindow-check; the window then activates by itself (LOGIN after the boundary, no human step) and is forward-only',async()=>{
   const strict={activate:true,requirePrewindow:true,requireBindings:true};
   // no prewindow check yet: refused, nothing fenced
@@ -297,15 +353,33 @@ try{
   assert.deepEqual((await srcSetting()).loginRoles.sort(),[operations,pricing].sort(),'nothing fenced');
   // the check reports every item separately; without bindings evidence it is NOT ready and names why
   let r=await prewindowCheck(ports(strict)) as Rec;
-  assert.equal(r.status,'CUTOVER_PREWINDOW_NOT_READY');assert.deepEqual(r.blockers,['BINDINGS_METADATA_NOT_CHECKED','LIVE_BINDINGS_NOT_CHECKED']);
+  assert.equal(r.status,'CUTOVER_PREWINDOW_NOT_READY');assert.deepEqual(r.blockers,['BINDINGS_METADATA_NOT_CHECKED','LIVE_BINDINGS_NOT_CHECKED','INDEPENDENT_BACKUP_ABSENT']);
+  assert.equal(r.runtimeCredentialsLiveBinding,'NOT_VERIFIABLE_BEFORE_WINDOW(NOLOGIN)');assert.equal(r.liveBindingsScope,'TARGET_OWNER_CONNECTION_ONLY');assert.match(String(r.deliveryBinding),/IN_WINDOW_ONLY/);assert.equal(r.independentBackupRestoreTested,false);
   assert.equal(r.bindingsMetadata,'NOT_CHECKED');assert.equal(r.liveBindings,'NOT_CHECKED');assert.equal(r.retainedSourceCopy,true);assert.equal(r.independentBackupEvidence,'ABSENT');
   assert.match(String(r.recoveryBasis),/not an independent backup/);
   await assert.rejects(copyAndSwitch(ports(strict)),code(/PRODUCTION_CUTOVER_PREWINDOW_REQUIRED/));
+  // independent recovery point: neither a hand-written file nor the retained source copy is enough; it must be confirmed ONLINE (a successful backup run after migration 0064)
+  const stamp=(over:Partial<BackupRun>={}):BackupRun=>({id:4242,createdAt:new Date(Date.now()-30*60000).toISOString().replace(/\.\d+Z$/,'Z'),headSha:'d'.repeat(40),event:'schedule',stepConclusion:'success',stepStartedAt:new Date(Date.now()-29*60000).toISOString(),stepCompletedAt:new Date(Date.now()-27*60000).toISOString(),...over});
+  const dirB=join(root,'.local/evidence/production-cutover');mkdirSync(dirB,{recursive:true});
+  mkdirSync(join(root,'.local/evidence/production-backup'),{recursive:true});
+  writeFileSync(join(root,'.local/evidence/production-backup/restore-pass-pre-0064.json'),JSON.stringify({result:'PASS',objectKey:'hourly/2026/11/27/2026-11-27T05-17-11-000Z.dump.age',migrations:63}));
+  writeFileSync(join(dirB,OPERATIONAL_BACKUP_FILE),JSON.stringify({version:'production-operational-backup-evidence/1',kind:'OPERATIONAL_BACKUP_RUN',self:'declared'}));
+  r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.independentBackupEvidence,'ABSENT','a hand-written record is not evidence');assert.ok((r.blockers as string[]).includes('INDEPENDENT_BACKUP_ABSENT'));
+  const good=stamp();backupRuns=[good];
+  const verdict=await collectBackupEvidence(backupPort,srcOwner,root,new Date());assert.equal(verdict.ok,true,JSON.stringify(verdict.reasons));
+  writeBackupEvidence(root,verdict.evidence!);
+  r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.independentBackupEvidence,'PRESENT');assert.equal(r.independentBackupRunId,4242);assert.equal(r.independentBackupRestoreTested,false);
+  assert.ok(!(r.blockers as string[]).includes('INDEPENDENT_BACKUP_ABSENT'));
+  // the run vanishes online (or fails): the stored file alone no longer counts
+  backupRuns=[{...good,stepConclusion:'failure'}];
+  r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.independentBackupEvidence,'ABSENT');
+  backupRuns=[good];
   // metadata CONSISTENT is NOT a live connection/delivery pass
   const dir=join(root,'.local/evidence/production-cutover');mkdirSync(dir,{recursive:true});
   const ev=(file:string,version:string,status:string,over:Rec={})=>writeFileSync(join(dir,file),JSON.stringify({version,target:DST,at:new Date().toISOString(),status,...over}),{mode:0o600});
   ev(BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION,'CONSISTENT');
   r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.bindingsMetadata,'CONSISTENT');assert.equal(r.liveBindings,'NOT_CHECKED');assert.deepEqual(r.blockers,['LIVE_BINDINGS_NOT_CHECKED']);
+  assert.equal(r.independentBackupEvidence,'PRESENT');
   ev(LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,'FAIL');
   r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.liveBindings,'FAIL');assert.deepEqual(r.blockers,['LIVE_BINDINGS_FAIL']);
   ev(LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,'PASS',{target:'neondb_other'});
@@ -371,5 +445,5 @@ try{
 
  console.log(JSON.stringify({status:'PASS',cases:count,source:SRC,target:DST,productionDdl:0,externalContact:0,
   notRun:['real Neon pg_signal_backend for the owner','real data volume/timing','Vercel secret switch and redeploy','target runtime-role LOGIN/password issuance (Owner)']}));
-}catch(e){console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??(e as Error).name,detail:(e as Error).message.slice(0,1500)}));process.exitCode=1;}
+}catch(e){console.error(JSON.stringify({status:'FAIL',stage,code:(e as {code?:string}).code??(e as Error).name,detail:(e as Error).message.slice(0,1500),at:process.env.CUTOVER_TEST_STACK?String((e as Error).stack).split("\n").slice(1,5).join(" | "):undefined}));process.exitCode=1;}
 finally{for(const close of closers)await close().catch(()=>undefined);await x.close().catch(()=>undefined);rmSync(root,{recursive:true,force:true});}

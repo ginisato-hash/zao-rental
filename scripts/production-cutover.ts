@@ -510,6 +510,97 @@ export async function compareAcl(source:Q,target:Q,sourceDatabase:string,targetD
  const unexpected=[...onlySource,...onlyTarget].filter(x=>!allowed(x));
  return{sourceLines:a.length,targetLines:b.length,onlySource,onlyTarget,unexpected,identical:onlySource.length===0&&onlyTarget.length===0};
 }
+/** Neon PLATFORM privileges: they exist only on databases the platform itself creates through its API/console (infrastructure roles, never an application role). A database created
+ * with plain SQL by the project owner does not receive them, the owner cannot grant them (cloud_admin is not a role it may act as) and no runtime path uses them. The 14 observed
+ * differences are listed EXACTLY (kind, object, grantee, privilege): neon_superuser on the database (CONNECT, CREATE, TEMPORARY) and cloud_admin's default privileges for
+ * neon_superuser in schema public on sequences (SELECT, UPDATE, USAGE) and relations (DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE). There is NO rule such
+ * as "everything for neon_superuser", "all default ACLs" or "PUBLIC": anything else stays an unexpected difference. The grant option of each line is pinned too. */
+const PLATFORM_LINES:ReadonlyArray<string>=[
+ ...['CONNECT','CREATE','TEMPORARY'].map(p=>`database|database|neon_superuser|${p}|false`),
+ ...['SELECT','UPDATE','USAGE'].map(p=>`default|cloud_admin:S:public|neon_superuser|${p}|true`),
+ ...['DELETE','INSERT','MAINTAIN','REFERENCES','SELECT','TRIGGER','TRUNCATE','UPDATE'].map(p=>`default|cloud_admin:r:public|neon_superuser|${p}|true`),
+];
+const PLATFORM_SET=new Set(PLATFORM_LINES);
+export const PLATFORM_EXPLAINED=(line:string)=>PLATFORM_SET.has(line);
+export const PLATFORM_EXPLAINED_COUNT=PLATFORM_LINES.length;
+
+/** The fixed, target-limited privilege plan: the privileges production gained through hotfix/activation installers outside migrations 0059-0063 (11 grants the target lacks) and the
+ * four column UPDATE privileges the current production role plan hands to operations on rental_preparations although the live production never had them. Each entry fixes object,
+ * privilege and grantee role; the grantor is always the database owner (the installer refuses an object the owner does not own). Nothing is copied from the source ACL as a whole. */
+export type PlanGrant={kind:'function'|'relation';object:string;privilege:'EXECUTE'|'SELECT';role:string};
+const FUNCTION_GRANTS:ReadonlyArray<readonly [string,string]>=[
+ ['notification_due_normal(timestamp with time zone,integer)','operations'],
+ ['ops_refund_claim(uuid)','operations'],['ops_refund_observe(uuid,jsonb)','operations'],['ops_refund_row(uuid)','operations'],
+ ['payment_projection.normal_candidates(text,timestamp with time zone,integer)','pay_projection'],
+ ['payment_reconciliation.claim_normal(text,integer,text,timestamp with time zone)','pay_truth'],
+ ['payment_reconciliation.dispatch_normal(text,integer,timestamp with time zone)','pay_dispatch'],
+];
+const SELECT_ROLES=['group','hold','operations','pay_projection'];
+export const TARGET_GRANT_PLAN:ReadonlyArray<PlanGrant>=[
+ ...FUNCTION_GRANTS.map(([object,role])=>({kind:'function' as const,object,privilege:'EXECUTE' as const,role})),
+ ...SELECT_ROLES.map(role=>({kind:'relation' as const,object:'public.provisional_model_bindings',privilege:'SELECT' as const,role})),
+];
+export const TARGET_REVOKE_COLUMNS=['prepared_at','prepared_by','fit_evidence','version'] as const;
+export const TARGET_REVOKE_TABLE='public.rental_preparations',TARGET_REVOKE_ROLE='operations';
+/** Normalised ACL lines (as aclLines prints them) the plan adds / removes. */
+export const planGrantLine=(g:PlanGrant)=>`${g.kind}|${g.object}|@db@_${g.role}|${g.privilege}|false`;
+export const planRevokeLines=()=>TARGET_REVOKE_COLUMNS.map(c=>`column|${TARGET_REVOKE_TABLE}.${c}|@db@_${TARGET_REVOKE_ROLE}|UPDATE|false`);
+
+/** Structure-only digest: schemaState without any privilege text, so a privilege-only change can be told from a structural one. */
+export async function structureState(pool:Q){
+ const q=async(sql:string)=>(await pool.query(sql)).rows.map(r=>Object.values(r).join('|'));
+ const material={
+  triggers:await q(`SELECT n.nspname||'.'||c.relname,g.tgname,g.tgenabled,pg_get_triggerdef(g.oid) FROM pg_trigger g JOIN pg_class c ON c.oid=g.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE NOT g.tgisinternal AND n.nspname NOT LIKE 'pg\\_%' ORDER BY 1,2`),
+  constraints:await q(`SELECT n.nspname||'.'||c.relname,k.conname,k.convalidated,pg_get_constraintdef(k.oid) FROM pg_constraint k JOIN pg_class c ON c.oid=k.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT LIKE 'pg\\_%' ORDER BY 1,2`),
+  relations:await q(`SELECT n.nspname||'.'||c.relname,c.relkind,pg_get_userbyid(c.relowner) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname<>'information_schema' AND c.relkind IN ('r','p','v','m','S') ORDER BY 1`),
+  functions:await q(`SELECT p.oid::regprocedure::text,pg_get_userbyid(p.proowner),p.prosecdef,md5(pg_get_functiondef(p.oid)) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname<>'information_schema' ORDER BY 1`),
+  columns:await q(`SELECT table_schema||'.'||table_name,column_name,data_type,is_nullable,coalesce(column_default,''),is_identity,coalesce(identity_generation,'') FROM information_schema.columns WHERE table_schema NOT LIKE 'pg\\_%' AND table_schema<>'information_schema' ORDER BY 1,2`),
+ };
+ return sha(JSON.stringify(material));
+}
+export type TargetGrantResult={added:number;removed:number;alreadyPresent:number;structureUnchanged:true;aclDeltaExact:true;newSchemaStateSha256:string};
+/** TARGET ONLY (the source is never opened here). One owner transaction: grants the fixed plan, revokes the four unneeded column privileges, then proves INSIDE the transaction that
+ * (a) the structure digest is unchanged and (b) the ACL delta is EXACTLY the plan (no more, no fewer lines), and only then commits. Idempotent. Roles, memberships and credentials untouched. */
+export async function installTargetGrants(target:Pool,database:string,owner:string):Promise<TargetGrantResult>{
+ const role=(r:string)=>database+'_'+r;
+ const owned=async(sql:string,p:unknown[])=>Number((await target.query(sql,p)).rows[0].n)===1;
+ for(const g of TARGET_GRANT_PLAN){
+  const ok=g.kind==='function'
+   ?await owned("SELECT count(*)::int n FROM pg_proc WHERE oid=to_regprocedure($1) AND pg_get_userbyid(proowner)=$2",[g.object,owner])
+   :await owned("SELECT count(*)::int n FROM pg_class WHERE oid=to_regclass($1) AND pg_get_userbyid(relowner)=$2",[g.object,owner]);
+  if(!ok)throw new Error('CUTOVER_TARGET_GRANT_OBJECT_MISSING_OR_NOT_OWNED');
+  if(!await owned('SELECT count(*)::int n FROM pg_roles WHERE rolname=$1',[role(g.role)]))throw new Error('CUTOVER_TARGET_GRANT_ROLE_MISSING');
+ }
+ if(!await owned("SELECT count(*)::int n FROM pg_class WHERE oid=to_regclass($1) AND pg_get_userbyid(relowner)=$2",[TARGET_REVOKE_TABLE,owner]))throw new Error('CUTOVER_TARGET_GRANT_OBJECT_MISSING_OR_NOT_OWNED');
+ const lines=async(q:Q)=>new Set(await aclLines(q,database,[owner]));
+ const wantAdd=TARGET_GRANT_PLAN.map(planGrantLine),wantRemove=planRevokeLines();
+ const client=await target.connect();
+ try{
+  await client.query('BEGIN READ WRITE');
+  const before=await lines(client),structureBefore=await structureState(client);
+  const expectedAdded=wantAdd.filter(l=>!before.has(l)).sort(),expectedRemoved=wantRemove.filter(l=>before.has(l)).sort();
+  for(const g of TARGET_GRANT_PLAN){
+   const obj=g.kind==='function'?`FUNCTION ${g.object}`:`TABLE ${g.object.split('.').map(qi).join('.')}`;
+   await client.query(`GRANT ${g.privilege} ON ${obj} TO ${qi(role(g.role))}`);
+  }
+  await client.query(`REVOKE UPDATE (${TARGET_REVOKE_COLUMNS.map(qi).join(', ')}) ON TABLE ${TARGET_REVOKE_TABLE.split('.').map(qi).join('.')} FROM ${qi(role(TARGET_REVOKE_ROLE))}`);
+  const after=await lines(client);
+  const added=[...after].filter(l=>!before.has(l)).sort(),removed=[...before].filter(l=>!after.has(l)).sort();
+  const exact=JSON.stringify(added)===JSON.stringify(expectedAdded)&&JSON.stringify(removed)===JSON.stringify(expectedRemoved);
+  if(!exact||await structureState(client)!==structureBefore){await client.query('ROLLBACK');throw new Error('CUTOVER_TARGET_GRANT_DELTA_NOT_EXACT');}
+  await client.query('COMMIT');
+  return{added:added.length,removed:removed.length,alreadyPresent:wantAdd.length-added.length,structureUnchanged:true,aclDeltaExact:true,newSchemaStateSha256:(await schemaState(target)).sha256};
+ }catch(e){await client.query('ROLLBACK').catch(()=>undefined);throw e;}finally{client.release();}
+}
+/** Tightening of the 0065 object-name allowance: a difference on a 0065 object must still be an ordinary privilege of an application role of THAT database: never PUBLIC, never a grant
+ * option, never another database's or a platform role. (The object-name part alone would let an excessive privilege on group/hold/ledger_assets/rental_loan_items through.) */
+export const MIGRATION_0065_LINE_OK=(line:string,owner:string)=>{
+ const [kind,,grantee,priv,grantable]=line.split('|');
+ if(grantable!=='false'||!grantee)return false;
+ if(grantee===owner)return true;                                  // the owner's own privileges on the objects it creates
+ if(!grantee.startsWith('@db@_'))return false;                    // never PUBLIC, never another database's or a platform role
+ return ['relation','column','function','schema','default'].includes(kind!)&&['SELECT','INSERT','UPDATE','DELETE','EXECUTE','USAGE','REFERENCES','TRIGGER'].includes(priv!);
+};
 /** Objects that 0065 introduces or re-grants (and the executor/operations/custody/group grants that go with them): a difference there is expected, anywhere else it is not. */
 export const MIGRATION_0065_OBJECTS=/^(?:(?:relation|column|schema|default)\|public\.(?:group_[a-z_]+|rental_loan_items|inventory_holds|ledger_assets)|function\|(?:rental_apply_receipt|rental_stage_guard|rental_validate_loan|rental_validate_group_loan|rental_inventory_blocks|group_[a-z_]+)\()/;
 

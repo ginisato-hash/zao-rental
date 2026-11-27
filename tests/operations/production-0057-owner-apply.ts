@@ -5,6 +5,7 @@
 import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
 import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
 import {applyProductionCouponAdminMigration,applyProductionCouponAdminGrants,couponAdminGrantProof,couponAdminCommittedProof,verifyProductionCouponAdmin} from '../../scripts/production-coupon-admin-delta';
+import {applyProductionGroupMigration,applyProductionGroupGrants,groupGrantProof,groupCommittedProof,verifyProductionGroup,GROUP_TABLES,groupRoleNames} from '../../scripts/production-group-delta';
 import {applyProductionSalesStopMigration,applyProductionSalesStopGrants,salesStopGrantProof,salesStopCommittedProof,verifyProductionSalesStop} from '../../scripts/production-sales-stop-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
@@ -196,7 +197,7 @@ try{
   await ca.query('BEGIN');try{await ca.query('ALTER TABLE coupon_status_events DISABLE TRIGGER coupon_status_immutable');await assert.rejects(couponAdminCommittedProof(ca,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/);}finally{await ca.query('ROLLBACK');}
   await couponAdminCommittedProof(ca,OWNER);
  }finally{ca.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,63).map(e=>({id:e.id,checksum:e.checksum})));// 0064 (group order core) has no operator installer in this change; it is applied by the release procedure
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,63).map(e=>({id:e.id,checksum:e.checksum})));
  assert.deepEqual(await guard(),before63);
  const roles63After=await roles();assert.deepEqual({roles:roles63After.roles,members:roles63After.members},{roles:roles63.roles,members:roles63.members});
  const owners63=roles63After.owners.filter((o:{k:string})=>!roles63.owners.some((p:{k:string})=>p.k===o.k));
@@ -217,4 +218,81 @@ try{
  for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[pricingRole,'coupon_status_events',priv]))[0].ok,priv==='SELECT'||priv==='INSERT','pricing '+priv);
  for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,'coupon_status_events',priv]))[0].ok,false,'operations '+priv);
  console.log('PASS canonical 0063 applies as neondb_owner after 0062: registry 62 -> 63, guard/roles/memberships unchanged, new objects owner-owned, pricing SELECT/INSERT + functions, operations functions only, PUBLIC nothing');
+
+ stage='0064 group order core: owner-path blocker, then grants and verify';
+ // 0064 (group order core) through its fixed operator path: grants before migrate refused, one transaction with read-back, no replay, no role/membership change,
+ // the custody functions it replaces keep their executor ownership, every new table is owner-owned and empty; then the group role (created by the NOLOGIN manager,
+ // never by the owner), the hold-equivalent + group delta, and the custody-side reads of the operations role.
+ const roles64=await roles(),gr=groupRoleNames(DB);
+ const gm=await owner.connect();
+ try{
+  await assert.rejects(applyProductionGroupGrants(gm,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'grants need the exact 0064 registry');
+  await assert.rejects(applyProductionGroupMigration(gm,DB,'someone_else'),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'wrong owner identity');
+  await assert.rejects(applyProductionCouponAdminMigration(gm,DB,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'the 0063 delta never re-applies on 0063');
+  // MEASURED BLOCKER: canonical 0064 re-creates the ordinary loan trigger and replaces custody-executor-owned functions. neondb_owner holds no custody
+  // membership, so the fixed operator path is refused as a whole (42501 -> fixed code), leaving 0001-0063, every role and every object untouched.
+  const rolesBlocked=await roles(),guardBlocked=await guard();
+  await assert.rejects(applyProductionGroupMigration(gm,DB,OWNER),/PRODUCTION_GROUP_EXECUTOR_OWNED_OBJECTS_BLOCKED/,'the owner path cannot install 0064 on the Production topology');
+  assert.deepEqual(await q('SELECT id FROM public.foundation_migrations ORDER BY id'),entries.slice(0,63).map(e=>({id:e.id})),'nothing applied');
+  assert.equal((await q("SELECT to_regclass('public.group_orders') IS NULL absent"))[0].absent,true);
+  assert.deepEqual(await roles(),rolesBlocked);assert.deepEqual(await guard(),guardBlocked);
+  console.log('PASS 0064 on the owner path is refused as one fixed code and rolls back completely (executor-owned custody objects)');
+  // PRIVILEGED-PATH SIMULATION (not a Production procedure): the isolated cluster superuser applies the canonical 0064 SQL and registry row, then new objects are
+  // given to the owner exactly as the owner path would have made them (the executor-owned function stays executor-owned). This lets the grants and verify
+  // steps below be proven independently of how 0064 reaches Production.
+  {
+   const su=await observer.connect();
+   try{
+    await su.query('BEGIN');await su.query('SET LOCAL search_path=public,pg_catalog');
+    await su.query(entries[63]!.sql);await su.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[63]!.id,entries[63]!.checksum]);
+    const me=(await su.query('SELECT current_user u')).rows[0].u;
+    for(const r of (await su.query("SELECT c.relname,c.relkind FROM pg_class c WHERE c.relnamespace='public'::regnamespace AND pg_get_userbyid(c.relowner)=$1 AND c.relkind IN ('r','S','v') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.objid=c.oid AND d.deptype IN ('a','i') AND d.classid='pg_class'::regclass)",[me])).rows)
+     await su.query(`ALTER ${r.relkind==='S'?'SEQUENCE':r.relkind==='v'?'VIEW':'TABLE'} public."${r.relname}" OWNER TO ${OWNER}`);
+    for(const r of (await su.query("SELECT p.oid::regprocedure::text f FROM pg_proc p WHERE p.pronamespace='public'::regnamespace AND pg_get_userbyid(p.proowner)=$1",[me])).rows)await su.query(`ALTER FUNCTION ${r.f} OWNER TO ${OWNER}`);
+    await su.query('COMMIT');
+   }catch(e){await su.query('ROLLBACK').catch(()=>{});throw e;}finally{su.release();}
+  }
+  assert.equal((await q("SELECT count(*)::int n FROM pg_proc WHERE oid='public.rental_validate_group_loan()'::regprocedure AND pg_get_userbyid(proowner)=$1",[EXECUTOR]))[0].n,1,'the group loan validator is executor-owned');
+  await assert.rejects(applyProductionGroupMigration(gm,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'no replay once 0064 is registered');
+  await gm.query('BEGIN');try{await gm.query('ALTER TABLE group_orders DISABLE TRIGGER group_order_guard');await assert.rejects(groupCommittedProof(gm,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);}finally{await gm.query('ROLLBACK');}
+  await groupCommittedProof(gm,DB,OWNER);
+ }finally{gm.release();}
+ assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,64).map(e=>({id:e.id,checksum:e.checksum})));
+ const roles64After=await roles();assert.deepEqual({roles:roles64After.roles,members:roles64After.members},{roles:roles64.roles,members:roles64.members});
+ const owners64=roles64After.owners.filter((o:{k:string})=>!roles64.owners.some((p:{k:string})=>p.k===o.k));
+ assert.ok(owners64.length>0&&owners64.every((o:{k:string;o:string})=>o.o===OWNER||o.k==='fn:rental_validate_group_loan()'&&o.o===EXECUTOR),'every new 0064 object is owner-owned (the group loan validator is executor-owned like the ordinary one)');
+ for(const t of GROUP_TABLES)assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty');
+ assert.equal((await q("SELECT count(*)::int n FROM pg_roles WHERE rolname=$1",[gr.group]))[0].n,0,'no group role before the grants step');
+ const g64=await owner.connect();try{
+  await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'verify needs the grants too');
+  const g=await applyProductionGroupGrants(g64,DB,OWNER);assert.equal(g.status,'PRODUCTION_GROUP_GRANTS_INSTALLED');assert.equal(g.roleChanges,1);await groupGrantProof(g64,DB,OWNER);
+  await assert.rejects(applyProductionGroupGrants(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'no second grants run');
+  const v=await verifyProductionGroup(g64,DB,OWNER);
+  assert.deepEqual(v,{status:'PRODUCTION_GROUP_VERIFIED',registry:64,tables:14,groups:0,activeGroups:0,entranceRows:0,events:0,pendingNotices:0,groupHolds:0,writes:0});
+  await g64.query('ALTER TABLE group_orders DISABLE TRIGGER group_order_guard');
+  await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'a disabled guard trigger fails verify');
+  await g64.query('ALTER TABLE group_orders ENABLE REPLICA TRIGGER group_order_guard');
+  await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'a replica-only trigger fails verify');
+  await g64.query('ALTER TABLE group_orders ENABLE TRIGGER group_order_guard');await verifyProductionGroup(g64,DB,OWNER);
+  // Exact privileges: any extra or missing privilege fails verify.
+  await g64.query(`GRANT DELETE ON group_orders TO ${gr.group}`);await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'an extra group DELETE fails verify');await g64.query(`REVOKE DELETE ON group_orders FROM ${gr.group}`);
+  await g64.query('GRANT SELECT ON group_payments TO PUBLIC');await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'PUBLIC access fails verify');await g64.query('REVOKE SELECT ON group_payments FROM PUBLIC');
+  await g64.query(`GRANT SELECT ON group_events TO ${DB}_pricing`);await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'another role on a group table fails verify');await g64.query(`REVOKE SELECT ON group_events FROM ${DB}_pricing`);
+  await g64.query(`REVOKE UPDATE(status) ON group_notification_outbox FROM ${gr.group}`);await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'a missing delivery column fails verify');await g64.query(`GRANT UPDATE(status) ON group_notification_outbox TO ${gr.group}`);
+  await verifyProductionGroup(g64,DB,OWNER);
+ }finally{g64.release();}
+ const members64=await q("SELECT pg_get_userbyid(roleid) r,pg_get_userbyid(member) m FROM pg_auth_members WHERE roleid=$1::regrole OR member=$1::regrole",[gr.group]);
+ assert.deepEqual(members64,[{r:gr.group,m:gr.manager}],'only the role manager administers the group role (the owner holds no membership)');
+ assert.equal((await q("SELECT rolcanlogin FROM pg_roles WHERE rolname=$1",[gr.group]))[0].rolcanlogin,false,'NOLOGIN until the Owner connection step');
+ assert.equal((await q("SELECT has_function_privilege($1,'group_register_actor(uuid)','EXECUTE') ok",[gr.group]))[0].ok,true);
+ assert.equal((await q("SELECT has_function_privilege($1,'group_register_actor(uuid)','EXECUTE') ok",[ops]))[0].ok,false);
+ for(const [t,p] of [['group_orders','SELECT'],['group_order_parts','SELECT'],['group_members','SELECT'],['group_payments','SELECT'],['group_part_preparations','SELECT'],['group_part_preparations','INSERT']] as const)assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,p]))[0].ok,true,'operations '+t+' '+p);
+ for(const [t,p] of [['group_orders','INSERT'],['group_orders','UPDATE'],['group_events','SELECT'],['group_payments','INSERT'],['group_notification_outbox','SELECT'],['group_part_preparations','DELETE']] as const)assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,p]))[0].ok,false,'operations has no '+t+' '+p);
+ assert.equal((await q("SELECT has_column_privilege($1,'group_part_preparations','prepared_at','UPDATE') ok,has_column_privilege($1,'group_part_preparations','checked_in_by','UPDATE') bad",[ops]))[0].ok,true);
+ assert.equal((await q("SELECT has_column_privilege($1,'group_part_preparations','checked_in_by','UPDATE') bad",[ops]))[0].bad,false);
+ assert.equal((await q("SELECT has_column_privilege($1,'group_notification_outbox','sent_at','UPDATE') ok,has_column_privilege($1,'group_notification_outbox','admin_message','UPDATE') bad",[gr.group]))[0].ok,true);
+ assert.equal((await q("SELECT has_column_privilege($1,'group_notification_outbox','admin_message','UPDATE') bad",[gr.group]))[0].bad,false);
+ for(const r of [pricingRole,DB+'_hold',DB+'_guest',DB+'_recommendation',DB+'_transfer'])if((await q('SELECT 1 FROM pg_roles WHERE rolname=$1',[r])).length)for(const t of GROUP_TABLES)assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') ok",[r,t]))[0].ok,false,r+' cannot read '+t);
+ // The group role really acts like the hold role plus the group delta: a synthetic group DML as that role is possible only through the guards (no direct write).
+ console.log('PASS canonical 0064 applies as neondb_owner after 0063: registry 63 -> 64, roles/memberships unchanged by migrate, custody functions keep executor ownership, tables owner-owned and empty; grants create only the NOLOGIN group role (via the role manager), exact privileges, PUBLIC nothing');
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

@@ -13,7 +13,7 @@ rule version: `HEIGHT_MINUS_20_WINDOW_15_BOOT_PLUS_1_EDGE_V2`（V1 は読取・�
 | fit metadata | `FitMeta`（kind=NORMAL/EDGE_BELOW/EDGE_ABOVE/NEAREST_AVAILABLE/MANUAL_FIT_REQUIRED、部品別 target/handled range/offered/diff/reason、ruleVersion）。preview の `offered`(JSONB)、selection の `selection.fit`（server が preview から導出）に保存。**DB migration なし**（既存 JSONB の拡張）。 |
 | 伝播 | preview -> selection -> quote（selection.quote_id 経由）-> 手配: `custody-service.assignment` の `fitByMember`、`manifest-service` の `preparationMembers[].fit`、`CustodyWorkspace` / `TomorrowPreparation` に表示。 |
 | 拘束 | `select()` は直接 `offered` の候補から variant を決め、`exact()` で fit/variant/price 等の余分な欄を拒否。fit は選択時に preview から再導出。 |
-| MANUAL_FIT_REQUIRED | 暫定限度（板 30cm、ブーツ 3cm、いずれもオーナー調整可）超過。候補は全て null、情報表示のみ、hold/quote/決済に進めない。ポールは職員が貸出時に調整する付属品のため常に確認フラグのみで、セット全体を止めない。 |
+| MANUAL_FIT_REQUIRED | 限度（板 30cm、ブーツ 3cm。Owner承認済み 2026-11-27、変更はOwnerの指示による）超過。候補は全て null、情報表示のみ、hold/quote/決済に進めない。ポールは職員が貸出時に調整する付属品のため常に確認フラグのみで、セット全体を止めない。 |
 | UI JA/EN | `components/fit-copy.ts`、GuestBooking（候補バッジ・注意文・確認画面）、RecommendationWorkspace（スタッフ）。390px/1280px で確認。 |
 | スキーマ上下限 | **変更なし（不要）**。身長50–250・足5–50・体重5–300は実在する体格を既に含む。失敗は入力範囲でなく catalog 側。DIN 閾値も不変（OUTSIDE_TABLE は null のまま）。単位/桁/有限性の誤りは従来通り `INVALID_RECOMMENDATION_INPUT`。 |
 
@@ -31,7 +31,7 @@ rule version: `HEIGHT_MINUS_20_WINDOW_15_BOOT_PLUS_1_EDGE_V2`（V1 は読取・�
 
 ## 限界 / NOT_RUN
 
-- 限度値（30cm/3cm）はメーカー資料に基づかない暫定値。メーカー禁止適合・BSL/ソール互換・解放試験のデータはリポジトリになく、実装していない。
+- 限度値（板 30cm・ブーツ 3cm）は Owner承認済み（2026-11-27）。メーカー資料に基づく値ではなくOwnerの運用判断。メーカー禁止適合・BSL/ソール互換・解放試験のデータはリポジトリになく、実装していない。
 - 通常経路で窓内に在庫があるセットの「ポールだけ範囲外」は fit 表示しない（通常結果保護のため。edge 経路のポールのみ分類）。ポール在庫不足時の「次に近いポール」は未実装（従来動作）。
 - スタッフ注文詳細（orders-service）への fit 表示は未実装。保存は quote 経由で参照可能、表示は準備/貸出画面のみ。
 - スタッフ preview UI の edge 表示は実装済みだが専用ブラウザ試験なし（既存スタッフ UI 試験の回帰のみ）。

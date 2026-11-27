@@ -21,6 +21,7 @@ import {RECEIPT_LEDGER, expectedPre0056RegistrySha256, validatePre0056DrillResul
 import {expectedPre0059RegistrySha256, validatePre0059DrillResult} from '../../scripts/production-restore-evidence-pre0059';
 import {expectedPre0062RegistrySha256, validatePre0062DrillResult} from '../../scripts/production-restore-evidence-pre0062';
 import {expectedPre0063RegistrySha256, validatePre0063DrillResult} from '../../scripts/production-restore-evidence-pre0063';
+import {expectedPre0064RegistrySha256, validatePre0064DrillResult} from '../../scripts/production-restore-evidence-pre0064';
 import {criticalFingerprint} from '../../scripts/local-restore';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 
@@ -446,6 +447,30 @@ try {
     assert.throws(() => validatePre0059DrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the pre-0059 verifier refuses a 62-entry result');
     assert.throws(() => validatePre0056DrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the pre-0056 verifier refuses a 62-entry result');
     assert.throws(() => validateDrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the frozen pre-0054 finalizer refuses a 62-entry result');
+    assert.deepEqual(await readdir(work), []);
+    assert.deepEqual(counters, {fetch: 1, restore: 1});
+  });
+
+  await check('GROUP-RESTORE-01: a pre-0064 Production backup restores against its 63-entry registry; only the pre-0064 verifier accepts that output (not the 53, 55, 58, 61 or 62 contracts)', async () => {
+    // Emulates a dump taken after the coupon admin delta (0063) and before the group order core: the registry holds the first 63 entries and no 0064 object exists.
+    const toPre0064 = async (p: Pool) => { await rewind0064(p); };
+    const target = await newTarget(); counters.fetch = counters.restore = 0;
+    const result = await runRestoreDrill(adapters(toPre0064), input(target, {expectedMigrations: 63}), fingerprintHost('production.invalid'));
+    assert.equal(result.verification.migrations, 63);
+    assert.equal(result.verification.registrySha256, expectedPre0064RegistrySha256());
+    const expect = {key: KEY, ciphertextBytes: (await lstat(cipherPath)).size, ciphertextSha256: sha(await readFile(cipherPath))};
+    assert.equal(validatePre0064DrillResult({...result, dataClass: 'PRODUCTION'}, expect).plaintextSha256, sha(plain));
+    assert.throws(() => validatePre0064DrillResult(result, expect), /RESTORE_EVIDENCE_NOT_PRODUCTION_DRILL_PASS/);
+    assert.throws(() => validatePre0063DrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the pre-0063 verifier refuses a 63-entry result');
+    assert.throws(() => validatePre0062DrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the pre-0062 verifier refuses a 63-entry result');
+    assert.throws(() => validatePre0059DrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the pre-0059 verifier refuses a 63-entry result');
+    assert.throws(() => validatePre0056DrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the pre-0056 verifier refuses a 63-entry result');
+    assert.throws(() => validateDrillResult({...result, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the frozen pre-0054 finalizer refuses a 63-entry result');
+    // And the reverse: a pre-0063 (62-entry) drill result cannot satisfy the pre-0064 verifier.
+    const toPre0063 = async (p: Pool) => { await rewind0064(p); await p.query("DELETE FROM foundation_migrations WHERE id IN ('0063')"); await p.query('DROP TABLE coupon_status_events; DROP FUNCTION coupon_is_active(uuid), coupon_booking_count(uuid)'); };
+    const target62 = await newTarget(); counters.fetch = counters.restore = 0;
+    const r62 = await runRestoreDrill(adapters(toPre0063), input(target62, {expectedMigrations: 62}), fingerprintHost('production.invalid'));
+    assert.throws(() => validatePre0064DrillResult({...r62, dataClass: 'PRODUCTION'}, expect), /RESTORE_EVIDENCE_MIGRATIONS_MISMATCH/, 'the pre-0064 verifier refuses a 62-entry result');
     assert.deepEqual(await readdir(work), []);
     assert.deepEqual(counters, {fetch: 1, restore: 1});
   });

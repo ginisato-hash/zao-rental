@@ -52,7 +52,8 @@ export async function endViewIfSessionIs(stamp:string){
  if(verdict==='CHANGED')return;
  // A request answered 401/403 and the session endpoint cannot be reached or says nothing: do not destroy a possibly valid session. The boundary hides the
  // screen and re-verifies until it can tell (a real expiry then ends it).
- if(verdict==='TRANSIENT'||verdict==='MATCH'){window.dispatchEvent(new Event('zao-auth-recheck'));return;}
+ if(verdict==='TRANSIENT'){window.dispatchEvent(new Event('zao-auth-recheck'));return;}
+ // ENDED, or MATCH (a business request was refused with 401 although the session endpoint still verifies this stamp: fail closed, as before).
  invalidateStaffView();
 }
 export function StaffSessionBoundary({stamp,children}:{stamp:string;children:ReactNode}){

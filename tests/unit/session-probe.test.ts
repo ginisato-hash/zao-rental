@@ -76,3 +76,9 @@ test('a probe that never answers is aborted after PROBE_TIMEOUT_MS and is a tran
  const realSetTimeout=globalThis.setTimeout;(globalThis as {setTimeout:unknown}).setTimeout=((fn:()=>void,ms?:number)=>realSetTimeout(fn,ms===PROBE_TIMEOUT_MS?5:ms)) as typeof setTimeout;
  try{await assert.rejects(probeSession());assert.equal(signal?.aborted,true);}finally{(globalThis as {setTimeout:unknown}).setTimeout=realSetTimeout;}
 });
+
+test('a business 401 while the session endpoint still verifies the same stamp fails closed (unchanged contract); only an unreadable answer re-verifies',async()=>{
+ const events=fakeWindow();
+ (globalThis as {fetch:unknown}).fetch=()=>Promise.resolve({ok:true,status:200,json:async()=>({status:'authorized',stamp:'A'})});
+ bumpSessionEpoch();await endViewIfSessionIs('A');assert.deepEqual(events,['zao-auth-ended']);
+});

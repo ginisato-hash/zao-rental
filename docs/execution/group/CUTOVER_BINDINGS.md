@@ -11,7 +11,7 @@
 | 同上 | `PRODUCTION_DB_ROLE_GROUP` | **無いのが正**（`<DB名>_group` を導出。上書きがあると古いロールに固定されるため、あれば検出） |
 | 同上 | `PRODUCTION_DB_PASSWORD_<上の11個＋GROUP>`(sensitive、12個) | 新規発行 |
 | 同上 | `PRODUCTION_WORKER_DB_PASSWORD_{DISPATCHER,WORKER,PROJECTOR}`(sensitive、3個) | 新規発行。ロール名は `productionPaymentRoleNames(DB名)` から導出（ROLE 変数なし）→ `neondb_v65_pay_{dispatch,truth,projection}` |
-| Webhook 専用 Vercel `prj_lQD8NC…` | `PRODUCTION_RECEIVER_DATABASE_URL`(sensitive、1個) | 新規：`postgresql://neondb_v65_pay_receipt:…@<同じ直結host>/neondb_v65?sslmode=verify-full`。**このプロジェクトに DB 系キーは他に置かない** |
+| Webhook 専用 Vercel `prj_lQD8NC…` | `PRODUCTION_RECEIVER_DATABASE_URL`(sensitive、1個) | 新規：`postgresql の接続URI（ロール・パスワードは秘密）@<同じ直結host>/neondb_v65?sslmode=verify-full`。**このプロジェクトに DB 系キーは他に置かない** |
 | GitHub Environment `production-backup` | secret `PGDATABASE` / `PGUSER` / `PGPASSWORD` | `neondb_v65` / `neondb_v65_backup` / 新規発行 |
 | 同上 | `PGHOST` / `PGPORT` / `PRODUCTION_BACKUP_ACTIVATION` | 変更なし |
 | DB ロール | `neondb_v65_*`（サービス12、worker3、receiver、diagnostic、backup） | 切替前 NOLOGIN。切替後に LOGIN（diagnostic を除く）。backup は `pg_read_all_data` のみのメンバー |

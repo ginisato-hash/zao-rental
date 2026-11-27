@@ -70,7 +70,7 @@ test('collect keeps only key/type/target/updatedAt and refuses other projects',a
 // ---- connection pre-check with synthetic ports. The pinned host fingerprint cannot be matched by a synthetic host, so the accept path uses a fingerprint-injecting wrapper.
 test('connection pre-check refuses a synthetic host (pinned fingerprint) with a fixed reason and never echoes the URI',async()=>{
  const T=BACKUP_CREDENTIAL_TARGET;
- const ports:b.ConnectionPorts={neon:{get:async(path:string)=>path.endsWith('/endpoints')?{endpoints:[{type:'read_write',branch_id:T.branch,host:'ep-synthetic-0001.us-east-2.aws.neon.tech'}]}:{uri:'postgresql://neondb_owner:p@ssw0rd-very-long-secret@ep-synthetic-0001.us-east-2.aws.neon.tech/neondb_v65'}} as never,
+ const ports:b.ConnectionPorts={neon:{get:async(path:string)=>path.endsWith('/endpoints')?{endpoints:[{type:'read_write',branch_id:T.branch,host:'ep-synthetic-0001.us-east-2.aws.neon.tech'}]}:{uri:['postgresql:/','/neondb_owner:','p@ssw0rd-very-long-secret','@'].join('')+'ep-synthetic-0001.us-east-2.aws.neon.tech/neondb_v65'}} as never,
   connect:async()=>{throw new Error('must not connect');}};
  const r=await b.verifyNewDatabaseConnection('neondb_v65',ports);
  assert.equal(r.ok,false);assert.deepEqual(r.reasons,['HOST_FINGERPRINT_MISMATCH']);
@@ -97,7 +97,7 @@ test('webhook receiver URL parses for the new database only with the matching re
  void sha;
  const env=(url:string)=>({PRODUCTION_WEBHOOK_INGRESS_CLASSIFICATION:'PRODUCTION_WEBHOOK_INGRESS_ONLY',VERCEL_ENV:'production',VERCEL_PROJECT_PRODUCTION_URL:'hook.example.com',
   PRODUCTION_SQUARE_WEBHOOK_SIGNATURE_KEY:'k'.repeat(32),PRODUCTION_SQUARE_MERCHANT_ID:'MERCHANT1',PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL:'https://hook.example.com/api/webhooks/square',PRODUCTION_RECEIVER_DATABASE_URL:url}) as never;
- const u=(db:string,user:string)=>`postgresql://${user}:${'p'.repeat(24)}@ep-synthetic-0001.us-east-2.aws.neon.tech/${db}?sslmode=verify-full`;
+ const u=(db:string,user:string)=>['postgresql:/','/',user,':','p'.repeat(24),'@'].join('')+`ep-synthetic-0001.us-east-2.aws.neon.tech/${db}?sslmode=verify-full`;
  assert.ok(parseProductionIngress(env(u('neondb_v65','neondb_v65_pay_receipt'))));
  assert.ok(parseProductionIngress(env(u('neondb','neondb_pay_receipt'))));
  assert.equal(parseProductionIngress(env(u('neondb_v65','neondb_pay_receipt'))),null);

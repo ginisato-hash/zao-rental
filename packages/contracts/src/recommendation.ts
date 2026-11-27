@@ -7,7 +7,9 @@ import {HoldError,normalizePeriod,variantMatches,atLeastV13,singleItemsCompatibl
 import {lengthCm,bootRange,bootDistance,compareBootFit,canonicalSize,BOOT_MAX_DISTANCE_CM} from './size';
 import type {StoreId} from './ledger';
 import {SKIER_TYPES,type SkierType} from './din';
-export const RECOMMENDATION_RULE='HEIGHT_MINUS_20_WINDOW_15_BOOT_PLUS_1_V1' as const;
+import {RECOMMENDATION_RULE_V2,partFit,poleFit,combineFit,NORMAL_DISTANCE_CM,MANUAL_FIT_LIMIT_CM,type FitMeta,type FitKind} from './size-edge';
+/** Current rule. V1 previews stay readable/selectable (see SUPPORTED_RECOMMENDATION_RULES); V2 only adds the edge route when the normal route has no candidate. */
+export const RECOMMENDATION_RULE=RECOMMENDATION_RULE_V2;
 export const MODEL_POLICY='EXPLICIT_SIZE_CLASS_NO_MODEL_PROMISE_V1' as const;
 export const DIRECTIONS=['RECOMMENDED','SHORTER','LONGER'] as const;
 export type Direction=typeof DIRECTIONS[number];
@@ -15,8 +17,8 @@ export type Profile={key:string;sport:'SKI'|'SNOWBOARD'|'WEAR';heightCm:number|n
 export type ItemFamily='SKI'|'SKI_BOOT'|'SNOWBOARD'|'SNOWBOARD_BOOT'|'POLE';
 export type RecommendationInput={contractVersion?:ContractVersion;pickupStore:StoreId;returnStore:StoreId;period:Period;members:Profile[]};
 export type Variant={id:string;family:string;age:string;tier:string;size:string;model_id?:string;catalog_season?:string|null;compatible_sports?:string[]|null;model_name?:string;poleStores?:string[]};
-export type Candidate={lengthCm:number;sizeLabel?:string;member:HoldConditions['members'][number]};
-export type MemberRecommendation={visualization?:AvatarVisualizationV1;key:string;targetCm:number;minCm:number;maxCm:number;bootCm:number;initialLengthCm:number|null;candidates:Record<Direction,Candidate|null>;checks:{lengthCm:number;result:Feasibility}[];reason:string|null;price:Record<string,unknown>|null;priceError:string|null};
+export type Candidate={lengthCm:number;sizeLabel?:string;member:HoldConditions['members'][number];/** Server-generated; absent = normal (and always absent on V1 data). */fit?:FitMeta};
+export type MemberRecommendation={visualization?:AvatarVisualizationV1;key:string;targetCm:number;minCm:number;maxCm:number;bootCm:number;initialLengthCm:number|null;candidates:Record<Direction,Candidate|null>;checks:{lengthCm:number;result:Feasibility}[];reason:string|null;price:Record<string,unknown>|null;priceError:string|null;/** V2 only: fit of the RECOMMENDED candidate (NORMAL when the normal route had candidates). */fit?:{ruleVersion:string;kind:FitKind};/** MANUAL_FIT_REQUIRED: nearest stock shown for information only; never selectable. */manualFit?:{fit:FitMeta;lengthCm:number;sizeLabel?:string}};
 export class RecommendationError extends HoldError{}
 const validate=new Ajv({allErrors:false,multipleOfPrecision:10}).compile(schema);
 export function parseRecommendation(value:unknown):RecommendationInput{
@@ -47,20 +49,20 @@ export function sizing(profile:Pick<Profile,'heightCm'|'footCm'|'itemFamily'|'it
 // allowance around a contiguous numeric value and explicit cm unit; never infer units.
 export function centimetres(size:string):number|null{const m=/^(\d{1,3}(?:\.\d)?)\s*cm$/i.exec(size.trim());return m?Number(m[1]):null;}
 // `preferLonger` (boots): on an equal distance never recommend the smaller size (R67 +1.0 cm rule).
-export function rankCandidates<T extends {lengthCm:number}>(all:T[],target:number,preferLonger=false):Record<Direction,T|null>{
- const ordered=all.filter(x=>Math.abs(x.lengthCm-target)<=15).sort((a,b)=>Math.abs(a.lengthCm-target)-Math.abs(b.lengthCm-target)||(preferLonger?b.lengthCm-a.lengthCm:a.lengthCm-b.lengthCm));
+export function rankCandidates<T extends {lengthCm:number}>(all:T[],target:number,preferLonger=false,window=15):Record<Direction,T|null>{
+ const ordered=all.filter(x=>Math.abs(x.lengthCm-target)<=window).sort((a,b)=>Math.abs(a.lengthCm-target)-Math.abs(b.lengthCm-target)||(preferLonger?b.lengthCm-a.lengthCm:a.lengthCm-b.lengthCm));
  const recommended=ordered[0]??null;
  return {RECOMMENDED:recommended,SHORTER:recommended?[...ordered].filter(x=>x.lengthCm<recommended.lengthCm).sort((a,b)=>b.lengthCm-a.lengthCm)[0]??null:null,LONGER:recommended?[...ordered].filter(x=>x.lengthCm>recommended.lengthCm).sort((a,b)=>a.lengthCm-b.lengthCm)[0]??null:null};
 }
 /** Boot buckets ranked against the +1.0 cm target; variants sharing one canonical size form one option. */
-export function bootOptions(variants:Variant[],family:'SKI_BOOT'|'SNOWBOARD_BOOT',targetCm:number){
+export function bootOptions(variants:Variant[],family:'SKI_BOOT'|'SNOWBOARD_BOOT',targetCm:number,maxDistanceCm=BOOT_MAX_DISTANCE_CM){
  const groups=new Map<string,{label:string;range:NonNullable<ReturnType<typeof bootRange>>;ids:string[]}>();
- for(const v of variants){if(v.family!==family)continue;const r=bootRange(v.size);if(!r||bootDistance(r,targetCm)>BOOT_MAX_DISTANCE_CM+1e-9)continue;const label=canonicalSize(family,v.size);const g=groups.get(label)??{label,range:r,ids:[]};g.ids.push(v.id);groups.set(label,g);}
+ for(const v of variants){if(v.family!==family)continue;const r=bootRange(v.size);if(!r||bootDistance(r,targetCm)>maxDistanceCm+1e-9)continue;const label=canonicalSize(family,v.size);const g=groups.get(label)??{label,range:r,ids:[]};g.ids.push(v.id);groups.set(label,g);}
  return [...groups.values()].sort((a,b)=>compareBootFit(a.range,b.range,targetCm)).map(g=>({...g,ids:g.ids.sort(),lengthCm:Math.min(Math.max(targetCm,g.range.lo),g.range.hi)}));
 }
 /** Selected families for a member: null = a set; V1.3 one item; V1.4 several. */
 export function memberItems(profile:Pick<Profile,'itemFamily'|'items'>):ItemFamily[]|null{return profile.items?.length?profile.items:profile.itemFamily?[profile.itemFamily]:null;}
-export function buildMembers(profile:Profile,variants:Variant[],version?:RecommendationInput['contractVersion'],bootChoice=0):{candidates:Candidate[];reason:string|null;bootChoices?:number}{
+export function buildMembers(profile:Profile,variants:Variant[],version?:RecommendationInput['contractVersion'],bootChoice=0,edge=false):{candidates:Candidate[];reason:string|null;bootChoices?:number}{
  const age=profile.adultAtStart?'ADULT':'KIDS';
  const wearItems=profile.wearSelection?[{family:'WEAR_JACKET' as const,variantIds:[profile.wearSelection.jacketVariantId]},{family:'WEAR_PANTS' as const,variantIds:[profile.wearSelection.pantsVariantId]}]:[];
  const wearMember:HoldConditions['members'][number]={key:profile.key,product:'WEAR_SET',age,tier:'STANDARD',wearSport:profile.wearSport??(profile.sport==='SNOWBOARD'?'SNOWBOARD':'SKI'),items:wearItems};
@@ -72,8 +74,11 @@ export function buildMembers(profile:Profile,variants:Variant[],version?:Recomme
  const fitPool=variants.filter(v=>v.age===age&&(v.tier===profile.tier||profile.tier==='PREMIUM'&&v.tier==='REGULAR'&&!catalog.some(x=>x.family===v.family)));
  const bootFamily:'SKI_BOOT'|'SNOWBOARD_BOOT'=sport==='SKI'?'SKI_BOOT':'SNOWBOARD_BOOT';
  const wantBoard=!selected||selected.includes(sport),wantBoot=!selected||selected.includes(bootFamily),wantPole=sport==='SKI'&&(!selected||selected.includes('POLE'));
- const options=wantBoot?bootOptions(fitPool,bootFamily,s.bootCm):[];
- if(wantBoot&&!options.length)return {candidates:[],reason:'BOOT_SIZE_NOT_FOUND'};
+ let options=wantBoot?bootOptions(fitPool,bootFamily,s.bootCm):[];
+ // EDGE_V2 (only when requested after the normal route found nothing): boots keep the shared-shell distance order but lose the 1.0 cm cap.
+ if(edge&&wantBoot&&!options.length)options=bootOptions(fitPool,bootFamily,s.bootCm,Infinity);
+ if(wantBoot&&!options.length)return {candidates:[],reason:edge?'NO_CATALOG_BOOT':'BOOT_SIZE_NOT_FOUND'};
+ const bootRanges=fitPool.filter(v=>v.family===bootFamily).map(v=>bootRange(v.size)).filter((r):r is NonNullable<typeof r>=>r!==null),bootBounds=bootRanges.length?{lo:Math.min(...bootRanges.map(r=>r.lo)),hi:Math.max(...bootRanges.map(r=>r.hi))}:null;
  const boot=options[Math.min(bootChoice,options.length-1)];
  const poles=fitPool.filter(v=>v.family==='POLE'&&lengthCm(v.size)!==null);
  const suggested=profile.heightCm===null?null:suggestPole(profile.heightCm,poles.map(v=>lengthCm(v.size)!));
@@ -82,14 +87,24 @@ export function buildMembers(profile:Profile,variants:Variant[],version?:Recomme
  // A set's pole is a V1.3 accessory (may be empty); an individual pole must name real capacity.
  if(selected&&wantPole&&!pole)return {reason:'INSUFFICIENT',candidates:[]};
  const poleItem={family:'POLE' as const,variantIds:pole?[pole.id]:[]};
+ // Fit metadata exists only on the explicit edge route; the normal route's candidates are byte-identical to V1.
+ const poleLengths=poles.map(v=>lengthCm(v.size)!),poleBounds=poleLengths.length?{lo:Math.min(...poleLengths),hi:Math.max(...poleLengths)}:null;
+ // Pre-V1.3 poles are named by the request, not sized from height, so only V1.3+ pole sizes are fit-classified.
+ const polePart=()=>edge&&pole&&atLeastV13(version)&&profile.heightCm!==null&&poleBounds?[poleFit(profile.heightCm*0.7,lengthCm(pole.size)!,poleBounds)]:[];
+ const bootPart=(o:NonNullable<typeof boot>|undefined)=>edge&&o&&bootBounds?[partFit(bootFamily,s.bootCm,o.range,bootBounds,NORMAL_DISTANCE_CM.boot,MANUAL_FIT_LIMIT_CM.boot)]:[];
+ const withFit=(c:Candidate,parts:ReturnType<typeof polePart>):Candidate=>{const f=edge?combineFit(parts,RECOMMENDATION_RULE_V2):null;return f?{...c,fit:f}:c;};
  const member=(items:HoldConditions['members'][number]['items']):HoldConditions['members'][number]=>({key:profile.key,product:selected?'SINGLE':sport==='SKI'?'SKI_SET':'SNOWBOARD_SET',age,tier:profile.tier,...(wearItems.length?{wear:true}:{}),items:[...items,...wearItems]});
  const extras=(withBoot:typeof boot|undefined)=>[...(wantBoot&&withBoot?[{family:bootFamily,variantIds:withBoot.ids}]:[]),...(wantPole?[poleItem]:[])];
  if(!wantBoard){
-  if(wantBoot)return {reason:null,bootChoices:1,candidates:options.slice(0,3).map(o=>({lengthCm:o.lengthCm,sizeLabel:o.label,member:member(extras(o))}))};
+  if(wantBoot)return {reason:null,bootChoices:1,candidates:options.slice(0,edge?6:3).map(o=>withFit({lengthCm:o.lengthCm,sizeLabel:o.label,member:member(extras(o))},[...bootPart(o),...polePart()]))};
   return pole?{reason:null,candidates:[{lengthCm:lengthCm(pole.size)!,sizeLabel:canonicalSize('POLE',pole.size),member:member(extras(undefined))}]}:{reason:'INSUFFICIENT',candidates:[]};
  }
- const boards=catalog.filter(v=>v.family===sport&&(!profile.modelSelection||v.model_id===profile.modelSelection.modelId&&v.catalog_season===profile.modelSelection.season)&&lengthCm(v.size)!==null&&Math.abs(lengthCm(v.size)!-s.targetCm)<=15);
- const lengths=[...new Set(boards.map(v=>lengthCm(v.size)!))].sort((a,b)=>a-b);
+ const eligible=catalog.filter(v=>v.family===sport&&(!profile.modelSelection||v.model_id===profile.modelSelection.modelId&&v.catalog_season===profile.modelSelection.season)&&lengthCm(v.size)!==null);
+ const windowed=eligible.filter(v=>Math.abs(lengthCm(v.size)!-s.targetCm)<=15);
+ // Edge route: no eligible size inside the +-15 cm window, so every real numeric size is a candidate, nearest first (tie: shorter).
+ const edgeBoards=edge&&!windowed.length&&eligible.length>0,boards=edgeBoards?eligible:windowed;
+ const lengths=[...new Set(boards.map(v=>lengthCm(v.size)!))].sort((a,b)=>edgeBoards?Math.abs(a-s.targetCm)-Math.abs(b-s.targetCm)||a-b:a-b);
+ const boardLengths=eligible.map(v=>lengthCm(v.size)!),boardBounds=boardLengths.length?{lo:Math.min(...boardLengths),hi:Math.max(...boardLengths)}:null;
  if(lengths.length>32||(boot?.ids.length??0)>6||lengths.some(n=>boards.filter(v=>lengthCm(v.size)===n).length>6))return {candidates:[],reason:'INDETERMINATE_CATALOG_LIMIT'};
- return {reason:lengths.length?null:'NO_CATALOG_LENGTH',bootChoices:options.length,candidates:lengths.map(n=>({lengthCm:n,sizeLabel:n+' cm',member:member([{family:sport,variantIds:boards.filter(v=>lengthCm(v.size)===n).map(v=>v.id).sort(),...(profile.modelSelection?{modelPromise:{...profile.modelSelection,variantId:boards.find(v=>lengthCm(v.size)===n)!.id}}:{})},...extras(boot)])}))};
+ return {reason:lengths.length?null:'NO_CATALOG_LENGTH',bootChoices:options.length,candidates:lengths.map(n=>withFit({lengthCm:n,sizeLabel:n+' cm',member:member([{family:sport,variantIds:boards.filter(v=>lengthCm(v.size)===n).map(v=>v.id).sort(),...(profile.modelSelection?{modelPromise:{...profile.modelSelection,variantId:boards.find(v=>lengthCm(v.size)===n)!.id}}:{})},...extras(boot)])},[...(edge&&boardBounds?[partFit(sport,s.targetCm,{lo:n,hi:n},boardBounds,NORMAL_DISTANCE_CM.board,MANUAL_FIT_LIMIT_CM.board)]:[]),...bootPart(boot),...polePart()]))};
 }

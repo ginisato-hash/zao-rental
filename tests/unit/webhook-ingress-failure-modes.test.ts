@@ -68,7 +68,8 @@ test('static: no runtime source calls the legacy inbox claim/settle, so square_w
  const files:string[]=[];
  const walk=(dir:string)=>{for(const name of readdirSync(dir)){if(name==='node_modules'||name==='.next')continue;const p=dir+'/'+name,s=statSync(p);if(s.isDirectory())walk(p);else if(/\.(ts|tsx|mjs)$/.test(name))files.push(p);}};
  for(const dir of ['packages','apps','scripts'])walk(dir);
- const callers=files.filter(f=>!/square-webhook-inbox\.ts$/.test(f)&&/square_webhook\.(?:claim|settle)\(|\.settle\(/.test(readFileSync(f,'utf8')));
+ // group/notification-worker.ts has its OWN private settle() on group_notification_outbox (unrelated to the Square inbox), so it is the one allowed match.
+ const callers=files.filter(f=>!/square-webhook-inbox\.ts$/.test(f)&&!/group\/notification-worker\.ts$/.test(f)&&/square_webhook\.(?:claim|settle)\(|\.settle\(/.test(readFileSync(f,'utf8')));
  assert.deepEqual(callers,[]);
 });
 

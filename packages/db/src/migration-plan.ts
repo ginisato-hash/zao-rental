@@ -37,4 +37,5 @@ export const migrationPlan = [
   {id:'0061',file:'0061_customer_identity.sql'},
   {id:'0062',file:'0062_store_sales_stops.sql'},
   {id:'0063',file:'0063_coupon_admin.sql'},
+  {id:'0064',file:'0064_group_order_core.sql'},
 ] as const;

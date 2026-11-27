@@ -10,7 +10,7 @@ const labels:Record<string,string>={
  NONE:'なし',UNPAID:'未払い',PENDING:'処理待ち',SUBMITTING:'送信中',UNKNOWN:'確認が必要',REVIEW:'確認が必要',COMPLETED:'完了',COMPLETED_DEV:'完了',CONFIRMED:'予約確定',CONFIRMED_DEV:'予約確定',PAYMENT_PENDING:'決済確認中',PAYMENT_REVIEW:'決済要確認',FAILED:'要対応',
  PICKUP_WINDOW:'受取可能',BEFORE_PICKUP:'受取日前',LATE_PICKUP:'後日受取',RETURN_DUE_PASSED:'返却期限超過',NO_PICKUP:'未受取で終了',OUT:'貸出中',RECEIVED:'受領済み',CANDIDATE:'受領前',READY:'準備済み',PREPARED:'準備済み',UNKNOWN_OR_ALREADY_RECEIVED:'確認が必要',INSPECTION_PENDING:'検品待ち',MATCHED:'照合済み',REVIEW_REQUIRED:'確認が必要',INTENT:'保存中',HOLD_SAVED:'在庫確保済み',HOLD_FAILED:'在庫を確保できません',QUOTE_SAVED:'見積保存済み',SAVED:'保存済み',CREATED:'作成済み',AMENDED:'変更済み',SUCCEEDED:'完了',UNAVAILABLE:'利用できません',BLOCKED:'要対応',NOT_RUN:'未実施',HEALTHY:'正常',DEGRADED:'要確認',INFO:'情報',WARN:'注意',ERROR:'重大',ACKNOWLEDGED:'確認済み',UNACKNOWLEDGED:'未確認',TRIAGED:'内容を確認済み',ASSIGNED:'担当者を割当済み',VERIFIED_WITH_CANONICAL_RECORD:'正式な記録と照合済み',
  PAYMENT_UNKNOWN:'決済結果が不明',WEBHOOK_RECONCILIATION_REQUIRED:'決済通知の確認が必要',WEBHOOK_FAILED:'決済通知の受取失敗',HOLD_EXPIRED:'在庫確保の期限切れ',TRANSFER_DELAYED:'店舗間移動の遅延',RETURN_INSPECTION_REQUIRED:'返却用品の検品待ち',INVENTORY_INVARIANT_FAILED:'在庫数の確認が必要',REFUND_PENDING:'返金処理待ち',REFUND_UNKNOWN:'返金結果が不明',NOTIFICATION_FAILED:'予約通知の送信失敗',STORAGE_FAILED:'保存に失敗',BOOKING_RECOVERY_FAILED:'予約確認に失敗',DB_UNAVAILABLE:'データベースに接続できません',PROVIDER_TIMEOUT:'外部サービスの応答待ち',
- APP:'アプリ',DB:'データベース',GUEST:'お客様の予約',PAYMENT_ADAPTER:'決済連携',WEBHOOK:'決済通知',MEDIA:'写真・画像',NOTIFICATION:'予約通知',SYSTEM:'システム全体',INSUFFICIENT:'在庫不足',INDETERMINATE:'在庫の再確認が必要',INDETERMINATE_SOME_CANDIDATES:'一部の候補を確認できません',TRANSFER_PLAN_REQUIRED:'店舗間移動の計画が必要',
+ APP:'アプリ',DB:'データベース',GUEST:'お客様の予約',PAYMENT_ADAPTER:'決済連携',WEBHOOK:'決済通知',MEDIA:'写真・画像',NOTIFICATION:'予約通知',SYSTEM:'システム全体',INSUFFICIENT:'在庫不足',INDETERMINATE:'在庫の再確認が必要',INDETERMINATE_SOME_CANDIDATES:'一部の候補を確認できません',NO_CATALOG_BOOT:'取扱ブーツの登録なし',NO_CATALOG_LENGTH:'取扱サイズの登録なし',MANUAL_FIT_REQUIRED:'店舗での適合確認が必要（オンライン選択不可）',TRANSFER_PLAN_REQUIRED:'店舗間移動の計画が必要',
 };
 const labelsEn:Record<string,string>={
  CONFIGURED_COMMERCIAL:'Production configured',
@@ -152,7 +152,7 @@ const labelsEn:Record<string,string>={
  SYSTEM:'Whole system',
  INSUFFICIENT:'Short of stock',
  INDETERMINATE:'Stock needs rechecking',
- INDETERMINATE_SOME_CANDIDATES:'Some options could not be checked',
+ INDETERMINATE_SOME_CANDIDATES:'Some options could not be checked',NO_CATALOG_BOOT:'No boot sizes in the catalog',NO_CATALOG_LENGTH:'No sizes in the catalog',MANUAL_FIT_REQUIRED:'Store fit confirmation required (not selectable online)',
  TRANSFER_PLAN_REQUIRED:'Station transfer needs planning',
 };
 // Every helper takes the screen's locale explicitly (default Japanese for screens not yet converted); there is no

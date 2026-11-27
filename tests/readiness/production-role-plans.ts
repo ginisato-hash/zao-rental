@@ -4,6 +4,7 @@
 // already establishes. No pg_dump/pg_restore binary or Docker is available in this sandbox (the
 // same gap already disclosed for R2B-F3/R4), so the backup role's proof targets the SQL privilege
 // boundary pg_dump depends on, exactly as the original R4 branch did.
+import {rewind0064} from '../fixtures/rewind-0064';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -117,6 +118,8 @@ try {
   // Only this owned disposable fixture rewinds the two new migrations for historical
   // 0050→0053 installer proofs. Live installers still require their exact historical database prefix.
   await production.query('DROP FUNCTION payment_reconciliation.dispatch_normal(text,integer,timestamptz),payment_reconciliation.claim_normal(text,integer,text,timestamptz),payment_projection.normal_candidates(text,timestamptz,integer),notification_due_normal(timestamptz,integer)');
+  // 0064 (group order core) is rewound first (it only adds objects on top of everything older); then 0063.
+  await rewind0064(production);
   // 0063 (coupon administration) is rewound before 0062; nothing older depends on it.
   await production.query('DROP TABLE coupon_status_events; DROP FUNCTION coupon_is_active(uuid), coupon_booking_count(uuid)');
   // 0062 (store sales stops) is rewound first; it has no dependency on the older objects below.
@@ -131,7 +134,7 @@ try {
   await production.query(legacy.slice(start,end).replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION'));
   // 0056 (refund automation) is rewound the same way so the historical installers see their exact prefix.
   await production.query('DROP FUNCTION ops_refund_row(uuid),ops_refund_claim(uuid),ops_refund_observe(uuid,jsonb); DROP TABLE staff_permission_override_removals, public.ops_refund_effects');
-  await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056','0057','0058','0059','0060','0061','0062','0063')");
+  await production.query("DELETE FROM foundation_migrations WHERE id IN ('0054','0055','0056','0057','0058','0059','0060','0061','0062','0063','0064')");
   await check('Fixed Production runtime upgrade rejects checksum drift, installs only0051 and narrow grants, and refuses replay',async()=>{
     const c=await production!.connect();try{
       const checksum=(await c.query("SELECT checksum FROM foundation_migrations WHERE id='0050'")).rows[0].checksum;
@@ -357,8 +360,8 @@ try {
       await assert.rejects(applyProductionRefundAutomationGrants(c,TARGET,db.identity.user),/GRANTS_REFUSED/);
     }finally{c.release();}
   });
-  await check('restore the current 0057–0063 fixture after exact historical installer proofs',async()=>{
-    const entries=(await bootstrapPlan(TARGET)).entries.slice(56,63);assert.deepEqual(entries.map(e=>e.id),['0057','0058','0059','0060','0061','0062','0063']);
+  await check('restore the current 0057–0064 fixture after exact historical installer proofs',async()=>{
+    const entries=(await bootstrapPlan(TARGET)).entries.slice(56,64);assert.deepEqual(entries.map(e=>e.id),['0057','0058','0059','0060','0061','0062','0063','0064']);
     const c=await production!.connect();try{
       await c.query('BEGIN');for(const entry of entries){await c.query(entry.sql);
       await c.query('INSERT INTO foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);}

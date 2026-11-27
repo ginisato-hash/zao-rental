@@ -5,17 +5,19 @@ import {startIsolatedPostgres} from './postgres';
 import {waitForPortFree} from './worktree';
 import {provisionOperationsRole} from './operations-roles';
 import {provisionApplicationRoles} from './application-roles';
+import {provisionGroupRole} from './group-role';
 import type {DevelopmentRuntime} from '../packages/auth/src/config';
 // Owned local resources only. The child receives app roles, never the migration connection.
-export async function startDevelopmentApp(options:{built?:boolean;operations?:boolean}={}){
- const db=await startIsolatedPostgres();let operations:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let startupPhase='MIGRATE';
+export async function startDevelopmentApp(options:{built?:boolean;operations?:boolean;group?:boolean}={}){
+ const db=await startIsolatedPostgres();let operations:Awaited<ReturnType<typeof provisionOperationsRole>>|undefined;let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined;let startupPhase='MIGRATE';let group:Awaited<ReturnType<typeof provisionGroupRole>>|undefined;
  try{
   await migrate(db.pool);startupPhase='SEED';await seed(db.pool,db.identity.namespace);startupPhase='WEB_PORT';await waitForPortFree(db.identity.webPort);
   startupPhase='APPLICATION_ROLES';roles=await provisionApplicationRoles(db.pool,db.identity);
   startupPhase='OPERATIONS_ROLE';if(options.operations)operations=await provisionOperationsRole(db.pool,db.identity);
+  startupPhase='GROUP_ROLE';if(options.group)group=await provisionGroupRole(db.pool,db.identity);
   startupPhase='SPAWN';
   const origin=`http://127.0.0.1:${db.identity.webPort}`;
-  const config:DevelopmentRuntime={...(operations?{operationsDb:operations.operationsDb}:{}),origin,namespace:db.identity.namespace,authSecret:randomBytes(32).toString('hex'),authDb:roles.authDb,ledgerDb:roles.ledgerDb,holdDb:roles.holdDb,transferDb:roles.transferDb,pricingDb:roles.pricingDb,recommendationDb:roles.recommendationDb};
+  const config:DevelopmentRuntime={...(operations?{operationsDb:operations.operationsDb}:{}),...(group?{groupDb:group.groupDb}:{}),origin,namespace:db.identity.namespace,authSecret:randomBytes(32).toString('hex'),authDb:roles.authDb,ledgerDb:roles.ledgerDb,holdDb:roles.holdDb,transferDb:roles.transferDb,pricingDb:roles.pricingDb,recommendationDb:roles.recommendationDb};
   const env:NodeJS.ProcessEnv={NODE_ENV:options.built?'production':'development',PATH:process.env.PATH,NEXT_TELEMETRY_DISABLED:'1',ZAO_DEVELOPMENT_RUNTIME:JSON.stringify(config)};
   const args=['node_modules/next/dist/bin/next',options.built?'start':'dev','apps/web',...(options.built?[]:['--webpack']),'--hostname','127.0.0.1','--port',String(db.identity.webPort)];
   const web=spawn(process.execPath,args,{env,stdio:['ignore','pipe','pipe']});
@@ -23,7 +25,7 @@ export async function startDevelopmentApp(options:{built?:boolean;operations?:bo
   web.stdout.resume();web.stderr.on('data',chunk=>{for(const line of String(chunk).split('\n'))if(/^AUTH_PIPELINE_CODE [A-Z0-9_]{1,80}$/.test(line))console.error(line);});
   let exited=false;const exit=new Promise<number>(resolve=>{web.once('error',()=>{exited=true;resolve(1);});web.once('exit',code=>{exited=true;resolve(code??1);});});
   let stopping:Promise<void>|undefined;
-  const stop=()=>stopping??=(async()=>{try{if(!exited){web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}}finally{try{await operations?.close();await roles!.close();}finally{await db.stop();}}})();
-  return {origin,db,roles,operations,exit,stop};
- }catch(error){const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';console.error(JSON.stringify({code:'DEVELOPMENT_START_FAILED',phase:startupPhase,category:/^(23505|23503|23514|40001|40P01|53300|57014|08003|08006|57P01|EADDRINUSE)$/.test(code)?code:'OTHER'}));await operations?.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
+  const stop=()=>stopping??=(async()=>{try{if(!exited){web.kill('SIGTERM');const timer=setTimeout(()=>web.kill('SIGKILL'),10000);try{await exit;}finally{clearTimeout(timer);}}}finally{try{await group?.close();await operations?.close();await roles!.close();}finally{await db.stop();}}})();
+  return {origin,db,roles,operations,group,exit,stop};
+ }catch(error){const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';console.error(JSON.stringify({code:'DEVELOPMENT_START_FAILED',phase:startupPhase,category:/^(23505|23503|23514|40001|40P01|53300|57014|08003|08006|57P01|EADDRINUSE)$/.test(code)?code:'OTHER'}));await group?.close();await operations?.close();if(roles)await roles.close();await db.stop();throw new Error('DEVELOPMENT_START_FAILED; authentication and database details withheld');}
 }

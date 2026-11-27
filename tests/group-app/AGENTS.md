@@ -1,0 +1,1 @@
+Test-only composition for the customer group application (tests/group/customer-ui.ts). Never deploy this app. It re-exports the real apps/web pages and the real group route; only the local development runtime (isolated PostgreSQL, synthetic data, dedicated `<db>_group` role) is injected by the launcher. No real email, payment provider or production credential.

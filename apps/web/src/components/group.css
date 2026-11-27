@@ -1,0 +1,49 @@
+/* Group application (customer). Builds on guest.css (same SALOMON station language): square controls, 2px ink rules, black = selected/primary. */
+.group-main{max-width:1180px}
+.group-main .guest-steps.group-steps{grid-template-columns:repeat(5,minmax(0,1fr))}
+.group-step-name{overflow-wrap:anywhere}
+@media (max-width:640px){
+ .group-main .group-steps li:not([aria-current]) .group-step-name{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+ .group-main .group-steps li[aria-current]{grid-column:span 1}
+ .group-main .guest-grid{grid-template-columns:minmax(0,1fr)}
+}
+.group-alert,.guest-main p.group-alert{margin:16px 0;padding:12px 14px;border-left:6px solid var(--signal);background:#fbeef0;color:var(--ink);font-weight:700}
+.group-alert ul{margin:8px 0 0;padding-left:20px}
+.group-link-button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 16px;border:2px solid var(--ink);color:var(--ink);background:var(--snow);font:700 16px/1.2 var(--d);text-decoration:none}
+.group-link-button:hover{background:var(--ink);color:var(--snow)}
+.group-resume{margin:16px 0;padding:14px;border:2px solid var(--ink)}
+.group-resume h2{font-size:clamp(18px,2vw,24px)}
+.group-resume input{margin:10px 0;font:700 13px/1.4 var(--b)}
+.group-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.group-import{margin:16px 0}
+.group-diff{margin-top:12px;padding:12px;border:2px solid var(--ink)}
+.group-diff-counts{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;padding:0;margin:8px 0}
+.group-diff-list{margin:8px 0;padding-left:20px;max-height:240px;overflow:auto}
+.group-list-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin:20px 0 8px}
+.group-filter{display:flex;flex-wrap:wrap;gap:6px}
+.group-main .group-filter button[aria-pressed=true]{background:var(--ink);color:var(--snow)}
+.group-bulk{margin:12px 0}
+.group-rows{list-style:none;padding:0;margin:0;display:grid;gap:16px}
+.group-row,.group-advice-row{border:2px solid var(--ink);padding:12px 14px;min-width:0}
+.group-row[data-state=INVALID],.group-row[data-state=SHORT],.group-row[data-state=UNAVAILABLE],.group-row[data-state=MANUAL_FIT_REQUIRED],.group-advice-row[data-state=SHORT],.group-advice-row[data-state=INVALID],.group-advice-row[data-state=UNAVAILABLE],.group-advice-row[data-state=MANUAL_FIT_REQUIRED]{border-left:10px solid var(--signal)}
+.group-main .group-row fieldset{border-top:0;padding:0}
+.group-main .group-row legend{font-size:clamp(20px,2vw,28px);padding-bottom:8px}
+.group-select{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:8px!important;margin-bottom:6px;font:700 13px/1.4 var(--b)}
+.group-main .group-select input{width:22px;height:22px;min-height:0;appearance:auto;-webkit-appearance:checkbox;accent-color:var(--ink)}
+.group-main .group-row .guest-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+.group-main .group-row input[type=number]{max-width:none}
+.group-main .group-row .group-items{grid-column:1 / -1}
+.group-row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.group-main textarea{width:100%;min-height:96px;padding:10px 12px;border:2px solid var(--ink);border-radius:0;background:var(--snow);color:var(--ink);font:700 16px/1.5 var(--b)}
+.group-main textarea:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--ink),0 0 0 3px var(--snow),0 0 0 5px var(--ink)}
+.group-quote-lines{list-style:none;padding:0;margin:12px 0;display:grid;gap:12px}
+.group-quote-lines li{border-top:2px solid var(--ink);padding-top:8px}
+.group-quote-lines table{width:100%;border-collapse:collapse;font-size:14px}
+.group-quote-lines th,.group-quote-lines td{padding:6px 4px;text-align:left;border-bottom:1px solid #c9c9c9;overflow-wrap:anywhere}
+.group-quote-lines td:last-child,.group-quote-lines tfoot td{text-align:right;font-variant-numeric:tabular-nums}
+.group-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.group-request{margin-top:24px}
+.group-main .guest-candidates{grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}
+.group-main .guest-candidates label.guest-candidate{min-height:96px}
+.group-main table{max-width:100%}
+@media (max-width:480px){.group-quote-lines table{font-size:13px}.group-quote-lines th,.group-quote-lines td{padding:6px 2px}}

@@ -5,7 +5,9 @@ import {useEffect,useRef,useState} from 'react';
 import {invalidateStaffView} from './StaffSessionBoundary';
 import {storeDisplayName} from '../../../../packages/contracts/src/store-display';
 import type {Profile} from '../../../../packages/contracts/src/recommendation';
-type Row={bookingId:string;displayName:string;period:{startDate:string;slot:string};pickupStore:string;pickup:{equipmentPrepared:boolean};preparationMembers:{key:string;product:string;tier:string;profile:Profile|null}[]};
+type Row={bookingId:string;displayName:string;period:{startDate:string;slot:string};pickupStore:string;pickup:{equipmentPrepared:boolean};preparationMembers:{key:string;product:string;tier:string;profile:Profile|null;fit?:FitMeta|null}[]};
+import {fitBadge,fitNotice,fitPartLine} from './fit-copy';
+import type {FitMeta} from '../../../../packages/contracts/src/size-edge';
 export function TomorrowPreparation({stamp,store,onOpen}:{stamp:string;store:string;onOpen:(id:string)=>void}){
  const locale=useStaffLocale().locale;const [data,setData]=useState<{store:string;date:string;rows:Row[];nextCursor:string|null}|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(false),[shared]=[useStaffLocale()],en=shared.locale==='en';
  const generation=useRef(0),t=(j:string,e:string)=>en?e:j;
@@ -28,7 +30,7 @@ export function TomorrowPreparation({stamp,store,onOpen}:{stamp:string;store:str
   {error&&<p role="alert">{t('読み込めませんでした。更新してください。','Could not load. Please refresh.')}</p>}
   {(busy||!current&&!error)&&<p role="status">{t('読み込んでいます…','Loading…')}</p>}
   <div className="staff-card-grid">{current?.rows.map(r=><article className="staff-card" key={r.bookingId}><div className="staff-card-head"><strong>{r.displayName}</strong><span className="staff-chip">{r.pickup.equipmentPrepared?t('準備完了','Ready'):t('未準備','Not prepared')}</span></div><p>{fmtDate(locale,r.period.startDate)} {r.period.slot==='PM'?'13:00':'08:30'} · {storeDisplayName(r.pickupStore)}</p>
-   {r.preparationMembers.map((m,n)=><p key={m.key}>{t('利用者','Person')} {n+1} · {({SKI_SET:t('スキーセット','Ski Set'),SNOWBOARD_SET:t('スノーボードセット','Snowboard Set'),SINGLE:t('単品','Individual Items'),WEAR_SET:t('ウェア','Wear')} as Record<string,string>)[m.product]}{m.product==='SINGLE'?'':' · '+(m.tier==='PREMIUM'?'Premium':m.tier==='REGULAR'?'Regular':t('スタンダード','Standard'))}<br/>{[m.profile?.heightCm?m.profile.heightCm+' cm':null,m.profile?.ski?m.profile.ski.weightKg+' kg':null,m.profile?.footCm?m.profile.footCm+' cm':null].filter(Boolean).join(' / ')}</p>)}
+   {r.preparationMembers.map((m,n)=><p key={m.key}>{t('利用者','Person')} {n+1} · {({SKI_SET:t('スキーセット','Ski Set'),SNOWBOARD_SET:t('スノーボードセット','Snowboard Set'),SINGLE:t('単品','Individual Items'),WEAR_SET:t('ウェア','Wear')} as Record<string,string>)[m.product]}{m.product==='SINGLE'?'':' · '+(m.tier==='PREMIUM'?'Premium':m.tier==='REGULAR'?'Regular':t('スタンダード','Standard'))}<br/>{[m.profile?.heightCm?m.profile.heightCm+' cm':null,m.profile?.ski?m.profile.ski.weightKg+' kg':null,m.profile?.footCm?m.profile.footCm+' cm':null].filter(Boolean).join(' / ')}{m.fit&&m.fit.kind!=='NORMAL'&&<><br/><strong data-fit={m.fit.kind}>{fitBadge(m.fit.kind,!en)}</strong> · {m.fit.parts.filter(x=>x.kind!=='NORMAL').map(fitPartLine).join(' / ')} · {fitNotice(!en)}</>}</p>)}
    <button className="staff-card-primary" onClick={()=>onOpen(r.bookingId)}>{r.pickup.equipmentPrepared?t('準備内容を確認','Review preparation'):t('準備する','Prepare')}</button></article>)}</div>
   {current&&!current.rows.length&&!busy&&!error&&<p className="staff-empty">{t('明日の準備対象はありません。','No bookings to prepare for tomorrow.')}</p>}
   {current?.nextCursor&&<button disabled={busy} onClick={()=>{setBusy(true);setError(false);void load(current.nextCursor);}}>{t('さらに読み込む','Load more')}</button>}

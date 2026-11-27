@@ -68,7 +68,7 @@ PINNED_FILES = {
     "scripts/production-install-normal-worker.ts": "0fedc4bb9e0d7f8a6d9ca66fb4d51c2ef737fd73565ede175b62a34110904a3f",
     "scripts/production-normal-worker-migration.ts": "1fd13e722b2895ec5cef5a103a96b1137b8dcbf9732d3a1a4b52a08fd20934b5",
     "scripts/production-normal-worker-grants.ts": "16582f0da02b1dc30f9233ae12cd5eaea10e6f57b5fef124aeca0e9233e8285c",
-    "scripts/production-worker-credential.ts": "2ce917f92e877c8ebe513cdd1d50331b6672f4d0667e3ee1f755f275afe7a928",
+    "scripts/production-worker-credential.ts": "c6c5b0b170c913ba5b3386e13b9d54e306f72de136b254744e41499b10dd9fe1",
     "scripts/production-worker-dormant-proof.ts": "278e31dac86e745e8fc0c63b4d24fefd5c18bee645681391a48984617903acbe",
     "scripts/production-worker-freshness.ts": "255c1d2618dfad7edec87231bdfa1b88224f333c3741a8c5b2190f89b78ac70c",
     "packages/db/migrations/0054_provisional_receipt_capacity.sql": "6aefbc51e167b2c070c35212e27a83d5a49545cd7012ecbb67ab9c7edfb5aea8",
@@ -87,7 +87,7 @@ LIFECYCLE_COMMANDS = {  # package.json script name -> required exact command
 FRESHNESS_FLAGS = ["--expected-active", "--intentional-stop"]
 # The Backup installer's pinned files must still be the reviewed ones (this policy builds on the backup chain's helper and evidence directory).
 BACKUP_PINNED_FILES = {
-    "scripts/production-backup-credential.ts": "ce064babfd6b1dae15e3d7370858b1d82ba65e4d9e66c02df29986604be08da7",
+    "scripts/production-backup-credential.ts": "d10fb423ff2a792e5a0e1a860c717e14bbb8ab3ba2a6aa85a19e5b09601e0751",
     "scripts/production-backup-object-get.ts": "64fca6e2628a485394fc9a2b0fa4642e2fab412993985782526eb78056813c08",
     "scripts/production-credential-activation.ts": "f4f96805ccf5d92f4382d545135121b6e3f411cc366c9dc1a113f3b6f7278abf",
     "scripts/production-backup.ts": "a571e89675c70c38d342c54441db66313c976c55b1d31e1be873ece2105596e6",

@@ -1,0 +1,772 @@
+{
+ "version": "production-cutover-bindings/1",
+ "source": "neondb",
+ "target": "neondb_v65",
+ "rows": [
+  {
+   "id": "main.db.host",
+   "lane": "main",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_HOST",
+    "type": "sensitive"
+   },
+   "change": "NO_CHANGE",
+   "oldRole": null,
+   "newRole": null,
+   "database": null,
+   "enable": "unchanged: the new database is on the same Neon endpoint",
+   "verify": "host fingerprint equals the pinned fingerprint (verifyNewDatabaseConnection)",
+   "order": 1
+  },
+  {
+   "id": "main.db.name",
+   "lane": "main",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_NAME",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": null,
+   "newRole": null,
+   "database": {
+    "old": "neondb",
+    "new": "neondb_v65"
+   },
+   "enable": "vercel env set (non-secret) before the candidate build; takes effect only on the next deployment",
+   "verify": "candidate stage: /api/readiness 200 with the database identity of neondb_v65",
+   "order": 2
+  },
+  {
+   "id": "main.role.auth",
+   "lane": "auth",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_AUTH",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_auth",
+   "newRole": "neondb_v65_auth",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 3
+  },
+  {
+   "id": "main.secret.auth",
+   "lane": "auth",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_AUTH",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_auth",
+   "newRole": "neondb_v65_auth",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 4
+  },
+  {
+   "id": "main.role.ledger",
+   "lane": "ledger",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_LEDGER",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_ledger",
+   "newRole": "neondb_v65_ledger",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 5
+  },
+  {
+   "id": "main.secret.ledger",
+   "lane": "ledger",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_LEDGER",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_ledger",
+   "newRole": "neondb_v65_ledger",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 6
+  },
+  {
+   "id": "main.role.hold",
+   "lane": "hold",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_HOLD",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_hold",
+   "newRole": "neondb_v65_hold",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 7
+  },
+  {
+   "id": "main.secret.hold",
+   "lane": "hold",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_HOLD",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_hold",
+   "newRole": "neondb_v65_hold",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 8
+  },
+  {
+   "id": "main.role.transfer",
+   "lane": "transfer",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_TRANSFER",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_transfer",
+   "newRole": "neondb_v65_transfer",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 9
+  },
+  {
+   "id": "main.secret.transfer",
+   "lane": "transfer",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_TRANSFER",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_transfer",
+   "newRole": "neondb_v65_transfer",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 10
+  },
+  {
+   "id": "main.role.pricing",
+   "lane": "pricing",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_PRICING",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_pricing",
+   "newRole": "neondb_v65_pricing",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 11
+  },
+  {
+   "id": "main.secret.pricing",
+   "lane": "pricing",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_PRICING",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_pricing",
+   "newRole": "neondb_v65_pricing",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 12
+  },
+  {
+   "id": "main.role.recommendation",
+   "lane": "recommendation",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_RECOMMENDATION",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_recommendation",
+   "newRole": "neondb_v65_recommendation",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 13
+  },
+  {
+   "id": "main.secret.recommendation",
+   "lane": "recommendation",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_RECOMMENDATION",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_recommendation",
+   "newRole": "neondb_v65_recommendation",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 14
+  },
+  {
+   "id": "main.role.operations",
+   "lane": "operations",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_OPERATIONS",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_operations",
+   "newRole": "neondb_v65_operations",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 15
+  },
+  {
+   "id": "main.secret.operations",
+   "lane": "operations",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_OPERATIONS",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_operations",
+   "newRole": "neondb_v65_operations",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 16
+  },
+  {
+   "id": "main.role.guest",
+   "lane": "guest",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_GUEST",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_guest",
+   "newRole": "neondb_v65_guest",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 17
+  },
+  {
+   "id": "main.secret.guest",
+   "lane": "guest",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_GUEST",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_guest",
+   "newRole": "neondb_v65_guest",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 18
+  },
+  {
+   "id": "main.role.content_read",
+   "lane": "content_read",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_CONTENT_READ",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_content_read",
+   "newRole": "neondb_v65_content_read",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 19
+  },
+  {
+   "id": "main.secret.content_read",
+   "lane": "content_read",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_CONTENT_READ",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_content_read",
+   "newRole": "neondb_v65_content_read",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 20
+  },
+  {
+   "id": "main.role.avatar_read",
+   "lane": "avatar_read",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_AVATAR_READ",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_avatar_read",
+   "newRole": "neondb_v65_avatar_read",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 21
+  },
+  {
+   "id": "main.secret.avatar_read",
+   "lane": "avatar_read",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_AVATAR_READ",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_avatar_read",
+   "newRole": "neondb_v65_avatar_read",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 22
+  },
+  {
+   "id": "main.role.booking_access",
+   "lane": "booking_access",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_ROLE_BOOKING_ACCESS",
+    "type": "encrypted"
+   },
+   "change": "SET_VALUE",
+   "oldRole": "neondb_booking_access",
+   "newRole": "neondb_v65_booking_access",
+   "database": null,
+   "enable": "vercel env set (non-secret) with the new role name",
+   "verify": "role exists, NOLOGIN until the window, LOGIN after the switch",
+   "order": 23
+  },
+  {
+   "id": "main.secret.booking_access",
+   "lane": "booking_access",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_BOOKING_ACCESS",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_booking_access",
+   "newRole": "neondb_v65_booking_access",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 24
+  },
+  {
+   "id": "main.role.group",
+   "lane": "group",
+   "sink": null,
+   "change": "DERIVED",
+   "oldRole": "neondb_group",
+   "newRole": "neondb_v65_group",
+   "database": null,
+   "enable": "derived as PRODUCTION_DB_NAME+\"_group\"; PRODUCTION_DB_ROLE_GROUP must stay ABSENT (an override would pin a stale role)",
+   "verify": "verifyBindings: no PRODUCTION_DB_ROLE_GROUP key, or exactly the new role",
+   "order": 25
+  },
+  {
+   "id": "main.secret.group",
+   "lane": "group",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_DB_PASSWORD_GROUP",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_group",
+   "newRole": "neondb_v65_group",
+   "database": null,
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> vercel env add --sensitive over stdin (see CUTOVER_BINDINGS.md §4); never the old role's password",
+   "verify": "direct verify-full + channel-binding login as the new role; sink updatedAt after the credential epoch",
+   "order": 26
+  },
+  {
+   "id": "main.worker.dispatcher",
+   "lane": "worker.dispatcher",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_pay_dispatch",
+   "newRole": "neondb_v65_pay_dispatch",
+   "database": null,
+   "enable": "same lifecycle as the service credentials; the role name is derived (productionPaymentRoleNames(PRODUCTION_DB_NAME)), so no ROLE variable exists",
+   "verify": "worker-tick readiness with the new role; reconciliation lease re-check",
+   "order": 27
+  },
+  {
+   "id": "main.worker.worker",
+   "lane": "worker.worker",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_WORKER_DB_PASSWORD_WORKER",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_pay_truth",
+   "newRole": "neondb_v65_pay_truth",
+   "database": null,
+   "enable": "same lifecycle as the service credentials; the role name is derived (productionPaymentRoleNames(PRODUCTION_DB_NAME)), so no ROLE variable exists",
+   "verify": "worker-tick readiness with the new role; reconciliation lease re-check",
+   "order": 28
+  },
+  {
+   "id": "main.worker.projector",
+   "lane": "worker.projector",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_ehUMOzM77em9DVnHJBJffncD5hg7",
+    "key": "PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_pay_projection",
+   "newRole": "neondb_v65_pay_projection",
+   "database": null,
+   "enable": "same lifecycle as the service credentials; the role name is derived (productionPaymentRoleNames(PRODUCTION_DB_NAME)), so no ROLE variable exists",
+   "verify": "worker-tick readiness with the new role; reconciliation lease re-check",
+   "order": 29
+  },
+  {
+   "id": "main.role.pay_diagnostic",
+   "lane": "diagnostics",
+   "sink": null,
+   "change": "DERIVED",
+   "oldRole": "neondb_pay_diagnostic",
+   "newRole": "neondb_v65_pay_diagnostic",
+   "database": null,
+   "enable": "no credential, no variable: stays NOLOGIN in the new database",
+   "verify": "role exists and is NOLOGIN",
+   "order": 30
+  },
+  {
+   "id": "webhook.receiver.url",
+   "lane": "receiver",
+   "sink": {
+    "kind": "VERCEL_ENV",
+    "project": "prj_lQD8NCfFfxbgBLBbwtAgFIQV49ka",
+    "key": "PRODUCTION_RECEIVER_DATABASE_URL",
+    "type": "sensitive"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_pay_receipt",
+   "newRole": "neondb_v65_pay_receipt",
+   "database": {
+    "old": "neondb",
+    "new": "neondb_v65"
+   },
+   "enable": "NEON_RESET_PASSWORD_IN_MEMORY -> assemble postgresql://<new receiver>:<pw>@<same direct host>/<new db>?sslmode=verify-full in memory -> vercel env add --sensitive over stdin on the WEBHOOK project only",
+   "verify": "parseProductionIngress accepts it (db allowlisted, user=<db>_pay_receipt, no pooler, verify-full); a signed test event is NOT sent",
+   "order": 31
+  },
+  {
+   "id": "backup.pgdatabase",
+   "lane": "backup",
+   "sink": {
+    "kind": "GITHUB_ENV_SECRET",
+    "environment": "production-backup",
+    "key": "PRODUCTION_BACKUP_PGDATABASE"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": null,
+   "newRole": null,
+   "database": {
+    "old": "neondb",
+    "new": "neondb_v65"
+   },
+   "enable": "gh secret set over stdin by the backup credential lifecycle (provision --database=neondb_v65)",
+   "verify": "secret updated after the credential epoch",
+   "order": 32
+  },
+  {
+   "id": "backup.pguser",
+   "lane": "backup",
+   "sink": {
+    "kind": "GITHUB_ENV_SECRET",
+    "environment": "production-backup",
+    "key": "PRODUCTION_BACKUP_PGUSER"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_backup",
+   "newRole": "neondb_v65_backup",
+   "database": null,
+   "enable": "same lifecycle",
+   "verify": "role is member of pg_read_all_data ONLY",
+   "order": 33
+  },
+  {
+   "id": "backup.pgpassword",
+   "lane": "backup",
+   "sink": {
+    "kind": "GITHUB_ENV_SECRET",
+    "environment": "production-backup",
+    "key": "PRODUCTION_BACKUP_PGPASSWORD"
+   },
+   "change": "NEW_SECRET",
+   "oldRole": "neondb_backup",
+   "newRole": "neondb_v65_backup",
+   "database": null,
+   "enable": "same lifecycle (temporary password through the manager, ONE reset_password, bounded LOGIN lease, then VALID UNTIL infinity after a restore proof)",
+   "verify": "pg_dump login probe as the new role, read-only posture",
+   "order": 34
+  },
+  {
+   "id": "backup.pghost",
+   "lane": "backup",
+   "sink": {
+    "kind": "GITHUB_ENV_SECRET",
+    "environment": "production-backup",
+    "key": "PRODUCTION_BACKUP_PGHOST"
+   },
+   "change": "NO_CHANGE",
+   "oldRole": null,
+   "newRole": null,
+   "database": null,
+   "enable": "unchanged (same endpoint, port 5432)",
+   "verify": "host fingerprint equals the pinned fingerprint",
+   "order": 35
+  },
+  {
+   "id": "backup.pgport",
+   "lane": "backup",
+   "sink": {
+    "kind": "GITHUB_ENV_SECRET",
+    "environment": "production-backup",
+    "key": "PRODUCTION_BACKUP_PGPORT"
+   },
+   "change": "NO_CHANGE",
+   "oldRole": null,
+   "newRole": null,
+   "database": null,
+   "enable": "unchanged (same endpoint, port 5432)",
+   "verify": "host fingerprint equals the pinned fingerprint",
+   "order": 36
+  },
+  {
+   "id": "backup.activation",
+   "lane": "backup",
+   "sink": {
+    "kind": "GITHUB_ENV_VARIABLE",
+    "environment": "production-backup",
+    "key": "PRODUCTION_BACKUP_ACTIVATION"
+   },
+   "change": "NO_CHANGE",
+   "oldRole": null,
+   "newRole": null,
+   "database": null,
+   "enable": "set LAST by the lifecycle (already R4_APPROVED); never cleared during the switch",
+   "verify": "unchanged",
+   "order": 37
+  }
+ ],
+ "roles": [
+  {
+   "role": "neondb_v65_auth",
+   "lane": "auth",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_ledger",
+   "lane": "ledger",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_hold",
+   "lane": "hold",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_transfer",
+   "lane": "transfer",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_pricing",
+   "lane": "pricing",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_recommendation",
+   "lane": "recommendation",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_operations",
+   "lane": "operations",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_guest",
+   "lane": "guest",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_content_read",
+   "lane": "content_read",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_avatar_read",
+   "lane": "avatar_read",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_booking_access",
+   "lane": "booking_access",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_group",
+   "lane": "group",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_pay_dispatch",
+   "lane": "worker.dispatcher",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_pay_truth",
+   "lane": "worker.worker",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_pay_projection",
+   "lane": "worker.projector",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_pay_receipt",
+   "lane": "receiver",
+   "runtime": true,
+   "loginAfterSwitch": true,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_pay_diagnostic",
+   "lane": "diagnostics",
+   "runtime": false,
+   "loginAfterSwitch": false,
+   "allowedMemberships": []
+  },
+  {
+   "role": "neondb_v65_backup",
+   "lane": "backup",
+   "runtime": false,
+   "loginAfterSwitch": true,
+   "allowedMemberships": [
+    "pg_read_all_data"
+   ]
+  }
+ ],
+ "retainedOld": {
+  "database": "neondb",
+  "purpose": "recovery source and read-only evidence; never a runtime target after the switch",
+  "roles": "FENCED_NOLOGIN",
+  "delete": "NEVER_IN_THIS_CUTOVER"
+ },
+ "untouched": [
+  "Square webhook URL, subscription, signature key, merchant and location (PRODUCTION_SQUARE_* in both projects)",
+  "customer auth/access/recovery keys (PRODUCTION_ACCESS_KEY*, PRODUCTION_GUEST_KEY, PRODUCTION_RECOVERY_KEY*, PRODUCTION_STAFF_KEY)",
+  "Resend credential, R2 credentials and bucket, AGE_BACKUP_RECIPIENT, CRON_SECRET, publication approval keys",
+  "Neon project/branch/endpoint host (the pinned host fingerprint)"
+ ],
+ "sha256": "fddc371016c32eb3d7d71f9ac56a4e0f9537cd68a56aee8a61349c9a9e02fd60"
+}

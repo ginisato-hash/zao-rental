@@ -236,9 +236,9 @@ export async function groupGrantProof(c:Pick<PoolClient,'query'>,database:string
  if(!role||role.rolsuper||role.rolcreatedb||role.rolcreaterole||role.rolreplication||role.rolbypassrls||role.rolinherit||role.memberships!==0)throw Error(refused);
  const names=[...GROUP_TABLES,...(link?CUSTODY_LINK_TABLES:[])] as string[];
  const t=(await c.query(`SELECT c.relname||'|'||(CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END)||'|'||a.privilege_type k FROM pg_class c,aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a WHERE c.relnamespace='public'::regnamespace AND c.relname=ANY($1) AND a.grantee<>c.relowner ORDER BY 1`,[names])).rows.map(x=>x.k as string);
- if(JSON.stringify(t)!==JSON.stringify(exp.tableLevel))throw Error(refused);
+ if(JSON.stringify(t)!==JSON.stringify(exp.tableLevel)){if(process.env.GROUP_DEBUG)console.error('TABLE_ACL extra',t.filter(v=>!exp.tableLevel.includes(v)),'missing',exp.tableLevel.filter(v=>!t.includes(v)));throw Error(refused);}
  const col=(await c.query(`SELECT c.relname||'.'||t.attname||'|'||(CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END)||'|'||a.privilege_type k FROM pg_attribute t JOIN pg_class c ON c.oid=t.attrelid,aclexplode(t.attacl) a WHERE c.relnamespace='public'::regnamespace AND c.relname=ANY($1) AND t.attacl IS NOT NULL AND NOT t.attisdropped ORDER BY 1`,[names])).rows.map(x=>x.k as string);
- if(JSON.stringify(col)!==JSON.stringify(exp.columnLevel))throw Error(refused);
+ if(JSON.stringify(col)!==JSON.stringify(exp.columnLevel)){if(process.env.GROUP_DEBUG)console.error('COL_ACL extra',col.filter(v=>!exp.columnLevel.includes(v)),'missing',exp.columnLevel.filter(v=>!col.includes(v)));throw Error(refused);}
  const seq=(await c.query(`SELECT (CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END)||'|'||a.privilege_type k FROM pg_class c,aclexplode(coalesce(c.relacl,acldefault('s',c.relowner))) a WHERE c.oid='public.group_number_seq'::regclass AND a.grantee<>c.relowner ORDER BY 1`)).rows.map(x=>x.k as string);
  if(JSON.stringify(seq)!==JSON.stringify([r.group+'|USAGE']))throw Error(refused);
  for(const f of [...GROUP_FUNCTIONS,...(link?CUSTODY_LINK_FUNCTIONS:[])]){
@@ -282,6 +282,42 @@ export async function applyProductionGroupGrants(c:PoolClient,database:string,ow
   committing=true;await c.query('COMMIT');committed=true;
   await begin(c,true);await registry(c,entries,64);await groupGrantProof(c,database,owner);await c.query('ROLLBACK');
   return {status:'PRODUCTION_GROUP_GRANTS_INSTALLED',grantStatements:sql.length,roleChanges:1,credentialChanges:0,businessWrites:0};
+ }catch(error){
+  await c.query('ROLLBACK').catch(()=>{});
+  if(committed)throw Error('PRODUCTION_GROUP_GRANTS_COMMITTED_READBACK_REQUIRED');
+  if(committing)throw Error('PRODUCTION_GROUP_GRANTS_COMMIT_UNKNOWN_READBACK_REQUIRED');
+  throw error;
+ }
+}
+
+/** Group role and grants for a database that was BOOTSTRAPPED at 0001-0065 (the cutover target, docs/execution/group/CUTOVER_REHEARSAL.md).
+ * Same statements and the same proof as applyProductionGroupGrants, with two differences that follow from the registry: the registry must be the exact
+ * 0001-0065 one, and the proof is the custody-link one (the operations role also reads the confirmed group and records the part's preparation).
+ * Nothing here applies a migration; the role is created by the NOLOGIN manager exactly as in the 0064 installer, so the owner keeps no membership. */
+export async function installGroupRoleOnFoundation65(c:PoolClient,database:string,owner:string){
+ const entries=await plan(database),r=groupRoleNames(database);let committing=false,committed=false;
+ try{
+  await begin(c);
+  await identity(c,database,owner);await registry(c,entries,65);await groupCommittedProof(c,database,owner);await custodyLinkAppliedProof(c,database,owner);
+  const present=(await c.query('SELECT rolname FROM pg_roles WHERE rolname=ANY($1)',[[r.hold,r.operations,r.manager,r.executor,r.group]])).rows.map(x=>x.rolname as string).sort();
+  if(JSON.stringify(present)!==JSON.stringify([r.executor,r.hold,r.manager,r.operations].sort()))throw Error(refused);
+  const before=(await c.query("SELECT count(*)::int r,(SELECT count(*)::int FROM pg_auth_members) m FROM pg_roles")).rows[0];
+  await c.query(`SET LOCAL ROLE ${q(r.manager)}`);await c.query(ROLE_CREATE_SQL(database));await c.query('RESET ROLE');
+  await identity(c,database,owner);
+  const mirror=await holdMirror(c,database);
+  const extra:string[]=[];for(const t of GROUP_EXTRA_READS){if(!(await roleAcl(c,r.hold)).tables.includes(`public.${t}|SELECT`))extra.push(`GRANT SELECT ON ${t} TO ${q(r.group)}`);}
+  const sql=[...mirror,...extra,...productionGroupDeltaGrants(database)];
+  for(const s of sql)await c.query(s);
+  // The bootstrap's operations grants predate the custody link; the 0064 installer plus applyProductionCustodyLink add these exactly (here in one step).
+  for(const g of CUSTODY_LINK_OPERATIONS_GRANTS)await c.query(g.replace('{OPS}',q(r.operations)));
+  await groupGrantProof(c,database,owner,true);
+  const m=(await c.query("SELECT pg_get_userbyid(roleid) role,pg_get_userbyid(member) member FROM pg_auth_members WHERE roleid=$1::regrole OR member=$1::regrole",[r.group])).rows;
+  if(m.length!==1||m[0].member!==r.manager)throw Error(refused);
+  const after=(await c.query("SELECT count(*)::int r,(SELECT count(*)::int FROM pg_auth_members) m FROM pg_roles")).rows[0];
+  if(after.r!==before.r+1||after.m!==before.m+1)throw Error(refused);
+  committing=true;await c.query('COMMIT');committed=true;
+  await begin(c,true);await registry(c,entries,65);await groupGrantProof(c,database,owner,true);await c.query('ROLLBACK');
+  return {status:'PRODUCTION_GROUP_ROLE_INSTALLED_ON_FOUNDATION65',grantStatements:sql.length+CUSTODY_LINK_OPERATIONS_GRANTS.length,roleChanges:1,credentialChanges:0,businessWrites:0};
  }catch(error){
   await c.query('ROLLBACK').catch(()=>{});
   if(committed)throw Error('PRODUCTION_GROUP_GRANTS_COMMITTED_READBACK_REQUIRED');

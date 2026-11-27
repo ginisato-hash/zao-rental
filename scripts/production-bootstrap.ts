@@ -195,13 +195,19 @@ export function productionMigrationSql(id:string,sql:string,target:string){
  * membership that involves it. The persistent owner never creates the custody roles itself. */
 export const OWNER_COMPATIBILITY_VERSION='production-owner-compat/2';
 export const OWNER_COMPATIBILITY_STRATEGY='EPHEMERAL_ROLE_CREATOR';
+/** Variant for a database that must stay migratable (cutover target, Issue #47 / TD #7219973419 §2-D): the creator role is NOT dropped.
+ * It stays as a dormant migration administrator: NOLOGIN, NOINHERIT, owns nothing, holds no privilege, ADMIN (only) on the two custody roles, reachable by the
+ * owner through SET ROLE only. A later migration that touches executor-owned functions opens a window (see production-migration-window.ts) and closes it again;
+ * between windows the owner holds no executor authority. The default (version/2) path is byte-for-byte unchanged. */
+export const OWNER_COMPATIBILITY_VERSION_RETAINED='production-owner-compat/3';
+export const OWNER_COMPATIBILITY_STRATEGY_RETAINED='DORMANT_MIGRATION_ADMIN_RETAINED';
 export const ROLE_CREATION_MIGRATION='0015';
 const qi=(v:string)=>{if(!IDENTIFIER.test(v))throw new Error('PRODUCTION_IDENTIFIER_INVALID '+v);return '"'+v+'"';};
 /** Deterministic, short, never self-referential (the plan digest is not an input). */
-export function bootstrapRoleName(target:string,manifestSha256:string){
+export function bootstrapRoleName(target:string,manifestSha256:string,version:string=OWNER_COMPATIBILITY_VERSION){
  assertProductionTarget(target);
  if(!/^[a-f0-9]{64}$/.test(manifestSha256))throw new Error('PRODUCTION_MANIFEST_DIGEST_INVALID');
- const name='zao_boot_'+sha256(target+'\0'+OWNER_COMPATIBILITY_VERSION+'\0'+manifestSha256).slice(0,16);
+ const name='zao_boot_'+sha256(target+'\0'+version+'\0'+manifestSha256).slice(0,16);
  if(!IDENTIFIER.test(name)||Buffer.byteLength(name,'utf8')>63)throw new Error('PRODUCTION_BOOTSTRAP_ROLE_NAME_INVALID');
  return name;
 }
@@ -223,10 +229,11 @@ export function locateRoleCreationBlock(sql:string){
  return{roleBlockEnd:first.end,roleBlockSha256:sha256(sql.slice(0,first.end)),firstOwnerTransferOffset:firstOwnerTransfer};
 }
 export type OwnerCompatibility={version:string;strategy:string;migration:string;bootstrapRole:string;executorRole:string;custodyRole:string;
- prologue:string[];bridge:string[];cleanup:string[];drop:string};
-export function ownerCompatibility(target:string,manifestSha256:string):OwnerCompatibility{
- const role=bootstrapRoleName(target,manifestSha256),boot=qi(role),executor=qi(target+'_custody_executor');
- return{version:OWNER_COMPATIBILITY_VERSION,strategy:OWNER_COMPATIBILITY_STRATEGY,migration:ROLE_CREATION_MIGRATION,
+ prologue:string[];bridge:string[];cleanup:string[];drop:string;retain:boolean};
+export function ownerCompatibility(target:string,manifestSha256:string,retain:boolean=false):OwnerCompatibility{
+ const version=retain?OWNER_COMPATIBILITY_VERSION_RETAINED:OWNER_COMPATIBILITY_VERSION;
+ const role=bootstrapRoleName(target,manifestSha256,version),boot=qi(role),executor=qi(target+'_custody_executor');
+ return{version,strategy:retain?OWNER_COMPATIBILITY_STRATEGY_RETAINED:OWNER_COMPATIBILITY_STRATEGY,retain,migration:ROLE_CREATION_MIGRATION,
   bootstrapRole:role,executorRole:target+'_custody_executor',custodyRole:target+'_custody',
   prologue:[`CREATE ROLE ${boot} NOLOGIN NOSUPERUSER NOCREATEDB CREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;`,`GRANT ${boot} TO SESSION_USER WITH SET TRUE, INHERIT FALSE;`,`SET LOCAL ROLE ${boot};`],
   // Still as the ephemeral role (its automatic ADMIN on the executor authorises the bridge), then back.
@@ -235,7 +242,7 @@ export function ownerCompatibility(target:string,manifestSha256:string):OwnerCom
   // require the new owner to hold CREATE on the function's schema, hence the temporary public grant.
   bridge:[`GRANT ${executor} TO SESSION_USER WITH SET TRUE, INHERIT TRUE;`,'RESET ROLE;',`GRANT CREATE ON SCHEMA public TO ${executor};`],
   cleanup:[`REVOKE CREATE ON SCHEMA public FROM ${executor};`,`SET LOCAL ROLE ${boot};`,`REVOKE ${executor} FROM SESSION_USER;`,'RESET ROLE;'],
-  drop:`DROP ROLE ${boot};`};
+  drop:retain?'':`DROP ROLE ${boot};`};
 }
 /** 0015 as executed by the Production bootstrap: the pinned role block (already guard-rewritten)
  * inside the ephemeral creator context, then the bridge, then the byte-identical remainder. */
@@ -252,16 +259,22 @@ const PROOF_CONTRACT={
  preDrop:['ephemeral role exists','pg_shdepend references 0','owns 0 in pg_class/pg_namespace/pg_proc/pg_type/pg_database/pg_tablespace/pg_default_acl','ACL grants 0 on pg_class/pg_proc/pg_namespace/pg_database/pg_default_acl'],
  postDrop:['ephemeral role absent','custody roles exist NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS','session_user direct membership in custody roles 0','no dangling pg_auth_members','executor CREATE on database false (never granted)','executor CREATE on public false (granted temporarily, revoked)'],
 };
+const PROOF_CONTRACT_RETAINED={
+ preCommit:['creator role exists','pg_shdepend references 0','owns 0 in pg_class/pg_namespace/pg_proc/pg_type/pg_database/pg_tablespace/pg_default_acl','ACL grants 0 on pg_class/pg_proc/pg_namespace/pg_database/pg_default_acl',
+  'creator NOLOGIN NOSUPERUSER NOCREATEDB CREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS','creator member of no role','creator members = session_user only, SET true INHERIT false ADMIN false',
+  'creator ADMIN (no SET, no INHERIT) on exactly the executor and custody roles','executor and custody members = creator only','session_user direct membership in custody roles 0','no dangling pg_auth_members',
+  'executor CREATE on database false','executor CREATE on public false (granted temporarily, revoked)'],
+};
 /** The canonical plan, rewritten for one approved target, with dual provenance.
  * `checksum` is deliberately the CANONICAL SOURCE MIGRATION CHECKSUM — the checksum of the
  * reviewed file, not of the bytes executed — because that is what makes a Production registry
  * comparable with a local one. The executed bytes are recorded separately. */
-export async function bootstrapPlan(target:string){
+export async function bootstrapPlan(target:string,options:{retainMigrationAdmin?:boolean}={}){
  assertProductionTarget(target);
  const manifest=sourceManifest();
  if(manifest.migrations.length!==migrationPlan.length)throw new Error('PRODUCTION_MANIFEST_LENGTH_MISMATCH '+manifest.migrations.length);
  const entries=[];let guards=0;
- const manifestSha256=sha256(JSON.stringify(manifest)),compat=ownerCompatibility(target,manifestSha256);
+ const manifestSha256=sha256(JSON.stringify(manifest)),compat=ownerCompatibility(target,manifestSha256,options.retainMigrationAdmin===true);
  for(const entry of migrationPlan){
   const approved=approvedEntry(entry.id);
   if(approved.file!==entry.file)throw new Error('PRODUCTION_MANIFEST_FILE_MISMATCH '+entry.id);
@@ -279,7 +292,7 @@ export async function bootstrapPlan(target:string){
  const ownerCompatibilityProvenance={version:compat.version,strategy:compat.strategy,migration:compat.migration,bootstrapRole:compat.bootstrapRole,
   bootstrapRoleDerivation:'zao_boot_ + sha256(target NUL version NUL manifestSha256)[0:16]',anchor:approvedEntry(ROLE_CREATION_MIGRATION).ownerCompatibility,
   prologueSqlSha256:sha256(compat.prologue.join('\n')),bridgeSqlSha256:sha256(compat.bridge.join('\n')),cleanupSqlSha256:sha256([...compat.cleanup,compat.drop].join('\n')),
-  proofContractSha256:sha256(JSON.stringify(PROOF_CONTRACT))};
+  proofContractSha256:sha256(JSON.stringify(compat.retain?PROOF_CONTRACT_RETAINED:PROOF_CONTRACT))};
  return{target,entries,provenance,guardsRewritten:guards,transformerVersion:TRANSFORMER_VERSION,ownerCompatibility:compat,ownerCompatibilityProvenance,
   manifestSha256,planSha256:sha256(JSON.stringify({provenance,ownerCompatibility:ownerCompatibilityProvenance}))};
 }
@@ -549,6 +562,7 @@ async function runPlanTransaction(pool:Pool,plan:BootstrapPlan,hooks:Transaction
   for(const [i,statement] of compat.cleanup.entries()){await client.query(statement);if(i===0)await hooks.duringCleanup?.(client);}
   await assertEphemeralRoleDroppable(client,compat.bootstrapRole);
   if(compat.drop)try{await client.query(compat.drop);}catch{throw new Error('PRODUCTION_BOOTSTRAP_EPHEMERAL_ROLE_DEPENDENCY');}
+  if(compat.retain)await assertDormantMigrationAdmin(client,compat);
   await assertOwnerCompatibilityCleared(client,compat);
   await hooks.beforeCommit?.(client);
   await client.query('COMMIT');
@@ -560,8 +574,8 @@ async function runPlanTransaction(pool:Pool,plan:BootstrapPlan,hooks:Transaction
 
 /** Production foundation = the schema plan plus role provisioning, bound under one digest. This, not
  * bootstrapProductionSchema(), is the authorised Production activation route. */
-export async function productionFoundationPlan(target:string){
- const bootstrap=await bootstrapPlan(target),roles=productionRoleProvisioningPlan(target);
+export async function productionFoundationPlan(target:string,options:{retainMigrationAdmin?:boolean}={}){
+ const bootstrap=await bootstrapPlan(target,options),roles=productionRoleProvisioningPlan(target);
  if(roles.executorRole!==bootstrap.ownerCompatibility.executorRole||roles.custodyRole!==bootstrap.ownerCompatibility.custodyRole)throw new Error('PRODUCTION_FOUNDATION_PLAN_MISMATCH');
  const binding={bootstrapPlanSha256:bootstrap.planSha256,roleProvisioningVersion:PRODUCTION_ROLE_PROVISIONING_VERSION,...roleProvisioningDigests(roles)};
  return{target,bootstrap,roles,binding,foundationPlanSha256:sha256(JSON.stringify(binding))};
@@ -571,13 +585,13 @@ export const FOUNDATION_FAULT_STAGES=['after-manager-create','after-operational-
 export type FoundationFaultStage=typeof FOUNDATION_FAULT_STAGES[number];
 /** Applies schema and operational roles to an empty, explicitly named Production database in one
  * transaction; any failure rolls all of it back. */
-export async function bootstrapProductionFoundation(pool:Pool,target:string){
+export async function bootstrapProductionFoundation(pool:Pool,target:string,options:{retainMigrationAdmin?:boolean}={}){
  assertProductionTarget(target);
  const actual=(await pool.query<{name:string}>('SELECT current_database() name')).rows[0]!.name;
  if(actual!==target)throw new Error('PRODUCTION_TARGET_MISMATCH');
  const occupied=Number((await pool.query(`SELECT count(*)::int n FROM pg_class c JOIN pg_namespace s ON s.oid=c.relnamespace WHERE c.relkind IN ('r','v','m') AND s.nspname NOT LIKE 'pg\\_%' AND s.nspname<>'information_schema'`)).rows[0].n);
  if(occupied)throw new Error('PRODUCTION_DATABASE_NOT_EMPTY');
- return runFoundationPlan(pool,await productionFoundationPlan(target));
+ return runFoundationPlan(pool,await productionFoundationPlan(target,options));
 }
 /** Product use always goes through bootstrapProductionFoundation(); tests pass mutated plans or a fault stage. */
 export async function runFoundationPlan(pool:Pool,plan:FoundationPlan,options:{failAt?:FoundationFaultStage}={}){
@@ -677,6 +691,27 @@ async function assertEphemeralRoleDroppable(c:PoolClient,role:string){
    +(SELECT count(*) FROM pg_default_acl d,aclexplode(d.defaclacl) a,b WHERE a.grantee=b.oid))::int AS grants`,[role]);
  if(r.present!==1||r.shdepend!==0||r.owned!==0||r.grants!==0)throw new Error('PRODUCTION_BOOTSTRAP_EPHEMERAL_ROLE_DEPENDENCY');
 }
+/** Retained creator: exactly the dormant-administrator posture, nothing more. Exported for the verifier of an existing target. */
+export async function dormantMigrationAdminPosture(c:Pool|PoolClient,role:string,executor:string,custody:string,owner?:string){
+ const q=async(sql:string,p:unknown[])=>(await c.query(sql,p)).rows;
+ const r=(await q('SELECT rolcanlogin,rolsuper,rolcreatedb,rolcreaterole,rolinherit,rolreplication,rolbypassrls FROM pg_roles WHERE rolname=$1',[role]))[0];
+ if(!r)return{ok:false,reason:'ABSENT'};
+ const flags=!r.rolcanlogin&&!r.rolsuper&&!r.rolcreatedb&&r.rolcreaterole&&!r.rolinherit&&!r.rolreplication&&!r.rolbypassrls;
+ const memberOf=Number((await q('SELECT count(*)::int n FROM pg_auth_members WHERE member=$1::regrole AND roleid<>ALL(ARRAY[$2::regrole,$3::regrole])',[role,executor,custody]))[0].n);
+ const members=await q("SELECT pg_get_userbyid(member) m,admin_option a,inherit_option i,set_option s FROM pg_auth_members WHERE roleid=$1::regrole",[role]);
+ const executorRows=await q("SELECT pg_get_userbyid(member) m,admin_option a,inherit_option i,set_option s FROM pg_auth_members WHERE roleid=$1::regrole",[executor]);
+ const custodyRows=await q("SELECT pg_get_userbyid(member) m,admin_option a,inherit_option i,set_option s FROM pg_auth_members WHERE roleid=$1::regrole",[custody]);
+ const only=(rows:Array<{m:string;a:boolean;i:boolean;s:boolean}>)=>rows.length===1&&rows[0]!.m===role&&rows[0]!.a===true&&rows[0]!.i===false&&rows[0]!.s===false;
+ // The creator made the role as the owner, so the owner holds an automatic ADMIN row and the bootstrap's SET-only grant: nobody else, and never INHERIT.
+ const holders=members.length>=1&&members.every(m=>m.i===false&&(owner===undefined||m.m===owner))&&members.some(m=>m.s===true);
+ const ok=flags&&memberOf===0&&holders&&only(executorRows as never)&&only(custodyRows as never);
+ return{ok,flags,memberOf,holders,executorAdminOnly:only(executorRows as never),custodyAdminOnly:only(custodyRows as never)};
+}
+async function assertDormantMigrationAdmin(c:PoolClient,compat:OwnerCompatibility){
+ const owner=(await c.query('SELECT session_user u')).rows[0].u as string;
+ const p=await dormantMigrationAdminPosture(c,compat.bootstrapRole,compat.executorRole,compat.custodyRole,owner);
+ if(!p.ok)throw new Error('PRODUCTION_BOOTSTRAP_DORMANT_ADMIN_POSTURE_FAILED');
+}
 /** Pre-COMMIT proof that no bootstrap-only capability or membership survives. */
 async function assertOwnerCompatibilityCleared(c:PoolClient,compat:OwnerCompatibility){
  const r=await row(c,`SELECT
@@ -686,5 +721,5 @@ async function assertOwnerCompatibilityCleared(c:PoolClient,compat:OwnerCompatib
   (SELECT count(*) FROM pg_auth_members m WHERE NOT EXISTS(SELECT 1 FROM pg_roles r WHERE r.oid=m.roleid) OR NOT EXISTS(SELECT 1 FROM pg_roles r WHERE r.oid=m.member) OR NOT EXISTS(SELECT 1 FROM pg_roles r WHERE r.oid=m.grantor))::int AS dangling,
   has_database_privilege($2,current_database(),'CREATE') AS database_create,
   has_schema_privilege($2,'public','CREATE') AS public_create`,[compat.bootstrapRole,compat.executorRole,compat.custodyRole]);
- if(r.ephemeral!==0||r.custody!==2||r.memberships!==0||r.dangling!==0||r.database_create!==false||r.public_create!==false)throw new Error('PRODUCTION_BOOTSTRAP_TEMPORARY_CAPABILITY_CLEANUP_FAILED');
+ if(r.ephemeral!==(compat.retain?1:0)||r.custody!==2||r.memberships!==0||r.dangling!==0||r.database_create!==false||r.public_create!==false)throw new Error('PRODUCTION_BOOTSTRAP_TEMPORARY_CAPABILITY_CLEANUP_FAILED');
 }

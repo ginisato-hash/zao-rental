@@ -313,6 +313,25 @@ export async function unfenceSource(owner:Pool,database:string,fence:Fence,manag
  if(!restoredLogin||!restoredSetting)throw new Error('CUTOVER_UNFENCE_UNVERIFIED');
  return true as const;
 }
+/** The irreversible boundary, written INTO THE TARGET DATABASE (the database comment, which its owner can set without superuser rights and anyone can read) before anything is
+ * activated: the first LOGIN grant, the lift of the read-only default and the credential switch all come after it. Its presence is read back from the database; a local file alone never decides. */
+export const ACTIVATION_MARKER='zao-cutover-activation';
+export async function readActivationMarker(pool:Q,database:string):Promise<string|null>{
+ const row=(await pool.query<{c:string|null}>('SELECT shobj_description(oid,\'pg_database\') c FROM pg_database WHERE datname=$1',[database])).rows[0];
+ const c=row?.c??null;
+ return c!==null&&c.startsWith(ACTIVATION_MARKER+':')?c.slice(ACTIVATION_MARKER.length+1):null;
+}
+export async function writeActivationMarker(pool:Pool,database:string,value:string){
+ if(!/^STARTED:[0-9TZ:.-]{10,40}$/.test(value))throw new Error('CUTOVER_ACTIVATION_MARKER_VALUE');
+ await readWrite(pool,[`COMMENT ON DATABASE ${qi(database)} IS '${ACTIVATION_MARKER}:${value}'`]);
+ if(await readActivationMarker(pool,database)!==value)throw new Error('CUTOVER_ACTIVATION_MARKER_UNVERIFIED');
+}
+/** Grants LOGIN to the target runtime roles through the role-administration role and reads every one back. Never called before the activation boundary. */
+export async function grantRuntimeLogin(owner:Pool,roles:string[],managerRole:string){
+ await readWrite(owner,roles.map(r=>`ALTER ROLE ${qi(r)} LOGIN`),managerRole);
+ const login=(await owner.query<{rolname:string}>('SELECT rolname FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin',[roles])).rows.map(r=>r.rolname);
+ if(!roles.every(r=>login.includes(r)))throw new Error('CUTOVER_TARGET_LOGIN_UNVERIFIED');
+}
 /** Work that a second worker could do on the data: an active reconciliation lease or a delivery in flight. `executorTransientRows` is statistics-based and only
  * meaningful when no runtime session exists (the effect tables are filled and emptied inside one SECURITY DEFINER transaction), so it is part of the
  * post-fence proof, not of the live pre-fence check. */
@@ -347,7 +366,7 @@ export type CutoverOptions={source:Pool;target:Pool;sourceOwner:Pool;targetOwner
  postSwitchProbe:(target:Pool)=>Promise<void>;
  now?:()=>Date;fault?:CutoverFault;
  sourceCount?:number;ignoreSourceOnly?:Record<string,string[]>};
-export type CutoverFailure=Error&{stage:CutoverStage;rolledBack:boolean;recoveryRequired:boolean;writesEnabled:boolean;writesUnknown:boolean;audit:Audit[];chainValid:boolean;fence?:Fence};
+export type CutoverFailure=Error&{stage:CutoverStage;rolledBack:boolean;recoveryRequired:boolean;writesEnabled:boolean;writesUnknown:boolean;activationStarted:boolean;audit:Audit[];chainValid:boolean;fence?:Fence};
 /** Executes the cutover. Failure contract (the product never claims more than it read back):
  *  - nothing fenced yet (preflight): nothing to restore, `rolledBack` true, `recoveryRequired` false;
  *  - fenced, target never writable: the exact snapshot is restored and READ BACK; `rolledBack` is true only when that proof holds, otherwise `recoveryRequired`
@@ -355,7 +374,7 @@ export type CutoverFailure=Error&{stage:CutoverStage;rolledBack:boolean;recovery
  *  - from the moment the target's read-only default is lifted (intent recorded first, then read back after any failure) the outcome is forward-fix only:
  *    the source stays fenced, `rolledBack` is false (never two writers). */
 export async function runCutover(o:CutoverOptions){
- const audit=auditChain(o.now);let fence:Fence|undefined,writesIntent=false,writesEnabled=false,writesUnknown=false,stage:CutoverStage='preflight';
+ const audit=auditChain(o.now);let fence:Fence|undefined,writesIntent=false,writesEnabled=false,writesUnknown=false,activationBoundary=false,stage:CutoverStage='preflight';
  const fault=(s:CutoverFault)=>{if(o.fault===s)throw new Error('CUTOVER_INJECTED_FAULT '+s);};
  const targetDefault=async()=>{
   const cfg=(await o.targetOwner.query('SELECT setconfig FROM pg_db_role_setting s JOIN pg_database d ON d.oid=s.setdatabase WHERE d.datname=$1 AND s.setrole=0',[o.targetDatabase])).rows[0]?.setconfig??[];
@@ -409,6 +428,8 @@ export async function runCutover(o:CutoverOptions){
   fault('reconcile');
   stage='enable-writes';
   // Intent is persisted BEFORE the default is lifted; a failure after this point is judged by reading the target back, never by assumption.
+  // From this line on the cutover is forward-only: the boundary counts as crossed even if recording it fails part-way (fail closed).
+  activationBoundary=true;
   await o.beforeEnableWrites?.();
   writesIntent=true;
   await readWrite(o.targetOwner,[`ALTER DATABASE ${qi(o.targetDatabase)} RESET default_transaction_read_only`]);
@@ -432,7 +453,7 @@ export async function runCutover(o:CutoverOptions){
    try{writesEnabled=!(await targetDefault());}catch{writesEnabled=true;writesUnknown=true;}
   }
   let rolledBack=false,recoveryRequired=false;
-  if(!writesEnabled){
+  if(!writesEnabled&&!activationBoundary){
    if(!fence)rolledBack=true;   // nothing was changed on the source
    else{
     try{
@@ -441,8 +462,8 @@ export async function runCutover(o:CutoverOptions){
     }catch{recoveryRequired=true;}
    }
    audit.add(rolledBack?'rollback':'recovery-required',{stage,reason:message.slice(0,200),sourceUnfenced:rolledBack&&Boolean(fence)});
-  }else audit.add('forward-fix-only',{stage,reason:message.slice(0,200),writesEnabled,writesUnknown,sourceFenced:Boolean(fence)});
-  const failure=Object.assign(new Error(message),{stage,rolledBack,recoveryRequired,writesEnabled,writesUnknown,audit:audit.entries,chainValid:audit.verify(),...(fence?{fence}:{})}) as CutoverFailure;
+  }else audit.add('forward-fix-only',{stage,reason:message.slice(0,200),writesEnabled,writesUnknown,activationStarted:activationBoundary,sourceFenced:Boolean(fence)});
+  const failure=Object.assign(new Error(message),{stage,rolledBack,recoveryRequired,writesEnabled,writesUnknown,activationStarted:activationBoundary,audit:audit.entries,chainValid:audit.verify(),...(fence?{fence}:{})}) as CutoverFailure;
   throw failure;
  }
 }

@@ -18,19 +18,23 @@ import {BACKUP_CREDENTIAL_TARGET as T,neonCliPort,type NeonPort} from './product
 import {assertProductionTarget,bootstrapPlan,bootstrapProductionFoundation,dormantMigrationAdminPosture} from './production-bootstrap';
 import {productionRoleProvisioningPlan} from './production-role-provisioning';
 import {installGroupRoleOnFoundation65,groupRoleNames} from './production-group-delta';
-import {requirePre0065Recovery,PRE_0065_RECOVERY_FILE,PRE_0065_RECOVERY_VERSION} from './production-recovery-evidence-pre0065';
+import {requirePre0065Recovery,requireRetainedSourceCopy,RETAINED_SOURCE_COPY_FILE,RETAINED_SOURCE_COPY_VERSION} from './production-recovery-evidence-pre0065';
 import {MIGRATION_0065_OBJECTS,NOT_COPIED,TARGET_ONLY_COLUMNS,compareAcl,inFlightWork,installDeltaGrantsOnFoundation65,listTables,proveTargetUntouched,readFenceState,readWrite,registry,runCutover,
- schemaState,tableDigests,triggerStates,foreignKeyOrphans,unfenceSource,type CutoverFailure,type CutoverFault,type Fence} from './production-cutover';
+ schemaState,tableDigests,triggerStates,foreignKeyOrphans,unfenceSource,readActivationMarker,writeActivationMarker,grantRuntimeLogin,type CutoverFailure,type CutoverFault,type Fence} from './production-cutover';
 
 export const CUTOVER_RUN_VERSION='production-cutover-run/1';
 /** The only database names this program will ever touch in Production. A second target exists so that a discarded first attempt can be replaced. */
 export const PRODUCTION_SOURCE='neondb';
 export const PRODUCTION_TARGETS=Object.freeze(['neondb_v65','neondb_v65b'] as const);
 export const PRODUCTION_OWNER='neondb_owner';
-export const COMMANDS=['preflight','bootstrap-target','copy-and-switch','verify-target','rollback','recover'] as const;
+export const COMMANDS=['preflight','bootstrap-target','prewindow-check','copy-and-switch','verify-target','rollback','recover'] as const;
 export type Command=typeof COMMANDS[number];
 
-export type RunConfig={source:string;target:string;owner:string;allowedTargets:readonly string[];root:string;fenceWaitMs?:number};
+export type RunConfig={source:string;target:string;owner:string;allowedTargets:readonly string[];root:string;fenceWaitMs?:number;
+ /** Production sets all of these true. `activate` (default true): the window itself grants the target runtime roles LOGIN right after the activation boundary is recorded (no human step inside the window);
+  * false stops after writes are enabled with the roles still NOLOGIN (rehearsal tests). `requirePrewindow` (default true): copy-and-switch refuses without a fresh READY prewindow-check.
+  * `requireBindings` (default true): prewindow-check also needs the fresh bindings-metadata AND live-binding evidence. `requireIndependentBackup` (default false): an independent restore point/drill is reported either way. */
+ activate?:boolean;requirePrewindow?:boolean;requireBindings?:boolean;requireIndependentBackup?:boolean;prewindowMaxAgeMs?:number};
 export type OwnerHandle={pool:Pool;close():Promise<void>};
 export type RunPorts={config:RunConfig;release():string;openOwner(database:string):Promise<OwnerHandle>;now():Date;
  /** Which privilege differences between source and target are explained (default: only the objects migration 0065 introduces or re-grants). */
@@ -45,12 +49,14 @@ const evidenceDir=(c:RunConfig)=>join(c.root,'.local/evidence/production-cutover
 const statePath=(c:RunConfig)=>join(evidenceDir(c),'state.json');
 
 // ---------------------------------------------------------------- state (counts, digests and names only; mode 0600; no secret ever)
-export type Phase='PREFLIGHT_OK'|'TARGET_BOOTSTRAPPED'|'WINDOW_OPEN'|'COPIED_AWAITING_OWNER'|'ROLLED_BACK'|'FORWARD_FIX_ONLY'|'RECOVERY_REQUIRED';
+export type Phase='PREFLIGHT_OK'|'TARGET_BOOTSTRAPPED'|'WINDOW_OPEN'|'COPIED_AWAITING_OWNER'|'ACTIVATED'|'ROLLED_BACK'|'FORWARD_FIX_ONLY'|'RECOVERY_REQUIRED';
 /** Whether the target has been allowed to accept writes: NEVER → INTENT (recorded BEFORE the read-only default is lifted) → ENABLED. A local file is evidence of INTENT only;
  * what actually happened is always decided by reading the databases back. */
 export type Writes='NEVER'|'INTENT'|'ENABLED';
 export type State={version:typeof CUTOVER_RUN_VERSION;source:string;target:string;phase:Phase;at:string;sourceLoginRoles:string[];sourceDigestSha256:string;sourceRows:number;
- targetSchemaStateSha256?:string;audit?:unknown;switchManifest?:SwitchManifest;writes?:Writes;sourceFence?:Fence;sourceDbSetting?:string|null;dormantAdminRole?:string;recoveryReason?:string};
+ targetSchemaStateSha256?:string;audit?:unknown;
+ /** The irreversible boundary. NONE is written when a window opens; STARTED is persisted (and mirrored into the target database) BEFORE the first activation step. A missing value is UNKNOWN and counts as crossed. */
+ activation?:'NONE'|'STARTED';activationAt?:string;prewindow?:{at:string;ready:boolean;blockers:string[]};switchManifest?:SwitchManifest;writes?:Writes;sourceFence?:Fence;sourceDbSetting?:string|null;dormantAdminRole?:string;recoveryReason?:string};
 export type SwitchManifest={database:string;rolePrefixFrom:string;rolePrefixTo:string;targetRuntimeRoles:string[];loginRequired:string[];passwordEnvPrefix:'PRODUCTION_DB_PASSWORD_';roleEnvPrefix:'PRODUCTION_DB_ROLE_';nameEnv:'PRODUCTION_DB_NAME'};
 function readState(c:RunConfig):State|undefined{
  const p=statePath(c);if(!existsSync(p))return undefined;
@@ -95,7 +101,7 @@ async function readOnly<T2>(pool:Pool,fn:(c:import('pg').PoolClient)=>Promise<T2
 export async function preflight(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
  const existing=readState(c);
- if(existing&&['WINDOW_OPEN','COPIED_AWAITING_OWNER','FORWARD_FIX_ONLY','RECOVERY_REQUIRED'].includes(existing.phase))fail('PHASE_REFUSED_'+existing.phase);
+ if(existing&&['WINDOW_OPEN','COPIED_AWAITING_OWNER','ACTIVATED','FORWARD_FIX_ONLY','RECOVERY_REQUIRED'].includes(existing.phase))fail('PHASE_REFUSED_'+existing.phase);
  return withOwner(ports,c.source,async source=>{
   await assertRegistryIs(source,64);
   const manager=managerOf(c.source),roles=runtimeRoleNames(c.source);
@@ -124,12 +130,13 @@ export async function preflight(ports:RunPorts){
   if(ready.ownerCreatedb&&ready.ownerCreaterole&&ready.canSetManager){
    writeState(c,state);
    // Recovery base: the source stays untouched in the cluster (fence only toggles role LOGIN and the database default); no age key, no Owner action.
-   const dir=join(c.root,'.local/evidence/production-backup');mkdirSync(dir,{recursive:true,mode:0o700});
-   writeFileSync(join(dir,PRE_0065_RECOVERY_FILE),JSON.stringify({version:PRE_0065_RECOVERY_VERSION,kind:'RETAINED_SOURCE_DATABASE',registry:64,recordedAt:ports.now().toISOString(),reference:`${c.source}-retained:${d.sha256.slice(0,16)}`}),{mode:0o600});
+   // NOT an independent backup: a record of the same-cluster retained source copy, kept in its own file so it can never overwrite or pass as an independent restore point/drill.
+   mkdirSync(evidenceDir(c),{recursive:true,mode:0o700});
+   writeFileSync(join(evidenceDir(c),RETAINED_SOURCE_COPY_FILE),JSON.stringify({version:RETAINED_SOURCE_COPY_VERSION,kind:'RETAINED_SOURCE_COPY',independent:false,registry:64,recordedAt:ports.now().toISOString(),reference:`${c.source}-retained:${d.sha256.slice(0,16)}`}),{mode:0o600});
   }
   return{status:ready.ownerCreatedb&&ready.ownerCreaterole&&ready.canSetManager?'CUTOVER_PREFLIGHT_OK':'CUTOVER_PREFLIGHT_BLOCKED',sourceSha:head,source:c.source,target:c.target,registry:64,...ready,
    ownerCanTerminateRuntimeSessions:facts.signal,targetExists:facts.targetExists,runtimeLoginRoles:sourceLoginRoles.length,runtimeSessions,inFlight:facts.work,
-   tables:d.tables,rows:d.rows,digestSha256Prefix:d.sha256.slice(0,16),recovery:'RETAINED_SOURCE_DATABASE',
+   tables:d.tables,rows:d.rows,digestSha256Prefix:d.sha256.slice(0,16),recovery:'RETAINED_SOURCE_COPY',independentBackupEvidence:independentBackup(c.root,ports.now()),
    note:facts.signal?'termination of runtime sessions is permitted':'termination NOT permitted: the Owner must stop the application first; copy-and-switch refuses while runtime sessions remain'};
  });
 }
@@ -169,10 +176,76 @@ async function exclusive<T2>(ports:RunPorts,pools:Pool[],fn:()=>Promise<T2>){
 const dormantRoleOf=async(target:string)=>(await bootstrapPlan(target,{retainMigrationAdmin:true})).ownerCompatibility.bootstrapRole;
 const targetReadOnlyNow=async(pool:Pool,db:string)=>(await readFenceState(pool,db,[])).dbSetting==='on';
 
+// ---------------------------------------------------------------- independent-backup report, evidence files and the prewindow check
+/** Reported as its own item; the retained source copy is never counted here. */
+function independentBackup(root:string,now:Date):'PRESENT'|'ABSENT'{
+ try{requirePre0065Recovery(root,now);return 'PRESENT';}catch{return 'ABSENT';}
+}
+export const BINDINGS_EVIDENCE_FILE='bindings-check.json';
+export const LIVE_BINDING_EVIDENCE_FILE='live-bindings.json';
+export const BINDINGS_EVIDENCE_VERSION='cutover-bindings-evidence/1';
+export const LIVE_BINDING_EVIDENCE_VERSION='cutover-live-binding-evidence/1';
+/** Evidence written by the bindings CLIs: fixed shape, bound to the target, fresh. Returns the recorded status, or null when absent/stale/other target/invalid. */
+function readEvidenceStatus(c:RunConfig,file:string,version:string,now:Date):string|null{
+ const p=join(evidenceDir(c),file);
+ try{
+  if(!existsSync(p)||!lstatSync(p).isFile()||lstatSync(p).size>8192)return null;
+  const r=JSON.parse(readFileSync(p,'utf8')) as {version?:unknown;target?:unknown;at?:unknown;status?:unknown};
+  const at=typeof r.at==='string'?Date.parse(r.at):NaN,age=now.getTime()-at;
+  if(r.version!==version||r.target!==c.target||!Number.isFinite(at)||age<0||age>(c.prewindowMaxAgeMs??PREWINDOW_MAX_AGE_MS))return null;
+  return typeof r.status==='string'?r.status:null;
+ }catch{return null;}
+}
+export const PREWINDOW_MAX_AGE_MS=2*60*60*1000;
+
+/** READ ONLY. Everything that must hold BEFORE the source is fenced, gathered in one place. Nothing is stopped while any item is open ("never fence unprepared"). The items
+ * are reported separately on purpose: a metadata match is NOT a live connection/delivery pass, and a retained source copy is NOT an independent restore point. */
+export async function prewindowCheck(ports:RunPorts){
+ const c=ports.config;assertConfig(c);const head=ports.release();const now=ports.now();
+ const st=readState(c);if(!st||st.phase!=='TARGET_BOOTSTRAPPED')fail('PHASE_REFUSED_'+(st?.phase??'NONE'));
+ let retained=true;try{requireRetainedSourceCopy(c.root,now);}catch{retained=false;}
+ const independent=independentBackup(c.root,now);
+ const bindingsMetadata=readEvidenceStatus(c,BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION,now);
+ const liveBindings=readEvidenceStatus(c,LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,now);
+ const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
+ try{
+  await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
+  await assertRegistryIs(sourceH.pool,64);
+  const sourceNow=await readFenceState(sourceH.pool,c.source,runtimeRoleNames(c.source));
+  const work=await readOnly(sourceH.pool,cl=>inFlightWork(cl));const {executorTransientRows:_t,...live}=work;void _t;
+  const target=await targetStructure(targetH.pool,c);
+  const marker=await readActivationMarker(targetH.pool,c.target);
+  const canTerminate=(await sourceH.pool.query("SELECT pg_has_role(current_user,'pg_signal_backend','MEMBER') m")).rows[0].m as boolean;
+  const items={
+   sourceLive:sourceNow.dbSetting!=='on'&&sourceNow.loginRoles.length>0,
+   inFlightWorkZero:Object.values(live).every(v=>v===0),
+   targetReady:target.ok&&target.runtimeLoginRoles.length===0&&target.runtimeSessions===0&&await targetReadOnlyNow(targetH.pool,c.target)&&marker===null,
+   retainedSourceCopy:retained,
+   independentBackupEvidence:independent,
+   bindingsMetadata:bindingsMetadata===null?'NOT_CHECKED':bindingsMetadata==='CONSISTENT'?'CONSISTENT':'FINDINGS',
+   liveBindings:liveBindings===null?'NOT_CHECKED':liveBindings==='PASS'?'PASS':'FAIL',
+   canTerminateRuntimeSessions:canTerminate};
+  const blockers:string[]=[];
+  if(!items.sourceLive)blockers.push('SOURCE_NOT_LIVE');
+  if(!items.inFlightWorkZero)blockers.push('IN_FLIGHT_WORK');
+  if(!items.targetReady)blockers.push('TARGET_NOT_READY');
+  if(!items.retainedSourceCopy)blockers.push('RETAINED_SOURCE_COPY_MISSING');
+  if(c.requireBindings!==false){
+   if(items.bindingsMetadata!=='CONSISTENT')blockers.push('BINDINGS_METADATA_'+items.bindingsMetadata);
+   if(items.liveBindings!=='PASS')blockers.push('LIVE_BINDINGS_'+items.liveBindings);
+  }
+  if(c.requireIndependentBackup===true&&independent!=='PRESENT')blockers.push('INDEPENDENT_BACKUP_ABSENT');
+  const ready=blockers.length===0;
+  writeState(c,{...st,at:now.toISOString(),prewindow:{at:now.toISOString(),ready,blockers}});
+  return{status:ready?'CUTOVER_PREWINDOW_READY':'CUTOVER_PREWINDOW_NOT_READY',sourceSha:head,target:c.target,ready,blockers,...items,
+   recoveryBasis:'RETAINED_SOURCE_COPY (same cluster; not an independent backup)'};
+ }finally{await sourceH.close();await targetH.close();}
+}
+
 // ---------------------------------------------------------------- bootstrap-target
 export async function bootstrapTarget(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
- requirePre0065Recovery(c.root,ports.now());
+ requireRetainedSourceCopy(c.root,ports.now());
  const st=readState(c);if(!st||(st.phase!=='PREFLIGHT_OK'&&st.phase!=='ROLLED_BACK'))fail('PREFLIGHT_REQUIRED');
  if(st.phase==='ROLLED_BACK')fail('TARGET_ALREADY_BOOTSTRAPPED');
  const sourceH=await ports.openOwner(c.source);
@@ -228,16 +301,32 @@ async function targetStructure(target:Pool,c:RunConfig){
  });
 }
 
+// ---------------------------------------------------------------- the irreversible activation boundary
+/** Read from the target DATABASE, never from the file alone. Fail closed: a missing/corrupt state, a state that says NONE while the marker exists, a marker that cannot be read or
+ * any value other than an explicit NONE all count as crossed. Once crossed, no automatic rollback/recover ever unfences the source. */
+async function activationEvidence(c:RunConfig,st:State,target:Pool){
+ let marker:string|null=null,unreadable=false;
+ try{marker=await readActivationMarker(target,c.target);}catch{unreadable=true;}
+ const state=st.activation??'MISSING';
+ const crossed=unreadable||marker!==null||state!=='NONE';
+ return{crossed,state,marker:unreadable?'UNREADABLE':marker===null?'ABSENT':'PRESENT',reason:unreadable?'ACTIVATION_EVIDENCE_UNREADABLE':marker!==null&&state==='NONE'?'ACTIVATION_MARKER_STATE_MISMATCH':state==='MISSING'?'ACTIVATION_EVIDENCE_UNKNOWN':'ACTIVATION_BOUNDARY_CROSSED'};
+}
+
 // ---------------------------------------------------------------- copy-and-switch
 /** A snapshot belongs to ONE window: once the source is proven restored it is dropped, so a stale one can never be applied to a later window. */
-const withoutWindow=(st:State):State=>{const {sourceFence:_f,recoveryReason:_r,...rest}=st;void _f;void _r;return rest as State;};
+const withoutWindow=(st:State):State=>{const {sourceFence:_f,recoveryReason:_r,prewindow:_p,...rest}=st;void _f;void _r;void _p;return {...rest,activation:'NONE'} as State;};
 const snapshotOf=(c:RunConfig,st:State):Fence=>st.sourceFence??{roles:runtimeRoleNames(c.source),wasLogin:st.sourceLoginRoles,terminated:0,terminateDenied:false,dbSetting:st.sourceDbSetting??null,verified:false};
 const failureCode=(message:string)=>'PRODUCTION_CUTOVER_'+(message.match(/^CUTOVER_([A-Z0-9_]+)/)?.[1]??'WINDOW_FAILED');
 
 export async function copyAndSwitch(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
- requirePre0065Recovery(c.root,ports.now());
+ requireRetainedSourceCopy(c.root,ports.now());
  const st0=readState(c);if(!st0||(st0.phase!=='TARGET_BOOTSTRAPPED'&&st0.phase!=='ROLLED_BACK'))fail('PHASE_REFUSED_'+(st0?.phase??'NONE'));
+ // Never fence unprepared: a fresh READY prewindow-check (every item verified outside the window) is a precondition.
+ if(c.requirePrewindow!==false){
+  const pw=st0.prewindow,age=pw?ports.now().getTime()-Date.parse(pw.at):NaN;
+  if(!pw||!pw.ready||!Number.isFinite(age)||age<0||age>(c.prewindowMaxAgeMs??PREWINDOW_MAX_AGE_MS))fail('PREWINDOW_REQUIRED');
+ }
  const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
  try{
   return await exclusive(ports,[sourceH.pool,targetH.pool],async()=>{
@@ -246,9 +335,10 @@ export async function copyAndSwitch(ports:RunPorts){
    const before=await targetStructure(targetH.pool,c);
    if(!before.ok||before.runtimeLoginRoles.length||before.runtimeSessions)fail('TARGET_NOT_READY');
    if(!await targetReadOnlyNow(targetH.pool,c.target))fail('TARGET_NOT_READ_ONLY');
+   if(await readActivationMarker(targetH.pool,c.target)!==null)fail('TARGET_ACTIVATION_MARKER_PRESENT');
    const sourceNow=await readFenceState(sourceH.pool,c.source,runtimeRoleNames(c.source));
    // Everything that will be changed is recorded BEFORE the first change; `recordFence` refines it with the exact role list.
-   let st:State={...st0,phase:'WINDOW_OPEN',at:ports.now().toISOString(),sourceLoginRoles:sourceNow.loginRoles,sourceDbSetting:sourceNow.dbSetting,writes:'NEVER'};
+   let st:State={...st0,phase:'WINDOW_OPEN',at:ports.now().toISOString(),sourceLoginRoles:sourceNow.loginRoles,sourceDbSetting:sourceNow.dbSetting,writes:'NEVER',activation:'NONE'};
    delete (st as {sourceFence?:Fence}).sourceFence;
    writeState(c,st);
    const manifest:SwitchManifest={database:c.target,rolePrefixFrom:c.source+'_',rolePrefixTo:c.target+'_',targetRuntimeRoles:runtimeRoleNames(c.target),loginRequired:runtimeRoleNames(c.target),
@@ -258,20 +348,29 @@ export async function copyAndSwitch(ports:RunPorts){
    try{
     result=await runCutover({source:sourceH.pool,target:targetH.pool,sourceOwner:sourceH.pool,targetOwner:targetH.pool,sourceDatabase:c.source,targetDatabase:c.target,
      runtimeRoles:runtimeRoleNames(c.source),managerRole:managerOf(c.source),fenceWaitMs:c.fenceWaitMs??60000,
-     ...(ports.fault?{fault:ports.fault}:{}),recordFence:f=>persist({sourceFence:f}),beforeEnableWrites:()=>persist({writes:'INTENT'}),afterEnableWrites:()=>persist({writes:'ENABLED'}),
-     switchRuntime:async()=>undefined,   // the credential switch is the Owner's: this program stops with the application unable to reach the target
-     postSwitchProbe:async t=>{const s=await targetStructure(t,c);if(!s.ok||s.runtimeLoginRoles.length)throw new Error('CUTOVER_POST_SWITCH_STRUCTURE');}});
+     ...(ports.fault?{fault:ports.fault}:{}),recordFence:f=>persist({sourceFence:f}),
+     // THE boundary: persisted locally first, then written into the target database, BEFORE the read-only default is lifted and before any LOGIN. From here on: forward-fix only.
+     beforeEnableWrites:async()=>{const at=ports.now().toISOString();persist({activation:'STARTED',activationAt:at,writes:'INTENT'});await writeActivationMarker(targetH.pool,c.target,'STARTED:'+at);},
+     afterEnableWrites:()=>persist({writes:'ENABLED'}),
+     // No human step inside the window: the runner itself grants the target runtime roles LOGIN (through the target's role-administration role) right after the boundary.
+     // The application still cannot reach the target until the prepared candidate (carrying the new bindings) is promoted by the release flow.
+     switchRuntime:async()=>{if(c.activate!==false)await grantRuntimeLogin(targetH.pool,runtimeRoleNames(c.target),managerOf(c.target));},
+     postSwitchProbe:async t=>{
+      const s=await targetStructure(t,c),roles=runtimeRoleNames(c.target);
+      const loginOk=c.activate===false?s.runtimeLoginRoles.length===0:roles.every(r=>s.runtimeLoginRoles.includes(r));
+      if(!s.ok||!loginOk)throw new Error('CUTOVER_POST_SWITCH_STRUCTURE');}});
    }catch(e){
     const f=e as Partial<CutoverFailure>&{message:string};
     const fence=f.fence??st.sourceFence;
-    if(f.writesEnabled)persist({phase:'FORWARD_FIX_ONLY',writes:f.writesUnknown?'INTENT':'ENABLED',audit:f.audit,...(fence?{sourceFence:fence}:{}),recoveryReason:'TARGET_WRITES_ALLOWED'});
+    if(f.writesEnabled||f.activationStarted)persist({phase:'FORWARD_FIX_ONLY',activation:'STARTED',writes:f.writesEnabled&&!f.writesUnknown?'ENABLED':'INTENT',audit:f.audit,...(fence?{sourceFence:fence}:{}),recoveryReason:'ACTIVATION_BOUNDARY_CROSSED'});
     else if(f.recoveryRequired)persist({phase:'RECOVERY_REQUIRED',writes:'NEVER',audit:f.audit,...(fence?{sourceFence:fence}:{}),recoveryReason:'SOURCE_UNFENCE_UNVERIFIED'});
     else{st=withoutWindow(st);persist({phase:'TARGET_BOOTSTRAPPED',writes:'NEVER',audit:f.audit});}
     throw Object.assign(new Error(failureCode(f.message)),{stage:f.stage,rolledBack:Boolean(f.rolledBack),recoveryRequired:Boolean(f.recoveryRequired)});
    }
-   persist({phase:'COPIED_AWAITING_OWNER',writes:'ENABLED',audit:result.audit,switchManifest:manifest});
-   return{status:'CUTOVER_COPIED_AWAITING_OWNER',sourceSha:head,chainValid:result.chainValid,tables:result.report.tables,rows:result.report.rows,sequences:result.report.sequences,
-    sourceFenced:true,targetWritableByApplication:false,steps:result.audit.map(a=>a.step),switchManifest:manifest};
+   const activated=c.activate!==false;
+   persist({phase:activated?'ACTIVATED':'COPIED_AWAITING_OWNER',writes:'ENABLED',activation:'STARTED',audit:result.audit,switchManifest:manifest});
+   return{status:activated?'CUTOVER_ACTIVATED':'CUTOVER_COPIED_AWAITING_OWNER',sourceSha:head,chainValid:result.chainValid,tables:result.report.tables,rows:result.report.rows,sequences:result.report.sequences,
+    sourceFenced:true,targetRuntimeLogin:activated,activationBoundary:'RECORDED_FORWARD_FIX_ONLY',steps:result.audit.map(a=>a.step),switchManifest:manifest};
   });
  }finally{await sourceH.close();await targetH.close();}
 }
@@ -324,15 +423,21 @@ async function restoreSource(c:RunConfig,sourceH:OwnerHandle,targetH:OwnerHandle
 }
 export async function rollback(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
- const st=readState(c);if(!st||st.phase!=='COPIED_AWAITING_OWNER')fail('ROLLBACK_PHASE_REFUSED_'+(st?.phase??'NONE'));
+ const st=readState(c);if(!st||!['COPIED_AWAITING_OWNER','WINDOW_OPEN','RECOVERY_REQUIRED'].includes(st.phase))fail('ROLLBACK_PHASE_REFUSED_'+(st?.phase??'NONE'));
  const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
  try{
   return await exclusive(ports,[sourceH.pool,targetH.pool],async()=>{
    await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
+   // The boundary decides first, and alone: after it was recorded (or when its evidence is unknown/unreadable/inconsistent) NOTHING makes going back automatic —
+   // not LOGIN=0, not identical data, not zero sessions. Data equal to the source proves nothing about work done through the target while it was open.
+   const act=await activationEvidence(c,st,targetH.pool);
+   if(act.crossed)fail('ROLLBACK_REFUSED_ACTIVATION_STARTED');
    const f=await targetFacts(sourceH,targetH,c);
-   // Going back is allowed only if the target has never carried a business write: nobody can log in or is connected, AND the full data and every sequence still equal the frozen source.
+   // Pre-boundary only. Additional conditions (never sufficient on their own): nobody can log in or is connected, the target is read-only, and — unless the window never
+   // allowed writes at all — the full data and every sequence still equal the frozen source.
    if(f.loginRoles>0||f.sessions>0)fail('ROLLBACK_REFUSED_TARGET_IN_USE');
-   if(!f.untouched.untouched)fail('ROLLBACK_REFUSED_TARGET_WRITTEN');
+   if(!f.readOnly)fail('ROLLBACK_REFUSED_TARGET_WRITABLE');
+   if((st.writes??'NEVER')!=='NEVER'&&!f.untouched.untouched)fail('ROLLBACK_REFUSED_TARGET_WRITTEN');
    const fence=await restoreSource(c,sourceH,targetH,st);
    writeState(c,{...withoutWindow(st),phase:'ROLLED_BACK',writes:'NEVER',at:ports.now().toISOString()});
    return{status:'CUTOVER_ROLLED_BACK',sourceSha:head,sourceRuntimeRolesRestored:fence.wasLogin.length,targetReadOnly:true,targetProvenUntouched:true};
@@ -352,13 +457,20 @@ export async function recover(ports:RunPorts){
    const sourceState=await readFenceState(sourceH.pool,c.source,runtimeRoleNames(c.source));
    const f=await targetFacts(sourceH,targetH,c);
    const sourceFenced=sourceState.dbSetting==='on'||st.sourceLoginRoles.some(r=>!sourceState.loginRoles.includes(r));
-   const facts={phase:st.phase,sourceFenced,sourceSessions:sourceState.sessions,targetReadOnly:f.readOnly,targetRuntimeLoginRoles:f.loginRoles,targetSessions:f.sessions,targetUntouched:f.untouched.untouched,writesRecorded:st.writes??'NEVER'};
+   const act=await activationEvidence(c,st,targetH.pool);
+   const facts={phase:st.phase,sourceFenced,sourceSessions:sourceState.sessions,targetReadOnly:f.readOnly,targetRuntimeLoginRoles:f.loginRoles,targetSessions:f.sessions,targetUntouched:f.untouched.untouched,writesRecorded:st.writes??'NEVER',
+    activation:act.state,activationMarker:act.marker};
+   // Crossed (or unknown): forward-fix only. The source stays fenced; nothing is unfenced, whatever the data looks like.
+   if(act.crossed){
+    writeState(c,{...st,phase:'FORWARD_FIX_ONLY',activation:'STARTED',at:ports.now().toISOString(),recoveryReason:act.reason});
+    return{status:'CUTOVER_FORWARD_FIX_ONLY',sourceSha:head,...facts,reason:act.reason,phase:'FORWARD_FIX_ONLY'};
+   }
    if(!sourceFenced){
     writeState(c,{...withoutWindow(st),phase:'TARGET_BOOTSTRAPPED',writes:'NEVER',at:ports.now().toISOString()});
     return{status:'CUTOVER_RECOVERED_NOTHING_FENCED',sourceSha:head,...facts,phase:'TARGET_BOOTSTRAPPED'};
    }
    // Provably safe to go back: nobody uses the target AND (it was never made writable, or its data still equals the frozen source).
-   const safe=f.loginRoles===0&&f.sessions===0&&((st.writes??'NEVER')==='NEVER'&&f.readOnly||f.untouched.untouched);
+   const safe=f.loginRoles===0&&f.sessions===0&&(st.writes??'NEVER')==='NEVER'&&f.readOnly;   // pre-boundary only: the target was never made writable (data equality alone is never enough)
    if(safe){
     try{
      const fence=await restoreSource(c,sourceH,targetH,st);
@@ -376,7 +488,7 @@ export async function recover(ports:RunPorts){
 }
 
 export async function runCommand(command:Command,ports:RunPorts){
- return command==='preflight'?preflight(ports):command==='bootstrap-target'?bootstrapTarget(ports):command==='copy-and-switch'?copyAndSwitch(ports):command==='verify-target'?verifyTarget(ports):command==='recover'?recover(ports):rollback(ports);
+ return command==='preflight'?preflight(ports):command==='bootstrap-target'?bootstrapTarget(ports):command==='prewindow-check'?prewindowCheck(ports):command==='copy-and-switch'?copyAndSwitch(ports):command==='verify-target'?verifyTarget(ports):command==='recover'?recover(ports):rollback(ports);
 }
 
 // ---------------------------------------------------------------- production adapters
@@ -402,7 +514,7 @@ export async function openProductionOwner(neon:NeonPort,database:string,createPo
  return{pool,close:async()=>{await pool.end().catch(()=>undefined);}};
 }
 export function productionPorts(root:string=process.cwd()):RunPorts{
- return{config:{source:PRODUCTION_SOURCE,target:PRODUCTION_TARGETS[0],owner:PRODUCTION_OWNER,allowedTargets:PRODUCTION_TARGETS,root},
+ return{config:{source:PRODUCTION_SOURCE,target:PRODUCTION_TARGETS[0],owner:PRODUCTION_OWNER,allowedTargets:PRODUCTION_TARGETS,root,activate:true,requirePrewindow:true,requireBindings:true,requireIndependentBackup:false},
   release:()=>assertAcceptedMainRelease(),now:()=>new Date(),
   openOwner:async database=>{
    if(!existsSync(NEON_BIN))return fail('NEON_CLI_MISSING');

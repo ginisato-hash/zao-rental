@@ -12,7 +12,7 @@ import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {productionFoundationPlan,runFoundationPlan} from '../../scripts/production-bootstrap';
 import {copyData,listTables,tableDigests,NOT_COPIED,readWrite} from '../../scripts/production-cutover';
 import {groupRoleNames} from '../../scripts/production-group-delta';
-import {requirePre0065Recovery} from '../../scripts/production-recovery-evidence-pre0065';
+import {requirePre0065Recovery,requireRetainedSourceCopy} from '../../scripts/production-recovery-evidence-pre0065';
 import {bootstrapTarget,copyAndSwitch,main,openProductionOwner,preflight,rollback,verifyTarget,PRODUCTION_SOURCE,PRODUCTION_TARGETS,productionPorts,type RunConfig,type RunPorts} from '../../scripts/production-cutover-run';
 
 const SRC='neondb',DST='neondb_next',OWNER='neondb_owner';
@@ -51,11 +51,11 @@ try{
 
  // The synthetic source never ran the 0059–0063 delta installers nor installed the group role, which Production's source did: those differences are explained here, nothing else.
  const FIXTURE_ONLY_GRANTS=(l:string)=>l.includes('@db@_group')||/\|public\.(staff_order_drafts|rental_terms_|customer_|coupon_|store_sales_|staff_notification)|^function\|(coupon_|customer_|staff_|store_sales_)|^relation\|public\.rental_terms_acceptances\|neondb_owner/.test(l);
- const config=(over:Partial<RunConfig>={}):RunConfig=>({source:SRC,target:DST,owner:OWNER,allowedTargets:[DST],root,fenceWaitMs:800,...over});
+ const config=(over:Partial<RunConfig>={}):RunConfig=>({source:SRC,target:DST,owner:OWNER,allowedTargets:[DST],root,fenceWaitMs:800,activate:false,requirePrewindow:false,requireBindings:false,...over});
  let opened=0,released=0;
  const ports=(over:Partial<RunConfig>={},rootOverride?:string):RunPorts=>({config:config({...over,...(rootOverride?{root:rootOverride}:{})}),release:()=>{released++;return 'a'.repeat(40);},now:()=>new Date(),aclAllowed:FIXTURE_ONLY_GRANTS,
   openOwner:async database=>{opened++;const pool=new Pool({host:'127.0.0.1',port,user:OWNER,password:ownerPassword,database,max:4});pool.on('error',()=>undefined);return{pool,close:async()=>{await pool.end().catch(()=>undefined);}};}});
- const state=()=>JSON.parse(readFileSync(join(root,'.local/evidence/production-cutover/state.json'),'utf8')) as {phase:string;sourceLoginRoles:string[];dormantAdminRole?:string;switchManifest?:{targetRuntimeRoles:string[];database:string}};
+ const state=()=>JSON.parse(readFileSync(join(root,'.local/evidence/production-cutover/state.json'),'utf8')) as {phase:string;activation?:string;sourceLoginRoles:string[];dormantAdminRole?:string;switchManifest?:{targetRuntimeRoles:string[];database:string}};
  const roleLogin=async(role:string)=>(await superuser.query('SELECT rolcanlogin FROM pg_roles WHERE rolname=$1',[role])).rows[0]?.rolcanlogin as boolean|undefined;
  const dbSetting=async(db:string)=>((await superuser.query('SELECT s.setconfig FROM pg_db_role_setting s JOIN pg_database d ON d.oid=s.setdatabase WHERE d.datname=$1 AND s.setrole=0',[db])).rows[0]?.setconfig??[]) as string[];
 
@@ -80,8 +80,9 @@ try{
  await check('preflight is READ ONLY: it measures the source, never touches it, records a retained-source recovery base and refuses nothing it can measure',async()=>{
   const logins=await roleLogin(operations);
   const app=appPool();await app.query('SELECT 1');
+  let rec:Awaited<ReturnType<typeof preflight>>|undefined;
   try{
-   const r=await preflight(ports());
+   const r=await preflight(ports());rec=r;
    assert.equal(r.status,'CUTOVER_PREFLIGHT_OK');assert.equal(r.registry,64);assert.equal(r.ownerCreatedb,true);assert.equal(r.canSetManager,true);assert.equal(r.ownerCanTerminateRuntimeSessions,false);
    assert.equal(r.targetExists,false);assert.equal(r.runtimeLoginRoles,1);assert.ok(r.runtimeSessions>=1);assert.ok(r.rows>0&&r.tables>0);
    assert.deepEqual(r.inFlight,{reconciliationLeases:0,bookingDeliveries:0,staffDeliveries:0,groupDeliveries:0,executorTransientRows:0});
@@ -90,9 +91,11 @@ try{
   assert.equal(await roleLogin(operations),logins,'runtime role LOGIN untouched');
   assert.equal((await dbSetting(SRC)).includes('default_transaction_read_only=on'),false,'source not fenced');
   assert.deepEqual(await tableDigests(srcOwner,tables),sourceBefore,'source rows untouched');
-  assert.equal(requirePre0065Recovery(root).kind,'RETAINED_SOURCE_DATABASE');
+  assert.equal(requireRetainedSourceCopy(root).kind,'RETAINED_SOURCE_COPY');assert.equal(requireRetainedSourceCopy(root).independent,false);
+  assert.throws(()=>requirePre0065Recovery(root),/PRE0065_RECOVERY_REQUIRED/,'the retained source copy is NOT an independent backup/restore evidence and never passes as one');
+  assert.equal(rec!.recovery,'RETAINED_SOURCE_COPY');assert.equal(rec!.independentBackupEvidence,'ABSENT');
   assert.equal(state().phase,'PREFLIGHT_OK');assert.equal(statSync(join(root,'.local/evidence/production-cutover/state.json')).mode&0o777,0o600);
-  const text=readFileSync(join(root,'.local/evidence/production-cutover/state.json'),'utf8')+readFileSync(join(root,'.local/evidence/production-backup/pre-0065-recovery.json'),'utf8');
+  const text=readFileSync(join(root,'.local/evidence/production-cutover/state.json'),'utf8')+readFileSync(join(root,'.local/evidence/production-cutover/retained-source-copy.json'),'utf8');
   assert.ok(!text.includes(ownerPassword)&&!/postgres(ql)?:\/\//.test(text),'no secret or URI in any evidence file');
  });
 
@@ -136,7 +139,7 @@ try{
   const app=appPool();await app.query('SELECT 1');
   let r:Awaited<ReturnType<typeof copyAndSwitch>>;
   try{r=await copyAndSwitch(ports());}finally{await app.end().catch(()=>undefined);}
-  assert.equal(r.status,'CUTOVER_COPIED_AWAITING_OWNER');assert.equal(r.chainValid,true);assert.equal(r.sourceFenced,true);assert.equal(r.targetWritableByApplication,false);
+  assert.equal(r.status,'CUTOVER_COPIED_AWAITING_OWNER');assert.equal(r.chainValid,true);assert.equal(r.sourceFenced,true);assert.equal(r.targetRuntimeLogin,false,'activate:false stops with the target roles still NOLOGIN');assert.equal(r.activationBoundary,'RECORDED_FORWARD_FIX_ONLY');assert.equal(state().activation,'STARTED');
   assert.deepEqual(r.steps,['preflight','fence','copy','reconcile','enable-writes','switch','post-switch']);
   assert.ok(r.rows>0);assert.equal(state().phase,'COPIED_AWAITING_OWNER');
   assert.equal(await roleLogin(operations),false,'source runtime role fenced');assert.ok((await dbSetting(SRC)).includes('default_transaction_read_only=on'));
@@ -158,19 +161,16 @@ try{
   for(const name of tables)assert.deepEqual(t[name],sourceBefore[name],name);
  });
 
- await check('rollback while the application has never used the target: source unfenced, target read-only again, phase ROLLED_BACK, and a new window can be run',async()=>{
-  const r=await rollback(ports());
-  assert.equal(r.status,'CUTOVER_ROLLED_BACK');assert.equal(r.targetReadOnly,true);assert.equal(r.sourceRuntimeRolesRestored,1);
-  assert.equal(await roleLogin(operations),true);assert.equal((await dbSetting(SRC)).includes('default_transaction_read_only=on'),false);
-  assert.ok((await dbSetting(DST)).includes('default_transaction_read_only=on'));assert.equal(state().phase,'ROLLED_BACK');
+ await check('after the activation boundary rollback is refused EVEN THOUGH the application never used the target and the data equal the source (the boundary, not the data, decides)',async()=>{
+  await assert.rejects(rollback(ports()),code(/PRODUCTION_CUTOVER_ROLLBACK_REFUSED_ACTIVATION_STARTED/));
+  assert.equal(await roleLogin(operations),false,'the source stays fenced');assert.ok((await dbSetting(SRC)).includes('default_transaction_read_only=on'));
+  assert.equal((await dbSetting(DST)).includes('default_transaction_read_only=on'),false);assert.equal(state().phase,'COPIED_AWAITING_OWNER');
   assert.deepEqual(await tableDigests(srcOwner,tables),sourceBefore,'the source is exactly what it was');
-  await assert.rejects(rollback(ports()),code(/PRODUCTION_CUTOVER_ROLLBACK_PHASE_REFUSED_ROLLED_BACK/));
-  const again=await copyAndSwitch(ports());assert.equal(again.status,'CUTOVER_COPIED_AWAITING_OWNER');assert.equal(state().phase,'COPIED_AWAITING_OWNER');
  });
 
  await check('once any target runtime role can log in, rollback is refused (forward fix only: never two writers) and verify-target falls back to the structural proof',async()=>{
   await superuser.query(`ALTER ROLE ${DST}_operations LOGIN`);
-  await assert.rejects(rollback(ports()),code(/PRODUCTION_CUTOVER_ROLLBACK_REFUSED_TARGET_IN_USE/));
+  await assert.rejects(rollback(ports()),code(/PRODUCTION_CUTOVER_ROLLBACK_REFUSED_ACTIVATION_STARTED/));
   assert.equal(await roleLogin(operations),false,'source stays fenced');assert.equal(state().phase,'COPIED_AWAITING_OWNER');
   const v=await verifyTarget(ports());assert.equal(v.status,'CUTOVER_TARGET_STRUCTURE_ONLY_PASS');assert.equal(v.mode,'STRUCTURAL_ONLY_TARGET_IN_USE');assert.equal(v.rowsIdenticalToSource,null);assert.deepEqual(v.runtimeLoginRoles,[DST+'_operations']);
   await superuser.query(`ALTER ROLE ${DST}_operations NOLOGIN`);

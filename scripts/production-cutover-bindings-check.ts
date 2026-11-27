@@ -1,8 +1,10 @@
 // Read-only machine reconciliation of the cutover bindings (names/types/targets/timestamps and role posture only; never values).
 // Usage: node --import tsx scripts/production-cutover-bindings-check.ts <target> <PRE_SWITCH|POST_SWITCH> <credentialEpochMs>
 import {execFile} from 'node:child_process';
+import {chmodSync,mkdirSync,writeFileSync} from 'node:fs';
+import {join} from 'node:path';
 import {buildBindingTable,verifyBindings,collectVercelMetadata,MAIN_PROJECT,WEBHOOK_PROJECT,BACKUP_ENVIRONMENT,SOURCE_DATABASE,CUTOVER_TARGETS,type RoleFact,type BindingFacts} from './production-cutover-bindings';
-import {productionPorts} from './production-cutover-run';
+import {productionPorts,BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION} from './production-cutover-run';
 
 const gh=(args:string[])=>new Promise<string>((resolve,reject)=>execFile('gh',args,{maxBuffer:8*1024*1024},(e,o)=>e?reject(new Error('CUTOVER_BINDINGS_COLLECT_FAILED')):resolve(String(o))));
 async function ghFacts(){
@@ -31,5 +33,10 @@ const roles=await roleFacts(table.roles.map(r=>r.role));
 const oldRoles=stage==='POST_SWITCH'?await roleFacts(buildBindingTable(SOURCE_DATABASE,target).roles.map(r=>r.role.replace(target+'_',SOURCE_DATABASE+'_'))):undefined;
 const facts:BindingFacts={vercel:{main,webhook},github,roles,...(oldRoles?{oldRoles}:{}),stage,credentialEpoch:Number(epoch)};
 const findings=verifyBindings(table,facts);
+// Metadata reconciliation evidence for the prewindow-check (PRE_SWITCH only). A metadata match is NOT a live connection/delivery proof: that is production-cutover-live-binding.ts.
+if(stage==='PRE_SWITCH'){
+ const dir=join(process.cwd(),'.local/evidence/production-cutover');mkdirSync(dir,{recursive:true,mode:0o700});const file=join(dir,BINDINGS_EVIDENCE_FILE);
+ writeFileSync(file,JSON.stringify({version:BINDINGS_EVIDENCE_VERSION,target,at:new Date().toISOString(),status:findings.length?'FINDINGS':'CONSISTENT',tableSha256:table.sha256,findings:findings.length}),{mode:0o600});chmodSync(file,0o600);
+}
 console.log(JSON.stringify({status:findings.length?'FINDINGS':'CONSISTENT',tableSha256:table.sha256,findings}));
 process.exit(findings.length?1:0);

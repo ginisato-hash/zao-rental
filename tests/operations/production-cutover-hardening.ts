@@ -3,7 +3,7 @@
 // its window. Disposable PostgreSQL, synthetic data only. No Production, no Neon, no Vercel, no external party.
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
-import {existsSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
+import {existsSync,mkdirSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {Pool} from 'pg';
@@ -11,11 +11,11 @@ import {groupFixture} from '../group/fixture';
 import {requestFor} from '../inventory/fixture';
 import {trackPoolLifecycle} from '../../scripts/pool-lifecycle';
 import {productionFoundationPlan,runFoundationPlan} from '../../scripts/production-bootstrap';
-import {copyData,fenceSource,readFenceState,readWrite,sequenceStates,tableDigests,MAX_TABLE_ROWS} from '../../scripts/production-cutover';
+import {copyData,fenceSource,readFenceState,readWrite,sequenceStates,tableDigests,unfenceSource,readActivationMarker,MAX_TABLE_ROWS} from '../../scripts/production-cutover';
 import {groupRoleNames} from '../../scripts/production-group-delta';
 import {closeMigrationWindow,openMigrationWindow,runInMigrationWindow,windowState} from '../../scripts/production-migration-window';
 import {auditChain} from '../../scripts/production-cutover';
-import {bootstrapTarget,copyAndSwitch,preflight,recover,rollback,verifyTarget,type RunConfig,type RunPorts} from '../../scripts/production-cutover-run';
+import {bootstrapTarget,copyAndSwitch,preflight,prewindowCheck,recover,rollback,verifyTarget,BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION,LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,type RunConfig,type RunPorts} from '../../scripts/production-cutover-run';
 import type {CutoverFault} from '../../scripts/production-cutover';
 
 const SRC='neondb',DST='neondb_next',OWNER='neondb_owner';
@@ -89,17 +89,25 @@ try{
  {const c=await srcOwner.connect();try{await c.query(`SET ROLE ${manager}`);await c.query(`ALTER ROLE ${operations} LOGIN PASSWORD '${ownerPassword}'`);await c.query(`ALTER ROLE ${pricing} LOGIN PASSWORD '${ownerPassword}'`);await c.query('RESET ROLE');}finally{c.release();}}
  const FIXTURE_ONLY_GRANTS=(l:string)=>l.includes('@db@_group')||/\|public\.(staff_order_drafts|rental_terms_|customer_|coupon_|store_sales_|staff_notification)|^function\|(coupon_|customer_|staff_|store_sales_)|^relation\|public\.rental_terms_acceptances\|neondb_owner/.test(l);
  let fault:CutoverFault|undefined;
- const config=(over:Partial<RunConfig>={}):RunConfig=>({source:SRC,target:DST,owner:OWNER,allowedTargets:[DST],root,fenceWaitMs:800,...over});
- const ports=():RunPorts=>({config:config(),release:()=>'a'.repeat(40),now:()=>new Date(),aclAllowed:FIXTURE_ONLY_GRANTS,...(fault?{fault}:{}),
+ const config=(over:Partial<RunConfig>={}):RunConfig=>({source:SRC,target:DST,owner:OWNER,allowedTargets:[DST],root,fenceWaitMs:800,activate:false,requirePrewindow:false,requireBindings:false,...over});
+ const ports=(over:Partial<RunConfig>={}):RunPorts=>({config:config(over),release:()=>'a'.repeat(40),now:()=>new Date(),aclAllowed:FIXTURE_ONLY_GRANTS,...(fault?{fault}:{}),
   openOwner:async database=>{const pool=new Pool({host:'127.0.0.1',port,user:OWNER,password:ownerPassword,database,max:4});pool.on('error',()=>undefined);return{pool,close:async()=>{await pool.end().catch(()=>undefined);}};}});
  const statePath=join(root,'.local/evidence/production-cutover/state.json'),lockPath=join(root,'.local/evidence/production-cutover/lock');
- const state=()=>JSON.parse(readFileSync(statePath,'utf8')) as {phase:string;writes?:string;sourceLoginRoles:string[];sourceDbSetting?:string|null;sourceFence?:{wasLogin:string[];dbSetting:string|null};dormantAdminRole?:string;recoveryReason?:string};
+ const state=()=>JSON.parse(readFileSync(statePath,'utf8')) as {phase:string;writes?:string;activation?:string;prewindow?:{ready:boolean;blockers:string[]};sourceLoginRoles:string[];sourceDbSetting?:string|null;sourceFence?:{wasLogin:string[];dbSetting:string|null};dormantAdminRole?:string;recoveryReason?:string};
  const srcSetting=async()=>(await readFenceState(srcOwner,SRC,[operations,pricing]));
  const dst=()=>connect(OWNER,ownerPassword,DST);
  type Rec=Record<string,unknown>;
  const recoverNow=async()=>(await recover(ports())) as Rec;
  const sessionOf=(role:string)=>{const p=new Pool({host:'127.0.0.1',port,user:role,password:ownerPassword,database:SRC,max:1});p.on('error',()=>undefined);return p;};
  const sourceRestored=async(label:string)=>{const s=await srcSetting();assert.deepEqual(s.loginRoles.sort(),[operations,pricing].sort(),label+': both runtime roles can log in again');assert.equal(s.dbSetting,null,label+': the database default is back to what it was');};
+ // TEST-ONLY operator reset between rehearsal cases (the product never does this: after the boundary it stops and asks for a human decision).
+ const testOnlyReset=async()=>{
+  const st=state();const snap=st.sourceFence;
+  if(snap)await unfenceSource(srcOwner,SRC,{roles:[operations,pricing],terminated:0,terminateDenied:false,verified:true,wasLogin:snap.wasLogin,dbSetting:snap.dbSetting},manager);
+  await readWrite(dst(),[`ALTER DATABASE ${DST} SET default_transaction_read_only=on`,`COMMENT ON DATABASE ${DST} IS NULL`]);
+  const {sourceFence:_f,recoveryReason:_r,prewindow:_p,...rest}=st as Record<string,unknown>;void _f;void _r;void _p;
+  writeFileSync(statePath,JSON.stringify({...rest,phase:'TARGET_BOOTSTRAPPED',writes:'NEVER',activation:'NONE'}),{mode:0o600});
+ };
  const stateBefore=async()=>{await preflight(ports());await bootstrapTarget(ports());assert.equal(state().phase,'TARGET_BOOTSTRAPPED');};
  await stateBefore();
 
@@ -151,34 +159,40 @@ try{
   assert.equal((await readFenceState(t,DST,[])).dbSetting,'on','but the target never became writable');
  });
 
- await check('LOST ENABLE-WRITES REPLY: the read-only default WAS lifted although the call failed; the outcome is read back and judged forward-fix-only (never a false rollback)',async()=>{
+ await check('LOST ENABLE-WRITES REPLY: the boundary was recorded BEFORE the lift, so even though the database is untouched and identical, nothing goes back — forward-fix only (the counterexample to "data equal = safe")',async()=>{
   fault='enable-writes-lost';
-  await assert.rejects(copyAndSwitch(ports()),(e:{rolledBack:boolean;recoveryRequired:boolean;message:string})=>{assert.equal(e.rolledBack,false,'no rollback is claimed once the lift happened');return true;});
+  await assert.rejects(copyAndSwitch(ports()),(e:{rolledBack:boolean;recoveryRequired:boolean;message:string})=>{assert.equal(e.rolledBack,false,'no rollback is claimed once the boundary was recorded');return true;});
   fault=undefined;
-  assert.equal(state().phase,'FORWARD_FIX_ONLY');assert.equal(state().writes,'ENABLED','the readback proved the lift: the file records what the database showed');
+  assert.equal(state().phase,'FORWARD_FIX_ONLY');assert.equal(state().writes,'ENABLED');assert.equal(state().activation,'STARTED');
+  assert.match(String(await readActivationMarker(dst(),DST)),/^STARTED:/,'the marker is in the target DATABASE, not only in the file');
   assert.deepEqual((await srcSetting()).loginRoles,[],'the source stays fenced: never two writers');
   assert.equal((await readFenceState(dst(),DST,[])).dbSetting,null,'the target really is writable');
-  // Nothing wrote to the target and nobody is connected, so `recover` can PROVE going back is safe: data and every sequence equal the frozen source.
+  // Nothing wrote to the target and nobody is connected — the data even equals the frozen source. That proves nothing about work done while it was open.
   const r=await recoverNow();
-  assert.equal(r.status,'CUTOVER_RECOVERED_ROLLED_BACK');assert.equal(r.targetUntouched,true);assert.equal(r.targetReadOnly,false);
-  await sourceRestored('lost enable-writes');
-  assert.equal((await readFenceState(dst(),DST,[])).dbSetting,'on','the target is read-only again');
+  assert.equal(r.status,'CUTOVER_FORWARD_FIX_ONLY');assert.equal(r.reason,'ACTIVATION_BOUNDARY_CROSSED');assert.equal(r.targetUntouched,true,'data are equal, and that is NOT the criterion');
+  assert.deepEqual((await srcSetting()).loginRoles,[],'never unfenced after the boundary');
+  await assert.rejects(rollback(ports()),code(/ROLLBACK_PHASE_REFUSED_FORWARD_FIX_ONLY/));
+  await testOnlyReset();await sourceRestored('lost enable-writes');
  });
 
- await check('TARGET WRITTEN: once the target carries any write (here a sequence advance), recover refuses to go back — forward-fix only, source stays fenced, no success claimed',async()=>{
+ await check('TARGET WRITTEN after the boundary: recover still refuses; the source stays fenced and no success is claimed',async()=>{
   fault='enable-writes-lost';
   await assert.rejects(copyAndSwitch(ports()),(e:{rolledBack:boolean})=>{assert.equal(e.rolledBack,false);return true;});
   fault=undefined;
   const t=dst();const seq=(await t.query("SELECT schemaname||'.'||sequencename s FROM pg_sequences WHERE last_value IS NOT NULL LIMIT 1")).rows[0].s as string;
   await readWrite(t,[`SELECT nextval('${seq}')`]);
   const r=await recoverNow();
-  assert.equal(r.status,'CUTOVER_FORWARD_FIX_ONLY');assert.equal(r.reason,'TARGET_MAY_HOLD_WRITES');assert.equal(r.targetUntouched,false);
-  assert.deepEqual((await srcSetting()).loginRoles,[],'never unfenced while the target may hold writes');assert.equal(state().phase,'FORWARD_FIX_ONLY');
-  await assert.rejects(rollback(ports()),code(/ROLLBACK_PHASE_REFUSED_FORWARD_FIX_ONLY/));
-  // test-only operator reset to continue the rehearsal (the product stops here and asks for a human decision)
-  const src0=(await sequenceStates(srcOwner)).find(q=>q.s===seq)!;await readWrite(t,[`SELECT setval('${seq}',${src0.v},${src0.c})`]);
-  const again=await recoverNow();assert.equal(again.status,'CUTOVER_RECOVERED_ROLLED_BACK','after the operator restored the sequence the target is provably untouched again');
-  await sourceRestored('target written');
+  assert.equal(r.status,'CUTOVER_FORWARD_FIX_ONLY');assert.equal(r.reason,'ACTIVATION_BOUNDARY_CROSSED');assert.equal(r.targetUntouched,false);
+  assert.deepEqual((await srcSetting()).loginRoles,[],'never unfenced after the boundary');assert.equal(state().phase,'FORWARD_FIX_ONLY');
+  await testOnlyReset();await sourceRestored('target written');
+ });
+
+ await check('PRE-BOUNDARY rollback is kept: a crash after the fence but before the boundary is rolled back by the `rollback` command AND by `recover`, from the real state',async()=>{
+  const st=state();
+  writeFileSync(statePath,JSON.stringify({...st,phase:'WINDOW_OPEN',writes:'NEVER',activation:'NONE',sourceLoginRoles:[operations,pricing],sourceDbSetting:null}),{mode:0o600});
+  await fenceSource(srcOwner,SRC,[operations,pricing],{managerRole:manager,waitMs:800});
+  const r=await rollback(ports());assert.equal(r.status,'CUTOVER_ROLLED_BACK');await sourceRestored('pre-boundary rollback');assert.equal(state().phase,'ROLLED_BACK');
+  await testOnlyReset();
  });
 
  await check('EXCLUSIVE: a second mutating command is refused by the file lock (live other process) and by the database advisory lock, and both are released afterwards',async()=>{
@@ -236,15 +250,91 @@ try{
   const seq=(await t.query("SELECT schemaname||'.'||sequencename s FROM pg_sequences WHERE last_value IS NOT NULL LIMIT 1")).rows[0].s as string;
   await readWrite(t,['ALTER TABLE public.customer_profiles ENABLE TRIGGER USER']).catch(()=>undefined);
   await readWrite(t,[`SELECT nextval('${seq}')`]);
-  await assert.rejects(rollback(ports()),code(/ROLLBACK_REFUSED_TARGET_WRITTEN/));
+  await assert.rejects(rollback(ports()),code(/ROLLBACK_REFUSED_ACTIVATION_STARTED/));
   assert.deepEqual((await srcSetting()).loginRoles,[],'the source stays fenced');assert.equal(state().phase,'COPIED_AWAITING_OWNER');
+  // even after the operator puts every sequence back so that data AND sequences equal the frozen source again, rollback stays refused (the boundary, not the data, decides)
   const src=(await sequenceStates(srcOwner)).find(q=>q.s===seq)!;await readWrite(t,[`SELECT setval('${seq}',${src.v},${src.c})`]);
-  const ok=await rollback(ports());assert.equal(ok.status,'CUTOVER_ROLLED_BACK');assert.equal(ok.targetProvenUntouched,true);
-  await sourceRestored('rollback');
+  await assert.rejects(rollback(ports()),code(/ROLLBACK_REFUSED_ACTIVATION_STARTED/));
+  await testOnlyReset();await sourceRestored('rollback');
+ });
+
+ await check('COUNTEREXAMPLE LOGIN→NOLOGIN: a target runtime role was LOGIN at some point and is NOLOGIN again, data identical — rollback and recover are both refused',async()=>{
+  const r=await copyAndSwitch(ports());assert.equal(r.status,'CUTOVER_COPIED_AWAITING_OWNER');
+  await superuser.query(`ALTER ROLE ${DST}_operations LOGIN`);await superuser.query(`ALTER ROLE ${DST}_operations NOLOGIN`);
+  assert.equal((await verifyTarget(ports())).status,'CUTOVER_TARGET_FULLY_VERIFIED','data are identical, nobody is logged in');
+  await assert.rejects(rollback(ports()),code(/ROLLBACK_REFUSED_ACTIVATION_STARTED/));
+  assert.equal((await recoverNow()).status,'CUTOVER_NOTHING_TO_RECOVER','COPIED_AWAITING_OWNER is not a recoverable phase');
+  assert.deepEqual((await srcSetting()).loginRoles,[],'the source stays fenced');
+  await testOnlyReset();await sourceRestored('login counterexample');
+ });
+
+ await check('FAIL CLOSED: missing, corrupt or inconsistent activation evidence is never read as "safe to go back"',async()=>{
+  await copyAndSwitch(ports());
+  const good=readFileSync(statePath,'utf8');
+  // (a) the activation field is missing (unknown past): refused even though the phase is a rollback phase
+  writeFileSync(statePath,JSON.stringify({...JSON.parse(good),phase:'WINDOW_OPEN',activation:undefined}),{mode:0o600});
+  await assert.rejects(rollback(ports()),code(/ROLLBACK_REFUSED_ACTIVATION_STARTED/));
+  let r=await recoverNow();assert.equal(r.status,'CUTOVER_FORWARD_FIX_ONLY');assert.equal(r.reason,'ACTIVATION_EVIDENCE_UNKNOWN');
+  // (b) the file says NONE but the database carries the marker: mismatch
+  writeFileSync(statePath,JSON.stringify({...JSON.parse(good),phase:'WINDOW_OPEN',activation:'NONE'}),{mode:0o600});
+  await assert.rejects(rollback(ports()),code(/ROLLBACK_REFUSED_ACTIVATION_STARTED/));
+  r=await recoverNow();assert.equal(r.status,'CUTOVER_FORWARD_FIX_ONLY');assert.equal(r.reason,'ACTIVATION_MARKER_STATE_MISMATCH');
+  // (c) a corrupt state file
+  writeFileSync(statePath,'{not json',{mode:0o600});
+  await assert.rejects(rollback(ports()),code(/PRODUCTION_CUTOVER_STATE_INVALID/));await assert.rejects(recoverNow(),code(/PRODUCTION_CUTOVER_STATE_INVALID/));
+  // (d) no state file at all
+  rmSync(statePath);
+  await assert.rejects(rollback(ports()),code(/ROLLBACK_PHASE_REFUSED_NONE/));await assert.rejects(recoverNow(),code(/PRODUCTION_CUTOVER_PHASE_REFUSED_NONE/));
+  assert.deepEqual((await srcSetting()).loginRoles,[],'through all of this the source stayed fenced');
+  writeFileSync(statePath,good,{mode:0o600});
+  await testOnlyReset();await sourceRestored('fail closed');
+ });
+
+ await check('PREWINDOW + ACTIVATION IN THE WINDOW: nothing is fenced without a fresh READY prewindow-check; the window then activates by itself (LOGIN after the boundary, no human step) and is forward-only',async()=>{
+  const strict={activate:true,requirePrewindow:true,requireBindings:true};
+  // no prewindow check yet: refused, nothing fenced
+  await assert.rejects(copyAndSwitch(ports(strict)),code(/PRODUCTION_CUTOVER_PREWINDOW_REQUIRED/));
+  assert.deepEqual((await srcSetting()).loginRoles.sort(),[operations,pricing].sort(),'nothing fenced');
+  // the check reports every item separately; without bindings evidence it is NOT ready and names why
+  let r=await prewindowCheck(ports(strict)) as Rec;
+  assert.equal(r.status,'CUTOVER_PREWINDOW_NOT_READY');assert.deepEqual(r.blockers,['BINDINGS_METADATA_NOT_CHECKED','LIVE_BINDINGS_NOT_CHECKED']);
+  assert.equal(r.bindingsMetadata,'NOT_CHECKED');assert.equal(r.liveBindings,'NOT_CHECKED');assert.equal(r.retainedSourceCopy,true);assert.equal(r.independentBackupEvidence,'ABSENT');
+  assert.match(String(r.recoveryBasis),/not an independent backup/);
+  await assert.rejects(copyAndSwitch(ports(strict)),code(/PRODUCTION_CUTOVER_PREWINDOW_REQUIRED/));
+  // metadata CONSISTENT is NOT a live connection/delivery pass
+  const dir=join(root,'.local/evidence/production-cutover');mkdirSync(dir,{recursive:true});
+  const ev=(file:string,version:string,status:string,over:Rec={})=>writeFileSync(join(dir,file),JSON.stringify({version,target:DST,at:new Date().toISOString(),status,...over}),{mode:0o600});
+  ev(BINDINGS_EVIDENCE_FILE,BINDINGS_EVIDENCE_VERSION,'CONSISTENT');
+  r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.bindingsMetadata,'CONSISTENT');assert.equal(r.liveBindings,'NOT_CHECKED');assert.deepEqual(r.blockers,['LIVE_BINDINGS_NOT_CHECKED']);
+  ev(LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,'FAIL');
+  r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.liveBindings,'FAIL');assert.deepEqual(r.blockers,['LIVE_BINDINGS_FAIL']);
+  ev(LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,'PASS',{target:'neondb_other'});
+  r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.liveBindings,'NOT_CHECKED','evidence for another target is ignored');
+  ev(LIVE_BINDING_EVIDENCE_FILE,LIVE_BINDING_EVIDENCE_VERSION,'PASS');
+  r=await prewindowCheck(ports(strict)) as Rec;assert.equal(r.status,'CUTOVER_PREWINDOW_READY');assert.deepEqual(r.blockers,[]);assert.equal(state().prewindow!.ready,true);
+  // the window: activation is part of it
+  const w=await copyAndSwitch(ports(strict)) as Rec;
+  assert.equal(w.status,'CUTOVER_ACTIVATED');assert.equal(w.targetRuntimeLogin,true);assert.equal(w.activationBoundary,'RECORDED_FORWARD_FIX_ONLY');
+  assert.equal(state().phase,'ACTIVATED');assert.equal(state().activation,'STARTED');
+  const roles=(w.switchManifest as {targetRuntimeRoles:string[]}).targetRuntimeRoles;
+  for(const role of roles)assert.equal((await superuser.query('SELECT rolcanlogin FROM pg_roles WHERE rolname=$1',[role])).rows[0].rolcanlogin,true,role+' LOGIN granted by the window itself');
+  assert.match(String(await readActivationMarker(dst(),DST)),/^STARTED:/);
+  assert.deepEqual((await srcSetting()).loginRoles,[],'the source is fenced');
+  await assert.rejects(rollback(ports(strict)),code(/ROLLBACK_PHASE_REFUSED_ACTIVATED/));
+  assert.equal((await recover(ports(strict)) as Rec).status,'CUTOVER_NOTHING_TO_RECOVER');
+  // a finished window is never re-run
+  await assert.rejects(copyAndSwitch(ports(strict)),code(/PHASE_REFUSED_ACTIVATED/));
+  for(const role of roles)await superuser.query(`ALTER ROLE ${role} NOLOGIN`);
+  await testOnlyReset();await sourceRestored('activation');
+  // a stale prewindow check (older than the limit) is refused, and a rolled-back window drops it
+  await prewindowCheck(ports(strict));
+  await assert.rejects(copyAndSwitch(ports({...strict,prewindowMaxAgeMs:1})),code(/PRODUCTION_CUTOVER_PREWINDOW_REQUIRED/));
+  rmSync(join(dir,BINDINGS_EVIDENCE_FILE));rmSync(join(dir,LIVE_BINDING_EVIDENCE_FILE));
  });
 
  // ===================================================================== D: the dormant migration administrator and a REAL later migration through its window
  await check('NEXT MIGRATION: executor-owned functions cannot be changed without a window, can through the window, and nothing is left behind (membership, CREATE, posture, audit chain)',async()=>{
+  await testOnlyReset();
   const again=await copyAndSwitch(ports());assert.equal(again.status,'CUTOVER_COPIED_AWAITING_OWNER');
   const t=dst();
   const admin=state().dormantAdminRole!;assert.match(admin,/^zao_boot_[0-9a-f]{16}$/);

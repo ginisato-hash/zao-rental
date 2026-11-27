@@ -20,9 +20,10 @@ export type GroupNotificationMaterial={
  adminMessage?:string|null;
 };
 /** Where the representative opens their own group. It carries the group id only (not a secret): access is granted by the owner
- * session / recovery of the group entrance (see docs/execution/GROUP_NOTIFICATIONS.md). No token ever appears in a mail link. */
+ * cookie of that group (or the saved resume link, pasted on the page). The page lives at /{locale}/group/g/{groupId}, which needs no entrance token,
+ * so it keeps working after the entrance is stopped or re-issued. No secret ever appears in a mail link. */
 export type GroupLinkBuilder=(m:{origin:string;locale:'ja'|'en';groupId:string;groupNumber:string})=>string;
-export const defaultGroupLink:GroupLinkBuilder=({origin,locale,groupId})=>`${origin}/${locale}/group/${encodeURIComponent(groupId)}`;
+export const defaultGroupLink:GroupLinkBuilder=({origin,locale,groupId})=>`${origin}/${locale}/group/g/${encodeURIComponent(groupId)}`;
 
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const brand='SALOMON RENTAL STATION ZAO';

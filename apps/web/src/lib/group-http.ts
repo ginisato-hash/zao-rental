@@ -64,6 +64,16 @@ export function groupHandler(boundary:()=>GroupBoundary|null|Promise<GroupBounda
    await c.svc.get({kind:'OWNER',groupId:id,secret},id);
    return json({groupId:id},{cookie:groupCookie(id,secret,secure)});
   }
+  // ----- catalog / templates for an EXISTING application: authority is the owner cookie, never the entrance, so a stopped or re-issued
+  // entrance cannot strand a group that already exists.
+  const og=/^\/g\/([^/]+)\/(catalog|template\/(?:ja|en)\/(?:empty|example|legend))$/.exec(path);
+  if(req.method==='GET'&&og){
+   const id=uuidOf(og[1]),secret=ownerSecret(req.headers,id);if(!secret)throw new GroupError('NOT_FOUND',404);
+   await c.svc.get({kind:'OWNER',groupId:id,secret},id);
+   if(og[2]==='catalog'){const cat=await c.catalog();return json({csv:cat.csv,models:cat.models.map(x=>({code:x.code,name:x.name,sport:x.sport})),terms:currentRentalTerms()});}
+   const tm=/^template\/(ja|en)\/(empty|example|legend)$/.exec(og[2]!)!;const t=await c.templates(tm[1]==='ja'?'JA':'EN'),f=t.files[tm[2] as 'empty'|'example'|'legend'];
+   return new Response(f.content,{headers:{...privateHeaders,'Content-Type':'text/csv; charset=utf-8','Content-Disposition':`attachment; filename="${f.filename}"`,'X-Content-Type-Options':'nosniff'}});
+  }
   // ----- one application (owner cookie)
   m=/^\/g\/([^/]+)(?:\/([a-z-]+))?$/.exec(path);
   if(!m)throw new GroupError('NOT_FOUND',404);

@@ -57,7 +57,7 @@ const store=(k:string,v?:string)=>{try{if(v===undefined)return sessionStorage.ge
 const days=(p:{startDate:string;endDate:string})=>Math.round((Date.parse(p.endDate)-Date.parse(p.startDate))/86400000)+1;
 const PRODUCT:Record<string,[string,string]>={SKI_SET:['スキーセット','Ski set'],SNOWBOARD_SET:['ボードセット','Board set'],SKI:['スキー板','Skis'],SKI_BOOT:['スキーブーツ','Ski boots'],POLE:['ポール','Poles'],SNOWBOARD:['スノーボード','Snowboard'],SNOWBOARD_BOOT:['ボードブーツ','Board boots'],WEAR_SET:['ウェア','Wear'],WEAR_JACKET:['ジャケット','Jacket'],WEAR_PANTS:['パンツ','Pants']};
 
-export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;token:string;groupId:string|null;legal?:{terms?:string|undefined;cancellation?:string|undefined}}){
+export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;token:string|null;groupId:string|null;legal?:{terms?:string|undefined;cancellation?:string|undefined}}){
  const ja=locale==='ja',t=GROUP_COPY[locale],lang=ja?'JA' as const:'EN' as const;
  const [phase,setPhase]=useState<'loading'|'closed'|'noaccess'|'form'|'work'>('loading');
  const [catalog,setCatalog]=useState<Catalog|null>(null);
@@ -72,7 +72,7 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
  const [planned,setPlanned]=useState<number|null>(null);
  const inflight=useRef(false),heading=useRef<HTMLHeadingElement>(null),gid=useRef<string|null>(groupId);
  const call=useCallback(async(path:string,body?:unknown):Promise<Api>=>{
-  try{const r=await fetch('/api/group'+path,{method:body===undefined?'GET':'POST',cache:'no-store',credentials:'same-origin',headers:{'x-group-entrance':token,...(body===undefined?{}:{'content-type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  try{const r=await fetch('/api/group'+path,{method:body===undefined?'GET':'POST',cache:'no-store',credentials:'same-origin',headers:{...(token?{'x-group-entrance':token}:{}),...(body===undefined?{}:{'content-type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
    let data:Api['data']={};try{data=await r.json();}catch{}return {ok:r.ok,status:r.status,data};}
   catch{return {ok:false,status:0,data:{error:'NETWORK'}};}
  },[token]);
@@ -90,12 +90,13 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
   setStep(['DRAFT'].includes(status)?2:status==='QUOTED'?4:5);
  },[]);
  useEffect(()=>{let live=true;(async()=>{
-  const cat=await call('/catalog');if(!live)return;
-  if(!cat.ok){setPhase('closed');return;}
+  // An existing group: the resume key (fragment) becomes the owner cookie FIRST, because the catalog of an existing group is owner-scoped.
+  const hash=groupId?new URLSearchParams(location.hash.replace(/^#/,'')).get('k'):null;
+  if(groupId&&hash){const s=await call('/session',{groupId,secret:hash});history.replaceState(null,'',location.pathname);if(!s.ok){if(live)setPhase('noaccess');return;}}
+  const cat=await call(groupId?'/g/'+groupId+'/catalog':'/catalog');if(!live)return;
+  if(!cat.ok){setPhase(groupId?'noaccess':'closed');return;}
   setCatalog(cat.data as unknown as Catalog);
   if(!groupId){setPhase('form');return;}
-  const hash=new URLSearchParams(location.hash.replace(/^#/,'')).get('k');
-  if(hash){const s=await call('/session',{groupId,secret:hash});history.replaceState(null,'',location.pathname);if(!s.ok){setPhase('noaccess');return;}}
   const v=await call('/g/'+groupId);if(!live)return;
   if(!v.ok){setPhase('noaccess');return;}
   const pv=store('zao-group-planned:'+groupId);if(pv)setPlanned(Number(pv));
@@ -131,7 +132,7 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
   const r=await call('/start',{requestKey:startKey.current,groupLabel:f.groupLabel.trim(),contactName:f.contactName.trim(),contactEmail:f.contactEmail.trim(),...(f.contactPhone.trim()?{contactPhone:f.contactPhone.trim()}:{}),locale:f.locale,pickupStore:f.store,returnStore:f.store,period:{startDate:f.startDate,endDate:f.endDate,startAt:f.startAt,returnBy:f.returnBy}});
   if(!r.ok){say(r.data);return;}
   const d=r.data as {groupId:string;resumeKey:string};gid.current=d.groupId;setResumeKey(d.resumeKey);setPlanned(n);store('zao-group-planned:'+d.groupId,String(n));
-  history.replaceState(null,'','/'+locale+'/group/'+token+'/'+d.groupId);
+  history.replaceState(null,'','/'+locale+'/group/g/'+d.groupId);
   const v=await call('/g/'+d.groupId);if(!v.ok){say(v.data);return;}
   applyView(v.data as unknown as View);setPhase('work');startKey.current=uuid();
  });
@@ -147,7 +148,7 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
  const delRow=(uid:string)=>{setRows(rs=>rs.filter(r=>r.uid!==uid));setSelected(s=>{const n=new Set(s);n.delete(uid);return n;});setConfirmDel(null);};
  const [bulk,setBulk]=useState<{field:'tier'|'wearAddon'|'jacketSize'|'pantsSize';value:string}>({field:'tier',value:'REGULAR'});
  const applyBulk=()=>{setRows(rs=>rs.map(r=>{if(!selected.has(r.uid))return r;const p:Partial<ERow>=bulk.field==='tier'?{tier:bulk.value as ERow['tier']}:bulk.field==='wearAddon'?{wearAddon:bulk.value==='YES'}:bulk.field==='jacketSize'?{jacketSize:bulk.value||null,wearAddon:r.sport==='WEAR'?false:true}:{pantsSize:bulk.value||null,wearAddon:r.sport==='WEAR'?false:true};return tidy({...r,...p});}));};
- const template=(kind:'empty'|'example'|'legend')=>exclusive('dl',async()=>{try{const r=await fetch(`/api/group/template/${locale}/${kind}`,{cache:'no-store',headers:{'x-group-entrance':token}});if(!r.ok){setError(t.generic);return;}const cd=/filename="([^"]+)"/.exec(r.headers.get('content-disposition')??'');download(cd?.[1]??`group-${kind}.csv`,await r.blob());}catch{setError(t.generic);}});
+ const template=(kind:'empty'|'example'|'legend')=>exclusive('dl',async()=>{try{const r=await fetch(gid.current?`/api/group/g/${gid.current}/template/${locale}/${kind}`:`/api/group/template/${locale}/${kind}`,{cache:'no-store',credentials:'same-origin',headers:token?{'x-group-entrance':token}:{}});if(!r.ok){setError(t.generic);return;}const cd=/filename="([^"]+)"/.exec(r.headers.get('content-disposition')??'');download(cd?.[1]??`group-${kind}.csv`,await r.blob());}catch{setError(t.generic);}});
  const exportCurrent=()=>download(`group-guests-${locale}-current.csv`,new Blob([serializeGroupCsvRows(rows.map(r=>({...values(r),memberId:r.memberId})),lang)],{type:'text/csv;charset=utf-8'}));
  const onFile=async(file:File|undefined)=>{
   setImp(null);if(!file||!csv)return;
@@ -224,14 +225,16 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
   if(!view||!reqBody.trim())return;const r=await call('/g/'+view.group.id+'/request',{requestKey:uuid(),kind:reqKind,body:reqBody.trim()});
   if(!r.ok){say(r.data);return;}setView(r.data as unknown as View);setReqBody('');setReqSent(true);
  });
- const copy=async()=>{if(!resumeKey||!view)return;const url=location.origin+'/'+locale+'/group/'+token+'/'+view.group.id+'#k='+resumeKey;try{await navigator.clipboard.writeText(url);setReqSent(false);setCopied(true);}catch{}};
+ const copy=async()=>{if(!resumeKey||!view)return;const url=location.origin+'/'+locale+'/group/g/'+view.group.id+'#k='+resumeKey;try{await navigator.clipboard.writeText(url);setReqSent(false);setCopied(true);}catch{}};
  const [copied,setCopied]=useState(false);
 
  // ------------------------------------------------------------------ render
  if(phase==='loading')return <p role="status" className="guest-status">{t.loading}</p>;
  const head=<><h1 ref={heading} tabIndex={-1}>{t.title}</h1></>;
  if(phase==='closed')return <>{head}<p role="alert">{t.closed}</p></>;
- if(phase==='noaccess')return <>{head}<p role="alert">{t.noAccess}</p><div className="guest-actions"><a className="group-link-button" href={'/'+locale+'/group/'+token}>{t.newApplication}</a></div></>;
+ if(phase==='noaccess')return <>{head}<p role="alert">{t.noAccess}</p>
+  {groupId&&<form className="group-resume" onSubmit={e=>{e.preventDefault();const raw=String(new FormData(e.currentTarget).get('key')??'').trim();const m=/[#&?]k=([A-Za-z0-9_-]{16,128})/.exec(raw);const secret=m?m[1]!:/^[A-Za-z0-9_-]{16,128}$/.test(raw)?raw:'';if(!secret){setError(t.generic);return;}void exclusive('resume',async()=>{const r=await call('/session',{groupId,secret});if(r.ok)location.reload();else setError(t.generic);});}}><label>{t.resume.enter}<input name="key" type="password" autoComplete="off" spellCheck={false}/></label><button type="submit">{t.resume.enterButton}</button>{error&&<p role="alert">{error}</p>}</form>}
+  {token&&<div className="guest-actions"><a className="group-link-button" href={'/'+locale+'/group/'+token}>{t.newApplication}</a></div>}</>;
  const shownStep=phase==='form'?1:step;
  const stepper=<ol className="guest-steps group-steps" aria-label={t.stepWord}>{t.steps.map((name,i)=><li key={name} className={i+1<shownStep?'guest-step--done':undefined} aria-current={i+1===shownStep?'step':undefined}><span className="guest-step-number">{i+1}</span><span className="group-step-name">{name}</span></li>)}</ol>;
  const errorBox=error&&<p role="alert" className="group-alert">{error}</p>;
@@ -258,7 +261,7 @@ export function GroupApplication({locale,token,groupId,legal}:{locale:Locale;tok
  }
 
  const v=view!;
- const resume=resumeKey&&<section className="group-resume" aria-label={t.resume.title}><h2>{t.resume.title}</h2><p>{t.resume.body}</p><input readOnly aria-label={t.resume.title} value={typeof location!=='undefined'?location.origin+'/'+locale+'/group/'+token+'/'+v.group.id+'#k='+resumeKey:''} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy()}>{copied?t.resume.copied:t.resume.copy}</button></section>;
+ const resume=resumeKey&&<section className="group-resume" aria-label={t.resume.title}><h2>{t.resume.title}</h2><p>{t.resume.body}</p><input readOnly aria-label={t.resume.title} value={typeof location!=='undefined'?location.origin+'/'+locale+'/group/g/'+v.group.id+'#k='+resumeKey:''} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy()}>{copied?t.resume.copied:t.resume.copy}</button></section>;
  const colLabel=(k:string)=>k;void colLabel;
  const summary=<dl className="guest-facts guest-facts--compact"><div><dt>{t.done.number}</dt><dd>{v.group.groupNumber}</dd></div><div><dt>{t.done.period}</dt><dd>{v.group.period.startDate}{v.group.period.endDate!==v.group.period.startDate?' – '+v.group.period.endDate:''}</dd></div><div><dt>{t.done.base}</dt><dd>{storeName(ja,v.group.pickupStore)}</dd></div></dl>;
 

@@ -5,7 +5,7 @@
 import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
 import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
 import {applyProductionCouponAdminMigration,applyProductionCouponAdminGrants,couponAdminGrantProof,couponAdminCommittedProof,verifyProductionCouponAdmin} from '../../scripts/production-coupon-admin-delta';
-import {applyProductionGroupMigration,applyProductionGroupGrants,groupGrantProof,groupCommittedProof,custodyLinkAbsentProof,verifyProductionGroup,CUSTODY_LINK_OPERATIONS_GRANTS,GROUP_TABLES,groupRoleNames} from '../../scripts/production-group-delta';
+import {applyProductionGroupMigration,applyProductionGroupGrants,applyProductionCustodyLink,preflightProductionCustodyLink,groupGrantProof,groupCommittedProof,custodyLinkAbsentProof,verifyProductionGroup,CUSTODY_LINK_OPERATIONS_GRANTS,GROUP_TABLES,groupRoleNames} from '../../scripts/production-group-delta';
 import {applyProductionSalesStopMigration,applyProductionSalesStopGrants,salesStopGrantProof,salesStopCommittedProof,verifyProductionSalesStop} from '../../scripts/production-sales-stop-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
@@ -299,23 +299,39 @@ try{
   assert.deepEqual(await q('SELECT id FROM public.foundation_migrations ORDER BY id'),entries.slice(0,64).map(e=>({id:e.id})),'0065 stays unregistered');
   assert.deepEqual(await roles(),rolesBefore65,'the refused 0065 changed no role, membership or owner');assert.deepEqual(await exec64(),execBefore65);
   const v0=await owner.connect();try{const v=await verifyProductionGroup(v0,DB,OWNER);assert.equal(v.custodyLink,'NOT_APPLIED');assert.equal(v.registry,64);}finally{v0.release();}
-  // PRIVILEGED-PATH SIMULATION (not a Production procedure): the isolated cluster superuser applies the canonical 0065 SQL and registry row. verify must then read the link
-  // separately: it refuses until the custody-side privileges the link needs exist, and accepts the exact set.
+  // The installer's own path (docs/execution/group/CUSTODY_LINK_PRIVILEGED_PATH.md). Without the platform-granted executor membership it refuses with a fixed code and
+  // changes nothing; a wrongly shaped grant (ADMIN, or SET without INHERIT) is not accepted either.
   {
-   const su=await observer.connect();
-   try{
-    await su.query('BEGIN');await su.query('SET LOCAL search_path=public,pg_catalog');
-    await su.query(entries[64]!.sql);await su.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[64]!.id,entries[64]!.checksum]);
-    const me=(await su.query('SELECT current_user u')).rows[0].u;
-    for(const r of (await su.query("SELECT c.relname,c.relkind FROM pg_class c WHERE c.relnamespace='public'::regnamespace AND pg_get_userbyid(c.relowner)=$1 AND c.relkind IN ('r','S','v') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.objid=c.oid AND d.deptype IN ('a','i') AND d.classid='pg_class'::regclass)",[me])).rows)
-     await su.query(`ALTER ${r.relkind==='S'?'SEQUENCE':r.relkind==='v'?'VIEW':'TABLE'} public."${r.relname}" OWNER TO ${OWNER}`);
-    for(const r of (await su.query("SELECT p.oid::regprocedure::text f FROM pg_proc p WHERE p.pronamespace='public'::regnamespace AND pg_get_userbyid(p.proowner)=$1",[me])).rows)await su.query(`ALTER FUNCTION ${r.f} OWNER TO ${OWNER}`);
-    await su.query('COMMIT');
-   }catch(e){await su.query('ROLLBACK').catch(()=>{});throw e;}finally{su.release();}
+   const pf0=await owner.connect();try{const p=await preflightProductionCustodyLink(pf0,DB,OWNER);assert.equal(p.executorMembership,'ABSENT');assert.equal(p.ready,false);assert.equal(p.writes,0);}finally{pf0.release();}
+   const a0=await owner.connect();try{await assert.rejects(applyProductionCustodyLink(a0,DB,OWNER),/PRODUCTION_CUSTODY_LINK_PRIVILEGED_PATH_REQUIRED/,'no membership: refused with a fixed code');}finally{a0.release();}
+   for(const bad of ['WITH INHERIT TRUE, SET TRUE, ADMIN TRUE','WITH INHERIT FALSE, SET TRUE, ADMIN FALSE','WITH INHERIT TRUE, SET FALSE, ADMIN FALSE']){
+    await observer.query(`GRANT ${EXECUTOR} TO ${OWNER} ${bad}`);
+    const pf=await owner.connect();try{assert.equal((await preflightProductionCustodyLink(pf,DB,OWNER)).ready,false,bad);}finally{pf.release();}
+    const ab=await owner.connect();try{await assert.rejects(applyProductionCustodyLink(ab,DB,OWNER),/PRODUCTION_CUSTODY_LINK_PRIVILEGED_PATH_REQUIRED/,bad);}finally{ab.release();}
+    await observer.query(`REVOKE ${EXECUTOR} FROM ${OWNER}`);
+   }
+   assert.deepEqual(await q('SELECT id FROM public.foundation_migrations ORDER BY id'),entries.slice(0,64).map(e=>({id:e.id})),'nothing was applied by the refusals');
+   // The platform grants exactly one membership for one window (SIMULATED here by the isolated cluster superuser).
+   await observer.query(`GRANT ${EXECUTOR} TO ${OWNER} WITH INHERIT TRUE, SET TRUE, ADMIN FALSE`);
+   const pf1=await owner.connect();try{const p=await preflightProductionCustodyLink(pf1,DB,OWNER);assert.equal(p.executorMembership,'GRANTED');assert.equal(p.ready,true);assert.equal(p.writes,0);}finally{pf1.release();}
+   const before=await roles(),stageBefore=await exec64();
+   const ap=await owner.connect();let res;try{res=await applyProductionCustodyLink(ap,DB,OWNER);}finally{ap.release();}
+   assert.equal(res.status,'PRODUCTION_CUSTODY_LINK_INSTALLED');assert.deepEqual(res.applied.map(x=>x.id),['0065']);assert.equal(res.roleChanges,0);assert.equal(res.credentialChanges,0);assert.equal(res.businessWrites,0);assert.equal(res.executorMembershipRevokeRequired,true);
+   assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,65).map(e=>({id:e.id,checksum:e.checksum})),'exactly 0001-0065, canonical checksums');
+   const after=await roles();assert.deepEqual({roles:after.roles,members:after.members},{roles:before.roles,members:before.members},'the install changed no role and no membership');
+   const stageAfter=await exec64();
+   const vl=(rows:{k:string}[])=>JSON.stringify(rows.filter(r=>r.k==='rental_validate_loan()'));assert.equal(vl(stageAfter),vl(stageBefore),'the ordinary loan validator is byte-identical');assert.equal(stageAfter.length,3);
+   assert.ok(stageAfter.every((r:{o:string})=>r.o===EXECUTOR),'all three custody functions stay executor-owned');
+   // a second run is refused (0065 is registered)
+   const again=await owner.connect();try{await assert.rejects(applyProductionCustodyLink(again,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);}finally{again.release();}
+   // the platform revokes the window; the verify read must work without it
+   await observer.query(`REVOKE ${EXECUTOR} FROM ${OWNER}`);
+   const pfAfter=await owner.connect();try{await assert.rejects(preflightProductionCustodyLink(pfAfter,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'preflight is for registry 64 only');}finally{pfAfter.release();}
   }
   assert.equal((await q("SELECT count(*)::int n FROM pg_proc WHERE oid='public.rental_validate_group_loan()'::regprocedure AND pg_get_userbyid(proowner)=$1",[EXECUTOR]))[0].n,1,'the group loan validator is executor-owned');
   const v1=await owner.connect();
   try{
+   await observer.query(`REVOKE SELECT ON group_orders,group_order_parts,group_members,group_payments FROM ${ops}`);
    await assert.rejects(verifyProductionGroup(v1,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'0065 present without the custody-side privileges it needs is not accepted');
    for(const s of CUSTODY_LINK_OPERATIONS_GRANTS)await observer.query(s.replace('{OPS}',ops));
    const v=await verifyProductionGroup(v1,DB,OWNER);
@@ -326,6 +342,6 @@ try{
    // The 0064 installer never writes on a 0065 database.
    await assert.rejects(applyProductionGroupGrants(v1,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);await assert.rejects(applyProductionGroupMigration(v1,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);
   }finally{v1.release();}
-  console.log('PASS 0065 custody link: refused as 42501 on the owner path and left unregistered (Production stays on 0064; verify reads NOT_APPLIED); when applied by a privileged path verify reads it separately (exact shape, exact custody privileges)');
+  console.log('PASS 0065 custody link: refused as 42501 on the owner path and left unregistered (Production stays on 0064; verify reads NOT_APPLIED); the installer applies it only under the platform-granted executor membership (fixed refusal codes otherwise), then verify reads it separately (exact shape, exact custody privileges)');
  }
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

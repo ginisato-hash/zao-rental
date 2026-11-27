@@ -165,6 +165,14 @@ try{
   await app.svc.setEntranceEnabled(app.admin,false,'SYNTHETIC incident stop');
   assert.equal((await new Browserish().req('/api/group/catalog')).status,404);const r=await new Browserish().req('/api/group/start',{method:'POST',body:{requestKey:randomUUID(),groupLabel:'SYNTHETIC closed',contactName:'x',contactEmail:'x@example.invalid',locale:'ja',pickupStore:'MOUNTAIN_BASE',returnStore:'MOUNTAIN_BASE',period:PERIOD}});assert.equal(r.status,404);
   assert.equal((await A.req('/api/group/g/'+a.id)).status,200);
+  // an existing group needs NO entrance for its catalog/templates (owner cookie only); another browser / group gets nothing
+  const oc=await A.req(`/api/group/g/${a.id}/catalog`,{entrance:null});assert.equal(oc.status,200,oc.text);assert.ok(oc.json.csv&&Array.isArray(oc.json.models));
+  assert.equal((await A.req(`/api/group/g/${a.id}/template/ja/empty`,{entrance:null})).status,200);
+  assert.equal((await new Browserish().req(`/api/group/g/${a.id}/catalog`,{entrance:null})).status,404);
+  assert.equal((await new Browserish().req(`/api/group/g/${a.id}/template/ja/empty`,{entrance:null})).status,404);
+  // the e-mail target page needs no entrance token and is private
+  const gp=await fetch(`${origin}/ja/group/g/${a.id}`);assert.equal(gp.status,200);assert.match(gp.headers.get('x-robots-tag')??'',/noindex/);assert.match(gp.headers.get('cache-control')??'',/no-store/);
+  assert.equal((await fetch(`${origin}/ja/group/g/not-a-uuid`)).status,404);
   await app.svc.setEntranceEnabled(app.admin,true,'SYNTHETIC resume');assert.equal((await new Browserish().req('/api/group/catalog')).status,200);
  });
  await check('rate limit: a burst from one peer is answered 429 with Retry-After and the data stays intact',async()=>{

@@ -290,6 +290,72 @@ export async function applyProductionGroupGrants(c:PoolClient,database:string,ow
  }
 }
 
+/** The ONLY accepted way for the owner to hold the executor's authority: exactly one membership row on `<db>_custody_executor`, member = the owner,
+ * INHERIT and SET true, ADMIN false (docs/execution/group/CUSTODY_LINK_PRIVILEGED_PATH.md section 4, granted by the platform for one window). */
+export async function executorMembershipProof(c:Pick<PoolClient,'query'>,database:string,owner:string,expected:'GRANTED'|'ABSENT'){
+ const rows=(await c.query("SELECT pg_get_userbyid(a.member) member,a.admin_option,a.inherit_option,a.set_option FROM pg_auth_members a WHERE a.roleid=to_regrole($1)",[groupRoleNames(database).executor])).rows as {member:string;admin_option:boolean;inherit_option:boolean;set_option:boolean}[];
+ if(expected==='ABSENT'){if(rows.length!==0)throw Error(refused);return;}
+ if(rows.length!==1||rows[0]!.member!==owner||rows[0]!.admin_option!==false||rows[0]!.inherit_option!==true||rows[0]!.set_option!==true)throw Error(refused);
+}
+
+/** READ ONLY: may 0065 be applied now? Reports the state of the 0064 core, the absent link and the platform-granted membership; writes nothing. */
+export async function preflightProductionCustodyLink(c:PoolClient,database:string,owner:string){
+ const entries=await plan(database);
+ try{
+  await begin(c,true);await identity(c,database,owner);await registry(c,entries,64);await groupCommittedProof(c,database,owner);await custodyLinkAbsentProof(c);await groupGrantProof(c,database,owner);
+  const members=Number((await c.query('SELECT count(*)::int n FROM pg_auth_members WHERE roleid=to_regrole($1)',[groupRoleNames(database).executor])).rows[0].n);
+  let membership:'GRANTED'|'ABSENT'|'UNEXPECTED'='UNEXPECTED';
+  try{await executorMembershipProof(c,database,owner,'GRANTED');membership='GRANTED';}catch{if(members===0)membership='ABSENT';}
+  await c.query('ROLLBACK');
+  return {status:'PRODUCTION_CUSTODY_LINK_PREFLIGHT',registry:64,custodyLink:'NOT_APPLIED',executorMembership:membership,executorMembers:members,ready:membership==='GRANTED',writes:0};
+ }catch(error){await c.query('ROLLBACK').catch(()=>{});throw error;}
+}
+
+/** 0065, once, as the database owner, in ONE transaction. Requires the platform-granted executor membership (see executorMembershipProof). Nothing is applied
+ * without it (PostgreSQL would refuse anyway with 42501; this refuses first, with a fixed code). Before/after proof: the ordinary loan validator is
+ * byte-identical; the two replaced custody functions keep executor ownership, SECURITY DEFINER and their fixed search_path; no role, membership or
+ * credential changes; the custody-side privileges the link needs are granted in the same transaction and proven exact. */
+export async function applyProductionCustodyLink(c:PoolClient,database:string,owner:string,seams:{afterCommit?:()=>Promise<void>}={}){
+ const entries=await plan(database),r=groupRoleNames(database);let committing=false,committed=false;
+ try{
+  await begin(c);
+  await c.query('SELECT pg_advisory_xact_lock(71820401),pg_advisory_xact_lock(71820600)');
+  await c.query('LOCK TABLE public.foundation_migrations IN EXCLUSIVE MODE');
+  await identity(c,database,owner);await registry(c,entries,64);await groupCommittedProof(c,database,owner);await custodyLinkAbsentProof(c);await groupGrantProof(c,database,owner);
+  try{await executorMembershipProof(c,database,owner,'GRANTED');}catch{throw Error('PRODUCTION_CUSTODY_LINK_PRIVILEGED_PATH_REQUIRED');}
+  const before:Record<string,FnIdentity|undefined>={};for(const sig of PROTECTED_CUSTODY_FUNCTIONS)before[sig]=await fnIdentity(c,sig);
+  for(const sig of PROTECTED_CUSTODY_FUNCTIONS)if(!before[sig])throw Error(refused);
+  const roles=(await c.query('SELECT count(*)::int r,(SELECT count(*)::int FROM pg_auth_members) m,(SELECT md5(string_agg(rolname||rolcanlogin::text||rolsuper::text||rolcreaterole::text||coalesce(rolvaliduntil::text,\'\'),\',\' ORDER BY rolname)) FROM pg_roles) a FROM pg_roles')).rows[0];
+  const entry=entries[64]!;
+  // 0065 hands rental_validate_group_loan() to the executor (ALTER FUNCTION ... OWNER TO): PostgreSQL requires the NEW owner to hold CREATE on the schema. Exactly as
+  // the original bootstrap bridge did (scripts/production-bootstrap.ts), the executor gets it for this one transaction and loses it again before COMMIT; the schema ACL
+  // must read back identical. The public schema belongs to pg_database_owner, i.e. to the database owner who runs this.
+  const schemaAcl=async()=>(await c.query("SELECT coalesce(nspacl::text,'') a FROM pg_namespace WHERE nspname='public'")).rows[0]!.a as string;
+  const aclBefore=await schemaAcl();
+  await c.query(`GRANT CREATE ON SCHEMA public TO ${q(r.executor)}`);
+  try{await c.query(entry.sql);}catch(e){if(process.env.GROUP_DEBUG)console.error('CUSTODY_LINK_STATEMENT_ERROR',(e as Error).message);if((e as {code?:string}).code==='42501')throw Error('PRODUCTION_CUSTODY_LINK_PRIVILEGED_PATH_REQUIRED');throw e;}
+  await c.query(`REVOKE CREATE ON SCHEMA public FROM ${q(r.executor)}`);
+  if(await schemaAcl()!==aclBefore)throw Error(refused);
+  await c.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);
+  for(const g of CUSTODY_LINK_OPERATIONS_GRANTS)await c.query(g.replace('{OPS}',q(r.operations)));
+  await registry(c,entries,65);await groupCommittedProof(c,database,owner);await custodyLinkAppliedProof(c,database,owner);await groupGrantProof(c,database,owner,true);
+  // The ordinary loan validator is byte-identical; the two replaced functions are still executor-owned definers with a fixed path.
+  const ordinary=await fnIdentity(c,'rental_validate_loan()');if(JSON.stringify(ordinary)!==JSON.stringify(before['rental_validate_loan()']))throw Error(refused);
+  for(const sig of REPLACED_FUNCTIONS){const a=await fnIdentity(c,sig);const b=before[sig]!;if(!a||a.owner!==b.owner||a.sd!==b.sd||a.cfg!==b.cfg||a.acl!==b.acl)throw Error(refused);}
+  const after=(await c.query('SELECT count(*)::int r,(SELECT count(*)::int FROM pg_auth_members) m,(SELECT md5(string_agg(rolname||rolcanlogin::text||rolsuper::text||rolcreaterole::text||coalesce(rolvaliduntil::text,\'\'),\',\' ORDER BY rolname)) FROM pg_roles) a FROM pg_roles')).rows[0];
+  if(after.r!==roles.r||after.m!==roles.m||after.a!==roles.a)throw Error(refused);
+  await executorMembershipProof(c,database,owner,'GRANTED');
+  committing=true;await c.query('COMMIT');committed=true;await seams.afterCommit?.();
+  await begin(c,true);await registry(c,entries,65);await groupCommittedProof(c,database,owner);await custodyLinkAppliedProof(c,database,owner);await groupGrantProof(c,database,owner,true);await c.query('ROLLBACK');
+  return {status:'PRODUCTION_CUSTODY_LINK_INSTALLED',applied:[{id:entry.id,checksum:entry.checksum}],grantStatements:CUSTODY_LINK_OPERATIONS_GRANTS.length,roleChanges:0,credentialChanges:0,businessWrites:0,executorMembershipRevokeRequired:true};
+ }catch(error){
+  await c.query('ROLLBACK').catch(()=>{});
+  if(committed)throw Error('PRODUCTION_CUSTODY_LINK_COMMITTED_READBACK_REQUIRED');
+  if(committing)throw Error('PRODUCTION_CUSTODY_LINK_COMMIT_UNKNOWN_READBACK_REQUIRED');
+  throw error;
+ }
+}
+
 /** Read-only check of the installed 0064 delta (no write, BEGIN READ ONLY): exact 0001-0064 registry, owner-owned relations, every guard trigger
  * enabled, SECURITY DEFINER functions with fixed search_path, exact privileges, and counts of groups, entrance rows, events and pending notices.
  * Used to read back after an uncertain COMMIT and before/after a deployment rollback (RELEASE_RUNBOOK). Counts only; no identifier or content. */

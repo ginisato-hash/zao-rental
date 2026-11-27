@@ -45,7 +45,9 @@ GRANT neondb_custody_executor TO neondb_owner WITH INHERIT TRUE, SET TRUE, ADMIN
 REVOKE neondb_custody_executor FROM neondb_owner;
 ```
 
-`INHERIT TRUE` が必要な理由：関数の所有権検査は「所有ロールの権限を持つこと」を要求するため、SET だけでは不足する。
+`INHERIT TRUE` が必要な理由：関数の所有権検査は「所有ロールの権限を持つこと」を要求するため、SET だけでは不足する。これは最初のブートストラップが executor 作成時に使った橋渡し（`scripts/production-bootstrap.ts`）と同じ形である。
+
+**サポートに頼まないもの**：0065 は `ALTER FUNCTION … OWNER TO executor` を含み、移し先の executor が `public` スキーマの CREATE を持つ必要がある。インストーラが同じトランザクション内で `GRANT CREATE ON SCHEMA public TO executor` → 適用 → `REVOKE` し、スキーマ ACL が元と一致することを確認する（public スキーマは DB 所有者が管理する）。サポートの作業はメンバーシップの付与と撤去だけである。隔離PGの本番トポロジ再現（`tests/operations/production-0057-owner-apply.ts`）で、この1件の付与だけで 0065 が owner 1トランザクションで適用でき、通常の貸出検証関数が不変であることを確認済み。
 
 **成功条件**
 - 付与後、`pg_auth_members` に `neondb_custody_executor` の行が1行だけ（member=`neondb_owner`、`inherit_option=t`、`set_option=t`、`admin_option=f`）。
@@ -60,8 +62,8 @@ REVOKE neondb_custody_executor FROM neondb_owner;
 ## 5. 付与後の実施順（Claude H が実施。付与が確認できるまで実行しない）
 
 1. READ ONLY で、付与の形（成功条件）を確認する。
-2. 0065 専用の復元証拠（登録64本の DB を対象）を確認する。**age 鍵の再要求はしない**。使える復元の根拠を別に整える（下記 §6）。
-3. 0065 を owner 1トランザクションで適用する（事前・事後に、executor 所有の3関数の所有者／ACL／SECURITY DEFINER／search_path、通常の貸出トリガ、`rental_inventory_blocks`、migration registry を読み戻して照合）。
+2. 0065 専用の復旧証拠（登録64本の DB を対象、24時間以内、固定形式）を確認する（`scripts/production-recovery-evidence-pre0065.ts`）。**age 鍵の再要求はしない**（下記 §6）。
+3. `npm run production:custody-link-preflight`（READ ONLY）で `ready: true` を確認し、`npm run production:install-custody-link` で 0065 を owner 1トランザクションで適用する（事前・事後に、executor 所有の3関数の所有者／ACL／SECURITY DEFINER／search_path、通常の貸出トリガ、`rental_inventory_blocks`、migration registry を読み戻して照合）。
 4. 最小権限の付与（`custody` / `operations` への団体表 SELECT、準備表、executor への SELECT）。
 5. サポートへ撤去を依頼し、撤去を READ ONLY で確認する。
 6. `production:verify-group` が `custodyLink: APPLIED` と最小権限の完全一致を返すことを確認する。

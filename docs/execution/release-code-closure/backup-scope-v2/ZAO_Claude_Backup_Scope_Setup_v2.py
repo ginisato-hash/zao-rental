@@ -63,7 +63,7 @@ WRANGLER_BIN = Path(".npm/_npx/32026684e21afda6/node_modules/.bin/wrangler")
 HELPER = "scripts/production-backup-credential.ts"
 OBJECT_GET = "scripts/production-backup-object-get.ts"
 PINNED_FILES = {
-    HELPER: "ce064babfd6b1dae15e3d7370858b1d82ba65e4d9e66c02df29986604be08da7",
+    HELPER: "d10fb423ff2a792e5a0e1a860c717e14bbb8ab3ba2a6aa85a19e5b09601e0751",
     OBJECT_GET: "64fca6e2628a485394fc9a2b0fa4642e2fab412993985782526eb78056813c08",
     "scripts/production-credential-activation.ts": "f4f96805ccf5d92f4382d545135121b6e3f411cc366c9dc1a113f3b6f7278abf",
     "scripts/production-backup.ts": "a571e89675c70c38d342c54441db66313c976c55b1d31e1be873ece2105596e6",

@@ -40,3 +40,5 @@
 
 ## 境界
 実本番の新DB作成・データ移行・切替、新規有料環境、破壊的変更は Owner の明示承認が前提。age 鍵の再要求や本番データの隔離環境への移送はしない。
+
+実行系と Owner 手順は [CUTOVER_RUNBOOK.md](CUTOVER_RUNBOOK.md)（`scripts/production-cutover-run.ts`）。

@@ -6,6 +6,7 @@ const good=(over:Record<string,unknown>={})=>({version:PRE_0065_RECOVERY_VERSION
 test('a fresh, fixed-shape pre-0065 recovery record for a 64-migration database is accepted',()=>{
  assert.deepEqual(validatePre0065Recovery(good(),now),{kind:'NEON_RESTORE_POINT',recordedAt:'2026-11-27T23:00:00.000Z',registry:64});
  assert.equal(validatePre0065Recovery(good({kind:'RESTORE_DRILL'}),now).kind,'RESTORE_DRILL');
+ assert.equal(validatePre0065Recovery(good({kind:'RETAINED_SOURCE_DATABASE',reference:'neondb-retained:0123456789abcdef'}),now).kind,'RETAINED_SOURCE_DATABASE');
 });
 test('every other shape is refused with one fixed code (63-migration drill, stale, future, extra keys, bad kind/reference)',()=>{
  const refuse=/PRODUCTION_INSTALL_PRE0065_RECOVERY_REQUIRED/;

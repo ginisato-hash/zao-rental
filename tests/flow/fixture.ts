@@ -2,6 +2,7 @@ import {recordSyntheticBookingProfile} from '../custody/preparation-fixture';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {migrate} from '../../packages/db/src/index';
+import {rewind0065} from '../fixtures/rewind-0065';
 import {startIsolatedPostgres} from '../../scripts/postgres';
 import {provisionApplicationRoles} from '../../scripts/application-roles';
 import {provisionFlowRole} from '../../scripts/flow-roles';
@@ -26,7 +27,7 @@ export class FakeGateway implements PaymentGateway{
 }
 export async function flowFixture(initialTime='2035-01-01T10:00:00+09:00',withPoles=true){
  const db=await startIsolatedPostgres();let roles:Awaited<ReturnType<typeof provisionApplicationRoles>>|undefined,flow:Awaited<ReturnType<typeof provisionFlowRole>>|undefined;
- try{await migrate(db.pool);await seedRecommendation(db.pool,false,withPoles);roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);
+  try{await migrate(db.pool);if(process.env.ZAO_TEST_CUSTODY_LINK==='0')await rewind0065(db.pool);/* test switch: run on 0064 only (custody link 0065 not applied), the Production state */await seedRecommendation(db.pool,false,withPoles);roles=await provisionApplicationRoles(db.pool,db.identity);flow=await provisionFlowRole(db.pool,db.identity);
  const password=randomBytes(24).toString('base64url'),origin='http://127.0.0.1:34567';let now=new Date(initialTime);
  async function clock(t:string){now=new Date(t);await db.pool.query(`CREATE OR REPLACE FUNCTION inventory_clock() RETURNS timestamptz LANGUAGE sql VOLATILE AS $$SELECT '${now.toISOString()}'::timestamptz$$`);}
  await clock(now.toISOString());const root=await bootstrapDevelopmentAdmin(db.pool,{email:'flow-root@example.invalid',displayName:'SYNTHETIC Admin',password}),bp=(await loadStaff(db.pool,root))!;

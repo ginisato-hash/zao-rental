@@ -31,18 +31,23 @@ const STORES=['MOUNTAIN_BASE','ONSEN_BASE'] as const;
 
 const roleKey=(s:ProductionService)=>`PRODUCTION_DB_ROLE_${s.toUpperCase()}`;
 const passwordKey=(s:ProductionService)=>`PRODUCTION_DB_PASSWORD_${s.toUpperCase()}`;
+/** Optional credential of the group application role (`<db>_group`). Absent => the group APIs stay closed (GROUP_UNCONNECTED, 503) and nothing else changes.
+ * The role itself is created NOLOGIN by the group grants installer; the Owner sets LOGIN and this credential later, by hand (RELEASE_RUNBOOK). */
+export const GROUP_PASSWORD_KEY='PRODUCTION_DB_PASSWORD_GROUP';
+/** The group role name is `<database>_group` unless PRODUCTION_DB_ROLE_GROUP names it, so a release works before any new environment name exists. */
+export const defaultGroupRole=(database:string)=>database+'_group';
 const locationKey=(s:typeof STORES[number])=>`PRODUCTION_SQUARE_LOCATION_${s}`;
 /** Fixed base-profile environment names (never an env scan). Optional avatar names are separate below. */
 export const COMMERCIAL_ALLOWLISTED_KEYS=Object.freeze([
  'ZAO_PRODUCTION_HOSTING_ACTIVATION','VERCEL_ENV','VERCEL_PROJECT_ID','VERCEL_GIT_COMMIT_SHA',
  'PRODUCTION_RELEASE_ID','PRODUCTION_PUBLIC_ORIGIN','PRODUCTION_DB_HOST','PRODUCTION_DB_NAME','PRODUCTION_GUEST_POLICY_SHA256',
  'PRODUCTION_GUEST_KEY','PRODUCTION_STAFF_KEY','PRODUCTION_ACCESS_KEY','PRODUCTION_RECOVERY_KEY','PRODUCTION_ACCESS_KEY_VERSION','PRODUCTION_RECOVERY_KEY_VERSION',
- ...productionServices.map(roleKey),...COMMERCIAL_DB_SERVICES.map(passwordKey),
+ ...productionServices.map(roleKey),...COMMERCIAL_DB_SERVICES.map(passwordKey),GROUP_PASSWORD_KEY,
  'PRODUCTION_SQUARE_APPLICATION_ID','PRODUCTION_SQUARE_MERCHANT_ID',...STORES.map(locationKey),'PRODUCTION_SQUARE_ACCESS_TOKEN','PRODUCTION_SQUARE_ACCESS_TOKEN_EXPIRES_AT','PRODUCTION_SQUARE_WEBHOOK_NOTIFICATION_URL',
  'PRODUCTION_RESEND_API_KEY','PRODUCTION_PUBLICATION_APPROVAL',
 ]);
 /** Names whose values are secret. Used by the operator plan to list names only, never values. */
-export const COMMERCIAL_SECRET_KEYS=Object.freeze(['PRODUCTION_GUEST_KEY','PRODUCTION_STAFF_KEY','PRODUCTION_ACCESS_KEY','PRODUCTION_RECOVERY_KEY',...COMMERCIAL_DB_SERVICES.map(passwordKey),'PRODUCTION_SQUARE_ACCESS_TOKEN','PRODUCTION_RESEND_API_KEY']);
+export const COMMERCIAL_SECRET_KEYS=Object.freeze(['PRODUCTION_GUEST_KEY','PRODUCTION_STAFF_KEY','PRODUCTION_ACCESS_KEY','PRODUCTION_RECOVERY_KEY',...COMMERCIAL_DB_SERVICES.map(passwordKey),GROUP_PASSWORD_KEY,'PRODUCTION_SQUARE_ACCESS_TOKEN','PRODUCTION_RESEND_API_KEY']);
 export const COMMERCIAL_AVATAR_ACTIVATION_TOKEN='R67_PRIVATE_AVATAR_V1';
 /** Read only after opt-in; removing the activation leaves the existing booking profile intact. */
 export const COMMERCIAL_AVATAR_KEYS=Object.freeze(['PRODUCTION_DB_PASSWORD_AVATAR_READ','PRODUCTION_AVATAR_R2_ACCOUNT_ID','PRODUCTION_AVATAR_R2_BUCKET','PRODUCTION_AVATAR_R2_ACCESS_KEY_ID','PRODUCTION_AVATAR_R2_SECRET_ACCESS_KEY','PRODUCTION_AVATAR_R2_EXPIRES_AT'] as const);
@@ -93,7 +98,7 @@ export function commercialProductionPlan(env:Env,now=new Date()):CommercialPlan|
  const origin=parseProductionPublicOrigin(e.PRODUCTION_PUBLIC_ORIGIN);
  if(!e.PRODUCTION_DB_HOST||!e.PRODUCTION_DB_NAME)fail('PRODUCTION_COMMERCIAL_DB_IDENTITY_MISSING');
  const roles={} as Record<ProductionService,string>;
- for(const s of productionServices){const role=e[roleKey(s)];if(!role)fail('PRODUCTION_COMMERCIAL_ROLE_NAME_MISSING');roles[s]=role!;}
+ for(const s of productionServices){const role=e[roleKey(s)]??(s==='group'?defaultGroupRole(e.PRODUCTION_DB_NAME!):undefined);if(!role)fail('PRODUCTION_COMMERCIAL_ROLE_NAME_MISSING');roles[s]=role!;}
  const keys=['PRODUCTION_GUEST_KEY','PRODUCTION_STAFF_KEY','PRODUCTION_ACCESS_KEY','PRODUCTION_RECOVERY_KEY'];
  for(const k of keys)if(!e[k]||!/^[a-f0-9]{64}$/.test(e[k]))fail('PRODUCTION_COMMERCIAL_SIGNING_KEY_INVALID');
  if(new Set(keys.map(k=>e[k])).size!==keys.length)fail('PRODUCTION_COMMERCIAL_SIGNING_KEY_INVALID');
@@ -116,6 +121,8 @@ export function commercialProductionPlan(env:Env,now=new Date()):CommercialPlan|
  const database:Partial<Record<ProductionService,ProductionDatabaseCredential>>={};
  for(const s of COMMERCIAL_DB_SERVICES){const password=e[passwordKey(s)];if(!password||password.length<16)fail('PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING');database[s]={provider:'NEON',environment:'PRODUCTION',host:e.PRODUCTION_DB_HOST!,port:5432,database:e.PRODUCTION_DB_NAME!,user:roles[s],password:password!,revoked:false};}
 
+ // Group application role: connected only when its credential is supplied (the Owner's separate step). A malformed credential is refused, never ignored.
+ if(e[GROUP_PASSWORD_KEY]!==undefined){const password=e[GROUP_PASSWORD_KEY];if(!password||password.length<16)fail('PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING');database.group={provider:'NEON',environment:'PRODUCTION',host:e.PRODUCTION_DB_HOST!,port:5432,database:e.PRODUCTION_DB_NAME!,user:roles.group,password:password!,revoked:false};}
  const avatarActivation=env.ZAO_PRODUCTION_AVATAR_ACTIVATION;
  let avatarMedia:R2Credential|null=null;
  if(avatarActivation!==undefined&&avatarActivation!==''){

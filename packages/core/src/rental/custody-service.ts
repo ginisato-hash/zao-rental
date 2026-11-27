@@ -7,6 +7,7 @@ import type {PoolClient} from 'pg';
 import {BookingService} from '../payment/booking-service';
 import {FlowError,flowHash,flowId,flowObject,flowStore,flowVersion} from '../../../contracts/src/rental-flow';
 import {GROUP_CONFIRMATION_BASIS,memberKey,settlementOf} from '../../../contracts/src/group-order';
+import {groupCustodyLinkActive,GROUP_CUSTODY_NOT_ACTIVATED} from '../group/custody-link';
 import {isWear,isAccessoryPole,normalizePeriod,variantMatches,type HoldConditions,type PromiseVariant} from '../../../contracts/src/hold';
 type Conn=Pick<PoolClient,'query'>;
 type Loan={id:string;cycle_id:string;booking_id:string;requirement_key:string;asset_id:string|null;pole_id:string|null;pole_slot:number|null;variant_id:string;family:string;state:string;version:number};
@@ -99,7 +100,11 @@ export class CustodyService extends BookingService{
   return this.tx('RENTAL_CHECKOUT',[],key,{operation:'completeNoPickup',v},async c=>{await this.pickup(c,v.bookingId as string);},async c=>{await c.query('SELECT public.rental_complete_no_pickup($1)',[v.bookingId]);return this.assignment(c,v.bookingId as string);});
  }
  private async batch(c:Conn,id:string){flowId(id);const b=(await c.query('SELECT * FROM rental_return_batches WHERE id=$1',[id])).rows[0];if(!b||b.owner_id!==this.identity.subject)throw new FlowError('FORBIDDEN',403);await this.authorize('RENTAL_RETURN',[b.store_id]);return b;}
- private async batchView(c:Conn,id:string){const b=await this.batch(c,id);const candidates=(await c.query<CandidateView>(`SELECT c.*,l.booking_id,l.group_part_id,l.requirement_key,l.family FROM rental_return_candidates c LEFT JOIN rental_loan_items l ON l.id=c.loan_item_id WHERE c.batch_id=$1 ORDER BY c.scanned_at,c.id`,[id])).rows;return {...b,candidates:await this.withGroupNumbers(c,candidates)};}
+ /** Ordinary custody reads group_part_id only when the custody link (0065) exists; without it no loan can be a group loan. */
+ private async groupColumn(c:Conn){return (await groupCustodyLinkActive(c))?'l.group_part_id':'NULL::uuid AS group_part_id';}
+ /** Every group loan / preparation entry closes here while 0065 is not applied. Ordinary booking custody never calls this. */
+ private async requireGroupLink(c:Conn){if(!(await groupCustodyLinkActive(c)))throw new FlowError(GROUP_CUSTODY_NOT_ACTIVATED,409);}
+ private async batchView(c:Conn,id:string){const b=await this.batch(c,id);const candidates=(await c.query<CandidateView>(`SELECT c.*,l.booking_id,${await this.groupColumn(c)},l.requirement_key,l.family FROM rental_return_candidates c LEFT JOIN rental_loan_items l ON l.id=c.loan_item_id WHERE c.batch_id=$1 ORDER BY c.scanned_at,c.id`,[id])).rows;return {...b,candidates:await this.withGroupNumbers(c,candidates)};}
  // A group item is shown under its parent group number (no booking exists). Only touched when a group loan is present.
  private async withGroupNumbers<T extends {group_part_id:string|null}>(c:Conn,rows:T[]){const ids=[...new Set(rows.map(r=>r.group_part_id).filter((x):x is string=>!!x))];if(!ids.length)return rows.map(r=>({...r,group_number:null as string|null}));const g=new Map((await c.query<{id:string;group_number:string}>('SELECT p.id,o.group_number FROM group_order_parts p JOIN group_orders o ON o.id=p.group_id WHERE p.id=ANY($1::uuid[])',[ids])).rows.map(x=>[x.id,x.group_number]));return rows.map(r=>({...r,group_number:r.group_part_id?g.get(r.group_part_id)??null:null}));}
  async getBatch(id:string){await this.authorize('RENTAL_RETURN');return this.batchView(this.pool,id);}
@@ -127,7 +132,7 @@ export class CustodyService extends BookingService{
  async inspection(key:string,value:unknown){const v=flowObject(value,['loanItemId','expectedVersion','store','evidence']);flowId(v.loanItemId);flowVersion(v.expectedVersion);flowStore(v.store);const evidence=note(v.evidence);
   return this.tx('RENTAL_RETURN',[v.store as string],key,{operation:'inspect',v},async c=>{if(!(await c.query('SELECT 1 FROM rental_custody_events WHERE loan_item_id=$1 AND actual_store=$2',[v.loanItemId,v.store])).rowCount)throw new FlowError('FORBIDDEN',403);},async(c,now)=>{const id=randomUUID();await c.query("INSERT INTO rental_inspections(id,loan_item_id,actor,store_id,inspected_at,result,evidence,expected_version) VALUES($1,$2,$3,$4,$5,'READY',$6,$7)",[id,v.loanItemId,this.identity.subject,v.store,now,evidence,v.expectedVersion]);await c.query('SELECT public.rental_apply_inspection($1)',[id]);return {id,loanItemId:v.loanItemId,state:'INSPECTED_CALENDAR_BLOCK_REMAINS'};});
  }
- async returns(store:string){flowStore(store);await this.authorize('RENTAL_RETURN',[store]);return {batches:(await this.pool.query('SELECT * FROM rental_return_batches WHERE owner_id=$1 AND store_id=$2 ORDER BY created_at DESC LIMIT 100',[this.identity.subject,store])).rows,received:await this.withGroupNumbers(this.pool,(await this.pool.query<ReceivedView>(`SELECT e.*,l.family,l.requirement_key,l.version,l.asset_id,l.pole_id,l.group_part_id,i.inspection_id FROM rental_custody_events e JOIN rental_loan_items l ON l.id=e.loan_item_id LEFT JOIN rental_inspection_events i ON i.loan_item_id=l.id WHERE e.actual_store=$1 ORDER BY e.applied_at DESC LIMIT 200`,[store])).rows)};}
+ async returns(store:string){flowStore(store);await this.authorize('RENTAL_RETURN',[store]);return {batches:(await this.pool.query('SELECT * FROM rental_return_batches WHERE owner_id=$1 AND store_id=$2 ORDER BY created_at DESC LIMIT 100',[this.identity.subject,store])).rows,received:await this.withGroupNumbers(this.pool,(await this.pool.query<ReceivedView>(`SELECT e.*,l.family,l.requirement_key,l.version,l.asset_id,l.pole_id,${await this.groupColumn(this.pool)},i.inspection_id FROM rental_custody_events e JOIN rental_loan_items l ON l.id=e.loan_item_id LEFT JOIN rental_inspection_events i ON i.loan_item_id=l.id WHERE e.actual_store=$1 ORDER BY e.applied_at DESC LIMIT 200`,[store])).rows)};}
 
  // ------------------------------------------------------------------------------------------------------------------
  // GROUP CUSTODY (Issue #47 B4). A CONFIRMED group (confirmation_basis GROUP_ADMIN_APPROVED, settled on site, usually still
@@ -136,7 +141,7 @@ export class CustodyService extends BookingService{
  // booking or payment_state=SUCCESS, and it never creates one: the ordinary gate above is untouched. The database enforces the same
  // conditions again (rental_validate_group_loan / rental_stage_guard), so this layer is not the only barrier.
  private async groupPartRow(c:Conn,partId:string){
-  flowId(partId);
+  flowId(partId);await this.requireGroupLink(c);
   const r=(await c.query<GroupPartRow>('SELECT p.id,p.group_id,p.part_no,p.hold_id,p.active,p.member_count,g.group_number,g.group_label,g.status AS group_status,g.revision AS group_revision,g.confirmation_basis,g.confirmed_total_jpy,g.pickup_store,g.return_store FROM group_order_parts p JOIN group_orders g ON g.id=p.group_id WHERE p.id=$1',[partId])).rows[0];
   if(!r)throw new FlowError('NOT_FOUND',404);
   await this.authorize('RENTAL_CHECKOUT',[r.pickup_store]);return r;
@@ -173,7 +178,7 @@ export class CustodyService extends BookingService{
  async groupCheckoutView(partId:string){await this.authorize('RENTAL_CHECKOUT');return this.groupAssignment(this.pool,partId);}
  /** Parent view: the group number and, per part, the members with their equipment, size/fit flag and loan state. No contact data. */
  async groupOverview(groupId:string){
-  flowId(groupId);await this.authorize('RENTAL_CHECKOUT');
+  flowId(groupId);await this.authorize('RENTAL_CHECKOUT');await this.requireGroupLink(this.pool);
   const g=(await this.pool.query<{id:string;group_number:string;group_label:string;status:string;confirmation_basis:string|null;confirmed_total_jpy:string|null;pickup_store:string;return_store:string;member_count:number;period:unknown}>('SELECT id,group_number,group_label,status,confirmation_basis,confirmed_total_jpy,pickup_store,return_store,member_count,period FROM group_orders WHERE id=$1',[groupId])).rows[0];
   if(!g)throw new FlowError('NOT_FOUND',404);
   await this.authorize('RENTAL_CHECKOUT',[g.pickup_store]);await this.authorize('BOOKING_VIEW',[g.pickup_store]);
@@ -196,7 +201,7 @@ export class CustodyService extends BookingService{
  }
  async groupByNumber(number:string){
   if(typeof number!=='string'||!/^G-\d{6}$/.test(number))throw new FlowError('INVALID_GROUP_NUMBER',422);
-  await this.authorize('RENTAL_CHECKOUT');const id=(await this.pool.query<{id:string}>('SELECT id FROM group_orders WHERE group_number=$1',[number])).rows[0]?.id;
+  await this.authorize('RENTAL_CHECKOUT');await this.requireGroupLink(this.pool);const id=(await this.pool.query<{id:string}>('SELECT id FROM group_orders WHERE group_number=$1',[number])).rows[0]?.id;
   if(!id)throw new FlowError('NOT_FOUND',404);return this.groupOverview(id);
  }
  private groupUsable(p:GroupPartRow,h:{state:string;payment_state:string;transfer_attention:string|null;allocation_stage:string},stages:string[]){

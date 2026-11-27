@@ -50,7 +50,8 @@ migration は追加していない（0064 のまま）。必要なのは group �
 
 ## 6. 運用・runbook
 - **役割**: 配送workerは group 役割（`<db>_group`）で動かす。`outbox` への列限定 UPDATE（status, attempt_count, next_attempt_at, claim_id, claim_until, provider_message_id, sent_at, last_safe_failure_code のみ。通知の中身 admin_message/event_type/dedupe_key 等は更新不可）を、正規のrole delta手順で適用: `scripts/group-notification-role.ts` の `groupNotificationRoleDelta(role)` が出す1文。本番DBへは適用していない。
-- **tick接続**: 本PRは本番tickを変更しない（booking worker不変）。接続する場合は `GroupNotificationWorker(groupPool, origin, deliveryAdapter).runBatch(limit, deadline)` を、groupプールが構成された環境の tick に1行追加する（アダプタは booking と同じ `ResendDelivery`）。アダプタ未接続の間は何も送られず行は PENDING のまま（誤送信しない）。
+- **tick接続（2026-11-27 実装済み）**: 本番の `worker-tick`（毎分・finite・同時実行の排他は既存のまま）が、団体プールと承認済み Resend 結線がある場合に限り、`packages/core/src/group/notification-lane.ts` の `runGroupNotificationLane` で `GroupNotificationWorker.runBatch` を1回だけ実行する。Owner 制御の `PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT`（0〜20、未設定=0）が 0 の間は outbox を見もしない。配信の契約（行ごとの lease・冪等キー・UNKNOWN は lookup のみ・古い状態の通知は SUPPRESSED）は不変。手順は `docs/execution/group/RELEASE_RUNBOOK.md`。
+- （以前の記述）**tick接続**: 本PRは本番tickを変更しない（booking worker不変）。接続する場合は `GroupNotificationWorker(groupPool, origin, deliveryAdapter).runBatch(limit, deadline)` を、groupプールが構成された環境の tick に1行追加する（アダプタは booking と同じ `ResendDelivery`）。アダプタ未接続の間は何も送られず行は PENDING のまま（誤送信しない）。
 - **UNKNOWN の扱い**: 管理画面は `needingAttention` で一覧、`reconcile(id)` が lookup のみ実行。Resend は lookup 非対応のため UNKNOWN のままになり得る。その場合は人が受信側/provider画面で確認する（自動再送はしない）。
 - **古い通知**: `superseded` は正常。配送が遅れても、解除/確約後に「仮押さえ中」が届くことはない。
 

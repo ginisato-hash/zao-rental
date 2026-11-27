@@ -499,7 +499,14 @@
   {
    "id": "0064",
    "file": "0064_group_order_core.sql",
-   "sha256": "d0c91b356ceb17a28929e8d56738e9a9085175337a2576cd6fc57a4895b4a5b8",
+   "sha256": "9960e7ef378c1a012fe93f4377da0df946f68f16d8c07fc68ec691552bc3d180",
+   "runtimeGuards": 0,
+   "guard": null
+  },
+  {
+   "id": "0065",
+   "file": "0065_group_custody_link.sql",
+   "sha256": "27a1666a30d873e5b2b3342561dbf5b8e0ea5c3118583d63360d2421e250d61d",
    "runtimeGuards": 0,
    "guard": null
   }

@@ -21,10 +21,10 @@ export const WORKER_TICK_BATCH_SIZE = 20;
 export const WORKER_TICK_ENV_KEYS = Object.freeze([
   'CRON_SECRET', 'PRODUCTION_WORKER_TICK_ACTIVATION', 'PRODUCTION_WORKER_ACCEPTED_AFTER',
   'PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER', 'PRODUCTION_WORKER_DB_PASSWORD_WORKER', 'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR',
-  'PRODUCTION_WORKER_NOTIFICATION_LIMIT', 'PRODUCTION_WORKER_REFUND_CREATE_LIMIT',
+  'PRODUCTION_WORKER_NOTIFICATION_LIMIT', 'PRODUCTION_WORKER_REFUND_CREATE_LIMIT', 'PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT',
 ] as const);
 /** Upper bounds, identical to the ones `normalWorkerPlan` enforces. */
-export const WORKER_TICK_LIMIT_BOUNDS = Object.freeze({PRODUCTION_WORKER_NOTIFICATION_LIMIT: 20, PRODUCTION_WORKER_REFUND_CREATE_LIMIT: 20} as const);
+export const WORKER_TICK_LIMIT_BOUNDS = Object.freeze({PRODUCTION_WORKER_NOTIFICATION_LIMIT: 20, PRODUCTION_WORKER_REFUND_CREATE_LIMIT: 20, PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT: 20} as const);
 /** Per-row maximum of a refund (`amount_jpy` CHECK in 0033/0045): a technical per-tick ceiling, not a budget. */
 export const WORKER_TICK_REFUND_ROW_MAX_JPY = 100_000_000;
 export type WorkerTickEnv = Partial<Record<(typeof WORKER_TICK_ENV_KEYS)[number], string | undefined>>;
@@ -79,7 +79,7 @@ export function workerTickDatabaseUrls(database: {host: string; name: string}, e
   return {dispatcher: url('dispatcher'), worker: url('worker'), projector: url('projector')};
 }
 
-export interface WorkerTickRuntime { runWorker(input: {plan: unknown; databaseUrls: Record<'dispatcher' | 'worker' | 'projector', string>; lookup: never; preflight?: boolean}): Promise<unknown> }
+export interface WorkerTickRuntime { runWorker(input: {plan: unknown; databaseUrls: Record<'dispatcher' | 'worker' | 'projector', string>; lookup: never; preflight?: boolean; groupNotificationLimit?: number}): Promise<unknown> }
 export interface WorkerTickInput {
   authorization: string | null; env: WorkerTickEnv; now: Date;
   runtime: WorkerTickRuntime | null;
@@ -94,6 +94,8 @@ let inFlight = false;
 function summary(result: unknown): Record<string, unknown> {
   const r = (result ?? {}) as Record<string, unknown>;
   const out: Record<string, unknown> = {state: typeof r.state === 'string' ? r.state : 'UNKNOWN'};
+  const group = (r['groupNotifications'] ?? null) as Record<string, unknown> | null;
+  if (group && typeof group.state === 'string') { out.groupNotifications = group.state; if (typeof group.processed === 'number') out.groupNotificationsProcessed = group.processed; }
   for (const k of ['projected', 'deferred', 'refundCreates', 'refundLookups']) if (typeof r[k] === 'number') out[k] = r[k];
   const backlog = (r['backlog'] ?? {}) as Record<string, unknown>;
   for (const k of ['pendingPayments', 'oldestPendingAgeSeconds']) if (typeof backlog[k] === 'number') out[k] = backlog[k];
@@ -112,7 +114,9 @@ export async function handleWorkerTick(input: WorkerTickInput): Promise<WorkerTi
     if (!input.runtime) return {status: 503, body: {state: 'RUNTIME_NOT_READY'}};
     const plan = workerTickPlan(input.env, input.now);
     const {database, lookup} = input.resolve();
-    const result = await input.runtime.runWorker({plan, databaseUrls: workerTickDatabaseUrls(database, input.env), lookup: lookup as never, preflight: false});
+    // Group customer notices (migration 0064): same finite tick, own Owner-controlled limit (unset = 0 = nothing is sent). A malformed value stops the tick.
+    const groupNotificationLimit = workerTickLimit(input.env, 'PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT');
+    const result = await input.runtime.runWorker({plan, databaseUrls: workerTickDatabaseUrls(database, input.env), lookup: lookup as never, preflight: false, groupNotificationLimit});
     const body: Record<string, unknown> = {...summary(result), durationMs: Date.now() - started};
     input.log(JSON.stringify({event: 'normal_worker_tick', ...body}));
     // PROVIDER_STOP (auth or rate limit at the provider) is a real stop: surface it as a failed scheduled run.

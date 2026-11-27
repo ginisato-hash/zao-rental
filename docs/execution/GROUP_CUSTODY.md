@@ -62,3 +62,11 @@ GROUP_RESERVED --(groupPrepare: 現物確認の準備記録)--> PREPARATION_FIXE
 - 実ブラウザ試験（団体パネル）は **NOT_RUN**（型・lint・ビルドのみ）。
 - 本番: custody 役割への団体テーブルの SELECT（`group_orders` `group_order_parts` `group_members` `group_payments`）と `group_part_preparations` の SELECT/INSERT/UPDATE(列)、operations 役割への同様の読取、および `rental_validate_group_loan` の所有者変更は、0064 適用時の正規 role delta 手順に含める必要がある（開発用 `scripts/custody-roles.ts` / `scripts/operations-roles.ts` には追加済み、本番DBへの適用は行っていない）。本番の custody 接続自体は従来どおり未接続（`DEVELOPMENT_CUSTODY_NOT_CONNECTED`）。
 - 0064 を直接編集した（未適用・未merge のため）。`config/production/bootstrap-source-manifest.json` の 0064 の sha256 と `tests/fixtures/rewind-0064.ts`（0064 適用前の旧定義への巻き戻し）を更新した。
+
+## 2026-11-27 分割（Owner決定・選択肢A）：団体コア 0064 と 貸出接続 0065
+- 本書が述べる「貸出接続」（`rental_loan_items` の `group_part_id`/`hold_id`、`group_part_preparations`、`rental_validate_group_loan`、団体対応の `rental_apply_receipt`/`rental_stage_guard`/`rental_inventory_blocks`、完全な `group_custody_stage_ok`/`group_custody_hold_update`/`group_order_guard`/`group_consistency`）は、**`0065_group_custody_link.sql` に移した**。`0064_group_order_core.sql` は executor 所有オブジェクトに一切触れず、本番の `neondb_owner` だけで適用できる（`tests/operations/production-0057-owner-apply.ts` の実測）。
+- 本番は 0064 だけで動く（0065 は特権経路が決まるまで未適用）。その間、団体の貸出・準備・返却の画面/API（`GroupCustodyPanel`、`CustodyService` の団体メソッド）は、DB の実体（列・準備表・検証関数・有効なトリガ。`packages/core/src/group/custody-link.ts`）から 0065 未適用を検知して **`GROUP_CUSTODY_NOT_ACTIVATED`（409）で閉じる**。環境変数は使わない。通常の個別貸出・返却・カレンダー・割当は group の列を読まず、影響を受けない（`ZAO_TEST_CUSTODY_LINK=0` の両状態試験）。
+- 0064 のみの状態でも、通常の返却が団体 hold に付ける `transfer_attention`（上の「受領時の既存仕様」）は通る（`group_custody_hold_update` の 0064 版は stage を動かさない）。団体 hold の stage 変更は 0064 では常に拒否される。
+- 本番の権限（custody/operations の団体表 SELECT・準備表、executor の SELECT）は 0065 側の権限であり、0064 の導入道具（`production-group-delta.ts`）は付与しない。`verify-group` は 0065 が登録されていれば別枠で読む（構造と、0065 が要る権限の完全一致）。
+- 試験用の巻き戻し: `tests/fixtures/rewind-0065.ts`（0064 のみの状態）、`rewind-0064.ts`（0065 → 0064 → それ以前）。
+

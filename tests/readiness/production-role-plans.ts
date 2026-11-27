@@ -360,8 +360,8 @@ try {
       await assert.rejects(applyProductionRefundAutomationGrants(c,TARGET,db.identity.user),/GRANTS_REFUSED/);
     }finally{c.release();}
   });
-  await check('restore the current 0057–0064 fixture after exact historical installer proofs',async()=>{
-    const entries=(await bootstrapPlan(TARGET)).entries.slice(56,64);assert.deepEqual(entries.map(e=>e.id),['0057','0058','0059','0060','0061','0062','0063','0064']);
+  await check('restore the current 0057–0065 fixture after exact historical installer proofs',async()=>{
+    const entries=(await bootstrapPlan(TARGET)).entries.slice(56,65);assert.deepEqual(entries.map(e=>e.id),['0057','0058','0059','0060','0061','0062','0063','0064','0065']);
     const c=await production!.connect();try{
       await c.query('BEGIN');for(const entry of entries){await c.query(entry.sql);
       await c.query('INSERT INTO foundation_migrations(id,checksum) VALUES($1,$2)',[entry.id,entry.checksum]);}
@@ -479,7 +479,7 @@ try {
   // production runtime itself relies on before ever trusting a connected role.
   const roleConfig = { database: { name: TARGET, roles: appNames } } as unknown as ProductionConfiguration;
   await check('F9: verifyProductionDatabase() passes for all 11 Production app roles (rolsuper/rolcreatedb/rolcreaterole/rolinherit/rolreplication/rolbypassrls/membership/database_owner/object_owner/CREATE all false)', async () => {
-    for (const service of productionServices) await verifyProductionDatabase(appRoles[service].pool, roleConfig, service);
+    for (const service of productionServices.filter(s => s !== 'group')) await verifyProductionDatabase(appRoles[service].pool, roleConfig, service);
   });
   await check('Production HOLD startup invokes its narrow quantity reader; missing grant fails closed without direct adjustment/materialization access',async()=>{
     for(const table of ['provisional_capacity_adjustments','provisional_capacity_materializations'])await denied(()=>hold.pool.query('SELECT 1 FROM '+table+' WHERE false'));
@@ -518,7 +518,7 @@ try {
     const f1Config = productionConfiguration({
       schemaVersion: 1, capability: 'ZAO_PRODUCTION_RUNTIME_V1',
       deployment: { provider: 'VERCEL', environment: 'production', projectId: 'f1-fixture-project', releaseId: 'f1-release', origin: 'https://f1-fixture.invalid' },
-      database: { provider: 'NEON', environment: 'production', host: 'ep-f1-fixture.neon.tech', name: TARGET, roles: appNames },
+      database: { provider: 'NEON', environment: 'production', host: 'ep-f1-fixture.neon.tech', name: TARGET, roles: { ...appNames, group: TARGET + '_group' } },
       flags: { booking: false, guestRecovery: false, payment: false, media: false, avatar: false, staffOperations: false },
       guest: f1Guest, approvedGuestSha256: guestConfigurationHash(f1Guest),
       payment: null, media: null,

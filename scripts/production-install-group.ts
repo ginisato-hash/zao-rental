@@ -1,5 +1,6 @@
-// Fixed Production installer for the 0064 group order delta: `migrate` applies 0064 once (one transaction), `grants` adds creates the group role and the approved group and operations privileges once,
-// `verify` only reads back the installed state in a READ ONLY transaction (no write; also the post-COMMIT-unknown and rollback check).
+// Fixed Production installer for the 0064 group order core: `migrate` applies 0064 once (one transaction, as the database owner: 0064 touches no executor-owned object),
+// `grants` creates the NOLOGIN group role `<db>_group` and gives it its approved privileges once, `verify` only reads back the installed state in a READ ONLY transaction (no write;
+// also the post-COMMIT-unknown and rollback check). The custody link (0065) is NOT installed here: it waits for a privileged path (docs/execution/group/RELEASE_RUNBOOK.md); verify reads it if present.
 // No arguments. Admission before any database connection: exact accepted main (clean checkout, HEAD == origin/main), no TLS override, a machine-derived Production restore
 // PASS record (verified, not just shape-checked), then a memory-only owner session proven over verify-full TLS. Output is a sanitised status object; failures are fixed codes.
 import {existsSync} from 'node:fs';

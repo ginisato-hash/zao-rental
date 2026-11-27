@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {productionGroupDeltaGrants,ROLE_CREATE_SQL} from '../../scripts/production-group-delta';
 import {main,type InstallSeams} from '../../scripts/production-install-group';
 
-// 0064 group delta (migration + operations grants) operator: the same admission gates as the staff delta installer.
+// 0064 group delta (owner-applicable core migration + group-role grants; 0065, the custody link, is NOT installed by this tool) operator: the same admission gates as the staff delta installer.
 test('group installer: unknown or extra arguments are refused before anything else',async()=>{
  for(const argv of [['migrate','--force'],['rollback'],[],['grants','x'],['verify','--write']])await assert.rejects(main(argv),/PRODUCTION_INSTALL_ARGUMENTS_REJECTED/,JSON.stringify(argv));
 });
@@ -41,8 +41,9 @@ test('group grants: fixed statements, least privilege, nothing to PUBLIC, no DDL
  const sql=productionGroupDeltaGrants('neondb');
  assert.ok(sql.includes('GRANT EXECUTE ON FUNCTION group_register_actor(uuid) TO "neondb_group"'));
  assert.ok(sql.includes('GRANT SELECT,INSERT,UPDATE,DELETE ON group_members TO "neondb_group"'));
- assert.ok(sql.includes('GRANT SELECT,INSERT ON group_part_preparations TO "neondb_operations"'));
- assert.ok(sql.includes('GRANT UPDATE(prepared_at,prepared_by,fit_evidence,version) ON group_part_preparations TO "neondb_operations"'));
+ // Least privilege after the split (Owner decision 2026-11-27): 0064 alone needs nothing for custody. Nothing about operations, the executor or a loan is granted.
+ assert.ok(sql.every(s=>!/operations|executor|group_part_preparations|rental_loan_items/.test(s)),'no custody-link grant belongs to the 0064 installer');
+ assert.ok(sql.every(s=>/TO "neondb_group"$/.test(s)),'every statement targets the group role only');
  assert.ok(sql.some(s=>/^GRANT UPDATE\(status,attempt_count,next_attempt_at,claim_id,claim_until,provider_message_id,sent_at,last_safe_failure_code\) ON group_notification_outbox TO "neondb_group"$/.test(s)));
  assert.ok(sql.every(s=>/^GRANT /.test(s)&&!/PUBLIC|ALL|TRUNCATE|WITH GRANT OPTION|ADMIN/i.test(s)),'only plain GRANT statements, never PUBLIC/ALL/TRUNCATE/grant option');
  assert.ok(sql.every(s=>!/ON group_(events|quotes|consents|adjustments|payments|requests|entrance_history|notification_outbox) .*\b(UPDATE|DELETE)\b/.test(s)||/^GRANT UPDATE\(/.test(s)),'append-only tables are never updated or deleted by the group role');
@@ -53,6 +54,12 @@ test('group role plan: the role is NOLOGIN with no powers and is created through
  assert.equal(ROLE_CREATE_SQL('neondb'),'CREATE ROLE "neondb_group" NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS');
  const src=readFileSync('scripts/production-group-delta.ts','utf8');
  assert.ok(/SET LOCAL ROLE \$\{q\(r\.manager\)\}`\);await c\.query\(ROLE_CREATE_SQL\(database\)\)/.test(src));
+});
+test('group installer: 0065 (custody link) is not installable here and a registered 0065 is only read by verify',()=>{
+ const src=readFileSync('scripts/production-group-delta.ts','utf8');
+ assert.ok(!/entries\[64\]!\.sql/.test(src),'the 0065 SQL is never executed by this installer');
+ assert.ok(/custodyLinkAppliedProof/.test(src)&&/custodyLinkAbsentProof/.test(src));
+ assert.ok(!/CUSTODY_LINK_OPERATIONS_GRANTS/.test(src.slice(src.indexOf('export function productionGroupDeltaGrants'),src.indexOf('export const ROLE_CREATE_SQL'))),'the grants step never installs the link privileges');
 });
 test('group migrate: the fixed code for the executor-owned object blocker is an installer-safe code',()=>{
  const src=readFileSync('scripts/production-install-group.ts','utf8');

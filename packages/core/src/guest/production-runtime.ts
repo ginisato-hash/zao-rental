@@ -32,6 +32,11 @@ import {loadGuestAvatar} from '../avatar/guest';
 import {R2MediaProvider,type R2Credential} from '../content/r2-media';
 import type {PaymentGateway} from '../../../contracts/src/rental-flow';
 import {runProductionWorker,type ProductionWorkerInput} from '../../../db/src/normal-production-worker';
+import {GroupOrderService} from '../group/group-service';
+import {GroupCustomerService} from '../group/group-customer';
+import {GroupNotificationWorker} from '../group/notification-worker';
+import {groupRuntimeReady} from '../group/production-ready';
+import {runGroupNotificationLane} from '../group/notification-lane';
 export const productionConfigurationDigest=(c:ProductionConfiguration)=>createHash('sha256').update(canonical(c)).digest('hex');
 export type ProductionSecretMaterial={
  database:Partial<Record<ProductionService,ProductionDatabaseCredential>>;
@@ -71,15 +76,25 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   const active=new Set<ProductionService>();if(c.flags.booking)for(const s of ['auth','guest','hold','pricing','recommendation','content_read','booking_access','operations'] as const)active.add(s);
   if(c.flags.staffOperations)for(const s of ['auth','ledger','hold','transfer','pricing','recommendation','operations'] as const)active.add(s);if(c.flags.avatar)active.add('avatar_read');if(c.flags.media)active.add('content_read');
   // Validate every supplied binding before opening even the first connection.
-  for(const s of productionServices)if(active.has(s)||secrets.database[s])validateProductionCredential(c,s,secrets.database[s]);
+  // The group role is validated and opened separately below: a problem with it must never take the booking/staff runtime down.
+  for(const s of productionServices)if(s!=='group'&&(active.has(s)||secrets.database[s]))validateProductionCredential(c,s,secrets.database[s]);
   for(const s of active){const pool=await (input.connect??connectProductionDatabase)(c,s,secrets.database[s]!);pools[s]=pool;pool.on('error',()=>{});await verifyProductionDatabase(pool,c,s);}
+  // Group application role (`<db>_group`, migration 0064): optional and isolated. Connected ONLY when its credential was supplied (the Owner's separate step), the
+  // identity/least-privilege check passes and the database is really ready for it (0064 applied, the role's grants present). Anything else leaves the group APIs
+  // closed (GROUP_UNCONNECTED / GROUP_NOT_CONNECTED, 503); the rest of the application never notices.
+  let groupPool:Pool|null=null;
+  if(secrets.database.group&&(c.flags.booking||c.flags.staffOperations)){
+   try{validateProductionCredential(c,'group',secrets.database.group);const pool=await (input.connect??connectProductionDatabase)(c,'group',secrets.database.group);pool.on('error',()=>{});
+    try{await verifyProductionDatabase(pool,c,'group');if(!(await groupRuntimeReady(pool)))throw Error();groupPool=pool;pools.group=pool;}catch{await pool.end().catch(()=>{});}
+   }catch{/* group stays unconnected */}
+  }
   const required=(s:ProductionService)=>{const p=pools[s];if(!p)throw new ProductionStartupError('DB_CONFIG');return p;};
   const base=(c.flags.booking||c.flags.staffOperations)?{
    config:{origin:c.deployment.origin,namespace:c.database.name,authSecret:secrets.guestKey,authDb:{port:5432}},
    auth:createStaffAuth(required('auth'),{origin:c.deployment.origin,secret:secrets.staffKey}),authPool:required('auth'),loginPool:required('auth'),
    holdPool:required('hold'),pricingPool:required('pricing'),recommendationPool:required('recommendation'),operationsPool:required('operations')
   }:null;
-  const staff=c.flags.staffOperations?{...base!,ledgerPool:required('ledger'),transferPool:required('transfer')}:null;
+  const staff=c.flags.staffOperations?{...base!,ledgerPool:required('ledger'),transferPool:required('transfer'),groupPool}:null;
   stage='GUEST_SECURITY';const guest=c.flags.booking?await composeProductionGuestSecurity({pool:required('guest'),configuration:c.guest,approvedConfigurationSha256:c.approvedGuestSha256,serverKey:secrets.guestKey,ingress,audit:async()=>input.audit('GUEST_SECURITY')}):null;
   const service=(actor:GuestActor)=>{if(!guest)throw new ProductionStartupError('FEATURE_FLAGS');const holds=new HoldService(required('hold'),actor),quotes=new QuoteService(required('pricing'),actor,undefined,priceAuthority),recommendations=new RecommendationService(required('recommendation'),actor,holds,quotes,async variants=>guestVariants(await guestCatalog(required('content_read'),variants),variants));
    // Read existing canonical payment/booking state even with Avatar/media absent.
@@ -96,18 +111,28 @@ export async function composeProductionRuntime(input:ProductionRuntimeInput){
   }:null;
   stage='BOOKING_ACCESS';const access=guest?new BookingAccess(required('booking_access'),Buffer.from(secrets.accessKey,'hex'),secrets.accessKeyVersion):null;
   const recovery=guest&&c.flags.guestRecovery?new BookingRecovery(required('booking_access'),Buffer.from(secrets.recoveryKey,'hex'),secrets.recoveryKeyVersion,undefined,5000,true):null;
+  // Customer group boundary (/api/group): same guest rate guard and server key as the booking flow. Null without a ready group pool.
+  const group=groupPool&&guest?(()=>{const svc=new GroupOrderService(groupPool!);return {svc,customer:new GroupCustomerService(svc,groupPool!,required('content_read')),pool:groupPool!,origin:c.deployment.origin,serverKey:secrets.guestKey,guard:(request:Request)=>guest.security.service.guard(guest.security.peer(request))};})():null;
   const refundWorker=input.refunds&&commercialIdentity?new CancellationRefundWorker(required('operations'),input.refunds,commercialIdentity):null;
   if(input.refunds&&!refundWorker)throw new ProductionStartupError('PAYMENT');
   if(input.notification&&(!commercialIdentity||!recovery))throw new ProductionStartupError('BOOKING_ACCESS');
   const notifications=input.notification?new BookingNotificationWorker(required('operations'),c.deployment.origin,recovery!,await productionNotificationDelivery(input.notification,commercialIdentity)):null;
+  // Group notification delivery: the group role + the same approved Resend binding as booking notifications. Only runs when a tick is explicitly given a group limit.
+  const groupNotifications=groupPool&&input.notification&&commercialIdentity?new GroupNotificationWorker(groupPool,c.deployment.origin,await productionNotificationDelivery(input.notification,commercialIdentity)):null;
   const readDerivative=async(digest:string)=>{if(!r2||! /^[a-f0-9]{64}$/.test(digest))return null;return r2.readPrivate('private/derivative/sha256/'+digest);};
   stage='MEDIA';let avatar=null;
   if(guest&&c.flags.avatar){const visuals=new PostgresAvatarVisuals(required('avatar_read')),rate=avatarGuestSecurity(required('guest'),guest.contexts,secrets.guestKey);await rate.transaction(async()=>{});
    avatar={guard:(request:Request)=>rate.guard(guest.security.peer(request)),load:(headers:Headers,scope:Parameters<typeof loadGuestAvatar>[4])=>loadGuestAvatar(guest.contexts,required('recommendation'),visuals,headers,scope),reader:()=>({findForDelivery:(id:string,hash:string,now:Date)=>visuals.findForDelivery(id,hash,now),readBytes:async(hash:string)=>{const bytes=await readDerivative(hash);return bytes?Buffer.from(bytes):null;}})};
   }
   stage='READY';await input.audit(stage);if(input.publication){if(!input.identity)throw Error();publication=issuePublicationAuthority(input.identity,input.publication);installPublicationAuthority(publication);}let closed=false;
-  return Object.freeze({configuration:c,staff,guest,service,staffOrders,access,recovery,avatar,refundWorker,notifications,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
-   async runWorker(workerInput:ProductionWorkerInput){if(closed||!commercialIdentity)throw new ProductionStartupError('PAYMENT');return runProductionWorker(commercialIdentity,workerInput,required('operations'),notifications,refundWorker);},
+  return Object.freeze({configuration:c,staff,guest,service,staffOrders,access,recovery,avatar,refundWorker,notifications,group,groupNotifications,readDerivative,payment:validatedPayment,contentReadPool:pools.content_read??null,
+   async runWorker(workerInput:ProductionWorkerInput&{groupNotificationLimit?:number}){if(closed||!commercialIdentity)throw new ProductionStartupError('PAYMENT');
+    const {groupNotificationLimit=0,...rest}=workerInput;if(!Number.isSafeInteger(groupNotificationLimit)||groupNotificationLimit<0||groupNotificationLimit>20)throw Error('NORMAL_WORKER_BATCH_REJECTED');
+    const result=await runProductionWorker(commercialIdentity,rest,required('operations'),notifications,refundWorker);
+    // Group notices: one bounded, leased pass in the same finite tick, only when the Owner-controlled limit is above 0 and a group pool + mail binding exist. Otherwise nothing is sent.
+    if(rest.preflight)return result;
+    const lane=await runGroupNotificationLane(groupNotifications,groupNotificationLimit,new Date((rest.plan as {deadline:string}).deadline));
+    return lane?{...result,groupNotifications:lane}:result;},
    public:guest?{r:base!,guestPool:required('guest'),readPool:required('content_read'),contexts:guest.contexts}:null,
    // F1 (TD correction): DB must never report READY without at least one actually-open pool —
    // a dark profile with every flag false opens zero connections (`active` stays empty, `pools`

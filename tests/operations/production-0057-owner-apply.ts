@@ -5,7 +5,7 @@
 import {STAFF_NOTIFICATION_FUNCTIONS,CUSTOMER_TABLES} from '../../scripts/production-staff-notifications';
 import {applyProductionStaffDeltaMigration,applyProductionStaffDeltaGrants,staffDeltaGrantProof,committedProof} from '../../scripts/production-staff-delta';
 import {applyProductionCouponAdminMigration,applyProductionCouponAdminGrants,couponAdminGrantProof,couponAdminCommittedProof,verifyProductionCouponAdmin} from '../../scripts/production-coupon-admin-delta';
-import {applyProductionGroupMigration,applyProductionGroupGrants,groupGrantProof,groupCommittedProof,verifyProductionGroup,GROUP_TABLES,groupRoleNames} from '../../scripts/production-group-delta';
+import {applyProductionGroupMigration,applyProductionGroupGrants,groupGrantProof,groupCommittedProof,custodyLinkAbsentProof,verifyProductionGroup,CUSTODY_LINK_OPERATIONS_GRANTS,GROUP_TABLES,groupRoleNames} from '../../scripts/production-group-delta';
 import {applyProductionSalesStopMigration,applyProductionSalesStopGrants,salesStopGrantProof,salesStopCommittedProof,verifyProductionSalesStop} from '../../scripts/production-sales-stop-delta';
 import assert from 'node:assert/strict';
 import {createHash,randomBytes} from 'node:crypto';
@@ -27,7 +27,7 @@ try{
  await db.pool.query(`CREATE DATABASE ${DB} OWNER ${OWNER}`);
  const owner=connect(OWNER,ownerPassword),observer=connect(db.identity.user,superPassword);
  const full=await productionFoundationPlan(DB),entries=full.bootstrap.entries;
- assert.equal(entries.length,64);assert.equal(entries[63]!.id,'0064');assert.equal(entries[62]!.id,'0063');assert.equal(entries[61]!.id,'0062');assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
+ assert.equal(entries.length,65);assert.equal(entries[64]!.id,'0065');assert.equal(entries[63]!.id,'0064');assert.equal(entries[62]!.id,'0063');assert.equal(entries[61]!.id,'0062');assert.equal(entries[58]!.id,'0059');assert.equal(entries[59]!.id,'0060');assert.equal(entries[60]!.id,'0061');assert.equal(entries[56]!.id,'0057');assert.equal(entries[57]!.id,'0058');assert.equal(entries[57]!.provenance.transformation,'NONE');assert.equal(entries[56]!.provenance.transformation,'NONE');
  stage='registry56 production topology';
  await runFoundationPlan(owner,{...full,bootstrap:{...full.bootstrap,entries:entries.slice(0,56)}});
  const q=async(sql:string,params:unknown[]=[])=>(await observer.query(sql,params)).rows;
@@ -219,48 +219,39 @@ try{
  for(const priv of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,'coupon_status_events',priv]))[0].ok,false,'operations '+priv);
  console.log('PASS canonical 0063 applies as neondb_owner after 0062: registry 62 -> 63, guard/roles/memberships unchanged, new objects owner-owned, pricing SELECT/INSERT + functions, operations functions only, PUBLIC nothing');
 
- stage='0064 group order core: owner-path blocker, then grants and verify';
+ stage='0064 group order core (Owner decision 2026-11-27, option A): owner path, grants, verify; then 0065 is refused on the owner path';
  // 0064 (group order core) through its fixed operator path: grants before migrate refused, one transaction with read-back, no replay, no role/membership change,
- // the custody functions it replaces keep their executor ownership, every new table is owner-owned and empty; then the group role (created by the NOLOGIN manager,
- // never by the owner), the hold-equivalent + group delta, and the custody-side reads of the operations role.
+ // the executor-owned custody objects untouched byte for byte, every new table owner-owned and empty; then the group role (created by the NOLOGIN manager,
+ // never by the owner) with exactly the hold-equivalent + group delta. 0065 (the custody link) is NOT applied: the owner path is refused (42501) and rolls back.
  const roles64=await roles(),gr=groupRoleNames(DB);
+ const exec64=async()=>(await q(`SELECT p.oid::regprocedure::text k,pg_get_userbyid(p.proowner) o,p.prosecdef sd,coalesce(p.proacl::text,'') acl,coalesce(p.proconfig::text,'') cfg,md5(pg_get_functiondef(p.oid)) def FROM pg_proc p WHERE p.oid IN ('public.rental_apply_receipt(uuid)'::regprocedure,'public.rental_stage_guard()'::regprocedure,'public.rental_validate_loan()'::regprocedure) ORDER BY 1`));
+ const loanTriggers=async()=>(await q("SELECT t.tgname,t.tgenabled,pg_get_triggerdef(t.oid) d FROM pg_trigger t WHERE t.tgrelid='public.rental_loan_items'::regclass AND NOT t.tgisinternal ORDER BY 1"));
+ const view63=async()=>(await q("SELECT pg_get_viewdef('public.rental_inventory_blocks'::regclass) d,pg_get_userbyid((SELECT relowner FROM pg_class WHERE oid='public.rental_inventory_blocks'::regclass)) o"))[0];
  const gm=await owner.connect();
  try{
   await assert.rejects(applyProductionGroupGrants(gm,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'grants need the exact 0064 registry');
   await assert.rejects(applyProductionGroupMigration(gm,DB,'someone_else'),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'wrong owner identity');
   await assert.rejects(applyProductionCouponAdminMigration(gm,DB,OWNER),/PRODUCTION_COUPON_ADMIN_RECONCILIATION_REQUIRED/,'the 0063 delta never re-applies on 0063');
-  // MEASURED BLOCKER: canonical 0064 re-creates the ordinary loan trigger and replaces custody-executor-owned functions. neondb_owner holds no custody
-  // membership, so the fixed operator path is refused as a whole (42501 -> fixed code), leaving 0001-0063, every role and every object untouched.
-  const rolesBlocked=await roles(),guardBlocked=await guard();
-  await assert.rejects(applyProductionGroupMigration(gm,DB,OWNER),/PRODUCTION_GROUP_EXECUTOR_OWNED_OBJECTS_BLOCKED/,'the owner path cannot install 0064 on the Production topology');
-  assert.deepEqual(await q('SELECT id FROM public.foundation_migrations ORDER BY id'),entries.slice(0,63).map(e=>({id:e.id})),'nothing applied');
-  assert.equal((await q("SELECT to_regclass('public.group_orders') IS NULL absent"))[0].absent,true);
-  assert.deepEqual(await roles(),rolesBlocked);assert.deepEqual(await guard(),guardBlocked);
-  console.log('PASS 0064 on the owner path is refused as one fixed code and rolls back completely (executor-owned custody objects)');
-  // PRIVILEGED-PATH SIMULATION (not a Production procedure): the isolated cluster superuser applies the canonical 0064 SQL and registry row, then new objects are
-  // given to the owner exactly as the owner path would have made them (the executor-owned function stays executor-owned). This lets the grants and verify
-  // steps below be proven independently of how 0064 reaches Production.
-  {
-   const su=await observer.connect();
-   try{
-    await su.query('BEGIN');await su.query('SET LOCAL search_path=public,pg_catalog');
-    await su.query(entries[63]!.sql);await su.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[63]!.id,entries[63]!.checksum]);
-    const me=(await su.query('SELECT current_user u')).rows[0].u;
-    for(const r of (await su.query("SELECT c.relname,c.relkind FROM pg_class c WHERE c.relnamespace='public'::regnamespace AND pg_get_userbyid(c.relowner)=$1 AND c.relkind IN ('r','S','v') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.objid=c.oid AND d.deptype IN ('a','i') AND d.classid='pg_class'::regclass)",[me])).rows)
-     await su.query(`ALTER ${r.relkind==='S'?'SEQUENCE':r.relkind==='v'?'VIEW':'TABLE'} public."${r.relname}" OWNER TO ${OWNER}`);
-    for(const r of (await su.query("SELECT p.oid::regprocedure::text f FROM pg_proc p WHERE p.pronamespace='public'::regnamespace AND pg_get_userbyid(p.proowner)=$1",[me])).rows)await su.query(`ALTER FUNCTION ${r.f} OWNER TO ${OWNER}`);
-    await su.query('COMMIT');
-   }catch(e){await su.query('ROLLBACK').catch(()=>{});throw e;}finally{su.release();}
-  }
-  assert.equal((await q("SELECT count(*)::int n FROM pg_proc WHERE oid='public.rental_validate_group_loan()'::regprocedure AND pg_get_userbyid(proowner)=$1",[EXECUTOR]))[0].n,1,'the group loan validator is executor-owned');
+  const execBefore=await exec64(),trigBefore=await loanTriggers(),viewBefore=await view63();
+  assert.equal(execBefore.length,3);assert.ok(execBefore.every((r:{o:string})=>r.o===EXECUTOR),'the custody functions are executor-owned');
+  // The owner (no custody membership) applies the canonical 0064 as a whole: it touches nothing the executor owns.
+  const m=await applyProductionGroupMigration(gm,DB,OWNER);
+  assert.equal(m.status,'PRODUCTION_GROUP_INSTALLED');assert.deepEqual(m.applied.map(a=>a.id),['0064']);assert.equal(m.grantsAdded,0);assert.equal(m.roleChanges,0);
+  assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,64).map(e=>({id:e.id,checksum:e.checksum})),'exactly 0001-0064, canonical checksums');
+  assert.deepEqual(await exec64(),execBefore,'rental_apply_receipt / rental_stage_guard / rental_validate_loan are byte-identical (owner, ACL, settings, source)');
+  assert.deepEqual(await loanTriggers(),trigBefore,'the ordinary loan trigger is untouched');assert.deepEqual(await view63(),viewBefore,'rental_inventory_blocks is untouched');
+  assert.deepEqual(await guard(),before63,'the stage guard is byte-identical');
   await assert.rejects(applyProductionGroupMigration(gm,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'no replay once 0064 is registered');
   await gm.query('BEGIN');try{await gm.query('ALTER TABLE group_orders DISABLE TRIGGER group_order_guard');await assert.rejects(groupCommittedProof(gm,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);}finally{await gm.query('ROLLBACK');}
-  await groupCommittedProof(gm,DB,OWNER);
+  await groupCommittedProof(gm,DB,OWNER);await custodyLinkAbsentProof(gm);
+  // A half-applied custody link is refused by the absent proof (the loan subject column on its own).
+  await gm.query('BEGIN');try{await gm.query('ALTER TABLE rental_loan_items ADD COLUMN group_part_id uuid');await assert.rejects(custodyLinkAbsentProof(gm),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);}finally{await gm.query('ROLLBACK');}
+  await custodyLinkAbsentProof(gm);
  }finally{gm.release();}
- assert.deepEqual(await q('SELECT id,checksum FROM public.foundation_migrations ORDER BY id'),entries.slice(0,64).map(e=>({id:e.id,checksum:e.checksum})));
- const roles64After=await roles();assert.deepEqual({roles:roles64After.roles,members:roles64After.members},{roles:roles64.roles,members:roles64.members});
+ const roles64After=await roles();assert.deepEqual({roles:roles64After.roles,members:roles64After.members},{roles:roles64.roles,members:roles64.members},'migrate changes no role, no membership, no LOGIN, no password');
  const owners64=roles64After.owners.filter((o:{k:string})=>!roles64.owners.some((p:{k:string})=>p.k===o.k));
- assert.ok(owners64.length>0&&owners64.every((o:{k:string;o:string})=>o.o===OWNER||o.k==='fn:rental_validate_group_loan()'&&o.o===EXECUTOR),'every new 0064 object is owner-owned (the group loan validator is executor-owned like the ordinary one)');
+ assert.ok(owners64.length>0&&owners64.every((o:{k:string;o:string})=>o.o===OWNER),'every new 0064 object is owner-owned (nothing is executor-owned)');
+ assert.ok(!owners64.some((o:{k:string})=>/rental_validate_group_loan|group_part_preparations/.test(o.k)),'no custody-link object exists');
  for(const t of GROUP_TABLES)assert.equal((await q(`SELECT count(*)::int n FROM ${t}`))[0].n,0,t+' starts empty');
  assert.equal((await q("SELECT count(*)::int n FROM pg_roles WHERE rolname=$1",[gr.group]))[0].n,0,'no group role before the grants step');
  const g64=await owner.connect();try{
@@ -268,7 +259,7 @@ try{
   const g=await applyProductionGroupGrants(g64,DB,OWNER);assert.equal(g.status,'PRODUCTION_GROUP_GRANTS_INSTALLED');assert.equal(g.roleChanges,1);await groupGrantProof(g64,DB,OWNER);
   await assert.rejects(applyProductionGroupGrants(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'no second grants run');
   const v=await verifyProductionGroup(g64,DB,OWNER);
-  assert.deepEqual(v,{status:'PRODUCTION_GROUP_VERIFIED',registry:64,tables:14,groups:0,activeGroups:0,entranceRows:0,events:0,pendingNotices:0,groupHolds:0,writes:0});
+  assert.deepEqual(v,{status:'PRODUCTION_GROUP_VERIFIED',registry:64,custodyLink:'NOT_APPLIED',groupRoleLogin:false,tables:13,groups:0,activeGroups:0,entranceRows:0,events:0,pendingNotices:0,groupHolds:0,writes:0});
   await g64.query('ALTER TABLE group_orders DISABLE TRIGGER group_order_guard');
   await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'a disabled guard trigger fails verify');
   await g64.query('ALTER TABLE group_orders ENABLE REPLICA TRIGGER group_order_guard');
@@ -278,6 +269,7 @@ try{
   await g64.query(`GRANT DELETE ON group_orders TO ${gr.group}`);await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'an extra group DELETE fails verify');await g64.query(`REVOKE DELETE ON group_orders FROM ${gr.group}`);
   await g64.query('GRANT SELECT ON group_payments TO PUBLIC');await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'PUBLIC access fails verify');await g64.query('REVOKE SELECT ON group_payments FROM PUBLIC');
   await g64.query(`GRANT SELECT ON group_events TO ${DB}_pricing`);await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'another role on a group table fails verify');await g64.query(`REVOKE SELECT ON group_events FROM ${DB}_pricing`);
+  await g64.query(`GRANT SELECT ON group_orders TO ${DB}_operations`);await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'a custody-link privilege (operations on a group table) is NOT part of 0064 and fails verify');await g64.query(`REVOKE SELECT ON group_orders FROM ${DB}_operations`);
   await g64.query(`REVOKE UPDATE(status) ON group_notification_outbox FROM ${gr.group}`);await assert.rejects(verifyProductionGroup(g64,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'a missing delivery column fails verify');await g64.query(`GRANT UPDATE(status) ON group_notification_outbox TO ${gr.group}`);
   await verifyProductionGroup(g64,DB,OWNER);
  }finally{g64.release();}
@@ -286,13 +278,54 @@ try{
  assert.equal((await q("SELECT rolcanlogin FROM pg_roles WHERE rolname=$1",[gr.group]))[0].rolcanlogin,false,'NOLOGIN until the Owner connection step');
  assert.equal((await q("SELECT has_function_privilege($1,'group_register_actor(uuid)','EXECUTE') ok",[gr.group]))[0].ok,true);
  assert.equal((await q("SELECT has_function_privilege($1,'group_register_actor(uuid)','EXECUTE') ok",[ops]))[0].ok,false);
- for(const [t,p] of [['group_orders','SELECT'],['group_order_parts','SELECT'],['group_members','SELECT'],['group_payments','SELECT'],['group_part_preparations','SELECT'],['group_part_preparations','INSERT']] as const)assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,p]))[0].ok,true,'operations '+t+' '+p);
- for(const [t,p] of [['group_orders','INSERT'],['group_orders','UPDATE'],['group_events','SELECT'],['group_payments','INSERT'],['group_notification_outbox','SELECT'],['group_part_preparations','DELETE']] as const)assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,p]))[0].ok,false,'operations has no '+t+' '+p);
- assert.equal((await q("SELECT has_column_privilege($1,'group_part_preparations','prepared_at','UPDATE') ok,has_column_privilege($1,'group_part_preparations','checked_in_by','UPDATE') bad",[ops]))[0].ok,true);
- assert.equal((await q("SELECT has_column_privilege($1,'group_part_preparations','checked_in_by','UPDATE') bad",[ops]))[0].bad,false);
- assert.equal((await q("SELECT has_column_privilege($1,'group_notification_outbox','sent_at','UPDATE') ok,has_column_privilege($1,'group_notification_outbox','admin_message','UPDATE') bad",[gr.group]))[0].ok,true);
+ // Least privilege: 0064 alone gives the custody (operations) role NOTHING on any group table, and nobody else anything either.
+ for(const t of GROUP_TABLES)for(const p of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await q('SELECT has_table_privilege($1,$2,$3) ok',[ops,t,p]))[0].ok,false,'operations has no '+t+' '+p+' before the custody link');
+ assert.equal((await q("SELECT has_column_privilege($1,'group_notification_outbox','sent_at','UPDATE') ok",[gr.group]))[0].ok,true);
  assert.equal((await q("SELECT has_column_privilege($1,'group_notification_outbox','admin_message','UPDATE') bad",[gr.group]))[0].bad,false);
  for(const r of [pricingRole,DB+'_hold',DB+'_guest',DB+'_recommendation',DB+'_transfer'])if((await q('SELECT 1 FROM pg_roles WHERE rolname=$1',[r])).length)for(const t of GROUP_TABLES)assert.equal((await q("SELECT has_table_privilege($1,$2,'SELECT') ok",[r,t]))[0].ok,false,r+' cannot read '+t);
- // The group role really acts like the hold role plus the group delta: a synthetic group DML as that role is possible only through the guards (no direct write).
- console.log('PASS canonical 0064 applies as neondb_owner after 0063: registry 63 -> 64, roles/memberships unchanged by migrate, custody functions keep executor ownership, tables owner-owned and empty; grants create only the NOLOGIN group role (via the role manager), exact privileges, PUBLIC nothing');
+ console.log('PASS canonical 0064 applies as neondb_owner after 0063: registry 63 -> 64, executor-owned custody objects byte-identical, no role/membership change, 13 owner-owned empty tables; grants create only the NOLOGIN group role (via the role manager), exact privileges, PUBLIC and operations nothing');
+
+ stage='0065 custody link: refused on the owner path, UNAPPLIED, Production runs on 0064; then read by verify when a privileged path applies it';
+ {
+  const rolesBefore65=await roles(),execBefore65=await exec64();
+  const c65=await owner.connect();
+  try{
+   await c65.query('BEGIN');await c65.query('SET LOCAL search_path=public,pg_catalog');
+   // The link re-creates the ordinary loan trigger (EXECUTE on the executor-owned validator), replaces executor-owned functions and hands a function to the executor:
+   // PostgreSQL refuses the owner (42501). This is why 0065 waits for a privileged path.
+   await assert.rejects(c65.query(entries[64]!.sql),(e:{code?:string})=>e.code==='42501','the owner cannot apply 0065 (executor-owned custody objects)');
+   await c65.query('ROLLBACK');
+  }finally{c65.release();}
+  assert.deepEqual(await q('SELECT id FROM public.foundation_migrations ORDER BY id'),entries.slice(0,64).map(e=>({id:e.id})),'0065 stays unregistered');
+  assert.deepEqual(await roles(),rolesBefore65,'the refused 0065 changed no role, membership or owner');assert.deepEqual(await exec64(),execBefore65);
+  const v0=await owner.connect();try{const v=await verifyProductionGroup(v0,DB,OWNER);assert.equal(v.custodyLink,'NOT_APPLIED');assert.equal(v.registry,64);}finally{v0.release();}
+  // PRIVILEGED-PATH SIMULATION (not a Production procedure): the isolated cluster superuser applies the canonical 0065 SQL and registry row. verify must then read the link
+  // separately: it refuses until the custody-side privileges the link needs exist, and accepts the exact set.
+  {
+   const su=await observer.connect();
+   try{
+    await su.query('BEGIN');await su.query('SET LOCAL search_path=public,pg_catalog');
+    await su.query(entries[64]!.sql);await su.query('INSERT INTO public.foundation_migrations(id,checksum) VALUES($1,$2)',[entries[64]!.id,entries[64]!.checksum]);
+    const me=(await su.query('SELECT current_user u')).rows[0].u;
+    for(const r of (await su.query("SELECT c.relname,c.relkind FROM pg_class c WHERE c.relnamespace='public'::regnamespace AND pg_get_userbyid(c.relowner)=$1 AND c.relkind IN ('r','S','v') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.objid=c.oid AND d.deptype IN ('a','i') AND d.classid='pg_class'::regclass)",[me])).rows)
+     await su.query(`ALTER ${r.relkind==='S'?'SEQUENCE':r.relkind==='v'?'VIEW':'TABLE'} public."${r.relname}" OWNER TO ${OWNER}`);
+    for(const r of (await su.query("SELECT p.oid::regprocedure::text f FROM pg_proc p WHERE p.pronamespace='public'::regnamespace AND pg_get_userbyid(p.proowner)=$1",[me])).rows)await su.query(`ALTER FUNCTION ${r.f} OWNER TO ${OWNER}`);
+    await su.query('COMMIT');
+   }catch(e){await su.query('ROLLBACK').catch(()=>{});throw e;}finally{su.release();}
+  }
+  assert.equal((await q("SELECT count(*)::int n FROM pg_proc WHERE oid='public.rental_validate_group_loan()'::regprocedure AND pg_get_userbyid(proowner)=$1",[EXECUTOR]))[0].n,1,'the group loan validator is executor-owned');
+  const v1=await owner.connect();
+  try{
+   await assert.rejects(verifyProductionGroup(v1,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'0065 present without the custody-side privileges it needs is not accepted');
+   for(const s of CUSTODY_LINK_OPERATIONS_GRANTS)await observer.query(s.replace('{OPS}',ops));
+   const v=await verifyProductionGroup(v1,DB,OWNER);
+   assert.equal(v.registry,65);assert.equal(v.custodyLink,'APPLIED');
+   await v1.query('ALTER TABLE rental_loan_items DISABLE TRIGGER rental_validate_group_loan');
+   await assert.rejects(verifyProductionGroup(v1,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/,'a disabled group loan validator fails the read of 0065');
+   await v1.query('ALTER TABLE rental_loan_items ENABLE TRIGGER rental_validate_group_loan');await verifyProductionGroup(v1,DB,OWNER);
+   // The 0064 installer never writes on a 0065 database.
+   await assert.rejects(applyProductionGroupGrants(v1,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);await assert.rejects(applyProductionGroupMigration(v1,DB,OWNER),/PRODUCTION_GROUP_RECONCILIATION_REQUIRED/);
+  }finally{v1.release();}
+  console.log('PASS 0065 custody link: refused as 42501 on the owner path and left unregistered (Production stays on 0064; verify reads NOT_APPLIED); when applied by a privileged path verify reads it separately (exact shape, exact custody privileges)');
+ }
 }catch(e){console.error('PRODUCTION_0057_OWNER_APPLY_FAILED '+stage);throw e;}finally{for(const close of closers)await close().catch(()=>{});await db.stop();}

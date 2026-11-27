@@ -136,3 +136,17 @@ test('avatar activation rejects missing, expired or malformed bindings without l
  for(const patch of cases){let error:unknown;try{commercialProductionPlan(env({...avatarEnv,...patch}));}catch(e){error=e;}
   assert.ok(error instanceof Error);assert.match(error.message,/^[A-Z_]+$/);assert.ok(!error.message.includes('private-value')&&!error.message.includes('synthetic-avatar-read'));}
 });
+
+test('group application role (migration 0064): the role defaults to <db>_group, its credential is optional and, when present, is validated and bound to that role; its absence changes nothing else',()=>{
+ const p0=commercialProductionPlan(env({PRODUCTION_DB_ROLE_GROUP:undefined}))!;
+ assert.equal(p0.configuration.database.roles.group,'neondb_group','no new environment name is needed for the role');
+ assert.equal(p0.secrets.database.group,undefined,'no credential => the group role is never connected');
+ assert.deepEqual(Object.keys(p0.secrets.database).sort(),[...COMMERCIAL_DB_SERVICES].sort(),'every other binding is unchanged');
+ const p1=commercialProductionPlan(env({PRODUCTION_DB_ROLE_GROUP:undefined,PRODUCTION_DB_PASSWORD_GROUP:pw('group')}))!;
+ assert.deepEqual(p1.secrets.database.group,{provider:'NEON',environment:'PRODUCTION',host:'ep-synthetic-fixture.ap-southeast-1.aws.neon.tech',port:5432,database:'neondb',user:'neondb_group',password:pw('group'),revoked:false});
+ assert.equal(commercialProductionPlan(env({PRODUCTION_DB_ROLE_GROUP:'neondb_grp',PRODUCTION_DB_PASSWORD_GROUP:pw('group')}))!.secrets.database.group!.user,'neondb_grp','an explicit role name wins');
+ for(const bad of ['','short','x'.repeat(15)])assert.throws(()=>commercialProductionPlan(env({PRODUCTION_DB_PASSWORD_GROUP:bad})),/PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING/,'a present but malformed credential is refused, never ignored: '+bad);
+ for(const bad of ['neondb_owner','neondb_admin','neondb_hold'])assert.throws(()=>commercialProductionPlan(env({PRODUCTION_DB_ROLE_GROUP:bad})),'an owner-like or duplicated role name is refused: '+bad);
+ assert.ok(COMMERCIAL_ALLOWLISTED_KEYS.includes('PRODUCTION_DB_PASSWORD_GROUP'));assert.ok(COMMERCIAL_ALLOWLISTED_KEYS.includes('PRODUCTION_DB_ROLE_GROUP'));
+ assert.ok(!JSON.stringify(commercialProductionPlan(env())!.configuration).includes(pw('group')),'the approved configuration (and its digest) carries the role name only, never a credential');
+});

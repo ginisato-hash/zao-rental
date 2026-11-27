@@ -1,6 +1,7 @@
 import {FlowError} from '../../../contracts/src/rental-flow';
 import {utcDate} from '../../../contracts/src/hold';
 import type {OperationsContext} from './context';
+import {groupCustodyLinkActive} from '../group/custody-link';
 
 // Booqable Calendar (Issue #47 consolidated order, Calendar row): items as rows, the period as columns, bars for what
 // holds each item. Read-only, one REPEATABLE READ READ ONLY snapshot, and only existing facts:
@@ -56,11 +57,13 @@ export class CalendarService{
    const ids=items.map(i=>i.id),bars=new Map<string,CalendarBar[]>(ids.map(id=>[id,[]]));
    const push=(id:string,b:CalendarBar)=>bars.get(id)?.push(b);
    if(ids.length){
-    const loans=(await c.query<{asset_id:string;booking_id:string|null;group_part_id:string|null;hold_id:string;state:string;start:string;due:string;received:string|null;overdue:boolean;pickup_store:string;return_store:string|null;customer:string|null}>(`SELECT l.asset_id,l.booking_id,l.group_part_id,coalesce(b.hold_id,l.hold_id) AS hold_id,l.state,
+    // Group loan columns exist only with the custody link (0065); without it every loan belongs to a booking.
+    const link=await groupCustodyLinkActive(c),holdOf=link?'coalesce(b.hold_id,l.hold_id)':'b.hold_id';
+    const loans=(await c.query<{asset_id:string;booking_id:string|null;group_part_id:string|null;hold_id:string;state:string;start:string;due:string;received:string|null;overdue:boolean;pickup_store:string;return_store:string|null;customer:string|null}>(`SELECT l.asset_id,l.booking_id,${link?'l.group_part_id':'NULL::uuid AS group_part_id'},${holdOf} AS hold_id,l.state,
       (l.checked_out_at AT TIME ZONE 'Asia/Tokyo')::date::text start,(l.due_at AT TIME ZONE 'Asia/Tokyo')::date::text due,(r.actual_received_at AT TIME ZONE 'Asia/Tokyo')::date::text received,
       (l.state='OUT' AND l.due_at<=$4) overdue,l.pickup_store,coalesce(b.conditions->>'returnStore',lh.return_store) return_store,
       CASE WHEN b.id IS NOT NULL AND (l.pickup_store=ANY($5::text[]) OR b.conditions->>'returnStore'=ANY($5::text[])) THEN b.contact->>'displayName' END customer
-     FROM rental_loan_items l LEFT JOIN rental_bookings b ON b.id=l.booking_id LEFT JOIN inventory_holds lh ON lh.id=coalesce(b.hold_id,l.hold_id) LEFT JOIN rental_receipts r ON r.loan_item_id=l.id
+     FROM rental_loan_items l LEFT JOIN rental_bookings b ON b.id=l.booking_id LEFT JOIN inventory_holds lh ON lh.id=${holdOf} LEFT JOIN rental_receipts r ON r.loan_item_id=l.id
      WHERE l.asset_id=ANY($1::uuid[]) AND (l.checked_out_at AT TIME ZONE 'Asia/Tokyo')::date<=$3::date
       AND coalesce((r.actual_received_at AT TIME ZONE 'Asia/Tokyo')::date,CASE WHEN l.state='OUT' THEN '9999-12-31'::date ELSE (l.due_at AT TIME ZONE 'Asia/Tokyo')::date END)>=$2::date`,[ids,from,to,now,visible])).rows;
     const handed=new Set(loans.map(l=>l.asset_id+'/'+l.hold_id));

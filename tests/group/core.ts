@@ -137,6 +137,19 @@ try{
   await rejects(x.svc.release(x.admin,g.groupId,{...input,reason:'different payload same key'}),'IDEMPOTENCY_MISMATCH');
  });
 
+ await check('removing every discount: the empty set is a real new revision + audit event, and quote/preview/confirmation all use it',async()=>{
+  const g=await x.held(token,3,'SYNTHETIC empty discount set');
+  const base=(await x.svc.previewConfirmation(x.admin,g.groupId)).totalJpy;
+  const s1=await x.svc.setAdjustments(x.admin,g.groupId,g.revision,[{target:'GROUP',method:'PERCENT_BPS',value:1000,reason:'SYNTHETIC group discount'}]);
+  assert.ok(s1.totalJpy<base);assert.equal((await x.svc.previewConfirmation(x.admin,g.groupId)).totalJpy,s1.totalJpy);
+  const s2=await x.svc.setAdjustments(x.admin,g.groupId,s1.revision,[]);
+  assert.equal(s2.revision,s1.revision+1,'a new revision is written');assert.equal(s2.totalJpy,base);assert.ok(s2.set>s1.set);
+  assert.equal((await x.svc.previewConfirmation(x.admin,g.groupId)).totalJpy,base,'preview no longer applies the removed discount');
+  const ev=(await q("SELECT payload FROM group_events WHERE group_id=$1 AND event_type='GROUP_DISCOUNTED' ORDER BY id",[g.groupId])).rows;assert.equal(ev.length,2);assert.equal(Number(ev[1].payload.set),s2.set);
+  const view=await x.svc.staffDetail(x.admin,g.groupId).catch(()=>null);if(view&&(view as {adjustments?:unknown[]}).adjustments)assert.equal((view as {adjustments:unknown[]}).adjustments.length,0,'staff view shows no current discount');
+  const done=await x.svc.confirm(x.admin,g.groupId,{requestKey:randomUUID(),expectedRevision:s2.revision});assert.equal(done.totalJpy,base,'confirmation states the undiscounted total');
+ });
+
  await check('confirm: GROUP_ADMIN_APPROVED, on-site and unpaid, no provider artefacts at all; message in the single confirmation notice',async()=>{
   const g=await x.held(token,4,'SYNTHETIC confirm');
   const unconsented=await x.quoted(token,2,'SYNTHETIC nc');await rejects(x.svc.confirm(x.admin,unconsented.groupId,{requestKey:randomUUID(),expectedRevision:unconsented.revision}),'INVALID_STATE');

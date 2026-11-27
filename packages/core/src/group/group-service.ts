@@ -28,6 +28,9 @@ const STORES=['MOUNTAIN_BASE','ONSEN_BASE'];
 const uuid=(v:unknown):string=>{if(typeof v!=='string'||!UUID.test(v))throw new GroupError('INVALID_ID');return v;};
 const n=(v:unknown)=>Number(v);
 
+/** The CURRENT discount set of group $1. An administrator may replace the set with an EMPTY one (all discounts removed): that writes no
+ * group_adjustments row, so the current set number comes from the latest GROUP_DISCOUNTED event (its payload carries `set`), never from max(set_no). */
+const CURRENT_SET_SQL=`coalesce((SELECT (e.payload->>'set')::integer FROM group_events e WHERE e.group_id=$1 AND e.event_type='GROUP_DISCOUNTED' ORDER BY e.id DESC LIMIT 1),0)`;
 export class GroupOrderService {
  constructor(private pool:Pool,private clock?:()=>Date){}
 
@@ -313,7 +316,7 @@ export class GroupOrderService {
 
  // ------------------------------------------------------------------ administrator discounts, requests, amend
  private async currentAdjustments(c:Conn,id:string):Promise<Adjustment[]>{
-  return (await c.query<{target:'MEMBER'|'GROUP';member_id:string|null;method:'FIXED_JPY'|'PERCENT_BPS';value:number;reason:string}>('SELECT target,member_id,method,value,reason FROM group_adjustments WHERE group_id=$1 AND set_no=(SELECT max(set_no) FROM group_adjustments WHERE group_id=$1) ORDER BY occurred_at,id',[id])).rows.map(r=>({target:r.target,...(r.member_id?{memberId:r.member_id}:{}),method:r.method,value:r.value,reason:r.reason}));
+  return (await c.query<{target:'MEMBER'|'GROUP';member_id:string|null;method:'FIXED_JPY'|'PERCENT_BPS';value:number;reason:string}>(`SELECT target,member_id,method,value,reason FROM group_adjustments WHERE group_id=$1 AND set_no=(${CURRENT_SET_SQL}) ORDER BY occurred_at,id`,[id])).rows.map(r=>({target:r.target,...(r.member_id?{memberId:r.member_id}:{}),method:r.method,value:r.value,reason:r.reason}));
  }
  private async groupBases(c:Conn,g:GroupRow,now:Date){
   const members=await this.members(c,g.id);const est=(await c.query<QuoteRow>("SELECT * FROM group_quotes WHERE group_id=$1 AND kind='ESTIMATE' ORDER BY version DESC LIMIT 1",[g.id])).rows[0];
@@ -326,7 +329,7 @@ export class GroupOrderService {
    const g=await this.lock(c,groupId);await this.authStaff(c,staff,'GROUP_DISCOUNT',[g.pickup_store,g.return_store]);
    this.expectRevision(g,expectedRevision);this.expectStatus(g,'REVIEW_HELD','CHANGES_REQUESTED');
    const {calc}=await this.groupBases(c,g,now);const q=await calc(adjustments);
-   const set=n((await c.query('SELECT coalesce(max(set_no),0) m FROM group_adjustments WHERE group_id=$1',[g.id])).rows[0].m)+1;
+   const set=n((await c.query(`SELECT greatest(coalesce((SELECT max(set_no) FROM group_adjustments WHERE group_id=$1),0),${CURRENT_SET_SQL}) m`,[g.id])).rows[0].m)+1;
    for(const a of adjustments){const au=q.totals.audit.find(x=>x.target===a.target&&(x.memberId??null)===(a.memberId??null))!;
     await c.query('INSERT INTO group_adjustments(id,group_id,set_no,target,member_id,method,value,reason,actor,before_jpy,after_jpy) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',[randomUUID(),g.id,set,a.target,a.memberId??null,a.method,a.value,a.reason.trim(),staff.subject,au.beforeJpy,au.afterJpy]);}
    const next=await this.bump(c,g,{},{event:'GROUP_DISCOUNTED',set,totalJpy:q.total});
@@ -509,7 +512,7 @@ export class GroupOrderService {
    const base=await this.detail(c,g,now,true);
    const payments=(await c.query('SELECT id,kind,amount_jpy::bigint AS "amountJpy",method,received_at AS "receivedAt",reverses_id AS "reversesId",reason,note,recorded_by AS "recordedBy",recorded_at AS "recordedAt" FROM group_payments WHERE group_id=$1 ORDER BY recorded_at,id',[g.id])).rows.map(r=>({...r,amountJpy:n(r.amountJpy)}));
    const changeRequests=(await c.query('SELECT id,kind,body,status,created_revision AS "createdRevision",created_at AS "createdAt" FROM group_change_requests WHERE group_id=$1 ORDER BY created_at,id',[g.id])).rows;
-   const adjustmentRows=(await c.query('SELECT set_no AS "setNo",target,member_id AS "memberId",method,value,reason,actor,before_jpy::bigint AS "beforeJpy",after_jpy::bigint AS "afterJpy",occurred_at AS "occurredAt" FROM group_adjustments WHERE group_id=$1 AND set_no=(SELECT max(set_no) FROM group_adjustments WHERE group_id=$1) ORDER BY occurred_at,id',[g.id])).rows.map(r=>({...r,beforeJpy:n(r.beforeJpy),afterJpy:n(r.afterJpy)}));
+   const adjustmentRows=(await c.query(`SELECT set_no AS "setNo",target,member_id AS "memberId",method,value,reason,actor,before_jpy::bigint AS "beforeJpy",after_jpy::bigint AS "afterJpy",occurred_at AS "occurredAt" FROM group_adjustments WHERE group_id=$1 AND set_no=(${CURRENT_SET_SQL}) ORDER BY occurred_at,id`,[g.id])).rows.map(r=>({...r,beforeJpy:n(r.beforeJpy),afterJpy:n(r.afterJpy)}));
    const notifications=(await c.query('SELECT event_type AS "eventType",status,attempt_count AS "attemptCount",last_safe_failure_code AS "failureCode",created_at AS "createdAt",sent_at AS "sentAt" FROM group_notification_outbox WHERE group_id=$1 ORDER BY created_at,id',[g.id])).rows;
    const est=(await c.query<QuoteRow>("SELECT * FROM group_quotes WHERE group_id=$1 AND kind='ESTIMATE' ORDER BY version DESC LIMIT 1",[g.id])).rows[0];
    const consent=est?(await c.query<{max_total_jpy:string}>('SELECT max_total_jpy FROM group_consents WHERE quote_id=$1',[est.id])).rows[0]:undefined;

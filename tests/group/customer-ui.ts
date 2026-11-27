@@ -127,6 +127,17 @@ try{
   // the resume link restores access and the secret leaves the URL
   await p3.goto(linkA.replace(origin,''));await expect(p3.getByRole('heading',{name:t.rows.heading})).toBeVisible();assert.equal(new URL(p3.url()).hash,'');
   await p3.reload();await expect(p3.getByRole('heading',{name:t.rows.heading})).toBeVisible();
+  // the e-mail target page (/ja/group/g/{id}): no entrance token in the URL; without the cookie it offers only the resume-key door
+  const c4=await ctx(390),p4=await c4.newPage();await p4.goto(`/ja/group/g/${idA}`);await expect(p4.getByText(t.noAccess)).toBeVisible();assert.equal(await p4.getByRole('link',{name:t.newApplication}).count(),0,'no new-application door without an entrance token');
+  assert.equal(await p4.getByText('SYNTHETIC Iso A').count(),0);await noOverflow(p4);
+  await p4.getByLabel(t.resume.enter).fill('not-a-key');await p4.getByRole('button',{name:t.resume.enterButton,exact:true}).click();await expect(p4.getByRole('alert').last()).toBeVisible();
+  await p4.getByLabel(t.resume.enter).fill(linkA);await p4.getByRole('button',{name:t.resume.enterButton,exact:true}).click();await expect(p4.getByRole('heading',{name:t.rows.heading})).toBeVisible();
+  // the owner (cookie) keeps the page after the entrance is stopped: the entrance never owned an existing group
+  await app.svc.setEntranceEnabled(app.admin,false,'SYNTHETIC mail-link check');
+  try{await p1.goto(`/ja/group/g/${idA}`);await expect(p1.getByRole('heading',{name:t.rows.heading})).toBeVisible();
+   const gone=await c3.newPage();await gone.goto(`/ja/group/${app.entranceToken}`);await expect(gone.getByText(t.closed)).toBeVisible();}
+  finally{await app.svc.setEntranceEnabled(app.admin,true,'SYNTHETIC mail-link check done');}
+  await c4.close();
   // closing the door: unknown entrance token
   const bad=await c3.newPage();await bad.goto(`/ja/group/${'a'.repeat(43)}`);await expect(bad.getByText(t.closed)).toBeVisible();
   await c1.close();await c2.close();await c3.close();

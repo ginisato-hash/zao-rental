@@ -121,8 +121,8 @@ export function commercialProductionPlan(env:Env,now=new Date()):CommercialPlan|
  const database:Partial<Record<ProductionService,ProductionDatabaseCredential>>={};
  for(const s of COMMERCIAL_DB_SERVICES){const password=e[passwordKey(s)];if(!password||password.length<16)fail('PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING');database[s]={provider:'NEON',environment:'PRODUCTION',host:e.PRODUCTION_DB_HOST!,port:5432,database:e.PRODUCTION_DB_NAME!,user:roles[s],password:password!,revoked:false};}
 
- // Group application role: connected only when its credential is supplied (the Owner's separate step). A malformed credential is refused, never ignored.
- if(e[GROUP_PASSWORD_KEY]!==undefined){const password=e[GROUP_PASSWORD_KEY];if(!password||password.length<16)fail('PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING');database.group={provider:'NEON',environment:'PRODUCTION',host:e.PRODUCTION_DB_HOST!,port:5432,database:e.PRODUCTION_DB_NAME!,user:roles.group,password:password!,revoked:false};}
+ // Group application role: connected only when its credential is supplied (the Owner's separate step). A missing, empty or too-short credential leaves ONLY the group service unconnected (GROUP_UNCONNECTED); it never fails booking/staff composition.
+ {const password=e[GROUP_PASSWORD_KEY];if(password!==undefined&&password.length>=16)database.group={provider:'NEON',environment:'PRODUCTION',host:e.PRODUCTION_DB_HOST!,port:5432,database:e.PRODUCTION_DB_NAME!,user:roles.group,password:password!,revoked:false};}
  const avatarActivation=env.ZAO_PRODUCTION_AVATAR_ACTIVATION;
  let avatarMedia:R2Credential|null=null;
  if(avatarActivation!==undefined&&avatarActivation!==''){

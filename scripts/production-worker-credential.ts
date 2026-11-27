@@ -22,11 +22,12 @@ import type {ProductionConfiguration} from '../packages/auth/src/production-conf
 
 export const WORKER_CREDENTIAL_VERSION='production-worker-credential/1';
 export const WORKER_LEASE_MINUTES=20;
-const names=productionPaymentRoleNames(T.database);
+/** Role names follow the SELECTED Production database (selectProductionCredentialDatabase): evaluated per access, never at module load. */
+const names={get dispatcher(){return productionPaymentRoleNames(T.database).dispatcher;},get worker(){return productionPaymentRoleNames(T.database).worker;},get projector(){return productionPaymentRoleNames(T.database).projector;}};
 export const WORKER_ROLES=Object.freeze([
- {key:'dispatcher' as const,role:names.dispatcher,sink:'PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER',signature:'payment_reconciliation.dispatch_normal(text,integer,timestamptz)'},
- {key:'worker' as const,role:names.worker,sink:'PRODUCTION_WORKER_DB_PASSWORD_WORKER',signature:'payment_reconciliation.claim_normal(text,integer,text,timestamptz)'},
- {key:'projector' as const,role:names.projector,sink:'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR',signature:'payment_projection.normal_candidates(text,timestamptz,integer)'},
+ {key:'dispatcher' as const,get role(){return names.dispatcher;},sink:'PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER',signature:'payment_reconciliation.dispatch_normal(text,integer,timestamptz)'},
+ {key:'worker' as const,get role(){return names.worker;},sink:'PRODUCTION_WORKER_DB_PASSWORD_WORKER',signature:'payment_reconciliation.claim_normal(text,integer,text,timestamptz)'},
+ {key:'projector' as const,get role(){return names.projector;},sink:'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR',signature:'payment_projection.normal_candidates(text,timestamptz,integer)'},
 ]);
 type WorkerRole=typeof WORKER_ROLES[number];
 export const CRON_SECRET_NAME='CRON_SECRET';

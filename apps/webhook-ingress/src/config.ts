@@ -1,6 +1,6 @@
 import type {PoolConfig} from 'pg';
 import type {SquareWebhookConfiguration} from '../../../packages/core/src/payment/square-webhook-receiver';
-import {EXPECTED_PRODUCTION_DATABASE_NAME,EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,productionHostFingerprint} from '../../../packages/auth/src/production-identity';
+import {isExpectedProductionDatabaseName,EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256,productionHostFingerprint} from '../../../packages/auth/src/production-identity';
 export const INGRESS_CLASSIFICATION='SANDBOX_WEBHOOK_INGRESS_ONLY';
 export const INGRESS_DOMAIN='zao-rental-webhook-sandbox.vercel.app';
 export const NOTIFICATION_URL=`https://${INGRESS_DOMAIN}/api/webhooks/square`;
@@ -44,7 +44,7 @@ export function parseProductionIngress(env:Environment):ParsedProductionIngress|
  try{
   const url=new URL(env.PRODUCTION_RECEIVER_DATABASE_URL??'');
   const database=url.pathname.slice(1),user=decodeURIComponent(url.username),password=decodeURIComponent(url.password);
-  if(url.protocol!=='postgresql:'||!/^ep-[a-z0-9.-]+\.neon\.tech$/.test(url.hostname)||/-pooler\./.test(url.hostname)||url.port&&url.port!=='5432'||url.hash||database!==EXPECTED_PRODUCTION_DATABASE_NAME||user!==database+'_pay_receipt'||password.length<16)return null;
+  if(url.protocol!=='postgresql:'||!/^ep-[a-z0-9.-]+\.neon\.tech$/.test(url.hostname)||/-pooler\./.test(url.hostname)||url.port&&url.port!=='5432'||url.hash||!isExpectedProductionDatabaseName(database)||user!==database+'_pay_receipt'||password.length<16)return null;
   if(url.searchParams.get('sslmode')!=='verify-full'||Array.from(url.searchParams).some(([key])=>key!=='sslmode')||url.searchParams.getAll('sslmode').length!==1)return null;
   return {hostFingerprintSha256:productionHostFingerprint(url.hostname),configuration:{webhook:{environment:'PRODUCTION',signatureKey,notificationUrl,merchantId},database:{host:url.hostname,port:5432,database,user,password,ssl:{rejectUnauthorized:true},enableChannelBinding:true,max:2,connectionTimeoutMillis:5000,idleTimeoutMillis:5000,application_name:'zao_rental_production_receiver'}}};
  }catch{return null;}

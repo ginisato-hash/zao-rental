@@ -24,6 +24,11 @@ import {isValidatedProductionConfiguration, type ProductionConfiguration} from '
 export const EXPECTED_PRODUCTION_HOST_FINGERPRINT_SHA256 = '7ad9939654fde65fa8bf8c4c043e33ca9053036d2137cf7616d365a11876c3fc';
 /** The live Neon readback the TD confirmed for this database. */
 export const EXPECTED_PRODUCTION_DATABASE_NAME = 'neondb';
+/** Cutover (Issue 47 DB switch): the same Neon project/branch/host also hosts exactly these two reserved databases built by the
+ * canonical bootstrap (0001-0065). Only these names, never a pattern, are accepted as the Production database. The binding still
+ * requires the pinned host fingerprint and Vercel project fingerprint. */
+export const PRODUCTION_DATABASE_NAMES = Object.freeze(['neondb', 'neondb_v65', 'neondb_v65b'] as const);
+export function isExpectedProductionDatabaseName(name: string): boolean { return (PRODUCTION_DATABASE_NAMES as readonly string[]).includes(name); }
 /** SHA-256 of the real Vercel project ID — committed as a fingerprint, not the raw ID. */
 export const EXPECTED_PRODUCTION_VERCEL_PROJECT_FINGERPRINT_SHA256 = 'da60fdc7da2f3acf7aab3dc1ff287912b439e84fe2ed20782838985be03f8101';
 
@@ -57,7 +62,7 @@ const REAL_EXPECTED: ProductionIdentityFacts = {
 export function assertProductionIdentityFacts(facts: ProductionIdentityFacts): void {
   if (facts.vercelProjectFingerprintSha256 !== REAL_EXPECTED.vercelProjectFingerprintSha256) throw new Error('PRODUCTION_IDENTITY_WRONG_VERCEL_PROJECT');
   if (facts.hostFingerprintSha256 !== REAL_EXPECTED.hostFingerprintSha256) throw new Error('PRODUCTION_IDENTITY_WRONG_HOST');
-  if (facts.databaseName !== REAL_EXPECTED.databaseName) throw new Error('PRODUCTION_IDENTITY_WRONG_DATABASE_NAME');
+  if (!isExpectedProductionDatabaseName(facts.databaseName)) throw new Error('PRODUCTION_IDENTITY_WRONG_DATABASE_NAME');
 }
 
 export type ExactProductionIdentity = Readonly<{ kind: 'EXACT_PRODUCTION_IDENTITY' }>;

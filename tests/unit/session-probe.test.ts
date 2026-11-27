@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {probeSession,SESSION_PROBE_JOIN_MS,bumpSessionEpoch,classifyProbe,reconnectDelay,RECONNECT_DELAYS_MS} from '../../apps/web/src/components/StaffSessionBoundary';
+import {probeSession,SESSION_PROBE_JOIN_MS,bumpSessionEpoch,classifyProbe,reconnectDelay,RECONNECT_DELAYS_MS,endViewIfSessionIs,PROBE_TIMEOUT_MS} from '../../apps/web/src/components/StaffSessionBoundary';
 // Concurrent identical /api/session probes collapse into one request; there is no cache, so later probes ask again.
 function stub(){const calls:number[]=[];const releases:(()=>void)[]=[];let fail=false;
  (globalThis as {fetch:unknown}).fetch=()=>{calls.push(Date.now());const n=calls.length;return new Promise((resolve,reject)=>{releases.push(()=>fail?reject(new Error('net')):resolve({ok:true,json:async()=>({stamp:'s'+n})}));});};
@@ -44,4 +44,35 @@ test('an auth-state change (epoch bump) is never answered with a probe that left
  const before=probeSession(now);bumpSessionEpoch();t+=1;const after=probeSession(now);s.finish();
  const [x,y]=await Promise.all([before,after]);assert.equal(s.calls.length,2,'the later check made its own request');assert.notEqual(x.body.stamp,y.body.stamp);
  const j1=probeSession(now);const j2=probeSession(now);s.finish();await Promise.all([j1,j2]);assert.equal(s.calls.length,3,'probes of the same epoch still collapse');
+});
+
+function fakeWindow(){const events:string[]=[];(globalThis as {window:unknown}).window={dispatchEvent:(e:{type:string})=>{events.push(e.type);return true;}};return events;}
+test('a 401 verdict for an OLD auth state never closes the screen of a newer valid session (A pending -> B signs in -> stale ENDED arrives)',async()=>{
+ const events=fakeWindow();let release:(v:unknown)=>void=()=>{};
+ (globalThis as {fetch:unknown}).fetch=()=>new Promise(res=>{release=res;});
+ const pending=endViewIfSessionIs('A');
+ bumpSessionEpoch(); // another tab signed in as B while the old probe is in flight
+ release({ok:false,status:401,json:async()=>({status:'anonymous'})});await pending;
+ assert.deepEqual(events,['zao-auth-recheck'],'re-verify, never end');
+});
+test('a 401 verdict in the SAME auth state still ends the screen (real expiry/sign-out)',async()=>{
+ const events=fakeWindow();
+ (globalThis as {fetch:unknown}).fetch=()=>Promise.resolve({ok:false,status:401,json:async()=>({status:'anonymous'})});
+ await new Promise(r=>setTimeout(r,SESSION_PROBE_JOIN_MS+5));await endViewIfSessionIs('A');
+ assert.deepEqual(events,['zao-auth-ended']);
+});
+test('transient probe failures and a different valid session never end the screen from endViewIfSessionIs',async()=>{
+ for(const [name,fetcher,expected] of [
+  ['network error',()=>Promise.reject(new Error('net')),['zao-auth-recheck']],
+  ['503',()=>Promise.resolve({ok:false,status:503,json:async()=>({})}),['zao-auth-recheck']],
+  ['another valid session',()=>Promise.resolve({ok:true,status:200,json:async()=>({status:'authorized',stamp:'B'})}),[]],
+ ] as const){const events=fakeWindow();(globalThis as {fetch:unknown}).fetch=fetcher;bumpSessionEpoch();await endViewIfSessionIs('A');assert.deepEqual(events,expected,name);}
+});
+test('a probe that never answers is aborted after PROBE_TIMEOUT_MS and is a transient failure (cannot hang a check forever)',async()=>{
+ assert.ok(PROBE_TIMEOUT_MS>=3000&&PROBE_TIMEOUT_MS<=30000);
+ let signal:AbortSignal|undefined;
+ (globalThis as {fetch:unknown}).fetch=(_u:string,init:{signal?:AbortSignal})=>new Promise((_res,rej)=>{signal=init.signal;init.signal?.addEventListener('abort',()=>rej(new Error('aborted')));});
+ bumpSessionEpoch();await new Promise(r=>setTimeout(r,SESSION_PROBE_JOIN_MS+5));
+ const realSetTimeout=globalThis.setTimeout;(globalThis as {setTimeout:unknown}).setTimeout=((fn:()=>void,ms?:number)=>realSetTimeout(fn,ms===PROBE_TIMEOUT_MS?5:ms)) as typeof setTimeout;
+ try{await assert.rejects(probeSession());assert.equal(signal?.aborted,true);}finally{(globalThis as {setTimeout:unknown}).setTimeout=realSetTimeout;}
 });

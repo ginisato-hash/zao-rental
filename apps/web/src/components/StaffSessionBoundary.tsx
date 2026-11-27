@@ -6,6 +6,8 @@ export function invalidateStaffView(){window.dispatchEvent(new Event('zao-auth-e
  *  This only collapses concurrent duplicates: there is no cache and no TTL, a later check always asks the server again, and the answer is never reused
  *  after it has arrived. The server still authorises every request; this changes how many identical probes a single screen sends. */
 export const SESSION_PROBE_JOIN_MS=100;
+/** A probe that gets no answer within this time is a TRANSIENT failure (the screen stays hidden and retries); it can never hang a check forever. */
+export const PROBE_TIMEOUT_MS=10000;
 type SessionAnswer={ok:boolean;status:number;body:{status?:string;stamp?:string}};
 /** Epoch of the browser's auth state. Anything that can change which session the cookie belongs to (a sign-in/sign-out/password change in another tab,
  *  a page restore, a visibility change, an auth-ended event) bumps it, and a probe is only ever shared with probes of the SAME epoch: an answer to a request
@@ -16,7 +18,8 @@ export function bumpSessionEpoch(){epoch++;inflight=null;}
 export function probeSession(now:()=>number=Date.now):Promise<SessionAnswer>{
  const t=now();
  if(inflight&&inflight.epoch===epoch&&t-inflight.startedAt<SESSION_PROBE_JOIN_MS)return inflight.promise;
- const promise=fetch('/api/session',{cache:'no-store'}).then(async r=>({ok:r.ok,status:r.status,body:await r.json() as {status?:string;stamp?:string}}));
+ const ctl=typeof AbortController==='undefined'?null:new AbortController();const timer=ctl?setTimeout(()=>ctl.abort(),PROBE_TIMEOUT_MS):null;
+ const promise=fetch('/api/session',{cache:'no-store',...(ctl?{signal:ctl.signal}:{})}).finally(()=>{if(timer)clearTimeout(timer);}).then(async r=>({ok:r.ok,status:r.status,body:await r.json() as {status?:string;stamp?:string}}));
  const mine={startedAt:t,epoch,promise};inflight=mine;
  const clear=()=>{if(inflight===mine)inflight=null;};promise.then(clear,clear);
  return promise;
@@ -39,8 +42,13 @@ export const reconnectDelay=(attempt:number)=>RECONNECT_DELAYS_MS[Math.min(Math.
  * (sign-in as someone else while the request was pending), the answer belongs to the old session: the view for the new
  * stamp is not ended here, and StaffSessionBoundary keeps verifying whichever stamp is shown. A failed check ends it. */
 export async function endViewIfSessionIs(stamp:string){
+ // The verdict belongs to the auth state it was asked in. If anything that can change the session (another tab signing in or out, a page restore, a
+ // visibility change) happened while the probe was in flight, its answer is about the OLD state: it must not end a screen that now belongs to a newer valid
+ // session. The boundary re-verifies instead.
+ const startedIn=epoch;
  let verdict:ProbeVerdict='TRANSIENT';
  try{verdict=classifyProbe(await probeSession(),stamp);}catch{/* cannot tell */}
+ if(epoch!==startedIn){window.dispatchEvent(new Event('zao-auth-recheck'));return;}
  if(verdict==='CHANGED')return;
  // A request answered 401/403 and the session endpoint cannot be reached or says nothing: do not destroy a possibly valid session. The boundary hides the
  // screen and re-verifies until it can tell (a real expiry then ends it).
@@ -74,7 +82,7 @@ export function StaffSessionBoundary({stamp,children}:{stamp:string;children:Rea
   const recheck=()=>{bumpSessionEpoch();void check(true);};
   channel.onmessage=event=>{if(['logout','signing-out','password-changed'].includes(event.data))end();else{bumpSessionEpoch();void check(true);}};
   document.addEventListener('visibilitychange',visibility);window.addEventListener('pagehide',hide);window.addEventListener('pageshow',show);window.addEventListener('zao-auth-ended',end);window.addEventListener('zao-auth-recheck',recheck);
-  const timer=setInterval(()=>void check(),15000);void check();channel.postMessage('session-opened');
+  const timer=setInterval(()=>{if(!retry)void check();},15000);void check();channel.postMessage('session-opened');
   return()=>{alive=false;clearInterval(timer);if(retry)clearTimeout(retry);channel.close();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('pagehide',hide);window.removeEventListener('pageshow',show);window.removeEventListener('zao-auth-ended',end);window.removeEventListener('zao-auth-recheck',recheck);}
  },[stamp]);
 

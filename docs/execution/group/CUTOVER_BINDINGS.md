@@ -59,3 +59,22 @@
 3. 候補 stage をデプロイ（現行 alias に影響なし）→ stage attestation＋2窓確認（書込み・外部副作用なし）。
 4. 停止窓：fence→最終コピー→照合→LOGIN 化→promote→post attestation。
 5. `verifyBindings(POST_SWITCH)`（旧ロールが LOGIN でないこと、新ロールが LOGIN であること）。
+
+
+## 窓前の資格情報の発行（`production:cutover-issue-credentials`）
+- 対象は、対応表の Vercel の NEW_SECRET 16 行です。メインの DB パスワード 12、worker のパスワード 3、専用 Webhook の受信用接続 URI 1 です。バックアップの 3 つ（PGDATABASE / PGUSER / PGPASSWORD）は含みません。
+- 実行は `npm run production:cutover-issue-credentials -- neondb_v65`（accepted main のみ。窓の前に、ダウンタイムなし）。
+- 1 ロールずつ直列に、次を行います。
+  1. 秘密を、メモリ内で乱数（32 バイト）として生成します。
+  2. 新 DB の管理ロール（`neondb_v65_role_admin`）経由で `ALTER ROLE … NOLOGIN PASSWORD …` を実行します。Neon の reset_password は使いません。NOLOGIN のロールで初回の reset が失敗する既知の事例を避けるためです。
+  3. Vercel の API（`env?upsert=true`）へ、本文を標準入力で送ります。sensitive、Production のみで、引数、ファイル、ログ、出力には出ません。
+  4. メタデータを読み戻します。該当キーがちょうど 1 行で、sensitive、production のみ、`updatedAt` が書込み後であることを確認します。値は読みません。
+- ロールは NOLOGIN のままです。LOGIN の付与も、新しい秘密での接続も、ありません。LOGIN は窓の中で、活性化の境界の記録の直後に付与されます。
+- **Vercel の環境変数は、次のデプロイからしか反映されません。** 現在の本番、Webhook、cron は、窓の中で候補を作るまで、今の値のままです。発行から切替までの間は、どちらのプロジェクトもデプロイしないでください。
+- 永続状態は `credentials-state.json`（0600、値は含みません）です。再実行は、完了したキーを飛ばします。書込みが確認できなかったキーだけを再発行し、同じキーは最大 2 回までです。超えると `ATTEMPTS_EXHAUSTED` で止まります。
+- 発行が終わったら、`production:cutover-bindings-check` を PRE_SWITCH で実行します。このとき、バックアップの 3 つは新しくなっていなくても指摘されません。窓の中で書き換わるためです。POST_SWITCH では必須です。
+
+## 窓の中のバックアップ資格情報（`switchBackupCredential`）
+- 定期バックアップは、実行のたびに 3 つの秘密を読みます。窓の前に書き換えると、元の DB が止まる前にバックアップが新 DB を向きます。
+- そのため、窓の中の、書込み可能化と LOGIN の付与の後に、既存の `backup:role-provision -- --database=neondb_v65`（固定ピン済み）を呼びます。ロールの準備と、3 つの秘密の書換えを行い、状態 `PROVISIONED` だけを成功として扱います。
+- 実装は `scripts/production-cutover-window-hooks.ts` で、関数までです。ランナーの `copy-and-switch` から呼ぶかどうかは、窓の手順で扱います。

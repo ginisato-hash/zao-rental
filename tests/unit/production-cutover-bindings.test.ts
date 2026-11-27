@@ -112,3 +112,28 @@ test('credential target selection moves database, role and manager together; all
  }finally{selectProductionCredentialDatabase(previous);}
  assert.equal(BACKUP_CREDENTIAL_TARGET.database,'neondb');assert.equal(BACKUP_CREDENTIAL_TARGET.role,'neondb_backup');
 });
+
+test('PRE_SWITCH does not require the backup sinks to be fresh (they move inside the window); POST_SWITCH still does; Vercel sinks are required in both',()=>{
+ const t=b.buildBindingTable('neondb','neondb_v65');
+ const pre=factsFor(t,'PRE_SWITCH');
+ pre.github.secrets=pre.github.secrets.map(s=>({...s,updatedAt:EPOCH-500}));
+ assert.deepEqual(b.verifyBindings(t,pre),[]);
+ const post=factsFor(t,'POST_SWITCH');
+ post.github.secrets=post.github.secrets.map(s=>({...s,updatedAt:EPOCH-500}));
+ const stale=b.verifyBindings(t,post).filter(x=>x.code==='STALE_CREDENTIAL').map(x=>x.id).sort();
+ assert.deepEqual(stale,['backup.pgdatabase','backup.pgpassword','backup.pguser']);
+ const preVercel=factsFor(t,'PRE_SWITCH');
+ preVercel.vercel.main=preVercel.vercel.main.map(e=>e.key==='PRODUCTION_DB_PASSWORD_AUTH'?{...e,updatedAt:EPOCH-500}:e);
+ assert.ok(b.verifyBindings(t,preVercel).some(x=>x.code==='STALE_CREDENTIAL'&&x.id==='main.secret.auth'));
+});
+test('role facts: the membership aggregate is cast to text[] (pg returns name[] as an unparsed string, which broke memberships.filter)',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const src=readFileSync(new URL('../../scripts/production-cutover-bindings-check.ts',import.meta.url),'utf8');
+ assert.match(src,/array_agg\(g\.rolname::text order by g\.rolname\)/);
+ assert.match(src,/'\{\}'::text\[\]\) as memberships/);
+ // The consumer assumes a real array: an unparsed "{a,b}" string must not be accepted as one.
+ const t=b.buildBindingTable('neondb','neondb_v65');
+ const f=factsFor(t,'PRE_SWITCH');
+ (f.roles[t.roles[0]!.role] as unknown as {memberships:unknown}).memberships='{a,b}';
+ assert.throws(()=>b.verifyBindings(t,f),TypeError);
+});

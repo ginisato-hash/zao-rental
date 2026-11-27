@@ -199,7 +199,8 @@
     "production:cutover-prewindow-check": "node --import tsx scripts/production-cutover-run.ts prewindow-check",
     "production:cutover-live-binding": "node --import tsx scripts/production-cutover-live-binding.ts",
     "production:cutover-backup-evidence": "node --import tsx scripts/production-cutover-backup-evidence-run.ts",
-    "production:cutover-install-target-grants": "node --import tsx scripts/production-cutover-run.ts install-target-grants"
+    "production:cutover-install-target-grants": "node --import tsx scripts/production-cutover-run.ts install-target-grants",
+    "production:cutover-issue-credentials": "node --import tsx scripts/production-cutover-credentials-run.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

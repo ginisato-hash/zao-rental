@@ -146,7 +146,8 @@ export function verifyBindings(table:BindingTable,facts:BindingFacts):Finding[]{
   }else if(s.kind==='GITHUB_ENV_SECRET'){
    expectedKeys.gh.add(s.key);const e=secretMap.get(s.key);
    if(!e)push('MISSING',r.id,`${s.key} secret absent in ${s.environment}`);
-   else if(r.change==='NEW_SECRET'&&(e.updatedAt==null||e.updatedAt<facts.credentialEpoch))push('STALE_CREDENTIAL',r.id,`${s.key} not rewritten since the credential epoch`);
+   // Backup sinks are read by the scheduled GitHub backup at every run: they are rewritten INSIDE the window (switch step), never before it, so PRE_SWITCH does not require them fresh.
+   else if(facts.stage==='POST_SWITCH'&&r.change==='NEW_SECRET'&&(e.updatedAt==null||e.updatedAt<facts.credentialEpoch))push('STALE_CREDENTIAL',r.id,`${s.key} not rewritten since the credential epoch`);
   }else{expectedKeys.gh.add(s.key);if(!vars.has(s.key))push('MISSING',r.id,`${s.key} variable absent in ${s.environment}`);}
  }
  // The group role must not be pinned by an override (a stale override survives a database change silently).

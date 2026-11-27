@@ -17,7 +17,7 @@ async function roleFacts(names:string[]):Promise<Record<string,RoleFact|undefine
  const owner=await productionPorts().openOwner(SOURCE_DATABASE);
  try{
   const r=await owner.pool.query(`select r.rolname,r.rolcanlogin,r.rolsuper,r.rolcreatedb,r.rolcreaterole,
-   coalesce((select array_agg(g.rolname order by g.rolname) from pg_auth_members m join pg_roles g on g.oid=m.roleid where m.member=r.oid),'{}') as memberships
+   coalesce((select array_agg(g.rolname::text order by g.rolname) from pg_auth_members m join pg_roles g on g.oid=m.roleid where m.member=r.oid),'{}'::text[]) as memberships
    from pg_roles r where r.rolname=any($1)`,[names]);
   const out:Record<string,RoleFact|undefined>={};
   for(const n of names)out[n]=undefined;

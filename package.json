@@ -24,6 +24,7 @@
     "check:secrets": "node scripts/check-secrets.mjs",
     "test:controller:macos": "node --import tsx scripts/test-controller-macos.ts",
     "controller:export": "node --import tsx scripts/export-controller.ts",
+    "test:staff-session-lifetime": "node --import tsx tests/auth/session-lifetime.ts",
     "test:auth": "node --import tsx tests/auth/first-admin-bootstrap.ts && node --import tsx tests/auth/staff-flow.ts && node --import tsx tests/auth/first-admin-commercial.ts",
     "test:inventory": "node --import tsx tests/inventory/real-postgres.ts",
     "test:r67-bookable": "node --import tsx tests/readiness/r67-bookable.ts",

@@ -1,29 +1,9 @@
+import {REWIND_0065_SQL} from './rewind-0065';
 import type {Pool} from 'pg';
-import {readFileSync} from 'node:fs';
-import {resolve} from 'node:path';
-const mig=(file:string)=>readFileSync(resolve(process.cwd(),'packages/db/migrations',file),'utf8');
-const between=(text:string,from:string,to:string)=>{const a=text.indexOf(from),b=text.indexOf(to,a);if(a<0||b<0)throw new Error('REWIND_SOURCE_NOT_FOUND '+from);return text.slice(a,b);};
-/** The exact pre-0064 definitions that 0064 replaces (read from the migrations that introduced them, so they cannot drift). */
-const PRE_0064_DEFINITIONS=[
- between(mig('0033_launch_operations.sql'),'CREATE OR REPLACE VIEW rental_inventory_blocks AS','CREATE TABLE rental_internal.amendment_effects'),
- between(mig('0015_custody_boundary.sql'),'CREATE FUNCTION rental_apply_receipt','REVOKE ALL ON FUNCTION rental_apply_receipt').replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION'),
- between(mig('0049_production_custody_states.sql'),'CREATE OR REPLACE FUNCTION rental_stage_guard','CREATE OR REPLACE FUNCTION rental_complete_no_pickup'),
-].join('\n');
 /** Emulates a database dumped before 0064 (group order core): removes exactly what 0064 added, in dependency order.
  * Used by the historical-registry restore/role-plan fixtures, like the earlier per-migration rewinds. Not a product operation. */
 export const REWIND_0064_SQL=`
-${PRE_0064_DEFINITIONS}
--- group custody connection (loan subject columns, preparations, validators)
-DROP TRIGGER IF EXISTS rental_validate_group_loan ON rental_loan_items;
-DROP TRIGGER IF EXISTS rental_validate_loan ON rental_loan_items;
-CREATE TRIGGER rental_validate_loan BEFORE INSERT ON rental_loan_items FOR EACH ROW EXECUTE FUNCTION rental_validate_loan();
-ALTER TABLE rental_loan_items DROP CONSTRAINT IF EXISTS rental_loan_subject;
-DROP INDEX IF EXISTS rental_group_requirement;
-DROP INDEX IF EXISTS rental_loan_group_part;
-ALTER TABLE rental_loan_items DROP COLUMN IF EXISTS hold_id,DROP COLUMN IF EXISTS group_part_id;
-ALTER TABLE rental_loan_items ALTER COLUMN booking_id SET NOT NULL;
-DROP TABLE IF EXISTS group_part_preparations;
-DROP FUNCTION IF EXISTS rental_validate_group_loan(),group_member_manual_fit(jsonb);
+${REWIND_0065_SQL}
 DROP TRIGGER IF EXISTS group_hold_guard ON inventory_holds;
 DROP TRIGGER IF EXISTS group_claim_guard ON inventory_claims;
 DROP TRIGGER IF EXISTS group_claim_guard ON provisional_capacity_claims;

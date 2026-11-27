@@ -26,7 +26,7 @@ export function GroupCustodyPanel({stamp,disabled:outerDisabled}:{stamp:string;d
   const data=await r.json();if([401,403].includes(r.status)||data.error==='SESSION_CHANGED'){invalidateStaffView();throw Object.assign(new Error('SESSION_CHANGED'),{definite:true});}
   if(!r.ok)throw Object.assign(new Error(data.error),{definite:r.status<500});return data;
  }
- async function run(job:()=>Promise<void>){if(busy)return;setBusy(true);setMessage('');try{await job();}catch(e){setMessage(t('拒否：','Refused: ')+(e as Error).message);}finally{setBusy(false);}}
+ async function run(job:()=>Promise<void>){if(busy)return;setBusy(true);setMessage('');try{await job();}catch(e){const code=(e as Error).message;setMessage(code==='GROUP_CUSTODY_NOT_ACTIVATED'?t('団体の貸出・返却はまだ有効になっていません（データベース側の準備が未完了です）。通常の個別貸出には影響しません。','Group loans and returns are not enabled yet (the database side is not ready). Ordinary rentals are not affected.'):t('拒否：','Refused: ')+code);}finally{setBusy(false);}}
  const find=()=>run(async()=>{setPart(null);setOverview(await call('/group-number/'+encodeURIComponent(number.trim().toUpperCase())) as Overview);});
  const open=(id:string)=>run(async()=>{setFit({});setPart(await call('/group-part/'+id) as PartView);});
  const mutate=(path:string,input:unknown)=>run(async()=>{

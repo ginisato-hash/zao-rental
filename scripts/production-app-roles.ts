@@ -21,7 +21,9 @@ const MAX_IDENTIFIER_BYTES=63;
 export function assertProductionDatabaseName(databaseName:string):void{if(!IDENTIFIER.test(databaseName)||ZR_PATTERN.test(databaseName))throw new Error('PRODUCTION_DATABASE_NAME_INVALID');}
 function assertIdentifierLength(name:string):void{if(Buffer.byteLength(name,'utf8')>MAX_IDENTIFIER_BYTES)throw new Error('PRODUCTION_ROLE_NAME_TOO_LONG');}
 
-export function productionAppRoleNames(databaseName:string):Record<ProductionService,string>{
+/** The roles the foundation role plan creates. `group` (`<db>_group`) is deliberately NOT here: the group grants installer creates it (scripts/production-group-delta.ts). */
+export type PlannedAppService=Exclude<ProductionService,'group'>;
+export function productionAppRoleNames(databaseName:string):Record<PlannedAppService,string>{
  assertProductionDatabaseName(databaseName);
  const names={
   auth:databaseName+'_auth',ledger:databaseName+'_ledger',hold:databaseName+'_hold',transfer:databaseName+'_transfer',

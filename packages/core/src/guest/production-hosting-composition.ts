@@ -72,7 +72,8 @@ export function installProductionHostingComposition(env:Readonly<Record<string,s
  if(!e.PRODUCTION_DB_HOST||!e.PRODUCTION_DB_NAME)throw new Error('PRODUCTION_HOSTING_DB_IDENTITY_MISSING');
  const roles={} as Record<ProductionService,string>;
  for(const s of productionServices){
-  const role=e[roleKey(s)];
+  // The group role (`<db>_group`) needs no new environment name: it defaults from the database name (the dark profile never opens it).
+  const role=e[roleKey(s)]??(s==='group'?e.PRODUCTION_DB_NAME+'_group':undefined);
   if(!role)throw new Error('PRODUCTION_HOSTING_ROLE_NAME_MISSING');
   roles[s]=role;
  }

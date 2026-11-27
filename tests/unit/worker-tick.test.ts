@@ -38,10 +38,10 @@ test('only an exact Bearer CRON_SECRET of at least 32 characters authorizes a ti
   ] as const) assert.equal(authorizeWorkerTick(header, secret), false, String(header));
 });
 
-test('the tick reads exactly its eight named variables and nothing else from the environment', () => {
+test('the tick reads exactly its nine named variables and nothing else from the environment', () => {
   assert.deepEqual([...WORKER_TICK_ENV_KEYS].sort(), ['CRON_SECRET', 'PRODUCTION_WORKER_ACCEPTED_AFTER', 'PRODUCTION_WORKER_DB_PASSWORD_DISPATCHER',
-    'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR', 'PRODUCTION_WORKER_DB_PASSWORD_WORKER', 'PRODUCTION_WORKER_NOTIFICATION_LIMIT', 'PRODUCTION_WORKER_REFUND_CREATE_LIMIT', 'PRODUCTION_WORKER_TICK_ACTIVATION']);
-  const read = readWorkerTickEnv({...env, PRODUCTION_WORKER_NOTIFICATION_LIMIT: '1', PRODUCTION_WORKER_REFUND_CREATE_LIMIT: '1', PRODUCTION_WORKER_REFUND_BUDGET_JPY: '5',
+    'PRODUCTION_WORKER_DB_PASSWORD_PROJECTOR', 'PRODUCTION_WORKER_DB_PASSWORD_WORKER', 'PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT', 'PRODUCTION_WORKER_NOTIFICATION_LIMIT', 'PRODUCTION_WORKER_REFUND_CREATE_LIMIT', 'PRODUCTION_WORKER_TICK_ACTIVATION']);
+  const read = readWorkerTickEnv({...env, PRODUCTION_WORKER_NOTIFICATION_LIMIT: '1', PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT: '1', PRODUCTION_WORKER_REFUND_CREATE_LIMIT: '1', PRODUCTION_WORKER_REFUND_BUDGET_JPY: '5',
     PRODUCTION_DB_PASSWORD_GUEST: 'unrelated-secret', PRODUCTION_SQUARE_ACCESS_TOKEN: 'unrelated-token', PRODUCTION_WORKER_DB_PASSWORD_EXTRA: 'x'});
   assert.deepEqual(Object.keys(read).sort(), [...WORKER_TICK_ENV_KEYS].sort());
 });
@@ -187,4 +187,21 @@ test('scheduler wiring is exactly one per-minute cron on the protected GET route
   assert.equal((source.match(/workerTickLimit\(env, '/g) ?? []).length, 2, 'notification and refund-create limits only');
   assert.ok(/if \(raw === undefined\) return 0;/.test(source), 'an unset limit is 0');
   assert.ok(!/REFUND_BUDGET/.test(source), 'no budget variable');
+});
+
+test('group notices (migration 0064): the tick passes an Owner-controlled limit that is 0 by default; only a bounded integer opens it and a malformed value stops the tick', async () => {
+  const dormant = harness();
+  assert.equal((await handleWorkerTick(dormant.input)).status, 200);
+  assert.equal((dormant.calls.run[0] as {groupNotificationLimit: number}).groupNotificationLimit, 0, 'unset = nothing is sent');
+  const open = harness({env: {...env, PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT: '5'}}, async () => ({state: 'COMPLETED', groupNotifications: {state: 'PROCESSED', processed: 3}}));
+  const response = await handleWorkerTick(open.input);
+  assert.equal((open.calls.run[0] as {groupNotificationLimit: number}).groupNotificationLimit, 5);
+  assert.equal(response.body.groupNotifications, 'PROCESSED');assert.equal(response.body.groupNotificationsProcessed, 3);
+  for (const bad of ['21', '-1', '1.5', 'x', '01', ' 1']) {
+    const h = harness({env: {...env, PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT: bad}});
+    const r = await handleWorkerTick(h.input);
+    assert.equal(r.status, 500, bad);assert.equal(r.body.code, 'WORKER_TICK_LIMIT_INVALID', bad);assert.equal(h.calls.run.length, 0, 'no worker work for a malformed switch: ' + bad);
+  }
+  assert.equal(workerTickLimit({}, 'PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT'), 0);
+  assert.ok(WORKER_TICK_ENV_KEYS.includes('PRODUCTION_WORKER_GROUP_NOTIFICATION_LIMIT'));
 });

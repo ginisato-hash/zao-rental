@@ -1,4 +1,4 @@
-import {productionRequested} from './production-runtime';
+import {productionRequested,getProductionRuntime} from './production-runtime';
 import 'server-only';
 import {Pool} from 'pg';
 import type {Connection} from '../../../../packages/auth/src/config';
@@ -8,11 +8,13 @@ import {GuestSecurity,guestPeerKey} from '../../../../packages/core/src/guest/se
 import {publicRuntime} from './public-runtime';
 import type {GroupBoundary} from './group-http';
 let groupPool:Pool|undefined;
-/** Group customer boundary for the local development / test composition only: the dedicated `<db>_group` role (never the migration or
- * owner role) from ZAO_GROUP_RUNTIME. Production is deliberately not connected here: the production group role delta and its
- * composition (GROUP_INVITE_CORE.md section 6) are a separate, reviewed step, so the route answers 503 GROUP_UNCONNECTED until then. */
+/** Group customer boundary. Production: the composed production runtime offers it ONLY when the dedicated `<db>_group` role has its credential, passed the
+ * identity/least-privilege check and the database is ready (0064 applied, the role's grants present); otherwise `group` is null and the route answers 503
+ * GROUP_UNCONNECTED, exactly as before. The entrance is closed until an administrator enables it on /staff/groups (the database holds no entrance row until then).
+ * Local development / test: the dedicated `<db>_group` role (never the migration or owner role) from ZAO_GROUP_RUNTIME. */
 export function groupBoundary(policy?:{peerRequests:number;globalRequests:number}):GroupBoundary|null{
- if(productionRequested()||process.env.NODE_ENV==='production')return null;
+ if(productionRequested()){const g=getProductionRuntime()?.group;return g?{customer:g.customer,origin:g.origin,serverKey:g.serverKey,guard:g.guard}:null;}
+ if(process.env.NODE_ENV==='production')return null;
  const p=publicRuntime(),raw=process.env.ZAO_GROUP_RUNTIME;if(!p||!raw)return null;
  const c=JSON.parse(raw) as Connection;
  if(c.host!=='127.0.0.1'||c.database!==p.r.config.namespace||c.user!==p.r.config.namespace+'_group'||c.port!==p.r.config.authDb.port||!c.password)throw new Error('GROUP_RUNTIME_INVALID');

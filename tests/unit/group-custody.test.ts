@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {groupMemberNeedsManualFit} from '../../packages/core/src/rental/custody-service';
 
-const sql=readFileSync('packages/db/migrations/0064_group_order_core.sql','utf8');
-const fn=(name:string)=>{const a=sql.indexOf('CREATE FUNCTION '+name),b=sql.indexOf('END$$;',a);assert.ok(a>=0&&b>a,name);return sql.slice(a,b);};
+// The custody link is migration 0065 (split out of 0064: Owner decision 2026-11-27, option A); 0064 is the owner-applicable core.
+const sql=readFileSync('packages/db/migrations/0065_group_custody_link.sql','utf8');
+const core=readFileSync('packages/db/migrations/0064_group_order_core.sql','utf8');
+const fn=(name:string)=>{let a=sql.indexOf('CREATE FUNCTION '+name);if(a<0)a=sql.indexOf('CREATE OR REPLACE FUNCTION '+name);const b=sql.indexOf('END$$;',a);assert.ok(a>=0&&b>a,name);return sql.slice(a,b);};
 const ordinary=readFileSync('packages/db/migrations/0049_production_custody_states.sql','utf8');
 
 test('manual-fit predicate: the group status, the size-edge FitMeta kind and the per-member selection fit all count; ordinary fits do not',()=>{
@@ -28,7 +30,7 @@ test('the ordinary booking validator and its payment gate are untouched: it only
  assert.match(ordinary,/h\.payment_state<>'SUCCESS'/);
  assert.match(sql,/CREATE TRIGGER rental_validate_loan BEFORE INSERT ON rental_loan_items FOR EACH ROW WHEN \(NEW\.group_part_id IS NULL\)/);
  assert.match(sql,/CREATE TRIGGER rental_validate_group_loan BEFORE INSERT ON rental_loan_items FOR EACH ROW WHEN \(NEW\.group_part_id IS NOT NULL\)/);
- assert.doesNotMatch(sql,/CREATE OR REPLACE FUNCTION rental_validate_loan\(\)/,'0064 does not redefine the ordinary validator');
+ assert.doesNotMatch(sql,/CREATE OR REPLACE FUNCTION rental_validate_loan\(\)/,'0065 does not redefine the ordinary validator');
 });
 
 test('stage edges: one statement of the group rule (confirmed by GROUP_ADMIN_APPROVED, payment NONE) used by both the group hold guard and the custody stage guard; the ordinary branch text is the 0049 one',()=>{
@@ -47,4 +49,16 @@ test('no payment artefact path in group custody: the service never writes a book
  const src=readFileSync('packages/core/src/rental/custody-service.ts','utf8');
  const group=src.slice(src.indexOf('GROUP CUSTODY (Issue #47 B4)'),src.indexOf('export type CustodyConditions'));
  for(const banned of ['INSERT INTO rental_bookings','INSERT INTO rental_payment_attempts','rental_provider_events',"payment_state='SUCCESS'",'payment_state=\'SUCCESS\'',"SET payment_state",'booking_cancellation_refunds'])assert.ok(!group.includes(banned),banned);
+});
+
+test('0064 (the owner-applicable core) touches no executor-owned object and carries no custody link; 0065 carries all of it',()=>{
+ // Static proof of the split. The real proof (the owner applies 0064 on the Production topology; 0065 is refused 42501) is tests/operations/production-0057-owner-apply.ts.
+ const code=core.split('\n').filter(l=>!l.trimStart().startsWith('--')).join('\n');
+ for(const banned of ['rental_validate_loan','rental_validate_group_loan','rental_apply_receipt','rental_stage_guard','rental_inventory_blocks','rental_loan_items','group_part_preparations','group_member_manual_fit','group_custody_stage_ok','_custody_executor','OWNER TO','group_part_id'])assert.ok(!code.includes(banned),'0064 must not contain '+banned);
+ for(const needed of ['rental_validate_group_loan','rental_apply_receipt','rental_stage_guard','rental_inventory_blocks','group_part_preparations','group_custody_stage_ok','_custody_executor','ALTER TABLE rental_loan_items ADD COLUMN group_part_id'])assert.ok(sql.includes(needed),'0065 must contain '+needed);
+ // The two core functions that 0065 replaces exist in both, and the core version has no loan reference.
+ assert.match(core,/CREATE FUNCTION group_custody_hold_update/);assert.match(sql,/CREATE OR REPLACE FUNCTION group_custody_hold_update/);
+ assert.match(core,/CREATE FUNCTION group_order_guard/);assert.match(sql,/CREATE OR REPLACE FUNCTION group_order_guard/);
+ assert.match(core,/CREATE FUNCTION group_consistency/);assert.match(sql,/CREATE OR REPLACE FUNCTION group_consistency/);
+ assert.doesNotMatch(core.slice(core.indexOf('CREATE FUNCTION group_custody_hold_update'),core.indexOf('END$$;',core.indexOf('CREATE FUNCTION group_custody_hold_update'))),/group_custody_stage_ok/);
 });

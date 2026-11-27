@@ -7,7 +7,9 @@ import {productionGuestConfiguration,guestConfigurationHash,type ProductionGuest
 // the two, which is exactly the residual gap this closes.
 const validated=new WeakSet<object>();
 export function isValidatedProductionConfiguration(c:unknown):c is ProductionConfiguration{return typeof c==='object'&&c!==null&&validated.has(c);}
-export const productionServices=['auth','ledger','hold','transfer','pricing','recommendation','operations','guest','content_read','avatar_read','booking_access'] as const;
+/** `group` is the dedicated group application role `<db>_group` (migration 0064). It is created by the group grants installer, not by the foundation role plan, and its
+ * LOGIN credential is optional: without it the group APIs stay closed (GROUP_UNCONNECTED, 503) and nothing else changes. */
+export const productionServices=['auth','ledger','hold','transfer','pricing','recommendation','operations','guest','content_read','avatar_read','booking_access','group'] as const;
 export type ProductionService=typeof productionServices[number];
 export const startupStages=['DB_CONFIG','INGRESS','PAYMENT','MEDIA','GUEST_SECURITY','BOOKING_ACCESS','FEATURE_FLAGS','READY'] as const;
 export type StartupStage=typeof startupStages[number];

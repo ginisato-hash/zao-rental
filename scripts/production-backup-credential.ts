@@ -25,8 +25,18 @@ import {productionCredentialBaseline,productionCredentialCompleteReset,productio
 import {assertProductionHost,assertProductionHostFingerprint,assertProductionPort,fingerprintHost} from './production-backup';
 
 export const BACKUP_CREDENTIAL_VERSION='production-backup-credential/1';
-export const BACKUP_CREDENTIAL_TARGET=Object.freeze({project:'curly-union-23141081',branch:'br-long-king-azkou4fy',database:'neondb',role:'neondb_backup',
- owner:'neondb_owner',manager:'neondb_role_admin',repo:'ginisato-hash/zao-rental',environment:'production-backup',port:'5432'});
+/** Databases this lifecycle may ever target: the original and the two reserved cutover targets (same Neon project/branch/host). */
+export const PRODUCTION_CREDENTIAL_DATABASES=Object.freeze(['neondb','neondb_v65','neondb_v65b'] as const);
+/** The live target. Defaults to the original database; selectProductionCredentialDatabase moves database/role/manager together (single object, so every importer sees it). */
+export const BACKUP_CREDENTIAL_TARGET={project:'curly-union-23141081',branch:'br-long-king-azkou4fy',database:'neondb',role:'neondb_backup',
+ owner:'neondb_owner',manager:'neondb_role_admin',repo:'ginisato-hash/zao-rental',environment:'production-backup',port:'5432'};
+/** Selects the cutover database for the credential lifecycle (backup role, worker roles). Allowlist only; role and manager are derived, never supplied. Returns the previous database. */
+export function selectProductionCredentialDatabase(database:string):string{
+ if(!(PRODUCTION_CREDENTIAL_DATABASES as readonly string[]).includes(database))throw new Error('BACKUP_CREDENTIAL_DATABASE_REFUSED');
+ const previous=BACKUP_CREDENTIAL_TARGET.database;
+ BACKUP_CREDENTIAL_TARGET.database=database;BACKUP_CREDENTIAL_TARGET.role=database+'_backup';BACKUP_CREDENTIAL_TARGET.manager=database+'_role_admin';
+ return previous;
+}
 const T=BACKUP_CREDENTIAL_TARGET;
 /** The first Production Backup workflow has a 30-minute timeout; the lease covers queueing plus that run with a wide margin and
  * is still bounded. It is a database-clock deadline, not the 20-minute commercial lease. */
@@ -397,8 +407,9 @@ const pgSession=async(c:ConnectionConfig,statementTimeout:number):Promise<SqlSes
  return {query:(sql,params)=>client.query(sql,params as unknown[]) as never,end:()=>client.end(),transportVerified:()=>clientTransportVerified(client,c.host)};
 };
 export function evidenceDirectory(root:string=process.cwd()){return join(root,'.local','evidence','production-backup');}
-export function fileGuard(dir:string):GuardStore{
- const path=join(dir,'reset-attempt.json');
+export function fileGuard(dir:string,database:string=T.database):GuardStore{
+ /** One durable one-shot guard per database; the original database keeps its historical file name. */
+ const path=join(dir,database==='neondb'?'reset-attempt.json':`reset-attempt-${database}.json`);
  return {exists:()=>existsSync(path),claim:()=>{
   mkdirSync(dir,{recursive:true,mode:0o700});
   let fd:number;try{fd=openSync(path,'wx',0o600);}catch{throw fail('BACKUP_CREDENTIAL_RESET_ALREADY_ATTEMPTED');}
@@ -407,13 +418,14 @@ export function fileGuard(dir:string):GuardStore{
 }
 export function productionPorts(root:string=process.cwd()):BackupCredentialPorts{
  if(!existsSync(NEON_BIN))throw fail('BACKUP_CREDENTIAL_NEON_CLI_MISSING');
- return {neon:neonCliPort(),github:gitHubCliPort(),connectOwner:c=>pgSession(c,30_000),connectBackup:c=>pgSession(c,30_000),guard:fileGuard(evidenceDirectory(root)),
+ return {neon:neonCliPort(),github:gitHubCliPort(),connectOwner:c=>pgSession(c,30_000),connectBackup:c=>pgSession(c,30_000),guard:fileGuard(evidenceDirectory(root),T.database),
   sleep:ms=>new Promise(r=>setTimeout(r,ms)),now:()=>new Date(),expectTls:true};
 }
 
 export async function main(argv:string[],root:string=process.cwd()):Promise<void>{
  const [command,...rest]=argv;
- if(rest.length)throw fail('BACKUP_CREDENTIAL_ARGUMENTS_REFUSED');
+ if(rest.length>1)throw fail('BACKUP_CREDENTIAL_ARGUMENTS_REFUSED');
+ if(rest.length===1){const m=/^--database=([a-z0-9_]{3,40})$/.exec(rest[0]!);if(!m)throw fail('BACKUP_CREDENTIAL_ARGUMENTS_REFUSED');try{selectProductionCredentialDatabase(m[1]!);}catch{throw fail('BACKUP_CREDENTIAL_ARGUMENTS_REFUSED');}}
  const dir=evidenceDirectory(root);
  let result:unknown;
  switch(command){

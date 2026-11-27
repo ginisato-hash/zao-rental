@@ -41,7 +41,9 @@ neondb_owner の READ ONLY トランザクションで読み取った。書き�
 ### 5.1 すでに実証済み（隔離PG・合成データ、2026-11-27 実行）
 `node --import tsx tests/operations/production-bootstrap.ts` の結果：**空のDBへ正規ブートストラップで 0001〜0065 の全65本が適用され**（`migrations:65`、ガード書き換え12）、registry は正本と完全一致、`structuralEquivalence: PASS`・`securityEquivalence: PASS`、その後の通常 migrator は何もしない（inert）、非空DB・誤ターゲット・使い捨て名は拒否される。ブートストラップは、一時的な作成者ロール（ephemeral、NOLOGIN、作成時に executor への ADMIN を自動で得る）→ executor への橋渡し（SET/INHERIT）と `public` の一時 CREATE → 撤去 → ロール削除、という適法な一時管理権限の設計で、実行後に権限は残らない。**この経路は 0065 を含み、外部の特権に依存しない。**
 
-### 5.2 未実証（次の技術検証。合成データのみ、本番は変更しない）
+### 5.2 合成データでの実証結果は [CUTOVER_REHEARSAL.md](CUTOVER_REHEARSAL.md)（`npm run test:production-cutover`、15ケースPASS）。下の項目のうち実証済みと未実証は同書に記載。
+
+### 5.2 技術検証の項目（合成データのみ、本番は変更しない）
 1. 0065 込みで構築した新規DBへ、検証済みバックアップのデータを取り込む順序（データのみの復元、またはローカル復元契約 `scripts/local-restore.ts` の本番版）。追記専用ガード・トリガ・identity・sequence・registry/checksum の整合。
 2. 取り込み後の同一性：既存の予約・在庫・売止・決済/返金・スタッフ・通知・会計の件数と内容、schema/ACL/roles/constraints/triggers、セッションと外部 worker・秘密管理（資格情報は再発行しない方針の確認）、通常予約と団体の競合。
 3. 切替の設計：書込み停止窓、差分の扱い、最終照合、復旧・rollback 条件、二重 worker の防止、切替後の再照合。最小停止・データ欠落なしの実現性を示す。

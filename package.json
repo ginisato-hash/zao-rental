@@ -165,6 +165,7 @@
     "test:operations-console-ui": "node --import tsx tests/operations/console-ui.ts",
     "test:operations-manifest": "node --import tsx tests/operations/manifest.ts && node --import tsx tests/operations/manifest-http.ts",
     "test:operations-restore": "node --import tsx tests/operations/restore.ts",
+    "test:production-cutover": "node --import tsx tests/operations/production-cutover.ts",
     "test:operations-baseline": "node --import tsx tests/operations/baseline.ts",
     "test:m2a-import": "node --import tsx tests/operations/import-rehearsal.ts",
     "test:m2a-connection": "node --import tsx tests/operations/connection-harness.ts",

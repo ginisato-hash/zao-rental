@@ -176,3 +176,10 @@ and its owner identically, so the test creates a separate `zr_<12hex>` canonical
 connects to it as the cluster owner — both environments then have owner ≠ database, which is
 what makes the comparison symmetric. Rows are still sorted after normalisation, and no custody
 role is excluded from the comparison to achieve any of this.
+
+## Retained dormant migration administrator (cutover target; Issue #47 / TD #7219973419 §2-D)
+`bootstrapPlan(target,{retainMigrationAdmin:true})` is a second, separately derived plan variant: `production-owner-compat/3`, strategy `DORMANT_MIGRATION_ADMIN_RETAINED`.
+It differs from the default (`production-owner-compat/2`, `EPHEMERAL_ROLE_CREATOR`) in exactly one step: the creator role is not dropped; instead the plan proves the dormant-administrator posture before COMMIT
+(NOLOGIN, NOSUPERUSER, NOCREATEDB, CREATEROLE, NOINHERIT; owns nothing; no ACL grants; member of nothing except ADMIN-only on the executor and custody roles; reachable only by the owner through SET ROLE).
+The role name is derived from the variant's version, so it can never collide with a version/2 role; the plan digest and the proof-contract digest differ accordingly. The approved-source manifest (migration file bytes) and the
+default path (and every digest pinned to it) are unchanged. The default Production bootstrap of `neondb` is not affected; only the cutover target uses the variant.

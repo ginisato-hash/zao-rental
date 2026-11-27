@@ -49,11 +49,13 @@ try{
  const sourceBefore=await tableDigests(srcOwner,tables);
  const appPool=()=>{const p=new Pool({host:'127.0.0.1',port,user:operations,password:ownerPassword,database:SRC,max:1});p.on('error',()=>undefined);return p;};
 
+ // The synthetic source never ran the 0059–0063 delta installers nor installed the group role, which Production's source did: those differences are explained here, nothing else.
+ const FIXTURE_ONLY_GRANTS=(l:string)=>l.includes('@db@_group')||/\|public\.(staff_order_drafts|rental_terms_|customer_|coupon_|store_sales_|staff_notification)|^function\|(coupon_|customer_|staff_|store_sales_)|^relation\|public\.rental_terms_acceptances\|neondb_owner/.test(l);
  const config=(over:Partial<RunConfig>={}):RunConfig=>({source:SRC,target:DST,owner:OWNER,allowedTargets:[DST],root,fenceWaitMs:800,...over});
  let opened=0,released=0;
- const ports=(over:Partial<RunConfig>={},rootOverride?:string):RunPorts=>({config:config({...over,...(rootOverride?{root:rootOverride}:{})}),release:()=>{released++;return 'a'.repeat(40);},now:()=>new Date(),
+ const ports=(over:Partial<RunConfig>={},rootOverride?:string):RunPorts=>({config:config({...over,...(rootOverride?{root:rootOverride}:{})}),release:()=>{released++;return 'a'.repeat(40);},now:()=>new Date(),aclAllowed:FIXTURE_ONLY_GRANTS,
   openOwner:async database=>{opened++;const pool=new Pool({host:'127.0.0.1',port,user:OWNER,password:ownerPassword,database,max:4});pool.on('error',()=>undefined);return{pool,close:async()=>{await pool.end().catch(()=>undefined);}};}});
- const state=()=>JSON.parse(readFileSync(join(root,'.local/evidence/production-cutover/state.json'),'utf8')) as {phase:string;sourceLoginRoles:string[];switchManifest?:{targetRuntimeRoles:string[];database:string}};
+ const state=()=>JSON.parse(readFileSync(join(root,'.local/evidence/production-cutover/state.json'),'utf8')) as {phase:string;sourceLoginRoles:string[];dormantAdminRole?:string;switchManifest?:{targetRuntimeRoles:string[];database:string}};
  const roleLogin=async(role:string)=>(await superuser.query('SELECT rolcanlogin FROM pg_roles WHERE rolname=$1',[role])).rows[0]?.rolcanlogin as boolean|undefined;
  const dbSetting=async(db:string)=>((await superuser.query('SELECT s.setconfig FROM pg_db_role_setting s JOIN pg_database d ON d.oid=s.setdatabase WHERE d.datname=$1 AND s.setrole=0',[db])).rows[0]?.setconfig??[]) as string[];
 
@@ -100,14 +102,17 @@ try{
   assert.equal(state().phase,'TARGET_BOOTSTRAPPED');
   assert.ok((await dbSetting(DST)).includes('default_transaction_read_only=on'));
   assert.equal(await roleLogin(DST+'_group'),false);assert.equal(await roleLogin(DST+'_operations'),false,'target runtime roles stay NOLOGIN');
-  assert.equal(Number((await superuser.query("SELECT count(*)::int n FROM pg_roles WHERE rolname LIKE 'zao\\_boot\\_%'")).rows[0].n),0,'no ephemeral creator role remains');
+  {const boot=(await superuser.query("SELECT rolname,rolcanlogin,rolinherit,rolcreaterole FROM pg_roles WHERE rolname LIKE 'zao\\_boot\\_%'")).rows;
+   assert.equal(boot.length,1,'exactly one creator role is retained: the dormant migration administrator');assert.equal(boot[0].rolcanlogin,false);assert.equal(boot[0].rolinherit,false);assert.equal(boot[0].rolcreaterole,true);
+   assert.equal(r.migrationAdmin,'DORMANT_NOLOGIN_RETAINED');assert.equal(state().dormantAdminRole,boot[0].rolname);}
   await assert.rejects(bootstrapTarget(ports()),code(/PRODUCTION_CUTOVER_PREFLIGHT_REQUIRED/),'second bootstrap refused');
   const s=await srcOwner.query('SELECT count(*)::int n FROM public.foundation_migrations');assert.equal(s.rows[0].n,64,'source registry untouched');
  });
 
  await check('verify-target before the window: structure proof only (the source is still writable), rows not yet compared',async()=>{
   const r=await verifyTarget(ports());
-  assert.equal(r.status,'CUTOVER_TARGET_VERIFIED');assert.equal(r.mode,'STRUCTURAL_ONLY_TARGET_IN_USE');
+  assert.equal(r.status,'CUTOVER_TARGET_STRUCTURE_ONLY_PASS','a structural pass is never reported as a full pass');assert.equal(r.fullMatch,false);assert.equal(r.mode,'STRUCTURAL_ONLY_TARGET_IN_USE');
+  assert.equal(r.migrationAdminDormant,true);assert.equal(r.strayCreatorRoles,0);assert.equal(r.acl.unexpectedDifferences,0);
   assert.equal(r.rowsIdenticalToSource,null);assert.equal(r.custodyLinkNative,true);assert.equal(r.executorMembers,0);assert.equal(r.fkOrphans,0);assert.equal(r.triggersNotEnabled,0);assert.equal(r.executorOwnedDefiners,3);
  });
 
@@ -148,7 +153,7 @@ try{
 
  await check('verify-target after the window: full row identity with the fenced source, structure unchanged, sequences and foreign keys proven',async()=>{
   const r=await verifyTarget(ports());
-  assert.equal(r.status,'CUTOVER_TARGET_VERIFIED');assert.equal(r.mode,'FULL_PRE_SWITCH');assert.equal(r.rowsIdenticalToSource,true);assert.equal(r.schemaUnchanged,true);assert.equal(r.sourceRuntimeLoginRoles,0);assert.deepEqual(r.runtimeLoginRoles,[]);
+  assert.equal(r.status,'CUTOVER_TARGET_FULLY_VERIFIED');assert.equal(r.fullMatch,true);assert.equal(r.mode,'FULL_PRE_SWITCH');assert.equal(r.rowsIdenticalToSource,true);assert.equal(r.schemaUnchanged,true);assert.equal(r.sourceRuntimeLoginRoles,0);assert.deepEqual(r.runtimeLoginRoles,[]);
   const t=await tableDigests(await connect(OWNER,ownerPassword,DST),tables,{'public.rental_loan_items':['group_part_id','hold_id']});
   for(const name of tables)assert.deepEqual(t[name],sourceBefore[name],name);
  });
@@ -167,7 +172,7 @@ try{
   await superuser.query(`ALTER ROLE ${DST}_operations LOGIN`);
   await assert.rejects(rollback(ports()),code(/PRODUCTION_CUTOVER_ROLLBACK_REFUSED_TARGET_IN_USE/));
   assert.equal(await roleLogin(operations),false,'source stays fenced');assert.equal(state().phase,'COPIED_AWAITING_OWNER');
-  const v=await verifyTarget(ports());assert.equal(v.mode,'STRUCTURAL_ONLY_TARGET_IN_USE');assert.equal(v.rowsIdenticalToSource,null);assert.deepEqual(v.runtimeLoginRoles,[DST+'_operations']);
+  const v=await verifyTarget(ports());assert.equal(v.status,'CUTOVER_TARGET_STRUCTURE_ONLY_PASS');assert.equal(v.mode,'STRUCTURAL_ONLY_TARGET_IN_USE');assert.equal(v.rowsIdenticalToSource,null);assert.deepEqual(v.runtimeLoginRoles,[DST+'_operations']);
   await superuser.query(`ALTER ROLE ${DST}_operations NOLOGIN`);
  });
 

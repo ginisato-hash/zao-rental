@@ -5,7 +5,7 @@
 // as the recovery base. The only things the Owner decides alone (target role LOGIN/passwords, Vercel env, redeploy approval) are outside this program.
 // Owner sessions are opened through the Neon API in memory, pinned to the exact host fingerprint, verify-full TLS and channel binding (same admission as the 0064 installers).
 import {createHash} from 'node:crypto';
-import {existsSync,lstatSync,mkdirSync,readFileSync,renameSync,writeFileSync,chmodSync} from 'node:fs';
+import {closeSync,existsSync,lstatSync,mkdirSync,openSync,readFileSync,renameSync,unlinkSync,writeFileSync,writeSync,chmodSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
 import {Pool} from 'pg';
@@ -15,24 +15,28 @@ import {assertFirstAdminTls} from './lib/first-admin-bootstrap';
 import {assertAcceptedMainRelease,assertNoTlsOverrides} from './lib/production-owner-session';
 import {assertProductionHost,assertProductionHostFingerprint,assertProductionPort} from './production-backup';
 import {BACKUP_CREDENTIAL_TARGET as T,neonCliPort,type NeonPort} from './production-backup-credential';
-import {assertProductionTarget,bootstrapProductionFoundation} from './production-bootstrap';
+import {assertProductionTarget,bootstrapPlan,bootstrapProductionFoundation,dormantMigrationAdminPosture} from './production-bootstrap';
 import {productionRoleProvisioningPlan} from './production-role-provisioning';
 import {installGroupRoleOnFoundation65,groupRoleNames} from './production-group-delta';
 import {requirePre0065Recovery,PRE_0065_RECOVERY_FILE,PRE_0065_RECOVERY_VERSION} from './production-recovery-evidence-pre0065';
-import {NOT_COPIED,TARGET_ONLY_COLUMNS,inFlightWork,installDeltaGrantsOnFoundation65,listTables,readWrite,registry,runCutover,schemaState,tableDigests,triggerStates,
- foreignKeyOrphans,unfenceSource,type Fence} from './production-cutover';
+import {MIGRATION_0065_OBJECTS,NOT_COPIED,TARGET_ONLY_COLUMNS,compareAcl,inFlightWork,installDeltaGrantsOnFoundation65,listTables,proveTargetUntouched,readFenceState,readWrite,registry,runCutover,
+ schemaState,tableDigests,triggerStates,foreignKeyOrphans,unfenceSource,type CutoverFailure,type CutoverFault,type Fence} from './production-cutover';
 
 export const CUTOVER_RUN_VERSION='production-cutover-run/1';
 /** The only database names this program will ever touch in Production. A second target exists so that a discarded first attempt can be replaced. */
 export const PRODUCTION_SOURCE='neondb';
 export const PRODUCTION_TARGETS=Object.freeze(['neondb_v65','neondb_v65b'] as const);
 export const PRODUCTION_OWNER='neondb_owner';
-export const COMMANDS=['preflight','bootstrap-target','copy-and-switch','verify-target','rollback'] as const;
+export const COMMANDS=['preflight','bootstrap-target','copy-and-switch','verify-target','rollback','recover'] as const;
 export type Command=typeof COMMANDS[number];
 
 export type RunConfig={source:string;target:string;owner:string;allowedTargets:readonly string[];root:string;fenceWaitMs?:number};
 export type OwnerHandle={pool:Pool;close():Promise<void>};
-export type RunPorts={config:RunConfig;release():string;openOwner(database:string):Promise<OwnerHandle>;now():Date};
+export type RunPorts={config:RunConfig;release():string;openOwner(database:string):Promise<OwnerHandle>;now():Date;
+ /** Which privilege differences between source and target are explained (default: only the objects migration 0065 introduces or re-grants). */
+ aclAllowed?:(line:string)=>boolean;
+ /** Failure injection for the rehearsal tests only; never set by the Production adapter. */
+ fault?:CutoverFault};
 
 const sha=(v:string)=>createHash('sha256').update(v).digest('hex');
 const qi=(v:string)=>'"'+v.replace(/"/g,'""')+'"';
@@ -41,9 +45,12 @@ const evidenceDir=(c:RunConfig)=>join(c.root,'.local/evidence/production-cutover
 const statePath=(c:RunConfig)=>join(evidenceDir(c),'state.json');
 
 // ---------------------------------------------------------------- state (counts, digests and names only; mode 0600; no secret ever)
-export type Phase='PREFLIGHT_OK'|'TARGET_BOOTSTRAPPED'|'WINDOW_OPEN'|'COPIED_AWAITING_OWNER'|'ROLLED_BACK'|'FORWARD_FIX_ONLY';
+export type Phase='PREFLIGHT_OK'|'TARGET_BOOTSTRAPPED'|'WINDOW_OPEN'|'COPIED_AWAITING_OWNER'|'ROLLED_BACK'|'FORWARD_FIX_ONLY'|'RECOVERY_REQUIRED';
+/** Whether the target has been allowed to accept writes: NEVER → INTENT (recorded BEFORE the read-only default is lifted) → ENABLED. A local file is evidence of INTENT only;
+ * what actually happened is always decided by reading the databases back. */
+export type Writes='NEVER'|'INTENT'|'ENABLED';
 export type State={version:typeof CUTOVER_RUN_VERSION;source:string;target:string;phase:Phase;at:string;sourceLoginRoles:string[];sourceDigestSha256:string;sourceRows:number;
- targetSchemaStateSha256?:string;audit?:unknown;switchManifest?:SwitchManifest};
+ targetSchemaStateSha256?:string;audit?:unknown;switchManifest?:SwitchManifest;writes?:Writes;sourceFence?:Fence;sourceDbSetting?:string|null;dormantAdminRole?:string;recoveryReason?:string};
 export type SwitchManifest={database:string;rolePrefixFrom:string;rolePrefixTo:string;targetRuntimeRoles:string[];loginRequired:string[];passwordEnvPrefix:'PRODUCTION_DB_PASSWORD_';roleEnvPrefix:'PRODUCTION_DB_ROLE_';nameEnv:'PRODUCTION_DB_NAME'};
 function readState(c:RunConfig):State|undefined{
  const p=statePath(c);if(!existsSync(p))return undefined;
@@ -88,7 +95,7 @@ async function readOnly<T2>(pool:Pool,fn:(c:import('pg').PoolClient)=>Promise<T2
 export async function preflight(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
  const existing=readState(c);
- if(existing&&['WINDOW_OPEN','COPIED_AWAITING_OWNER','FORWARD_FIX_ONLY'].includes(existing.phase))fail('PHASE_REFUSED_'+existing.phase);
+ if(existing&&['WINDOW_OPEN','COPIED_AWAITING_OWNER','FORWARD_FIX_ONLY','RECOVERY_REQUIRED'].includes(existing.phase))fail('PHASE_REFUSED_'+existing.phase);
  return withOwner(ports,c.source,async source=>{
   await assertRegistryIs(source,64);
   const manager=managerOf(c.source),roles=runtimeRoleNames(c.source);
@@ -127,39 +134,82 @@ export async function preflight(ports:RunPorts){
  });
 }
 
+// ---------------------------------------------------------------- exclusive lock (one mutating command at a time, on this machine AND in the database)
+const LOCK_KEY=71820402;
+function takeFileLock(c:RunConfig,now:Date){
+ mkdirSync(evidenceDir(c),{recursive:true,mode:0o700});
+ const path=join(evidenceDir(c),'lock');
+ for(let attempt=0;attempt<2;attempt++){
+  try{const fd=openSync(path,'wx',0o600);writeSync(fd,JSON.stringify({pid:process.pid,at:now.toISOString()}));closeSync(fd);return path;}
+  catch(e){
+   if((e as NodeJS.ErrnoException).code!=='EEXIST')throw e;
+   let pid=0;try{pid=Number(JSON.parse(readFileSync(path,'utf8')).pid);}catch{pid=0;}
+   let alive=false;if(pid>0)try{process.kill(pid,0);alive=true;}catch(k){alive=(k as NodeJS.ErrnoException).code==='EPERM';}
+   if(alive&&pid!==process.pid)return fail('LOCKED');
+   unlinkSync(path);   // a dead holder: take over once
+  }
+ }
+ return fail('LOCKED');
+}
+/** Holds the file lock and one advisory lock per database for the duration of `fn`. */
+async function exclusive<T2>(ports:RunPorts,pools:Pool[],fn:()=>Promise<T2>){
+ const path=takeFileLock(ports.config,ports.now());
+ const held:import('pg').PoolClient[]=[];
+ try{
+  for(const pool of pools){
+   const cl=await pool.connect();held.push(cl);
+   if((await cl.query('SELECT pg_try_advisory_lock($1) ok',[LOCK_KEY])).rows[0].ok!==true)return fail('LOCKED_DB');
+  }
+  return await fn();
+ }finally{
+  for(const cl of held){await cl.query('SELECT pg_advisory_unlock($1)',[LOCK_KEY]).catch(()=>undefined);cl.release();}
+  try{unlinkSync(path);}catch{/* already gone */}
+ }
+}
+const dormantRoleOf=async(target:string)=>(await bootstrapPlan(target,{retainMigrationAdmin:true})).ownerCompatibility.bootstrapRole;
+const targetReadOnlyNow=async(pool:Pool,db:string)=>(await readFenceState(pool,db,[])).dbSetting==='on';
+
 // ---------------------------------------------------------------- bootstrap-target
 export async function bootstrapTarget(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
  requirePre0065Recovery(c.root,ports.now());
  const st=readState(c);if(!st||(st.phase!=='PREFLIGHT_OK'&&st.phase!=='ROLLED_BACK'))fail('PREFLIGHT_REQUIRED');
  if(st.phase==='ROLLED_BACK')fail('TARGET_ALREADY_BOOTSTRAPPED');
- await withOwner(ports,c.source,async source=>{
-  await assertRegistryIs(source,64);
-  const exists=(await source.query('SELECT count(*)::int n FROM pg_database WHERE datname=$1',[c.target])).rows[0].n===1;
-  if(!exists)await source.query(`CREATE DATABASE ${qi(c.target)} OWNER ${qi(c.owner)}`);
- });
- const result=await withOwner(ports,c.target,async target=>{
-  const foundation=await bootstrapProductionFoundation(target,c.target);
-  const cl=await target.connect();
-  try{
-   const g=await installGroupRoleOnFoundation65(cl,c.target,c.owner);
-   const dgr=await installDeltaGrantsOnFoundation65(cl,c.target,c.owner);
-   await cl.query(`ALTER DATABASE ${qi(c.target)} SET default_transaction_read_only=on`);
-   await assertRegistryIs(target,65);
-   const ss=await schemaState(target);
-   const rows=Number((await target.query('SELECT (SELECT count(*) FROM public.group_orders)+(SELECT count(*) FROM public.rental_bookings) n')).rows[0].n);
-   if(rows!==0)fail('TARGET_NOT_EMPTY');
-   return{foundation:Boolean(foundation),group:g,delta:dgr,schemaState:ss.sha256};
-  }finally{cl.release();}
- });
- writeState(c,{...st,phase:'TARGET_BOOTSTRAPPED',at:ports.now().toISOString(),targetSchemaStateSha256:result.schemaState});
- return{status:'CUTOVER_TARGET_BOOTSTRAPPED',sourceSha:head,target:c.target,registry:65,schemaStateSha256Prefix:result.schemaState.slice(0,16),readOnlyUntilVerified:true};
+ const sourceH=await ports.openOwner(c.source);
+ try{
+  return await exclusive(ports,[sourceH.pool],async()=>{
+   await identity(sourceH.pool,c.source,c.owner);
+   await assertRegistryIs(sourceH.pool,64);
+   const exists=(await sourceH.pool.query('SELECT count(*)::int n FROM pg_database WHERE datname=$1',[c.target])).rows[0].n===1;
+   if(!exists)await sourceH.pool.query(`CREATE DATABASE ${qi(c.target)} OWNER ${qi(c.owner)}`);
+   const result=await withOwner(ports,c.target,async target=>{
+    // The creator role of the executor is RETAINED as a dormant migration administrator (production-owner-compat/3): the next migration that touches
+    // executor-owned functions can then be applied through a revocable window (production-migration-window.ts), with nobody outside the database involved.
+    const foundation=await bootstrapProductionFoundation(target,c.target,{retainMigrationAdmin:true});
+    const cl=await target.connect();
+    try{
+     const g=await installGroupRoleOnFoundation65(cl,c.target,c.owner);
+     const dgr=await installDeltaGrantsOnFoundation65(cl,c.target,c.owner);
+     await cl.query(`ALTER DATABASE ${qi(c.target)} SET default_transaction_read_only=on`);
+     await assertRegistryIs(target,65);
+     const ss=await schemaState(target);
+     const rows=Number((await target.query('SELECT (SELECT count(*) FROM public.group_orders)+(SELECT count(*) FROM public.rental_bookings) n')).rows[0].n);
+     if(rows!==0)fail('TARGET_NOT_EMPTY');
+     return{foundation:Boolean(foundation),group:g,delta:dgr,schemaState:ss.sha256};
+    }finally{cl.release();}
+   });
+   const dormant=await dormantRoleOf(c.target);
+   writeState(c,{...st,phase:'TARGET_BOOTSTRAPPED',at:ports.now().toISOString(),targetSchemaStateSha256:result.schemaState,writes:'NEVER',dormantAdminRole:dormant});
+   return{status:'CUTOVER_TARGET_BOOTSTRAPPED',sourceSha:head,target:c.target,registry:65,schemaStateSha256Prefix:result.schemaState.slice(0,16),readOnlyUntilVerified:true,migrationAdmin:'DORMANT_NOLOGIN_RETAINED'};
+  });
+ }finally{await sourceH.close();}
 }
 
 // ---------------------------------------------------------------- shared READ ONLY structural proof of the target
 async function targetStructure(target:Pool,c:RunConfig){
  await assertRegistryIs(target,65);
- const roles=runtimeRoleNames(c.target),exec=c.target+'_custody_executor';
+ const roles=runtimeRoleNames(c.target),exec=c.target+'_custody_executor',custody=c.target+'_custody';
+ const dormant=await dormantRoleOf(c.target);
  return readOnly(target,async cl=>{
   const q=async(sql:string,p:unknown[]=[])=>(await cl.query(sql,p)).rows;
   const bad=(await triggerStates(cl)).filter(t=>t.state!=='O');
@@ -167,46 +217,62 @@ async function targetStructure(target:Pool,c:RunConfig){
   const owners=await q("SELECT p.proname,pg_get_userbyid(p.proowner) o,p.prosecdef d FROM pg_proc p WHERE p.proname IN ('rental_apply_receipt','rental_stage_guard','rental_validate_loan') ORDER BY 1");
   const nativeLink=(await q("SELECT count(*)::int n FROM information_schema.columns WHERE table_name='rental_loan_items' AND column_name IN ('group_part_id','hold_id')"))[0].n===2&&
    (await q("SELECT count(*)::int n FROM pg_class WHERE relname='group_part_preparations' AND relkind='r'"))[0].n===1;
-  const members=(await q('SELECT count(*)::int n FROM pg_auth_members WHERE roleid=$1::regrole',[qi(exec)]))[0].n;
-  const ephemeral=(await q("SELECT count(*)::int n FROM pg_roles WHERE rolname LIKE 'zao\\_boot\\_%'"))[0].n;
+  // Contract: no ordinary member holds the executor. The ONLY member is the dormant migration administrator, with ADMIN and neither SET nor INHERIT.
+  const members=(await q('SELECT count(*)::int n FROM pg_auth_members WHERE roleid=$1::regrole AND member<>$2::regrole',[qi(exec),qi(dormant)]))[0].n;
+  const admin=await dormantMigrationAdminPosture(cl as never,dormant,exec,custody);
+  const strayCreators=(await q("SELECT count(*)::int n FROM pg_roles WHERE rolname LIKE 'zao\\_boot\\_%' AND rolname<>$1",[dormant]))[0].n;
   const login=(await q('SELECT rolname FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin ORDER BY 1',[roles])).map(r=>r.rolname as string);
   const sessions=(await q('SELECT count(*)::int n FROM pg_stat_activity WHERE usename=ANY($1)',[roles]))[0].n as number;
-  const ok=bad.length===0&&orphans.length===0&&owners.length===3&&owners.every(o=>o.o===exec&&o.d===true)&&nativeLink&&members===0&&ephemeral===0;
-  return{ok,triggersNotEnabled:bad.length,fkOrphans:orphans.length,executorOwnedDefiners:owners.length,custodyLinkNative:nativeLink,executorMembers:members,ephemeralRoles:ephemeral,runtimeLoginRoles:login,runtimeSessions:sessions};
+  const ok=bad.length===0&&orphans.length===0&&owners.length===3&&owners.every(o=>o.o===exec&&o.d===true)&&nativeLink&&members===0&&strayCreators===0&&admin.ok===true;
+  return{ok,triggersNotEnabled:bad.length,fkOrphans:orphans.length,executorOwnedDefiners:owners.length,custodyLinkNative:nativeLink,executorMembers:members,migrationAdminDormant:admin.ok===true,strayCreatorRoles:strayCreators,runtimeLoginRoles:login,runtimeSessions:sessions};
  });
 }
 
 // ---------------------------------------------------------------- copy-and-switch
+/** A snapshot belongs to ONE window: once the source is proven restored it is dropped, so a stale one can never be applied to a later window. */
+const withoutWindow=(st:State):State=>{const {sourceFence:_f,recoveryReason:_r,...rest}=st;void _f;void _r;return rest as State;};
+const snapshotOf=(c:RunConfig,st:State):Fence=>st.sourceFence??{roles:runtimeRoleNames(c.source),wasLogin:st.sourceLoginRoles,terminated:0,terminateDenied:false,dbSetting:st.sourceDbSetting??null,verified:false};
+const failureCode=(message:string)=>'PRODUCTION_CUTOVER_'+(message.match(/^CUTOVER_([A-Z0-9_]+)/)?.[1]??'WINDOW_FAILED');
+
 export async function copyAndSwitch(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
  requirePre0065Recovery(c.root,ports.now());
- const st=readState(c);if(!st||(st.phase!=='TARGET_BOOTSTRAPPED'&&st.phase!=='ROLLED_BACK'))fail('PHASE_REFUSED_'+(st?.phase??'NONE'));
+ const st0=readState(c);if(!st0||(st0.phase!=='TARGET_BOOTSTRAPPED'&&st0.phase!=='ROLLED_BACK'))fail('PHASE_REFUSED_'+(st0?.phase??'NONE'));
  const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
  try{
-  await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
-  await assertRegistryIs(sourceH.pool,64);
-  const before=await targetStructure(targetH.pool,c);
-  if(!before.ok||before.runtimeLoginRoles.length||before.runtimeSessions)fail('TARGET_NOT_READY');
-  const loginNow=(await sourceH.pool.query('SELECT rolname FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin ORDER BY 1',[runtimeRoleNames(c.source)])).rows.map(r=>r.rolname as string);
-  // The window is recorded BEFORE the fence so that a crash leaves a state that rollback can read.
-  writeState(c,{...st,phase:'WINDOW_OPEN',at:ports.now().toISOString(),sourceLoginRoles:loginNow});
-  const prefixTo=c.target+'_',prefixFrom=c.source+'_';
-  const manifest:SwitchManifest={database:c.target,rolePrefixFrom:prefixFrom,rolePrefixTo:prefixTo,targetRuntimeRoles:runtimeRoleNames(c.target),loginRequired:runtimeRoleNames(c.target),
-   passwordEnvPrefix:'PRODUCTION_DB_PASSWORD_',roleEnvPrefix:'PRODUCTION_DB_ROLE_',nameEnv:'PRODUCTION_DB_NAME'};
-  let result:Awaited<ReturnType<typeof runCutover>>;
-  try{
-   result=await runCutover({source:sourceH.pool,target:targetH.pool,sourceOwner:sourceH.pool,targetOwner:targetH.pool,sourceDatabase:c.source,targetDatabase:c.target,
-    runtimeRoles:runtimeRoleNames(c.source),managerRole:managerOf(c.source),fenceWaitMs:c.fenceWaitMs??60000,
-    switchRuntime:async()=>undefined,   // the credential switch is the Owner's: this program stops with the application unable to reach the target
-    postSwitchProbe:async t=>{const s=await targetStructure(t,c);if(!s.ok||s.runtimeLoginRoles.length)throw new Error('CUTOVER_POST_SWITCH_STRUCTURE');}});
-  }catch(e){
-   const f=e as {stage?:string;rolledBack?:boolean;audit?:unknown;message:string};
-   writeState(c,{...st,phase:f.rolledBack?'TARGET_BOOTSTRAPPED':'FORWARD_FIX_ONLY',at:ports.now().toISOString(),sourceLoginRoles:loginNow,audit:f.audit});
-   throw Object.assign(new Error('PRODUCTION_CUTOVER_'+(f.message.match(/^CUTOVER_([A-Z0-9_]+)/)?.[1]??'WINDOW_FAILED')),{stage:f.stage,rolledBack:f.rolledBack});
-  }
-  writeState(c,{...st,phase:'COPIED_AWAITING_OWNER',at:ports.now().toISOString(),sourceLoginRoles:loginNow,audit:result.audit,switchManifest:manifest});
-  return{status:'CUTOVER_COPIED_AWAITING_OWNER',sourceSha:head,chainValid:result.chainValid,tables:result.report.tables,rows:result.report.rows,sequences:result.report.sequences,
-   sourceFenced:true,targetWritableByApplication:false,steps:result.audit.map(a=>a.step),switchManifest:manifest};
+  return await exclusive(ports,[sourceH.pool,targetH.pool],async()=>{
+   await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
+   await assertRegistryIs(sourceH.pool,64);
+   const before=await targetStructure(targetH.pool,c);
+   if(!before.ok||before.runtimeLoginRoles.length||before.runtimeSessions)fail('TARGET_NOT_READY');
+   if(!await targetReadOnlyNow(targetH.pool,c.target))fail('TARGET_NOT_READ_ONLY');
+   const sourceNow=await readFenceState(sourceH.pool,c.source,runtimeRoleNames(c.source));
+   // Everything that will be changed is recorded BEFORE the first change; `recordFence` refines it with the exact role list.
+   let st:State={...st0,phase:'WINDOW_OPEN',at:ports.now().toISOString(),sourceLoginRoles:sourceNow.loginRoles,sourceDbSetting:sourceNow.dbSetting,writes:'NEVER'};
+   delete (st as {sourceFence?:Fence}).sourceFence;
+   writeState(c,st);
+   const manifest:SwitchManifest={database:c.target,rolePrefixFrom:c.source+'_',rolePrefixTo:c.target+'_',targetRuntimeRoles:runtimeRoleNames(c.target),loginRequired:runtimeRoleNames(c.target),
+    passwordEnvPrefix:'PRODUCTION_DB_PASSWORD_',roleEnvPrefix:'PRODUCTION_DB_ROLE_',nameEnv:'PRODUCTION_DB_NAME'};
+   const persist=(patch:Partial<State>)=>{st={...st,...patch,at:ports.now().toISOString()};writeState(c,st);};
+   let result:Awaited<ReturnType<typeof runCutover>>;
+   try{
+    result=await runCutover({source:sourceH.pool,target:targetH.pool,sourceOwner:sourceH.pool,targetOwner:targetH.pool,sourceDatabase:c.source,targetDatabase:c.target,
+     runtimeRoles:runtimeRoleNames(c.source),managerRole:managerOf(c.source),fenceWaitMs:c.fenceWaitMs??60000,
+     ...(ports.fault?{fault:ports.fault}:{}),recordFence:f=>persist({sourceFence:f}),beforeEnableWrites:()=>persist({writes:'INTENT'}),afterEnableWrites:()=>persist({writes:'ENABLED'}),
+     switchRuntime:async()=>undefined,   // the credential switch is the Owner's: this program stops with the application unable to reach the target
+     postSwitchProbe:async t=>{const s=await targetStructure(t,c);if(!s.ok||s.runtimeLoginRoles.length)throw new Error('CUTOVER_POST_SWITCH_STRUCTURE');}});
+   }catch(e){
+    const f=e as Partial<CutoverFailure>&{message:string};
+    const fence=f.fence??st.sourceFence;
+    if(f.writesEnabled)persist({phase:'FORWARD_FIX_ONLY',writes:f.writesUnknown?'INTENT':'ENABLED',audit:f.audit,...(fence?{sourceFence:fence}:{}),recoveryReason:'TARGET_WRITES_ALLOWED'});
+    else if(f.recoveryRequired)persist({phase:'RECOVERY_REQUIRED',writes:'NEVER',audit:f.audit,...(fence?{sourceFence:fence}:{}),recoveryReason:'SOURCE_UNFENCE_UNVERIFIED'});
+    else{st=withoutWindow(st);persist({phase:'TARGET_BOOTSTRAPPED',writes:'NEVER',audit:f.audit});}
+    throw Object.assign(new Error(failureCode(f.message)),{stage:f.stage,rolledBack:Boolean(f.rolledBack),recoveryRequired:Boolean(f.recoveryRequired)});
+   }
+   persist({phase:'COPIED_AWAITING_OWNER',writes:'ENABLED',audit:result.audit,switchManifest:manifest});
+   return{status:'CUTOVER_COPIED_AWAITING_OWNER',sourceSha:head,chainValid:result.chainValid,tables:result.report.tables,rows:result.report.rows,sequences:result.report.sequences,
+    sourceFenced:true,targetWritableByApplication:false,steps:result.audit.map(a=>a.step),switchManifest:manifest};
+  });
  }finally{await sourceH.close();await targetH.close();}
 }
 
@@ -220,6 +286,8 @@ export async function verifyTarget(ports:RunPorts){
   const s=await targetStructure(targetH.pool,c);
   const now=await schemaState(targetH.pool);
   const schemaUnchanged=st.targetSchemaStateSha256===undefined||now.sha256===st.targetSchemaStateSha256;
+  // The privilege sets of source and target are compared in full; only objects migration 0065 itself introduces may differ.
+  const acl=await compareAcl(sourceH.pool,targetH.pool,c.source,c.target,l=>MIGRATION_0065_OBJECTS.test(l)||(ports.aclAllowed?.(l)??false),[c.owner]);
   let identical:boolean|null=null;
   // Source and target hold the same rows only while nobody can write to either: the application cannot log in to the target and the source is fenced.
   const sourceLogin=Number((await sourceH.pool.query('SELECT count(*)::int n FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin',[runtimeRoleNames(c.source)])).rows[0].n);
@@ -228,32 +296,87 @@ export async function verifyTarget(ports:RunPorts){
    const a=await readOnly(sourceH.pool,cl=>tableDigests(cl,tables)),b=await readOnly(targetH.pool,cl=>tableDigests(cl,tables,TARGET_ONLY_COLUMNS));
    identical=tables.every(t=>a[t]!.rows===b[t]!.rows&&a[t]!.sha256===b[t]!.sha256);
   }
-  return{status:s.ok&&schemaUnchanged&&identical!==false?'CUTOVER_TARGET_VERIFIED':'CUTOVER_TARGET_VERIFY_FAILED',sourceSha:head,phase:st.phase,registry:65,...s,schemaUnchanged,
+  const structureOk=s.ok&&schemaUnchanged&&acl.unexpected.length===0;
+  // Two different passes, never confused: FULLY_VERIFIED needs full row identity; STRUCTURE_ONLY says nothing about the rows.
+  const status=!structureOk||identical===false?'CUTOVER_TARGET_VERIFY_FAILED':identical===true?'CUTOVER_TARGET_FULLY_VERIFIED':'CUTOVER_TARGET_STRUCTURE_ONLY_PASS';
+  return{status,fullMatch:identical===true,sourceSha:head,phase:st.phase,registry:65,...s,schemaUnchanged,
+   acl:{sourceLines:acl.sourceLines,targetLines:acl.targetLines,explainedDifferences:acl.onlySource.length+acl.onlyTarget.length-acl.unexpected.length,unexpectedDifferences:acl.unexpected.length,
+    unexpectedSample:acl.unexpected.slice(0,5).map(l=>l.split('|').slice(0,3).join('|'))},
    rowsIdenticalToSource:identical,sourceRuntimeLoginRoles:sourceLogin,mode:identical===null?'STRUCTURAL_ONLY_TARGET_IN_USE':'FULL_PRE_SWITCH'};
  }finally{await sourceH.close();await targetH.close();}
 }
 
-// ---------------------------------------------------------------- rollback (only while the application has never been able to use the target)
+// ---------------------------------------------------------------- rollback / recover
+/** The target's facts that decide whether going back is still allowed (read from the databases, never from a file). */
+async function targetFacts(sourceH:OwnerHandle,targetH:OwnerHandle,c:RunConfig){
+ const roles=runtimeRoleNames(c.target);
+ const used=(await targetH.pool.query('SELECT (SELECT count(*)::int FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin) l,(SELECT count(*)::int FROM pg_stat_activity WHERE usename=ANY($1)) s',[roles])).rows[0] as {l:number;s:number};
+ const readOnly=await targetReadOnlyNow(targetH.pool,c.target);
+ const tables=await copiedTables(sourceH.pool);
+ const untouched=await proveTargetUntouched(sourceH.pool,targetH.pool,tables);
+ return{loginRoles:used.l,sessions:used.s,readOnly,untouched};
+}
+async function restoreSource(c:RunConfig,sourceH:OwnerHandle,targetH:OwnerHandle,st:State){
+ if(!await targetReadOnlyNow(targetH.pool,c.target))await readWrite(targetH.pool,[`ALTER DATABASE ${qi(c.target)} SET default_transaction_read_only=on`]);
+ const fence=snapshotOf(c,st);
+ await unfenceSource(sourceH.pool,c.source,fence,managerOf(c.source));
+ return fence;
+}
 export async function rollback(ports:RunPorts){
  const c=ports.config;assertConfig(c);const head=ports.release();
  const st=readState(c);if(!st||st.phase!=='COPIED_AWAITING_OWNER')fail('ROLLBACK_PHASE_REFUSED_'+(st?.phase??'NONE'));
  const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
  try{
-  await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
-  const roles=runtimeRoleNames(c.target);
-  const used=(await targetH.pool.query('SELECT (SELECT count(*)::int FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin) l,(SELECT count(*)::int FROM pg_stat_activity WHERE usename=ANY($1)) s',[roles])).rows[0];
-  // Proof the target never accepted an application write: no runtime role of it can log in and none has a session. Otherwise only a forward fix is allowed (never two writers).
-  if(used.l>0||used.s>0)fail('ROLLBACK_REFUSED_TARGET_IN_USE');
-  await readWrite(targetH.pool,[`ALTER DATABASE ${qi(c.target)} SET default_transaction_read_only=on`]);
-  const fence:Fence={roles:runtimeRoleNames(c.source),wasLogin:st.sourceLoginRoles,terminated:0,terminateDenied:false};
-  await unfenceSource(sourceH.pool,c.source,fence,managerOf(c.source));
-  writeState(c,{...st,phase:'ROLLED_BACK',at:ports.now().toISOString()});
-  return{status:'CUTOVER_ROLLED_BACK',sourceSha:head,sourceRuntimeRolesRestored:st.sourceLoginRoles.length,targetReadOnly:true};
+  return await exclusive(ports,[sourceH.pool,targetH.pool],async()=>{
+   await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
+   const f=await targetFacts(sourceH,targetH,c);
+   // Going back is allowed only if the target has never carried a business write: nobody can log in or is connected, AND the full data and every sequence still equal the frozen source.
+   if(f.loginRoles>0||f.sessions>0)fail('ROLLBACK_REFUSED_TARGET_IN_USE');
+   if(!f.untouched.untouched)fail('ROLLBACK_REFUSED_TARGET_WRITTEN');
+   const fence=await restoreSource(c,sourceH,targetH,st);
+   writeState(c,{...withoutWindow(st),phase:'ROLLED_BACK',writes:'NEVER',at:ports.now().toISOString()});
+   return{status:'CUTOVER_ROLLED_BACK',sourceSha:head,sourceRuntimeRolesRestored:fence.wasLogin.length,targetReadOnly:true,targetProvenUntouched:true};
+  });
+ }finally{await sourceH.close();await targetH.close();}
+}
+/** Crash/failed-window recovery from the REAL database state. It rolls back only when that is provably safe; otherwise it never unfences and says so.
+ * It never claims success it did not read back: a source that cannot be proven restored stays RECOVERY_REQUIRED. */
+export async function recover(ports:RunPorts){
+ const c=ports.config;assertConfig(c);const head=ports.release();
+ const st=readState(c);if(!st)fail('PHASE_REFUSED_NONE');
+ if(!['WINDOW_OPEN','RECOVERY_REQUIRED','FORWARD_FIX_ONLY'].includes(st.phase))return{status:'CUTOVER_NOTHING_TO_RECOVER',sourceSha:head,phase:st.phase};
+ const sourceH=await ports.openOwner(c.source),targetH=await ports.openOwner(c.target);
+ try{
+  return await exclusive(ports,[sourceH.pool,targetH.pool],async()=>{
+   await identity(sourceH.pool,c.source,c.owner);await identity(targetH.pool,c.target,c.owner);
+   const sourceState=await readFenceState(sourceH.pool,c.source,runtimeRoleNames(c.source));
+   const f=await targetFacts(sourceH,targetH,c);
+   const sourceFenced=sourceState.dbSetting==='on'||st.sourceLoginRoles.some(r=>!sourceState.loginRoles.includes(r));
+   const facts={phase:st.phase,sourceFenced,sourceSessions:sourceState.sessions,targetReadOnly:f.readOnly,targetRuntimeLoginRoles:f.loginRoles,targetSessions:f.sessions,targetUntouched:f.untouched.untouched,writesRecorded:st.writes??'NEVER'};
+   if(!sourceFenced){
+    writeState(c,{...withoutWindow(st),phase:'TARGET_BOOTSTRAPPED',writes:'NEVER',at:ports.now().toISOString()});
+    return{status:'CUTOVER_RECOVERED_NOTHING_FENCED',sourceSha:head,...facts,phase:'TARGET_BOOTSTRAPPED'};
+   }
+   // Provably safe to go back: nobody uses the target AND (it was never made writable, or its data still equals the frozen source).
+   const safe=f.loginRoles===0&&f.sessions===0&&((st.writes??'NEVER')==='NEVER'&&f.readOnly||f.untouched.untouched);
+   if(safe){
+    try{
+     const fence=await restoreSource(c,sourceH,targetH,st);
+     writeState(c,{...withoutWindow(st),phase:'TARGET_BOOTSTRAPPED',writes:'NEVER',at:ports.now().toISOString()});
+     return{status:'CUTOVER_RECOVERED_ROLLED_BACK',sourceSha:head,...facts,sourceRuntimeRolesRestored:fence.wasLogin.length,phase:'TARGET_BOOTSTRAPPED'};
+    }catch{
+     writeState(c,{...st,phase:'RECOVERY_REQUIRED',at:ports.now().toISOString(),recoveryReason:'SOURCE_UNFENCE_UNVERIFIED'});
+     return{status:'CUTOVER_RECOVERY_REQUIRED',sourceSha:head,...facts,reason:'SOURCE_UNFENCE_UNVERIFIED',phase:'RECOVERY_REQUIRED'};
+    }
+   }
+   writeState(c,{...st,phase:'FORWARD_FIX_ONLY',at:ports.now().toISOString(),recoveryReason:'TARGET_MAY_HOLD_WRITES'});
+   return{status:'CUTOVER_FORWARD_FIX_ONLY',sourceSha:head,...facts,reason:'TARGET_MAY_HOLD_WRITES',phase:'FORWARD_FIX_ONLY'};
+  });
  }finally{await sourceH.close();await targetH.close();}
 }
 
 export async function runCommand(command:Command,ports:RunPorts){
- return command==='preflight'?preflight(ports):command==='bootstrap-target'?bootstrapTarget(ports):command==='copy-and-switch'?copyAndSwitch(ports):command==='verify-target'?verifyTarget(ports):rollback(ports);
+ return command==='preflight'?preflight(ports):command==='bootstrap-target'?bootstrapTarget(ports):command==='copy-and-switch'?copyAndSwitch(ports):command==='verify-target'?verifyTarget(ports):command==='recover'?recover(ports):rollback(ports);
 }
 
 // ---------------------------------------------------------------- production adapters

@@ -91,6 +91,18 @@ export async function tableDigests(pool:Q,tables:string[],ignore:Record<string,s
 export async function sequencePositions(pool:Q){
  return (await pool.query<{s:string;v:string|null}>(`SELECT schemaname||'.'||sequencename s,last_value::text v FROM pg_sequences ORDER BY 1`)).rows;
 }
+/** Exact sequence state: last_value AND is_called (a never-called sequence and one called at its start value differ). Where the owner may not read a sequence
+ * (executor-owned), the catalogue view is the only evidence and is_called is derived from it. */
+export type SequenceState={s:string;v:string|null;c:boolean};
+export async function sequenceStates(pool:Q):Promise<SequenceState[]>{
+ const names=(await pool.query<{s:string;v:string|null}>(`SELECT schemaname||'.'||sequencename s,last_value::text v FROM pg_sequences ORDER BY 1`)).rows;
+ const out:SequenceState[]=[];
+ for(const q of names){
+  try{const r=(await pool.query(`SELECT last_value::text v,is_called c FROM ${qt(q.s)}`)).rows[0];out.push({s:q.s,v:r.v as string,c:r.c as boolean});}
+  catch{out.push({s:q.s,v:q.v,c:q.v!==null});}
+ }
+ return out;
+}
 /** Every foreign key re-proved by anti-join (a catalogue-valid constraint is not evidence). */
 export async function foreignKeyOrphans(pool:Q){
  const fks=(await pool.query<{name:string;child:string;parent:string;cc:string[];pc:string[]}>(`SELECT k.conname name,cn.nspname||'.'||cl.relname child,pn.nspname||'.'||pr.relname parent,
@@ -129,11 +141,35 @@ export async function assertTableSets(source:Q,target:Q){
  for(const e of TARGET_ONLY_TABLES)if(Number((await target.query(`SELECT count(*)::int n FROM ${qt(e)}`)).rows[0].n))throw new Error('CUTOVER_TARGET_ONLY_TABLE_NOT_EMPTY '+e);
  return {tables:s.length,targetOnly:extra};
 }
-export type CopyReport={tables:number;rows:number;perTable:Record<string,number>;sequences:number;deferredConstraints:number};
+/** Upper bound for one table in this copy design (one transaction, server-side cursor, bounded batches). Larger tables are refused, never silently truncated. */
+export const MAX_TABLE_ROWS=5_000_000;
+/** Reads one table as the server's own JSON text (no JavaScript number parsing: bigint/numeric/timestamps keep every digit), in bounded batches. */
+async function readTable(source:Q,t:string,batch:number,maxRows:number,sink:(texts:string[])=>Promise<void>):Promise<number>{
+ const isPool=typeof (source as Pool).connect==='function'&&!('release' in source);
+ const c=isPool?await (source as Pool).connect():source as PoolClient;
+ let n=0;
+ try{
+  const total=Number((await c.query(`SELECT count(*)::int n FROM ${qt(t)}`)).rows[0].n);
+  if(total>maxRows)throw new Error('CUTOVER_TABLE_TOO_LARGE '+t+' '+total);
+  if(!isPool){const all=(await c.query(`SELECT to_jsonb(x)::text v FROM ${qt(t)} x`)).rows.map(r=>r.v as string);for(let i=0;i<all.length;i+=batch)await sink(all.slice(i,i+batch));return all.length;}
+  await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+  await c.query(`DECLARE zao_cutover_cursor NO SCROLL CURSOR FOR SELECT to_jsonb(x)::text v FROM ${qt(t)} x`);
+  for(;;){
+   const rows=(await c.query(`FETCH ${batch} FROM zao_cutover_cursor`)).rows.map(r=>r.v as string);
+   if(!rows.length)break;
+   n+=rows.length;await sink(rows);
+  }
+  await c.query('COMMIT');
+  if(n!==total)throw new Error('CUTOVER_SOURCE_CHANGED_DURING_READ '+t);
+  return n;
+ }catch(e){if(isPool)await c.query('ROLLBACK').catch(()=>undefined);throw e;}
+ finally{if(isPool)c.release();}
+}
+export type CopyReport={tables:number;rows:number;perTable:Record<string,number>;sequences:number;sequencesUnused:number;deferredConstraints:number};
 /** Copies every row of every table (except NOT_COPIED) from source into the target, in the caller's transaction.
  * User triggers of each table are disabled only for its load and re-enabled before the transaction ends. Tables with rows in the
  * target are replaced (migration-seeded rows are not authoritative; the source is). Source-only columns must be NULL. */
-export async function copyData(source:Q,client:PoolClient,options:{batch?:number;faultAfterTable?:string;ignoreSourceOnly?:Record<string,string[]>}={}):Promise<CopyReport>{
+export async function copyData(source:Q,client:PoolClient,options:{batch?:number;maxRows?:number;faultAfterTable?:string;ignoreSourceOnly?:Record<string,string[]>}={}):Promise<CopyReport>{
  const batch=options.batch??500;
  const destination=new Set(await listTables(client));
  const copied=(await listTables(source)).filter(t=>!(NOT_COPIED as readonly string[]).includes(t));
@@ -168,27 +204,27 @@ export async function copyData(source:Q,client:PoolClient,options:{batch?:number
    if(unexpected.some(c=>!allowed.includes(c)))throw new Error('CUTOVER_TARGET_ONLY_COLUMN_UNAPPROVED '+t+' '+unexpected.join(','));
    const writable=tc.filter(c=>sourceNames.has(c.name)&&!c.generated).map(c=>c.name);
    const identity=tc.some(c=>c.identityAlways),list=writable.map(qi).join(',');
-   const result=await source.query(`SELECT to_jsonb(x) v FROM ${qt(t)} x`);
-   for(let i=0;i<result.rows.length;i+=batch){
-    const chunk=result.rows.slice(i,i+batch).map(r=>r.v);
-    await client.query(`INSERT INTO ${qt(t)}(${list})${identity?' OVERRIDING SYSTEM VALUE':''} SELECT ${list} FROM jsonb_populate_recordset(NULL::${qt(t)},$1::jsonb)`,[JSON.stringify(chunk)]);
-   }
-   perTable[t]=result.rows.length;rows+=result.rows.length;
+   const n=await readTable(source,t,batch,options.maxRows??MAX_TABLE_ROWS,async texts=>{
+    // The rows travel as the server's own jsonb text: never parsed or re-serialised by JavaScript (no precision loss).
+    await client.query(`INSERT INTO ${qt(t)}(${list})${identity?' OVERRIDING SYSTEM VALUE':''} SELECT ${list} FROM jsonb_populate_recordset(NULL::${qt(t)},$1::jsonb)`,['['+texts.join(',')+']']);
+   });
+   perTable[t]=n;rows+=n;
    if(options.faultAfterTable===t)throw new Error('CUTOVER_INJECTED_FAULT '+t);
   }
   // Sequence positions follow the source exactly (gaps included), never max(column).
-  let sequences=0;
+  let sequences=0,sequencesUnused=0;
   const target=new Set((await client.query<{s:string}>(`SELECT schemaname||'.'||sequencename s FROM pg_sequences`)).rows.map(r=>r.s));
-  for(const q of await sequencePositions(source)){
+  for(const q of await sequenceStates(source)){
    if(q.v===null||!target.has(q.s))continue;
-   await client.query('SELECT setval($1::regclass,$2::bigint,true)',[q.s,q.v]);sequences++;
+   // last_value AND is_called: an unused sequence stays unused (setval(..,false)), a used one continues after its last value.
+   await client.query('SELECT setval($1::regclass,$2::bigint,$3::boolean)',[q.s,q.v,q.c]);if(q.c)sequences++;else sequencesUnused++;
   }
   if(deferred.length){
    // Every deferred foreign key is checked now; only then is the constraint returned to exactly its committed definition.
    await client.query('SET CONSTRAINTS ALL IMMEDIATE');
    for(const d of madeDeferrable)await client.query(`ALTER TABLE ${qt(d.table)} ALTER CONSTRAINT ${qi(d.constraint)} NOT DEFERRABLE`);
   }
-  return {tables:order.length,rows,perTable,sequences,deferredConstraints:deferred.length};
+  return {tables:order.length,rows,perTable,sequences,sequencesUnused,deferredConstraints:deferred.length};
  }finally{
   // Always restore, also on failure inside an aborted transaction the ROLLBACK does it; on success this makes it explicit.
   for(const t of disabled)await client.query(`ALTER TABLE ${qt(t)} ENABLE TRIGGER USER`).catch(()=>undefined);
@@ -206,34 +242,57 @@ export function auditChain(now:()=>Date=()=>new Date()){
   verify(){let prev='0'.repeat(64);return entries.every((e,i)=>{const ok=e.seq===i+1&&e.prev===prev&&e.hash===sha(JSON.stringify({seq:e.seq,step:e.step,at:e.at,detail:e.detail,prev:e.prev}));prev=e.hash;return ok;});},
  };
 }
-export type Fence={roles:string[];wasLogin:string[];terminated:number;terminateDenied:boolean};
-/** Fences the source: runtime roles that can log in are made NOLOGIN (through the role-administration role the owner can SET to),
- * their sessions are terminated where the caller is permitted to, and the database defaults to read-only. The proof is "zero sessions
- * of those roles remain", not the absence of an error: where termination is not permitted the fence fails and the application must be
- * stopped by the Owner first. */
-export async function fenceSource(owner:Pool,database:string,runtimeRoles:string[],options:{managerRole:string;waitMs?:number}):Promise<Fence>{
+/** Snapshot of everything the fence changes, taken BEFORE it changes anything (persisted by the caller through `record`). `dbSetting` is the database-level
+ * default_transaction_read_only value that existed before (null = none), so that restoring is exact and not a blind RESET. */
+export type Fence={roles:string[];wasLogin:string[];terminated:number;terminateDenied:boolean;dbSetting:string|null;verified:boolean};
+export type FenceState={loginRoles:string[];dbSetting:string|null;sessions:number};
+/** The REAL state of the source, read from the database (never inferred from a local file): who can log in, the database default, how many sessions of `roles` exist. */
+export async function readFenceState(pool:Q,database:string,roles:string[]):Promise<FenceState>{
+ const login=(await pool.query<{rolname:string}>('SELECT rolname FROM pg_roles WHERE rolname=ANY($1) AND rolcanlogin ORDER BY 1',[roles])).rows.map(r=>r.rolname);
+ const cfg=(await pool.query<{c:string[]|null}>('SELECT s.setconfig c FROM pg_db_role_setting s JOIN pg_database d ON d.oid=s.setdatabase WHERE d.datname=$1 AND s.setrole=0',[database])).rows[0]?.c??[];
+ const entry=cfg.find(x=>x.startsWith('default_transaction_read_only='));
+ const sessions=Number((await pool.query('SELECT count(*)::int n FROM pg_stat_activity WHERE usename=ANY($1) AND pid<>pg_backend_pid()',[roles])).rows[0].n);
+ return{loginRoles:login,dbSetting:entry?entry.slice('default_transaction_read_only='.length):null,sessions};
+}
+/** Fences the source: runtime roles that can log in are made NOLOGIN (through the role-administration role the owner can SET to), their sessions are terminated
+ * where the caller is permitted to, and the database defaults to read-only.
+ *  - the snapshot is handed to `record` BEFORE the first change, and is attached to EVERY error thrown from here on, so a partial fence is always restorable;
+ *  - each boundary is read back from the database: the fence is only reported when no role can log in, the default is read-only and zero sessions remain
+ *    (NOLOGIN does not end a session, so termination is retried until the deadline);
+ *  - `extraRoles` (e.g. a receiver role) are included in the session proof. */
+export async function fenceSource(owner:Pool,database:string,runtimeRoles:string[],options:{managerRole:string;waitMs?:number;extraRoles?:string[];record?:(f:Fence)=>Promise<void>|void;faultPartial?:boolean}):Promise<Fence>{
  const present=(await owner.query<{rolname:string;rolcanlogin:boolean}>('SELECT rolname,rolcanlogin FROM pg_roles WHERE rolname=ANY($1) ORDER BY 1',[runtimeRoles])).rows;
  const names=present.map(r=>r.rolname),wasLogin=present.filter(r=>r.rolcanlogin).map(r=>r.rolname);
- const client=await owner.connect();let terminated=0,denied=false;
- const fence:Fence={roles:names,wasLogin,terminated:0,terminateDenied:false};
+ const watched=[...new Set([...names,...(options.extraRoles??[])])];
+ const before=await readFenceState(owner,database,watched);
+ const fence:Fence={roles:names,wasLogin,terminated:0,terminateDenied:false,dbSetting:before.dbSetting,verified:false};
+ await options.record?.(fence);
+ let client:PoolClient|undefined;
  try{
+  client=await owner.connect();
   await client.query(`SET ROLE ${qi(options.managerRole)}`);
-  for(const r of wasLogin)await client.query(`ALTER ROLE ${qi(r)} NOLOGIN`);
+  for(const [i,r] of wasLogin.entries()){
+   await client.query(`ALTER ROLE ${qi(r)} NOLOGIN`);
+   if(options.faultPartial&&i===0)throw new Error('CUTOVER_INJECTED_FAULT fence-partial');
+  }
   await client.query('RESET ROLE');
   await client.query(`ALTER DATABASE ${qi(database)} SET default_transaction_read_only=on`);
-  const sessions=(await client.query<{pid:number}>('SELECT pid FROM pg_stat_activity WHERE usename=ANY($1) AND pid<>pg_backend_pid()',[names])).rows;
-  for(const s of sessions){
-   try{await client.query('SELECT pg_terminate_backend($1)',[s.pid]);terminated++;}catch{denied=true;}
-  }
-  fence.terminated=terminated;fence.terminateDenied=denied;
   const deadline=Date.now()+(options.waitMs??5000);
   for(;;){
-   const left=Number((await client.query('SELECT count(*)::int n FROM pg_stat_activity WHERE usename=ANY($1) AND pid<>pg_backend_pid()',[names])).rows[0].n);
-   if(left===0)return fence;
-   if(Date.now()>deadline)throw Object.assign(new Error('CUTOVER_FENCE_SESSIONS_REMAIN'),{fence});
+   const sessions=(await client.query<{pid:number}>('SELECT pid FROM pg_stat_activity WHERE usename=ANY($1) AND pid<>pg_backend_pid()',[watched])).rows;
+   if(!sessions.length)break;
+   for(const s of sessions){
+    try{await client.query('SELECT pg_terminate_backend($1)',[s.pid]);fence.terminated++;}catch{fence.terminateDenied=true;}
+   }
+   if(Date.now()>deadline)throw new Error('CUTOVER_FENCE_SESSIONS_REMAIN');
    await new Promise(r=>setTimeout(r,100));
   }
- }finally{await client.query('RESET ROLE').catch(()=>undefined);client.release();}
+  const after=await readFenceState(client,database,watched);
+  if(after.loginRoles.some(r=>names.includes(r))||after.dbSetting!=='on'||after.sessions!==0)throw new Error('CUTOVER_FENCE_READBACK_FAILED');
+  fence.verified=true;
+  return fence;
+ }catch(e){throw Object.assign(e instanceof Error?e:new Error(String(e)),{fence});}
+ finally{if(client){await client.query('RESET ROLE').catch(()=>undefined);client.release();}}
 }
 /** A database that defaults to read-only also hands read-only sessions to the operator: every control statement is an explicit READ WRITE transaction. */
 export async function readWrite(pool:Pool,statements:string[],asRole?:string){
@@ -245,11 +304,18 @@ export async function readWrite(pool:Pool,statements:string[],asRole?:string){
   await client.query('COMMIT');
  }catch(e){await client.query('ROLLBACK').catch(()=>undefined);throw e;}finally{client.release();}
 }
+/** Restores EXACTLY the snapshot (logins and the previous database default) and proves it by reading the database back; throws when it cannot prove it. */
 export async function unfenceSource(owner:Pool,database:string,fence:Fence,managerRole:string){
  if(fence.wasLogin.length)await readWrite(owner,fence.wasLogin.map(r=>`ALTER ROLE ${qi(r)} LOGIN`),managerRole);
- await readWrite(owner,[`ALTER DATABASE ${qi(database)} RESET default_transaction_read_only`]);
+ await readWrite(owner,[fence.dbSetting===null?`ALTER DATABASE ${qi(database)} RESET default_transaction_read_only`:`ALTER DATABASE ${qi(database)} SET default_transaction_read_only=${fence.dbSetting==='on'?'on':'off'}`]);
+ const now=await readFenceState(owner,database,fence.roles);
+ const restoredLogin=fence.wasLogin.every(r=>now.loginRoles.includes(r)),restoredSetting=now.dbSetting===fence.dbSetting;
+ if(!restoredLogin||!restoredSetting)throw new Error('CUTOVER_UNFENCE_UNVERIFIED');
+ return true as const;
 }
-/** Work that a second worker could do on the data: an active reconciliation lease or a delivery in flight. */
+/** Work that a second worker could do on the data: an active reconciliation lease or a delivery in flight. `executorTransientRows` is statistics-based and only
+ * meaningful when no runtime session exists (the effect tables are filled and emptied inside one SECURITY DEFINER transaction), so it is part of the
+ * post-fence proof, not of the live pre-fence check. */
 export async function inFlightWork(pool:Q){
  const q=async(sql:string)=>Number((await pool.query(sql)).rows[0].n);
  return{reconciliationLeases:await q('SELECT count(*)::int n FROM payment_reconciliation.jobs WHERE lease_token IS NOT NULL'),
@@ -258,35 +324,60 @@ export async function inFlightWork(pool:Q){
   groupDeliveries:await q("SELECT count(*)::int n FROM public.group_notification_outbox WHERE status='SENDING'"),
   executorTransientRows:await q(`SELECT coalesce(sum(n_live_tup),0)::int n FROM pg_stat_all_tables WHERE schemaname||'.'||relname=ANY(ARRAY['${TRANSIENT_EXECUTOR_TABLES.join("','")}'])`)};
 }
+/** Full-data proof that a target has never carried a net write since its copy: every table digest and every sequence state equals the frozen source's. */
+export async function proveTargetUntouched(source:Pool,target:Pool,tables:string[]){
+ const a=await tableDigests(source,tables),b=await tableDigests(target,tables,TARGET_ONLY_COLUMNS);
+ const rowsDiffer=tables.filter(t=>a[t]!.rows!==b[t]!.rows||a[t]!.sha256!==b[t]!.sha256);
+ const sa=await sequenceStates(source),sb=new Map((await sequenceStates(target)).map(r=>[r.s,r]));
+ const seqDiffer=sa.filter(r=>r.v!==null&&sb.has(r.s)&&(sb.get(r.s)!.v!==r.v||sb.get(r.s)!.c!==r.c)).map(r=>r.s);
+ return{untouched:rowsDiffer.length===0&&seqDiffer.length===0,rowsDiffer,seqDiffer,tables:tables.length};
+}
 export type CutoverStage='preflight'|'fence'|'copy'|'reconcile'|'enable-writes'|'switch'|'post-switch';
+export type CutoverFault=CutoverStage|'fence-partial'|'fence-readback'|'copy-commit-lost'|'enable-writes-lost'|'unfence-fails';
 export type CutoverOptions={source:Pool;target:Pool;sourceOwner:Pool;targetOwner:Pool;sourceDatabase:string;targetDatabase:string;runtimeRoles:string[];managerRole:string;fenceWaitMs?:number;
+ /** Roles whose sessions must also be zero (e.g. the receiver role). */
+ extraRoles?:string[];
+ /** Persist the pre-fence snapshot; called BEFORE the first change. A crash after this leaves enough to restore from. */
+ recordFence?:(f:Fence)=>Promise<void>|void;
+ /** Persist "target writes are about to be allowed" BEFORE the database default is lifted, and "allowed" after. */
+ beforeEnableWrites?:()=>Promise<void>|void;
+ afterEnableWrites?:()=>Promise<void>|void;
  /** The only non-database step: point the runtime at the target (secret/env change by the Owner). Receives the audit chain. */
  switchRuntime:()=>Promise<void>;
  postSwitchProbe:(target:Pool)=>Promise<void>;
- now?:()=>Date;fault?:CutoverStage;
+ now?:()=>Date;fault?:CutoverFault;
  sourceCount?:number;ignoreSourceOnly?:Record<string,string[]>};
-/** Executes the cutover. Rollback contract:
- *  - before 'enable-writes' the target has never accepted an application write: failure unfences the source and the target copy is discardable (re-run replaces it);
- *  - from 'enable-writes' on, the target may hold new writes; failure is forward-fix only and the source stays fenced (never two writers). */
+export type CutoverFailure=Error&{stage:CutoverStage;rolledBack:boolean;recoveryRequired:boolean;writesEnabled:boolean;writesUnknown:boolean;audit:Audit[];chainValid:boolean;fence?:Fence};
+/** Executes the cutover. Failure contract (the product never claims more than it read back):
+ *  - nothing fenced yet (preflight): nothing to restore, `rolledBack` true, `recoveryRequired` false;
+ *  - fenced, target never writable: the exact snapshot is restored and READ BACK; `rolledBack` is true only when that proof holds, otherwise `recoveryRequired`
+ *    is true (RECOVERY_REQUIRED: the source may still be fenced; use `recover`, never assume);
+ *  - from the moment the target's read-only default is lifted (intent recorded first, then read back after any failure) the outcome is forward-fix only:
+ *    the source stays fenced, `rolledBack` is false (never two writers). */
 export async function runCutover(o:CutoverOptions){
- const audit=auditChain(o.now);let fence:Fence|undefined,writesEnabled=false,stage:CutoverStage='preflight';
- const fault=(s:CutoverStage)=>{if(o.fault===s)throw new Error('CUTOVER_INJECTED_FAULT '+s);};
+ const audit=auditChain(o.now);let fence:Fence|undefined,writesIntent=false,writesEnabled=false,writesUnknown=false,stage:CutoverStage='preflight';
+ const fault=(s:CutoverFault)=>{if(o.fault===s)throw new Error('CUTOVER_INJECTED_FAULT '+s);};
+ const targetDefault=async()=>{
+  const cfg=(await o.targetOwner.query('SELECT setconfig FROM pg_db_role_setting s JOIN pg_database d ON d.oid=s.setdatabase WHERE d.datname=$1 AND s.setrole=0',[o.targetDatabase])).rows[0]?.setconfig??[];
+  return (cfg as string[]).includes('default_transaction_read_only=on');
+ };
  try{
   const reg=await assertRegistries(o.source,o.target,o.sourceCount);
   const sets=await assertTableSets(o.source,o.target);
-  const ro=(await o.target.query("SELECT current_setting('default_transaction_read_only') v")).rows[0].v;
-  const dbSetting=(await o.targetOwner.query('SELECT setconfig FROM pg_db_role_setting s JOIN pg_database d ON d.oid=s.setdatabase WHERE d.datname=$1 AND s.setrole=0',[o.targetDatabase])).rows[0]?.setconfig??[];
-  if(!(dbSetting as string[]).includes('default_transaction_read_only=on'))throw new Error('CUTOVER_TARGET_NOT_READ_ONLY');
-  void ro;
+  if(!await targetDefault())throw new Error('CUTOVER_TARGET_NOT_READ_ONLY');
   const targetBefore=await schemaState(o.target);
-  audit.add('preflight',{registry:reg,tables:sets.tables,targetBaseline:targetBefore.sha256});
+  // Re-check immediately before stopping anything: nothing is fenced while the work or the target is not ready.
+  const live=await inFlightWork(o.source);const {executorTransientRows:_t,...liveWork}=live;void _t;
+  if(Object.values(liveWork).some(v=>v>0))throw new Error('CUTOVER_PREFLIGHT_IN_FLIGHT_WORK '+JSON.stringify(liveWork));
+  audit.add('preflight',{registry:reg,tables:sets.tables,targetBaseline:targetBefore.sha256,inFlight:liveWork});
   fault('preflight');
   stage='fence';
-  try{fence=await fenceSource(o.sourceOwner,o.sourceDatabase,o.runtimeRoles,{managerRole:o.managerRole,...(o.fenceWaitMs===undefined?{}:{waitMs:o.fenceWaitMs})});}
-  catch(e){fence=(e as {fence?:Fence}).fence;throw e;}
+  fence=await fenceSource(o.sourceOwner,o.sourceDatabase,o.runtimeRoles,{managerRole:o.managerRole,...(o.fenceWaitMs===undefined?{}:{waitMs:o.fenceWaitMs}),
+   ...(o.extraRoles?{extraRoles:o.extraRoles}:{}),...(o.recordFence?{record:o.recordFence}:{}),faultPartial:o.fault==='fence-partial'});
+  fault('fence-readback');
   const work=await inFlightWork(o.source);
   if(Object.values(work).some(v=>v>0))throw new Error('CUTOVER_IN_FLIGHT_WORK '+JSON.stringify(work));
-  audit.add('fence',{roles:fence.roles,terminated:fence.terminated,inFlight:work});
+  audit.add('fence',{roles:fence.roles,terminated:fence.terminated,verified:fence.verified,inFlight:work});
   fault('fence');
   stage='copy';
   const sourceDigests=await tableDigests(o.source,(await listTables(o.source)).filter(t=>!(NOT_COPIED as readonly string[]).includes(t)));
@@ -297,24 +388,33 @@ export async function runCutover(o:CutoverOptions){
    await client.query('SELECT pg_advisory_xact_lock(71820401)');
    report=await copyData(o.source,client,(o.ignoreSourceOnly?{ignoreSourceOnly:o.ignoreSourceOnly}:{}));
    fault('copy');
+   if(o.fault==='unfence-fails')throw new Error('CUTOVER_INJECTED_FAULT copy');   // after a fence: its restoration is made to fail too (see the catch below)
    await client.query('COMMIT');
+   // The commit reached the server; a lost reply after this point is indistinguishable from this fault. The target is still read-only: a re-run replaces the copy.
+   fault('copy-commit-lost');
   }catch(e){await client.query('ROLLBACK').catch(()=>undefined);throw e;}finally{client.release();}
-  audit.add('copy',{tables:report.tables,rows:report.rows,sequences:report.sequences});
+  audit.add('copy',{tables:report.tables,rows:report.rows,sequences:report.sequences,sequencesUnused:report.sequencesUnused});
   stage='reconcile';
   const tables=Object.keys(sourceDigests);
   const targetDigests=await tableDigests(o.target,tables,TARGET_ONLY_COLUMNS);
   const differing=tables.filter(t=>sourceDigests[t]!.rows!==targetDigests[t]!.rows||sourceDigests[t]!.sha256!==targetDigests[t]!.sha256);
   if(differing.length)throw new Error('CUTOVER_RECONCILE_MISMATCH '+differing.join(','));
-  const seqS=await sequencePositions(o.source),seqT=new Map((await sequencePositions(o.target)).map(r=>[r.s,r.v]));
-  const seqBad=seqS.filter(r=>r.v!==null&&seqT.has(r.s)&&seqT.get(r.s)!==r.v).map(r=>r.s);
+  const seqS=await sequenceStates(o.source),seqT=new Map((await sequenceStates(o.target)).map(r=>[r.s,r]));
+  const seqBad=seqS.filter(r=>r.v!==null&&seqT.has(r.s)&&(seqT.get(r.s)!.v!==r.v||seqT.get(r.s)!.c!==r.c)).map(r=>r.s);
   if(seqBad.length)throw new Error('CUTOVER_SEQUENCE_MISMATCH '+seqBad.join(','));
   const fk=await foreignKeyOrphans(o.target);if(fk.orphans.length)throw new Error('CUTOVER_FOREIGN_KEY_ORPHAN '+fk.orphans.join(','));
   const bad=(await triggerStates(o.target)).filter(t=>t.state!=='O');if(bad.length)throw new Error('CUTOVER_TRIGGER_NOT_ENABLED '+bad.map(b=>b.t+'.'+b.trig).join(','));
   const after=await schemaState(o.target);if(after.sha256!==targetBefore.sha256)throw new Error('CUTOVER_SCHEMA_STATE_CHANGED');
-  audit.add('reconcile',{tables:tables.length,rows:Object.values(targetDigests).reduce((a,d)=>a+d.rows,0),digest:sha(JSON.stringify(targetDigests)),foreignKeys:fk.checked,schemaState:after.sha256});
+  audit.add('reconcile',{tables:tables.length,rows:Object.values(targetDigests).reduce((a,d)=>a+d.rows,0),digest:sha(JSON.stringify(targetDigests)),foreignKeys:fk.checked,sequences:seqS.length,schemaState:after.sha256});
   fault('reconcile');
   stage='enable-writes';
-  await readWrite(o.targetOwner,[`ALTER DATABASE ${qi(o.targetDatabase)} RESET default_transaction_read_only`]);writesEnabled=true;
+  // Intent is persisted BEFORE the default is lifted; a failure after this point is judged by reading the target back, never by assumption.
+  await o.beforeEnableWrites?.();
+  writesIntent=true;
+  await readWrite(o.targetOwner,[`ALTER DATABASE ${qi(o.targetDatabase)} RESET default_transaction_read_only`]);
+  fault('enable-writes-lost');
+  writesEnabled=true;
+  await o.afterEnableWrites?.();
   audit.add('enable-writes',{});
   fault('enable-writes');
   stage='switch';
@@ -326,13 +426,27 @@ export async function runCutover(o:CutoverOptions){
   return{status:'CUTOVER_COMPLETE' as const,audit:audit.entries,chainValid:audit.verify(),report,sourceFenced:true};
  }catch(e){
   const message=(e as Error).message;
-  // Rollback is only possible while the target has never been writable.
-  if(!writesEnabled){if(fence)await unfenceSource(o.sourceOwner,o.sourceDatabase,fence,o.managerRole);audit.add('rollback',{stage,reason:message.slice(0,200),sourceUnfenced:Boolean(fence)});}
-  else audit.add('forward-fix-only',{stage,reason:message.slice(0,200),writesEnabled,sourceFenced:Boolean(fence)&&writesEnabled});
-  const failure=Object.assign(new Error(message),{stage,rolledBack:!writesEnabled,audit:audit.entries,chainValid:audit.verify()});
+  fence=fence??(e as {fence?:Fence}).fence;
+  if(writesIntent&&!writesEnabled){
+   // The lift may or may not have reached the server: read it back.
+   try{writesEnabled=!(await targetDefault());}catch{writesEnabled=true;writesUnknown=true;}
+  }
+  let rolledBack=false,recoveryRequired=false;
+  if(!writesEnabled){
+   if(!fence)rolledBack=true;   // nothing was changed on the source
+   else{
+    try{
+     if(o.fault==='unfence-fails')throw new Error('CUTOVER_INJECTED_FAULT unfence-fails');
+     await unfenceSource(o.sourceOwner,o.sourceDatabase,fence,o.managerRole);rolledBack=true;
+    }catch{recoveryRequired=true;}
+   }
+   audit.add(rolledBack?'rollback':'recovery-required',{stage,reason:message.slice(0,200),sourceUnfenced:rolledBack&&Boolean(fence)});
+  }else audit.add('forward-fix-only',{stage,reason:message.slice(0,200),writesEnabled,writesUnknown,sourceFenced:Boolean(fence)});
+  const failure=Object.assign(new Error(message),{stage,rolledBack,recoveryRequired,writesEnabled,writesUnknown,audit:audit.entries,chainValid:audit.verify(),...(fence?{fence}:{})}) as CutoverFailure;
   throw failure;
  }
 }
+
 /** Schema + trigger + owner + ACL state of one database, normalised by object name only (no data). */
 export async function schemaState(pool:Q){
  const q=async(sql:string)=>(await pool.query(sql)).rows.map(r=>Object.values(r).join('|'));
@@ -345,6 +459,38 @@ export async function schemaState(pool:Q){
  };
  return{sha256:sha(JSON.stringify(material)),counts:Object.fromEntries(Object.entries(material).map(([k,v])=>[k,v.length]))};
 }
+
+/** Every privilege in a database, as one normalised line per (object, grantee, privilege, grantable): relations, columns, functions, schemas, the database
+ * and default ACLs. Role names are normalised by the database-name prefix (`<db>_group` → `<db>_group` is `@db@_group`), so a source and a target built under
+ * different database names compare directly. This, not any single structural condition, is the basis for "the privileges are identical". */
+export async function aclLines(pool:Q,database:string,shared:string[]=[]):Promise<string[]>{
+ const norm=(r:string)=>r==='PUBLIC'||shared.includes(r)?r:r.startsWith(database+'_')?'@db@_'+r.slice(database.length+1):r;
+ const rows=async(sql:string)=>(await pool.query<{o:string;g:string;p:string;t:boolean}>(sql)).rows;
+ const lines:string[]=[];
+ const add=(kind:string,r:{o:string;g:string;p:string;t:boolean})=>lines.push(`${kind}|${r.o}|${norm(r.g)}|${r.p}|${r.t}`);
+ const grantee=()=>`CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END`;
+ for(const r of await rows(`SELECT n.nspname||'.'||c.relname o,${grantee()} g,a.privilege_type p,a.is_grantable t FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace,aclexplode(c.relacl) a
+  WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname<>'information_schema' AND c.relkind IN ('r','p','v','m','S')`))add('relation',r);
+ for(const r of await rows(`SELECT n.nspname||'.'||c.relname||'.'||at.attname o,${grantee()} g,a.privilege_type p,a.is_grantable t FROM pg_attribute at JOIN pg_class c ON c.oid=at.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace,aclexplode(at.attacl) a
+  WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname<>'information_schema' AND at.attacl IS NOT NULL AND NOT at.attisdropped`))add('column',r);
+ for(const r of await rows(`SELECT p.oid::regprocedure::text o,${grantee()} g,a.privilege_type p,a.is_grantable t FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace,aclexplode(p.proacl) a
+  WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname<>'information_schema'`))add('function',r);
+ for(const r of await rows(`SELECT n.nspname o,${grantee()} g,a.privilege_type p,a.is_grantable t FROM pg_namespace n,aclexplode(n.nspacl) a WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname<>'information_schema'`))add('schema',r);
+ for(const r of await rows(`SELECT 'database' o,${grantee()} g,a.privilege_type p,a.is_grantable t FROM pg_database d,aclexplode(d.datacl) a WHERE d.datname=current_database()`))add('database',r);
+ for(const r of await rows(`SELECT pg_get_userbyid(d.defaclrole)||':'||d.defaclobjtype::text||':'||coalesce(n.nspname,'') o,${grantee()} g,a.privilege_type p,a.is_grantable t FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid=d.defaclnamespace,aclexplode(d.defaclacl) a`))add('default',r);
+ return lines.sort();
+}
+export type AclComparison={sourceLines:number;targetLines:number;onlySource:string[];onlyTarget:string[];unexpected:string[];identical:boolean};
+/** Compares two databases' privilege sets. Differences must be explained by `allowed` (objects 0065 itself introduces or changes); anything else is `unexpected`. */
+export async function compareAcl(source:Q,target:Q,sourceDatabase:string,targetDatabase:string,allowed:(line:string)=>boolean,shared:string[]=[]):Promise<AclComparison>{
+ const a=await aclLines(source,sourceDatabase,shared),b=await aclLines(target,targetDatabase,shared);
+ const sa=new Set(a),sb=new Set(b);
+ const onlySource=a.filter(x=>!sb.has(x)),onlyTarget=b.filter(x=>!sa.has(x));
+ const unexpected=[...onlySource,...onlyTarget].filter(x=>!allowed(x));
+ return{sourceLines:a.length,targetLines:b.length,onlySource,onlyTarget,unexpected,identical:onlySource.length===0&&onlyTarget.length===0};
+}
+/** Objects that 0065 introduces or re-grants (and the executor/operations/custody/group grants that go with them): a difference there is expected, anywhere else it is not. */
+export const MIGRATION_0065_OBJECTS=/^(?:(?:relation|column|schema|default)\|public\.(?:group_[a-z_]+|rental_loan_items|inventory_holds|ledger_assets)|function\|(?:rental_apply_receipt|rental_stage_guard|rental_validate_loan|rental_validate_group_loan|rental_inventory_blocks|group_[a-z_]+)\()/;
 
 /** The runtime privileges that Production received from the 0059–0063 delta installers, for a database bootstrapped at 0001–0065.
  * The bootstrap's role plan predates them, and each installer refuses any registry but its own (0061/0062/0063). The statements are the installers' own pure

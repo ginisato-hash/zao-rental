@@ -14,7 +14,7 @@ test('all five events x ja/en render, never mention an expiry or extension, neve
  for(const locale of ['ja','en'] as const)for(const event of GROUP_NOTIFICATION_EVENTS){
   const r=renderGroupNotification(mat(event,locale,{adminMessage:'msg'}),ORIGIN);
   assert.ok(!FORBIDDEN.test(r.subject+r.text+r.html),event+locale);assert.ok(r.subject.includes('G-000042'));assert.ok(!/[\r\n]/.test(r.subject));
-  const links=r.text.match(/https?:\/\/\S+/g)!;assert.equal(links.length,1);assert.equal(links[0],`${ORIGIN}/${locale}/group/${base.groupId}`);
+  const links=r.text.match(/https?:\/\/\S+/g)!;assert.equal(links.length,1);assert.equal(links[0],`${ORIGIN}/${locale}/group/g/${base.groupId}`);
  }
 });
 test('review-held subject and confirmed subject are clearly different; held copy states the three facts',()=>{

@@ -134,6 +134,8 @@
     "production:install-group-migration": "node --import tsx scripts/production-install-group.ts migrate",
     "production:install-group-grants": "node --import tsx scripts/production-install-group.ts grants",
     "production:verify-group": "node --import tsx scripts/production-install-group.ts verify",
+    "production:custody-link-preflight": "node --import tsx scripts/production-install-group.ts custody-link-preflight",
+    "production:install-custody-link": "node --import tsx scripts/production-install-group.ts custody-link",
     "production:attest-release": "node --import tsx scripts/production-release-attest.ts",
     "production:worker-bind-cron-secret": "node --import tsx scripts/production-worker-credential.ts bind-cron-secret",
     "production:worker-dormant-proof": "node --import tsx scripts/production-worker-dormant-proof.ts",

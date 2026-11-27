@@ -10,7 +10,7 @@ const JA={
  closed:'このリンクは現在ご利用いただけません。店舗からご案内したリンクをご確認ください。',
  noAccess:'この申請を開くための鍵がこのブラウザにありません。再開リンクをお持ちの場合はそのリンクを開いてください。新しく申し込む場合は下のボタンから始められます（入口のリンクだけでは、すでにある申請は開けません）。',
  newApplication:'新しく申し込む',
- resume:{title:'この申請の再開リンク',body:'このブラウザ以外で続きを開くときの鍵です。入口のリンクとは別のものです。他の人に共有しないでください。この画面を閉じると、再表示はできません。',copy:'リンクをコピー',copied:'コピーしました'},
+ resume:{title:'この申請の再開リンク',body:'このブラウザ以外で続きを開くときの鍵です。入口のリンクとは別のものです。他の人に共有しないでください。この画面を閉じると、再表示はできません。',copy:'リンクをコピー',copied:'コピーしました',enter:'再開リンク（または鍵）を貼り付けてください',enterButton:'開く'},
  form:{
   group:'団体名',rep:'代表者名',email:'メールアドレス',phone:'連絡先電話番号（任意）',lang:'ご案内の言語',ja:'日本語',en:'English',base:'貸出・返却店舗',
   start:'利用開始日',end:'利用終了日',startAt:'貸出開始時刻',returnBy:'返却時刻',people:'おおよその人数',peopleNote:'1〜100名。実際の人数は次のステップの一覧で決まります。',
@@ -81,7 +81,7 @@ const EN:GroupCopy={
  closed:'This link is not available right now. Please check the link the store gave you.',
  noAccess:'This browser does not have the key to open this request. If you have a resume link, open that link. To start a new request, use the button below (the entrance link alone cannot open an existing request).',
  newApplication:'Start a new request',
- resume:{title:'Resume link for this request',body:'This is the key for continuing in another browser. It is different from the entrance link. Do not share it. It cannot be shown again after you leave this screen.',copy:'Copy link',copied:'Copied'},
+ resume:{title:'Resume link for this request',body:'This is the key for continuing in another browser. It is different from the entrance link. Do not share it. It cannot be shown again after you leave this screen.',copy:'Copy link',copied:'Copied',enter:'Paste your resume link (or key)',enterButton:'Open'},
  form:{
   group:'Group name',rep:'Representative name',email:'Email address',phone:'Phone number (optional)',lang:'Language for notices',ja:'日本語',en:'English',base:'Pick-up and return store',
   start:'Start date',end:'End date',startAt:'Pick-up time',returnBy:'Return time',people:'Approximate number of guests',peopleNote:'1 to 100. The exact list is set in the next step.',

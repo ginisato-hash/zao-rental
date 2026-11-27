@@ -145,7 +145,10 @@ test('group application role (migration 0064): the role defaults to <db>_group, 
  const p1=commercialProductionPlan(env({PRODUCTION_DB_ROLE_GROUP:undefined,PRODUCTION_DB_PASSWORD_GROUP:pw('group')}))!;
  assert.deepEqual(p1.secrets.database.group,{provider:'NEON',environment:'PRODUCTION',host:'ep-synthetic-fixture.ap-southeast-1.aws.neon.tech',port:5432,database:'neondb',user:'neondb_group',password:pw('group'),revoked:false});
  assert.equal(commercialProductionPlan(env({PRODUCTION_DB_ROLE_GROUP:'neondb_grp',PRODUCTION_DB_PASSWORD_GROUP:pw('group')}))!.secrets.database.group!.user,'neondb_grp','an explicit role name wins');
- for(const bad of ['','short','x'.repeat(15)])assert.throws(()=>commercialProductionPlan(env({PRODUCTION_DB_PASSWORD_GROUP:bad})),/PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING/,'a present but malformed credential is refused, never ignored: '+bad);
+ // A malformed/short/empty optional group credential fails ONLY the group service closed (group stays unconnected -> GROUP_UNCONNECTED);
+ // booking, staff and payment composition are unaffected and every other required check stays strict.
+ for(const bad of ['','short','x'.repeat(15)]){const pb=commercialProductionPlan(env({PRODUCTION_DB_PASSWORD_GROUP:bad}));assert.ok(pb,'composition still succeeds: '+bad);assert.equal(pb!.secrets.database.group,undefined,'group is not connected with a malformed credential: '+bad);assert.ok(pb!.secrets.database.guest,'other services keep their credentials');}
+ assert.throws(()=>commercialProductionPlan(env({PRODUCTION_DB_PASSWORD_GUEST:'short'})),/PRODUCTION_COMMERCIAL_DB_CREDENTIAL_MISSING/,'required credentials stay strict');
  for(const bad of ['neondb_owner','neondb_admin','neondb_hold'])assert.throws(()=>commercialProductionPlan(env({PRODUCTION_DB_ROLE_GROUP:bad})),'an owner-like or duplicated role name is refused: '+bad);
  assert.ok(COMMERCIAL_ALLOWLISTED_KEYS.includes('PRODUCTION_DB_PASSWORD_GROUP'));assert.ok(COMMERCIAL_ALLOWLISTED_KEYS.includes('PRODUCTION_DB_ROLE_GROUP'));
  assert.ok(!JSON.stringify(commercialProductionPlan(env())!.configuration).includes(pw('group')),'the approved configuration (and its digest) carries the role name only, never a credential');

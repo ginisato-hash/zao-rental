@@ -1,17 +1,18 @@
 // Fixed Production installer for the 0064 group order core: `migrate` applies 0064 once (one transaction, as the database owner: 0064 touches no executor-owned object),
 // `grants` creates the NOLOGIN group role `<db>_group` and gives it its approved privileges once, `verify` only reads back the installed state in a READ ONLY transaction (no write;
-// also the post-COMMIT-unknown and rollback check). The custody link (0065) is NOT installed here: it waits for a privileged path (docs/execution/group/RELEASE_RUNBOOK.md); verify reads it if present.
+// also the post-COMMIT-unknown and rollback check). The custody link (0065) has its own two commands: `custody-link-preflight` (READ ONLY) and `custody-link` (one owner transaction; needs the platform-granted executor membership and fresh pre-0065 recovery evidence, docs/execution/group/CUSTODY_LINK_PRIVILEGED_PATH.md).
 // No arguments. Admission before any database connection: exact accepted main (clean checkout, HEAD == origin/main), no TLS override, a machine-derived Production restore
 // PASS record (verified, not just shape-checked), then a memory-only owner session proven over verify-full TLS. Output is a sanitised status object; failures are fixed codes.
 import {existsSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
 import {neonCliPort} from './production-backup-credential';
-import {applyProductionGroupMigration,applyProductionGroupGrants,verifyProductionGroup} from './production-group-delta';
+import {applyProductionGroupMigration,applyProductionGroupGrants,verifyProductionGroup,preflightProductionCustodyLink,applyProductionCustodyLink} from './production-group-delta';
+import {requirePre0065Recovery} from './production-recovery-evidence-pre0065';
 import {assertAcceptedMainRelease,assertNoTlsOverrides,openOwnerSession,type OwnerSession} from './lib/production-owner-session';
 import {requirePre0064RestorePass} from './production-restore-evidence-pre0064';
 
-const COMMANDS=['migrate','grants','verify'] as const;
+const COMMANDS=['migrate','grants','verify','custody-link-preflight','custody-link'] as const;
 type Command=typeof COMMANDS[number];
 const NEON_BIN=join(homedir(),'.npm/_npx/978debf9b3a75271/node_modules/.bin/neon');
 const SAFE_CODE=/^PRODUCTION_(INSTALL|GROUP|COUPON_ADMIN|SALES_STOP|FIRST_ADMIN|STAFF_BOOTSTRAP|CREDENTIAL)_[A-Z0-9_]{1,80}$|^BACKUP_(CREDENTIAL|HOST|PORT)_[A-Z0-9_]{1,80}$/;
@@ -31,10 +32,11 @@ export async function main(argv:string[],root:string=process.cwd(),seams:Install
  // Both writing commands need a fresh restore proof of the database they run on, the 0001-0063 Production database
  // (scripts/production-restore-evidence-pre0064.ts). No older restore contract can stand in for it. `verify` writes nothing
  // (READ ONLY transaction), so it stays available after that proof expires, e.g. when deciding a rollback.
- if(command!=='verify')await requirePre0064RestorePass(root);
+ if(command==='custody-link')requirePre0065Recovery(root);
+ else if(command==='migrate'||command==='grants')await requirePre0064RestorePass(root);
  const session=await seams.openSession();
  try{
-  const result=command==='migrate'?await applyProductionGroupMigration(session.client,'neondb','neondb_owner'):command==='grants'?await applyProductionGroupGrants(session.client,'neondb','neondb_owner'):await verifyProductionGroup(session.client,'neondb','neondb_owner');
+  const result=command==='migrate'?await applyProductionGroupMigration(session.client,'neondb','neondb_owner'):command==='grants'?await applyProductionGroupGrants(session.client,'neondb','neondb_owner'):command==='custody-link'?await applyProductionCustodyLink(session.client,'neondb','neondb_owner'):command==='custody-link-preflight'?await preflightProductionCustodyLink(session.client,'neondb','neondb_owner'):await verifyProductionGroup(session.client,'neondb','neondb_owner');
   console.log(JSON.stringify({sourceSha:head,command,...result}));
  }finally{await session.close();}
 }

@@ -50,7 +50,7 @@ try{
   assert.ok(m.text.includes('¥'+Number(est).toLocaleString('en-US')),'provisional tax-included amount');
   assert.equal(m.recipient,'synthetic-rep@example.invalid');assert.equal(m.locale,'ja');
   assert.ok(!FORBIDDEN_COPY.test(m.subject+m.text+m.html),'no expiry / extension wording');
-  const link=/http:\/\/127\.0\.0\.1:3000\/ja\/group\/[^\s"]+/.exec(m.text)![0];assert.equal(link,`${ORIGIN}/ja/group/${g.groupId}`);
+  const link=/http:\/\/127\.0\.0\.1:3000\/ja\/group\/g\/[^\s"]+/.exec(m.text)![0];assert.equal(link,`${ORIGIN}/ja/group/g/${g.groupId}`);
   assert.ok(!link.includes(g.owner.secret)&&!m.text.includes(g.owner.secret)&&!m.html!.includes(g.owner.secret),'the owner secret is never in a mail');
   assert.ok(!/[?#]/.test(link),'no token or query in the link');
   const row=(await ob(g.groupId))[0];assert.equal(row.status,'SENT');assert.match(row.provider_message_id,/^msg_/);

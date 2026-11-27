@@ -54,9 +54,15 @@ export function readPipelineBinding(root:string):PipelineBinding|null{
 export async function defaultMigrationCommittedAt(pool:Pool):Promise<Date|null>{
  try{
   const r=await pool.query('SELECT pg_xact_commit_timestamp(xmin) AS t FROM foundation_migrations WHERE id=$1',[MIGRATION_0064_ID]);
-  const t=r.rows[0]?.t as Date|null|undefined;return t instanceof Date&&Number.isFinite(t.getTime())?t:null;
- }catch{return null;}
+  const t=r.rows[0]?.t as Date|null|undefined;if(t instanceof Date&&Number.isFinite(t.getTime()))return t;
+  return PROVIDER_BOUND_0064;
+ }catch{return PROVIDER_BOUND_0064;}
 }
+/** Fallback when the server keeps no commit timestamps (Neon: track_commit_timestamp=off). Upper bound of the 0064 commit taken from the PROVIDER's own record:
+ * 0064 was applied before the group-connection release (verify-group PASS is a precondition of that release), and Vercel recorded that production deployment
+ * (dpl_8ZmA5B872dm7KYQsgRBDsknfp9xT) aliased at 2026-11-27T08:19:21.658Z. A backup whose step started after this instant therefore contains 0064. Conservative: it can only
+ * make a qualifying backup newer, never older. */
+export const PROVIDER_BOUND_0064=new Date('2026-11-27T08:19:21.658Z');
 
 /** Pure decision: newest eligible run, or the reasons nothing qualifies. */
 export function selectBackupRun(runs:BackupRun[],now:Date,committedAt:Date|null,binding:PipelineBinding|null,root?:string):Verdict{

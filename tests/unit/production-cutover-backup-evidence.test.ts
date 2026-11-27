@@ -74,3 +74,13 @@ test('GitHub port keeps only completed successful runs and reads the backup step
  assert.deepEqual(runs.map(x=>[x.id,x.stepConclusion,x.stepCompletedAt]),[[7,'success','2026-11-27T16:19:35Z']]);
  assert.ok(calls.every(c=>c[0]==='api'&&!c.includes('-X')&&!c.includes('--method')),'GET only');
 });
+
+test('server without commit timestamps: the provider-recorded upper bound of the 0064 commit is used; a real timestamp wins', async()=>{
+ const {defaultMigrationCommittedAt,PROVIDER_BOUND_0064}=await import('../../scripts/production-cutover-backup-evidence');
+ const none={query:async()=>({rows:[{t:null}]})} as unknown as Pool;
+ assert.equal((await defaultMigrationCommittedAt(none))?.toISOString(),PROVIDER_BOUND_0064.toISOString());
+ const broken={query:async()=>{throw new Error('track_commit_timestamp is off');}} as unknown as Pool;
+ assert.equal((await defaultMigrationCommittedAt(broken))?.toISOString(),PROVIDER_BOUND_0064.toISOString());
+ const real=new Date('2026-11-27T06:00:00.000Z');
+ assert.equal((await defaultMigrationCommittedAt({query:async()=>({rows:[{t:real}]})} as unknown as Pool))?.toISOString(),real.toISOString());
+});

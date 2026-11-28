@@ -146,7 +146,7 @@ export async function issueCredentials(p:CredentialPorts,target:string):Promise<
    let password=randomBytes(32).toString('base64url');
    let value='';
    try{
-    await owner.query('BEGIN');
+    await owner.query('BEGIN READ WRITE');
     try{
      await owner.query(`SET LOCAL ROLE ${qi(manager)}`);
      await owner.query(`ALTER ROLE ${qi(s.role)} NOLOGIN PASSWORD '${password}' VALID UNTIL 'infinity'`);
